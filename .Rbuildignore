@@ -1,0 +1,15 @@
+^.*\.Rproj$
+^.*\.Renviron$
+^\.Rproj\.user$
+^LICENSE\.md$
+^README\.Rmd$
+^\.DS_Store$
+^codecov\.yml$
+^\.github$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^devel$
+^vignettes/articles$
+^data-raw$
+^presentations$
