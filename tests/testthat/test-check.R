@@ -169,6 +169,19 @@ test_that("check_strata accepts valid factor strata", {
   )
 })
 
+test_that("check_strata fails with invalid strata", {
+  double_strata_data <- data.frame(
+    event_date = as.Date(c("2020-07-08", "2020-07-09")),
+    report_date = as.Date(c("2020-07-11", "2020-07-12")),
+    category = c(0.237, 1248.13)
+  )
+
+  expect_error(
+    check_strata(double_strata_data, strata = "category"),
+    "should contain integer or character values"
+  )
+})
+
 test_that("check_strata fails when strata column not found", {
   test_data <- setup_test_data()
 

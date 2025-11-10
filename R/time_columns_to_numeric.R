@@ -23,6 +23,9 @@ time_cols_to_numeric <- function(data, event_date, report_date, event_units, rep
     )
   }
 
+  check_units(data, report_units)
+  check_units(data, event_units)
+
   #Check that report_units is coarser than or equal to event_units
   if (event_units != "numeric" && report_units != "numeric") {
     granularity_order <- c("days", "weeks", "months", "years")
@@ -97,7 +100,7 @@ time_cols_to_numeric <- function(data, event_date, report_date, event_units, rep
         !!as.symbol(".year_difference_temp"))) %>%
       dplyr::mutate(!!as.symbol(".month_difference_temp") := dplyr::if_else(
         !!as.symbol(".month_difference_temp") < 0,
-        12 - lubridate::month(!!min_event_date) + (lubridate::month(!!as.symbol(event_date)) - 1),
+        12 - lubridate::month(!!min_event_date) + lubridate::month(!!as.symbol(event_date)),
         !!as.symbol(".month_difference_temp")
       )) %>%
       dplyr::mutate(!!as.symbol(".event_num") := 12*!!as.symbol(".year_difference_temp") + !!as.symbol(".month_difference_temp")) %>%
@@ -115,7 +118,7 @@ time_cols_to_numeric <- function(data, event_date, report_date, event_units, rep
         !!as.symbol(".year_difference_temp"))) %>%
       dplyr::mutate(!!as.symbol(".month_difference_temp") := dplyr::if_else(
         !!as.symbol(".month_difference_temp") < 0,
-        12 - lubridate::month(!!min_event_date) + (lubridate::month(!!as.symbol(report_date)) - 1),
+        12 - lubridate::month(!!min_event_date) + lubridate::month(!!as.symbol(report_date)),
         !!as.symbol(".month_difference_temp")
       )) %>%
       dplyr::mutate(!!as.symbol(".report_num") := 12*!!as.symbol(".year_difference_temp") + !!as.symbol(".month_difference_temp")) %>%
