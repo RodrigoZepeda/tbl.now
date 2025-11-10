@@ -4,7 +4,12 @@
 #' @exportS3Method pillar::tbl_sum
 tbl_sum.tbl_now <- function(x, ...) {
   default_header <- NextMethod()
-  c(default_header, "tbl_now" = paste0(attr(x, 'data_type')," (frequency = ", attr(x, 'date_units'), ")"))
+  c(default_header,
+    "Data type" = cli::cli_fmt({cli::cli_text("{.val {get_data_type(x)}}")}),
+    "Frequency" = cli::cli_fmt({
+      cli::cli_text("Event: {.code {get_event_units(x)}} | Report: {.code {get_report_units(x)}}")
+    })
+  )
 }
 
 #' @importFrom pillar tbl_format_footer

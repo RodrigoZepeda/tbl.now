@@ -13,9 +13,11 @@ new_tbl_now(
   covariates = NULL,
   is_batched = NULL,
   now = NULL,
-  date_units = "auto",
+  event_units = "auto",
+  report_units = "auto",
   data_type = "auto",
   verbose = TRUE,
+  force = FALSE,
   ...
 )
 
@@ -27,7 +29,8 @@ tbl_now(
   covariates = NULL,
   is_batched = NULL,
   now = NULL,
-  date_units = "auto",
+  event_units = "auto",
+  report_units = "auto",
   data_type = "auto",
   verbose = TRUE,
   ...
@@ -61,13 +64,19 @@ the real, idealized, report date set `is_batched = TRUE`.}
 nowcast. If no `now` is given then the function automatically uses the last
 `event_date`.}
 
-\item{date_units}{(optional) Character. Either "auto" (default), "weekly",  "daily"
-or "numeric". Use `numeric` when the temporal effects are given as covariates.}
+\item{event_units}{(optional) Character. Either "auto" (default), "days",
+"weeks", "months", "years" or "numeric".}
+
+\item{report_units}{(optional) Character. Either "auto" (default), "days",
+"weeks", "months", "years" or "numeric".}
 
 \item{data_type}{(optional) Character. Either "auto", "linelist" or
 "count".}
 
 \item{verbose}{(optional) Logical. Whether to throw a message. Default = `TRUE`.}
+
+\item{force}{(optional) Logical. Whether to force computation overwriting pre-existing variables.
+Default = `FALSE`.}
 
 \item{...}{Additional metadata to be stored as attributes.}
 }
@@ -92,8 +101,11 @@ by the [validate_tbl_now()] function:
   \item{covariates}{Names of the columns corresponding to covariates (for modelling).}
   \item{num_covariates}{Number of covariates Corresponds to `length(covariates)`.}
   \item{now}{Date of the `now` for a nowcast.}
-  \item{date_units}{Either `daily`, `weekly` or `numeric`. Corresponds to the units of `event_date`
-  and `report_date`}
+  \item{is_batched}{Column indicating whether the measurement is noisy (only upper bound) or not.}
+  \item{event_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `event_date`}
+  \item{report_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `report_date`}
+  \item{repot_num}{Column where the `report_date` was transformed to numeric values}
+  \item{event_num}{Column where the `event_date` was transformed to numeric values}
   \item{data_type}{Either `linelist` or `count` depending on whether it is linelist data
   or count data}
 }

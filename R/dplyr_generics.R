@@ -33,7 +33,7 @@ validate_tbl_now <- function(x) {
 
   #Get required attributes
   required_attrs <- c("event_date", "report_date", "num_strata",
-                      "num_covariates", "now", "date_units",
+                      "num_covariates", "now", "event_units", "report_units",
                       "data_type")
 
   errors   <- character(0)
@@ -64,7 +64,8 @@ validate_tbl_now <- function(x) {
   num_covariates <- get_num_covariates(x)
   covariates     <- get_covariates(x)
   now            <- get_now(x)
-  date_units     <- get_date_units(x)
+  report_units   <- get_report_units(x)
+  event_units    <- get_event_units(x)
   data_type      <- get_data_type(x)
   is_batched     <- get_is_batched(x)
 
@@ -104,12 +105,19 @@ validate_tbl_now <- function(x) {
     errors <- c(errors, "Attribute {.val now}  must be a Date object of length 1")
   }
 
-  # date_units must be valid option
-  valid_date_units <- c("auto", "days", "weeks", "numeric")
-  if (!is.character(date_units) || length(date_units) != 1 ||
-      !date_units %in% valid_date_units) {
+  # "event_units" and "report_units" must be valid option
+  valid_date_units <- c("auto", "days", "weeks", "numeric", "months", "years")
+  if (!is.character(report_units) || length(report_units) != 1 ||
+      !report_units %in% valid_date_units) {
     errors <- c(errors, sprintf(
-      "Attribute {.val date_units} must be one of: {.val %s}",
+      "Attribute {.val report_units} must be one of: {.val %s}",
+      paste(valid_date_units, collapse = ", ")
+    ))
+  }
+  if (!is.character(event_units) || length(event_units) != 1 ||
+      !event_units %in% valid_date_units) {
+    errors <- c(errors, sprintf(
+      "Attribute {.val event_units} must be one of: {.val %s}",
       paste(valid_date_units, collapse = ", ")
     ))
   }
@@ -206,7 +214,7 @@ validate_tbl_now <- function(x) {
       invalid_dates <- x[[report_date]][valid_rows] < x[[event_date]][valid_rows]
       if (any(invalid_dates, na.rm = TRUE)) {
         warnings <- c(warnings, sprintf(
-          "%d row(s) have report_date before event_date",
+          "%d row(s) have a `report_date` before `event_date`",
           sum(invalid_dates, na.rm = TRUE)
         ))
       }
@@ -268,7 +276,7 @@ tbl_now_can_reconstruct <- function(data) {
 
   # check whether input is valid, ignoring its class
   valid <- tryCatch(
-    { validate_tbl_now(data)},
+    { validate_tbl_now(data) },
     error = function(cnd) FALSE
   )
 
@@ -290,9 +298,13 @@ tbl_now_reconstruct_internal <- function(data, template){
   keep_attrs <- attrs[setdiff(names(attrs), c("names", "row.names", "class"))]
 
   # Enforce protected columns
-  protected_cols <- c(attrs[["event_date"]], attrs[["report_date"]])
+  protected_cols <- c(attrs[["event_date"]], attrs[["report_date"]], ".event_num", ".report_num")
   if (!is.null(attrs[["is_batched"]])){
     protected_cols <- c(protected_cols, attrs[["is_batched"]])
+  }
+
+  if (!is.null(get_data_type(data)) && get_data_type(data) == "count"){
+    protected_cols <- c(protected_cols, "n")
   }
 
   # Check the protected columns and return as data.frame instead
@@ -433,4 +445,137 @@ dplyr_col_modify.tbl_now <- function(data, cols) {
 #' @exportS3Method dplyr::dplyr_reconstruct
 dplyr_reconstruct.tbl_now <- function(data, template) {
   tbl_now_reconstruct(data, template)
+}
+
+# Based on https://www.bio-ai.org/blog/extending-tibbles/
+#' Grouped tbl_now
+#'
+#' @param x A `tbl_now`
+#' @param groups Column grops to group_by
+#' @keywords internal
+new_grouped_tbl_now <- function(x, groups) {
+  x <- dplyr::new_grouped_df(x = x, groups = groups, class = c("grouped_tbl_now"))
+  tbl_df_location <- grep("tbl_df", class(x), fixed = TRUE)
+  class(x) <- append(class(x), "tbl_now", after = tbl_df_location - 1)
+  x
+}
+
+#' @importFrom dplyr group_by
+#' @exportS3Method dplyr::group_by
+group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_drop_default(.data)) {
+
+  grouped_tbl <- NextMethod()
+
+  if (dplyr::is.grouped_df(grouped_tbl)) {
+    # Extract grouping information from default method
+    grouping_structure <- dplyr::group_data(grouped_tbl)
+    # Restore original attributes and add grouping information
+    x <- new_grouped_tbl_now(.data, groups = grouping_structure)
+  } else {
+    # This is an edge case if no groups are actually provided. Then simply return a regular subclass
+    x <- new_tbl_now(data = .data,
+                     event_date = get_event_date(.data),
+                     report_date = get_report_date(.data),
+                     strata = get_strata(.data),
+                     covariates = get_covariates(.data),
+                     is_batched = get_is_batched(.data),
+                     now = get_now(.data),
+                     event_units = get_event_units(.data),
+                     report_units = get_event_units(.data),
+                     data_type = get_data_type(.data),
+                     verbose = FALSE)
+  }
+  x
+}
+
+#' @importFrom dplyr ungroup
+#' @exportS3Method dplyr::ungroup
+ungroup.grouped_tbl_now <- function(x, ...) {
+
+  event_date   <- get_event_date(x)
+  report_date  <- get_report_date(x)
+  strata       <- get_strata(x)
+  covariates   <- get_covariates(x)
+  is_batched   <- get_is_batched(x)
+  now          <- get_now(x)
+  event_units  <- get_event_units(x)
+  report_units <- get_event_units(x)
+  data_type    <- get_data_type(x)
+
+  # Run default ungrouping.
+  tbl <- NextMethod()
+
+  if (dplyr::is_grouped_df(tbl)) {
+    # If the tibble is still grouped, we dont need to do anything, as the default dplyr method doesnt call as_tibble
+    x <- tbl
+  } else {
+    # Otherwise the tibble is completely ungrouped and we need to reapply custom attributes, but remove grouping
+    # This is most simplest done by simply creating a new tibble subclass
+    # This is an edge case if no groups are actually provided. Then simply return a regular subclass
+    x <- new_tbl_now(data = tbl,
+                     event_date = event_date,
+                     report_date = report_date,
+                     strata = strata,
+                     covariates = covariates,
+                     is_batched = is_batched,
+                     now = now,
+                     event_units = event_units,
+                     report_units = report_units,
+                     data_type = data_type,
+                     verbose = FALSE,
+                     force = TRUE)
+  }
+  x
+}
+
+
+#' @importFrom dplyr summarise
+#' @exportS3Method dplyr::summarise
+summarise.tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
+
+ #Remove the tbl_now attribute
+ class(.data) <- class(.data)[which(class(.data) != "grouped_tbl_now")]
+
+ #Do normal summarise
+ summarised_tbl <- dplyr::summarise(.data, ..., .groups = .groups)
+
+ result <- tryCatch({
+    new_tbl_now(data = summarised_tbl,
+                event_date = get_event_date(.data),
+                report_date = get_report_date(.data),
+                strata = get_strata(.data),
+                covariates = get_covariates(.data),
+                is_batched = get_is_batched(.data),
+                now = get_now(.data),
+                event_units = get_event_units(.data),
+                report_units = get_event_units(.data),
+                data_type = get_data_type(.data),
+                verbose = FALSE,
+                force = TRUE)
+    },
+    error = function(e) {
+      cli::cli_warn("Dropping `tbl_now` attributes and converting to `tibble`")
+      summarised_tbl
+    }
+  )
+
+  result
+}
+
+#' @importFrom dplyr summarize
+#' @exportS3Method dplyr::summarize
+summarize.tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
+  summarise.tbl_now(.data, ..., .groups = .groups)
+}
+
+#' @importFrom dplyr summarise
+#' @exportS3Method dplyr::summarise
+summarise.grouped_tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
+  summarise.tbl_now(.data, ..., .groups = .groups)
+}
+
+#' @importFrom dplyr summarize
+#' @exportS3Method dplyr::summarize
+summarize.grouped_tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
+  summarise.tbl_now(.data, ..., .groups = .groups)
 }

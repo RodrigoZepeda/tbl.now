@@ -1,5 +1,4 @@
 # Load libraries (assuming the code depends on these)
-library(testthat)
 library(dplyr)
 
 # Source all necessary functions for testing.
@@ -51,7 +50,8 @@ test_that("tbl_now creates object with minimal linelist data", {
   expect_equal(attr(result, "covariates"), c("age_group", "gender"))
   expect_equal(attr(result, "num_covariates"), 2)
   expect_equal(attr(result, "data_type"), "linelist") # Should infer linelist
-  expect_equal(attr(result, "date_units"), "days")    # Should infer "day" for Date objects
+  expect_equal(attr(result, "report_units"), "days")    # Should infer "day" for Date objects
+  expect_equal(attr(result, "event_units"), "days")    # Should infer "day" for Date objects
 
   expect_equal(attr(result, "event_date"), get_event_date(result))
   expect_equal(attr(result, "report_date"), get_report_date(result))
@@ -61,7 +61,8 @@ test_that("tbl_now creates object with minimal linelist data", {
   expect_equal(attr(result, "covariates"), get_covariates(result))
   expect_equal(attr(result, "num_covariates"), get_num_covariates(result))
   expect_equal(attr(result, "data_type"), get_data_type(result))
-  expect_equal(attr(result, "date_units"), get_date_units(result))
+  expect_equal(attr(result, "report_units"), get_report_units(result))
+  expect_equal(attr(result, "event_units"), get_event_units(result))
 
 })
 
@@ -124,7 +125,6 @@ test_that("tbl_now infers 'count' data_type correctly", {
   expect_equal(attr(result, "data_type"), "count")
 })
 
-#FIXME: Fix the column
 test_that("tbl_now handles optional 'is_batched' column", {
   result <- tbl_now(
     data = ll_data,
@@ -134,7 +134,7 @@ test_that("tbl_now handles optional 'is_batched' column", {
     date_units = "days",
     verbose = FALSE
   )
-  #expect_equal(attr(result, "is_batched"), "is_batched_col")
+  expect_equal(attr(result, "is_batched"), "is_batched_col")
 })
 
 test_that("tbl_now errors when date columns are missing or invalid", {
@@ -169,15 +169,18 @@ test_that("tbl_now errors when date columns are missing or invalid", {
       onset_week = as.Date("2023-01-10"),
       report_week = as.Date("2023-01-01")
     )
-  expect_error(
-    tbl_now(
-      data = invalid_data,
-      event_date = "onset_week",
-      report_date = "report_week",
-      date_units = "days",
-      verbose = FALSE
-    ),
-    "Timetravel"
+  suppressWarnings(
+    expect_warning(
+      tbl_now(
+        data = invalid_data,
+        event_date = "onset_week",
+        report_date = "report_week",
+        report_units = "days",
+        event_units = "days",
+        verbose = FALSE
+      ),
+      "before"
+    )
   )
 })
 

@@ -64,7 +64,7 @@ infer_now <- function(data, now, event_date, report_date) {
 #' @param date_column Name of a column of `data`
 #' that contains the dates.
 #'
-#' @return Whether the data's date_units are `days` or `weeks`.
+#' @return Whether the data's date_units are `days`, `weeks`, `months`, `years` or `numeric`.
 #' @examples
 #' \dontrun{
 #' #Get the maximum report date and infer the data distribution
@@ -84,14 +84,17 @@ infer_now <- function(data, now, event_date, report_date) {
 #' #Or just input the type
 #' infer_units_one_column(weekly_data, "weeks", "report_date")
 #'
+#' #Also works with numeric
+#' infer_units_one_column(tibble(report_date = 1:20), date_units = "auto", "report_date")
+#'
 #' }
 #' @keywords internal
-infer_units_one_column <- function(data, date_units, date_column) {
+infer_units_one_column <- function(data, date_column, date_units) {
 
   #Force conversion of data to avoid loops with dplyr_reconstruct
   data <- dplyr::as_tibble(data)
 
-  valid_units <- c("days", "weeks")
+  valid_units <- c("days", "weeks", "months", "years", "numeric")
 
   if (is.null(date_units) || date_units == "auto") {
 
@@ -103,33 +106,48 @@ infer_units_one_column <- function(data, date_units, date_column) {
     }
 
     # Calculate the differences between consecutive dates
-    date_diffs <- data %>%
+    date_vals <- data %>%
       dplyr::distinct(!!as.symbol(date_column)) %>%
       dplyr::arrange(!!as.symbol(date_column)) %>%
-      dplyr::pull(!!as.symbol(date_column)) %>%
-      diff()
+      dplyr::pull(!!as.symbol(date_column))
 
-    # Convert the differences to a period (days)
-    min_difference <- date_diffs %>%
-      min() %>%
-      as.numeric()
+    # Check if they are date or numeric
+    if (lubridate::is.Date(date_vals)){
 
-    # Categorize based on the median difference
-    if (min_difference <= 1) {
-      date_units <- "days"
-    } else if (min_difference >= 6 & min_difference <= 8) {
-      date_units <- "weeks"
+      date_diffs <- date_vals %>%
+        diff()
+
+      # Convert the differences to a period (days)
+      min_difference <- date_diffs %>%
+        min() %>%
+        as.numeric()
+
+      # Categorize based on the median difference
+      if (min_difference <= 6) {
+        date_units <- "days"
+      } else if (min_difference > 6 & min_difference <= 13) {
+        date_units <- "weeks"
+      } else if (min_difference >= 27 & min_difference <= 35) {
+        date_units <- "months"
+      } else if (min_difference >= 360 & min_difference <= 370) {
+        date_units <- "years"
+      } else {
+        cli::cli_abort(
+          "Cannot infer time date_units. Specify between {.code date_units = {.val {valid_units}}}"
+        )
+      }
+    } else if (is.numeric(date_vals)) {
+      date_units <- "numeric"
     } else {
       cli::cli_abort(
-        "Cannot infer time date_units. Specify between {.code date_units = {.val {valid_units}}}"
+        "Date column {.val {date_column}} has to be either `numeric` or a `Date`"
       )
     }
   } else if (!(date_units %in% valid_units)){
     cli::cli_abort(
-      "Date units {date_units} not supported by the model yet."
+      "Date units {date_units} not supported yet. Try transforming them to `numeric` and using the `numeric` format."
     )
   }
-
   return(date_units)
 }
 
@@ -143,29 +161,8 @@ infer_units_one_column <- function(data, date_units, date_column) {
 #' @return Whether the data's date_units are `days` or `weeks`.
 #'
 #' @keywords internal
-infer_units <- function(data, event_date, report_date, date_units) {
-
-
-  #Force conversion of data to avoid loops with dplyr_reconstruct
-  data <- dplyr::as_tibble(data)
-
-  #Infer the date_units for event_date and report_date
-  true_date_units   <- infer_units_one_column(data, date_units = date_units, date_column = event_date)
-  report_date_units <- infer_units_one_column(data, date_units = date_units, date_column = report_date)
-
-  #Check that the inferred date_units are the same
-  if (true_date_units != report_date_units){
-    cli::cli_abort(
-      paste0(
-        "Inferred date_units for {event_date} are {.val {true_date_units}} while ",
-        "inferred date_units for {report_date} are {.val {report_date_units}}. ",
-        "The model cannot work with different scales. If you think this is a ",
-        "mistake use the `date_units` argument to set up the date_units."
-      )
-    )
-  }
-
-  return(true_date_units)
+infer_units <- function(data, date_column, date_units) {
+  infer_units_one_column(data, date_units = date_units, date_column = date_column)
 }
 
 #' Automatically infer the `data_type`

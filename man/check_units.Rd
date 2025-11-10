@@ -8,9 +8,6 @@ check_units(data, date_units)
 }
 \arguments{
 \item{data}{A `data.frame` to be converted.}
-
-\item{date_units}{(optional) Character. Either "auto" (default), "weekly",  "daily"
-or "numeric". Use `numeric` when the temporal effects are given as covariates.}
 }
 \value{
 (invisible) `TRUE` if the date_units are valid or NULL

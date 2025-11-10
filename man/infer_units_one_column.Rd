@@ -4,14 +4,14 @@
 \alias{infer_units_one_column}
 \title{Automatically infer which value is `date_units` for one column.}
 \usage{
-infer_units_one_column(data, date_units, date_column)
+infer_units_one_column(data, date_column, date_units)
 }
 \arguments{
 \item{date_column}{Name of a column of `data`
 that contains the dates.}
 }
 \value{
-Whether the data's date_units are `days` or `weeks`.
+Whether the data's date_units are `days`, `weeks`, `months`, `years` or `numeric`.
 }
 \description{
 Function returns whether data is daily or weekly
@@ -38,6 +38,9 @@ infer_units_one_column(weekly_data, NULL, "report_date")
 
 #Or just input the type
 infer_units_one_column(weekly_data, "weeks", "report_date")
+
+#Also works with numeric
+infer_units_one_column(tibble(report_date = 1:20), date_units = "auto", "report_date")
 
 }
 }

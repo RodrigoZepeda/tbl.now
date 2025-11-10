@@ -49,24 +49,24 @@ check_date_columns <- function(data, event_date, report_date) {
     )
   }
 
-  # Check that none observation has report before onset
-  if (any(true_date_col > report_date_col)) {
-
-    # Get the number of observations before (for message)
-    n_before <- nrow(data)
-
-    # Filter to keep only those with onset after report
-    n_after <- data %>%
-      dplyr::filter(!!as.symbol(event_date) > !!as.symbol(report_date)) %>%
-      dplyr::tally() %>%
-      dplyr::pull()
-
-    perc  <- round(100*n_after/n_before, 4)
-
-    cli::cli_abort(
-      "{.val {n_after}} rows ({perc}%) have a {.code report_date} ocurring before the {.code event_date}. Timetravel is not yet included in the model."
-    )
-  }
+  # # Check that none observation has report before onset
+  # if (any(true_date_col > report_date_col)) {
+  #
+  #   # Get the number of observations before (for message)
+  #   n_before <- nrow(data)
+  #
+  #   # Filter to keep only those with onset after report
+  #   n_after <- data %>%
+  #     dplyr::filter(!!as.symbol(event_date) > !!as.symbol(report_date)) %>%
+  #     dplyr::tally() %>%
+  #     dplyr::pull()
+  #
+  #   perc  <- round(100*n_after/n_before, 4)
+  #
+  #   cli::cli_warn(
+  #     "{.val {n_after}} rows ({perc}%) have a {.code report_date} ocurring before the {.code event_date}. This might throw an error later on."
+  #   )
+  # }
 
   return(invisible(TRUE))
 }
@@ -260,7 +260,7 @@ check_now <- function(data, event_date, report_date, now) {
 #' @keywords internal
 check_units <- function(data, date_units) {
 
-  valid_units <- c("days", "weeks")
+  valid_units <- c("days", "weeks", "numeric", "months", "years")
 
   # Check that date_units is in one of the following:
   if (!is.null(date_units) && !(date_units %in% valid_units)) {

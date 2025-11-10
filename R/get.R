@@ -52,8 +52,14 @@ get_now <- function(x) {
 
 #' @rdname nowcast_data_getters
 #' @export
-get_date_units <- function(x) {
-  attr(x, "date_units", exact = TRUE)
+get_report_units <- function(x) {
+  attr(x, "report_units", exact = TRUE)
+}
+
+#' @rdname nowcast_data_getters
+#' @export
+get_event_units <- function(x) {
+  attr(x, "event_units", exact = TRUE)
 }
 
 #' @rdname nowcast_data_getters

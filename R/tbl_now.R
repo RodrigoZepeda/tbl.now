@@ -30,13 +30,19 @@
 #' nowcast. If no `now` is given then the function automatically uses the last
 #' `event_date`.
 #'
-#' @param date_units (optional) Character. Either "auto" (default), "weekly",  "daily"
-#' or "numeric". Use `numeric` when the temporal effects are given as covariates.
+#' @param event_units (optional) Character. Either "auto" (default), "days",
+#' "weeks", "months", "years" or "numeric".
+#'
+#' @param report_units (optional) Character. Either "auto" (default), "days",
+#' "weeks", "months", "years" or "numeric".
 #'
 #' @param data_type (optional) Character. Either "auto", "linelist" or
 #' "count".
 #'
 #' @param verbose (optional) Logical. Whether to throw a message. Default = `TRUE`.
+#'
+#' @param force (optional) Logical. Whether to force computation overwriting pre-existing variables.
+#' Default = `FALSE`.
 #'
 #' @param ... Additional metadata to be stored as attributes.
 #'
@@ -53,8 +59,11 @@
 #'   \item{covariates}{Names of the columns corresponding to covariates (for modelling).}
 #'   \item{num_covariates}{Number of covariates Corresponds to `length(covariates)`.}
 #'   \item{now}{Date of the `now` for a nowcast.}
-#'   \item{date_units}{Either `daily`, `weekly` or `numeric`. Corresponds to the units of `event_date`
-#'   and `report_date`}
+#'   \item{is_batched}{Column indicating whether the measurement is noisy (only upper bound) or not.}
+#'   \item{event_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `event_date`}
+#'   \item{report_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `report_date`}
+#'   \item{repot_num}{Column where the `report_date` was transformed to numeric values}
+#'   \item{event_num}{Column where the `event_date` was transformed to numeric values}
 #'   \item{data_type}{Either `linelist` or `count` depending on whether it is linelist data
 #'   or count data}
 #' }
@@ -112,9 +121,11 @@ new_tbl_now <- function(data,
                         covariates = NULL,
                         is_batched = NULL,
                         now = NULL,
-                        date_units = "auto",
+                        event_units = "auto",
+                        report_units = "auto",
                         data_type = "auto",
                         verbose = TRUE,
+                        force = FALSE,
                         ...) {
 
   #Check the data frame data--------
@@ -161,18 +172,17 @@ new_tbl_now <- function(data,
   # Infer automatic variables------
 
   #Infer the now
-  now        <- infer_now(data, now = now, event_date = event_date,
-                          report_date = report_date)
+  now          <- infer_now(data, now = now, event_date = event_date, report_date = report_date)
 
   # Infer the date_units whether it is daily, weekly, monthly or yearly
-  date_units <- infer_units(data, date_units = date_units, event_date = event_date,
-                            report_date = report_date)
+  event_units  <- infer_units(data, date_column = event_date, date_units = event_units)
+  report_units <- infer_units(data, date_column = report_date, date_units = report_units)
 
   # Get whether data is count or line data
-  data_type  <- infer_data_type(data, data_type = data_type, verbose = verbose)
+  data_type    <- infer_data_type(data, data_type = data_type, verbose = verbose)
 
   # Capture all other attributes
-  other_attrs <- list(...)
+  other_attrs  <- list(...)
 
   # === 3. Attribute Assignment ===
   data <- dplyr::as_tibble(data)
@@ -185,13 +195,31 @@ new_tbl_now <- function(data,
   attr(data, "num_covariates") <- num_covariates
   attr(data, "covariates")     <- covariates
   attr(data, "now")            <- now
-  attr(data, "date_units")     <- date_units
+  attr(data, "event_units")    <- event_units
+  attr(data, "report_units")   <- report_units
   attr(data, "data_type")      <- data_type
+  attr(data, "is_batched")     <- is_batched
 
   # Add all other attributes from ...
   for (attr_name in names(other_attrs)) {
     attr(data, attr_name) <- other_attrs[[attr_name]]
   }
+
+  # Add report_num and event_num the numerical columns
+  if (".event_num" %in% colnames(data) && !force){
+    cli::cli_abort(
+      "Data already has a column named {.val .event_num} which this class uses to save the numeric version of the event_date. Please rename your {.val .event_num} column."
+    )
+  }
+  if (".report_num" %in% colnames(data) && !force){
+    cli::cli_abort(
+      "Data already has a column named {.val .report_num} which this class uses to save the numeric version of the report_date. Please rename your {.val .report_num} column."
+    )
+  }
+
+  data <- time_cols_to_numeric(data, event_date = event_date, report_date = report_date,
+                               event_units = event_units, report_units = report_units,
+                               force = force)
 
   # === 4. Class Assignment ===
   # Prepend the S3 class. It will inherit from data.frame.
@@ -212,7 +240,8 @@ tbl_now <- function(data,
                     covariates = NULL,
                     is_batched = NULL,
                     now = NULL,
-                    date_units = "auto",
+                    event_units = "auto",
+                    report_units = "auto",
                     data_type = "auto",
                     verbose = TRUE,
                     ...){
@@ -224,7 +253,8 @@ tbl_now <- function(data,
               covariates = covariates,
               is_batched = is_batched,
               now = now,
-              date_units = date_units,
+              event_units = event_units,
+              report_units = report_units,
               data_type = data_type,
               verbose = verbose,
               ...)

@@ -9,7 +9,8 @@
 \alias{get_covariates}
 \alias{get_num_covariates}
 \alias{get_now}
-\alias{get_date_units}
+\alias{get_report_units}
+\alias{get_event_units}
 \alias{get_data_type}
 \alias{get_is_batched}
 \title{Getters for tbl_now attributes}
@@ -28,7 +29,9 @@ get_num_covariates(x)
 
 get_now(x)
 
-get_date_units(x)
+get_report_units(x)
+
+get_event_units(x)
 
 get_data_type(x)
 

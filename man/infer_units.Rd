@@ -4,7 +4,7 @@
 \alias{infer_units}
 \title{Automatically infer which value is `date_units`}
 \usage{
-infer_units(data, event_date, report_date, date_units)
+infer_units(data, date_column, date_units)
 }
 \value{
 Whether the data's date_units are `days` or `weeks`.

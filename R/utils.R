@@ -32,4 +32,75 @@ attr_default <- function(x, name, default = NULL) {
   if (is.null(val)) default else val
 }
 
-
+# NEED TO IMPROVE IT TO WORK WITH COUNT BY DOING WEIGHTS
+#' #' Summary of a `tbl_now`
+#' #'
+#' #' Generates a summary of a `tbl_now` object
+#' #'
+#' #' @inheritParams base::summary
+#' #'
+#' #' @return A `tibble` with summary statistics
+#' #'
+#' #' @export
+#' summary.tbl_now <- function(x, ...) {
+#'
+#'   #Get the indicators by strata
+#'   result_stratified <- dplyr::tibble()
+#'   if (get_num_strata(x) > 0){
+#'     for (st in get_strata(x)){
+#'       result_stratified <- suppressWarnings({
+#'         x %>%
+#'           dplyr::group_by(dplyr::across(st)) %>%
+#'           dplyr::summarise(
+#'             min_report = min(!!as.symbol(".report_num")),
+#'             q025       = quantile(!!as.symbol(".report_num"), 0.025),
+#'             q05        = quantile(!!as.symbol(".report_num"), 0.05),
+#'             q10        = quantile(!!as.symbol(".report_num"), 0.10),
+#'             q25        = quantile(!!as.symbol(".report_num"), 0.25),
+#'             median     = median(!!as.symbol(".report_num")),
+#'             q75        = quantile(!!as.symbol(".report_num"), 0.75),
+#'             q90        = quantile(!!as.symbol(".report_num"), 0.90),
+#'             q95        = quantile(!!as.symbol(".report_num"), 0.95),
+#'             q975       = quantile(!!as.symbol(".report_num"), 0.975),
+#'             max_report = max(!!as.symbol(".report_num")),
+#'             mean       = mean(!!as.symbol(".report_num")),
+#'             sd         = sd(!!as.symbol(".report_num")),
+#'           ) %>%
+#'           dplyr::mutate(!!as.symbol("units") := get_event_units(x)) %>%
+#'           dplyr::rename(!!as.symbol("strata_val") := !!as.symbol(st)) %>%
+#'           dplyr::mutate(!!as.symbol("strata") := !!st)
+#'         }) %>%
+#'         dplyr::bind_rows(result_stratified)
+#'     }
+#'   }
+#'
+#'
+#'
+#'   #Get the indicators globally
+#'   result_global <- suppressWarnings({
+#'     x %>%
+#'       dplyr::summarise(
+#'         min_report = min(!!as.symbol(".report_num")),
+#'         q025       = quantile(!!as.symbol(".report_num"), 0.025),
+#'         q05        = quantile(!!as.symbol(".report_num"), 0.05),
+#'         q10        = quantile(!!as.symbol(".report_num"), 0.10),
+#'         q25        = quantile(!!as.symbol(".report_num"), 0.25),
+#'         median     = median(!!as.symbol(".report_num")),
+#'         q75        = quantile(!!as.symbol(".report_num"), 0.75),
+#'         q90        = quantile(!!as.symbol(".report_num"), 0.90),
+#'         q95        = quantile(!!as.symbol(".report_num"), 0.95),
+#'         q975       = quantile(!!as.symbol(".report_num"), 0.975),
+#'         max_report = max(!!as.symbol(".report_num")),
+#'         mean       = mean(!!as.symbol(".report_num")),
+#'         sd         = sd(!!as.symbol(".report_num")),
+#'      ) %>%
+#'       dplyr::mutate(!!as.symbol("units") := get_event_units(x)) %>%
+#'       dplyr::mutate(!!as.symbol("strata_val") := "Overall") %>%
+#'       dplyr::mutate(!!as.symbol("strata") := "Overall")
+#'   })
+#'
+#'   return(result_global %>% dplyr::bind_rows(result_stratified))
+#'
+#' }
+#'
+#'

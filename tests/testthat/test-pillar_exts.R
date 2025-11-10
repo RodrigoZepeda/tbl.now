@@ -28,8 +28,11 @@ test_that("tbl_sum.tbl_now shows correct class and frequency", {
   output <- format(tbl_sum(result))
 
   # Expected format: "tbl_now (frequency = day)"
-  expect_true(any(grepl("tbl_now", names(output))))
-  expect_true(any(grepl("linelist \\(frequency = days\\)", output)))
+  expect_true(any(grepl("Data type", names(output))))
+  expect_true(any(grepl("Frequency", names(output))))
+  expect_true(any(grepl("linelist", output)))
+  expect_true(any(grepl("Event: `days`", output)))
+  expect_true(any(grepl("Report: `days`", output)))
 })
 
 test_that("tbl_format_footer.tbl_now displays mandatory attributes", {
@@ -95,7 +98,7 @@ test_that("ctl_new_pillar.tbl_now annotates event and report date columns", {
   # 1. The annotation for event_date
   # We expect "event_date_col [event_date]" to appear in the header area.
   expect_true(any(grepl("event_date_col \\<", output))) # Check column name is present
-  expect_true(any(grepl("event_date_col", output[3]))) # Check if it's in the header line (line 1 is the header for tibbles)
+  expect_true(any(grepl("event_date_col", output[4]))) # Check if it's in the header line (line 1 is the header for tibbles)
   expect_true(any(grepl("\\[event_date\\]", output))) # Check annotation is present
 
   # 2. The annotation for report_date
