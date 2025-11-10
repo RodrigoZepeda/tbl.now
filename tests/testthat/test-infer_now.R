@@ -2,8 +2,8 @@ test_that("infer_now works", {
 
   #Check that it returns the maximum if no null is specified
   disease_data <- dplyr::tibble(
-    event_date   = seq(as.Date("2020/01/01"), as.Date("2020/12/01")),
-    report_date = seq(as.Date("2020/01/05"), as.Date("2020/12/05")),
+    event_date   = seq(as.Date("2020/01/01"), as.Date("2020/12/01"), by = "1 day"),
+    report_date = seq(as.Date("2020/01/05"), as.Date("2020/12/05"), by = "1 day"),
     wrong_date  = "a"
   )
 

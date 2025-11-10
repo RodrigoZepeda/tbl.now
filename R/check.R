@@ -99,7 +99,7 @@ check_strata <- function(data, strata) {
         dplyr::distinct_at(strata_colname) %>%
         dplyr::pull(!!as.symbol(strata_colname))
 
-      if(rlang::is_integer(strata_col) | rlang::is_character(strata_col) | is.factor(strata_col)){
+      if(!rlang::is_integer(strata_col) & !rlang::is_character(strata_col) & !is.factor(strata_col)){
         cli::cli_abort(
           "Strata column {.val {strata_col}} should contain integer or character values."
         )
@@ -121,8 +121,8 @@ check_strata <- function(data, strata) {
 
     #See if strata and data are different. Otherwise there is 1 obs per strata
     if (n_strata == n_data){
-      cli::cli_abort(
-        "Cannot create a stratified model: There is only one observation per strata."
+      cli::cli_warn(
+        "There is only one observation per strata."
       )
     }
   }
