@@ -36,10 +36,6 @@ ndata <- tbl_now(denguedat,
 #> ℹ Identified data as linelist-data where each observation is a test.
 
 to_count(ndata)
-#> Warning: `data` is grouped by onset_week, report_week, .event_num, and .report_num.
-#> Ungrouping.
-#> Warning: Linelist data contains a column named `n` which will be overwritten. If you are
-#> working with count-data set `data_type = "count"`
 #> # A tibble:  8,265 × 6
 #> # Data type: "count"
 #> # Frequency: Event: `weeks` | Report: `weeks`

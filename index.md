@@ -10,5 +10,5 @@ You can install the development version of tbl.now from
 
 ``` r
 # install.packages("remotes")
-remotes::install_github"RodrigoZepeda/tbl.now")
+remotes::install_github("RodrigoZepeda/tbl.now")
 ```
