@@ -23,16 +23,13 @@ time_cols_to_numeric <- function(data, event_date, report_date, event_units, rep
     )
   }
 
-  check_units(data, report_units)
-  check_units(data, event_units)
-
   #Check that report_units is coarser than or equal to event_units
   if (event_units != "numeric" && report_units != "numeric") {
     granularity_order <- c("days", "weeks", "months", "years")
     event_level       <- which(granularity_order == event_units)
     report_level      <- which(granularity_order == report_units)
 
-    if (is.na(event_level) || is.na(report_level)) {
+    if (rlang::is_empty(event_level) || rlang::is_empty(report_level)) {
       cli::cli_abort(
         "Invalid units specified. Must be one of: 'days', 'weeks', 'months', 'years', or 'numeric'."
       )

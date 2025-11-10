@@ -344,7 +344,7 @@ test_that("time_cols_to_numeric fails with invalid units", {
       report_units = "days",
       force = FALSE
     ),
-    'Invalid.*date_units.*invalid_unit'
+    'Invalid units specified'
   )
 })
 
