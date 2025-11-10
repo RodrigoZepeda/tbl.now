@@ -28,8 +28,8 @@ The goal of tbl.now is to provide a unified `tibble`-like interface for nowcasti
 
 You can install the development version of tbl.now from [GitHub](https://github.com/) with:
 
-``` r
+```{r, eval=FALSE}
 # install.packages("remotes")
-remotes::install_github"RodrigoZepeda/tbl.now")
+remotes::install_github("RodrigoZepeda/tbl.now")
 ```
 

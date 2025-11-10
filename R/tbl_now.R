@@ -134,7 +134,7 @@ new_tbl_now <- function(data,
   }
 
   if (dplyr::is.grouped_df(data)){
-    cli::cli_warn("{.arg data} is grouped by {colnames(dplyr::group_keys(data))}. Ungrouping.")
+    #cli::cli_warn("{.arg data} is grouped by {colnames(dplyr::group_keys(data))}. Ungrouping.")
     data <- data %>% dplyr::ungroup()
   }
 

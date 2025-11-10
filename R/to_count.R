@@ -43,45 +43,45 @@ to_count.tbl_now <- function(x, ...) {
 
   #Ungroup just in case
   x <- x %>%
-    dplyr::ungroup()
+    ungroup()
 
   #Group by event_date and report_date
   # Group data to generate counts
   x <- x %>%
-    dplyr::group_by(dplyr::across(c(get_event_date(x), get_report_date(x), ".event_num", ".report_num")))
+    group_by(dplyr::across(c(get_event_date(x), get_report_date(x), ".event_num", ".report_num")))
 
   # Group by delay censoring status first checking that it exists
   if (!is.null(get_is_batched(x))){
     x <- x  %>%
-      dplyr::group_by(dplyr::across(get_is_batched(x)), .add = TRUE)
+      group_by(dplyr::across(get_is_batched(x)), .add = TRUE)
   }
 
   # Group by strata first checking that strata exists
   if (get_num_strata(x) > 0) {
     x <- x  %>%
-      dplyr::group_by(dplyr::across(get_strata(x)), .add = TRUE)
+      group_by(dplyr::across(get_strata(x)), .add = TRUE)
   }
 
-  # FIXME: What happens with continuous covariates
+  # TODO: What happens with continuous covariates
   # Group by strata first checking that strata exists
   if (get_num_covariates(x) > 0) {
     x <- x  %>%
-      dplyr::group_by(dplyr::across(get_covariates(x)), .add = TRUE)
+      group_by(dplyr::across(get_covariates(x)), .add = TRUE)
   }
 
   #In case it was count just group and sum
   if (get_data_type(x) == "count"){
     #Summarise
     x <- x  %>%
-      dplyr::summarise(!!as.symbol("n") := sum(!!as.symbol("n")), .groups = "drop")
+      summarise(!!as.symbol("n") := sum(!!as.symbol("n")), .groups = "drop")
   } else if  (get_data_type(x) == "linelist"){
+
+    #Change the attribute first to avoid the warning from summarise
+    attr(x, "data_type") <- "count"
+
     #Summarise
     x <- x %>%
-      dplyr::tally() %>%
-      dplyr::ungroup()
-
-    #Change the attribute
-    attr(x, "data_type") <- "count"
+      summarise(!!as.symbol("n") := dplyr::n(), .groups = "drop")
 
   } else {
     cli::cli_abort("`data_type` {get_data_type(x)} not implemented")
