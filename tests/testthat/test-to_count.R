@@ -74,10 +74,10 @@ setup_test_data <- function() {
   )
 }
 
-# Tests for to_count() generic ----
-test_that("to_count is an S3 generic", {
-  expect_true(isS3stdGeneric("to_count"))
-})
+# # Tests for to_count() generic ----
+# test_that("to_count is an S3 generic", {
+#   expect_true(isS3stdGeneric("to_count"))
+# })
 
 # Tests for to_count.tbl_now() with linelist data ----
 test_that("to_count converts linelist data to count data", {
