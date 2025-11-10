@@ -30,3 +30,4 @@ Imports:
     pillar,
     rlang
 RoxygenNote: 7.3.2
+URL: https://rodrigozepeda.github.io/tbl.now/
