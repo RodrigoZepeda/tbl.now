@@ -68,6 +68,7 @@ event_date = "date_of_symptom_onset",
 to_count(ndata)
 #> Warning: 147 row(s) have a `report_date` before `event_date`
 #> Warning: 147 row(s) have a `report_date` before `event_date`
+#> Warning: 147 row(s) have a `report_date` before `event_date`
 #> # A tibble:  40,822 × 6
 #> # Data type: "count"
 #> # Frequency: Event: `days` | Report: `days`
@@ -99,6 +100,7 @@ ndata <- tbl_now(vectordat,
 #> ℹ Identified data as count-data with counts in column `n`.
 #> Warning: 2 row(s) have a `report_date` before `event_date`
 to_count(ndata)
+#> Warning: 2 row(s) have a `report_date` before `event_date`
 #> Warning: 2 row(s) have a `report_date` before `event_date`
 #> Warning: 2 row(s) have a `report_date` before `event_date`
 #> # A tibble:  51,010 × 7
