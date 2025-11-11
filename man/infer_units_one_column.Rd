@@ -40,7 +40,7 @@ infer_units_one_column(weekly_data, NULL, "report_date")
 infer_units_one_column(weekly_data, "weeks", "report_date")
 
 #Also works with numeric
-infer_units_one_column(tibble(report_date = 1:20), date_units = "auto", "report_date")
+infer_units_one_column(data.frame(report_date = 1:20), date_units = "auto", "report_date")
 
 }
 }

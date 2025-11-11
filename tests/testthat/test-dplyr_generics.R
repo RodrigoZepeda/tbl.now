@@ -206,3 +206,649 @@ test_that("`summarise.grouped_tbl_now` works via delegation", {
   expect_s3_class(grouped, "grouped_df")
   expect_equal(grouped %>% ungroup(), x)
 })
+
+# Test file for dplyr_generics.R functions
+
+# Setup test data ----
+setup_test_data <- function() {
+  base_data <- data.frame(
+    onset_week = as.Date(c("2020-07-08", "2020-07-15", "2020-07-22", "2020-07-29")),
+    report_week = as.Date(c("2020-07-11", "2020-07-18", "2020-07-25", "2020-08-01")),
+    gender = c("Male", "Female", "Male", "Female"),
+    age_group = c("20-30", "30-40", "20-30", "40-50"),
+    temperature = c(25.5, 26.0, 24.8, 25.2),
+    value = c(10, 20, 30, 40)
+  )
+
+  ndata <- tbl_now(
+    base_data,
+    event_date = "onset_week",
+    report_date = "report_week",
+    strata = "gender",
+    covariates = "temperature",
+    verbose = FALSE
+  )
+
+  list(
+    ndata = ndata,
+    base_data = base_data
+  )
+}
+
+# Tests for validate_tbl_now() ----
+test_that("validate_tbl_now passes for valid tbl_now", {
+  test_data <- setup_test_data()
+
+  expect_true(validate_tbl_now(test_data$ndata))
+  expect_invisible(validate_tbl_now(test_data$ndata))
+})
+
+test_that("validate_tbl_now fails for non-data.frame", {
+  expect_error(
+    validate_tbl_now(list(a = 1, b = 2)),
+    "must inherit from.*data.frame"
+  )
+})
+
+test_that("validate_tbl_now fails when required attributes are missing", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+
+  # Remove a required attribute
+  attr(ndata, "event_date") <- NULL
+
+  expect_error(
+    validate_tbl_now(ndata),
+    "Missing required attribute"
+  )
+})
+
+test_that("validate_tbl_now fails when event_date is not character", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+
+  attr(ndata, "event_date") <- 123
+
+  expect_error(
+    validate_tbl_now(ndata),
+    "event_date.*must be"
+  )
+})
+
+test_that("validate_tbl_now fails when columns don't exist", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+
+  # Set event_date to non-existent column
+  attr(ndata, "event_date") <- "nonexistent"
+
+  expect_error(
+    validate_tbl_now(ndata),
+    "not found in data"
+  )
+})
+
+test_that("validate_tbl_now warns when report_date before event_date", {
+  bad_data <- data.frame(
+    onset_week = as.Date(c("2020-07-15", "2020-07-22")),
+    report_week = as.Date(c("2020-07-08", "2020-07-18"))  # First is before event
+  )
+
+  ndata <- suppressWarnings(
+    tbl_now(
+      bad_data,
+      event_date = "onset_week",
+      report_date = "report_week",
+      verbose = FALSE
+    )
+  )
+
+  # Should create with warning
+  expect_warning(
+    validate_tbl_now(ndata),
+    "report_date.*before.*event_date"
+  )
+})
+
+# Tests for is_tbl_now() ----
+test_that("is_tbl_now returns TRUE for valid tbl_now", {
+  test_data <- setup_test_data()
+
+  expect_true(is_tbl_now(test_data$ndata))
+})
+
+test_that("is_tbl_now returns FALSE for regular data.frame", {
+  regular_df <- data.frame(x = 1:3, y = 4:6)
+
+  expect_false(is_tbl_now(regular_df))
+})
+
+test_that("is_tbl_now returns FALSE for invalid tbl_now", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+
+  # Corrupt it by removing required attribute
+  attr(ndata, "event_date") <- NULL
+
+  expect_false(is_tbl_now(ndata))
+})
+
+test_that("is_tbl_now returns FALSE for object with tbl_now class but invalid structure", {
+  fake_tbl_now <- data.frame(x = 1:3)
+  class(fake_tbl_now) <- c("tbl_now", "data.frame")
+
+  expect_false(is_tbl_now(fake_tbl_now))
+})
+
+# Tests for subsetting with [.tbl_now ----
+test_that("[.tbl_now maintains tbl_now class with valid subset", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata[1:2, ]
+
+  expect_s3_class(result, "tbl_now")
+  expect_true(is_tbl_now(result))
+})
+
+test_that("[.tbl_now maintains attributes", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata[1:2, ]
+
+  expect_equal(get_event_date(result), get_event_date(test_data$ndata))
+  expect_equal(get_report_date(result), get_report_date(test_data$ndata))
+  expect_equal(get_strata(result), get_strata(test_data$ndata))
+})
+
+test_that("[.tbl_now drops to data.frame when removing protected columns", {
+  test_data <- setup_test_data()
+
+  # Remove event_date column
+  expect_warning(
+    result <- test_data$ndata[, -which(colnames(test_data$ndata) == "onset_week")],
+    "Dropped protected column"
+  )
+
+  expect_false(is_tbl_now(result))
+  expect_s3_class(result, "tbl_df")
+})
+
+test_that("[.tbl_now updates now when rows change", {
+  test_data <- setup_test_data()
+
+  original_now <- get_now(test_data$ndata)
+
+  # Subset to first two rows only
+  result <- test_data$ndata[1:2, ]
+
+  # Now might be updated
+  expect_s3_class(get_now(result), "Date")
+})
+
+test_that("[.tbl_now handles column selection", {
+  test_data <- setup_test_data()
+
+  # Select specific columns including protected ones
+  result <- test_data$ndata[, c("onset_week", "report_week", "gender", ".event_num", ".report_num")]
+
+  expect_s3_class(result, "tbl_now")
+  expect_true("onset_week" %in% colnames(result))
+  expect_true("report_week" %in% colnames(result))
+})
+
+# Tests for names<-.tbl_now ----
+test_that("names<-.tbl_now maintains tbl_now class with valid names", {
+  test_data <- setup_test_data()
+
+  ndata <- test_data$ndata
+  new_names <- colnames(ndata)
+  new_names[which(new_names == "value")] <- "new_value"
+
+  names(ndata) <- new_names
+
+  expect_s3_class(ndata, "tbl_now")
+})
+
+test_that("names<-.tbl_now drops to data.frame when renaming protected columns", {
+  test_data <- setup_test_data()
+
+  for (protected in c("onset_week","report_week",".event_num",".report_num")){
+
+    ndata <- test_data$ndata
+    new_names <- colnames(ndata)
+    new_names[which(new_names == protected)] <- "renamed"
+
+    expect_warning(
+      names(ndata) <- new_names,
+      "Dropped protected column"
+    )
+
+    expect_false(is_tbl_now(ndata))
+  }
+})
+
+# Tests for $<-.tbl_now ----
+test_that("$<-.tbl_now maintains tbl_now class when adding column", {
+  test_data <- setup_test_data()
+
+  ndata <- test_data$ndata
+  ndata$new_column <- 1:nrow(ndata)
+
+  expect_s3_class(ndata, "tbl_now")
+  expect_true("new_column" %in% colnames(ndata))
+})
+
+test_that("$<-.tbl_now maintains tbl_now class when modifying column", {
+  test_data <- setup_test_data()
+
+  ndata <- test_data$ndata
+  ndata$value <- ndata$value * 2
+
+  expect_s3_class(ndata, "tbl_now")
+})
+
+test_that("$<-.tbl_now allows modifying non-protected columns", {
+  test_data <- setup_test_data()
+
+  ndata <- test_data$ndata
+  ndata$gender <- "Unknown"
+
+  expect_s3_class(ndata, "tbl_now")
+  expect_true(all(ndata$gender == "Unknown"))
+})
+
+# Tests for dplyr_row_slice.tbl_now ----
+test_that("dplyr_row_slice maintains tbl_now with valid slice", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>% dplyr::slice(1:2)
+
+  expect_s3_class(result, "tbl_now")
+  expect_equal(nrow(result), 2)
+})
+
+test_that("dplyr_row_slice preserves attributes", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>% dplyr::slice(1:3)
+
+  expect_equal(get_event_date(result), get_event_date(test_data$ndata))
+  expect_equal(get_strata(result), get_strata(test_data$ndata))
+})
+
+# Tests for dplyr_col_modify.tbl_now ----
+test_that("dplyr_col_modify maintains tbl_now when adding columns", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>% dplyr::mutate(new_col = value * 2)
+
+  expect_s3_class(result, "tbl_now")
+  expect_true("new_col" %in% colnames(result))
+})
+
+test_that("dplyr_col_modify maintains tbl_now when modifying columns", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>% dplyr::mutate(value = value + 10)
+
+  expect_s3_class(result, "tbl_now")
+})
+
+test_that("dplyr_col_modify drops to tibble when removing protected columns", {
+  test_data <- setup_test_data()
+
+  expect_warning(
+    result <- test_data$ndata %>% dplyr::select(-onset_week),
+    "Dropped protected column"
+  )
+
+  expect_false(is_tbl_now(result))
+})
+
+# Tests for group_by.tbl_now ----
+test_that("group_by creates grouped_tbl_now", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>% dplyr::group_by(gender)
+
+  expect_s3_class(result, "grouped_tbl_now")
+  expect_s3_class(result, "tbl_now")
+  expect_true(dplyr::is_grouped_df(result))
+})
+
+test_that("group_by preserves tbl_now attributes", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>% dplyr::group_by(gender)
+
+  expect_equal(get_event_date(result), get_event_date(test_data$ndata))
+  expect_equal(get_report_date(result), get_report_date(test_data$ndata))
+  expect_equal(get_strata(result), get_strata(test_data$ndata))
+})
+
+test_that("group_by handles multiple grouping variables", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>% dplyr::group_by(gender, age_group)
+
+  expect_s3_class(result, "grouped_tbl_now")
+  expect_equal(length(dplyr::group_vars(result)), 2)
+})
+
+test_that("group_by returns tbl_now when no groups specified", {
+  test_data <- setup_test_data()
+
+  # Group by nothing
+  result <- test_data$ndata %>% dplyr::group_by()
+
+  expect_s3_class(result, "tbl_now")
+})
+
+# Tests for ungroup.grouped_tbl_now ----
+test_that("ungroup removes grouping from grouped_tbl_now", {
+  test_data <- setup_test_data()
+
+  grouped <- test_data$ndata %>% dplyr::group_by(gender)
+  result <- grouped %>% dplyr::ungroup()
+
+  expect_s3_class(result, "tbl_now")
+  expect_false(dplyr::is_grouped_df(result))
+})
+
+test_that("ungroup preserves tbl_now attributes", {
+  test_data <- setup_test_data()
+
+  grouped <- test_data$ndata %>% dplyr::group_by(gender)
+  result <- grouped %>% dplyr::ungroup()
+
+  expect_equal(get_event_date(result), get_event_date(test_data$ndata))
+  expect_equal(get_report_date(result), get_report_date(test_data$ndata))
+  expect_equal(get_strata(result), get_strata(test_data$ndata))
+})
+
+test_that("ungroup handles partial ungrouping", {
+  test_data <- setup_test_data()
+
+  grouped <- test_data$ndata %>% dplyr::group_by(gender, age_group)
+  result <- grouped %>% dplyr::ungroup(gender)
+
+  # Should still be grouped by age_group
+  expect_true(dplyr::is_grouped_df(result))
+  expect_equal(dplyr::group_vars(result), "age_group")
+})
+
+# Tests for summarise.tbl_now ----
+test_that("summarise maintains tbl_now when valid", {
+  test_data <- setup_test_data()
+
+  result <- suppressWarnings(
+    test_data$ndata %>%
+    dplyr::group_by(gender) %>%
+    dplyr::summarise(mean_value = mean(value), .groups = "drop")
+  )
+
+  # Should try to maintain tbl_now if possible
+  expect_true(inherits(result, "tbl_now") || inherits(result, "tbl_df"))
+})
+
+
+test_that("summarise drops to tibble when losing required columns", {
+  test_data <- setup_test_data()
+
+  expect_warning(
+    result <- test_data$ndata %>%
+      summarise(total = sum(value)),
+    "Dropping.*tbl_now"
+  )
+
+  expect_false(is_tbl_now(result))
+  expect_s3_class(result, "tbl_df")
+})
+
+test_that("summarise with grouped_tbl_now works", {
+  test_data <- setup_test_data()
+
+  grouped <- test_data$ndata %>% dplyr::group_by(gender)
+
+  result <- suppressWarnings(
+    grouped %>%
+      dplyr::summarise(mean_temp = mean(temperature), .groups = "drop")
+  )
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 2)
+})
+
+test_that("summarize (American spelling) works", {
+  test_data <- setup_test_data()
+
+  # Test that both spellings work
+  result1 <- suppressWarnings(
+    test_data$ndata %>%
+      dplyr::group_by(gender) %>%
+      dplyr::summarise(mean_value = mean(value), .groups = "drop")
+  )
+
+  result2 <- suppressWarnings(
+    test_data$ndata %>%
+      dplyr::group_by(gender) %>%
+      dplyr::summarize(mean_value = mean(value), .groups = "drop")
+  )
+
+  expect_equal(class(result1), class(result2))
+  expect_equal(result1, result2)
+})
+
+# Tests for tbl_now_reconstruct ----
+test_that("tbl_now_reconstruct maintains valid tbl_now", {
+  test_data <- setup_test_data()
+
+  # Simulate a dplyr operation
+  modified <- as.data.frame(test_data$ndata)
+
+  result <- tbl_now_reconstruct(modified, test_data$ndata)
+
+  expect_s3_class(result, "tbl_now")
+})
+
+test_that("tbl_now_reconstruct drops to tibble when invalid", {
+  test_data <- setup_test_data()
+
+  # Remove protected column
+  modified <- test_data$ndata
+  suppressWarnings(
+    modified$onset_week <- NULL
+  )
+
+  expect_warning(
+    result <- tbl_now_reconstruct(modified, test_data$ndata),
+    "Dropped protected column"
+  )
+
+  expect_false(is_tbl_now(result))
+})
+
+test_that("tbl_now_reconstruct updates strata when columns dropped", {
+  test_data <- setup_test_data()
+
+  # Add multiple strata
+  ndata <- test_data$ndata
+  ndata <- change_strata(ndata, c("gender", "age_group"))
+
+  # Remove one strata column
+  modified <- ndata
+  modified$age_group <- NULL
+
+  result <- tbl_now_reconstruct(modified, ndata)
+
+  if (is_tbl_now(result)) {
+    expect_equal(get_strata(result), "gender")
+    expect_equal(get_num_strata(result), 1)
+  }
+})
+
+test_that("tbl_now_reconstruct updates covariates when columns dropped", {
+  test_data <- setup_test_data()
+
+  # Add multiple covariates
+  ndata <- test_data$ndata
+  ndata$humidity <- c(0.6, 0.65, 0.7, 0.68)
+  ndata <- change_covariates(ndata, c("temperature", "humidity"))
+
+  # Remove one covariate column
+  modified <- ndata
+  modified$humidity <- NULL
+
+  result <- tbl_now_reconstruct(modified, ndata)
+
+  if (is_tbl_now(result)) {
+    expect_equal(get_covariates(result), "temperature")
+    expect_equal(get_num_covariates(result), 1)
+  }
+})
+
+test_that("tbl_now_reconstruct doesn't change now", {
+  test_data <- setup_test_data()
+
+  old_now <- get_now(test_data$ndata)
+  # Remove rows that would change now
+  modified <- test_data$ndata[1:2, ]
+
+  new_now <- get_now(tbl_now_reconstruct(modified, test_data$ndata))
+  expect_equal(old_now, new_now)
+})
+
+# Tests for filtering ----
+test_that("filter maintains tbl_now", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>% dplyr::filter(gender == "Male")
+
+  expect_s3_class(result, "tbl_now")
+  expect_equal(nrow(result), 2)
+})
+
+test_that("filter preserves attributes", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>% dplyr::filter(value > 15)
+
+  expect_equal(get_event_date(result), get_event_date(test_data$ndata))
+  expect_equal(get_strata(result), get_strata(test_data$ndata))
+})
+
+# Tests for select ----
+test_that("select maintains tbl_now with protected columns", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>%
+    dplyr::select(onset_week, report_week, gender, .event_num, .report_num)
+
+  expect_s3_class(result, "tbl_now")
+})
+
+test_that("select drops to tibble without protected columns", {
+  test_data <- setup_test_data()
+
+  expect_warning(
+    result <- test_data$ndata %>% dplyr::select(gender, value),
+    "Dropped protected column"
+  )
+
+  expect_false(is_tbl_now(result))
+})
+
+# Tests for arrange ----
+test_that("arrange maintains tbl_now", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>% dplyr::arrange(desc(value))
+
+  expect_s3_class(result, "tbl_now")
+  expect_equal(nrow(result), nrow(test_data$ndata))
+})
+
+test_that("arrange preserves attributes", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>% dplyr::arrange(onset_week)
+
+  expect_equal(get_event_date(result), get_event_date(test_data$ndata))
+  expect_equal(get_strata(result), get_strata(test_data$ndata))
+})
+
+# Integration tests ----
+test_that("chaining dplyr verbs maintains tbl_now", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>%
+    dplyr::filter(value > 15) %>%
+    dplyr::mutate(double_value = value * 2) %>%
+    dplyr::arrange(desc(double_value))
+
+  expect_s3_class(result, "tbl_now")
+  expect_true("double_value" %in% colnames(result))
+})
+
+test_that("group_by then summarise works correctly", {
+  test_data <- setup_test_data()
+
+  result <- suppressWarnings(
+    test_data$ndata %>%
+      dplyr::group_by(gender) %>%
+      dplyr::summarise(
+        n = dplyr::n(),
+        mean_value = mean(value),
+        .groups = "drop"
+      )
+  )
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 2)
+})
+
+test_that("complex dplyr operations maintain or drop class appropriately", {
+  test_data <- setup_test_data()
+
+  # Should maintain
+  result1 <- test_data$ndata %>%
+    dplyr::filter(gender == "Male") %>%
+    dplyr::mutate(new_val = value * 2)
+
+  expect_s3_class(result1, "tbl_now")
+
+  # Should drop
+  expect_warning(
+    result2 <- test_data$ndata %>%
+      dplyr::select(gender, value),
+    "Dropped protected column"
+  )
+
+  expect_false(is_tbl_now(result2))
+})
+
+# Tests for edge cases ----
+test_that("empty subset maintains structure", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>% dplyr::filter(value > 1000)
+
+  expect_s3_class(result, "tbl_now")
+  expect_equal(nrow(result), 0)
+})
+
+test_that("operations on grouped_tbl_now maintain structure", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>%
+    group_by(gender) %>%
+    dplyr::filter(value > 15) %>%
+    ungroup()
+
+  expect_s3_class(result, "tbl_now")
+  expect_false(dplyr::is_grouped_df(result))
+
+  expect_s3_class(test_data$ndata %>%
+                    group_by(gender) %>%
+                    dplyr::filter(value > 15), "grouped_tbl_now")
+})

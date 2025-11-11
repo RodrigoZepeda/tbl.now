@@ -447,6 +447,39 @@ dplyr_reconstruct.tbl_now <- function(data, template) {
   tbl_now_reconstruct(data, template)
 }
 
+#' @importFrom dplyr dplyr_reconstruct
+#' @exportS3Method dplyr::dplyr_reconstruct
+dplyr_reconstruct.grouped_tbl_now <- function(data, template) {
+
+  # First reconstruct as tbl_now
+  reconstructed <- tbl_now_reconstruct(data, template)
+
+  # If reconstruction was successful and template was grouped
+  if (is_tbl_now(reconstructed) && dplyr::is_grouped_df(template)) {
+    # Get the grouping structure from template
+    grouping_structure <- dplyr::group_data(template)
+
+    # Recreate the grouped_tbl_now
+    reconstructed <- new_grouped_tbl_now(reconstructed, groups = grouping_structure)
+  }
+
+  reconstructed
+}
+
+#' @importFrom dplyr dplyr_row_slice
+#' @exportS3Method dplyr::dplyr_row_slice
+dplyr_row_slice.grouped_tbl_now  <- function(data, i, ...) {
+  out <- NextMethod()
+  dplyr_reconstruct(out, data)
+}
+
+#' @importFrom dplyr dplyr_col_modify
+#' @exportS3Method dplyr::dplyr_col_modify
+dplyr_col_modify.grouped_tbl_now  <- function(data, cols) {
+  out <- NextMethod()
+  dplyr_reconstruct(out, data)
+}
+
 # Based on https://www.bio-ai.org/blog/extending-tibbles/
 #' Grouped tbl_now
 #'
@@ -483,7 +516,8 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
                      event_units = get_event_units(.data),
                      report_units = get_event_units(.data),
                      data_type = get_data_type(.data),
-                     verbose = FALSE)
+                     verbose = FALSE,
+                     force = TRUE)
   }
   x
 }
@@ -534,7 +568,7 @@ ungroup.grouped_tbl_now <- function(x, ...) {
 summarise.tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
 
  #Remove the tbl_now attribute
- class(.data) <- class(.data)[which(class(.data) != "grouped_tbl_now")]
+class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_now")))]
 
  #Do normal summarise
  summarised_tbl <- dplyr::summarise(.data, ..., .groups = .groups)
