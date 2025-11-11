@@ -275,6 +275,70 @@ test_that("validate_tbl_now fails when event_date is not character", {
   )
 })
 
+test_that("validate_tbl_now fails when report_date is not character", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+
+  attr(ndata, "report_date") <- 123
+
+  expect_error(
+    validate_tbl_now(ndata),
+    "report_date.*must be"
+  )
+})
+
+test_that("validate_tbl_now fails when num_strata is not number", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+  ndata <- remove_all_strata(ndata)
+
+  #This should error
+  attr(ndata, "num_strata") <- -1
+  expect_error(
+    validate_tbl_now(ndata),
+    "negative"
+  )
+
+  attr(ndata, "num_strata") <- "a"
+  expect_error(
+    validate_tbl_now(ndata),
+    "strata.*numeric"
+  )
+
+  attr(ndata, "num_strata") <- 1:10
+  expect_error(
+    validate_tbl_now(ndata),
+    "strata.*numeric"
+  )
+})
+
+test_that("validate_tbl_now fails when num_covariates is not number", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+  ndata <- remove_all_covariates(ndata)
+
+  #This should error
+  attr(ndata, "num_covariates") <- -1
+  expect_error(
+    validate_tbl_now(ndata),
+    "negative"
+  )
+
+  attr(ndata, "num_covariates") <- "a"
+  expect_error(
+    validate_tbl_now(ndata),
+    "covariate.*numeric"
+  )
+
+  attr(ndata, "num_covariates") <- 1:10
+  expect_error(
+    validate_tbl_now(ndata),
+    "covariate.*numeric"
+  )
+})
+
+
+
 test_that("validate_tbl_now fails when columns don't exist", {
   test_data <- setup_test_data()
   ndata <- test_data$ndata
@@ -610,13 +674,22 @@ test_that("summarise with grouped_tbl_now works", {
 
   grouped <- test_data$ndata %>% dplyr::group_by(gender)
 
-  result <- suppressWarnings(
+  results <- suppressWarnings(
     grouped %>%
       dplyr::summarise(mean_temp = mean(temperature), .groups = "drop")
   )
 
-  expect_s3_class(result, "tbl_df")
-  expect_equal(nrow(result), 2)
+
+  resultz <- suppressWarnings(
+    grouped %>%
+      dplyr::summarize(mean_temp = mean(temperature), .groups = "drop")
+  )
+
+  expect_s3_class(results, "tbl_df")
+  expect_s3_class(resultz, "tbl_df")
+  expect_equal(nrow(results), 2)
+  expect_equal(nrow(resultz), 2)
+  expect_equal(results, resultz)
 })
 
 test_that("summarize (American spelling) works", {
@@ -632,6 +705,24 @@ test_that("summarize (American spelling) works", {
   result2 <- suppressWarnings(
     test_data$ndata %>%
       dplyr::group_by(gender) %>%
+      dplyr::summarize(mean_value = mean(value), .groups = "drop")
+  )
+
+  expect_equal(class(result1), class(result2))
+  expect_equal(result1, result2)
+})
+
+test_that("summarize (American spelling) works in ungrouped", {
+  test_data <- setup_test_data()
+
+  # Test that both spellings work
+  result1 <- suppressWarnings(
+    test_data$ndata %>%
+      dplyr::summarise(mean_value = mean(value), .groups = "drop")
+  )
+
+  result2 <- suppressWarnings(
+    test_data$ndata %>%
       dplyr::summarize(mean_value = mean(value), .groups = "drop")
   )
 

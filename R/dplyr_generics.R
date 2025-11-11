@@ -85,9 +85,17 @@ validate_tbl_now <- function(x) {
     errors <- c(errors, "Attribute {.val num_strata} must be a single numeric value")
   }
 
+  if (length(num_strata) == 1 && is.numeric(num_strata) && num_strata < 0){
+    errors <- c(errors, "Cannot have negative `num_strata` ({.val num_strata})")
+  }
+
   # num_covariates must be numeric
   if (!is.numeric(num_covariates) || length(num_covariates) != 1) {
     errors <- c(errors, "Attribute {.val num_covariates} must be a single numeric value")
+  }
+
+  if (length(num_covariates) == 1 && is.numeric(num_covariates) && num_covariates < 0){
+    errors <- c(errors, "Cannot have negative `num_covariates` ({.val num_covariates})")
   }
 
   # strata must be NULL or character
