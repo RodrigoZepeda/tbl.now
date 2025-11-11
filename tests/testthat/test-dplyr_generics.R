@@ -2,7 +2,7 @@
 # --- Setup: Create a function to make a minimal, valid tbl_now for testing ---
 make_test_tbl_now <- function(n = 10) {
   # Mock data to simulate 'denguedat' structure and column types
-  df <- tibble::tibble(
+  df <- dplyr::tibble(
     onset_week  = seq(lubridate::ymd("1990-01-01"), by = "week", length.out = n),
     report_week = onset_week + lubridate::days(sample(0:14, n, replace = TRUE)),
     gender      = sample(c("Male", "Female"), n, replace = TRUE),
