@@ -37,11 +37,5 @@ event_date = "date_of_symptom_onset",
               strata = "sex")
 to_count(ndata)
 
-data("vectordat")
-ndata <- tbl_now(vectordat,
-    event_date = "symptoms",
-    report_date = "update",
-    strata = c("state","sex"))
-to_count(ndata)
 
 }
