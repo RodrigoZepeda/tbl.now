@@ -141,7 +141,7 @@ validate_tbl_now <- function(x) {
   }
 
   # is_batched must be NULL or character(1)
-  if (!is.null(is_batched) && (!is.character(is_batched) || length(is_batched) != 1)) {
+  if (!is.null(is_batched) && (length(is_batched) != 1 || !is.character(is_batched))) {
     errors <- c(errors, "Attribute {.val is_batched} must be {.val NULL} or a character vector of length 1")
   }
 
@@ -154,7 +154,7 @@ validate_tbl_now <- function(x) {
     errors <- c(errors, sprintf("Column {.val %s} (report_date) not found in data", report_date))
   }
 
-  if (!is.null(is_batched) && !is_batched %in% colnames(x)) {
+  if (!is.null(is_batched) && length(is_batched) == 1 && !(is_batched %in% colnames(x))) {
     errors <- c(errors, sprintf("Column {.val %s} (is_batched) not found in data", is_batched))
   }
 
@@ -187,7 +187,7 @@ validate_tbl_now <- function(x) {
     }
   }
 
-  if (!is.null(is_batched) && is_batched %in% colnames(x)) {
+  if (!is.null(is_batched) && length(is_batched) == 1 && is_batched %in% colnames(x)) {
     if (!is.logical(x[[is_batched]])) {
       errors <- c(errors, sprintf("Column '%s' must be logical (TRUE/FALSE)", is_batched))
     }
@@ -230,7 +230,7 @@ validate_tbl_now <- function(x) {
 
     # Check that 'now' is >= max(report_date)
     max_report <- max(x[[report_date]], na.rm = TRUE)
-    if (!is.na(max_report) && !is.null(now) && now < max_report) {
+    if (!is.na(max_report) && !is.null(now) && lubridate::is.Date(now) && now < max_report) {
       warnings <- c(warnings, sprintf(
         "Attribute 'now' (%s) seems to be in the past (before maximum report_date (%s))",
         as.character(now), as.character(max_report)

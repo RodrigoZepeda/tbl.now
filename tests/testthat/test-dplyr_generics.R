@@ -217,6 +217,7 @@ setup_test_data <- function() {
     gender = c("Male", "Female", "Male", "Female"),
     age_group = c("20-30", "30-40", "20-30", "40-50"),
     temperature = c(25.5, 26.0, 24.8, 25.2),
+    is_batched = c(T,F,F,F),
     value = c(10, 20, 30, 40)
   )
 
@@ -226,6 +227,7 @@ setup_test_data <- function() {
     report_date = "report_week",
     strata = "gender",
     covariates = "temperature",
+    is_batched = "is_batched",
     verbose = FALSE
   )
 
@@ -287,6 +289,99 @@ test_that("validate_tbl_now fails when report_date is not character", {
   )
 })
 
+test_that("validate_tbl_now fails when report or event date is not date", {
+  test_data <- setup_test_data()
+
+  for (type in c("report_date", "event_date")){
+
+    ndata <- test_data$ndata
+    ndata <- ndata %>%
+      dplyr::mutate(!!as.symbol(attr(ndata, type)) := as.character(!!as.symbol(attr(ndata, type))))
+
+    expect_error(
+      validate_tbl_now(ndata),
+      "must be of class Date"
+    )
+  }
+})
+
+test_that("validate_tbl_now fails when is_batched is not logical", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+  ndata <- ndata %>%
+      dplyr::mutate(!!as.symbol(attr(ndata, "is_batched")) := as.character(!!as.symbol(attr(ndata, "is_batched"))))
+
+  expect_error(
+    validate_tbl_now(ndata),
+    "must be logical"
+  )
+
+})
+
+test_that("validate_tbl_now fails when now is not date", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+
+  attr(ndata, "now") <- "error"
+
+  expect_error(
+    validate_tbl_now(ndata),
+    "now.*must be"
+  )
+})
+
+test_that("validate_tbl_now fails when data_type is not count, linelist or official", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+
+  attr(ndata, "data_type") <- "error"
+
+  expect_error(
+    validate_tbl_now(ndata),
+    "data_type.*must be"
+  )
+})
+
+test_that("validate_tbl_now fails when is_batched is not specified correctly", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+
+  attr(ndata, "is_batched") <- 2
+
+  expect_error(
+    validate_tbl_now(ndata),
+    "is_batched.*must be"
+  )
+
+  attr(ndata, "is_batched") <- c("a","b")
+  expect_error(
+    validate_tbl_now(ndata),
+    "is_batched.*must be"
+  )
+
+  attr(ndata, "is_batched") <- "not_a_column"
+  expect_error(
+    validate_tbl_now(ndata),
+    "Column.*not found in data"
+  )
+
+})
+
+test_that("validate_tbl_now fails when units is not valid", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+
+  for (unit_type in c("event_units", "report_units")){
+    attr(ndata, unit_type) <- "error"
+
+    expect_error(
+      validate_tbl_now(ndata),
+      "Attribute.*must be one of.*days.*weeks"
+    )
+  }
+})
+
+
 test_that("validate_tbl_now fails when num_strata is not number", {
   test_data <- setup_test_data()
   ndata <- test_data$ndata
@@ -309,6 +404,45 @@ test_that("validate_tbl_now fails when num_strata is not number", {
   expect_error(
     validate_tbl_now(ndata),
     "strata.*numeric"
+  )
+})
+
+test_that("validate_tbl_now fails when num_strata does not match strata length", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+
+  #This should error
+  attr(ndata, "num_strata") <- 100
+  expect_error(
+    validate_tbl_now(ndata),
+    "length"
+  )
+
+  #This should error
+  attr(ndata, "num_strata") <- length(attr(ndata, "strata"))
+  attr(ndata, "strata") <- c("temperature","age_group")
+  expect_error(
+    validate_tbl_now(ndata),
+    "length"
+  )
+})
+
+test_that("validate_tbl_now fails when num_covariates does not match covariate length", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata
+
+  #This should error
+  attr(ndata, "num_covariates") <- 100
+  expect_error(
+    validate_tbl_now(ndata),
+    "length"
+  )
+
+  attr(ndata, "num_covariates") <- length(attr(ndata, "covariates"))
+  attr(ndata, "covariates") <- c("temperature","age_group")
+  expect_error(
+    validate_tbl_now(ndata),
+    "length"
   )
 })
 
@@ -453,7 +587,7 @@ test_that("[.tbl_now handles column selection", {
   test_data <- setup_test_data()
 
   # Select specific columns including protected ones
-  result <- test_data$ndata[, c("onset_week", "report_week", "gender", ".event_num", ".report_num")]
+  result <- test_data$ndata[, c("onset_week", "report_week", "gender", ".event_num", ".report_num", "is_batched")]
 
   expect_s3_class(result, "tbl_now")
   expect_true("onset_week" %in% colnames(result))
@@ -833,7 +967,7 @@ test_that("select maintains tbl_now with protected columns", {
   test_data <- setup_test_data()
 
   result <- test_data$ndata %>%
-    dplyr::select(onset_week, report_week, gender, .event_num, .report_num)
+    dplyr::select(onset_week, report_week, gender, .event_num, .report_num, is_batched)
 
   expect_s3_class(result, "tbl_now")
 })
