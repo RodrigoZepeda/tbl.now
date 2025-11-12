@@ -189,7 +189,7 @@ infer_data_type <- function(data, data_type, verbose = FALSE) {
 
     #Check that `n` column is really an integer
     n_col <- data %>% dplyr::distinct_at("n") %>% dplyr::pull()
-    if (!is.numeric(n_col) || any(ceiling(n_col) != n_col)){
+    if (!is.numeric(n_col) || any(ceiling(n_col) != n_col, na.rm = TRUE)){
       cli::cli_abort(
         paste0(
           "Cannot automatically detect data_type. Data has a column named `n`",
@@ -197,6 +197,12 @@ infer_data_type <- function(data, data_type, verbose = FALSE) {
           " Please set the {.code data_type} argument to either {.val count}",
           " or {.val linelist}."
         )
+      )
+    }
+
+    if (any(is.na(n_col))){
+      cli::cli_warn(
+        "Some observations in the count column `n` contain missing values."
       )
     }
 
