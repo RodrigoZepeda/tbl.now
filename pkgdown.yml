@@ -2,7 +2,7 @@ pandoc: 3.1.11
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles: {}
-last_built: 2025-11-11T21:39Z
+last_built: 2025-11-12T07:04Z
 urls:
   reference: https://rodrigozepeda.github.io/tbl.now/reference
   article: https://rodrigozepeda.github.io/tbl.now/articles
