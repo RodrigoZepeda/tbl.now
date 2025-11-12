@@ -131,39 +131,6 @@ name `n` of counts of observations if `data_type = "linelist"`.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 40,812 more rows</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"vectordat"</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>data set ‘vectordat’ not found</span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">vectordat</span>,</span></span>
-<span class="r-in"><span>    event_date <span class="op">=</span> <span class="st">"symptoms"</span>,</span></span>
-<span class="r-in"><span>    report_date <span class="op">=</span> <span class="st">"update"</span>,</span></span>
-<span class="r-in"><span>    strata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"state"</span>,<span class="st">"sex"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'vectordat' not found</span>
-<span class="r-in"><span><span class="fu">to_count</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>147 row(s) have a `report_date` before `event_date`</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>147 row(s) have a `report_date` before `event_date`</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>147 row(s) have a `report_date` before `event_date`</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  40,822 × 6</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    date_of_symptom_onset date_of_registry .event_num .report_num sex          n</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span>          <span style="color: #949494;">[report_date]</span>         <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[...]</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 2020-03-06            2020-04-05                0          30 FEMALE       1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 2020-03-06            2020-04-05                0          30 MALE         1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 2020-03-07            2020-04-05                1          30 FEMALE       1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 2020-03-11            2020-04-07                5          32 MALE         1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 2020-03-18            2020-04-05               12          30 FEMALE       1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 2020-03-23            2020-04-08               17          33 FEMALE       1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 2020-03-24            2020-04-05               18          30 MALE         1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 2020-03-26            2020-04-06               20          31 FEMALE       1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 2020-03-27            2020-04-05               21          30 FEMALE       1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 2020-03-31            2020-04-05               25          30 FEMALE       1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2023-01-01</span> | Event date: <span style="color: #0000BB;">"date_of_symptom_onset"</span> | Report date:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # <span style="color: #0000BB;">"date_of_registry"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"sex"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 40,812 more rows</span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

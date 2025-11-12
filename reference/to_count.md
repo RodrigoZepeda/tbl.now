@@ -92,37 +92,4 @@ to_count(ndata)
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 40,812 more rows
 
-data("vectordat")
-#> Warning: data set ‘vectordat’ not found
-ndata <- tbl_now(vectordat,
-    event_date = "symptoms",
-    report_date = "update",
-    strata = c("state","sex"))
-#> Error: object 'vectordat' not found
-to_count(ndata)
-#> Warning: 147 row(s) have a `report_date` before `event_date`
-#> Warning: 147 row(s) have a `report_date` before `event_date`
-#> Warning: 147 row(s) have a `report_date` before `event_date`
-#> # A tibble:  40,822 × 6
-#> # Data type: "count"
-#> # Frequency: Event: `days` | Report: `days`
-#>    date_of_symptom_onset date_of_registry .event_num .report_num sex          n
-#>    <date>                <date>                <dbl>       <dbl> <chr>    <int>
-#>    [event_date]          [report_date]         [...]       [...] [strata] [...]
-#>  1 2020-03-06            2020-04-05                0          30 FEMALE       1
-#>  2 2020-03-06            2020-04-05                0          30 MALE         1
-#>  3 2020-03-07            2020-04-05                1          30 FEMALE       1
-#>  4 2020-03-11            2020-04-07                5          32 MALE         1
-#>  5 2020-03-18            2020-04-05               12          30 FEMALE       1
-#>  6 2020-03-23            2020-04-08               17          33 FEMALE       1
-#>  7 2020-03-24            2020-04-05               18          30 MALE         1
-#>  8 2020-03-26            2020-04-06               20          31 FEMALE       1
-#>  9 2020-03-27            2020-04-05               21          30 FEMALE       1
-#> 10 2020-03-31            2020-04-05               25          30 FEMALE       1
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2023-01-01 | Event date: "date_of_symptom_onset" | Report date:
-#> # "date_of_registry"
-#> # Strata: "sex"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 40,812 more rows
 ```
