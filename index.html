@@ -49,7 +49,7 @@
 </h1></div>
 <!-- badges: start -->
 
-<p>The goal of tbl.now is to provide a unified <code>tibble</code>-like interface for nowcasting algorithms within the <code>diseasenowcasting</code> framework.</p>
+<p>The goal of tbl.now is to provide a unified <code>tibble</code>-like interface for nowcasting algorithms within the <a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link"><code>diseasenowcasting</code></a> framework.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -57,6 +57,102 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"RodrigoZepeda/tbl.now"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="class">Class<a class="anchor" aria-label="anchor" href="#class"></a>
+</h2>
+<p>The <code>tbl.now</code> package contains the <code>tbl.now</code> class which extends the <code>tbl</code> class from (<a href="https://tibble.tidyverse.org/" class="external-link"><code>tibble()</code></a>). Nowcasts require an <code>event_date</code> and a <code>report_date</code> thus the<code>tbl.now</code> class can be thought of as a specific <code>tibble</code> that <strong>guarantees</strong> an <code>event_date</code> and a <code>report_date</code>. It also <strong>tags</strong> variables as: covariates, strata or as a batched indicator. Finally it converts event and report dates to numeric.</p>
+<p>Here is an example with a fake linelist data.frame where cases have happened at <code>symptom_onset</code> but have been reported at <code>report_time``. The tibble includes</code>sex<code>and</code>age_group<code>as covariate,</code>state<code>as strata and an unused variable called</code>comorbidity`.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     filter, lag</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span>
+<span></span>
+<span><span class="co">#This is what the dataframe looks like</span></span>
+<span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>  patient_id  <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,</span>
+<span>  symptom_onset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020/12/01"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020/12/01"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020/12/01"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020/12/02"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020/12/02"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  report_time   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020/12/01"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020/12/01"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020/12/02"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020/12/02"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020/12/03"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  sex           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"M"</span>, <span class="st">"F"</span>, <span class="st">"F"</span>, <span class="st">"M"</span>, <span class="st">"F"</span><span class="op">)</span>,</span>
+<span>  age_group     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"20-40"</span>,<span class="st">"40-60"</span>,<span class="st">"20-40"</span>,<span class="st">"40-60"</span>,<span class="st">"40-60"</span><span class="op">)</span>,</span>
+<span>  state         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NY"</span>,<span class="st">"NJ"</span>, <span class="st">"NY"</span>,<span class="st">"NY"</span>,<span class="st">"NY"</span><span class="op">)</span>,</span>
+<span>  comorbidity   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">T</span>,<span class="cn">F</span>,<span class="cn">F</span>,<span class="cn">F</span>,<span class="cn">T</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">df</span></span>
+<span><span class="co">#&gt; # A tibble: 5 × 7</span></span>
+<span><span class="co">#&gt;   patient_id symptom_onset report_time sex   age_group state comorbidity</span></span>
+<span><span class="co">#&gt;        &lt;int&gt; &lt;date&gt;        &lt;date&gt;      &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt; &lt;lgl&gt;      </span></span>
+<span><span class="co">#&gt; 1          1 2020-12-01    2020-12-01  M     20-40     NY    TRUE       </span></span>
+<span><span class="co">#&gt; 2          2 2020-12-01    2020-12-01  F     40-60     NJ    FALSE      </span></span>
+<span><span class="co">#&gt; 3          3 2020-12-01    2020-12-02  F     20-40     NY    FALSE      </span></span>
+<span><span class="co">#&gt; 4          4 2020-12-02    2020-12-02  M     40-60     NY    FALSE      </span></span>
+<span><span class="co">#&gt; 5          5 2020-12-02    2020-12-03  F     40-60     NY    TRUE</span></span></code></pre></div>
+<p>and transform it to <code>tbl_now</code> involves specifying the date of the event, the date of the report, the strata and the covariates.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">vdat</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>,</span>
+<span>                event_date  <span class="op">=</span> <span class="st">"symptom_onset"</span>,</span>
+<span>                report_date <span class="op">=</span> <span class="st">"report_time"</span>, </span>
+<span>                covariate   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sex"</span>, <span class="st">"age_group"</span><span class="op">)</span>,  </span>
+<span>                strata      <span class="op">=</span> <span class="st">"state"</span><span class="op">)</span>     </span>
+<span><span class="co">#&gt; ℹ Identified data as linelist-data where each observation is a test.</span></span>
+<span></span>
+<span><span class="va">vdat</span></span>
+<span><span class="co">#&gt; # A tibble:  5 × 9</span></span>
+<span><span class="co">#&gt; # Data type: "linelist"</span></span>
+<span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
+<span><span class="co">#&gt;   patient_id symptom_onset report_time   sex         age_group state comorbidity</span></span>
+<span><span class="co">#&gt;        &lt;int&gt; &lt;date&gt;        &lt;date&gt;        &lt;chr&gt;       &lt;chr&gt;     &lt;chr&gt; &lt;lgl&gt;      </span></span>
+<span><span class="co">#&gt;        [...] [event_date]  [report_date] [covariate] [covaria… [str… [...]      </span></span>
+<span><span class="co">#&gt; 1          1 2020-12-01    2020-12-01    M           20-40     NY    TRUE       </span></span>
+<span><span class="co">#&gt; 2          2 2020-12-01    2020-12-01    F           40-60     NJ    FALSE      </span></span>
+<span><span class="co">#&gt; 3          3 2020-12-01    2020-12-02    F           20-40     NY    FALSE      </span></span>
+<span><span class="co">#&gt; 4          4 2020-12-02    2020-12-02    M           40-60     NY    FALSE      </span></span>
+<span><span class="co">#&gt; 5          5 2020-12-02    2020-12-03    F           40-60     NY    TRUE       </span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # Now: 2020-12-03 | Event date: "symptom_onset" | Report date: "report_time"</span></span>
+<span><span class="co">#&gt; # Strata: "state"</span></span>
+<span><span class="co">#&gt; # Covariates: "sex" and "age_group"</span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # ℹ 2 more variables: .event_num &lt;dbl&gt;, .report_num &lt;dbl&gt;</span></span></code></pre></div>
+<p>The algorithm automatically infers it corresponds to <code>linelist</code> data (vs count) and infers that the now is 2020-12-03 (the last date). The usual <code>dplyr</code> operations can be performed on the dataset with it adjusting on the fly. For example, removing the <code>age_group</code> removes it from the covariate list at the bottom:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">vdat</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">age_group</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble:  5 × 8</span></span>
+<span><span class="co">#&gt; # Data type: "linelist"</span></span>
+<span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
+<span><span class="co">#&gt;   patient_id symptom_onset report_time   sex        state comorbidity .event_num</span></span>
+<span><span class="co">#&gt;        &lt;int&gt; &lt;date&gt;        &lt;date&gt;        &lt;chr&gt;      &lt;chr&gt; &lt;lgl&gt;            &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt;        [...] [event_date]  [report_date] [covariat… [str… [...]            [...]</span></span>
+<span><span class="co">#&gt; 1          1 2020-12-01    2020-12-01    M          NY    TRUE                 0</span></span>
+<span><span class="co">#&gt; 2          2 2020-12-01    2020-12-01    F          NJ    FALSE                0</span></span>
+<span><span class="co">#&gt; 3          3 2020-12-01    2020-12-02    F          NY    FALSE                0</span></span>
+<span><span class="co">#&gt; 4          4 2020-12-02    2020-12-02    M          NY    FALSE                1</span></span>
+<span><span class="co">#&gt; 5          5 2020-12-02    2020-12-03    F          NY    TRUE                 1</span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # Now: 2020-12-03 | Event date: "symptom_onset" | Report date: "report_time"</span></span>
+<span><span class="co">#&gt; # Strata: "state"</span></span>
+<span><span class="co">#&gt; # Covariates: "sex"</span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # ℹ 1 more variable: .report_num &lt;dbl&gt;</span></span></code></pre></div>
+<p>While changing the structure in a way that removes the event and report dates returns a <code>tibble</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">vdat</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">sex</span><span class="op">)</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">tally</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Dropping `tbl_now` attributes and converting to `tibble`</span></span>
+<span><span class="co">#&gt; # A tibble: 2 × 2</span></span>
+<span><span class="co">#&gt;   sex       n</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt; &lt;int&gt;</span></span>
+<span><span class="co">#&gt; 1 F         3</span></span>
+<span><span class="co">#&gt; 2 M         2</span></span></code></pre></div>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="license">

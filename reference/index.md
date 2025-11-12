@@ -46,6 +46,3 @@
   : Create a \`tbl_now\` object
 - [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
   : Transform an object to count data
-- [`vectordat`](https://rodrigozepeda.github.io/tbl.now/reference/vectordat.md)
-  : vectordat: Vector borne reportable diseases from Mexico (Feb-Dec
-  2024)
