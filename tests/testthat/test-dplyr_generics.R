@@ -962,6 +962,21 @@ test_that("filter preserves attributes", {
   expect_equal(get_strata(result), get_strata(test_data$ndata))
 })
 
+test_that("validate works with numeric", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>%
+    dplyr::mutate(report_week = as.numeric(difftime(report_week, min(onset_week), units = "weeks"))) %>%
+    dplyr::mutate(onset_week = as.numeric(difftime(onset_week, min(onset_week), units = "weeks")))
+
+
+  expect_equal(get_event_date(result), get_event_date(test_data$ndata))
+  expect_equal(get_strata(result), get_strata(test_data$ndata))
+  expect_equal(result$onset_week, result$.event_num)
+  expect_equal(result$report_week, result$.report_num)
+
+})
+
 # Tests for select ----
 test_that("select maintains tbl_now with protected columns", {
   test_data <- setup_test_data()

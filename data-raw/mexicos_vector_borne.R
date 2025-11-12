@@ -1,4 +1,5 @@
-dengue_files <- list.files("~/Downloads/dengue/", full.names = T, pattern = "*.csv")
+library(tidyverse)
+x <- list.files("~/Downloads/dengue/", full.names = T, pattern = "*.csv")
 dengue <- read_csv(dengue_files, id = "file")
 dengue <- dengue |>
   select(ID_REGISTRO, SEXO, ENTIDAD_UM_NOTIF, FECHA_ACTUALIZACION, FECHA_SIGN_SINTOMAS) |>
