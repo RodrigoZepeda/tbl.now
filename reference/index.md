@@ -21,6 +21,8 @@
 - [`denguedat`](https://rodrigozepeda.github.io/tbl.now/reference/denguedat.md)
   : denguedat: Dengue fever individual-level reporting data from Puerto
   Rico
+- [`flusight`](https://rodrigozepeda.github.io/tbl.now/reference/flusight.md)
+  : flusight:
 - [`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/is_tbl_now.md)
   : Check if an object is a tbl_now
 - [`mpoxdat`](https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.md)
