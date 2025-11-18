@@ -50,7 +50,8 @@ columns</p>
 <span>  <span class="va">...</span>,</span>
 <span>  date_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  numeric_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  name_prefix <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"."</span>, <span class="va">date_col</span><span class="op">)</span></span>
+<span>  name_prefix <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"."</span>, <span class="va">date_col</span><span class="op">)</span>,</span>
+<span>  weekend_days <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Sat"</span>, <span class="st">"Sun"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'tbl_now'</span></span>
@@ -59,7 +60,8 @@ columns</p>
 <span>  t_effect <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  overwrite <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span>,</span>
-<span>  date_type <span class="op">=</span> <span class="st">"event_date"</span></span>
+<span>  date_type <span class="op">=</span> <span class="st">"event_date"</span>,</span>
+<span>  weekend_days <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Sat"</span>, <span class="st">"Sun"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -100,6 +102,13 @@ use `date_col`.</p></dd>
 
 <dt id="arg-name-prefix">name_prefix<a class="anchor" aria-label="anchor" href="#arg-name-prefix"></a></dt>
 <dd><p>What preffix to add to the column names</p></dd>
+
+
+<dt id="arg-weekend-days">weekend_days<a class="anchor" aria-label="anchor" href="#arg-weekend-days"></a></dt>
+<dd><p>A character or numeric vector defining weekend days.
+-Numeric: must be integers in 1-7 corresponding to [lubridate::wday()] when `week_start = 1`.
+-Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
+Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).</p></dd>
 
 
 <dt id="arg-date-type">date_type<a class="anchor" aria-label="anchor" href="#arg-date-type"></a></dt>

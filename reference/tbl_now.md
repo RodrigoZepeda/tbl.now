@@ -6,7 +6,7 @@ nowcast. See the Attributes section for more information.
 ## Usage
 
 ``` r
-new_tbl_now(
+tbl_now(
   data,
   event_date,
   report_date,
@@ -20,21 +20,6 @@ new_tbl_now(
   case_col = NULL,
   verbose = TRUE,
   force = FALSE,
-  ...
-)
-
-tbl_now(
-  data,
-  event_date,
-  report_date,
-  strata = NULL,
-  covariates = NULL,
-  is_batched = NULL,
-  now = NULL,
-  event_units = "auto",
-  report_units = "auto",
-  data_type = "auto",
-  verbose = TRUE,
   ...
 )
 ```

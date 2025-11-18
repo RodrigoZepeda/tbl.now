@@ -28,7 +28,8 @@
 - [`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/is_tbl_now.md)
   : Check if an object is a tbl_now
 - [`is_weekday()`](https://rodrigozepeda.github.io/tbl.now/reference/is_weekday.md)
-  : Check whether a date is a weekday vs weekend
+  : Check whether a date is a weekday vs weekend (international
+  definition)
 - [`mpoxdat`](https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.md)
   : mpoxdat: Mpox reporting data from the 2022 New York City outbreak
 - [`` `names<-`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/names-set-.tbl_now.md)
@@ -51,8 +52,7 @@
   : Print temporal effects
 - [`` `[`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/sub-.tbl_now.md)
   : Subset function for \`tbl_now\` with downgrade-on-subsetting
-- [`new_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
-  [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+- [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
   : Create a \`tbl_now\` object
 - [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
   : Temporal Effects Class

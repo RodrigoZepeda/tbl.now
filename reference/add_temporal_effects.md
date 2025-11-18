@@ -16,7 +16,8 @@ add_temporal_effects(
   ...,
   date_col = NULL,
   numeric_col = NULL,
-  name_prefix = paste0(".", date_col)
+  name_prefix = paste0(".", date_col),
+  weekend_days = c("Sat", "Sun")
 )
 
 # S3 method for class 'tbl_now'
@@ -25,7 +26,8 @@ add_temporal_effects(
   t_effect = NULL,
   overwrite = FALSE,
   ...,
-  date_type = "event_date"
+  date_type = "event_date",
+  weekend_days = c("Sat", "Sun")
 )
 ```
 
@@ -66,6 +68,14 @@ add_temporal_effects(
 - name_prefix:
 
   What preffix to add to the column names
+
+- weekend_days:
+
+  A character or numeric vector defining weekend days. -Numeric: must be
+  integers in 1-7 corresponding to \[lubridate::wday()\] when
+  \`week_start = 1\`. -Character: any of c("Mon","Tuesday","wed",...)
+  case-insensitive. Defaults to Saturday and Sunday (weekend_days =
+  c("Sat", "Sun")).
 
 - date_type:
 
