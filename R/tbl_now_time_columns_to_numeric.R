@@ -122,5 +122,15 @@ time_cols_to_numeric <- function(data, event_date, report_date, event_units, rep
       dplyr::select(-!!as.symbol(".month_difference_temp"), -!!as.symbol(".year_difference_temp"))
   }
 
+  #Add delay column
+  if (".delay" %in% colnames(data) && !force){
+    cli::cli_abort(
+      "This function internally creates a column called `.delay` please rename yours."
+    )
+  } else {
+    data <- data %>%
+      dplyr::mutate(!!as.symbol(".delay") := !!as.symbol(".report_num") - !!as.symbol(".event_num"))
+  }
+
   return(data)
 }

@@ -30,6 +30,10 @@
 #' nowcast. If no `now` is given then the function automatically uses the last
 #' `event_date`.
 #'
+#' @param case_col (optional) Name of the column with the case counts if
+#' `data_type` is "count". If `case_col` is specified even if `data_type`
+#' is "linelist" that name will be used if the `to_count` function is applied.
+#'
 #' @param event_units (optional) Character. Either "auto" (default), "days",
 #' "weeks", "months", "years" or "numeric".
 #'
@@ -124,9 +128,22 @@ new_tbl_now <- function(data,
                         event_units = "auto",
                         report_units = "auto",
                         data_type = "auto",
+                        case_col = NULL,
                         verbose = TRUE,
                         force = FALSE,
                         ...) {
+
+
+  #Case column of counts is
+  if (is.null(case_col) && data_type != "linelist"){
+    case_col <- "n"
+  }
+
+  if (length(case_col) > 1){
+    cli::cli_abort(
+      "{.code case_col} has to be either `NULL` or a character with just one column name."
+    )
+  }
 
   #Check the data frame data--------
   if (!is.data.frame(data)) {
@@ -179,7 +196,7 @@ new_tbl_now <- function(data,
   report_units <- infer_units(data, date_column = report_date, date_units = report_units)
 
   # Get whether data is count or line data
-  data_type    <- infer_data_type(data, data_type = data_type, verbose = verbose)
+  data_type    <- infer_data_type(data, data_type = data_type, case_col = case_col, verbose = verbose)
 
   # Capture all other attributes
   other_attrs  <- list(...)
@@ -191,6 +208,7 @@ new_tbl_now <- function(data,
   attr(data, "event_date")     <- event_date
   attr(data, "report_date")    <- report_date
   attr(data, "num_strata")     <- num_strata
+  attr(data, "case_col")       <- case_col
   attr(data, "strata")         <- strata
   attr(data, "num_covariates") <- num_covariates
   attr(data, "covariates")     <- covariates
@@ -217,6 +235,7 @@ new_tbl_now <- function(data,
     )
   }
 
+  #Convert time columns to numeric
   data <- time_cols_to_numeric(data, event_date = event_date, report_date = report_date,
                                event_units = event_units, report_units = report_units,
                                force = force)
@@ -231,6 +250,7 @@ new_tbl_now <- function(data,
   return(data)
 }
 
+#FIXME: Fix so that it is the same as new_tbl_now
 #' @rdname tbl_now
 #' @export
 tbl_now <- function(data,

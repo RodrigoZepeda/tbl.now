@@ -1,4 +1,7 @@
 # Pillar extension functions that work for pretty printing a `tbl_now`
+# This file includes the following functions: `tbl_sum`, `tbl_format_footer` and `ctl_new_pillar`
+# See the Custom Formatting vignette from pillar for more info:
+# https://pillar.r-lib.org/articles/extending.html
 
 #' @importFrom pillar tbl_sum
 #' @exportS3Method pillar::tbl_sum
@@ -23,12 +26,12 @@ tbl_format_footer.tbl_now <- function(x, ...) {
 
   footer <- cli::cli_fmt({
     cli::cli_rule()
-    cli::cli_text("Now: {.val {attr(x, 'now')}} | Event date: {.val {attr(x, 'event_date')}} | Report date: {.val {attr(x, 'report_date')}}")
+    cli::cli_text("Now: {.val {get_now(x)}} | Event date: {.val {get_event_date(x)}} | Report date: {.val {get_report_date(x)}}")
     if (num_strata > 0){
-      cli::cli_text("Strata: {.val {attr(x, 'strata')}}")
+      cli::cli_text("Strata: {.val {get_strata(x)}}")
     }
     if (num_covariates > 0){
-      cli::cli_text("Covariates: {.val {attr(x, 'covariates')}}")
+      cli::cli_text("Covariates: {.val {get_covariates(x)}}")
     }
     cli::cli_rule()
   })
@@ -43,14 +46,16 @@ ctl_new_pillar.tbl_now <- function(controller, x, width, ...) {
   cval <- out$title[[1]][[1]]
 
   if (!is.null(cval)){
-    if (cval == attr(controller, "event_date")) {
+    if (cval == get_event_date(controller)) {
       annotation <- "[event_date]"
-    } else if (cval == attr(controller, "report_date")) {
+    } else if (cval == get_report_date(controller)) {
       annotation <- "[report_date]"
-    } else if (!is.null(attr(controller,"strata")) && cval %in% attr(controller,"strata")) {
+    } else if (!is.null(get_strata(controller)) && (cval %in% get_strata(controller))) {
       annotation <- "[strata]"
-    } else if (!is.null(attr(controller,"covariates")) && cval %in% attr(controller,"covariates")) {
+    } else if (!is.null(get_covariates(controller)) && (cval %in% get_covariates(controller))) {
       annotation <- "[covariate]"
+    } else if (!is.null(get_temporal_effects(controller)) && (cval %in% get_temporal_effects(controller))) {
+      annotation <- "[t_effect]"
     } else {
       annotation <- "[...]"
     }

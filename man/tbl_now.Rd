@@ -16,6 +16,7 @@ new_tbl_now(
   event_units = "auto",
   report_units = "auto",
   data_type = "auto",
+  case_col = NULL,
   verbose = TRUE,
   force = FALSE,
   ...
@@ -72,6 +73,10 @@ nowcast. If no `now` is given then the function automatically uses the last
 
 \item{data_type}{(optional) Character. Either "auto", "linelist" or
 "count".}
+
+\item{case_col}{(optional) Name of the column with the case counts if
+`data_type` is "count". If `case_col` is specified even if `data_type`
+is "linelist" that name will be used if the `to_count` function is applied.}
 
 \item{verbose}{(optional) Logical. Whether to throw a message. Default = `TRUE`.}
 

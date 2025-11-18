@@ -39,6 +39,9 @@ to_count.tbl_now <- function(x, ...) {
   x <- x %>%
     ungroup()
 
+  case_col <- get_case_col(x)
+  if (is.null(case_col)) case_col <- "n"
+
   #Group by event_date and report_date
   # Group data to generate counts
   x <- x %>%
@@ -56,6 +59,12 @@ to_count.tbl_now <- function(x, ...) {
       group_by(dplyr::across(get_strata(x)), .add = TRUE)
   }
 
+  # Group by strata first checking that strata exists
+  if (length(get_temporal_effects(x)) > 0) {
+    x <- x  %>%
+      group_by(dplyr::across(get_temporal_effects(x)), .add = TRUE)
+  }
+
   # TODO: What happens with continuous covariates
   # Group by strata first checking that strata exists
   if (get_num_covariates(x) > 0) {
@@ -67,7 +76,7 @@ to_count.tbl_now <- function(x, ...) {
   if (get_data_type(x) == "count"){
     #Summarise
     x <- x  %>%
-      summarise(!!as.symbol("n") := sum(!!as.symbol("n")), .groups = "drop")
+      summarise(!!as.symbol(case_col) := sum(!!as.symbol(case_col)), .groups = "drop")
   } else if  (get_data_type(x) == "linelist"){
 
     #Change the attribute first to avoid the warning from summarise
@@ -75,7 +84,7 @@ to_count.tbl_now <- function(x, ...) {
 
     #Summarise
     x <- x %>%
-      summarise(!!as.symbol("n") := dplyr::n(), .groups = "drop")
+      summarise(!!as.symbol(case_col) := dplyr::n(), .groups = "drop")
 
   } else {
     cli::cli_abort("`data_type` {get_data_type(x)} not implemented")

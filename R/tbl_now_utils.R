@@ -32,6 +32,24 @@ attr_default <- function(x, name, default = NULL) {
   if (is.null(val)) default else val
 }
 
+#' Check whether a date is a weekday vs weekend
+#'
+#' Function that checks whether a date object is a weekday or weekend.
+#'
+#' @param date A date object
+#'
+#' @examples
+#' is_weekday(as.Date("2020-04-22"))
+#' is_weekday(as.Date("2020-04-19"))
+#'
+#' @references
+#' From https://stackoverflow.com/a/60346779/5067372
+#'
+#' @export
+is_weekday <- function(date) {
+  lubridate::wday(date, week_start = 1) < 6
+}
+
 # NEED TO IMPROVE IT TO WORK WITH COUNT BY DOING WEIGHTS
 #' #' Summary of a `tbl_now`
 #' #'

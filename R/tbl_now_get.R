@@ -70,6 +70,18 @@ get_data_type <- function(x) {
 
 #' @rdname nowcast_data_getters
 #' @export
+get_temporal_effects <- function(x) {
+  attr(x, "temporal_effects", exact = TRUE)
+}
+
+#' @rdname nowcast_data_getters
+#' @export
 get_is_batched <- function(x) {
   attr(x, "is_batched", exact = TRUE)
+}
+
+#' @rdname nowcast_data_getters
+#' @export
+get_case_col <- function(x){
+  attr(x, "case_col", exact = TRUE)
 }

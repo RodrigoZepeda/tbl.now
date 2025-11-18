@@ -68,6 +68,7 @@ validate_tbl_now <- function(x) {
   event_units    <- get_event_units(x)
   data_type      <- get_data_type(x)
   is_batched     <- get_is_batched(x)
+  case_col       <- get_case_col(x)
 
   # === 4. Validate attribute types ===
 
@@ -211,6 +212,12 @@ validate_tbl_now <- function(x) {
     ))
   }
 
+  # Removing the case_col
+  if (data_type != "linelist" && (is.null(case_col) || !(case_col %in% colnames(x)))){
+    errors <- c(errors,
+                paste0("Dropped case column ", case_col, " when data_type was ", data_type, "."))
+  }
+
   # === 8. Validate data relationships ===
 
   if (!is.null(event_date) && !is.null(report_date) &&
@@ -306,13 +313,13 @@ tbl_now_reconstruct_internal <- function(data, template){
   keep_attrs <- attrs[setdiff(names(attrs), c("names", "row.names", "class"))]
 
   # Enforce protected columns
-  protected_cols <- c(attrs[["event_date"]], attrs[["report_date"]], ".event_num", ".report_num")
-  if (!is.null(attrs[["is_batched"]])){
-    protected_cols <- c(protected_cols, attrs[["is_batched"]])
-  }
+  protected_cols <- c(get_event_date(data),
+                      get_report_date(data),
+                      get_is_batched(data),
+                      ".event_num", ".report_num", ".delay")
 
   if (!is.null(get_data_type(data)) && get_data_type(data) == "count"){
-    protected_cols <- c(protected_cols, "n")
+    protected_cols <- c(protected_cols, get_case_col(data))
   }
 
   # Check the protected columns and return as data.frame instead
@@ -339,12 +346,21 @@ tbl_now_reconstruct_internal <- function(data, template){
 
   # Update covariates if columns were dropped
   if (!is.null(attrs[["num_covariates"]]) && attrs[["num_covariates"]] > 0) {
-    #Get the strata still  here
+    #Get the covariates still  here
     covariates <- intersect(attrs[["covariates"]], names(data))
 
     #Reattach
     attr(data, "covariates")      <- covariates
     attr(data, "num_covariates")  <- length(covariates)
+  }
+
+  # Update temporal effects if columns were dropped
+  if (!is.null(attrs[["temporal_effects"]]) && length(attrs[["temporal_effects"]]) > 0) {
+    #Get the temporal effects still  here
+    temporal_effects <- intersect(attrs[["temporal_effects"]], names(data))
+
+    #Reattach
+    attr(data, "temporal_effects") <- temporal_effects
   }
 
 
@@ -524,6 +540,7 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
                      event_units = get_event_units(.data),
                      report_units = get_event_units(.data),
                      data_type = get_data_type(.data),
+                     #FIXME: Here add the new variables
                      verbose = FALSE,
                      force = TRUE)
   }
@@ -533,16 +550,6 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
 #' @importFrom dplyr ungroup
 #' @exportS3Method dplyr::ungroup
 ungroup.grouped_tbl_now <- function(x, ...) {
-
-  event_date   <- get_event_date(x)
-  report_date  <- get_report_date(x)
-  strata       <- get_strata(x)
-  covariates   <- get_covariates(x)
-  is_batched   <- get_is_batched(x)
-  now          <- get_now(x)
-  event_units  <- get_event_units(x)
-  report_units <- get_event_units(x)
-  data_type    <- get_data_type(x)
 
   # Run default ungrouping.
   tbl <- NextMethod()
@@ -555,15 +562,16 @@ ungroup.grouped_tbl_now <- function(x, ...) {
     # This is most simplest done by simply creating a new tibble subclass
     # This is an edge case if no groups are actually provided. Then simply return a regular subclass
     x <- new_tbl_now(data = tbl,
-                     event_date = event_date,
-                     report_date = report_date,
-                     strata = strata,
-                     covariates = covariates,
-                     is_batched = is_batched,
-                     now = now,
-                     event_units = event_units,
-                     report_units = report_units,
-                     data_type = data_type,
+                     event_date = get_event_date(x),
+                     report_date = get_report_date(x),
+                     strata = get_strata(x),
+                     covariates = get_covariates(x),
+                     is_batched = get_is_batched(x),
+                     now = get_now(x),
+                     event_units = get_event_units(x),
+                     report_units = get_report_units(x),
+                     data_type = get_data_type(x),
+                     #FIXME: Here add the new variables
                      verbose = FALSE,
                      force = TRUE)
   }
@@ -592,6 +600,7 @@ class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_
                 event_units = get_event_units(.data),
                 report_units = get_event_units(.data),
                 data_type = get_data_type(.data),
+                #FIXME: Here add the new variables
                 verbose = FALSE,
                 force = TRUE)
     },

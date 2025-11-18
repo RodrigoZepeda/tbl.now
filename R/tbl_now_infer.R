@@ -175,7 +175,13 @@ infer_units <- function(data, date_column, date_units) {
 #' @return Whether the data is `count` or `linelist`
 #'
 #' @keywords internal
-infer_data_type <- function(data, data_type, verbose = FALSE) {
+infer_data_type <- function(data, data_type, case_col, verbose = FALSE) {
+
+  if (length(case_col) > 1){
+    cli::cli_abort(
+      "Invalid `case_col` must be a vector of length 1 or `NULL`"
+    )
+  }
 
   #Force conversion of data to avoid loops with dplyr_reconstruct
   data <- dplyr::as_tibble(data)
@@ -184,15 +190,15 @@ infer_data_type <- function(data, data_type, verbose = FALSE) {
   data_type <- data_type[1]
 
   # Check that there is no column `n` if linedata and that there is if counts
-  if (data_type == "auto" & ("n" %in% colnames(data))) {
+  if (data_type == "auto" && !is.null(case_col) &&  (case_col %in% colnames(data))) {
     data_type <- "count"
 
     #Check that `n` column is really an integer
-    n_col <- data %>% dplyr::distinct_at("n") %>% dplyr::pull()
+    n_col <- data %>% dplyr::distinct(!!as.symbol(case_col)) %>% dplyr::pull()
     if (!is.numeric(n_col) || any(ceiling(n_col) != n_col, na.rm = TRUE)){
       cli::cli_abort(
         paste0(
-          "Cannot automatically detect data_type. Data has a column named `n`",
+          "Cannot automatically detect data_type. Data has a column named {.val {case_col}}",
           "which does not seem to be count data (is not an integer).",
           " Please set the {.code data_type} argument to either {.val count}",
           " or {.val linelist}."
@@ -202,19 +208,19 @@ infer_data_type <- function(data, data_type, verbose = FALSE) {
 
     if (any(is.na(n_col))){
       cli::cli_warn(
-        "Some observations in the count column `n` contain missing values."
+        "Some observations in the count column {val {case_col}} contain missing values."
       )
     }
 
     if (verbose) {
       cli::cli_alert_info(
         paste0(
-          "Identified data as count-data with counts in column `n`."
+          "Identified data as count-data with counts in column {.val {case_col}}."
         )
       )
     }
 
-  } else if (data_type == "auto" & !("n" %in% colnames(data))) {
+  } else if (data_type == "auto" && (is.null(case_col) || !(case_col %in% colnames(data)))) {
 
     data_type <- "linelist"
     if (verbose) {
@@ -224,18 +230,18 @@ infer_data_type <- function(data, data_type, verbose = FALSE) {
         )
       )
     }
-  } else if (data_type == "linelist" & "n" %in% colnames(data)) {
+  } else if (data_type == "linelist" && !is.null(case_col) && case_col %in% colnames(data)) {
     cli::cli_warn(
       paste0(
-        "Linelist data contains a column named `n` which will be overwritten.",
+        "Linelist data contains a column named {.val {case_col}} which will be overwritten.",
         " If you are working with count-data set ",
         "{.code data_type = {.val count}}"
       )
     )
-  } else if (data_type == "count" & !("n" %in% colnames(data))) {
+  } else if (data_type == "count" && !is.null(case_col) && !(case_col %in% colnames(data))) {
     cli::cli_abort(
       paste0(
-        "Count data should have a column named `n` with the number ",
+        "Count data should have a column named {.val {case_col}} with the number ",
         "of tests per event_date-report_date combination. Otherwise set ",
         "{.code data_type = {.val linelist}} if working with line-list data."
       )
