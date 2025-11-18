@@ -41,11 +41,11 @@ infer_now <- function(data, now, event_date, report_date) {
   # Now should be the last observed moment in time
   if (is.null(now)) {
     max_report_date <- data %>%
-      dplyr::summarise(!!as.symbol("max") := max(!!as.symbol(report_date))) %>%
+      dplyr::summarise(!!as.symbol("max") := max(!!as.symbol(report_date), na.rm = TRUE)) %>%
       dplyr::pull()
 
     max_true_date <- data %>%
-      dplyr::summarise(!!as.symbol("max") := max(!!as.symbol(event_date))) %>%
+      dplyr::summarise(!!as.symbol("max") := max(!!as.symbol(event_date), na.rm = TRUE)) %>%
       dplyr::pull()
 
     now <- max(max_report_date, max_true_date)
@@ -119,7 +119,7 @@ infer_units_one_column <- function(data, date_column, date_units) {
 
       # Convert the differences to a period (days)
       min_difference <- date_diffs %>%
-        min() %>%
+        min(na.rm = TRUE) %>%
         as.numeric()
 
       # Categorize based on the median difference
