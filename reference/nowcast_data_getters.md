@@ -27,7 +27,11 @@ get_event_units(x)
 
 get_data_type(x)
 
+get_temporal_effects(x)
+
 get_is_batched(x)
+
+get_case_col(x)
 ```
 
 ## Arguments

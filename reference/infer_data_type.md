@@ -6,7 +6,7 @@ has not) a column named \`n\`
 ## Usage
 
 ``` r
-infer_data_type(data, data_type, verbose = FALSE)
+infer_data_type(data, data_type, case_col, verbose = FALSE)
 ```
 
 ## Arguments
@@ -18,6 +18,13 @@ infer_data_type(data, data_type, verbose = FALSE)
 - data_type:
 
   (optional) Character. Either "auto", "linelist" or "count".
+
+- case_col:
+
+  (optional) Name of the column with the case counts if \`data_type\` is
+  "count". If \`case_col\` is specified even if \`data_type\` is
+  "linelist" that name will be used if the \`to_count\` function is
+  applied.
 
 - verbose:
 

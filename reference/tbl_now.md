@@ -17,6 +17,7 @@ new_tbl_now(
   event_units = "auto",
   report_units = "auto",
   data_type = "auto",
+  case_col = NULL,
   verbose = TRUE,
   force = FALSE,
   ...
@@ -96,6 +97,13 @@ tbl_now(
 - data_type:
 
   (optional) Character. Either "auto", "linelist" or "count".
+
+- case_col:
+
+  (optional) Name of the column with the case counts if \`data_type\` is
+  "count". If \`case_col\` is specified even if \`data_type\` is
+  "linelist" that name will be used if the \`to_count\` function is
+  applied.
 
 - verbose:
 
@@ -190,22 +198,22 @@ ndata <- tbl_now(denguedat,
 # You can see that it documents the `event_date`, `report_date`, `strata`,
 # `covariates` as well as the `now`.
 ndata
-#> # A tibble:  52,987 × 5
+#> # A tibble:  52,987 × 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#>    onset_week   report_week   gender   .event_num .report_num
-#>    <date>       <date>        <chr>         <dbl>       <dbl>
-#>    [event_date] [report_date] [strata]      [...]       [...]
-#>  1 1990-01-01   1990-01-01    Male              0           0
-#>  2 1990-01-01   1990-01-01    Female            0           0
-#>  3 1990-01-01   1990-01-01    Female            0           0
-#>  4 1990-01-01   1990-01-08    Female            0           1
-#>  5 1990-01-01   1990-01-08    Male              0           1
-#>  6 1990-01-01   1990-01-15    Female            0           2
-#>  7 1990-01-01   1990-01-15    Female            0           2
-#>  8 1990-01-01   1990-01-15    Female            0           2
-#>  9 1990-01-01   1990-01-22    Female            0           3
-#> 10 1990-01-01   1990-01-08    Female            0           1
+#>    onset_week   report_week   gender   .event_num .report_num .delay
+#>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl>
+#>    [event_date] [report_date] [strata]      [...]       [...]  [...]
+#>  1 1990-01-01   1990-01-01    Male              0           0      0
+#>  2 1990-01-01   1990-01-01    Female            0           0      0
+#>  3 1990-01-01   1990-01-01    Female            0           0      0
+#>  4 1990-01-01   1990-01-08    Female            0           1      1
+#>  5 1990-01-01   1990-01-08    Male              0           1      1
+#>  6 1990-01-01   1990-01-15    Female            0           2      2
+#>  7 1990-01-01   1990-01-15    Female            0           2      2
+#>  8 1990-01-01   1990-01-15    Female            0           2      2
+#>  9 1990-01-01   1990-01-22    Female            0           3      3
+#> 10 1990-01-01   1990-01-08    Female            0           1      1
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
@@ -217,22 +225,22 @@ ndata
 #`data.frame` operations are permitted
 ndata$newcolumn <- "something"
 ndata
-#> # A tibble:  52,987 × 6
+#> # A tibble:  52,987 × 7
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#>    onset_week   report_week   gender   .event_num .report_num newcolumn
-#>    <date>       <date>        <chr>         <dbl>       <dbl> <chr>    
-#>    [event_date] [report_date] [strata]      [...]       [...] [...]    
-#>  1 1990-01-01   1990-01-01    Male              0           0 something
-#>  2 1990-01-01   1990-01-01    Female            0           0 something
-#>  3 1990-01-01   1990-01-01    Female            0           0 something
-#>  4 1990-01-01   1990-01-08    Female            0           1 something
-#>  5 1990-01-01   1990-01-08    Male              0           1 something
-#>  6 1990-01-01   1990-01-15    Female            0           2 something
-#>  7 1990-01-01   1990-01-15    Female            0           2 something
-#>  8 1990-01-01   1990-01-15    Female            0           2 something
-#>  9 1990-01-01   1990-01-22    Female            0           3 something
-#> 10 1990-01-01   1990-01-08    Female            0           1 something
+#>    onset_week   report_week   gender   .event_num .report_num .delay newcolumn
+#>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl> <chr>    
+#>    [event_date] [report_date] [strata]      [...]       [...]  [...] [...]    
+#>  1 1990-01-01   1990-01-01    Male              0           0      0 something
+#>  2 1990-01-01   1990-01-01    Female            0           0      0 something
+#>  3 1990-01-01   1990-01-01    Female            0           0      0 something
+#>  4 1990-01-01   1990-01-08    Female            0           1      1 something
+#>  5 1990-01-01   1990-01-08    Male              0           1      1 something
+#>  6 1990-01-01   1990-01-15    Female            0           2      2 something
+#>  7 1990-01-01   1990-01-15    Female            0           2      2 something
+#>  8 1990-01-01   1990-01-15    Female            0           2      2 something
+#>  9 1990-01-01   1990-01-22    Female            0           3      3 something
+#> 10 1990-01-01   1990-01-08    Female            0           1      1 something
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
@@ -243,68 +251,68 @@ ndata
 ndata <- ndata[,-4]
 #> Warning: Dropped protected column(?s): ".event_num". Returning a `tibble`
 ndata
-#> # A tibble: 52,987 × 5
-#>    onset_week report_week gender .report_num newcolumn
-#>    <date>     <date>      <chr>        <dbl> <chr>    
-#>  1 1990-01-01 1990-01-01  Male             0 something
-#>  2 1990-01-01 1990-01-01  Female           0 something
-#>  3 1990-01-01 1990-01-01  Female           0 something
-#>  4 1990-01-01 1990-01-08  Female           1 something
-#>  5 1990-01-01 1990-01-08  Male             1 something
-#>  6 1990-01-01 1990-01-15  Female           2 something
-#>  7 1990-01-01 1990-01-15  Female           2 something
-#>  8 1990-01-01 1990-01-15  Female           2 something
-#>  9 1990-01-01 1990-01-22  Female           3 something
-#> 10 1990-01-01 1990-01-08  Female           1 something
+#> # A tibble: 52,987 × 6
+#>    onset_week report_week gender .report_num .delay newcolumn
+#>    <date>     <date>      <chr>        <dbl>  <dbl> <chr>    
+#>  1 1990-01-01 1990-01-01  Male             0      0 something
+#>  2 1990-01-01 1990-01-01  Female           0      0 something
+#>  3 1990-01-01 1990-01-01  Female           0      0 something
+#>  4 1990-01-01 1990-01-08  Female           1      1 something
+#>  5 1990-01-01 1990-01-08  Male             1      1 something
+#>  6 1990-01-01 1990-01-15  Female           2      2 something
+#>  7 1990-01-01 1990-01-15  Female           2      2 something
+#>  8 1990-01-01 1990-01-15  Female           2      2 something
+#>  9 1990-01-01 1990-01-22  Female           3      3 something
+#> 10 1990-01-01 1990-01-08  Female           1      1 something
 #> # ℹ 52,977 more rows
 
 #Like selecting
 ndata[1:10,]
-#> # A tibble: 10 × 5
-#>    onset_week report_week gender .report_num newcolumn
-#>    <date>     <date>      <chr>        <dbl> <chr>    
-#>  1 1990-01-01 1990-01-01  Male             0 something
-#>  2 1990-01-01 1990-01-01  Female           0 something
-#>  3 1990-01-01 1990-01-01  Female           0 something
-#>  4 1990-01-01 1990-01-08  Female           1 something
-#>  5 1990-01-01 1990-01-08  Male             1 something
-#>  6 1990-01-01 1990-01-15  Female           2 something
-#>  7 1990-01-01 1990-01-15  Female           2 something
-#>  8 1990-01-01 1990-01-15  Female           2 something
-#>  9 1990-01-01 1990-01-22  Female           3 something
-#> 10 1990-01-01 1990-01-08  Female           1 something
+#> # A tibble: 10 × 6
+#>    onset_week report_week gender .report_num .delay newcolumn
+#>    <date>     <date>      <chr>        <dbl>  <dbl> <chr>    
+#>  1 1990-01-01 1990-01-01  Male             0      0 something
+#>  2 1990-01-01 1990-01-01  Female           0      0 something
+#>  3 1990-01-01 1990-01-01  Female           0      0 something
+#>  4 1990-01-01 1990-01-08  Female           1      1 something
+#>  5 1990-01-01 1990-01-08  Male             1      1 something
+#>  6 1990-01-01 1990-01-15  Female           2      2 something
+#>  7 1990-01-01 1990-01-15  Female           2      2 something
+#>  8 1990-01-01 1990-01-15  Female           2      2 something
+#>  9 1990-01-01 1990-01-22  Female           3      3 something
+#> 10 1990-01-01 1990-01-08  Female           1      1 something
 ndata
-#> # A tibble: 52,987 × 5
-#>    onset_week report_week gender .report_num newcolumn
-#>    <date>     <date>      <chr>        <dbl> <chr>    
-#>  1 1990-01-01 1990-01-01  Male             0 something
-#>  2 1990-01-01 1990-01-01  Female           0 something
-#>  3 1990-01-01 1990-01-01  Female           0 something
-#>  4 1990-01-01 1990-01-08  Female           1 something
-#>  5 1990-01-01 1990-01-08  Male             1 something
-#>  6 1990-01-01 1990-01-15  Female           2 something
-#>  7 1990-01-01 1990-01-15  Female           2 something
-#>  8 1990-01-01 1990-01-15  Female           2 something
-#>  9 1990-01-01 1990-01-22  Female           3 something
-#> 10 1990-01-01 1990-01-08  Female           1 something
+#> # A tibble: 52,987 × 6
+#>    onset_week report_week gender .report_num .delay newcolumn
+#>    <date>     <date>      <chr>        <dbl>  <dbl> <chr>    
+#>  1 1990-01-01 1990-01-01  Male             0      0 something
+#>  2 1990-01-01 1990-01-01  Female           0      0 something
+#>  3 1990-01-01 1990-01-01  Female           0      0 something
+#>  4 1990-01-01 1990-01-08  Female           1      1 something
+#>  5 1990-01-01 1990-01-08  Male             1      1 something
+#>  6 1990-01-01 1990-01-15  Female           2      2 something
+#>  7 1990-01-01 1990-01-15  Female           2      2 something
+#>  8 1990-01-01 1990-01-15  Female           2      2 something
+#>  9 1990-01-01 1990-01-22  Female           3      3 something
+#> 10 1990-01-01 1990-01-08  Female           1      1 something
 #> # ℹ 52,977 more rows
 
 #You can also apply all dplyr functions:
 ndata %>%
   dplyr::filter(report_week <= as.Date("1991-01-02", format = "%Y-%m-%d"))
-#> # A tibble: 1,981 × 5
-#>    onset_week report_week gender .report_num newcolumn
-#>    <date>     <date>      <chr>        <dbl> <chr>    
-#>  1 1990-01-01 1990-01-01  Male             0 something
-#>  2 1990-01-01 1990-01-01  Female           0 something
-#>  3 1990-01-01 1990-01-01  Female           0 something
-#>  4 1990-01-01 1990-01-08  Female           1 something
-#>  5 1990-01-01 1990-01-08  Male             1 something
-#>  6 1990-01-01 1990-01-15  Female           2 something
-#>  7 1990-01-01 1990-01-15  Female           2 something
-#>  8 1990-01-01 1990-01-15  Female           2 something
-#>  9 1990-01-01 1990-01-22  Female           3 something
-#> 10 1990-01-01 1990-01-08  Female           1 something
+#> # A tibble: 1,981 × 6
+#>    onset_week report_week gender .report_num .delay newcolumn
+#>    <date>     <date>      <chr>        <dbl>  <dbl> <chr>    
+#>  1 1990-01-01 1990-01-01  Male             0      0 something
+#>  2 1990-01-01 1990-01-01  Female           0      0 something
+#>  3 1990-01-01 1990-01-01  Female           0      0 something
+#>  4 1990-01-01 1990-01-08  Female           1      1 something
+#>  5 1990-01-01 1990-01-08  Male             1      1 something
+#>  6 1990-01-01 1990-01-15  Female           2      2 something
+#>  7 1990-01-01 1990-01-15  Female           2      2 something
+#>  8 1990-01-01 1990-01-15  Female           2      2 something
+#>  9 1990-01-01 1990-01-22  Female           3      3 something
+#> 10 1990-01-01 1990-01-08  Female           1      1 something
 #> # ℹ 1,971 more rows
 
 #Removing an important column automatically transforms to tibble
@@ -313,35 +321,35 @@ suppressWarnings(
   ndata %>%
     dplyr::select(-onset_week)
 )
-#> # A tibble: 52,987 × 4
-#>    report_week gender .report_num newcolumn
-#>    <date>      <chr>        <dbl> <chr>    
-#>  1 1990-01-01  Male             0 something
-#>  2 1990-01-01  Female           0 something
-#>  3 1990-01-01  Female           0 something
-#>  4 1990-01-08  Female           1 something
-#>  5 1990-01-08  Male             1 something
-#>  6 1990-01-15  Female           2 something
-#>  7 1990-01-15  Female           2 something
-#>  8 1990-01-15  Female           2 something
-#>  9 1990-01-22  Female           3 something
-#> 10 1990-01-08  Female           1 something
+#> # A tibble: 52,987 × 5
+#>    report_week gender .report_num .delay newcolumn
+#>    <date>      <chr>        <dbl>  <dbl> <chr>    
+#>  1 1990-01-01  Male             0      0 something
+#>  2 1990-01-01  Female           0      0 something
+#>  3 1990-01-01  Female           0      0 something
+#>  4 1990-01-08  Female           1      1 something
+#>  5 1990-01-08  Male             1      1 something
+#>  6 1990-01-15  Female           2      2 something
+#>  7 1990-01-15  Female           2      2 something
+#>  8 1990-01-15  Female           2      2 something
+#>  9 1990-01-22  Female           3      3 something
+#> 10 1990-01-08  Female           1      1 something
 #> # ℹ 52,977 more rows
 
 #Removing strata just changes the overall structure
 ndata %>% dplyr::select(-gender)
-#> # A tibble: 52,987 × 4
-#>    onset_week report_week .report_num newcolumn
-#>    <date>     <date>            <dbl> <chr>    
-#>  1 1990-01-01 1990-01-01            0 something
-#>  2 1990-01-01 1990-01-01            0 something
-#>  3 1990-01-01 1990-01-01            0 something
-#>  4 1990-01-01 1990-01-08            1 something
-#>  5 1990-01-01 1990-01-08            1 something
-#>  6 1990-01-01 1990-01-15            2 something
-#>  7 1990-01-01 1990-01-15            2 something
-#>  8 1990-01-01 1990-01-15            2 something
-#>  9 1990-01-01 1990-01-22            3 something
-#> 10 1990-01-01 1990-01-08            1 something
+#> # A tibble: 52,987 × 5
+#>    onset_week report_week .report_num .delay newcolumn
+#>    <date>     <date>            <dbl>  <dbl> <chr>    
+#>  1 1990-01-01 1990-01-01            0      0 something
+#>  2 1990-01-01 1990-01-01            0      0 something
+#>  3 1990-01-01 1990-01-01            0      0 something
+#>  4 1990-01-01 1990-01-08            1      1 something
+#>  5 1990-01-01 1990-01-08            1      1 something
+#>  6 1990-01-01 1990-01-15            2      2 something
+#>  7 1990-01-01 1990-01-15            2      2 something
+#>  8 1990-01-01 1990-01-15            2      2 something
+#>  9 1990-01-01 1990-01-22            3      3 something
+#> 10 1990-01-01 1990-01-08            1      1 something
 #> # ℹ 52,977 more rows
 ```

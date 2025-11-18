@@ -75,22 +75,22 @@ name `n` of counts of observations if `data_type = "linelist"`.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Identified data as linelist-data where each observation is a test.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">to_count</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  8,265 × 6</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  8,265 × 7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    onset_week   report_week   .event_num .report_num gender       n</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[...]</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1990-01-01   1990-01-01             0           0 Female       2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1990-01-01   1990-01-01             0           0 Male         1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 1990-01-01   1990-01-08             0           1 Female      13</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1990-01-01   1990-01-08             0           1 Male        11</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1990-01-01   1990-01-15             0           2 Female      16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 1990-01-01   1990-01-15             0           2 Male         7</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1990-01-01   1990-01-22             0           3 Female       7</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1990-01-01   1990-01-22             0           3 Male         1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-01   1990-01-29             0           4 Male         1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01   1990-02-12             0           6 Male         1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    onset_week   report_week   .event_num .report_num gender       n .delay</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1990-01-01   1990-01-01             0           0 Female       2      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1990-01-01   1990-01-01             0           0 Male         1      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 1990-01-01   1990-01-08             0           1 Female      13      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1990-01-01   1990-01-08             0           1 Male        11      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1990-01-01   1990-01-15             0           2 Female      16      2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 1990-01-01   1990-01-15             0           2 Male         7      2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1990-01-01   1990-01-22             0           3 Female       7      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1990-01-01   1990-01-22             0           3 Male         1      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-01   1990-01-29             0           4 Male         1      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01   1990-02-12             0           6 Male         1      6</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-20</span> | Event date: <span style="color: #0000BB;">"onset_week"</span> | Report date: <span style="color: #0000BB;">"report_week"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span></span>
@@ -102,13 +102,13 @@ name `n` of counts of observations if `data_type = "linelist"`.</p>
 <span class="r-in"><span>event_date <span class="op">=</span> <span class="st">"date_of_symptom_onset"</span>,</span></span>
 <span class="r-in"><span>              report_date <span class="op">=</span> <span class="st">"date_of_registry"</span>,</span></span>
 <span class="r-in"><span>              strata <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Identified data as count-data with counts in column `n`.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Identified data as count-data with counts in column <span style="color: #0000BB;">"n"</span>.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>147 row(s) have a `report_date` before `event_date`</span>
 <span class="r-in"><span><span class="fu">to_count</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>147 row(s) have a `report_date` before `event_date`</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>147 row(s) have a `report_date` before `event_date`</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>147 row(s) have a `report_date` before `event_date`</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  40,822 × 6</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  40,822 × 7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    date_of_symptom_onset date_of_registry .event_num .report_num sex          n</span>
@@ -130,6 +130,7 @@ name `n` of counts of observations if `data_type = "linelist"`.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"sex"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 40,812 more rows</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 1 more variable: .delay &lt;dbl&gt;</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

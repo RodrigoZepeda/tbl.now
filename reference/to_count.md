@@ -36,22 +36,22 @@ ndata <- tbl_now(denguedat,
 #> ℹ Identified data as linelist-data where each observation is a test.
 
 to_count(ndata)
-#> # A tibble:  8,265 × 6
+#> # A tibble:  8,265 × 7
 #> # Data type: "count"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#>    onset_week   report_week   .event_num .report_num gender       n
-#>    <date>       <date>             <dbl>       <dbl> <chr>    <int>
-#>    [event_date] [report_date]      [...]       [...] [strata] [...]
-#>  1 1990-01-01   1990-01-01             0           0 Female       2
-#>  2 1990-01-01   1990-01-01             0           0 Male         1
-#>  3 1990-01-01   1990-01-08             0           1 Female      13
-#>  4 1990-01-01   1990-01-08             0           1 Male        11
-#>  5 1990-01-01   1990-01-15             0           2 Female      16
-#>  6 1990-01-01   1990-01-15             0           2 Male         7
-#>  7 1990-01-01   1990-01-22             0           3 Female       7
-#>  8 1990-01-01   1990-01-22             0           3 Male         1
-#>  9 1990-01-01   1990-01-29             0           4 Male         1
-#> 10 1990-01-01   1990-02-12             0           6 Male         1
+#>    onset_week   report_week   .event_num .report_num gender       n .delay
+#>    <date>       <date>             <dbl>       <dbl> <chr>    <int>  <dbl>
+#>    [event_date] [report_date]      [...]       [...] [strata] [...]  [...]
+#>  1 1990-01-01   1990-01-01             0           0 Female       2      0
+#>  2 1990-01-01   1990-01-01             0           0 Male         1      0
+#>  3 1990-01-01   1990-01-08             0           1 Female      13      1
+#>  4 1990-01-01   1990-01-08             0           1 Male        11      1
+#>  5 1990-01-01   1990-01-15             0           2 Female      16      2
+#>  6 1990-01-01   1990-01-15             0           2 Male         7      2
+#>  7 1990-01-01   1990-01-22             0           3 Female       7      3
+#>  8 1990-01-01   1990-01-22             0           3 Male         1      3
+#>  9 1990-01-01   1990-01-29             0           4 Male         1      4
+#> 10 1990-01-01   1990-02-12             0           6 Male         1      6
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
@@ -63,13 +63,13 @@ ndata <- tbl_now(covidat,
 event_date = "date_of_symptom_onset",
               report_date = "date_of_registry",
               strata = "sex")
-#> ℹ Identified data as count-data with counts in column `n`.
+#> ℹ Identified data as count-data with counts in column "n".
 #> Warning: 147 row(s) have a `report_date` before `event_date`
 to_count(ndata)
 #> Warning: 147 row(s) have a `report_date` before `event_date`
 #> Warning: 147 row(s) have a `report_date` before `event_date`
 #> Warning: 147 row(s) have a `report_date` before `event_date`
-#> # A tibble:  40,822 × 6
+#> # A tibble:  40,822 × 7
 #> # Data type: "count"
 #> # Frequency: Event: `days` | Report: `days`
 #>    date_of_symptom_onset date_of_registry .event_num .report_num sex          n
@@ -91,5 +91,6 @@ to_count(ndata)
 #> # Strata: "sex"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 40,812 more rows
+#> # ℹ 1 more variable: .delay <dbl>
 
 ```

@@ -40,7 +40,7 @@ a column named `n`</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">infer_data_type</span><span class="op">(</span><span class="va">data</span>, <span class="va">data_type</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">infer_data_type</span><span class="op">(</span><span class="va">data</span>, <span class="va">data_type</span>, <span class="va">case_col</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -54,6 +54,12 @@ a column named `n`</p>
 <dt id="arg-data-type">data_type<a class="anchor" aria-label="anchor" href="#arg-data-type"></a></dt>
 <dd><p>(optional) Character. Either "auto", "linelist" or
 "count".</p></dd>
+
+
+<dt id="arg-case-col">case_col<a class="anchor" aria-label="anchor" href="#arg-case-col"></a></dt>
+<dd><p>(optional) Name of the column with the case counts if
+`data_type` is "count". If `case_col` is specified even if `data_type`
+is "linelist" that name will be used if the `to_count` function is applied.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
