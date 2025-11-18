@@ -1,0 +1,30 @@
+# Exclude all .csv and .rda files
+*.csv
+*.rda
+
+# Exclusions from .Rbuildignore (and others)
+tbl.now.Rproj
+.Renviron
+.Rproj.user
+codecov.yml
+.github/
+_pkgdown.yml
+docs/
+data/
+pkgdown/
+devel/
+vignettes/articles/
+data-raw/
+presentations/
+repomix-output.xml
+man/
+NAMESPACE
+LICENSE
+LICENSE.md
+^\.git$
+.Rbuildignore
+.gitignore
+.repomixignore
+README.md
+README.Rmd
+repomix.config.json

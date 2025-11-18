@@ -208,7 +208,7 @@ infer_data_type <- function(data, data_type, case_col, verbose = FALSE) {
 
     if (any(is.na(n_col))){
       cli::cli_warn(
-        "Some observations in the count column {val {case_col}} contain missing values."
+        "Some observations in the count column {.val {case_col}} contain missing values."
       )
     }
 

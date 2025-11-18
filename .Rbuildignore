@@ -13,3 +13,7 @@
 ^vignettes/articles$
 ^data-raw$
 ^presentations$
+^repomix\.config\.json$
+^\.gitignore$
+^\.repomixignore$
+^repomix-output\.xml$
