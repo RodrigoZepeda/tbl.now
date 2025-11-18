@@ -181,11 +181,11 @@ test_that("`summarise.tbl_now` preserves class when valid", {
   # Summarising linelist data usually aggregates, so we might need a test where
   # the protected columns remain or the resulting structure can be reconstructed.
   # For this simple test, we'll ensure the attributes are copied to the result
-  # using new_tbl_now if all protected columns remain (or are handled).
+  # using tbl_now if all protected columns remain (or are handled).
 
   # In this case, since `data_type` is 'linelist', 'n' is not protected.
   # If we summarize without dropping 'onset_week' and 'report_week', it should work.
-  summarized_valid <- suppressWarnings({ # Suppress warning from new_tbl_now about event/report units
+  summarized_valid <- suppressWarnings({ # Suppress warning from tbl_now about event/report units
     x %>%
       group_by(onset_week, report_week, gender, .event_num, .report_num) %>%
       summarise(max_report = max(report_week), .groups = "drop")

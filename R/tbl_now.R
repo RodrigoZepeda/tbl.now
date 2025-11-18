@@ -118,7 +118,7 @@
 
 #' @rdname tbl_now
 #' @export
-new_tbl_now <- function(data,
+tbl_now <- function(data,
                         event_date,
                         report_date,
                         strata = NULL,
@@ -250,34 +250,4 @@ new_tbl_now <- function(data,
   return(data)
 }
 
-#FIXME: Fix so that it is the same as new_tbl_now
-#' @rdname tbl_now
-#' @export
-tbl_now <- function(data,
-                    event_date,
-                    report_date,
-                    strata = NULL,
-                    covariates = NULL,
-                    is_batched = NULL,
-                    now = NULL,
-                    event_units = "auto",
-                    report_units = "auto",
-                    data_type = "auto",
-                    verbose = TRUE,
-                    ...){
-
-  new_tbl_now(data = data,
-              event_date = event_date,
-              report_date = report_date,
-              strata = strata,
-              covariates = covariates,
-              is_batched = is_batched,
-              now = now,
-              event_units = event_units,
-              report_units = report_units,
-              data_type = data_type,
-              verbose = verbose,
-              ...)
-
-}
 

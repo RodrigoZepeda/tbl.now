@@ -28,6 +28,8 @@
 #'
 #' @param ... Additional arguments (unused)
 #'
+#' @inheritParams is_weekday
+#'
 #'
 #' @return A `tbl_now` or `data.frame` containing all of the effects as new columns.
 #'
@@ -54,7 +56,8 @@ add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALS
                                             ...,
                                             date_col = NULL,
                                             numeric_col = NULL,
-                                            name_prefix = paste0(".", date_col)) {
+                                            name_prefix = paste0(".", date_col),
+                                            weekend_days = c("Sat","Sun")) {
 
   #Do nothing if no effect
   if (is.null(t_effect)){
@@ -113,7 +116,7 @@ add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALS
 
       x <- x %>%
         dplyr::mutate(!!as.symbol(paste0(name_prefix,"_weekend")) :=
-                        as.integer(!is_weekday(!!as.symbol(date_col))))
+                        as.integer(!is_weekday(!!as.symbol(date_col), weekend_days = weekend_days)))
     }
 
     # Add day of the month effect-----
@@ -214,7 +217,9 @@ add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALS
 
 #' @export
 #' @rdname add_temporal_effects
-add_temporal_effects.tbl_now <- function(x, t_effect = NULL, overwrite = FALSE,  ..., date_type = "event_date"){
+add_temporal_effects.tbl_now <- function(x, t_effect = NULL, overwrite = FALSE,  ...,
+                                         date_type = "event_date",
+                                         weekend_days = c("Sat","Sun")){
 
   if (date_type == "event_date"){
     date_col    <- get_event_date(x)

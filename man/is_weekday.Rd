@@ -2,21 +2,36 @@
 % Please edit documentation in R/tbl_now_utils.R
 \name{is_weekday}
 \alias{is_weekday}
-\title{Check whether a date is a weekday vs weekend}
+\title{Check whether a date is a weekday vs weekend (international definition)}
 \usage{
-is_weekday(date)
+is_weekday(date, weekend_days = c("Sat", "Sun"))
 }
 \arguments{
-\item{date}{A date object}
+\item{date}{A Date (or POSIXt) object.}
+
+\item{weekend_days}{A character or numeric vector defining weekend days.
+-Numeric: must be integers in 1-7 corresponding to [lubridate::wday()] when `week_start = 1`.
+-Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
+Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).}
+}
+\value{
+A logical vector: TRUE if weekday, FALSE if weekend.
 }
 \description{
 Function that checks whether a date object is a weekday or weekend.
 }
 \examples{
-is_weekday(as.Date("2020-04-22"))
-is_weekday(as.Date("2020-04-19"))
+is_weekday(as.Date("2020-04-22"))                   # TRUE (Wed)
+is_weekday(as.Date("2020-04-19"))                   # FALSE (Sun)
 
-}
-\references{
-From https://stackoverflow.com/a/60346779/5067372
+# Middle East weekend (Fri - Sat)
+is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri","Sat"))
+
+# Weekend only on Friday
+is_weekday(as.Date("2020-04-17"), weekend_days = "Friday")
+is_weekday(as.Date("2020-04-18"), weekend_days = "Friday")
+
+# Weekend on Sun - Mon (numeric: 7 = Sun, 1 = Mon)
+is_weekday(as.Date("2020-04-20"), weekend_days = c(7, 1))
+
 }

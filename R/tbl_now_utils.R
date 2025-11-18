@@ -32,23 +32,57 @@ attr_default <- function(x, name, default = NULL) {
   if (is.null(val)) default else val
 }
 
-#' Check whether a date is a weekday vs weekend
+#' Check whether a date is a weekday vs weekend (international definition)
 #'
 #' Function that checks whether a date object is a weekday or weekend.
 #'
-#' @param date A date object
+#' @param date A Date (or POSIXt) object.
+#' @param weekend_days A character or numeric vector defining weekend days.
+#'   -Numeric: must be integers in 1-7 corresponding to [lubridate::wday()] when `week_start = 1`.
+#'   -Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
+#'   Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).
+#'
+#'
+#' @return A logical vector: TRUE if weekday, FALSE if weekend.
 #'
 #' @examples
-#' is_weekday(as.Date("2020-04-22"))
-#' is_weekday(as.Date("2020-04-19"))
+#' is_weekday(as.Date("2020-04-22"))                   # TRUE (Wed)
+#' is_weekday(as.Date("2020-04-19"))                   # FALSE (Sun)
 #'
-#' @references
-#' From https://stackoverflow.com/a/60346779/5067372
+#' # Middle East weekend (Fri - Sat)
+#' is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri","Sat"))
+#'
+#' # Weekend only on Friday
+#' is_weekday(as.Date("2020-04-17"), weekend_days = "Friday")
+#' is_weekday(as.Date("2020-04-18"), weekend_days = "Friday")
+#'
+#' # Weekend on Sun - Mon (numeric: 7 = Sun, 1 = Mon)
+#' is_weekday(as.Date("2020-04-20"), weekend_days = c(7, 1))
 #'
 #' @export
-is_weekday <- function(date) {
-  lubridate::wday(date, week_start = 1) < 6
+is_weekday <- function(date, weekend_days = c("Sat", "Sun")) {
+
+  # Convert weekend_days to numeric wday indices
+  weekend_idx <- if (is.numeric(weekend_days)) {
+    as.integer(weekend_days)
+  } else {
+    all_days           <- lubridate::wday(1:7, label = TRUE, abbr = TRUE, week_start = 1)
+    weekend_days_clean <- tolower(substr(weekend_days, 1, 3))
+    day_lookup         <- tolower(substr(as.character(all_days), 1, 3))
+    match(weekend_days_clean, day_lookup)
+  }
+
+  # Invalid weekend specification
+  if (any(is.na(weekend_idx)))
+    cli::cli_abort("Invalid `weekend_days` provided. Must be integer (1 to 7) or day names:{lubridate::wday(1:7, label = TRUE, abbr = TRUE} ")
+
+  # Compute wday with given start-of-week
+  d <- lubridate::wday(date, week_start = 1)
+
+  # TRUE if weekday (not part of weekend)
+  !d %in% weekend_idx
 }
+
 
 # NEED TO IMPROVE IT TO WORK WITH COUNT BY DOING WEIGHTS
 #' #' Summary of a `tbl_now`

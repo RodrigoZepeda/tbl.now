@@ -2,10 +2,9 @@
 % Please edit documentation in R/tbl_now.R
 \name{tbl_now}
 \alias{tbl_now}
-\alias{new_tbl_now}
 \title{Create a `tbl_now` object}
 \usage{
-new_tbl_now(
+tbl_now(
   data,
   event_date,
   report_date,
@@ -19,21 +18,6 @@ new_tbl_now(
   case_col = NULL,
   verbose = TRUE,
   force = FALSE,
-  ...
-)
-
-tbl_now(
-  data,
-  event_date,
-  report_date,
-  strata = NULL,
-  covariates = NULL,
-  is_batched = NULL,
-  now = NULL,
-  event_units = "auto",
-  report_units = "auto",
-  data_type = "auto",
-  verbose = TRUE,
   ...
 )
 }

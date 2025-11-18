@@ -15,7 +15,8 @@ add_temporal_effects(x, t_effect = NULL, overwrite = FALSE, ...)
   ...,
   date_col = NULL,
   numeric_col = NULL,
-  name_prefix = paste0(".", date_col)
+  name_prefix = paste0(".", date_col),
+  weekend_days = c("Sat", "Sun")
 )
 
 \method{add_temporal_effects}{tbl_now}(
@@ -23,7 +24,8 @@ add_temporal_effects(x, t_effect = NULL, overwrite = FALSE, ...)
   t_effect = NULL,
   overwrite = FALSE,
   ...,
-  date_type = "event_date"
+  date_type = "event_date",
+  weekend_days = c("Sat", "Sun")
 )
 }
 \arguments{
@@ -47,6 +49,11 @@ effects. For date-related effects (such as month or day of the week)
 use `date_col`.}
 
 \item{name_prefix}{What preffix to add to the column names}
+
+\item{weekend_days}{A character or numeric vector defining weekend days.
+-Numeric: must be integers in 1-7 corresponding to [lubridate::wday()] when `week_start = 1`.
+-Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
+Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).}
 
 \item{date_type}{Either `event_date` (default) or `report_date`
 to add temporal effects to those columns.}

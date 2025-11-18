@@ -530,7 +530,7 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
     x <- new_grouped_tbl_now(.data, groups = grouping_structure)
   } else {
     # This is an edge case if no groups are actually provided. Then simply return a regular subclass
-    x <- new_tbl_now(data = .data,
+    x <- tbl_now(data = .data,
                      event_date = get_event_date(.data),
                      report_date = get_report_date(.data),
                      strata = get_strata(.data),
@@ -540,7 +540,7 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
                      event_units = get_event_units(.data),
                      report_units = get_event_units(.data),
                      data_type = get_data_type(.data),
-                     #FIXME: Here add the new variables
+                     case_col = get_case_col(.data),
                      verbose = FALSE,
                      force = TRUE)
   }
@@ -561,7 +561,7 @@ ungroup.grouped_tbl_now <- function(x, ...) {
     # Otherwise the tibble is completely ungrouped and we need to reapply custom attributes, but remove grouping
     # This is most simplest done by simply creating a new tibble subclass
     # This is an edge case if no groups are actually provided. Then simply return a regular subclass
-    x <- new_tbl_now(data = tbl,
+    x <- tbl_now(data = tbl,
                      event_date = get_event_date(x),
                      report_date = get_report_date(x),
                      strata = get_strata(x),
@@ -571,7 +571,7 @@ ungroup.grouped_tbl_now <- function(x, ...) {
                      event_units = get_event_units(x),
                      report_units = get_report_units(x),
                      data_type = get_data_type(x),
-                     #FIXME: Here add the new variables
+                     case_col = get_case_col(x),
                      verbose = FALSE,
                      force = TRUE)
   }
@@ -590,7 +590,7 @@ class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_
  summarised_tbl <- dplyr::summarise(.data, ..., .groups = .groups)
 
  result <- tryCatch({
-    new_tbl_now(data = summarised_tbl,
+    tbl_now(data = summarised_tbl,
                 event_date = get_event_date(.data),
                 report_date = get_report_date(.data),
                 strata = get_strata(.data),
@@ -600,7 +600,7 @@ class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_
                 event_units = get_event_units(.data),
                 report_units = get_event_units(.data),
                 data_type = get_data_type(.data),
-                #FIXME: Here add the new variables
+                case_col = get_case_col(.data),
                 verbose = FALSE,
                 force = TRUE)
     },

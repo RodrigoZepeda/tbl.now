@@ -11,7 +11,7 @@
 #' @examples
 #' \dontrun{
 #' data(denguedat)
-#' ndata <- new_tbl_now(denguedat,
+#' ndata <- tbl_now(denguedat,
 #'                           event_date = "onset_week",
 #'                           report_date = "report_week")
 #'
