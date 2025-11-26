@@ -115,8 +115,8 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
   }
 
   # now must be a Date
-  if (!lubridate::is.Date(now) || length(now) != 1) {
-    errors <- c(errors, "Attribute {.val now}  must be a Date object of length 1")
+  if ((!lubridate::is.Date(now) && !is.integer(now)) || length(now) != 1) {
+    errors <- c(errors, "Attribute {.val now}  must be a Date or integer object of length 1")
   }
 
   # "event_units" and "report_units" must be valid option
@@ -182,14 +182,14 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
 
   # === 6. Validate column types ===
   if (!is.null(event_date) && event_date %in% colnames(x)) {
-    if (!lubridate::is.Date(x[[event_date]])) {
-      errors <- c(errors, sprintf("Column '%s' must be of class Date", event_date))
+    if (!lubridate::is.Date(x[[event_date]]) && !is.integer(x[[event_date]])) {
+      errors <- c(errors, sprintf("Column '%s' must be of class Date or integer", event_date))
     }
   }
 
   if (!is.null(report_date) && report_date %in% colnames(x)) {
-    if (!lubridate::is.Date(x[[report_date]])) {
-      errors <- c(errors, sprintf("Column '%s' must be of class Date", report_date))
+    if (!lubridate::is.Date(x[[report_date]])  && !is.integer(x[[report_date]])) {
+      errors <- c(errors, sprintf("Column '%s' must be of class Date or integer", report_date))
     }
   }
 
@@ -332,16 +332,17 @@ tbl_now_reconstruct_internal <- function(data, template){
 
   # Copy over *all* attributes except the data.frame essentials
   attrs      <- attributes(template)
+
   keep_attrs <- attrs[setdiff(names(attrs), c("names", "row.names", "class"))]
 
   # Enforce protected columns
-  protected_cols <- c(get_event_date(data),
-                      get_report_date(data),
-                      get_is_batched(data),
+  protected_cols <- c(get_event_date(template),
+                      get_report_date(template),
+                      get_is_batched(template),
                       ".event_num", ".report_num", ".delay")
 
-  if (!is.null(get_data_type(data)) && grepl("count", get_data_type(data))){
-    protected_cols <- c(protected_cols, get_case_col(data))
+  if (!is.null(get_data_type(template)) && grepl("count", get_data_type(template))){
+    protected_cols <- c(protected_cols, get_case_col(template))
   }
 
   # Check the protected columns and return as data.frame instead
@@ -357,9 +358,9 @@ tbl_now_reconstruct_internal <- function(data, template){
   }
 
   # Update strata if columns were dropped
-  if (!is.null(attrs[["num_strata"]]) && attrs[["num_strata"]] > 0) {
+  if (!is.null(get_num_strata(template)) && get_num_strata(template) > 0) {
     #Get the strata still  here
-    strata <- intersect(attrs[["strata"]], names(data))
+    strata <- intersect(get_strata(template), names(data))
 
     #Reattach
     attr(data, "strata")      <- strata
@@ -367,9 +368,9 @@ tbl_now_reconstruct_internal <- function(data, template){
   }
 
   # Update covariates if columns were dropped
-  if (!is.null(attrs[["num_covariates"]]) && attrs[["num_covariates"]] > 0) {
+  if (!is.null(get_num_covariates(template)) && get_num_covariates(template) > 0) {
     #Get the covariates still  here
-    covariates <- intersect(attrs[["covariates"]], names(data))
+    covariates <- intersect(get_covariates(template), names(data))
 
     #Reattach
     attr(data, "covariates")      <- covariates
@@ -377,9 +378,9 @@ tbl_now_reconstruct_internal <- function(data, template){
   }
 
   # Update temporal effects if columns were dropped
-  if (!is.null(attrs[["temporal_effects"]]) && length(attrs[["temporal_effects"]]) > 0) {
+  if (!is.null(get_temporal_effects(template)) && length(get_temporal_effects(template)) > 0) {
     #Get the temporal effects still  here
-    temporal_effects <- intersect(attrs[["temporal_effects"]], names(data))
+    temporal_effects <- intersect(get_temporal_effects(template), names(data))
 
     #Reattach
     attr(data, "temporal_effects") <- temporal_effects
@@ -387,7 +388,7 @@ tbl_now_reconstruct_internal <- function(data, template){
 
 
   # Re-infer now if rows changed----
-  original_now <- attrs[["now"]]
+  original_now <- get_now(template)
   now <- tryCatch(
     infer_now(
       data,
@@ -403,7 +404,6 @@ tbl_now_reconstruct_internal <- function(data, template){
   }
 
   # Restore class
-  data <- dplyr::as_tibble(data)
   class(data) <- c("tbl_now", class(data))
 
   return(data)
@@ -440,8 +440,19 @@ is_tbl_now <- function(x){
 #' @inheritParams base::subset
 #'
 #' @return A `tbl_now` object or a `data.frame`
+#' @name assign_tbl
+#' @export
+
+#' @rdname assign_tbl
 #' @export
 `[.tbl_now` <- function(x, ...) {
+  out <- NextMethod()
+  tbl_now_reconstruct(out, x)
+}
+
+#' @rdname assign_tbl
+#' @export
+`[.grouped_tbl_now` <- function(x, ...) {
   out <- NextMethod()
   tbl_now_reconstruct(out, x)
 }
@@ -455,8 +466,19 @@ is_tbl_now <- function(x){
 #' @inheritParams base::names
 #'
 #' @return A `tbl_now` object or a `data.frame`
+#' @name names_tbl_now
+#' @export
+
+#' @rdname names_tbl_now
 #' @export
 `names<-.tbl_now` <- function(x, value) {
+  out <- NextMethod()
+  tbl_now_reconstruct(out, x)
+}
+
+#' @rdname names_tbl_now
+#' @export
+`names<-.grouped_tbl_now` <- function(x, value) {
   out <- NextMethod()
   tbl_now_reconstruct(out, x)
 }
@@ -467,8 +489,19 @@ is_tbl_now <- function(x){
 #' @inheritParams base::Extract
 #'
 #' @return A `tbl_now` object or a `data.frame`
+#' @name money_tbl_now
+#' @export
+
+#' @rdname money_tbl_now
 #' @export
 `$<-.tbl_now` <- function(x, name, value) {
+  out <- NextMethod()
+  tbl_now_reconstruct(out, x)
+}
+
+#' @rdname money_tbl_now
+#' @export
+`$<-.grouped_tbl_now` <- function(x, name, value) {
   out <- NextMethod()
   tbl_now_reconstruct(out, x)
 }
@@ -493,24 +526,37 @@ dplyr_reconstruct.tbl_now <- function(data, template) {
   tbl_now_reconstruct(data, template)
 }
 
-#' @importFrom dplyr dplyr_reconstruct
-#' @exportS3Method dplyr::dplyr_reconstruct
-dplyr_reconstruct.grouped_tbl_now <- function(data, template) {
+#' @importFrom dplyr group_by
+#' @exportS3Method dplyr::group_by
+group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_drop_default(.data)) {
 
-  # First reconstruct as tbl_now
-  reconstructed <- tbl_now_reconstruct(data, template)
+  grouped_tbl <- NextMethod()
 
-  # If reconstruction was successful and template was grouped
-  if (is_tbl_now(reconstructed) && dplyr::is_grouped_df(template)) {
-    # Get the grouping structure from template
-    grouping_structure <- dplyr::group_data(template)
-
-    # Recreate the grouped_tbl_now
-    reconstructed <- new_grouped_tbl_now(reconstructed, groups = grouping_structure)
+  if (dplyr::is.grouped_df(grouped_tbl)) {
+    # Extract grouping information from default method
+    grouping_structure <- dplyr::group_data(grouped_tbl)
+    # Restore original attributes and add grouping information
+    x <- new_grouped_tbl_now(.data, groups = grouping_structure)
+  } else {
+    # This is an edge case if no groups are actually provided. Then simply return a regular subclass
+    x <- tbl_now(data = .data,
+                 event_date = get_event_date(.data),
+                 report_date = get_report_date(.data),
+                 strata = get_strata(.data),
+                 covariates = get_covariates(.data),
+                 is_batched = get_is_batched(.data),
+                 now = get_now(.data),
+                 event_units = get_event_units(.data),
+                 report_units = get_event_units(.data),
+                 data_type = get_data_type(.data),
+                 case_col = get_case_col(.data),
+                 verbose = FALSE,
+                 force = TRUE,
+                 warn_non_uniqueness = FALSE)
   }
-
-  reconstructed
+  x
 }
+
 
 #' @importFrom dplyr dplyr_row_slice
 #' @exportS3Method dplyr::dplyr_row_slice
@@ -526,6 +572,22 @@ dplyr_col_modify.grouped_tbl_now  <- function(data, cols) {
   dplyr_reconstruct(out, data)
 }
 
+#' @importFrom dplyr dplyr_reconstruct
+#' @exportS3Method dplyr::dplyr_reconstruct
+dplyr_reconstruct.grouped_tbl_now <- function(data, template) {
+  # First reconstruct as tbl_now
+  reconstructed <- tbl_now_reconstruct(data, template)
+
+  # If reconstruction was successful and template was grouped
+  if (is_tbl_now(reconstructed) && dplyr::is_grouped_df(template)) {
+    reconstructed <- new_grouped_tbl_now(reconstructed, groups =  dplyr::group_data(template))
+  }
+
+  return(reconstructed)
+}
+
+
+
 # Based on https://www.bio-ai.org/blog/extending-tibbles/
 #' Grouped tbl_now
 #'
@@ -534,41 +596,15 @@ dplyr_col_modify.grouped_tbl_now  <- function(data, cols) {
 #' @keywords internal
 new_grouped_tbl_now <- function(x, groups) {
   x <- dplyr::new_grouped_df(x = x, groups = groups, class = c("grouped_tbl_now"))
+
+  #Get name before tbl_df otherwise it gets lost with the methods
+  #see blog (https://www.bio-ai.org/blog/extending-tibbles/)
   tbl_df_location <- grep("tbl_df", class(x), fixed = TRUE)
-  class(x) <- append(class(x), "tbl_now", after = tbl_df_location - 1)
-  x
+  class(x)        <- append(class(x), "tbl_now", after = tbl_df_location - 1)
+
+  return(x)
 }
 
-#' @importFrom dplyr group_by
-#' @exportS3Method dplyr::group_by
-group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_drop_default(.data)) {
-
-  grouped_tbl <- NextMethod()
-
-  if (dplyr::is.grouped_df(grouped_tbl)) {
-    # Extract grouping information from default method
-    grouping_structure <- dplyr::group_data(grouped_tbl)
-    # Restore original attributes and add grouping information
-    x <- new_grouped_tbl_now(.data, groups = grouping_structure)
-  } else {
-    # This is an edge case if no groups are actually provided. Then simply return a regular subclass
-    x <- tbl_now(data = .data,
-                     event_date = get_event_date(.data),
-                     report_date = get_report_date(.data),
-                     strata = get_strata(.data),
-                     covariates = get_covariates(.data),
-                     is_batched = get_is_batched(.data),
-                     now = get_now(.data),
-                     event_units = get_event_units(.data),
-                     report_units = get_event_units(.data),
-                     data_type = get_data_type(.data),
-                     case_col = get_case_col(.data),
-                     verbose = FALSE,
-                     force = TRUE,
-                     warn_non_uniqueness = FALSE)
-  }
-  x
-}
 
 #' @importFrom dplyr ungroup
 #' @exportS3Method dplyr::ungroup
