@@ -5,12 +5,15 @@
 \alias{to_count.tbl_now}
 \title{Transform an object to count data}
 \usage{
-to_count(x, ...)
+to_count(x, to = NULL, ...)
 
-\method{to_count}{tbl_now}(x, ...)
+\method{to_count}{tbl_now}(x, to = NULL, ...)
 }
 \arguments{
 \item{x}{Data to be transformed from `linelist` to count data}
+
+\item{to}{Either `linelist`, `count-incidence` or `count-cumulative`
+the resulting data-type to be created.}
 
 \item{...}{Additional arguments}
 }
@@ -21,6 +24,10 @@ following classes:
 * `tbl_now`: takes a `tbl_now` object and creates a new column with
 name `n` of counts of observations if `data_type = "linelist"`.
 }
+\note{
+`linelist` data cannot be reconstructed from `count-*` data. Tring
+this will throw an error as you cannot un-count aggregated data.
+}
 \examples{
 data(denguedat)
 ndata <- tbl_now(denguedat,
@@ -28,14 +35,16 @@ ndata <- tbl_now(denguedat,
     report_date = "report_week",
     strata = "gender")
 
-to_count(ndata)
+to_count(ndata, to = "count-incidence")
 
 data("covidat")
+suppressWarnings({
 ndata <- tbl_now(covidat,
 event_date = "date_of_symptom_onset",
               report_date = "date_of_registry",
               strata = "sex")
 to_count(ndata)
+})
 
 
 }

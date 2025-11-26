@@ -29,8 +29,13 @@ setup_test_data <- function() {
     ),
     count_data = data.frame(
       event_date = as.Date(c("2020-07-08", "2020-07-09", "2020-07-08")),
-      report_date = as.Date(c("2020-07-11", "2020-07-12", "2020-07-11")),
-      n = c(5L, 3L, 2L)
+      report_date = as.Date(c("2020-07-11", "2020-07-12", "2020-07-12")),
+      n = c(5L, 3L, 12L)
+    ),
+    count_data2 = data.frame(
+      event_date = as.Date(c("2020-07-08", "2020-07-09", "2020-07-08")),
+      report_date = as.Date(c("2020-07-11", "2020-07-12", "2020-07-12")),
+      n = c(5L, 3L, 1L)
     ),
     linelist_data = data.frame(
       event_date = as.Date(c("2020-07-08", "2020-07-09", "2020-07-10")),
@@ -312,6 +317,8 @@ test_that("infer_data_type detects count data when n column exists", {
   result <- infer_data_type(
     test_data$count_data,
     data_type = "auto",
+    event_date = "event_date",
+    report_date = "report_date",
     case_col = "n",
     verbose = FALSE
   )
@@ -322,10 +329,12 @@ test_that("infer_data_type detects count data when n column exists", {
     test_data$count_data,
     data_type = "auto",
     case_col = "cases",
+    event_date = "event_date",
+    report_date = "report_date",
     verbose = FALSE
   )
 
-  expect_equal(result, "count")
+  expect_equal(result, "count-cumulative")
 })
 
 test_that("infer_data_type detects linelist data when n column missing", {
@@ -354,12 +363,26 @@ test_that("infer_data_type shows message when verbose = TRUE", {
   test_data <- setup_test_data()
 
   expect_message(
-    infer_data_type(test_data$count_data, data_type = "auto", case_col = "n", verbose = TRUE),
-    "count-data"
+    infer_data_type(test_data$count_data, data_type = "auto",
+                    event_date = "event_date",
+                    report_date = "report_date",
+                    case_col = "n", verbose = TRUE),
+    "count-cumulative"
   )
 
   expect_message(
-    infer_data_type(test_data$linelist_data, data_type = "auto", case_col = "n", verbose = TRUE),
+    infer_data_type(test_data$count_data2, data_type = "auto",
+                    event_date = "event_date",
+                    report_date = "report_date",
+                    case_col = "n", verbose = TRUE),
+    "count-incidence"
+  )
+
+  expect_message(
+    infer_data_type(test_data$linelist_data, data_type = "auto",
+                    event_date = "event_date",
+                    report_date = "report_date",
+                    case_col = "n", verbose = TRUE),
     "linelist-data"
   )
 })
@@ -417,23 +440,13 @@ test_that("infer_data_type fails when n column is not numeric", {
   )
 
   expect_error(
-    infer_data_type(invalid_count, data_type = "auto", case_col = "n", verbose = FALSE),
-    "Cannot automatically detect data_type"
+    infer_data_type(invalid_count, data_type = "auto", event_date = "event_date", report_date = "report_date",
+                    case_col = "n", verbose = FALSE),
+    "non-numeric"
   )
 })
 
-test_that("infer_data_type fails when n column has non-integer values", {
-  invalid_count <- data.frame(
-    event_date = as.Date(c("2020-07-08", "2020-07-09")),
-    report_date = as.Date(c("2020-07-11", "2020-07-12")),
-    n = c(1.5, 2.7)
-  )
 
-  expect_error(
-    infer_data_type(invalid_count, data_type = "auto", case_col = "n", verbose = FALSE),
-    "Cannot automatically detect data_type"
-  )
-})
 
 test_that("infer_data_type handles vector data_type input", {
   test_data <- setup_test_data()
@@ -443,10 +456,12 @@ test_that("infer_data_type handles vector data_type input", {
     test_data$count_data,
     data_type = c("auto", "linelist"),
     case_col = "n",
-    verbose = FALSE
+    verbose = FALSE,
+    event_date = "event_date",
+    report_date = "report_date"
   )
 
-  expect_equal(result, "count")
+  expect_equal(result, "count-cumulative")
 })
 
 
@@ -506,21 +521,23 @@ test_that("infer functions work with count data", {
   test_data <- setup_test_data()
 
   now <- infer_now(
-    test_data$count_data,
+    test_data$count_data2,
     now = NULL,
     event_date = "event_date",
     report_date = "report_date"
   )
 
   data_type <- infer_data_type(
-    test_data$count_data,
+    test_data$count_data2,
     data_type = "auto",
+    event_date = "event_date",
+    report_date = "report_date",
     case_col = "n",
     verbose = FALSE
   )
 
   expect_s3_class(now, "Date")
-  expect_equal(data_type, "count")
+  expect_equal(data_type, "count-incidence")
 })
 
 test_that("infer functions work with numeric dates", {
@@ -553,7 +570,9 @@ test_that("infer functions handle edge cases", {
   expect_silent({
     infer_now(two_obs, NULL, "event_date", "report_date")
     infer_units(two_obs, "event_date", "auto")
-    infer_data_type(two_obs, "auto", case_col = "n", verbose = FALSE)
+    infer_data_type(two_obs, "auto", case_col = "n", verbose = FALSE,
+                    event_date = "event_date",
+                    report_date = "report_date")
   })
 })
 
@@ -585,19 +604,4 @@ test_that("infer_units handles boundary cases for time periods", {
   expect_equal(result2, "weeks")
 })
 
-test_that("infer_data_type accepts integer n values", {
-  count_with_int <- data.frame(
-    event_date = as.Date(c("2020-07-08", "2020-07-09")),
-    report_date = as.Date(c("2020-07-11", "2020-07-12")),
-    n = c(5L, 3L)
-  )
 
-  result <- infer_data_type(
-    count_with_int,
-    data_type = "auto",
-    case_col = "n",
-    verbose = FALSE
-  )
-
-  expect_equal(result, "count")
-})

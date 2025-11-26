@@ -2,7 +2,7 @@
 % Please edit documentation in R/tbl_now.R
 \name{tbl_now}
 \alias{tbl_now}
-\title{Create a `tbl_now` object}
+\title{Create a \code{tbl_now} object}
 \usage{
 tbl_now(
   data,
@@ -16,38 +16,40 @@ tbl_now(
   report_units = "auto",
   data_type = "auto",
   case_col = NULL,
+  t_effects = NULL,
   verbose = TRUE,
   force = FALSE,
+  warn_non_uniqueness = TRUE,
   ...
 )
 }
 \arguments{
-\item{data}{A `data.frame` to be converted.}
+\item{data}{A \code{data.frame} to be converted.}
 
 \item{event_date}{Character. The name of the column containing the event date.}
 
 \item{report_date}{Character. The name of the column containing the report date.}
 
-\item{strata}{(optional) Character vector or `NULL` (default). Name of different variables
+\item{strata}{(optional) Character vector or \code{NULL} (default). Name of different variables
 (column names) in strata. Strata correspond to variables that are of interest
 by themselves. For example if it is of interest to generate nowcasts by gender then
-`gender` is a `strata`.}
+\code{gender} is a \code{strata}.}
 
-\item{covariates}{(optional) Character vector or `NULL` (default). Name of different variables
+\item{covariates}{(optional) Character vector or \code{NULL} (default). Name of different variables
 (column names) that influence the nowcast but are not strata.
 For example precipitation might influence a dengue nowcast but in general it
 is not of interest to generate nowcasts by precipitation levels.}
 
-\item{is_batched}{(optional) Character or `NULL` (default). The name of a column containing either
-`TRUE` or `FALSE` indicating whether the `report_date` is correctly specified
-or corresponds to a `batch` and thus is censored. In other words, if the
-`report_date` is accurately measured set `report_date = TRUE` but if
-the `report_date` corresponds to an error and is only an upper bound of
-the real, idealized, report date set `is_batched = TRUE`.}
+\item{is_batched}{(optional) Character or \code{NULL} (default). The name of a column containing either
+\code{TRUE} or \code{FALSE} indicating whether the \code{report_date} is correctly specified
+or corresponds to a \code{batch} and thus is censored. In other words, if the
+\code{report_date} is accurately measured set \code{report_date = TRUE} but if
+the \code{report_date} corresponds to an error and is only an upper bound of
+the real, idealized, report date set \code{is_batched = TRUE}.}
 
-\item{now}{(optional) Date or `NULL` (default). The date that is considered the `now` of the
-nowcast. If no `now` is given then the function automatically uses the last
-`event_date`.}
+\item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
+nowcast. If no \code{now} is given then the function automatically uses the last
+\code{event_date}.}
 
 \item{event_units}{(optional) Character. Either "auto" (default), "days",
 "weeks", "months", "years" or "numeric".}
@@ -56,48 +58,136 @@ nowcast. If no `now` is given then the function automatically uses the last
 "weeks", "months", "years" or "numeric".}
 
 \item{data_type}{(optional) Character. Either "auto", "linelist" or
-"count".}
+"count-incidence" or "count-cumulative". See section below for
+an explanation on data types.}
 
 \item{case_col}{(optional) Name of the column with the case counts if
-`data_type` is "count". If `case_col` is specified even if `data_type`
-is "linelist" that name will be used if the `to_count` function is applied.}
+\code{data_type} is "count". If \code{case_col} is specified even if \code{data_type}
+is "linelist" that name will be used if the \code{to_count} function is applied.}
 
-\item{verbose}{(optional) Logical. Whether to throw a message. Default = `TRUE`.}
+\item{t_effects}{(optional) Either \code{NULL} (default), a \code{\link[=temporal_effects]{temporal_effects()}} object
+or a vector with the names of the columns containing the temporal effects.}
+
+\item{verbose}{(optional) Logical. Whether to throw a message. Default = \code{TRUE}.}
 
 \item{force}{(optional) Logical. Whether to force computation overwriting pre-existing variables.
-Default = `FALSE`.}
+Default = \code{FALSE}.}
+
+\item{warn_non_uniqueness}{(optional) Logical. Whether to throw a warning if data
+has multiple observations for same event and report date (conditional on covariates
+and strata)}
 
 \item{...}{Additional metadata to be stored as attributes.}
 }
 \value{
-An object of class `tbl_now`.
+An object of class \code{tbl_now}.
 }
 \description{
-A special `data.frame` class that includes information for the nowcast.
+A special \code{data.frame} class that includes information for the nowcast.
 See the Attributes section for more information.
 }
 \section{Attributes}{
 
 
-The following attributes are part of a `tbl_now` and are validated
-by the [validate_tbl_now()] function:
+The following attributes are part of a \code{tbl_now} and are validated
+by the \code{\link[=validate_tbl_now]{validate_tbl_now()}} function:
 
 \describe{
-  \item{event_date}{Name of the column refering to the event of interest.}
-  \item{report_date}{Name of the column refering to when the event of interest was reported.}
-  \item{strata}{Names of the columns corresponding to the strata (for modelling).}
-  \item{num_strata}{Number of strata. Corresponds to `length(strata)`.}
-  \item{covariates}{Names of the columns corresponding to covariates (for modelling).}
-  \item{num_covariates}{Number of covariates Corresponds to `length(covariates)`.}
-  \item{now}{Date of the `now` for a nowcast.}
-  \item{is_batched}{Column indicating whether the measurement is noisy (only upper bound) or not.}
-  \item{event_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `event_date`}
-  \item{report_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `report_date`}
-  \item{repot_num}{Column where the `report_date` was transformed to numeric values}
-  \item{event_num}{Column where the `event_date` was transformed to numeric values}
-  \item{data_type}{Either `linelist` or `count` depending on whether it is linelist data
-  or count data}
+\item{event_date}{Name of the column refering to the event of interest.}
+\item{report_date}{Name of the column refering to when the event of interest was reported.}
+\item{strata}{Names of the columns corresponding to the strata (for modelling).}
+\item{num_strata}{Number of strata. Corresponds to \code{length(strata)}.}
+\item{covariates}{Names of the columns corresponding to covariates (for modelling).}
+\item{num_covariates}{Number of covariates Corresponds to \code{length(covariates)}.}
+\item{now}{Date of the \code{now} for a nowcast.}
+\item{is_batched}{Column indicating whether the measurement is noisy (only upper bound) or not.}
+\item{event_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}. Corresponds to the units of \code{event_date}}
+\item{report_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}. Corresponds to the units of \code{report_date}}
+\item{repot_num}{Column where the \code{report_date} was transformed to numeric values}
+\item{event_num}{Column where the \code{event_date} was transformed to numeric values}
+\item{data_type}{Either \code{linelist} or \code{count} depending on whether it is linelist data
+or count data}
 }
+}
+
+\section{Data types}{
+
+The following data-types are admitted at \code{tbl_now} objects.
+
+\emph{Linelist}
+
+Each row is an individual that was reported at \code{report_date} as happening at \code{event_date}.
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{df <- data.frame(
+ patient     = 1:6,
+ event_date  = c(rep(as.Date("2020/09/12"), 3),
+                 rep(as.Date("2020/09/13"), 3)),
+ report_date = c(as.Date("2020/09/12"),
+                 as.Date("2020/09/13"),
+                 as.Date("2020/09/14"),
+                 as.Date("2020/09/13"),
+                 as.Date("2020/09/14"),
+                 as.Date("2020/09/15")))
+print(df)
+#>   patient event_date report_date
+#> 1       1 2020-09-12  2020-09-12
+#> 2       2 2020-09-12  2020-09-13
+#> 3       3 2020-09-12  2020-09-14
+#> 4       4 2020-09-13  2020-09-13
+#> 5       5 2020-09-13  2020-09-14
+#> 6       6 2020-09-13  2020-09-15
+}\if{html}{\out{</div>}}
+
+\emph{Count-incidence}
+
+Each \code{report_date}-\code{event_date} combination contains the total number of
+cases observed \emph{exactly} at \code{report_date} for \code{event_date}.
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{df <- data.frame(
+ n           = c(7, 1, 9, 5, 0, 2),
+ event_date  = c(rep(as.Date("2020/09/12"), 3),
+                 rep(as.Date("2020/09/13"), 3)),
+ report_date = c(as.Date("2020/09/12"),
+                 as.Date("2020/09/13"),
+                 as.Date("2020/09/14"),
+                 as.Date("2020/09/13"),
+                 as.Date("2020/09/14"),
+                 as.Date("2020/09/15")))
+print(df)
+#>   n event_date report_date
+#> 1 7 2020-09-12  2020-09-12
+#> 2 1 2020-09-12  2020-09-13
+#> 3 9 2020-09-12  2020-09-14
+#> 4 5 2020-09-13  2020-09-13
+#> 5 0 2020-09-13  2020-09-14
+#> 6 2 2020-09-13  2020-09-15
+}\if{html}{\out{</div>}}
+
+\emph{Count-cumulative}
+
+Each \code{report_date}-\code{event_date} combination contains the total number of
+cases observed up until \code{report_date} for \code{event_date}. The most recent
+\code{report_date} contains the best estimation of cases happening at \code{event_date}.
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{df <- data.frame(
+ n           = c(1,5, 8, 2, 2, 4),
+ event_date  = c(rep(as.Date("2020/09/12"), 3),
+                 rep(as.Date("2020/09/13"), 3)),
+ report_date = c(as.Date("2020/09/12"),
+                 as.Date("2020/09/13"),
+                 as.Date("2020/09/14"),
+                 as.Date("2020/09/13"),
+                 as.Date("2020/09/14"),
+                 as.Date("2020/09/15")))
+print(df)
+#>   n event_date report_date
+#> 1 1 2020-09-12  2020-09-12
+#> 2 5 2020-09-12  2020-09-13
+#> 3 8 2020-09-12  2020-09-14
+#> 4 2 2020-09-13  2020-09-13
+#> 5 2 2020-09-13  2020-09-14
+#> 6 4 2020-09-13  2020-09-15
+}\if{html}{\out{</div>}}
 }
 
 \examples{

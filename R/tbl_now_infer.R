@@ -175,7 +175,8 @@ infer_units <- function(data, date_column, date_units) {
 #' @return Whether the data is `count` or `linelist`
 #'
 #' @keywords internal
-infer_data_type <- function(data, data_type, case_col, verbose = FALSE) {
+infer_data_type <- function(data, data_type, event_date, report_date, strata = NULL,
+                            is_batched = NULL, case_col = NULL, verbose = FALSE) {
 
   if (length(case_col) > 1){
     cli::cli_abort(
@@ -191,22 +192,50 @@ infer_data_type <- function(data, data_type, case_col, verbose = FALSE) {
 
   # Check that there is no column `n` if linedata and that there is if counts
   if (data_type == "auto" && !is.null(case_col) &&  (case_col %in% colnames(data))) {
-    data_type <- "count"
 
-    #Check that `n` column is really an integer
-    n_col <- data %>% dplyr::distinct(!!as.symbol(case_col)) %>% dplyr::pull()
-    if (!is.numeric(n_col) || any(ceiling(n_col) != n_col, na.rm = TRUE)){
-      cli::cli_abort(
-        paste0(
-          "Cannot automatically detect data_type. Data has a column named {.val {case_col}}",
-          "which does not seem to be count data (is not an integer).",
-          " Please set the {.code data_type} argument to either {.val count}",
-          " or {.val linelist}."
-        )
+    #Check that the data is different
+    distinct_data <- data %>%
+      dplyr::distinct_at(c(event_date, report_date, strata, is_batched)) %>%
+      nrow()
+
+    if (distinct_data != nrow(data)){
+      cli::cli_warn(
+        "Cannot accurately infer the data-type when rows are repeated across event and report dates"
       )
     }
 
-    if (any(is.na(n_col))){
+    #Check that data should be always increasing by strata, event date, report date
+    #for that purpose get the differences
+    summarized_difs <- data %>%
+      dplyr::group_by_at(c(event_date, strata, is_batched)) %>%
+      dplyr::arrange(!!as.symbol(report_date)) %>%
+      dplyr::mutate(!!as.symbol("difference") := !!as.symbol(case_col) - dplyr::lag(!!as.symbol(case_col))) %>%
+      dplyr::filter(!is.na(!!as.symbol("difference"))) %>%
+      dplyr::filter(!!as.symbol("difference") < 0) %>%
+      nrow()
+
+    if (summarized_difs > 0){
+      data_type <- "count-incidence"
+    } else {
+      data_type <- "count-cumulative"
+    }
+
+    # #Check that `n` column is really an integer
+
+    # if (!is.numeric(n_col) || any(ceiling(n_col) != n_col, na.rm = TRUE)){
+    #   cli::cli_abort(
+    #     paste0(
+    #       "Cannot automatically detect data_type. Data has a column named {.val {case_col}}",
+    #       "which does not seem to be count data (is not an integer).",
+    #       " Please set the {.code data_type} argument to either {.val count}",
+    #       " or {.val linelist}."
+    #     )
+    #   )
+    # }
+
+    #Look for missing values
+    n_col <- data %>% dplyr::filter(is.na(!!as.symbol(case_col))) %>% nrow()
+    if (n_col > 0){
       cli::cli_warn(
         "Some observations in the count column {.val {case_col}} contain missing values."
       )
@@ -215,7 +244,7 @@ infer_data_type <- function(data, data_type, case_col, verbose = FALSE) {
     if (verbose) {
       cli::cli_alert_info(
         paste0(
-          "Identified data as count-data with counts in column {.val {case_col}}."
+          "Identified data as {data_type} with counts in column {.val {case_col}}."
         )
       )
     }
@@ -235,10 +264,10 @@ infer_data_type <- function(data, data_type, case_col, verbose = FALSE) {
       paste0(
         "Linelist data contains a column named {.val {case_col}} which will be overwritten.",
         " If you are working with count-data set ",
-        "{.code data_type = {.val count}}"
+        "{.code data_type = {.val count-incidence}} or {.code data_type = {.val count-cumulative}}"
       )
     )
-  } else if (data_type == "count" && !is.null(case_col) && !(case_col %in% colnames(data))) {
+  } else if (grepl("count", data_type) && !is.null(case_col) && !(case_col %in% colnames(data))) {
     cli::cli_abort(
       paste0(
         "Count data should have a column named {.val {case_col}} with the number ",

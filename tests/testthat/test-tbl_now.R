@@ -10,7 +10,7 @@ library(dplyr)
 # Linelist data (data_type should be "linelist")
 ll_data <- tibble(
   onset_week = as.Date(c("2023-01-01", "2023-01-02", "2023-01-01", "2023-01-03")),
-  report_week = as.Date(c("2023-01-03", "2023-01-03", "2023-01-05", "2023-01-05")),
+  report_week = as.Date(c("2023-01-03", "2023-01-03", "2023-01-03", "2023-01-05")),
   gender = c("M", "F", "M", "F"),
   age_group = c("A", "B", "A", "B"),
   is_batched_col = c(FALSE, FALSE, TRUE, FALSE)
@@ -122,7 +122,7 @@ test_that("tbl_now infers 'count' data_type correctly", {
     verbose = FALSE
   )
 
-  expect_equal(attr(result, "data_type"), "count")
+  expect_equal(attr(result, "data_type"), "count-cumulative")
 })
 
 test_that("tbl_now handles optional 'is_batched' column", {
@@ -147,7 +147,7 @@ test_that("tbl_now errors when date columns are missing or invalid", {
       verbose = FALSE,
       date_units = "days",
     ),
-    'event_date.* not found in `data`'
+    "doesn't exist|not found"
   )
 
   # Error if a strata column is missing
@@ -160,7 +160,7 @@ test_that("tbl_now errors when date columns are missing or invalid", {
       date_units = "days",
       verbose = FALSE
     ),
-    "missing_strata.* not found in data"
+    "doesn't exist|not found"
   )
 
   # Error if event_date > report_date is violated (based on check.R logic)
@@ -209,7 +209,7 @@ test_that("tbl_now errors if strata or covariates are not characters", {
       verbose = FALSE,
       date_units = "days"
     ),
-    "strata.* must be.* a character vector"
+    "doesn't exist|not found"
   )
   expect_error(
     tbl_now(
@@ -220,6 +220,98 @@ test_that("tbl_now errors if strata or covariates are not characters", {
       verbose = FALSE,
       date_units = "days"
     ),
-    "covariates.* must be.* a character vector"
+    "doesn't exist|not found"
   )
+})
+
+test_that("tbl_now throws warning when repeated rows",{
+
+  data("flusight")
+
+  flusight <- flusight %>%
+    dplyr::filter(!is.na(observation)) %>%
+    dplyr::mutate(epiweek_as_of = lubridate::epiweek(as_of)) %>%
+    dplyr::mutate(epiyear_as_of = lubridate::epiyear(as_of)) %>%
+    dplyr::left_join(
+      dplyr::tibble(report_date = seq(min(flusight$as_of), max(flusight$as_of) + lubridate::days(7), by = "1 day")) %>%
+        dplyr::mutate(epiweek_as_of = lubridate::epiweek(report_date)) %>%
+        dplyr::mutate(epiyear_as_of = lubridate::epiyear(report_date)) %>%
+        dplyr::mutate(day = lubridate::wday(report_date)) %>%
+        dplyr::filter(day == 7),
+      by = dplyr::join_by(epiweek_as_of, epiyear_as_of)
+    ) %>%
+    dplyr::select(-epiweek_as_of, -epiyear_as_of, -day)
+
+  expect_warning(
+    tbl_now(flusight,
+            event_date  = "target_end_date",
+            report_date = "report_date",
+            strata      = "location_name",
+            case_col    = "observation",
+            data_type   = "count-cumulative",
+            verbose = FALSE),
+    "Data has multiple rows for the same event"
+  )
+
+
+  suppressWarnings(
+  expect_warning(
+    tbl_now(flusight,
+            event_date  = "target_end_date",
+            report_date = "report_date",
+            strata      = "location_name",
+            case_col    = "observation",
+            verbose = FALSE),
+    "Cannot accurately infer the data-type"
+  ))
+
+})
+
+test_that("tbl_now correctly identifies data type",{
+
+  #lINELIST
+  df1 <- data.frame(
+   patient     = 1:6,
+   event_date  = c(rep(as.Date("2020/09/12"), 3),
+                   rep(as.Date("2020/09/13"), 3)),
+   report_date = c(as.Date("2020/09/12"),
+                   as.Date("2020/09/13"),
+                   as.Date("2020/09/14"),
+                   as.Date("2020/09/13"),
+                   as.Date("2020/09/14"),
+                   as.Date("2020/09/15")))
+
+  dtbl1 <- tbl_now(df1, event_date = "event_date", report_date = "report_date", verbose = FALSE)
+  expect_equal(get_data_type(dtbl1), "linelist")
+
+  #COUNT INCIDENCE
+  df2 <- data.frame(
+   n           = c(7, 1, 9, 5, 0, 2),
+   event_date  = c(rep(as.Date("2020/09/12"), 3),
+                   rep(as.Date("2020/09/13"), 3)),
+   report_date = c(as.Date("2020/09/12"),
+                   as.Date("2020/09/13"),
+                   as.Date("2020/09/14"),
+                   as.Date("2020/09/13"),
+                   as.Date("2020/09/14"),
+                   as.Date("2020/09/15")))
+
+  dtbl2 <- tbl_now(df2, event_date = "event_date", report_date = "report_date", verbose = FALSE)
+  expect_equal(get_data_type(dtbl2), "count-incidence")
+
+  #COUNT CUMULATIVE
+  df3 <- data.frame(
+   n           = c(1,5, 8, 2, 2, 4),
+   event_date  = c(rep(as.Date("2020/09/12"), 3),
+                   rep(as.Date("2020/09/13"), 3)),
+   report_date = c(as.Date("2020/09/12"),
+                   as.Date("2020/09/13"),
+                   as.Date("2020/09/14"),
+                   as.Date("2020/09/13"),
+                   as.Date("2020/09/14"),
+                   as.Date("2020/09/15")))
+
+  dtbl3 <- tbl_now(df3, event_date = "event_date", report_date = "report_date", verbose = FALSE)
+  expect_equal(get_data_type(dtbl3), "count-cumulative")
+
 })

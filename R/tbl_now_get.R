@@ -4,7 +4,51 @@
 #' Each function returns a specific attribute (e.g. event date, strata, covariates, etc.).
 #'
 #' @param x A `tbl_now` object.
+#'
 #' @return The requested attribute (character, date, logical, etc.).
+#'
+#' @examples
+#' data(denguedat)
+#' ndata <- tbl_now(denguedat,
+#'     event_date = "onset_week",
+#'     report_date = "report_week",
+#'     strata = "gender",
+#'     t_effects = temporal_effects(month_of_year = TRUE),
+#'     verbose = FALSE)
+#'
+#' #Get the event date
+#' get_event_date(ndata)
+#'
+#' #Get the report date
+#' get_report_date(ndata)
+#'
+#' #Get strata
+#' get_strata(ndata)
+#'
+#' #Get covariates
+#' get_covariates(ndata)
+#'
+#' #Get is batched
+#' get_is_batched(ndata)
+#'
+#' #Get the now
+#' get_now(ndata)
+#'
+#' #Get the report units
+#' get_report_units(ndata)
+#'
+#' #Get the event units
+#' get_event_units(ndata)
+#'
+#' #Get the data type
+#' get_data_type(ndata)
+#'
+#' #Get the column with cases
+#' get_case_col(ndata)
+#'
+#' #Get temporal effects
+#' get_temporal_effects(ndata)
+#'
 #' @name nowcast_data_getters
 NULL
 

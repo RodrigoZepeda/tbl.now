@@ -9,11 +9,11 @@
 #' @return A `tbl_now` object with updated attributes
 #'
 #' @examples
-#' \dontrun{
 #' data(denguedat)
 #' ndata <- tbl_now(denguedat,
-#'                           event_date = "onset_week",
-#'                           report_date = "report_week")
+#'                  event_date = "onset_week",
+#'                  report_date = "report_week",
+#'                  verbose = FALSE)
 #'
 #' # Change the event_date column to a different date column
 #' ndata$new_onset_week <- ndata$onset_week - lubridate::days(1)
@@ -45,19 +45,19 @@
 #' ndata
 #'
 #' # Remove some covariates
-#' ndata <- remove_covariates(ndata, "temperature")
+#' ndata <- remove_covariate(ndata, "temperature")
 #' ndata
 #'
 #' # Add covariates
-#' ndata <- add_covariates(ndata, "temperature")
+#' ndata <- add_covariate(ndata, "temperature")
 #' ndata
 #'
 #' # Change now
 #' ndata <- change_now(ndata, as.Date("2025-01-01"))
 #' ndata
-#' }
 #'
 #' @name change
+#' @seealso [add_temporal_effects()]
 NULL
 
 #' @rdname change
@@ -274,3 +274,36 @@ change_now <- function(x, value) {
 
   x
 }
+
+#' @rdname change
+#' @export
+replace_temporal_effects <- function(x, value) {
+
+  if (!inherits(x, "tbl_now")) {
+    cli::cli_abort("{.arg x} must be a {.code tbl_now} object")
+  }
+
+  if (!is.null(value) && S7::S7_inherits(value, temporal_effects)) {
+    cli::cli_abort("{.arg value} must be {.val NULL} or a `temporal_effects()`")
+  }
+
+  #Get the columns to remove
+  cols_to_remove <- get_temporal_effects(x)
+  x <- x %>% dplyr::select(-dplyr::one_of(cols_to_remove))
+  attr(x, "temporal_effects") <- NULL
+
+  if (!is.null(value)){
+    x <- add_temporal_effects(x, t_effects = TRUE, overwrite = TRUE)
+  }
+
+  x
+}
+
+#' @rdname change
+#' @export
+remove_temporal_effects <- function(x) {
+
+  #Get the strata that is not value
+  replace_temporal_effects(x, value = NULL)
+}
+

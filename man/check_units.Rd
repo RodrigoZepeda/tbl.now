@@ -7,7 +7,7 @@
 check_units(data, date_units)
 }
 \arguments{
-\item{data}{A `data.frame` to be converted.}
+\item{data}{A \code{data.frame} to be converted.}
 }
 \value{
 (invisible) `TRUE` if the date_units are valid or NULL

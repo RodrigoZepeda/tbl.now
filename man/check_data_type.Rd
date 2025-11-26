@@ -8,7 +8,8 @@ check_data_type(data_type)
 }
 \arguments{
 \item{data_type}{(optional) Character. Either "auto", "linelist" or
-"count".}
+"count-incidence" or "count-cumulative". See section below for
+an explanation on data types.}
 }
 \value{
 `TRUE` (invisible) if the data_type is one of the valid

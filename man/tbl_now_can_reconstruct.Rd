@@ -7,7 +7,7 @@
 tbl_now_can_reconstruct(data)
 }
 \arguments{
-\item{data}{A `data.frame` to be converted.}
+\item{data}{A \code{data.frame} to be converted.}
 }
 \value{
 A boolean logical (`TRUE` or `FALSE`)

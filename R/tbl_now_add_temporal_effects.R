@@ -18,7 +18,7 @@
 #' @param date_type Either `event_date` (default) or `report_date`
 #' to add temporal effects to those columns.
 #'
-#' @param t_effect A [temporal_effects()] object codifying the
+#' @param t_effects A [temporal_effects()] object codifying the
 #' temporal effects to be used.
 #'
 #' @param name_prefix What preffix to add to the column names
@@ -43,16 +43,16 @@
 #'     strata = "gender")
 #'
 #' # Add an effect for epidemiological week
-#' add_temporal_effects(disease_data, t_effect = temporal_effects(week_of_year = TRUE))
+#' add_temporal_effects(disease_data, t_effects= temporal_effects(week_of_year = TRUE))
 #' @name add_temporal_effects
 #' @export
-add_temporal_effects <- function(x, t_effect = NULL, overwrite = FALSE, ...) {
+add_temporal_effects <- function(x, t_effects= NULL, overwrite = FALSE, ...) {
   UseMethod("add_temporal_effects")
 }
 
 #' @export
 #' @rdname add_temporal_effects
-add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALSE,
+add_temporal_effects.data.frame <- function(x, t_effects= NULL, overwrite = FALSE,
                                             ...,
                                             date_col = NULL,
                                             numeric_col = NULL,
@@ -60,14 +60,14 @@ add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALS
                                             weekend_days = c("Sat","Sun")) {
 
   #Do nothing if no effect
-  if (is.null(t_effect)){
+  if (is.null(t_effects)){
     return(x)
   }
 
   #Check the class
-  if (!S7::S7_inherits(t_effect, class = temporal_effects)){
+  if (!S7::S7_inherits(t_effects, class = temporal_effects)){
     cli::cli_abort(
-      "`t_effect` should be a {.code t_effect} object. Use `temporal_effects` to create it."
+      "`t_effects` should be a {.code temporal_effects} object. Use `temporal_effects` to create it."
     )
   }
 
@@ -90,9 +90,9 @@ add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALS
     dplyr::pull(!!as.symbol(date_col))
 
   # Add day of the week effect-----
-  if (!is.null(t_effect)) {
+  if (!is.null(t_effects)) {
 
-    if (t_effect@"day_of_week" & !is.null(date_col)) {
+    if (t_effects@"day_of_week" & !is.null(date_col)) {
 
       if (paste0(name_prefix,"_day_of_week") %in% colnames(x) && !overwrite){
         cli::cli_abort(
@@ -106,7 +106,7 @@ add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALS
     }
 
     # Add weekend effect-----
-    if (t_effect@weekend & !is.null(date_col)) {
+    if (t_effects@weekend & !is.null(date_col)) {
 
       if (paste0(name_prefix,"_weekend") %in% colnames(x) && !overwrite){
         cli::cli_abort(
@@ -120,7 +120,7 @@ add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALS
     }
 
     # Add day of the month effect-----
-    if (t_effect@day_of_month & !is.null(date_col)) {
+    if (t_effects@day_of_month & !is.null(date_col)) {
 
       if (paste0(name_prefix,"_day_of_month") %in% colnames(x) && !overwrite){
         cli::cli_abort(
@@ -134,7 +134,7 @@ add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALS
     }
 
     # Add month effect (centered at current month = 1)-----
-    if (t_effect@month_of_year & !is.null(date_col)) {
+    if (t_effects@month_of_year & !is.null(date_col)) {
 
       if (paste0(name_prefix,"_month_of_year") %in% colnames(x) && !overwrite){
         cli::cli_abort(
@@ -151,7 +151,7 @@ add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALS
     }
 
     # Add epiweek effect (centered at current week = 1 | week 53 that almost never happens is collapsed to January)-----
-    if (t_effect@week_of_year & !is.null(date_col)) {
+    if (t_effects@week_of_year & !is.null(date_col)) {
 
       if (paste0(name_prefix,"_week_of_year") %in% colnames(x) && !overwrite){
         cli::cli_abort(
@@ -168,9 +168,9 @@ add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALS
     }
 
     # Add seasons-----
-    if (!is.null(t_effect@seasons) & length(t_effect@seasons) > 0 & !is.null(numeric_col)) {
+    if (!is.null(t_effects@seasons) & length(t_effects@seasons) > 0 & !is.null(numeric_col)) {
       #For each season add a column
-      for (m in t_effect@seasons){
+      for (m in t_effects@seasons){
 
         #Create season name
         season_name <- paste0(name_prefix,"_season_", m)
@@ -189,7 +189,7 @@ add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALS
     }
 
     # Add holiday effect-----
-    if (!is.null(t_effect@holidays) & length(t_effect@holidays) > 0 & !is.null(date_col)) {
+    if (!is.null(t_effects@holidays) & length(t_effects@holidays) > 0 & !is.null(date_col)) {
       # Check almanac installation
       if (!rlang::check_installed("almanac")) {
         cli::cli_abort(
@@ -206,7 +206,7 @@ add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALS
         x <- x %>%
           dplyr::mutate(!!as.symbol(paste0(name_prefix,"_holiday")) :=
                           as.integer(
-                            almanac::alma_in(!!as.symbol(date_col), t_effect[["holidays"]]))
+                            almanac::alma_in(!!as.symbol(date_col), t_effects@holidays))
           )
       }
     }
@@ -217,7 +217,7 @@ add_temporal_effects.data.frame <- function(x, t_effect = NULL, overwrite = FALS
 
 #' @export
 #' @rdname add_temporal_effects
-add_temporal_effects.tbl_now <- function(x, t_effect = NULL, overwrite = FALSE,  ...,
+add_temporal_effects.tbl_now <- function(x, t_effects= NULL, overwrite = FALSE,  ...,
                                          date_type = "event_date",
                                          weekend_days = c("Sat","Sun")){
 
@@ -235,7 +235,7 @@ add_temporal_effects.tbl_now <- function(x, t_effect = NULL, overwrite = FALSE, 
 
   old_cols <- colnames(x)
   x        <- add_temporal_effects.data.frame(x,
-                                              t_effect = t_effect,
+                                              t_effects= t_effects,
                                               date_col = date_col,
                                               numeric_col = numeric_col,
                                               name_prefix = paste0(".", date_name), ...)

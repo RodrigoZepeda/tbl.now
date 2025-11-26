@@ -12,13 +12,15 @@
 #'
 #' @param x An object to validate
 #'
+#' @inheritParams tbl_now
+#'
 #' @return Returns `TRUE` invisibly or throws an error. Called for its side effects.
 #'
 #' @examples
 #' \dontrun{
 #' data(denguedat)
 #' ndata <- tbl_now(denguedat, event_date = "onset_week",
-#'   report_date = "report_week")
+#'   report_date = "report_week", verbose = FALSE)
 #'
 #' # Validate without errors
 #' validate_tbl_now(ndata)
@@ -29,7 +31,8 @@
 #' }
 #'
 #' @keywords internal
-validate_tbl_now <- function(x) {
+validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
+
 
   #Get required attributes
   required_attrs <- c("event_date", "report_date", "num_strata",
@@ -69,6 +72,8 @@ validate_tbl_now <- function(x) {
   data_type      <- get_data_type(x)
   is_batched     <- get_is_batched(x)
   case_col       <- get_case_col(x)
+
+  if (data_type == "linelist"){warn_non_uniqueness <- FALSE}
 
   # === 4. Validate attribute types ===
 
@@ -132,7 +137,7 @@ validate_tbl_now <- function(x) {
   }
 
   # data_type must be valid option
-  valid_data_types <- c("auto", "linelist", "count")
+  valid_data_types <- c("auto", "linelist", "count-incidence","count-cumulative")
   if (!is.character(data_type) || length(data_type) != 1 ||
       !data_type %in% valid_data_types) {
     errors <- c(errors, sprintf(
@@ -245,6 +250,23 @@ validate_tbl_now <- function(x) {
     }
   }
 
+
+  #Validate that event_date and report_date don't have repeated values for same strata/covariates----
+  if (warn_non_uniqueness){
+    current_rows  <- nrow(x)
+    distinct_rows <- x %>%
+      dplyr::as_tibble() %>%
+      dplyr::distinct_at(c(get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x), get_is_batched(x), get_temporal_effects(x))) %>%
+      nrow()
+
+    if (current_rows > distinct_rows){
+      warnings <- c(warnings,
+                    paste0("*Non-unique*: Data has multiple rows for the same event ({event_date}) and report",
+                    "({report_date}) dates. Consider using `to_count()` to aggregate the data."))
+    }
+  }
+
+
   # === 9. Return results ===
   if (length(errors) > 0) {
     cli::cli_abort(c("Invalid tbl_now object:", errors))
@@ -318,7 +340,7 @@ tbl_now_reconstruct_internal <- function(data, template){
                       get_is_batched(data),
                       ".event_num", ".report_num", ".delay")
 
-  if (!is.null(get_data_type(data)) && get_data_type(data) == "count"){
+  if (!is.null(get_data_type(data)) && grepl("count", get_data_type(data))){
     protected_cols <- c(protected_cols, get_case_col(data))
   }
 
@@ -542,7 +564,8 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
                      data_type = get_data_type(.data),
                      case_col = get_case_col(.data),
                      verbose = FALSE,
-                     force = TRUE)
+                     force = TRUE,
+                     warn_non_uniqueness = FALSE)
   }
   x
 }
@@ -573,7 +596,8 @@ ungroup.grouped_tbl_now <- function(x, ...) {
                      data_type = get_data_type(x),
                      case_col = get_case_col(x),
                      verbose = FALSE,
-                     force = TRUE)
+                     force = TRUE,
+                     warn_non_uniqueness = FALSE)
   }
   x
 }
@@ -602,7 +626,8 @@ class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_
                 data_type = get_data_type(.data),
                 case_col = get_case_col(.data),
                 verbose = FALSE,
-                force = TRUE)
+                force = TRUE,
+                warn_non_uniqueness = FALSE)
     },
     error = function(e) {
       cli::cli_warn("Dropping `tbl_now` attributes and converting to `tibble`")

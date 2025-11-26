@@ -7,7 +7,7 @@
 check_verbose(verbose)
 }
 \arguments{
-\item{verbose}{(optional) Logical. Whether to throw a message. Default = `TRUE`.}
+\item{verbose}{(optional) Logical. Whether to throw a message. Default = \code{TRUE}.}
 }
 \value{
 (invisible) `TRUE` if the verbose argument is valid

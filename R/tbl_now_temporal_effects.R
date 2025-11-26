@@ -17,7 +17,8 @@
 #' US Federal holidays can be passed by providing the [`almanac::cal_us_federal()`] calendar.
 #'
 #' Example:
-#' ```r
+#'
+#' ```{r, eval=FALSE}
 #' library(almanac)
 #' temporal_effects(holidays = cal_us_federal())
 #' ```
@@ -32,7 +33,7 @@
 #'   cal <- almanac::rcalendar(almanac::hol_christmas())
 #'   temporal_effects(holidays = cal, day_of_month = TRUE, seasons = c(7, 365))
 #' }
-#'
+#' @md
 #' @export
 temporal_effects <- S7::new_class(
   "temporal_effects",

@@ -30,6 +30,9 @@
 #' nowcast. If no `now` is given then the function automatically uses the last
 #' `event_date`.
 #'
+#' @param t_effects (optional) Either `NULL` (default), a [temporal_effects()] object
+#' or a vector with the names of the columns containing the temporal effects.
+#'
 #' @param case_col (optional) Name of the column with the case counts if
 #' `data_type` is "count". If `case_col` is specified even if `data_type`
 #' is "linelist" that name will be used if the `to_count` function is applied.
@@ -41,12 +44,17 @@
 #' "weeks", "months", "years" or "numeric".
 #'
 #' @param data_type (optional) Character. Either "auto", "linelist" or
-#' "count".
+#' "count-incidence" or "count-cumulative". See section below for
+#' an explanation on data types.
 #'
 #' @param verbose (optional) Logical. Whether to throw a message. Default = `TRUE`.
 #'
 #' @param force (optional) Logical. Whether to force computation overwriting pre-existing variables.
 #' Default = `FALSE`.
+#'
+#' @param warn_non_uniqueness (optional) Logical. Whether to throw a warning if data
+#' has multiple observations for same event and report date (conditional on covariates
+#' and strata)
 #'
 #' @param ... Additional metadata to be stored as attributes.
 #'
@@ -71,6 +79,67 @@
 #'   \item{data_type}{Either `linelist` or `count` depending on whether it is linelist data
 #'   or count data}
 #' }
+#'
+#' @section Data types:
+#' The following data-types are admitted at `tbl_now` objects.
+#'
+#' *Linelist*
+#'
+#' Each row is an individual that was reported at `report_date` as happening at `event_date`.
+#'
+#' ```{r, cache=TRUE}
+#' df <- data.frame(
+#'  patient     = 1:6,
+#'  event_date  = c(rep(as.Date("2020/09/12"), 3),
+#'                  rep(as.Date("2020/09/13"), 3)),
+#'  report_date = c(as.Date("2020/09/12"),
+#'                  as.Date("2020/09/13"),
+#'                  as.Date("2020/09/14"),
+#'                  as.Date("2020/09/13"),
+#'                  as.Date("2020/09/14"),
+#'                  as.Date("2020/09/15")))
+#' print(df)
+#' ```
+#'
+#' *Count-incidence*
+#'
+#' Each `report_date`-`event_date` combination contains the total number of
+#' cases observed _exactly_ at `report_date` for `event_date`.
+#'
+#' ```{r, cache=TRUE}
+#' df <- data.frame(
+#'  n           = c(7, 1, 9, 5, 0, 2),
+#'  event_date  = c(rep(as.Date("2020/09/12"), 3),
+#'                  rep(as.Date("2020/09/13"), 3)),
+#'  report_date = c(as.Date("2020/09/12"),
+#'                  as.Date("2020/09/13"),
+#'                  as.Date("2020/09/14"),
+#'                  as.Date("2020/09/13"),
+#'                  as.Date("2020/09/14"),
+#'                  as.Date("2020/09/15")))
+#' print(df)
+#' ```
+#'
+#' *Count-cumulative*
+#'
+#' Each `report_date`-`event_date` combination contains the total number of
+#' cases observed up until `report_date` for `event_date`. The most recent
+#' `report_date` contains the best estimation of cases happening at `event_date`.
+#'
+#' ```{r, cache=TRUE}
+#' df <- data.frame(
+#'  n           = c(1,5, 8, 2, 2, 4),
+#'  event_date  = c(rep(as.Date("2020/09/12"), 3),
+#'                  rep(as.Date("2020/09/13"), 3)),
+#'  report_date = c(as.Date("2020/09/12"),
+#'                  as.Date("2020/09/13"),
+#'                  as.Date("2020/09/14"),
+#'                  as.Date("2020/09/13"),
+#'                  as.Date("2020/09/14"),
+#'                  as.Date("2020/09/15")))
+#' print(df)
+#' ```
+#'
 #'
 #' @examples
 #' # The `tbl_now` is a data.frame with additional attributes
@@ -114,10 +183,8 @@
 #'
 #' @return An object of class `tbl_now`.
 #'
-#' @name tbl_now
-
-#' @rdname tbl_now
 #' @export
+#' @md
 tbl_now <- function(data,
                         event_date,
                         report_date,
@@ -129,8 +196,10 @@ tbl_now <- function(data,
                         report_units = "auto",
                         data_type = "auto",
                         case_col = NULL,
+                        t_effects = NULL,
                         verbose = TRUE,
                         force = FALSE,
+                        warn_non_uniqueness = TRUE,
                         ...) {
 
 
@@ -196,7 +265,11 @@ tbl_now <- function(data,
   report_units <- infer_units(data, date_column = report_date, date_units = report_units)
 
   # Get whether data is count or line data
-  data_type    <- infer_data_type(data, data_type = data_type, case_col = case_col, verbose = verbose)
+  data_type    <- infer_data_type(data, data_type = data_type,
+                                  event_date = event_date, report_date = report_date,
+                                  strata = strata,
+                                  is_batched = is_batched,
+                                  case_col = case_col, verbose = verbose)
 
   # Capture all other attributes
   other_attrs  <- list(...)
@@ -240,12 +313,21 @@ tbl_now <- function(data,
                                event_units = event_units, report_units = report_units,
                                force = force)
 
+
   # === 4. Class Assignment ===
   # Prepend the S3 class. It will inherit from data.frame.
   class(data) <- c("tbl_now", class(data))
 
+  #Add temporal effects
+  if (!is.null(t_effects) && S7::S7_inherits(t_effects, class = temporal_effects)){
+    data <- data %>%
+      add_temporal_effects(t_effects= t_effects)
+  } else if (!is.null(t_effects) && is.character(t_effects)){
+    attr(data, "temporal_effects") <- t_effects
+  }
+
   #Validate
-  validate_tbl_now(data)
+  validate_tbl_now(data, warn_non_uniqueness = warn_non_uniqueness)
 
   return(data)
 }

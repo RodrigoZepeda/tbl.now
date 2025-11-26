@@ -21,17 +21,17 @@ tbl_format_footer.tbl_now <- function(x, ...) {
   default_footer <- NextMethod()
 
   #Get the defaults
-  num_strata     <- attr_default(x, "num_strata", 0)
-  num_covariates <- attr_default(x, "num_covariates", 0)
-
   footer <- cli::cli_fmt({
     cli::cli_rule()
     cli::cli_text("Now: {.val {get_now(x)}} | Event date: {.val {get_event_date(x)}} | Report date: {.val {get_report_date(x)}}")
-    if (num_strata > 0){
+    if (get_num_strata(x) > 0){
       cli::cli_text("Strata: {.val {get_strata(x)}}")
     }
-    if (num_covariates > 0){
+    if (get_num_covariates(x) > 0){
       cli::cli_text("Covariates: {.val {get_covariates(x)}}")
+    }
+    if (length(get_temporal_effects(x)) > 0){
+      cli::cli_text("T. effects: {.val {get_temporal_effects(x)}}")
     }
     cli::cli_rule()
   })

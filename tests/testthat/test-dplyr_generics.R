@@ -1007,9 +1007,9 @@ test_that("test dropping count column", {
 
   expect_warning(
     test_data$ndata %>%
-      to_count() %>%
+      to_count(to = "count-incidence") %>%
       dplyr::select(-n),
-    "Dropped protected column"
+    "Drop"
   )
 
 })

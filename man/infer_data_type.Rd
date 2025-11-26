@@ -4,19 +4,45 @@
 \alias{infer_data_type}
 \title{Automatically infer the `data_type`}
 \usage{
-infer_data_type(data, data_type, case_col, verbose = FALSE)
+infer_data_type(
+  data,
+  data_type,
+  event_date,
+  report_date,
+  strata = NULL,
+  is_batched = NULL,
+  case_col = NULL,
+  verbose = FALSE
+)
 }
 \arguments{
-\item{data}{A `data.frame` to be converted.}
+\item{data}{A \code{data.frame} to be converted.}
 
 \item{data_type}{(optional) Character. Either "auto", "linelist" or
-"count".}
+"count-incidence" or "count-cumulative". See section below for
+an explanation on data types.}
+
+\item{event_date}{Character. The name of the column containing the event date.}
+
+\item{report_date}{Character. The name of the column containing the report date.}
+
+\item{strata}{(optional) Character vector or \code{NULL} (default). Name of different variables
+(column names) in strata. Strata correspond to variables that are of interest
+by themselves. For example if it is of interest to generate nowcasts by gender then
+\code{gender} is a \code{strata}.}
+
+\item{is_batched}{(optional) Character or \code{NULL} (default). The name of a column containing either
+\code{TRUE} or \code{FALSE} indicating whether the \code{report_date} is correctly specified
+or corresponds to a \code{batch} and thus is censored. In other words, if the
+\code{report_date} is accurately measured set \code{report_date = TRUE} but if
+the \code{report_date} corresponds to an error and is only an upper bound of
+the real, idealized, report date set \code{is_batched = TRUE}.}
 
 \item{case_col}{(optional) Name of the column with the case counts if
-`data_type` is "count". If `case_col` is specified even if `data_type`
-is "linelist" that name will be used if the `to_count` function is applied.}
+\code{data_type} is "count". If \code{case_col} is specified even if \code{data_type}
+is "linelist" that name will be used if the \code{to_count} function is applied.}
 
-\item{verbose}{(optional) Logical. Whether to throw a message. Default = `TRUE`.}
+\item{verbose}{(optional) Logical. Whether to throw a message. Default = \code{TRUE}.}
 }
 \value{
 Whether the data is `count` or `linelist`

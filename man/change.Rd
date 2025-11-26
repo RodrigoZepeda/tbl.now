@@ -13,6 +13,8 @@
 \alias{add_covariate}
 \alias{remove_all_covariates}
 \alias{change_now}
+\alias{replace_temporal_effects}
+\alias{remove_temporal_effects}
 \title{Change attributes of a `tbl_now` object}
 \usage{
 change_event_date(x, value)
@@ -36,6 +38,10 @@ add_covariate(x, value)
 remove_all_covariates(x)
 
 change_now(x, value)
+
+replace_temporal_effects(x, value)
+
+remove_temporal_effects(x)
 }
 \arguments{
 \item{x}{A `tbl_now` object}
@@ -50,11 +56,11 @@ Functions to modify the attributes of a `tbl_now` object.
 All functions validate the object after making changes.
 }
 \examples{
-\dontrun{
 data(denguedat)
 ndata <- tbl_now(denguedat,
-                          event_date = "onset_week",
-                          report_date = "report_week")
+                 event_date = "onset_week",
+                 report_date = "report_week",
+                 verbose = FALSE)
 
 # Change the event_date column to a different date column
 ndata$new_onset_week <- ndata$onset_week - lubridate::days(1)
@@ -86,16 +92,18 @@ ndata <- change_covariates(ndata, c("temperature", "humidity"))
 ndata
 
 # Remove some covariates
-ndata <- remove_covariates(ndata, "temperature")
+ndata <- remove_covariate(ndata, "temperature")
 ndata
 
 # Add covariates
-ndata <- add_covariates(ndata, "temperature")
+ndata <- add_covariate(ndata, "temperature")
 ndata
 
 # Change now
 ndata <- change_now(ndata, as.Date("2025-01-01"))
 ndata
-}
 
+}
+\seealso{
+[add_temporal_effects()]
 }

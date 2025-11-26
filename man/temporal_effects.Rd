@@ -25,26 +25,26 @@ temporal_effects(
 
 \item{week_of_year}{Logical. Whether to include an effect for the epidemiological week.}
 
-\item{seasons}{Vector. Either `integer(0)` or a vector where each entry is the length of the
+\item{seasons}{Vector. Either \code{integer(0)} or a vector where each entry is the length of the
 seasons included in the model.}
 
-\item{holidays}{Either `NULL` or an [`almanac::rcalendar()`] specifying how to calculate holidays.}
+\item{holidays}{Either \code{NULL} or an \code{\link[almanac:rcalendar]{almanac::rcalendar()}} specifying how to calculate holidays.}
 }
 \value{
-An object of class `temporal_effects`.
+An object of class \code{temporal_effects}.
 }
 \description{
-The `temporal_effects` class specifies which temporal covariates or effects
+The \code{temporal_effects} class specifies which temporal covariates or effects
 should be included in a nowcasting model (e.g., day of week, month, holidays, etc.).
 }
 \details{
-US Federal holidays can be passed by providing the [`almanac::cal_us_federal()`] calendar.
+US Federal holidays can be passed by providing the \code{\link[almanac:cal_us_federal]{almanac::cal_us_federal()}} calendar.
 
 Example:
-```r
-library(almanac)
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{library(almanac)
 temporal_effects(holidays = cal_us_federal())
-```
+}\if{html}{\out{</div>}}
 }
 \examples{
 temporal_effects(day_of_week = TRUE, week_of_year = TRUE)
@@ -53,5 +53,4 @@ if (rlang::is_installed("almanac")) {
   cal <- almanac::rcalendar(almanac::hol_christmas())
   temporal_effects(holidays = cal, day_of_month = TRUE, seasons = c(7, 365))
 }
-
 }

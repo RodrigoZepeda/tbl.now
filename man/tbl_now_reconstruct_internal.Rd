@@ -7,7 +7,7 @@
 tbl_now_reconstruct_internal(data, template)
 }
 \arguments{
-\item{data}{A `data.frame` to be converted.}
+\item{data}{A \code{data.frame} to be converted.}
 }
 \value{
 A `tbl_now` object or a `data.frame`

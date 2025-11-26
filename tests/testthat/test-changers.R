@@ -633,13 +633,13 @@ test_that("changer functions work with count data", {
     event_date = "onset_week",
     report_date = "report_week",
     strata = "gender",
-    data_type = "count"
+    data_type = "count-incidence"
   )
 
   result <- add_strata(ndata, "gender")
 
   expect_s3_class(result, "tbl_now")
-  expect_equal(get_data_type(result), "count")
+  expect_equal(get_data_type(result), "count-incidence")
 })
 
 test_that("changer functions validate after each change", {

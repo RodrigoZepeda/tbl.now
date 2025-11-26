@@ -7,7 +7,7 @@
 check_date_columns(data, event_date, report_date)
 }
 \arguments{
-\item{data}{A `data.frame` to be converted.}
+\item{data}{A \code{data.frame} to be converted.}
 
 \item{event_date}{Character. The name of the column containing the event date.}
 

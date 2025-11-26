@@ -17,3 +17,4 @@
 ^\.gitignore$
 ^\.repomixignore$
 ^repomix-output\.xml$
+^cache$

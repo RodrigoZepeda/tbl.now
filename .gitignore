@@ -17,3 +17,5 @@ diseasenowcasting.Rproj
 diseasenowcasting.Rproj
 diseasenowcasting.Rproj
 repomix-output.xml
+cache
+inst/doc

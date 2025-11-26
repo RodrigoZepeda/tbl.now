@@ -6,11 +6,11 @@
 \alias{add_temporal_effects.tbl_now}
 \title{Add temporal effect coding to a `tbl_now`}
 \usage{
-add_temporal_effects(x, t_effect = NULL, overwrite = FALSE, ...)
+add_temporal_effects(x, t_effects = NULL, overwrite = FALSE, ...)
 
 \method{add_temporal_effects}{data.frame}(
   x,
-  t_effect = NULL,
+  t_effects = NULL,
   overwrite = FALSE,
   ...,
   date_col = NULL,
@@ -21,7 +21,7 @@ add_temporal_effects(x, t_effect = NULL, overwrite = FALSE, ...)
 
 \method{add_temporal_effects}{tbl_now}(
   x,
-  t_effect = NULL,
+  t_effects = NULL,
   overwrite = FALSE,
   ...,
   date_type = "event_date",
@@ -31,7 +31,7 @@ add_temporal_effects(x, t_effect = NULL, overwrite = FALSE, ...)
 \arguments{
 \item{x}{A `tbl_now` object or a `data.frame`.}
 
-\item{t_effect}{A [temporal_effects()] object codifying the
+\item{t_effects}{A [temporal_effects()] object codifying the
 temporal effects to be used.}
 
 \item{overwrite}{If `TRUE` ignores that the columns already exist and overwrites them.
@@ -75,5 +75,5 @@ disease_data <- tbl_now(denguedat,
     strata = "gender")
 
 # Add an effect for epidemiological week
-add_temporal_effects(disease_data, t_effect = temporal_effects(week_of_year = TRUE))
+add_temporal_effects(disease_data, t_effects= temporal_effects(week_of_year = TRUE))
 }

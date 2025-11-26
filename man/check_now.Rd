@@ -7,15 +7,15 @@
 check_now(data, event_date, report_date, now)
 }
 \arguments{
-\item{data}{A `data.frame` to be converted.}
+\item{data}{A \code{data.frame} to be converted.}
 
 \item{event_date}{Character. The name of the column containing the event date.}
 
 \item{report_date}{Character. The name of the column containing the report date.}
 
-\item{now}{(optional) Date or `NULL` (default). The date that is considered the `now` of the
-nowcast. If no `now` is given then the function automatically uses the last
-`event_date`.}
+\item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
+nowcast. If no \code{now} is given then the function automatically uses the last
+\code{event_date}.}
 }
 \value{
 (invisible) TRUE if the `now` date is achievable considering
