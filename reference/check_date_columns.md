@@ -12,7 +12,7 @@ check_date_columns(data, event_date, report_date)
 
 - data:
 
-  A \`data.frame\` to be converted.
+  A `data.frame` to be converted.
 
 - event_date:
 

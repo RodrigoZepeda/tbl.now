@@ -14,7 +14,7 @@ tbl_now_reconstruct(data, template)
 
 - data:
 
-  A \`data.frame\` to be converted.
+  A `data.frame` to be converted.
 
 ## Value
 

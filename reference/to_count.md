@@ -9,10 +9,10 @@ name \`n\` of counts of observations if \`data_type = "linelist"\`.
 ## Usage
 
 ``` r
-to_count(x, ...)
+to_count(x, to = NULL, ...)
 
 # S3 method for class 'tbl_now'
-to_count(x, ...)
+to_count(x, to = NULL, ...)
 ```
 
 ## Arguments
@@ -21,9 +21,19 @@ to_count(x, ...)
 
   Data to be transformed from \`linelist\` to count data
 
+- to:
+
+  Either \`linelist\`, \`count-incidence\` or \`count-cumulative\` the
+  resulting data-type to be created.
+
 - ...:
 
   Additional arguments
+
+## Note
+
+\`linelist\` data cannot be reconstructed from \`count-\*\` data. Tring
+this will throw an error as you cannot un-count aggregated data.
 
 ## Examples
 
@@ -35,9 +45,9 @@ ndata <- tbl_now(denguedat,
     strata = "gender")
 #> ℹ Identified data as linelist-data where each observation is a test.
 
-to_count(ndata)
+to_count(ndata, to = "count-incidence")
 #> # A tibble:  8,265 × 7
-#> # Data type: "count"
+#> # Data type: "count-incidence"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week   report_week   .event_num .report_num gender       n .delay
 #>    <date>       <date>             <dbl>       <dbl> <chr>    <int>  <dbl>
@@ -59,18 +69,16 @@ to_count(ndata)
 #> # ℹ 8,255 more rows
 
 data("covidat")
+suppressWarnings({
 ndata <- tbl_now(covidat,
 event_date = "date_of_symptom_onset",
               report_date = "date_of_registry",
               strata = "sex")
-#> ℹ Identified data as count-data with counts in column "n".
-#> Warning: 147 row(s) have a `report_date` before `event_date`
 to_count(ndata)
-#> Warning: 147 row(s) have a `report_date` before `event_date`
-#> Warning: 147 row(s) have a `report_date` before `event_date`
-#> Warning: 147 row(s) have a `report_date` before `event_date`
+})
+#> ℹ Identified data as count-incidence with counts in column "n".
 #> # A tibble:  40,822 × 7
-#> # Data type: "count"
+#> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>    date_of_symptom_onset date_of_registry .event_num .report_num sex          n
 #>    <date>                <date>                <dbl>       <dbl> <chr>    <int>

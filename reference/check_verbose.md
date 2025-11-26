@@ -12,7 +12,7 @@ check_verbose(verbose)
 
 - verbose:
 
-  (optional) Logical. Whether to throw a message. Default = \`TRUE\`.
+  (optional) Logical. Whether to throw a message. Default = `TRUE`.
 
 ## Value
 

@@ -12,7 +12,9 @@ check_data_type(data_type)
 
 - data_type:
 
-  (optional) Character. Either "auto", "linelist" or "count".
+  (optional) Character. Either "auto", "linelist" or "count-incidence"
+  or "count-cumulative". See section below for an explanation on data
+  types.
 
 ## Value
 

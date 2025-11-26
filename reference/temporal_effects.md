@@ -1,6 +1,6 @@
 # Temporal Effects Class
 
-The \`temporal_effects\` class specifies which temporal covariates or
+The `temporal_effects` class specifies which temporal covariates or
 effects should be included in a nowcasting model (e.g., day of week,
 month, holidays, etc.).
 
@@ -44,25 +44,29 @@ temporal_effects(
 
 - seasons:
 
-  Vector. Either \`integer(0)\` or a vector where each entry is the
-  length of the seasons included in the model.
+  Vector. Either `integer(0)` or a vector where each entry is the length
+  of the seasons included in the model.
 
 - holidays:
 
-  Either \`NULL\` or an \[\`almanac::rcalendar()\`\] specifying how to
-  calculate holidays.
+  Either `NULL` or an
+  [`almanac::rcalendar()`](https://rdrr.io/pkg/almanac/man/rcalendar.html)
+  specifying how to calculate holidays.
 
 ## Value
 
-An object of class \`temporal_effects\`.
+An object of class `temporal_effects`.
 
 ## Details
 
 US Federal holidays can be passed by providing the
-\[\`almanac::cal_us_federal()\`\] calendar.
+[`almanac::cal_us_federal()`](https://rdrr.io/pkg/almanac/man/cal_us_federal.html)
+calendar.
 
-Example: “\`r library(almanac) temporal_effects(holidays =
-cal_us_federal()) “\`
+Example:
+
+    library(almanac)
+    temporal_effects(holidays = cal_us_federal())
 
 ## Examples
 

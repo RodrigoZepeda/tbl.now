@@ -15,7 +15,7 @@ tbl_now_can_reconstruct(data)
 
 - data:
 
-  A \`data.frame\` to be converted.
+  A `data.frame` to be converted.
 
 ## Value
 

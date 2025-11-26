@@ -6,7 +6,7 @@ required attributes and valid data.
 ## Usage
 
 ``` r
-validate_tbl_now(x)
+validate_tbl_now(x, warn_non_uniqueness = FALSE)
 ```
 
 ## Arguments
@@ -14,6 +14,12 @@ validate_tbl_now(x)
 - x:
 
   An object to validate
+
+- warn_non_uniqueness:
+
+  (optional) Logical. Whether to throw a warning if data has multiple
+  observations for same event and report date (conditional on covariates
+  and strata)
 
 ## Value
 
@@ -26,7 +32,7 @@ effects.
 if (FALSE) { # \dontrun{
 data(denguedat)
 ndata <- tbl_now(denguedat, event_date = "onset_week",
-  report_date = "report_week")
+  report_date = "report_week", verbose = FALSE)
 
 # Validate without errors
 validate_tbl_now(ndata)

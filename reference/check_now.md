@@ -12,7 +12,7 @@ check_now(data, event_date, report_date, now)
 
 - data:
 
-  A \`data.frame\` to be converted.
+  A `data.frame` to be converted.
 
 - event_date:
 
@@ -24,9 +24,9 @@ check_now(data, event_date, report_date, now)
 
 - now:
 
-  (optional) Date or \`NULL\` (default). The date that is considered the
-  \`now\` of the nowcast. If no \`now\` is given then the function
-  automatically uses the last \`event_date\`.
+  (optional) Date or `NULL` (default). The date that is considered the
+  `now` of the nowcast. If no `now` is given then the function
+  automatically uses the last `event_date`.
 
 ## Value
 
