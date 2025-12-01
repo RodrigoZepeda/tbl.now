@@ -72,6 +72,9 @@
   [`get_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_is_batched()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_case_col()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_protected_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_protected_generated_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_protected_given_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   : Getters for tbl_now attributes
 
 - [`print`](https://rodrigozepeda.github.io/tbl.now/reference/print.md)

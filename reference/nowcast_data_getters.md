@@ -32,6 +32,12 @@ get_temporal_effects(x)
 get_is_batched(x)
 
 get_case_col(x)
+
+get_protected_cols(x)
+
+get_protected_generated_cols(x)
+
+get_protected_given_cols(x)
 ```
 
 ## Arguments

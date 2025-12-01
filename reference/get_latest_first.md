@@ -31,6 +31,21 @@ dengue <- to_count(dengue)
 
 #Gets the first reported cases (what as initially thought of to be the incidence)
 get_initial_reported_cases(dengue)
+#> # A tibble: 52,987 × 6
+#> # Groups:   onset_week, gender [2,164]
+#>    onset_week report_week gender .event_num .report_num .delay
+#>    <date>     <date>      <chr>       <dbl>       <dbl>  <dbl>
+#>  1 1990-01-01 1990-01-01  Male            0           0      0
+#>  2 1990-01-01 1990-01-01  Female          0           0      0
+#>  3 1990-01-01 1990-01-01  Female          0           0      0
+#>  4 1990-01-01 1990-01-08  Female          0           1      1
+#>  5 1990-01-01 1990-01-08  Male            0           1      1
+#>  6 1990-01-01 1990-01-15  Female          0           2      2
+#>  7 1990-01-01 1990-01-15  Female          0           2      2
+#>  8 1990-01-01 1990-01-15  Female          0           2      2
+#>  9 1990-01-01 1990-01-22  Female          0           3      3
+#> 10 1990-01-01 1990-01-08  Female          0           1      1
+#> # ℹ 52,977 more rows
 #> # A tibble:  10,296 × 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
@@ -55,6 +70,21 @@ get_initial_reported_cases(dengue)
 
 #Gets the latest reported cases (what is now thought of to be the incidence)
 get_latest_reported_cases(dengue)
+#> # A tibble: 52,987 × 6
+#> # Groups:   onset_week, gender [2,164]
+#>    onset_week report_week gender .event_num .report_num .delay
+#>    <date>     <date>      <chr>       <dbl>       <dbl>  <dbl>
+#>  1 1990-01-01 1990-01-01  Male            0           0      0
+#>  2 1990-01-01 1990-01-01  Female          0           0      0
+#>  3 1990-01-01 1990-01-01  Female          0           0      0
+#>  4 1990-01-01 1990-01-08  Female          0           1      1
+#>  5 1990-01-01 1990-01-08  Male            0           1      1
+#>  6 1990-01-01 1990-01-15  Female          0           2      2
+#>  7 1990-01-01 1990-01-15  Female          0           2      2
+#>  8 1990-01-01 1990-01-15  Female          0           2      2
+#>  9 1990-01-01 1990-01-22  Female          0           3      3
+#> 10 1990-01-01 1990-01-08  Female          0           1      1
+#> # ℹ 52,977 more rows
 #> # A tibble:  4,398 × 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
