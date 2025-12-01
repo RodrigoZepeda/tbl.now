@@ -90,8 +90,9 @@ tbl_now(
 - case_col:
 
   (optional) Name of the column with the case counts if `data_type` is
-  "count". If `case_col` is specified even if `data_type` is "linelist"
-  that name will be used if the `to_count` function is applied.
+  "count-incidence" or "count-cumulative". If `case_col` is specified
+  even if `data_type` is "linelist" that name will be used if the
+  `to_count` function is applied.
 
 - t_effects:
 
@@ -184,8 +185,10 @@ function:
 
 - data_type:
 
-  Either `linelist` or `count` depending on whether it is linelist data
-  or count data
+  Either `linelist`, `count-incidence` or `count-cumulative` depending
+  on whether it is linelist data or count data with incidence (each
+  report date's incidence) or cumulative (overall known cases at report
+  date)
 
 ## Data types
 
@@ -309,8 +312,6 @@ ndata
 #> # A tibble:  52,987 × 7
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week   report_week   gender   .event_num .report_num .delay newcolumn
 #>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl> <chr>    
 #>    [event_date] [report_date] [strata]      [...]       [...]  [...] [...]    
@@ -328,15 +329,10 @@ ndata
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
-#> # Strata: "gender"
-#> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 52,977 more rows
 
 #Like removing a column
 ndata <- ndata[,-4]
-#> Warning: Dropped protected column(?s): ".event_num". Returning a `tibble`
 #> Warning: Dropped protected column(?s): ".event_num". Returning a `tibble`
 ndata
 #> # A tibble: 52,987 × 6

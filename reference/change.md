@@ -67,8 +67,6 @@ ndata
 #> # A tibble:  52,987 × 7
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week report_week   gender .event_num .report_num .delay new_onset_week
 #>    <date>     <date>        <chr>       <dbl>       <dbl>  <dbl> <date>        
 #>    [...]      [report_date] [...]       [...]       [...]  [...] [event_date]  
@@ -85,9 +83,6 @@ ndata
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "report_week"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "report_week"
-#> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 52,977 more rows
 
 # Change the report_date column to a different column
@@ -95,12 +90,6 @@ ndata$new_report_week <- ndata$report_week - lubridate::days(1)
 ndata <- change_report_date(ndata, "new_report_week")
 ndata
 #> # A tibble:  52,987 × 8
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week report_week gender .event_num .report_num .delay new_onset_week
@@ -116,15 +105,6 @@ ndata
 #>  8 1990-01-01 1990-01-15  Female          0           2      2 1989-12-31    
 #>  9 1990-01-01 1990-01-22  Female          0           3      3 1989-12-31    
 #> 10 1990-01-01 1990-01-08  Female          0           1      1 1989-12-31    
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # ────────────────────────────────────────────────────────────────────────────────
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # ────────────────────────────────────────────────────────────────────────────────
@@ -138,20 +118,6 @@ ndata
 #> # A tibble:  52,987 × 9
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week report_week gender   .event_num .report_num .delay new_onset_week
 #>    <date>     <date>      <chr>         <dbl>       <dbl>  <dbl> <date>        
 #>    [...]      [...]       [strata]      [...]       [...]  [...] [event_date]  
@@ -169,34 +135,6 @@ ndata
 #> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # Strata: "gender" and "age_group"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 52,977 more rows
 #> # ℹ 2 more variables: new_report_week <date>, age_group <chr>
 
@@ -204,20 +142,6 @@ ndata
 ndata <- remove_strata(ndata, "gender")
 ndata
 #> # A tibble:  52,987 × 9
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week report_week gender .event_num .report_num .delay new_onset_week
@@ -237,34 +161,6 @@ ndata
 #> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # Strata: "age_group"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 52,977 more rows
 #> # ℹ 2 more variables: new_report_week <date>, age_group <chr>
 
@@ -272,20 +168,6 @@ ndata
 ndata <- add_strata(ndata, "gender")
 ndata
 #> # A tibble:  52,987 × 9
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week report_week gender   .event_num .report_num .delay new_onset_week
@@ -301,34 +183,6 @@ ndata
 #>  8 1990-01-01 1990-01-15  Female            0           2      2 1989-12-31    
 #>  9 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # ────────────────────────────────────────────────────────────────────────────────
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # Strata: "gender" and "age_group"
@@ -344,68 +198,6 @@ ndata
 #> # A tibble:  52,987 × 11
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week report_week gender   .event_num .report_num .delay new_onset_week
 #>    <date>     <date>      <chr>         <dbl>       <dbl>  <dbl> <date>        
 #>    [...]      [...]       [strata]      [...]       [...]  [...] [event_date]  
@@ -419,161 +211,6 @@ ndata
 #>  8 1990-01-01 1990-01-15  Female            0           2      2 1989-12-31    
 #>  9 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # Strata: "gender" and "age_group"
@@ -589,68 +226,6 @@ ndata
 #> # A tibble:  52,987 × 11
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week report_week gender   .event_num .report_num .delay new_onset_week
 #>    <date>     <date>      <chr>         <dbl>       <dbl>  <dbl> <date>        
 #>    [...]      [...]       [strata]      [...]       [...]  [...] [event_date]  
@@ -664,161 +239,6 @@ ndata
 #>  8 1990-01-01 1990-01-15  Female            0           2      2 1989-12-31    
 #>  9 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # Strata: "gender" and "age_group"
@@ -834,68 +254,6 @@ ndata
 #> # A tibble:  52,987 × 11
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week report_week gender   .event_num .report_num .delay new_onset_week
 #>    <date>     <date>      <chr>         <dbl>       <dbl>  <dbl> <date>        
 #>    [...]      [...]       [strata]      [...]       [...]  [...] [event_date]  
@@ -909,161 +267,6 @@ ndata
 #>  8 1990-01-01 1990-01-15  Female            0           2      2 1989-12-31    
 #>  9 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # Strata: "gender" and "age_group"
@@ -1079,68 +282,6 @@ ndata
 #> # A tibble:  52,987 × 11
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week report_week gender   .event_num .report_num .delay new_onset_week
 #>    <date>     <date>      <chr>         <dbl>       <dbl>  <dbl> <date>        
 #>    [...]      [...]       [strata]      [...]       [...]  [...] [event_date]  
@@ -1154,161 +295,6 @@ ndata
 #>  8 1990-01-01 1990-01-15  Female            0           2      2 1989-12-31    
 #>  9 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Strata: "gender" and "age_group"
-#> # Covariates: "temperature" and "humidity"
-#> # ────────────────────────────────────────────────────────────────────────────────
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # Strata: "gender" and "age_group"

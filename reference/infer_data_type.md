@@ -58,8 +58,9 @@ infer_data_type(
 - case_col:
 
   (optional) Name of the column with the case counts if `data_type` is
-  "count". If `case_col` is specified even if `data_type` is "linelist"
-  that name will be used if the `to_count` function is applied.
+  "count-incidence" or "count-cumulative". If `case_col` is specified
+  even if `data_type` is "linelist" that name will be used if the
+  `to_count` function is applied.
 
 - verbose:
 

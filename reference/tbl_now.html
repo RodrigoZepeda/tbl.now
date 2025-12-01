@@ -127,7 +127,7 @@ an explanation on data types.</p></dd>
 
 <dt id="arg-case-col">case_col<a class="anchor" aria-label="anchor" href="#arg-case-col"></a></dt>
 <dd><p>(optional) Name of the column with the case counts if
-<code>data_type</code> is "count". If <code>case_col</code> is specified even if <code>data_type</code>
+<code>data_type</code> is "count-incidence" or "count-cumulative". If <code>case_col</code> is specified even if <code>data_type</code>
 is "linelist" that name will be used if the <code>to_count</code> function is applied.</p></dd>
 
 
@@ -203,8 +203,8 @@ by the <code><a href="validate_tbl_now.html">validate_tbl_now()</a></code> funct
 <dd><p>Column where the <code>event_date</code> was transformed to numeric values</p></dd>
 
 <dt>data_type</dt>
-<dd><p>Either <code>linelist</code> or <code>count</code> depending on whether it is linelist data
-or count data</p></dd>
+<dd><p>Either <code>linelist</code>, <code>count-incidence</code> or <code>count-cumulative</code> depending on whether it is linelist data
+or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)</p></dd>
 
 
 </dl></div>
@@ -321,8 +321,6 @@ cases observed up until <code>report_date</code> for <code>event_date</code>. Th
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    onset_week   report_week   gender   .event_num .report_num .delay newcolumn</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[strata]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span> <span style="color: #949494;">[...]</span>    </span>
@@ -340,15 +338,10 @@ cases observed up until <code>report_date</code> for <code>event_date</code>. Th
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-20</span> | Event date: <span style="color: #0000BB;">"onset_week"</span> | Report date: <span style="color: #0000BB;">"report_week"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-20</span> | Event date: <span style="color: #0000BB;">"onset_week"</span> | Report date: <span style="color: #0000BB;">"report_week"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 52,977 more rows</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#Like removing a column</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span><span class="op">[</span>,<span class="op">-</span><span class="fl">4</span><span class="op">]</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Dropped protected column(?s): <span style="color: #0000BB;">".event_num"</span>. Returning a `tibble`</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Dropped protected column(?s): <span style="color: #0000BB;">".event_num"</span>. Returning a `tibble`</span>
 <span class="r-in"><span><span class="va">ndata</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 52,987 × 6</span></span>
