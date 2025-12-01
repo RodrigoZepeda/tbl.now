@@ -15,6 +15,9 @@
 \alias{get_temporal_effects}
 \alias{get_is_batched}
 \alias{get_case_col}
+\alias{get_protected_cols}
+\alias{get_protected_generated_cols}
+\alias{get_protected_given_cols}
 \title{Getters for tbl_now attributes}
 \usage{
 get_event_date(x)
@@ -42,6 +45,12 @@ get_temporal_effects(x)
 get_is_batched(x)
 
 get_case_col(x)
+
+get_protected_cols(x)
+
+get_protected_generated_cols(x)
+
+get_protected_given_cols(x)
 }
 \arguments{
 \item{x}{A `tbl_now` object.}

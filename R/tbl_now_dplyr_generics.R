@@ -335,17 +335,10 @@ tbl_now_reconstruct_internal <- function(data, template){
   # Copy over *all* attributes except the data.frame essentials
   attrs      <- attributes(template)
 
-  keep_attrs <- attrs[setdiff(names(attrs), c("names", "row.names", "class"))]
+  keep_attrs <- attrs[setdiff(names(attrs), c("names", "row.names", "class", "groups"))]
 
   # Enforce protected columns
-  protected_cols <- c(get_event_date(template),
-                      get_report_date(template),
-                      get_is_batched(template),
-                      ".event_num", ".report_num", ".delay")
-
-  if (!is.null(get_data_type(template)) && grepl("count", get_data_type(template))){
-    protected_cols <- c(protected_cols, get_case_col(template))
-  }
+  protected_cols <- get_protected_cols(template)
 
   # Check the protected columns and return as data.frame instead
   missing_protected <- setdiff(protected_cols, names(data))
@@ -482,6 +475,7 @@ is_tbl_now <- function(x){
 #' @export
 `names<-.grouped_tbl_now` <- function(x, value) {
   out <- NextMethod()
+  print(out)
   tbl_now_reconstruct(out, x)
 }
 
@@ -702,14 +696,14 @@ summarize.grouped_tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
   summarise.tbl_now(.data, ..., .by = .by, .groups = .groups)
 }
 
-#' @importFrom dplyr summarise
-#' @exportS3Method dplyr::summarise
+#' @importFrom dplyr reframe
+#' @exportS3Method dplyr::reframe
 reframe.tbl_now <- function(.data, ..., .by = NULL) {
 
   #Remove the tbl_now attribute
   class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_now")))]
 
-  #Do normal summarise
+  #Do normal reframe
   reframed_tbl <- dplyr::reframe(.data, ..., .by = .by)
 
   result <- tryCatch({
@@ -737,8 +731,83 @@ reframe.tbl_now <- function(.data, ..., .by = NULL) {
   result
 }
 
-#' @importFrom dplyr summarize
-#' @exportS3Method dplyr::summarize
+#' @importFrom dplyr reframe
+#' @exportS3Method dplyr::reframe
 reframe.grouped_tbl_now <- function(.data, ..., .by = NULL) {
   reframe.tbl_now(.data, ..., .by = .by)
+}
+
+#' @importFrom dplyr rename
+#' @exportS3Method dplyr::rename
+rename.tbl_now <- function(.data, ...) {
+
+  #This is drawn from dplyr rename source code
+  #https://github.com/tidyverse/dplyr/blob/main/R/rename.R
+  loc   <- tidyselect::eval_rename(rlang::expr(c(...)), .data)
+  .data <- rename_attributes(.data, loc)
+
+  #Use the normal rename
+  NextMethod()
+}
+
+#' @importFrom dplyr rename_with
+#' @exportS3Method dplyr::rename_with
+rename_with.tbl_now <- function(.data, .fn, .cols = dplyr::everything(), ...) {
+
+  #Check the cols
+  loc        <- tidyselect::eval_select(rlang::enquo(.cols), .data, allow_rename = FALSE)
+  names(loc) <- sapply(names(loc), .fn)
+  .data      <- rename_attributes(.data, loc)
+
+  NextMethod()
+
+
+}
+
+#' Function to rename attributes given a `rename` is applied
+#'
+#' @keywords internal
+rename_attributes <- function(.data, loc){
+
+  #Check that .event_num, .report_num, .delay are not renamed
+  loc_protected <- which(names(.data) %in% get_protected_generated_cols(.data))
+  if (any(loc_protected %in% loc)){
+    changed_loc <- names(.data)[loc_protected][which(loc_protected %in% loc)]
+    cli::cli_alert_warning(
+      "Changing the name of protected columns {.val {changed_loc}} will result in a tibble"
+    )
+    .data <- dplyr::as_tibble(.data)
+  }
+
+  #Check the ones that changed and change in attributes (such as report date)
+  protected_given_cols <- get_protected_given_cols(.data)
+  loc_changeable       <- which(names(.data) %in% protected_given_cols)
+  if (any(loc_changeable %in% loc)){
+    changed_names      <- names(.data)[loc_changeable[which(loc_changeable %in% loc)]]
+    changed_attributes <- protected_given_cols[which(protected_given_cols %in% changed_names)]
+    for (atrb in 1:length(changed_attributes)){
+      new_name_pos <- which(names(.data) == changed_attributes[atrb])
+      attr(.data, names(changed_attributes)[atrb]) <- names(loc)[which(loc == new_name_pos)]
+    }
+  }
+
+  #Check the strata
+  protected_strata_cols <- get_strata(.data)
+  loc_changeable        <- which(names(.data) %in% protected_strata_cols)
+  if (any(loc_changeable %in% loc)){
+    kept_names <- names(.data)[loc_changeable[which(!(loc_changeable %in% loc))]]
+    new_names  <- names(loc)[which(loc %in% loc_changeable)]
+    attr(.data, "strata") <- c(kept_names, new_names)
+  }
+
+  #Check the covariates
+  protected_covariate_cols <- get_covariates(.data)
+  loc_changeable           <- which(names(.data) %in% protected_covariate_cols)
+  if (any(loc_changeable %in% loc)){
+    kept_names <- names(.data)[loc_changeable[which(!(loc_changeable %in% loc))]]
+    new_names  <- names(loc)[which(loc %in% loc_changeable)]
+    attr(.data, "covariates") <- c(kept_names, new_names)
+  }
+
+  return(.data)
 }

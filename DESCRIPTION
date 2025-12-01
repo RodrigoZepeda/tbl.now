@@ -32,7 +32,8 @@ Imports:
     lubridate,
     pillar,
     rlang,
-    S7
+    S7,
+    tidyselect
 RoxygenNote: 7.3.2
 URL: https://rodrigozepeda.github.io/tbl.now/
 VignetteBuilder: knitr
