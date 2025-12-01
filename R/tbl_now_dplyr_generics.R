@@ -241,12 +241,14 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
     }
 
     # Check that 'now' is >= max(report_date)
-    max_report <- max(x[[report_date]], na.rm = TRUE)
-    if (!is.na(max_report) && !is.null(now) && lubridate::is.Date(now) && now < max_report) {
-      warnings <- c(warnings, sprintf(
-        "Attribute 'now' (%s) seems to be in the past (before maximum report_date (%s))",
-        as.character(now), as.character(max_report)
-      ))
+    if (nrow(x) > 0){
+      max_report <- max(x[[report_date]], na.rm = TRUE)
+      if (!is.na(max_report) && !is.null(now) && lubridate::is.Date(now) && now < max_report) {
+        warnings <- c(warnings, sprintf(
+          "Attribute 'now' (%s) seems to be in the past (before maximum report_date (%s))",
+          as.character(now), as.character(max_report)
+        ))
+      }
     }
   }
 
@@ -404,7 +406,7 @@ tbl_now_reconstruct_internal <- function(data, template){
   }
 
   # Restore class
-  class(data) <- c("tbl_now", class(data))
+  class(data) <- class(template)
 
   return(data)
 

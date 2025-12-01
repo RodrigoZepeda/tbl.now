@@ -34,7 +34,7 @@
 #' or a vector with the names of the columns containing the temporal effects.
 #'
 #' @param case_col (optional) Name of the column with the case counts if
-#' `data_type` is "count". If `case_col` is specified even if `data_type`
+#' `data_type` is "count-incidence" or "count-cumulative". If `case_col` is specified even if `data_type`
 #' is "linelist" that name will be used if the `to_count` function is applied.
 #'
 #' @param event_units (optional) Character. Either "auto" (default), "days",
@@ -76,8 +76,8 @@
 #'   \item{report_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `report_date`}
 #'   \item{repot_num}{Column where the `report_date` was transformed to numeric values}
 #'   \item{event_num}{Column where the `event_date` was transformed to numeric values}
-#'   \item{data_type}{Either `linelist` or `count` depending on whether it is linelist data
-#'   or count data}
+#'   \item{data_type}{Either `linelist`, `count-incidence` or `count-cumulative` depending on whether it is linelist data
+#'   or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)}
 #' }
 #'
 #' @section Data types:

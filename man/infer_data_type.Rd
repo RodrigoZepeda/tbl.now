@@ -39,7 +39,7 @@ the \code{report_date} corresponds to an error and is only an upper bound of
 the real, idealized, report date set \code{is_batched = TRUE}.}
 
 \item{case_col}{(optional) Name of the column with the case counts if
-\code{data_type} is "count". If \code{case_col} is specified even if \code{data_type}
+\code{data_type} is "count-incidence" or "count-cumulative". If \code{case_col} is specified even if \code{data_type}
 is "linelist" that name will be used if the \code{to_count} function is applied.}
 
 \item{verbose}{(optional) Logical. Whether to throw a message. Default = \code{TRUE}.}

@@ -62,7 +62,7 @@ nowcast. If no \code{now} is given then the function automatically uses the last
 an explanation on data types.}
 
 \item{case_col}{(optional) Name of the column with the case counts if
-\code{data_type} is "count". If \code{case_col} is specified even if \code{data_type}
+\code{data_type} is "count-incidence" or "count-cumulative". If \code{case_col} is specified even if \code{data_type}
 is "linelist" that name will be used if the \code{to_count} function is applied.}
 
 \item{t_effects}{(optional) Either \code{NULL} (default), a \code{\link[=temporal_effects]{temporal_effects()}} object
@@ -105,8 +105,8 @@ by the \code{\link[=validate_tbl_now]{validate_tbl_now()}} function:
 \item{report_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}. Corresponds to the units of \code{report_date}}
 \item{repot_num}{Column where the \code{report_date} was transformed to numeric values}
 \item{event_num}{Column where the \code{event_date} was transformed to numeric values}
-\item{data_type}{Either \code{linelist} or \code{count} depending on whether it is linelist data
-or count data}
+\item{data_type}{Either \code{linelist}, \code{count-incidence} or \code{count-cumulative} depending on whether it is linelist data
+or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)}
 }
 }
 
