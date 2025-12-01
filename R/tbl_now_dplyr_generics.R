@@ -648,8 +648,16 @@ summarise.tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
  #Remove the tbl_now attribute
 class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_now")))]
 
- #Do normal summarise
- summarised_tbl <- dplyr::summarise(.data, ..., .groups = .groups)
+ #Do normal summarise. This is just a hack to avoid error "Can't supply both `.by` and `.groups`."
+ if (is.null(.by) & !is.null(.groups)){
+   summarised_tbl <- dplyr::summarise(.data, ..., .groups = .groups)
+ } else if (!is.null(.by) & is.null(.groups)){
+   summarised_tbl <- dplyr::summarise(.data, ..., .by = .by)
+ } else if (is.null(.by) & is.null(.groups)) {
+   summarised_tbl <- dplyr::summarise(.data, ...)
+ } else {
+   summarised_tbl <- dplyr::summarise(.data, ..., .by = .by, .groups = .groups)
+ }
 
  result <- tryCatch({
     tbl_now(data = summarised_tbl,
@@ -679,17 +687,58 @@ class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_
 #' @importFrom dplyr summarize
 #' @exportS3Method dplyr::summarize
 summarize.tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
-  summarise.tbl_now(.data, ..., .groups = .groups)
+  summarise.tbl_now(.data, ..., .by = .by, .groups = .groups)
 }
 
 #' @importFrom dplyr summarise
 #' @exportS3Method dplyr::summarise
 summarise.grouped_tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
-  summarise.tbl_now(.data, ..., .groups = .groups)
+  summarise.tbl_now(.data, ..., .by = .by, .groups = .groups)
 }
 
 #' @importFrom dplyr summarize
 #' @exportS3Method dplyr::summarize
 summarize.grouped_tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
-  summarise.tbl_now(.data, ..., .groups = .groups)
+  summarise.tbl_now(.data, ..., .by = .by, .groups = .groups)
+}
+
+#' @importFrom dplyr summarise
+#' @exportS3Method dplyr::summarise
+reframe.tbl_now <- function(.data, ..., .by = NULL) {
+
+  #Remove the tbl_now attribute
+  class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_now")))]
+
+  #Do normal summarise
+  reframed_tbl <- dplyr::reframe(.data, ..., .by = .by)
+
+  result <- tryCatch({
+    tbl_now(data = reframed_tbl,
+            event_date = get_event_date(.data),
+            report_date = get_report_date(.data),
+            strata = get_strata(.data),
+            covariates = get_covariates(.data),
+            is_batched = get_is_batched(.data),
+            now = get_now(.data),
+            event_units = get_event_units(.data),
+            report_units = get_event_units(.data),
+            data_type = get_data_type(.data),
+            case_col = get_case_col(.data),
+            verbose = FALSE,
+            force = TRUE,
+            warn_non_uniqueness = FALSE)
+  },
+  error = function(e) {
+    cli::cli_warn("Dropping `tbl_now` attributes and converting to `tibble`")
+    reframed_tbl
+  }
+  )
+
+  result
+}
+
+#' @importFrom dplyr summarize
+#' @exportS3Method dplyr::summarize
+reframe.grouped_tbl_now <- function(.data, ..., .by = NULL) {
+  reframe.tbl_now(.data, ..., .by = .by)
 }
