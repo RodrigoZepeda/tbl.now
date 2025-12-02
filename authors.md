@@ -20,13 +20,13 @@
 ## Citation
 
 Zepeda-Tello R, Yaari R, Perini M (2025). *tbl.now: Tibble Extension for
-Nowcasts*. R package version 0.2.0,
+Nowcasts*. R package version 0.3.3,
 <https://rodrigozepeda.github.io/tbl.now/>.
 
     @Manual{,
       title = {tbl.now: Tibble Extension for Nowcasts},
       author = {Rodrigo Zepeda-Tello and Rami Yaari and Matteo Perini},
       year = {2025},
-      note = {R package version 0.2.0},
+      note = {R package version 0.3.3},
       url = {https://rodrigozepeda.github.io/tbl.now/},
     }

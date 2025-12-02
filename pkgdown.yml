@@ -3,7 +3,7 @@ pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   Introduction: Introduction.html
-last_built: 2025-12-01T21:45Z
+last_built: 2025-12-02T21:43Z
 urls:
   reference: https://rodrigozepeda.github.io/tbl.now/reference
   article: https://rodrigozepeda.github.io/tbl.now/articles

@@ -77,9 +77,6 @@
   [`get_protected_given_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   : Getters for tbl_now attributes
 
-- [`print`](https://rodrigozepeda.github.io/tbl.now/reference/print.md)
-  : Print temporal effects
-
 - [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
   :
 
