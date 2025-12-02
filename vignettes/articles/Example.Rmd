@@ -1,0 +1,95 @@
+---
+title: "Example analysis"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+In this article we show how to use the `tbl.now` framework with real data from the Center for Disease Control (CDC). 
+
+We start by loading the required packages:
+
+```{r, message=FALSE}
+library(dplyr)
+library(lubridate)
+library(tbl.now)
+```
+
+## Data
+
+For the example we will use the Flusight data from the CDC which contains **weekly** hospital admissions of patients with confirmed influenza (see `?flusight`). The data is reported **weekly** starting one week after the observations. 
+
+```{r}
+data(flusight)
+flusight
+```
+
+The column `target_end_date` corresponds to the **week** of observation while `as_of` corresponds to the **week** when information was updated. The same observation week (`target_end_date`) has then multiple report dates (`as_of`) corresponding to future weeks of update. Data is available for several states and territories of the United States via `location_name`. 
+
+Finally note that the data is reported as cumulative cases (`case-cumulative`). That is, the column `observations` contains not the cases that were updated in date `as_of` but the **overall** number of cases that were believed to have happend in date `target_end_date` by date `as_of`. You can see this with an example:
+
+```{r}
+flusight %>% 
+  filter(location_name == "Florida" & target_end_date == ymd("2024/04/06")) 
+```
+
+We can try and setup a `tbl_now` by specifying the following:
+
++ `event_date`: When cases happened
++ `report_date`: When cases were reported. 
++ `case_col`: Column containing information about the number of cases for that observation.
++ `strata`: A vector containing all of the columns considered strata
+
+Creating the `tbl_now` object like this will throw several warnings: 
+
+```{r}
+df_wrong <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
+        case_col = "observation", strata = c("location_name"))
+```
+
+The first and last warnings indicate, for example, that some observations are repeated. You can see that rows `422146`, `422147`, `422148`, `422149` have exactly the same values:
+
+```{r}
+flusight[c(422146, 422147, 422148, 422149), ]
+```
+
+Using [`dplyr's distinct()](https://dplyr.tidyverse.org/reference/distinct.html) we can clean the repeated rows and fix those warnings:
+
+```{r}
+flusight <- flusight %>% distinct()
+```
+
+**Missing** values are warned by the  `tbl_now` object to make sure the user knows of their presence. We can either ignore the warning, remove or substitute the values. For the purpose of this example, we will filter them out:
+
+```{r}
+flusight <- flusight %>% filter(!is.na(observation))
+```
+
+Then try again the `tbl_now` (spoiler, we still need to fix one last thing):
+
+```{r}
+df_still_wrong <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
+        case_col = "observation", strata = c("location_name"))
+```
+
+The data was incorrectly identified as `count-incidence` which means that each event-report date combination corresponds to the number of cases that where observed for the `event_date` and reported **exactly** at `report_date`. That is, the total number of cases that happened at `event_date` is given by the **sum** of all of the cases for each `report_date`. 
+
+In our case we have `count-cumulative` data where the `report_date` reports the latest estimate of the **total** number of cases. This can be specified with the `data_type` option: 
+
+```{r}
+df_flu <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
+        case_col = "observation", strata = c("location_name"), data_type = "count-cumulative")
+```
+
+And this results in the correct `tbl_now` object:
+
+```{r}
+df_flu
+```
+
+

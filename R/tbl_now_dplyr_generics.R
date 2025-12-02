@@ -263,8 +263,10 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
 
     if (current_rows > distinct_rows){
       warnings <- c(warnings,
-                    paste0("*Non-unique*: Data has multiple rows for the same event ({event_date}) and report",
-                    "({report_date}) dates. Consider using `to_count()` to aggregate the data."))
+                    paste0(
+                      "*Non-unique*: Data has multiple rows for the same event ({event_date}) and report",
+                      "({report_date}) dates. Consider using `to_count()` to aggregate the data or",
+                      "`distinct()` to remove repeated observations."))
     }
   }
 

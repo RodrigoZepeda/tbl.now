@@ -244,7 +244,7 @@ infer_data_type <- function(data, data_type, event_date, report_date, strata = N
     if (verbose) {
       cli::cli_alert_info(
         paste0(
-          "Identified data as {data_type} with counts in column {.val {case_col}}."
+          "Identified data as <{.emph {data_type}}> with counts in column {.val {case_col}}."
         )
       )
     }
@@ -255,7 +255,7 @@ infer_data_type <- function(data, data_type, event_date, report_date, strata = N
     if (verbose) {
       cli::cli_alert_info(
         paste0(
-          "Identified data as linelist-data where each observation is a test."
+          "Identified data as <{.emph linelist-data}> where each observation is a test."
         )
       )
     }

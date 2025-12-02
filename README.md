@@ -54,7 +54,7 @@ The nowcasting problem is to estimate the total number of events **now**
 that have occurred at any past `event_date` given that not all of them
 have been reported yet.
 
-## Simple example
+## Example
 
 In the context of nowcasting, the **tbl_now** can be thought of as a
 specific [tibble()](https://tibble.tidyverse.org/reference/tibble.html)
@@ -87,22 +87,36 @@ function:
 ``` r
 df_now <- tbl_now(df, event_date = "event_date", report_date = "report_date")
 #> ℹ Identified data as count-incidence with counts in column "n".
+df_now
+#> # A tibble:  4 × 6
+#> # Data type: "count-incidence"
+#> # Frequency: Event: `days` | Report: `days`
+#>   event_date   report_date       n .event_num .report_num .delay
+#>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl>
+#>   [event_date] [report_date] [...]      [...]       [...]  [...]
+#> 1 2023-12-25   2023-12-26       10          0           1      1
+#> 2 2023-12-26   2023-12-26        2          1           1      0
+#> 3 2023-12-25   2023-12-27        5          0           2      2
+#> 4 2023-12-26   2023-12-27       11          1           2      1
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
+#> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
 The
 [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
 automatically detects whether the **data-type** corresponds to
 *linelist*, *count-incidence* or *count-cumulative* data, the
-**date-units** for the event and report dates (frequency), and the *now*
-is given by the latest date (2023-12-27). Additionally it transforms the
-`event_date` into numeric (`.event_num` column) as well as the
-`report_date` (`.report_num` column) and calculates the delay (`.delay`
-column).
+**date-units** for the event and report dates (frequency), and the
+**now** is given by the latest date (2023-12-27). Additionally it
+transforms the `event_date` into numeric (`.event_num` column) as well
+as the `report_date` (`.report_num` column) and calculates the delay
+(`.delay` column).
 
 The
 [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
 is compatible with the usual [dplyr](https://dplyr.tidyverse.org/)
-operations with it adjusting on-the-go:
+operations:
 
 ``` r
 df_now %>% 
@@ -125,13 +139,16 @@ df_now %>%
 Temporal effects can be added as covariates of the
 [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
 using the
-\[temporal_effects()\]\[tbl_now()\](<https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html>).
+[temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html).
 
 For example we can specify it includes the day of the week, the week of
 the year, and whether it is holiday in the US:
 
 ``` r
-t_eff <- temporal_effects(day_of_week = TRUE, week_of_year = TRUE, holidays = cal_us_federal())
+t_eff <- temporal_effects(
+  day_of_week  = TRUE,
+  week_of_year = TRUE, 
+  holidays     = cal_us_federal())
 t_eff
 #> 
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
@@ -156,18 +173,24 @@ df_now %>%
 #> # A tibble:  4 × 9
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
-#>   event_date  report_date     n .event_num .report_num .delay .event_day_of_week
-#>   <date>      <date>      <dbl>      <dbl>       <dbl>  <dbl>              <int>
-#>   [event_dat… [report_da… [...]      [...]       [...]  [...]         [t_effect]
-#> 1 2023-12-25  2023-12-26     10          0           1      1                  2
-#> 2 2023-12-26  2023-12-26      2          1           1      0                  3
-#> 3 2023-12-25  2023-12-27      5          0           2      2                  2
-#> 4 2023-12-26  2023-12-27     11          1           2      1                  3
+#>   event_date   report_date       n .event_num .report_num .delay
+#>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl>
+#>   [event_date] [report_date] [...]      [...]       [...]  [...]
+#> 1 2023-12-25   2023-12-26       10          0           1      1
+#> 2 2023-12-26   2023-12-26        2          1           1      0
+#> 3 2023-12-25   2023-12-27        5          0           2      2
+#> 4 2023-12-26   2023-12-27       11          1           2      1
+#>   .event_day_of_week .event_week_of_year .event_holiday
+#>                <int>               <int>          <int>
+#>           [t_effect]          [t_effect]     [t_effect]
+#> 1                  2                   1              1
+#> 2                  3                   1              0
+#> 3                  2                   1              1
+#> 4                  3                   1              0
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # T. effects: ".event_day_of_week", ".event_week_of_year", and ".event_holiday"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 2 more variables: .event_week_of_year <int>, .event_holiday <int>
 ```
 
 Note that Christmas (`2023-12-25`) is marked as an `.event_holiday`,
