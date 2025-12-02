@@ -191,7 +191,7 @@ add_temporal_effects.data.frame <- function(x, t_effects= NULL, overwrite = FALS
     # Add holiday effect-----
     if (!is.null(t_effects@holidays) & length(t_effects@holidays) > 0 & !is.null(date_col)) {
       # Check almanac installation
-      if (!rlang::check_installed("almanac")) {
+      if (!rlang::is_installed("almanac")) {
         cli::cli_abort(
           "Please install the `almanac` package to be able to integrate `holiday` effects"
         )
