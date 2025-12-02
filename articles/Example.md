@@ -71,6 +71,8 @@ flusight %>%
 #> # ℹ 30 more rows
 ```
 
+## Creating the `tbl_now`
+
 We can try and setup a `tbl_now` by specifying the following:
 
 - `event_date`: When cases happened
@@ -177,4 +179,118 @@ df_flu
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 451,405 more rows
 #> # ℹ 1 more variable: .delay <dbl>
+```
+
+## Using the `tbl_now`
+
+Once created the `tbl_now` you can use the classic `dplyr` verbs to do
+operations. For example by renaming columns and filtering out just one
+state:
+
+``` r
+df_florida <- df_flu %>% 
+  rename(latest_report = as_of) %>% 
+  filter(location_name == "Florida")
+
+df_florida
+#> # A tibble:  8,539 × 7
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>    latest_report target_end_date location_name observation .event_num
+#>    <date>        <date>          <chr>               <dbl>      <dbl>
+#>    [report_date] [event_date]    [strata]            [...]      [...]
+#>  1 2023-09-23    2022-02-12      Florida                68          1
+#>  2 2023-09-23    2022-02-19      Florida                66          2
+#>  3 2023-09-23    2022-02-26      Florida                73          3
+#>  4 2023-09-23    2022-03-05      Florida                72          4
+#>  5 2023-09-23    2022-03-12      Florida                68          5
+#>  6 2023-09-23    2022-03-19      Florida                71          6
+#>  7 2023-09-23    2022-03-26      Florida               108          7
+#>  8 2023-09-23    2022-04-02      Florida               101          8
+#>  9 2023-09-23    2022-04-09      Florida                97          9
+#> 10 2023-09-23    2022-04-16      Florida               158         10
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2025-11-12 | Event date: "target_end_date" | Report date: "latest_report"
+#> # Strata: "location_name"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 8,529 more rows
+#> # ℹ 2 more variables: .report_num <dbl>, .delay <dbl>
+```
+
+Given that in this dataset we only have `Florida` it makes no sense to
+keep `location_name` as strata. We can use the `remove_strata` function
+to remove it without removing the column (though removing the column
+would also work):
+
+``` r
+df_florida <- df_florida %>% 
+  remove_strata("location_name")
+df_florida
+#> # A tibble:  8,539 × 7
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>    latest_report target_end_date location_name observation .event_num
+#>    <date>        <date>          <chr>               <dbl>      <dbl>
+#>    [report_date] [event_date]    [...]               [...]      [...]
+#>  1 2023-09-23    2022-02-12      Florida                68          1
+#>  2 2023-09-23    2022-02-19      Florida                66          2
+#>  3 2023-09-23    2022-02-26      Florida                73          3
+#>  4 2023-09-23    2022-03-05      Florida                72          4
+#>  5 2023-09-23    2022-03-12      Florida                68          5
+#>  6 2023-09-23    2022-03-19      Florida                71          6
+#>  7 2023-09-23    2022-03-26      Florida               108          7
+#>  8 2023-09-23    2022-04-02      Florida               101          8
+#>  9 2023-09-23    2022-04-09      Florida                97          9
+#> 10 2023-09-23    2022-04-16      Florida               158         10
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2025-11-12 | Event date: "target_end_date" | Report date: "latest_report"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 8,529 more rows
+#> # ℹ 2 more variables: .report_num <dbl>, .delay <dbl>
+```
+
+The current `now` for the nowcast is:
+
+``` r
+get_now(df_florida)
+#> [1] "2025-11-12"
+```
+
+However, if we were interested, say, in historical nowcasting
+(i.e. backtesting) we can filter the dates and update the now:
+
+``` r
+df_florida <- df_florida %>% 
+  filter(latest_report < ymd("2023/12/01")) %>% 
+  change_now(ymd("2023/12/01"))
+
+df_florida
+#> # A tibble:  895 × 7
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>    latest_report target_end_date location_name observation .event_num
+#>    <date>        <date>          <chr>               <dbl>      <dbl>
+#>    [report_date] [event_date]    [...]               [...]      [...]
+#>  1 2023-09-23    2022-02-12      Florida                68          1
+#>  2 2023-09-23    2022-02-19      Florida                66          2
+#>  3 2023-09-23    2022-02-26      Florida                73          3
+#>  4 2023-09-23    2022-03-05      Florida                72          4
+#>  5 2023-09-23    2022-03-12      Florida                68          5
+#>  6 2023-09-23    2022-03-19      Florida                71          6
+#>  7 2023-09-23    2022-03-26      Florida               108          7
+#>  8 2023-09-23    2022-04-02      Florida               101          8
+#>  9 2023-09-23    2022-04-09      Florida                97          9
+#> 10 2023-09-23    2022-04-16      Florida               158         10
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2023-12-01 | Event date: "target_end_date" | Report date: "latest_report"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 885 more rows
+#> # ℹ 2 more variables: .report_num <dbl>, .delay <dbl>
+```
+
+Which yields the new value:
+
+``` r
+get_now(df_florida)
+#> [1] "2023-12-01"
 ```

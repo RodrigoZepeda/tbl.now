@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   articles/Example: Example.html
   Introduction: Introduction.html
-last_built: 2025-12-02T23:34Z
+last_built: 2025-12-02T23:58Z
 urls:
   reference: https://rodrigozepeda.github.io/tbl.now/reference
   article: https://rodrigozepeda.github.io/tbl.now/articles
