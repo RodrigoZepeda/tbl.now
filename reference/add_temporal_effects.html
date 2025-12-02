@@ -9,7 +9,7 @@ columns"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,7 +20,8 @@ columns"></head><body>
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Introduction.html">Introduction</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Introduction.html">Introduction</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -134,7 +135,7 @@ to add temporal effects to those columns.</p></dd>
 <span class="r-in"><span>    event_date <span class="op">=</span> <span class="st">"onset_week"</span>,</span></span>
 <span class="r-in"><span>    report_date <span class="op">=</span> <span class="st">"report_week"</span>,</span></span>
 <span class="r-in"><span>    strata <span class="op">=</span> <span class="st">"gender"</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Identified data as linelist-data where each observation is a test.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Identified data as &lt;<span style="font-style: italic;">linelist-data</span>&gt; where each observation is a test.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Add an effect for epidemiological week</span></span></span>
 <span class="r-in"><span><span class="fu">add_temporal_effects</span><span class="op">(</span><span class="va">disease_data</span>, t_effects<span class="op">=</span> <span class="fu"><a href="temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></span>

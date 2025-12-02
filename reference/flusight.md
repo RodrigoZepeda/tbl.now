@@ -1,11 +1,10 @@
-# flusight:
+# flusight: NHSN Weekly Hospital Respiratory Data from FluSight
 
-NHSN Weekly Hospital Respiratory Data from FluSight FluSight's weekly
-hospital admission prediction targets based on the 'total number of new
-hospital admissions of patients with confirmed influenza captured during
-the reporting week' reported through CDC's NHSN (the dataset formerly
-known as HHS-Protect), Weekly Hospital Respiratory Data. Data was
-downloaded on November 12th 2025.
+FluSight's weekly hospital admission prediction targets based on the
+'total number of new hospital admissions of patients with confirmed
+influenza captured during the reporting week' reported through CDC's
+NHSN (the dataset formerly known as HHS-Protect), Weekly Hospital
+Respiratory Data. Data was downloaded on November 12th 2025.
 
 ## Usage
 

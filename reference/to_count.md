@@ -43,7 +43,7 @@ ndata <- tbl_now(denguedat,
     event_date = "onset_week",
     report_date = "report_week",
     strata = "gender")
-#> ℹ Identified data as linelist-data where each observation is a test.
+#> ℹ Identified data as <linelist-data> where each observation is a test.
 
 to_count(ndata, to = "count-incidence")
 #> # A tibble:  8,265 × 7
@@ -76,7 +76,7 @@ event_date = "date_of_symptom_onset",
               strata = "sex")
 to_count(ndata)
 })
-#> ℹ Identified data as count-incidence with counts in column "n".
+#> ℹ Identified data as <count-incidence> with counts in column "n".
 #> # A tibble:  40,822 × 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`

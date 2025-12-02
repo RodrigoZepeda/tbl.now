@@ -97,7 +97,7 @@ disease_data <- tbl_now(denguedat,
     event_date = "onset_week",
     report_date = "report_week",
     strata = "gender")
-#> ℹ Identified data as linelist-data where each observation is a test.
+#> ℹ Identified data as <linelist-data> where each observation is a test.
 
 # Add an effect for epidemiological week
 add_temporal_effects(disease_data, t_effects= temporal_effects(week_of_year = TRUE))

@@ -35,7 +35,7 @@
   Rico
 
 - [`flusight`](https://rodrigozepeda.github.io/tbl.now/reference/flusight.md)
-  : flusight:
+  : flusight: NHSN Weekly Hospital Respiratory Data from FluSight
 
 - [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
   [`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
