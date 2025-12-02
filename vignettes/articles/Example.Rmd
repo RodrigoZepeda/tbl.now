@@ -38,6 +38,8 @@ flusight %>%
   filter(location_name == "Florida" & target_end_date == ymd("2024/04/06")) 
 ```
 
+## Creating the `tbl_now`
+
 We can try and setup a `tbl_now` by specifying the following:
 
 + `event_date`: When cases happened
@@ -92,4 +94,44 @@ And this results in the correct `tbl_now` object:
 df_flu
 ```
 
+## Using the `tbl_now`
 
+Once created the `tbl_now` you can use the classic `dplyr` verbs to do operations. For example by renaming columns and filtering out just one state: 
+
+```{r}
+df_florida <- df_flu %>% 
+  rename(latest_report = as_of) %>% 
+  filter(location_name == "Florida")
+
+df_florida
+```
+
+Given that in this dataset we only have `Florida` it makes no sense to keep `location_name` as strata. We can use the `remove_strata` function to remove it without removing the column (though removing the column would also work):
+
+```{r}
+df_florida <- df_florida %>% 
+  remove_strata("location_name")
+df_florida
+```
+
+The current `now` for the nowcast is:
+
+```{r}
+get_now(df_florida)
+```
+
+However, if we were interested, say, in historical nowcasting (i.e. backtesting) we can filter the dates and update the now: 
+
+```{r}
+df_florida <- df_florida %>% 
+  filter(latest_report < ymd("2023/12/01")) %>% 
+  change_now(ymd("2023/12/01"))
+
+df_florida
+```
+
+Which yields the new value:
+
+```{r}
+get_now(df_florida)
+```
