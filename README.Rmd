@@ -43,20 +43,19 @@ library(tbl.now)
 library(almanac)    #Suggested for holiday effects
 ```
 
-## Introduction
+## Why tbl_now?
 
 Traditionally in epidemiological nowcasting scenarios we have two dates: 
 
 * `event_date`: When something happened (e.g. symptom onset or a test was taken).
 * `report_date`: When it was reported (e.g. the patient went to the clinic or the test results were registered). 
 
-The nowcasting problem is to estimate the total number of events **now** that have occurred at any past `event_date` given that not all of them have been reported yet. 
+The nowcasting problem is to estimate the total number of events **now** that have occurred at any past `event_date` given that not all of them have been reported yet. In the context of nowcasting, the **tbl_now** can be thought of as a specific [tibble()](https://tibble.tidyverse.org/reference/tibble.html) that **guarantees** an `event_date` and a `report_date`.
+
 
 ## Example
 
-In the context of nowcasting, the **tbl_now** can be thought of as a specific [tibble()](https://tibble.tidyverse.org/reference/tibble.html) that **guarantees** an `event_date` and a `report_date`.
-
-For example the following data.frame represents the number of cases `n`  reported at `report_date` that happened at `event_date`
+Consider the following `data.frame` representing the number of cases `n`  reported at `report_date` that happened at `event_date`:
 
 ```{r}
 df <- tibble(
@@ -84,6 +83,23 @@ df_now %>%
   filter(n > 5)
 ```
 
+If strata was given, the [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) can easily tag the corresponding strata. 
+
+```{r}
+#Add the column using dplyr:
+df_now <- df_now %>% 
+  mutate(sex = c("M","M","F","M")) 
+
+df_now
+```
+
+To specify strata you can use the `add_strata`:
+
+```{r}
+df_now %>% 
+  add_strata("sex")
+```
+
 ## Temporal effects
 
 Temporal effects can be added as covariates of the [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)  using the [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html). 
@@ -107,8 +123,9 @@ df_now %>%
 Note that Christmas (`2023-12-25`) is marked as an `.event_holiday`, everything corresponds to the first epidemiological week of `2024`, and the days of the week correspond to Monday (`event_day_of_week = 2`) and Tuesday (`event_day_of_week = 3`). All of these effects can be used as covariates in the models. 
 
 
+## Learn more about tbl.now 
 
-
-
++ Read the whitepaper on [tbl.now](https://rodrigozepeda.github.io/tbl.now/articles/Introduction.html)
++ Read an [example](https://rodrigozepeda.github.io/tbl.now/articles/Example.html) with real data. 
 
 

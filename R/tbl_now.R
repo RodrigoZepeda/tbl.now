@@ -67,9 +67,7 @@
 #'   \item{event_date}{Name of the column refering to the event of interest.}
 #'   \item{report_date}{Name of the column refering to when the event of interest was reported.}
 #'   \item{strata}{Names of the columns corresponding to the strata (for modelling).}
-#'   \item{num_strata}{Number of strata. Corresponds to `length(strata)`.}
 #'   \item{covariates}{Names of the columns corresponding to covariates (for modelling).}
-#'   \item{num_covariates}{Number of covariates Corresponds to `length(covariates)`.}
 #'   \item{now}{Date of the `now` for a nowcast.}
 #'   \item{is_batched}{Column indicating whether the measurement is noisy (only upper bound) or not.}
 #'   \item{event_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `event_date`}
@@ -280,10 +278,8 @@ tbl_now <- function(data,
   # Set the core attributes (if adding new attributes here change in validate_tbl_now too)
   attr(data, "event_date")     <- event_date
   attr(data, "report_date")    <- report_date
-  attr(data, "num_strata")     <- num_strata
   attr(data, "case_col")       <- case_col
   attr(data, "strata")         <- strata
-  attr(data, "num_covariates") <- num_covariates
   attr(data, "covariates")     <- covariates
   attr(data, "now")            <- now
   attr(data, "event_units")    <- event_units

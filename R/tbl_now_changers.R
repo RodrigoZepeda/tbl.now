@@ -152,7 +152,6 @@ change_strata <- function(x, value) {
   }
 
   attr(x, "strata") <-  value
-  attr(x, "num_strata") <-  length(value)
 
   validate_tbl_now(x)
 
@@ -212,7 +211,6 @@ change_covariates <- function(x, value) {
   }
 
   attr(x, "covariates") <-  value
-  attr(x, "num_covariates") <-  length(value)
 
   validate_tbl_now(x)
 

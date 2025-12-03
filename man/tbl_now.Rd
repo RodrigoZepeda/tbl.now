@@ -96,9 +96,7 @@ by the \code{\link[=validate_tbl_now]{validate_tbl_now()}} function:
 \item{event_date}{Name of the column refering to the event of interest.}
 \item{report_date}{Name of the column refering to when the event of interest was reported.}
 \item{strata}{Names of the columns corresponding to the strata (for modelling).}
-\item{num_strata}{Number of strata. Corresponds to \code{length(strata)}.}
 \item{covariates}{Names of the columns corresponding to covariates (for modelling).}
-\item{num_covariates}{Number of covariates Corresponds to \code{length(covariates)}.}
 \item{now}{Date of the \code{now} for a nowcast.}
 \item{is_batched}{Column indicating whether the measurement is noisy (only upper bound) or not.}
 \item{event_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}. Corresponds to the units of \code{event_date}}

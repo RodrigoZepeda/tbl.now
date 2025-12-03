@@ -73,7 +73,7 @@ get_strata <- function(x) {
 #' @rdname nowcast_data_getters
 #' @export
 get_num_strata <- function(x) {
-  attr(x, "num_strata", exact = TRUE)
+  length(get_strata(x))
 }
 
 #' @rdname nowcast_data_getters
@@ -85,7 +85,7 @@ get_covariates <- function(x) {
 #' @rdname nowcast_data_getters
 #' @export
 get_num_covariates <- function(x) {
-  attr(x, "num_covariates", exact = TRUE)
+  length(get_covariates(x))
 }
 
 #' @rdname nowcast_data_getters

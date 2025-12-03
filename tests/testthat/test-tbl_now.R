@@ -46,9 +46,7 @@ test_that("tbl_now creates object with minimal linelist data", {
   expect_equal(attr(result, "report_date"), "report_week")
   expect_equal(attr(result, "now"), expected_now)     # Should infer max report date
   expect_equal(attr(result, "strata"), NULL)          # Should be empty
-  expect_equal(attr(result, "num_strata"), 0)          # Should be empty
   expect_equal(attr(result, "covariates"), c("age_group", "gender"))
-  expect_equal(attr(result, "num_covariates"), 2)
   expect_equal(attr(result, "data_type"), "linelist") # Should infer linelist
   expect_equal(attr(result, "report_units"), "days")    # Should infer "day" for Date objects
   expect_equal(attr(result, "event_units"), "days")    # Should infer "day" for Date objects
@@ -57,9 +55,9 @@ test_that("tbl_now creates object with minimal linelist data", {
   expect_equal(attr(result, "report_date"), get_report_date(result))
   expect_equal(attr(result, "now"), get_now(result))
   expect_equal(attr(result, "strata"), get_strata(result))
-  expect_equal(attr(result, "num_strata"), get_num_strata(result))
+  expect_equal(length(get_strata(result)), get_num_strata(result))
   expect_equal(attr(result, "covariates"), get_covariates(result))
-  expect_equal(attr(result, "num_covariates"), get_num_covariates(result))
+  expect_equal(length(get_covariates(result)), get_num_covariates(result))
   expect_equal(attr(result, "data_type"), get_data_type(result))
   expect_equal(attr(result, "report_units"), get_report_units(result))
   expect_equal(attr(result, "event_units"), get_event_units(result))
@@ -107,9 +105,7 @@ test_that("tbl_now correctly sets strata ", {
   )
 
   expect_equal(attr(result, "strata"), c("age_group", "gender"))
-  expect_equal(attr(result, "num_strata"), 2)
   expect_equal(attr(result, "covariates"), NULL)
-  expect_equal(attr(result, "num_covariates"), 0)
 })
 
 test_that("tbl_now infers 'count' data_type correctly", {

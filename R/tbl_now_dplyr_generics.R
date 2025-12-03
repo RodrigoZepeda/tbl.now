@@ -35,8 +35,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
 
 
   #Get required attributes
-  required_attrs <- c("event_date", "report_date", "num_strata",
-                      "num_covariates", "now", "event_units", "report_units",
+  required_attrs <- c("event_date", "report_date", "now", "event_units", "report_units",
                       "data_type")
 
   errors   <- character(0)
@@ -62,9 +61,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
   # === 3. Extract attributes for validation ===
   event_date     <- get_event_date(x)
   report_date    <- get_report_date(x)
-  num_strata     <- get_num_strata(x)
   strata         <- get_strata(x)
-  num_covariates <- get_num_covariates(x)
   covariates     <- get_covariates(x)
   now            <- get_now(x)
   report_units   <- get_report_units(x)
@@ -86,23 +83,6 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
     errors <- c(errors, "Attribute {.val report_date} must be a Date of length 1")
   }
 
-  # num_strata must be numeric
-  if (!is.numeric(num_strata) || length(num_strata) != 1) {
-    errors <- c(errors, "Attribute {.val num_strata} must be a single numeric value")
-  }
-
-  if (length(num_strata) == 1 && is.numeric(num_strata) && num_strata < 0){
-    errors <- c(errors, "Cannot have negative `num_strata` ({.val num_strata})")
-  }
-
-  # num_covariates must be numeric
-  if (!is.numeric(num_covariates) || length(num_covariates) != 1) {
-    errors <- c(errors, "Attribute {.val num_covariates} must be a single numeric value")
-  }
-
-  if (length(num_covariates) == 1 && is.numeric(num_covariates) && num_covariates < 0){
-    errors <- c(errors, "Cannot have negative `num_covariates` ({.val num_covariates})")
-  }
 
   # strata must be NULL or character
   if (!is.null(strata) && !is.character(strata)) {
@@ -197,24 +177,6 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
     if (!is.logical(x[[is_batched]])) {
       errors <- c(errors, sprintf("Column '%s' must be logical (TRUE/FALSE)", is_batched))
     }
-  }
-
-  # === 7. Validate consistency between attributes ===
-
-  # Check num_strata matches length of strata
-  if (!is.null(strata) && num_strata != length(strata)) {
-    errors <- c(errors, sprintf(
-      "Attribute 'num_strata' (%d) does not match length of 'strata' (%d)",
-      num_strata, length(strata)
-    ))
-  }
-
-  # Check num_covariates matches length of covariates
-  if (!is.null(covariates) && num_covariates != length(covariates)) {
-    errors <- c(errors, sprintf(
-      "Attribute 'num_covariates' (%d) does not match length of 'covariates' (%d)",
-      num_covariates, length(covariates)
-    ))
   }
 
   # Removing the case_col
@@ -361,7 +323,6 @@ tbl_now_reconstruct_internal <- function(data, template){
 
     #Reattach
     attr(data, "strata")      <- strata
-    attr(data, "num_strata")  <- length(strata)
   }
 
   # Update covariates if columns were dropped
@@ -371,7 +332,6 @@ tbl_now_reconstruct_internal <- function(data, template){
 
     #Reattach
     attr(data, "covariates")      <- covariates
-    attr(data, "num_covariates")  <- length(covariates)
   }
 
   # Update temporal effects if columns were dropped

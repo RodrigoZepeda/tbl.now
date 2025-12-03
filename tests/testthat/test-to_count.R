@@ -248,7 +248,6 @@ test_that("to_count preserves strata attributes", {
   result <- to_count(ndata, to = "count-incidence")
 
   expect_equal(get_strata(result), c("gender", "age_group"))
-  expect_equal(get_num_strata(result), 2)
 })
 
 # Tests for to_count.tbl_now() with covariates ----
