@@ -4,7 +4,7 @@ output: rmarkdown::html_vignette
 bibliography: references.bib
 link-citations: true
 vignette: >
-  %\VignetteIndexEntry{Introduction}
+  %\VignetteIndexEntry{tbl.now}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -92,9 +92,23 @@ The following sections explain each of these perks of the `tbl.now` framework as
 
 ### Attributes of a `tbl_now` 
 
+#### Data types {#data-types}
+
+#### Temporal effects
+
+#### Modifying the attributes of a `tbl_now`
+
+#### Transforming a `tbl_now` to count data
+
+#### Modifying a `tbl_now` with `dplyr`
+
+#### Updating a `tbl_now`
+
+## Other functions
 
 
-### Data types {#data-types}
+
+
 
 
 ## References
