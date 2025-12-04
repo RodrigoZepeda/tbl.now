@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Introduction • tbl.now</title>
+<title>tbl.now • tbl.now</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Introduction">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="tbl.now">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,7 +34,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/Example.html">Example analysis</a></li>
-    <li><a class="dropdown-item" href="../articles/Introduction.html">Introduction</a></li>
+    <li><a class="dropdown-item" href="../articles/Introduction.html">tbl.now</a></li>
   </ul>
 </li>
       </ul>
@@ -55,7 +55,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Introduction</h1>
+      <h1>tbl.now</h1>
             
       
 
@@ -65,12 +65,186 @@
     
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lubridate.tidyverse.org" class="external-link">lubridate</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span></code></pre></div>
+<div class="section level2">
+<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
+</h2>
+<p>In <code>R</code>, one of the main frameworks for data analysis is
+the <a href="https://tidyverse.org/" class="external-link">tidyverse</a> <span class="citation">(<a href="#ref-tidyverse">Wickham et al.
+2019</a>)</span>. Within it, data is arranged with <strong>rows</strong>
+corresponding to single observations and <strong>columns</strong>
+representing different variables. This is referred to as <a href="https://tidyr.tidyverse.org/articles/tidy-data.html" class="external-link">tidy data</a>
+<span class="citation">(<a href="#ref-wickham2014tidy">Wickham
+2014</a>)</span>.</p>
+<p>For time series, tidy extensions to the classical
+<code>data.frame</code> (or <a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link"><code>tibble</code></a>)
+have previously been proposed with the <a href="https://tsibble.tidyverts.org/" class="external-link">tsibble</a>, the <a href="https://business-science.github.io/tibbletime/" class="external-link">tibbletime</a>,
+and the <a href="https://business-science.github.io/timetk/" class="external-link">timetk</a>
+packages <span class="citation">(<a href="#ref-wang2020new">E. Wang,
+Cook, and Hyndman 2020</a>; <a href="#ref-wang2019tidy">Y. Wang
+2019</a>; <a href="#ref-timetk">Dancho and Vaughan 2023</a>)</span>.
+However, in the context of epidemiological nowcasting were two different
+time-indexes are on the same table, the previous methods are lacking.
+This is where <code>tbl.now</code> comes in.</p>
+<p>The tibble now (<code>tbl.now</code>) is an extension fo the <a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link"><code>tibble</code></a>
+that tags specific variables as indexes for nowcasting models in the
+context of <a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link"><code>diseasenowcasting</code></a>.
+The main purpose of the <code>tbl.now</code> is to unify the data
+inputted to <a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link"><code>diseasenowcasting</code></a>’s
+models while allowing the user to keep a <code>tidy</code> structure on
+the data and perform the usual [<code>dplyr</code>] data cleaning
+operations. This allows the user to move easierly into one of the
+classical modeling workflow frameworks such as <span class="citation">(<a href="#ref-gelman2020bayesian">Gelman et al.
+2020</a>; <a href="#ref-wickham2023r">Wickham, Çetinkaya-Rundel, and
+Grolemund 2023</a>)</span>:</p>
+<pre><code>Data Cleaning -&gt; Modeling -&gt; New Data Cleaning -&gt; New Modeling -&gt; ...</code></pre>
+</div>
 <div class="section level2">
 <h2 id="the-tbl-now-framework">The <code>tbl.now</code> framework<a class="anchor" aria-label="anchor" href="#the-tbl-now-framework"></a>
 </h2>
+<p>In epidemiological nowcasting scenarios we have at least two
+dates:</p>
+<ul>
+<li><p><code>event_date</code>: When something happened (<em>e.g.</em>
+symptom onset or a test was taken).</p></li>
+<li><p><code>report_date</code>: When it was reported (<em>e.g.</em> the
+patient visited a physician or the test results were
+registered).</p></li>
+</ul>
+<p>The nowcasting problem is:</p>
+<blockquote>
+<p>To estimate the total number of events <strong>now</strong> that have
+occurred at any <strong>past</strong> <code>event_date</code> given that
+not all of them have been reported yet (i.e. some
+`<code>report_date</code>s are potentially in the future).</p>
+</blockquote>
+<p>In the context of nowcasting, the <code>tbl_now</code> can be thought
+of as a specific <code><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble()</a></code> that guarantees an
+<code>event_date</code> and a <code>report_date.</code> by tagging them
+as <strong>attributes</strong> and allows for additional operations such
+as delay calculation.</p>
+<div class="section level3">
+<h3 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
+</h3>
+<p>The <code>tbl_now</code> works from a <code>data.frame</code> by
+specifying the <code>event_date</code> and <code>report_date</code>
+columns:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  symptom_onset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/25"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/26"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/25"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/26"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  medical_visit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/26"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/26"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/27"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/27"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">2</span>, <span class="fl">5</span>, <span class="fl">11</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">df</span></span>
+<span><span class="co">#&gt;   symptom_onset medical_visit  n</span></span>
+<span><span class="co">#&gt; 1    2023-12-25    2023-12-26 10</span></span>
+<span><span class="co">#&gt; 2    2023-12-26    2023-12-26  2</span></span>
+<span><span class="co">#&gt; 3    2023-12-25    2023-12-27  5</span></span>
+<span><span class="co">#&gt; 4    2023-12-26    2023-12-27 11</span></span></code></pre></div>
+<p>In the previous <code>data.frame</code>, column
+<strong>symptom_onset</strong> represents the <code>event</code> while
+<strong>medical_visit</strong> corresponds to the <code>report</code>.
+Finally <code>n</code> corresponds to the number of cases which can be
+specified in the <code>case_count</code> variable.</p>
+<p>The previous options can be specified in the
+<code>tbl_now</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
+<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">symptom_onset</span>, report_date <span class="op">=</span> <span class="va">medical_visit</span>, case_count <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Identified data as &lt;<span style="font-style: italic;">count-incidence</span>&gt; with counts in column <span style="color: #0000BB;">"n"</span>.</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  4 × 6</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
+<span><span class="co">#&gt;   symptom_onset medical_visit       n .event_num .report_num .delay</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #949494;">[event_date]</span>  <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[cases]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2023-12-25    2023-12-26         10          0           1      1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2023-12-26    2023-12-26          2          1           1      0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2023-12-25    2023-12-27          5          0           2      2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2023-12-26    2023-12-27         11          1           2      1</span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2023-12-27</span> | Event date: <span style="color: #0000BB;">"symptom_onset"</span> | Report date: <span style="color: #0000BB;">"medical_visit"</span></span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
+<p>Notice that the [tbl_now()] function does several things at once:</p>
+<ul>
+<li><p>It auto-detects the <strong>data-type</strong> as
+<code>count-incidence</code>. Other data types such as
+<code>linelist</code> are available and are discussed in section
+@ref(data-types).</p></li>
+<li><p>It auto-detects the <strong>units (frequency)</strong> of the
+event and report dates as ‘daily’ for both.</p></li>
+<li><p>It <strong>tags</strong> <code>symptom_onset</code> as an
+<code>event_date</code>, <code>medical_visit</code> as a
+<code>report_date</code> and <code>n</code> as
+<code>cases</code>.</p></li>
+<li><p>It generates the <code>.event_num</code> and
+<code>.report_num</code> columns which are numerical versions of the
+<code>event_date</code> and <code>report_date</code> columns.</p></li>
+<li><p>It generates the <code>.delay</code> column with the delay given
+by the difference between report and event:
+<code>.delay = report_date - event_date</code>.</p></li>
+<li><p>It automatically detects the <strong>now</strong> for the
+nowcasting.</p></li>
+</ul>
+<p>The following sections explain each of these perks of the
+<code>tbl.now</code> framework as well as additional functions that can
+be applied to a <code>tbl.now</code>.</p>
 </div>
-  </main>
+<div class="section level3">
+<h3 id="attributes-of-a-tbl_now">Attributes of a <code>tbl_now</code><a class="anchor" aria-label="anchor" href="#attributes-of-a-tbl_now"></a>
+</h3>
+</div>
+<div class="section level3">
+<h3 id="data-types">Data types<a class="anchor" aria-label="anchor" href="#data-types"></a>
+</h3>
+</div>
+</div>
+<div class="section level2 unnumbered">
+<h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="ref-timetk" class="csl-entry">
+Dancho, Matt, and Davis Vaughan. 2023. <em>Timetk: A Tool Kit for
+Working with Time Series</em>. <a href="https://doi.org/10.32614/CRAN.package.timetk" class="external-link">https://doi.org/10.32614/CRAN.package.timetk</a>.
+</div>
+<div id="ref-gelman2020bayesian" class="csl-entry">
+Gelman, Andrew, Aki Vehtari, Daniel Simpson, Charles C Margossian, Bob
+Carpenter, Yuling Yao, Lauren Kennedy, Jonah Gabry, Paul-Christian
+Bürkner, and Martin Modrák. 2020. <span>“Bayesian Workflow.”</span>
+<em>arXiv Preprint arXiv:2011.01808</em>.
+</div>
+<div id="ref-wang2020new" class="csl-entry">
+Wang, Earo, Dianne Cook, and Rob J Hyndman. 2020. <span>“A New Tidy Data
+Structure to Support Exploration and Modeling of Temporal Data.”</span>
+<em>Journal of Computational and Graphical Statistics</em> 29 (3):
+466–78.
+</div>
+<div id="ref-wang2019tidy" class="csl-entry">
+Wang, Yiru. 2019. <span>“Tidy Tools for Supporting Fluent Workflow in
+Temporal Data Analysis.”</span> PhD thesis, Monash University.
+</div>
+<div id="ref-wickham2014tidy" class="csl-entry">
+Wickham, Hadley. 2014. <span>“Tidy Data.”</span> <em>Journal of
+Statistical Software</em> 59: 1–23.
+</div>
+<div id="ref-tidyverse" class="csl-entry">
+Wickham, Hadley, Mara Averick, Jennifer Bryan, Winston Chang, Lucy
+D’Agostino McGowan, Romain François, Garrett Grolemund, et al. 2019.
+<span>“Welcome to the <span class="nocase">tidyverse</span>.”</span>
+<em>Journal of Open Source Software</em> 4 (43): 1686. <a href="https://doi.org/10.21105/joss.01686" class="external-link">https://doi.org/10.21105/joss.01686</a>.
+</div>
+<div id="ref-wickham2023r" class="csl-entry">
+Wickham, Hadley, Mine Çetinkaya-Rundel, and Garrett Grolemund. 2023.
+<em>R for Data Science: Import, Tidy, Transform, Visualize, and Model
+Data</em>. O’Reilly Media, Inc.
+</div>
+</div>
+</div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside>
 </div>
 
 

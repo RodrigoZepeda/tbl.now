@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,7 +34,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/Example.html">Example analysis</a></li>
-    <li><a class="dropdown-item" href="../articles/Introduction.html">Introduction</a></li>
+    <li><a class="dropdown-item" href="../articles/Introduction.html">tbl.now</a></li>
   </ul>
 </li>
       </ul>
@@ -266,7 +266,7 @@ no sense to keep <code>location_name</code> as strata. We can use the
 column (though removing the column would also work):</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_florida</span> <span class="op">&lt;-</span> <span class="va">df_florida</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
-<span>  <span class="fu"><a href="../reference/change.html">remove_strata</a></span><span class="op">(</span><span class="st">"location_name"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/remove.html">remove_strata</a></span><span class="op">(</span><span class="st">"location_name"</span><span class="op">)</span></span>
 <span><span class="va">df_florida</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  8,539 × 7</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>

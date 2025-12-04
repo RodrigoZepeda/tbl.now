@@ -1,8 +1,8 @@
 # Getters for tbl_now attributes
 
-These functions extract metadata attributes from a \`tbl_now\` object.
-Each function returns a specific attribute (e.g. event date, strata,
-covariates, etc.).
+These functions extract the attributes from a `tbl_now` object. Each
+function returns a specific attribute (e.g. event date, strata,
+covariates, etc).
 
 ## Usage
 
@@ -32,19 +32,13 @@ get_temporal_effects(x)
 get_is_batched(x)
 
 get_case_count(x)
-
-get_protected_cols(x)
-
-get_protected_generated_cols(x)
-
-get_protected_given_cols(x)
 ```
 
 ## Arguments
 
 - x:
 
-  A \`tbl_now\` object.
+  A `tbl_now` object.
 
 ## Value
 
@@ -54,12 +48,12 @@ The requested attribute (character, date, logical, etc.).
 
 ``` r
 data(denguedat)
-ndata <- tbl_now(denguedat,
-    event_date = "onset_week",
-    report_date = "report_week",
-    strata = "gender",
-    t_effects = temporal_effects(month_of_year = TRUE),
-    verbose = FALSE)
+ndata <- denguedat %>%
+ tbl_now(event_date = onset_week,
+         report_date = report_week,
+         strata = gender,
+         t_effects = temporal_effects(month_of_year = TRUE),
+         verbose = FALSE)
 
 #Get the event date
 get_event_date(ndata)

@@ -2,6 +2,12 @@
 
 ## All functions
 
+- [`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`add_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  :
+
+  Add attributes to a `tbl_now` object
+
 - [`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
   : Add temporal effect coding to a \`tbl_now\`
 
@@ -9,7 +15,9 @@
   : Align weeks to a common weekday
 
 - [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
-  : Transform into a \`tbl_now\` object
+  :
+
+  Transform into a `tbl_now` object
 
 - [`` `[`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
   [`` `[`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
@@ -21,16 +29,10 @@
   [`change_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_is_batched()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
-  [`remove_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
-  [`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
-  [`remove_all_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
-  [`remove_covariate()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
-  [`add_covariate()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
-  [`remove_all_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
-  [`replace_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
-  [`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
-  : Change attributes of a \`tbl_now\` object
+  :
+
+  Change attributes of a `tbl_now` object
 
 - [`covidat`](https://rodrigozepeda.github.io/tbl.now/reference/covidat.md)
   : covidat: COVID-19 reporting data from Mexico City (2020-2022)
@@ -77,10 +79,17 @@
   [`get_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_is_batched()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-  [`get_protected_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-  [`get_protected_generated_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-  [`get_protected_given_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   : Getters for tbl_now attributes
+
+- [`remove_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
+  [`remove_all_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
+  [`remove_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
+  [`remove_all_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
+  [`replace_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
+  [`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
+  :
+
+  Remove attributes from a `tbl_now` object
 
 - [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
   :
