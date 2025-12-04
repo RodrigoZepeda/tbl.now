@@ -361,9 +361,32 @@ count_data <- ndata %>%
   to_count(to = "count-incidence")
 
 count_data %>%
-  mutate(n2 = 1.15*n) %>%
+  dplyr::mutate(n2 = 1.15*n) %>%
   change_case_count(n2)
-#> Error in mutate(., n2 = 1.15 * n): could not find function "mutate"
+#> # A tibble:  52,987 × 11
+#> # Data type: "count-incidence"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>    new_onset_week new_report_week .event_num .report_num gender   age_group
+#>    <date>         <date>               <dbl>       <dbl> <chr>    <chr>    
+#>    [event_date]   [report_date]        [...]       [...] [strata] [strata] 
+#>  1 1989-12-31     1989-12-31               0           0 Female   < 18     
+#>  2 1989-12-31     1989-12-31               0           0 Female   < 18     
+#>  3 1989-12-31     1989-12-31               0           0 Male     20-60    
+#>  4 1989-12-31     1990-01-07               0           1 Female   20-60    
+#>  5 1989-12-31     1990-01-07               0           1 Female   20-60    
+#>  6 1989-12-31     1990-01-07               0           1 Female   20-60    
+#>  7 1989-12-31     1990-01-07               0           1 Female   20-60    
+#>  8 1989-12-31     1990-01-07               0           1 Female   20-60    
+#>  9 1989-12-31     1990-01-07               0           1 Female   20-60    
+#> 10 1989-12-31     1990-01-07               0           1 Female   60+      
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
+#> # Strata: "gender" and "age_group"
+#> # Covariates: "temperature" and "humidity"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 52,977 more rows
+#> # ℹ 5 more variables: temperature <dbl>, humidity <dbl>, n <int>, .delay <dbl>,
+#> #   n2 <dbl>
 
 #Change is_batched
 ndata$is_batched <- F
