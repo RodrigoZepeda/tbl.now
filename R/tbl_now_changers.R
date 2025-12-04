@@ -73,7 +73,7 @@
 #'   change_case_count(n2)
 #'
 #' #Change is_batched
-#' ndata$is_batched <- F
+#' ndata$is_batched <- FALSE
 #' ndata %>%
 #'   change_is_batched(is_batched)
 #'
