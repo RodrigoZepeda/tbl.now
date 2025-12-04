@@ -8,22 +8,25 @@ align_week(
   .data,
   date_col,
   align_on_day = 1,
-  type = "epiweek",
-  new_date_col = paste0(deparse(substitute(date_col)), "_aligned")
+  type = "epi",
+  new_date_col = NULL
 )
 }
 \arguments{
 \item{.data}{A `data.frame` or tibble.}
 
-\item{date_col}{A column name (string or tidy-selection) containing dates.}
+\item{date_col}{A \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column name containing dates.}
 
 \item{align_on_day}{Integer 1–7 indicating the weekday to align to.
 Uses [lubridate::wday()] numbering (1 = Sunday, 7 = Saturday).}
 
-\item{type}{Either `"epiweek"` (default) or `"isoweek"`. Determines
-which week/year functions to use.}
+\item{type}{Either `"epi"` (default) or `"iso"`. Determines
+which week/year functions to use whether [lubridate::epiweek()] or
+[lubridate::isoweek()]}
 
-\item{new_date_col}{Name of the new aligned date column to be created.}
+\item{new_date_col}{Name of the new aligned date column to be created. By default
+it creates a column named `\{date_col\}_aligned` where `date_col` corresponds
+to the column name passed to that parameter.}
 }
 \value{
 A tibble identical to `.data` but with an added aligned date column.

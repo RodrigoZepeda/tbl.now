@@ -9,6 +9,18 @@ test_that("align_week returns a data.frame with new aligned date column", {
   expect_true("date_aligned" %in% names(out))
 })
 
+test_that("align_week works with and without ''", {
+  df <- data.frame(
+    date = as.Date(c("2020-10-31", "2022-11-07", "2022-11-13"))
+  )
+
+  expect_equal(
+    align_week(df, date_col = "date"),
+    align_week(df, date_col = date)
+  )
+
+})
+
 test_that("align_week aligns dates to the specified weekday", {
   df <- data.frame(date = as.Date("2022-11-09"))  # Wednesday
 
@@ -22,12 +34,22 @@ test_that("align_week aligns dates to the specified weekday", {
 test_that("align_week supports isoweek", {
   df <- data.frame(date = as.Date("2022-12-31"))
 
-  out <- align_week(df, date_col = date, type = "isoweek")
+  out <- align_week(df, date_col = date, type = "iso")
   aligned <- out$date_aligned
 
   expect_s3_class(out, "data.frame")
   # should produce a valid date
   expect_true(!is.na(aligned))
+})
+
+test_that("align_week errors with incorrect type", {
+  df <- data.frame(date = as.Date("2022-12-31"))
+
+  expect_error(
+    align_week(df, date_col = date, type = "something"),
+    "Invalid type"
+  )
+
 })
 
 test_that("align_week does not modify original columns", {

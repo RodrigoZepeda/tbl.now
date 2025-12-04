@@ -1,27 +1,37 @@
 #' Create a `tbl_now` object
 #'
-#' A special `data.frame` class that includes information for the nowcast.
+#' A special `tibble` class that includes information for the nowcast.
 #' See the Attributes section for more information.
 #'
-#' @param data A `data.frame` to be converted.
+#' @param data A `data.frame` or `tibble` to be converted.
 #'
-#' @param event_date Character. The name of the column containing the event date.
+#' @param event_date \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+#' name of the column containing the event date.
 #'
-#' @param report_date Character. The name of the column containing the report date.
+#' @param report_date \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+#' name of the column containing the report date.
 #'
-#' @param is_batched (optional) Character or `NULL` (default). The name of a column containing either
-#' `TRUE` or `FALSE` indicating whether the `report_date` is correctly specified
-#' or corresponds to a `batch` and thus is censored. In other words, if the
-#' `report_date` is accurately measured set `report_date = TRUE` but if
-#' the `report_date` corresponds to an error and is only an upper bound of
-#' the real, idealized, report date set `is_batched = TRUE`.
+#' @param case_count (optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or `NULL`
+#' Name of the column with the case counts if `data_type` is "count-incidence"
+#' or "count-cumulative".
 #'
-#' @param strata (optional) Character vector or `NULL` (default). Name of different variables
-#' (column names) in strata. Strata correspond to variables that are of interest
-#' by themselves. For example if it is of interest to generate nowcasts by gender then
+#' @param is_batched (optional)
+#' \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or `NULL` (default).
+#' The name of a column containing either `TRUE` or `FALSE` indicating whether
+#' the `report_date` is correctly specified or corresponds to a `batch` and thus
+#' is censored. In other words, if the `report_date` is accurately measured
+#' set `is_batched = FALSE` but if the `report_date` corresponds to an error
+#' and is only an upper bound of the real report date
+#' set `is_batched = TRUE`.
+#'
+#' @param strata (optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+#' or `NULL` (default). Name of different variables (column names) in strata.
+#' Strata correspond to variables that are of interest by themselves.
+#' For example if it is of interest to generate nowcasts by gender then
 #' `gender` is a `strata`.
 #'
-#' @param covariates (optional) Character vector or `NULL` (default). Name of different variables
+#' @param covariates (optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+#' or `NULL` (default). Name of different variables
 #' (column names) that influence the nowcast but are not strata.
 #' For example precipitation might influence a dengue nowcast but in general it
 #' is not of interest to generate nowcasts by precipitation levels.
@@ -31,11 +41,7 @@
 #' `event_date`.
 #'
 #' @param t_effects (optional) Either `NULL` (default), a [temporal_effects()] object
-#' or a vector with the names of the columns containing the temporal effects.
-#'
-#' @param case_col (optional) Name of the column with the case counts if
-#' `data_type` is "count-incidence" or "count-cumulative". If `case_col` is specified even if `data_type`
-#' is "linelist" that name will be used if the `to_count` function is applied.
+#' or a character vector with the names of the columns containing the temporal effects.
 #'
 #' @param event_units (optional) Character. Either "auto" (default), "days",
 #' "weeks", "months", "years" or "numeric".
@@ -142,10 +148,9 @@
 #' @examples
 #' # The `tbl_now` is a data.frame with additional attributes
 #' data(denguedat)
-#' ndata <- tbl_now(denguedat,
-#'     event_date = "onset_week",
-#'     report_date = "report_week",
-#'     strata = "gender")
+#' ndata <- denguedat %>%
+#'   tbl_now(event_date = onset_week, report_date = report_week,
+#'     strata = gender)
 #'
 #' # You can see that it documents the `event_date`, `report_date`, `strata`,
 #' # `covariates` as well as the `now`.
@@ -184,33 +189,22 @@
 #' @export
 #' @md
 tbl_now <- function(data,
-                        event_date,
-                        report_date,
-                        strata = NULL,
-                        covariates = NULL,
-                        is_batched = NULL,
-                        now = NULL,
-                        event_units = "auto",
-                        report_units = "auto",
-                        data_type = "auto",
-                        case_col = NULL,
-                        t_effects = NULL,
-                        verbose = TRUE,
-                        force = FALSE,
-                        warn_non_uniqueness = TRUE,
-                        ...) {
+                    event_date,
+                    report_date,
+                    strata = NULL,
+                    covariates = NULL,
+                    case_count = NULL,
+                    is_batched = NULL,
+                    now = NULL,
+                    event_units = "auto",
+                    report_units = "auto",
+                    data_type = "auto",
+                    t_effects = NULL, #FIXME: Do tidy select here too
+                    verbose = TRUE,
+                    force = FALSE,
+                    warn_non_uniqueness = TRUE,
+                    ...) {
 
-
-  #Case column of counts is
-  if (is.null(case_col) && data_type != "linelist"){
-    case_col <- "n"
-  }
-
-  if (length(case_col) > 1){
-    cli::cli_abort(
-      "{.code case_col} has to be either `NULL` or a character with just one column name."
-    )
-  }
 
   #Check the data frame data--------
   if (!is.data.frame(data)) {
@@ -218,8 +212,39 @@ tbl_now <- function(data,
   }
 
   if (dplyr::is.grouped_df(data)){
-    #cli::cli_warn("{.arg data} is grouped by {colnames(dplyr::group_keys(data))}. Ungrouping.")
+    cli::cli_warn("{.arg data} is grouped by {colnames(dplyr::group_keys(data))}. Ungrouping.")
     data <- data %>% dplyr::ungroup()
+  }
+
+
+  #Get event date column
+  event_col_select <- tidyselect::eval_select(rlang::expr({{ event_date }}), data)
+  event_date       <- colnames(data)[event_col_select]
+
+  report_col_select <- tidyselect::eval_select(rlang::expr({{ report_date }}), data)
+  report_date       <- colnames(data)[report_col_select]
+
+  case_count_select <- tidyselect::eval_select(rlang::expr({{ case_count }}), data)
+  case_count        <- colnames(data)[case_count_select]
+  if (length(case_count) == 0) case_count <- NULL
+
+  is_batched_select <- tidyselect::eval_select(rlang::expr({{ is_batched }}), data)
+  is_batched        <- colnames(data)[is_batched_select]
+  if (length(is_batched) == 0) is_batched <- NULL
+
+  strata_select <- tidyselect::eval_select(rlang::expr({{ strata }}), data)
+  strata        <- colnames(data)[strata_select]
+  if (length(strata) == 0) strata <- NULL
+
+  covariates_select <- tidyselect::eval_select(rlang::expr({{ covariates }}), data)
+  covariates        <- colnames(data)[covariates_select]
+  if (length(covariates) == 0) covariates <- NULL
+
+
+  if (length(case_count) > 1){
+    cli::cli_abort(
+      "{.code case_count} has to be either `NULL` or a character with just one column name."
+    )
   }
 
   #Check the date columns are dates-------
@@ -267,7 +292,7 @@ tbl_now <- function(data,
                                   event_date = event_date, report_date = report_date,
                                   strata = strata,
                                   is_batched = is_batched,
-                                  case_col = case_col, verbose = verbose)
+                                  case_count = case_count, verbose = verbose)
 
   # Capture all other attributes
   other_attrs  <- list(...)
@@ -278,7 +303,7 @@ tbl_now <- function(data,
   # Set the core attributes (if adding new attributes here change in validate_tbl_now too)
   attr(data, "event_date")     <- event_date
   attr(data, "report_date")    <- report_date
-  attr(data, "case_col")       <- case_col
+  attr(data, "case_count")       <- case_count
   attr(data, "strata")         <- strata
   attr(data, "covariates")     <- covariates
   attr(data, "now")            <- now

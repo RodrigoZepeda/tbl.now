@@ -8,6 +8,9 @@
 #' @param new_data Another `tbl_now` with the same `strata`, `covariates`, `is_batched`,
 #' and `temporal_effects` or a `data.frame` with additional (newer) data
 #' not present in `x`
+#'
+#' @inheritParams tbl_now
+#'
 #' @param strata (optional) Whether to keep the strata from `object` ("left"),
 #' from `new_data` ("right") or from `both` ("both")
 #' @param covariates (optional) Whether to keep the covariates from `object` ("left"),
@@ -36,7 +39,7 @@
 #' @export
 update.tbl_now <- function(object, ..., new_data,
                            strata = "left", covariates = strata,
-                           temporal_effects = strata,
+                           t_effects = strata,
                            now = NULL,
                            remove_duplicates = NULL){
 
@@ -192,7 +195,7 @@ update.tbl_now <- function(object, ..., new_data,
           event_units = get_event_units(object),
           report_units = get_report_units(object),
           data_type = get_data_type(object),
-          case_col = get_case_col(object),
+          case_count = get_case_count(object),
           t_effects = NULL,
           force = TRUE,
           ...)
@@ -258,11 +261,11 @@ update_check_tbl_now_internal <- function(object, new_data){
   }
 
   #Check that both objects have the same event and report columns
-  if (!identical(get_case_col(object), get_case_col(new_data))){
+  if (!identical(get_case_count(object), get_case_count(new_data))){
     cli::cli_abort(
       paste0(
-        "`object` has case_col = {.val {get_case_col(object)}} while ",
-        "`new_data` has case_col = {.val {get_case_col(new_data)}}. ",
+        "`object` has case_count = {.val {get_case_count(object)}} while ",
+        "`new_data` has case_count = {.val {get_case_count(new_data)}}. ",
         "They must be the same in order to `update`."
       )
     )
@@ -335,10 +338,10 @@ update_check_data_frame_internal <- function(object, new_data){
   }
 
   #Check that both objects have the same event and report columns
-  if (grepl("count", get_data_type(object)) & !(get_case_col(object) %in% colnames(new_data))){
+  if (grepl("count", get_data_type(object)) & !is.null(get_case_count(object)) && !(get_case_count(object) %in% colnames(new_data))){
     cli::cli_abort(
       paste0(
-        "`object` has case_col = {.val {get_case_col(object)}} but ",
+        "`object` has case_count = {.val {get_case_count(object)}} but ",
         "that column was not found in `new_data`."
       )
     )

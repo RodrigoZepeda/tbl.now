@@ -10,12 +10,12 @@ tbl_now(
   report_date,
   strata = NULL,
   covariates = NULL,
+  case_count = NULL,
   is_batched = NULL,
   now = NULL,
   event_units = "auto",
   report_units = "auto",
   data_type = "auto",
-  case_col = NULL,
   t_effects = NULL,
   verbose = TRUE,
   force = FALSE,
@@ -24,28 +24,38 @@ tbl_now(
 )
 }
 \arguments{
-\item{data}{A \code{data.frame} to be converted.}
+\item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 
-\item{event_date}{Character. The name of the column containing the event date.}
+\item{event_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+name of the column containing the event date.}
 
-\item{report_date}{Character. The name of the column containing the report date.}
+\item{report_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+name of the column containing the report date.}
 
-\item{strata}{(optional) Character vector or \code{NULL} (default). Name of different variables
-(column names) in strata. Strata correspond to variables that are of interest
-by themselves. For example if it is of interest to generate nowcasts by gender then
+\item{strata}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+or \code{NULL} (default). Name of different variables (column names) in strata.
+Strata correspond to variables that are of interest by themselves.
+For example if it is of interest to generate nowcasts by gender then
 \code{gender} is a \code{strata}.}
 
-\item{covariates}{(optional) Character vector or \code{NULL} (default). Name of different variables
+\item{covariates}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+or \code{NULL} (default). Name of different variables
 (column names) that influence the nowcast but are not strata.
 For example precipitation might influence a dengue nowcast but in general it
 is not of interest to generate nowcasts by precipitation levels.}
 
-\item{is_batched}{(optional) Character or \code{NULL} (default). The name of a column containing either
-\code{TRUE} or \code{FALSE} indicating whether the \code{report_date} is correctly specified
-or corresponds to a \code{batch} and thus is censored. In other words, if the
-\code{report_date} is accurately measured set \code{report_date = TRUE} but if
-the \code{report_date} corresponds to an error and is only an upper bound of
-the real, idealized, report date set \code{is_batched = TRUE}.}
+\item{case_count}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL}
+Name of the column with the case counts if \code{data_type} is "count-incidence"
+or "count-cumulative".}
+
+\item{is_batched}{(optional)
+\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL} (default).
+The name of a column containing either \code{TRUE} or \code{FALSE} indicating whether
+the \code{report_date} is correctly specified or corresponds to a \code{batch} and thus
+is censored. In other words, if the \code{report_date} is accurately measured
+set \code{is_batched = FALSE} but if the \code{report_date} corresponds to an error
+and is only an upper bound of the real report date
+set \code{is_batched = TRUE}.}
 
 \item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
 nowcast. If no \code{now} is given then the function automatically uses the last
@@ -61,12 +71,8 @@ nowcast. If no \code{now} is given then the function automatically uses the last
 "count-incidence" or "count-cumulative". See section below for
 an explanation on data types.}
 
-\item{case_col}{(optional) Name of the column with the case counts if
-\code{data_type} is "count-incidence" or "count-cumulative". If \code{case_col} is specified even if \code{data_type}
-is "linelist" that name will be used if the \code{to_count} function is applied.}
-
 \item{t_effects}{(optional) Either \code{NULL} (default), a \code{\link[=temporal_effects]{temporal_effects()}} object
-or a vector with the names of the columns containing the temporal effects.}
+or a character vector with the names of the columns containing the temporal effects.}
 
 \item{verbose}{(optional) Logical. Whether to throw a message. Default = \code{TRUE}.}
 
@@ -83,7 +89,7 @@ and strata)}
 An object of class \code{tbl_now}.
 }
 \description{
-A special \code{data.frame} class that includes information for the nowcast.
+A special \code{tibble} class that includes information for the nowcast.
 See the Attributes section for more information.
 }
 \section{Attributes}{
@@ -191,10 +197,9 @@ print(df)
 \examples{
 # The `tbl_now` is a data.frame with additional attributes
 data(denguedat)
-ndata <- tbl_now(denguedat,
-    event_date = "onset_week",
-    report_date = "report_week",
-    strata = "gender")
+ndata <- denguedat \%>\%
+  tbl_now(event_date = onset_week, report_date = report_week,
+    strata = gender)
 
 # You can see that it documents the `event_date`, `report_date`, `strata`,
 # `covariates` as well as the `now`.

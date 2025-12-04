@@ -137,17 +137,17 @@ test_that("`dplyr_reconstruct.tbl_now` handles reconstruction logic", {
   expect_false(inherits(reconstructed_invalid, "tbl_now"))
   expect_s3_class(reconstructed_invalid, "tbl_df")
 
-  #FIXME: This test fails but I am not sure we should be testing this
-  # # Scenario 3: Downgrade due to missing protected column
-  # invalid_data <- suppressWarnings(
-  #   template %>% dplyr::select(-onset_week)
-  # )
-  # reconstructed_invalid <- suppressWarnings(
-  #   dplyr_reconstruct(invalid_data, template)
-  # )
-  #
-  # expect_false(inherits(reconstructed_invalid, "tbl_now"))
-  # expect_s3_class(reconstructed_invalid, "tbl_df")
+
+  # Scenario 3: Downgrade due to missing protected column
+  invalid_data <- suppressWarnings(
+    template %>% dplyr::select(-onset_week)
+  )
+  reconstructed_invalid <- suppressWarnings(
+    dplyr_reconstruct(invalid_data, template)
+  )
+
+  expect_false(inherits(reconstructed_invalid, "tbl_now"))
+  expect_s3_class(reconstructed_invalid, "tbl_df")
 })
 
 # ----------------------------------------------------------------------
@@ -178,10 +178,7 @@ test_that("`ungroup.grouped_tbl_now` returns an ungrouped `tbl_now`", {
 
 test_that("`summarise.tbl_now` preserves class when valid", {
   x <- make_test_tbl_now()
-  # Summarising linelist data usually aggregates, so we might need a test where
-  # the protected columns remain or the resulting structure can be reconstructed.
-  # For this simple test, we'll ensure the attributes are copied to the result
-  # using tbl_now if all protected columns remain (or are handled).
+
 
   # In this case, since `data_type` is 'linelist', 'n' is not protected.
   # If we summarize without dropping 'onset_week' and 'report_week', it should work.

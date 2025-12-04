@@ -7,7 +7,7 @@
 tbl_now_reconstruct(data, template)
 }
 \arguments{
-\item{data}{A \code{data.frame} to be converted.}
+\item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 }
 \value{
 A `tbl_now` object (if the input is valid) or a `data.frame`

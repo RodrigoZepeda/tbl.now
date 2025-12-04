@@ -7,11 +7,13 @@
 check_date_columns(data, event_date, report_date)
 }
 \arguments{
-\item{data}{A \code{data.frame} to be converted.}
+\item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 
-\item{event_date}{Character. The name of the column containing the event date.}
+\item{event_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+name of the column containing the event date.}
 
-\item{report_date}{Character. The name of the column containing the report date.}
+\item{report_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+name of the column containing the report date.}
 }
 \value{
 `TRUE` (invisible) if the `event_date` and `report_date` are

@@ -319,7 +319,7 @@ test_that("infer_data_type detects count data when n column exists", {
     data_type = "auto",
     event_date = "event_date",
     report_date = "report_date",
-    case_col = "n",
+    case_count = "n",
     verbose = FALSE
   )
 
@@ -328,7 +328,7 @@ test_that("infer_data_type detects count data when n column exists", {
   result <- infer_data_type(
     test_data$count_data,
     data_type = "auto",
-    case_col = "cases",
+    case_count = "cases",
     event_date = "event_date",
     report_date = "report_date",
     verbose = FALSE
@@ -343,7 +343,7 @@ test_that("infer_data_type detects linelist data when n column missing", {
   result <- infer_data_type(
     test_data$linelist_data,
     data_type = "auto",
-    case_col = NULL,
+    case_count = NULL,
     verbose = FALSE
   )
 
@@ -352,7 +352,7 @@ test_that("infer_data_type detects linelist data when n column missing", {
   result2 <- infer_data_type(
     test_data$linelist_data,
     data_type = "auto",
-    case_col = "n",
+    case_count = "n",
     verbose = FALSE
   )
 
@@ -366,7 +366,7 @@ test_that("infer_data_type shows message when verbose = TRUE", {
     infer_data_type(test_data$count_data, data_type = "auto",
                     event_date = "event_date",
                     report_date = "report_date",
-                    case_col = "n", verbose = TRUE),
+                    case_count = "n", verbose = TRUE),
     "count-cumulative"
   )
 
@@ -374,7 +374,7 @@ test_that("infer_data_type shows message when verbose = TRUE", {
     infer_data_type(test_data$count_data2, data_type = "auto",
                     event_date = "event_date",
                     report_date = "report_date",
-                    case_col = "n", verbose = TRUE),
+                    case_count = "n", verbose = TRUE),
     "count-incidence"
   )
 
@@ -382,7 +382,7 @@ test_that("infer_data_type shows message when verbose = TRUE", {
     infer_data_type(test_data$linelist_data, data_type = "auto",
                     event_date = "event_date",
                     report_date = "report_date",
-                    case_col = "n", verbose = TRUE),
+                    case_count = "n", verbose = TRUE),
     "linelist-data"
   )
 })
@@ -392,17 +392,17 @@ test_that("infer_data_type returns provided data_type when not auto", {
 
   result <- infer_data_type(
     test_data$linelist_data,
-    case_col = "n",
+    case_count = "n",
     data_type = "linelist",
     verbose = FALSE
   )
 
   expect_equal(result, "linelist")
 
-  #Even when changing case_col
+  #Even when changing case_count
   result <- infer_data_type(
     test_data$linelist_data,
-    case_col = NULL,
+    case_count = NULL,
     data_type = "linelist",
     verbose = FALSE
   )
@@ -418,7 +418,7 @@ test_that("infer_data_type warns when linelist has n column", {
   )
 
   expect_warning(
-    infer_data_type(linelist_with_n, data_type = "linelist", case_col = "n", verbose = FALSE),
+    infer_data_type(linelist_with_n, data_type = "linelist", case_count = "n", verbose = FALSE),
     "contains a column named.*n.*will be overwritten"
   )
 })
@@ -427,7 +427,7 @@ test_that("infer_data_type fails when count data missing n column", {
   test_data <- setup_test_data()
 
   expect_error(
-    infer_data_type(test_data$linelist_data, data_type = "count", case_col = "n", verbose = FALSE),
+    infer_data_type(test_data$linelist_data, data_type = "count", case_count = "n", verbose = FALSE),
     "Count data should have a column named.*n"
   )
 })
@@ -441,7 +441,7 @@ test_that("infer_data_type fails when n column is not numeric", {
 
   expect_error(
     infer_data_type(invalid_count, data_type = "auto", event_date = "event_date", report_date = "report_date",
-                    case_col = "n", verbose = FALSE),
+                    case_count = "n", verbose = FALSE),
     "non-numeric"
   )
 })
@@ -455,7 +455,7 @@ test_that("infer_data_type handles vector data_type input", {
   result <- infer_data_type(
     test_data$count_data,
     data_type = c("auto", "linelist"),
-    case_col = "n",
+    case_count = "n",
     verbose = FALSE,
     event_date = "event_date",
     report_date = "report_date"
@@ -465,7 +465,7 @@ test_that("infer_data_type handles vector data_type input", {
 })
 
 
-test_that("infer_data_type throws error when case_col is a vector", {
+test_that("infer_data_type throws error when case_count is a vector", {
   test_data <- setup_test_data()
 
   # Should use first element
@@ -473,7 +473,7 @@ test_that("infer_data_type throws error when case_col is a vector", {
     infer_data_type(
     test_data$count_data,
     data_type = c("auto", "linelist"),
-    case_col = c("n", "m"),
+    case_count = c("n", "m"),
     verbose = FALSE
     ),
     "must be a vector of length 1"
@@ -507,7 +507,7 @@ test_that("infer functions work together for daily data", {
   data_type <- infer_data_type(
     test_data$daily_data,
     data_type = "auto",
-    case_col = "n",
+    case_count = "n",
     verbose = FALSE
   )
 
@@ -532,7 +532,7 @@ test_that("infer functions work with count data", {
     data_type = "auto",
     event_date = "event_date",
     report_date = "report_date",
-    case_col = "n",
+    case_count = "n",
     verbose = FALSE
   )
 
@@ -570,7 +570,7 @@ test_that("infer functions handle edge cases", {
   expect_silent({
     infer_now(two_obs, NULL, "event_date", "report_date")
     infer_units(two_obs, "event_date", "auto")
-    infer_data_type(two_obs, "auto", case_col = "n", verbose = FALSE,
+    infer_data_type(two_obs, "auto", case_count = "n", verbose = FALSE,
                     event_date = "event_date",
                     report_date = "report_date")
   })

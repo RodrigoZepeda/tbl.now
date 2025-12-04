@@ -68,7 +68,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
   event_units    <- get_event_units(x)
   data_type      <- get_data_type(x)
   is_batched     <- get_is_batched(x)
-  case_col       <- get_case_col(x)
+  case_count       <- get_case_count(x)
 
   if (data_type == "linelist"){warn_non_uniqueness <- FALSE}
 
@@ -179,10 +179,17 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
     }
   }
 
-  # Removing the case_col
-  if (data_type != "linelist" && (is.null(case_col) || !(case_col %in% colnames(x)))){
+  #Check they don't have the same report and event dates
+  if (get_event_date(x) == get_report_date(x)){
+    cli::cli_alert_warning(
+      "Object has the same event and report dates with value {.val {get_event_date(x)}}"
+    )
+  }
+
+  # Removing the case_count
+  if (data_type != "linelist" && (is.null(case_count) || !(case_count %in% colnames(x)))){
     errors <- c(errors,
-                paste0("Dropped case column ", case_col, " when data_type was ", data_type, "."))
+                paste0("Dropped case column ", case_count, " when data_type was ", data_type, "."))
   }
 
   # === 8. Validate data relationships ===
@@ -213,6 +220,8 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
       }
     }
   }
+
+  #FIXME: Throw warning when now is too far in the future or in the past
 
 
   #Validate that event_date and report_date don't have repeated values for same strata/covariates----
@@ -437,7 +446,6 @@ is_tbl_now <- function(x){
 #' @export
 `names<-.grouped_tbl_now` <- function(x, value) {
   out <- NextMethod()
-  print(out)
   tbl_now_reconstruct(out, x)
 }
 
@@ -507,7 +515,7 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
                  event_units = get_event_units(.data),
                  report_units = get_event_units(.data),
                  data_type = get_data_type(.data),
-                 case_col = get_case_col(.data),
+                 case_count = get_case_count(.data),
                  verbose = FALSE,
                  force = TRUE,
                  warn_non_uniqueness = FALSE)
@@ -588,12 +596,12 @@ ungroup.grouped_tbl_now <- function(x, ...) {
                      event_units = get_event_units(x),
                      report_units = get_report_units(x),
                      data_type = get_data_type(x),
-                     case_col = get_case_col(x),
+                     case_count = get_case_count(x),
                      verbose = FALSE,
                      force = TRUE,
                      warn_non_uniqueness = FALSE)
   }
-  x
+  return(x)
 }
 
 
@@ -626,7 +634,7 @@ class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_
                 event_units = get_event_units(.data),
                 report_units = get_event_units(.data),
                 data_type = get_data_type(.data),
-                case_col = get_case_col(.data),
+                case_count = get_case_count(.data),
                 verbose = FALSE,
                 force = TRUE,
                 warn_non_uniqueness = FALSE)
@@ -679,7 +687,7 @@ reframe.tbl_now <- function(.data, ..., .by = NULL) {
             event_units = get_event_units(.data),
             report_units = get_event_units(.data),
             data_type = get_data_type(.data),
-            case_col = get_case_col(.data),
+            case_count = get_case_count(.data),
             verbose = FALSE,
             force = TRUE,
             warn_non_uniqueness = FALSE)

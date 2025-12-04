@@ -40,6 +40,12 @@ test_that("change_event_date changes event_date to new column", {
   expect_s3_class(result, "tbl_now")
   expect_equal(get_event_date(result), "new_onset")
   expect_true(validate_tbl_now(result))
+
+  result <- change_event_date(ndata, new_onset)
+
+  expect_s3_class(result, "tbl_now")
+  expect_equal(get_event_date(result), "new_onset")
+  expect_true(validate_tbl_now(result))
 })
 
 test_that("change_event_date fails with non-tbl_now object", {
@@ -59,7 +65,7 @@ test_that("change_event_date fails with non-character value", {
 
   expect_error(
     change_event_date(test_data$ndata, 123),
-    "must be a character vector of length 1"
+    "Can't select columns past the end"
   )
 })
 
@@ -68,7 +74,7 @@ test_that("change_event_date fails with multiple values", {
 
   expect_error(
     change_event_date(test_data$ndata, c("onset_week", "report_week")),
-    "must be a character vector of length 1"
+    "length 1"
   )
 })
 
@@ -77,7 +83,7 @@ test_that("change_event_date fails when column not found", {
 
   expect_error(
     change_event_date(test_data$ndata, "nonexistent"),
-    "not found in data"
+    "doesn't exist"
   )
 })
 
@@ -156,7 +162,7 @@ test_that("change_report_date fails with non-character value", {
 
   expect_error(
     change_report_date(test_data$ndata, TRUE),
-    "must be a character vector of length 1"
+    "must be numeric or character, not `TRUE`"
   )
 })
 
@@ -165,7 +171,7 @@ test_that("change_report_date fails when column not found", {
 
   expect_error(
     change_report_date(test_data$ndata, "missing_col"),
-    "not found in data"
+    "doesn't exist"
   )
 })
 
@@ -219,7 +225,7 @@ test_that("change_strata fails with non-character non-NULL value", {
 
   expect_error(
     change_strata(test_data$ndata, 123),
-    "must be.*NULL.*or a character vector"
+    "doesn't exist"
   )
 })
 
@@ -228,7 +234,7 @@ test_that("change_strata fails when column not found", {
 
   expect_error(
     change_strata(test_data$ndata, "nonexistent_strata"),
-    "not found in data"
+    "doesn't exist"
   )
 })
 
@@ -373,7 +379,7 @@ test_that("change_covariates fails with non-character non-NULL value", {
 
   expect_error(
     change_covariates(test_data$ndata, list("temperature")),
-    "must be.*NULL.*or a character vector"
+    "must be numeric or character"
   )
 })
 
@@ -382,7 +388,7 @@ test_that("change_covariates fails when column not found", {
 
   expect_error(
     change_covariates(test_data$ndata, "nonexistent_covariate"),
-    "not found in data"
+    "doesn't exist"
   )
 })
 
@@ -520,7 +526,7 @@ test_that("change_now fails with non-Date value", {
 
   expect_error(
     change_now(test_data$ndata, "2020-08-01"),
-    "must be a Date object of length 1"
+    "must be a Date of length 1"
   )
 })
 
@@ -529,7 +535,7 @@ test_that("change_now fails with multiple dates", {
 
   expect_error(
     change_now(test_data$ndata, as.Date(c("2020-08-01", "2020-08-02"))),
-    "must be a Date object of length 1"
+    "must be a Date of length 1"
   )
 })
 
@@ -632,11 +638,12 @@ test_that("changer functions work with count data", {
     count_data,
     event_date = "onset_week",
     report_date = "report_week",
+    case_count = n,
     strata = "gender",
     data_type = "count-incidence"
   )
 
-  result <- add_strata(ndata, "gender")
+  result <- add_strata(ndata, gender)
 
   expect_s3_class(result, "tbl_now")
   expect_equal(get_data_type(result), "count-incidence")

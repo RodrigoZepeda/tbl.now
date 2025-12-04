@@ -2,8 +2,11 @@
 % Please edit documentation in R/tbl_now_changers.R
 \name{change}
 \alias{change}
+\alias{change_now}
 \alias{change_event_date}
 \alias{change_report_date}
+\alias{change_case_count}
+\alias{change_is_batched}
 \alias{change_strata}
 \alias{remove_strata}
 \alias{add_strata}
@@ -12,48 +15,83 @@
 \alias{remove_covariate}
 \alias{add_covariate}
 \alias{remove_all_covariates}
-\alias{change_now}
 \alias{replace_temporal_effects}
 \alias{remove_temporal_effects}
 \title{Change attributes of a `tbl_now` object}
 \usage{
-change_event_date(x, value)
+change_now(x, now = NULL)
 
-change_report_date(x, value)
+change_event_date(x, event_date)
 
-change_strata(x, value)
+change_report_date(x, report_date)
 
-remove_strata(x, value)
+change_case_count(x, case_count)
 
-add_strata(x, value)
+change_is_batched(x, is_batched)
+
+change_strata(x, ...)
+
+remove_strata(x, ...)
+
+add_strata(x, ...)
 
 remove_all_strata(x)
 
-change_covariates(x, value)
+change_covariates(x, ...)
 
-remove_covariate(x, value)
+remove_covariate(x, ...)
 
-add_covariate(x, value)
+add_covariate(x, ...)
 
 remove_all_covariates(x)
 
-change_now(x, value)
-
-replace_temporal_effects(x, value)
+replace_temporal_effects(x, t_effects)
 
 remove_temporal_effects(x)
 }
 \arguments{
 \item{x}{A `tbl_now` object}
 
-\item{value}{The new value for the attribute}
+\item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
+nowcast. If no \code{now} is given then the function automatically uses the last
+\code{event_date}.}
+
+\item{event_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+name of the column containing the event date.}
+
+\item{report_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+name of the column containing the report date.}
+
+\item{case_count}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL}
+Name of the column with the case counts if \code{data_type} is "count-incidence"
+or "count-cumulative".}
+
+\item{is_batched}{(optional)
+\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL} (default).
+The name of a column containing either \code{TRUE} or \code{FALSE} indicating whether
+the \code{report_date} is correctly specified or corresponds to a \code{batch} and thus
+is censored. In other words, if the \code{report_date} is accurately measured
+set \code{is_batched = FALSE} but if the \code{report_date} corresponds to an error
+and is only an upper bound of the real report date
+set \code{is_batched = TRUE}.}
+
+\item{...}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} with the columns
+for the attribute. In the case of `covariates` and `strata` argument `...` can
+refer to multiple columns.}
+
+\item{t_effects}{(optional) Either \code{NULL} (default), a \code{\link[=temporal_effects]{temporal_effects()}} object
+or a character vector with the names of the columns containing the temporal effects.}
 }
 \value{
 A `tbl_now` object with updated attributes
 }
 \description{
 Functions to modify the attributes of a `tbl_now` object.
-All functions validate the object after making changes.
+}
+\details{
+Variable selection can be used with the
+auxiliary dplyr verbs such as [dplyr::starts_with()], [dplyr::all_of()],
+and [dplyr::where()]. See [dplyr::select()] for additional info.
 }
 \examples{
 data(denguedat)
@@ -64,44 +102,57 @@ ndata <- tbl_now(denguedat,
 
 # Change the event_date column to a different date column
 ndata$new_onset_week <- ndata$onset_week - lubridate::days(1)
-ndata <- change_event_date(ndata, "new_onset_week")
+ndata <- ndata \%>\% change_event_date(new_onset_week)
 ndata
 
 # Change the report_date column to a different column
 ndata$new_report_week <- ndata$report_week - lubridate::days(1)
-ndata <- change_report_date(ndata, "new_report_week")
+ndata <- ndata \%>\% change_report_date(new_report_week)
 ndata
 
 # Change strata to different strata
 ndata$age_group <- sample(c("< 18","20-60","60+"), nrow(ndata), replace = TRUE)
-ndata <- change_strata(ndata, c("gender", "age_group"))
+ndata <- ndata \%>\% change_strata(gender, age_group)
 ndata
 
 # Remove some strata
-ndata <- remove_strata(ndata, "gender")
+ndata <- remove_strata(ndata, gender)
 ndata
 
 # Add strata
-ndata <- add_strata(ndata, "gender")
+ndata <- add_strata(ndata, dplyr::starts_with("gender"))
 ndata
 
 # Change covariates
 ndata$temperature <- rnorm(nrow(ndata), 25, 4)
 ndata$humidity    <- rbeta(nrow(ndata), 0.6, 0.4)
-ndata <- change_covariates(ndata, c("temperature", "humidity"))
+ndata <- ndata \%>\% change_covariates(temperature, humidity)
 ndata
 
 # Remove some covariates
-ndata <- remove_covariate(ndata, "temperature")
+ndata <- remove_covariate(ndata, temperature)
 ndata
 
 # Add covariates
-ndata <- add_covariate(ndata, "temperature")
+ndata <- add_covariate(ndata, temperature)
 ndata
 
 # Change now
-ndata <- change_now(ndata, as.Date("2025-01-01"))
+ndata <- change_now(ndata, now = as.Date("2025-01-01"))
 ndata
+
+#Change case count column
+count_data <- ndata \%>\%
+  to_count(to = "count-incidence")
+
+count_data \%>\%
+  mutate(n2 = 1.15*n) \%>\%
+  change_case_count(n2)
+
+#Change is_batched
+ndata$is_batched <- F
+ndata \%>\%
+  change_is_batched(is_batched)
 
 }
 \seealso{

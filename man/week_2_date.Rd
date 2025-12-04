@@ -17,22 +17,25 @@ week_2_date(
 \arguments{
 \item{.data}{A data.frame or tibble.}
 
-\item{week_col}{Column name (string) containing week numbers.}
+\item{week_col}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column
+name containing epidemiological week numbers.}
 
-\item{year_col}{Column name (string) containing year numbers.}
+\item{year_col}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column
+name containing epidemiological year numbers.}
 
-\item{align_on_day}{Integer 1–7 (lubridate weekday numbering) indicating
+\item{align_on_day}{Integer 1–7 ([lubridate::wday()] numbering) indicating
 the weekday to align to.}
 
 \item{week_fun}{Function that extracts week numbers from a date
-(e.g., [lubridate::epiweek()], [lubridate::isoweek()]).}
+(either [lubridate::epiweek()], [lubridate::isoweek()]).}
 
-\item{year_fun}{Function that extracts the epidemiological/ISO year from a date.}
+\item{year_fun}{Function that extracts the epidemiological/ISO year from
+a date (either [lubridate::epiyear()] or [lubridate::isoyear()]).}
 
 \item{date_col_name}{Name of the resulting date column.}
 }
 \value{
-The input dataframe with a new date column appended.
+The given `data.frame` with a new date column appended.
 }
 \description{
 Takes week numbers and year numbers and returns the date corresponding
@@ -41,10 +44,14 @@ aligning epiweek or isoweek data to a consistent weekday.
 }
 \examples{
 df <- data.frame(
-  week_col = 1:5,
-  year_col = rep(2024, 5)
+  epidemiological_week = 1:5,
+  epidemiological_year = rep(2024, 5)
 )
 
-week_2_date(df, week_col = "week_col", year_col = "year_col")
+df \%>\%
+  week_2_date(
+    week_col = epidemiological_week,
+    year_col = epidemiological_year
+  )
 
 }

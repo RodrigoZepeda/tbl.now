@@ -44,7 +44,7 @@
 #' get_data_type(ndata)
 #'
 #' #Get the column with cases
-#' get_case_col(ndata)
+#' get_case_count(ndata)
 #'
 #' #Get temporal effects
 #' get_temporal_effects(ndata)
@@ -126,8 +126,8 @@ get_is_batched <- function(x) {
 
 #' @rdname nowcast_data_getters
 #' @export
-get_case_col <- function(x){
-  attr(x, "case_col", exact = TRUE)
+get_case_count <- function(x){
+  attr(x, "case_count", exact = TRUE)
 }
 
 #' @rdname nowcast_data_getters
@@ -153,7 +153,7 @@ get_protected_given_cols <- function(x){
   protected_cols <- c("event_date"  = get_event_date(x), "report_date" = get_report_date(x), "is_batched"  = get_is_batched(x))
 
   if (!is.null(get_data_type(x)) && grepl("count", get_data_type(x))){
-    protected_cols <- c(protected_cols, "case_col" = get_case_col(x))
+    protected_cols <- c(protected_cols, "case_count" = get_case_count(x))
   }
 
   protected_cols

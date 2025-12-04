@@ -7,7 +7,7 @@
 check_delay_is_censored(data, delay_is_censored)
 }
 \arguments{
-\item{data}{A \code{data.frame} to be converted.}
+\item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 }
 \value{
 (invisible) `TRUE` if the column `delay_is_censored` is NULL or

@@ -11,36 +11,41 @@ infer_data_type(
   report_date,
   strata = NULL,
   is_batched = NULL,
-  case_col = NULL,
+  case_count = NULL,
   verbose = FALSE
 )
 }
 \arguments{
-\item{data}{A \code{data.frame} to be converted.}
+\item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 
 \item{data_type}{(optional) Character. Either "auto", "linelist" or
 "count-incidence" or "count-cumulative". See section below for
 an explanation on data types.}
 
-\item{event_date}{Character. The name of the column containing the event date.}
+\item{event_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+name of the column containing the event date.}
 
-\item{report_date}{Character. The name of the column containing the report date.}
+\item{report_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+name of the column containing the report date.}
 
-\item{strata}{(optional) Character vector or \code{NULL} (default). Name of different variables
-(column names) in strata. Strata correspond to variables that are of interest
-by themselves. For example if it is of interest to generate nowcasts by gender then
+\item{strata}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+or \code{NULL} (default). Name of different variables (column names) in strata.
+Strata correspond to variables that are of interest by themselves.
+For example if it is of interest to generate nowcasts by gender then
 \code{gender} is a \code{strata}.}
 
-\item{is_batched}{(optional) Character or \code{NULL} (default). The name of a column containing either
-\code{TRUE} or \code{FALSE} indicating whether the \code{report_date} is correctly specified
-or corresponds to a \code{batch} and thus is censored. In other words, if the
-\code{report_date} is accurately measured set \code{report_date = TRUE} but if
-the \code{report_date} corresponds to an error and is only an upper bound of
-the real, idealized, report date set \code{is_batched = TRUE}.}
+\item{is_batched}{(optional)
+\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL} (default).
+The name of a column containing either \code{TRUE} or \code{FALSE} indicating whether
+the \code{report_date} is correctly specified or corresponds to a \code{batch} and thus
+is censored. In other words, if the \code{report_date} is accurately measured
+set \code{is_batched = FALSE} but if the \code{report_date} corresponds to an error
+and is only an upper bound of the real report date
+set \code{is_batched = TRUE}.}
 
-\item{case_col}{(optional) Name of the column with the case counts if
-\code{data_type} is "count-incidence" or "count-cumulative". If \code{case_col} is specified even if \code{data_type}
-is "linelist" that name will be used if the \code{to_count} function is applied.}
+\item{case_count}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL}
+Name of the column with the case counts if \code{data_type} is "count-incidence"
+or "count-cumulative".}
 
 \item{verbose}{(optional) Logical. Whether to throw a message. Default = \code{TRUE}.}
 }

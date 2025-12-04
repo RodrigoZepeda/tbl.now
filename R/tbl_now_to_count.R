@@ -49,8 +49,8 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
   x <- x %>% ungroup()
 
   #Fill the nulls
-  case_col <- get_case_col(x)
-  if (is.null(case_col)) case_col <- "n"
+  case_count <- get_case_count(x)
+  if (is.null(case_count)) case_count <- "n"
   if (is.null(to)) to <- get_data_type(x)
 
   #Create the grouping vector
@@ -74,16 +74,17 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
 
     #Summarise
     x <- x  %>%
-      summarise(!!as.symbol(case_col) := sum(!!as.symbol(case_col)), .groups = "drop")
+      summarise(!!as.symbol(case_count) := sum(!!as.symbol(case_count)), .groups = "drop")
 
   } else if  (get_data_type(x) == "linelist" & to == "count-incidence"){
 
     #Change the attribute first to avoid the warning from summarise
     attr(x, "data_type") <- "count-incidence"
+    attr(x, "case_count")  <- case_count
 
     #Summarise
     x <- x %>%
-      summarise(!!as.symbol(case_col) := dplyr::n(), .groups = "drop")
+      summarise(!!as.symbol(case_count) := dplyr::n(), .groups = "drop")
 
   } else if (get_data_type(x) == "linelist" & to == "count-cumulative"){
 
@@ -100,7 +101,7 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
       to_count(to = "count-incidence") %>% #Just to make sure 1 obs per
       dplyr::group_by_at(c(get_event_date(x), ".event_num", get_is_batched(x), get_strata(x), get_temporal_effects(x))) %>%
       dplyr::arrange_at(get_report_date(x)) %>%
-      dplyr::mutate(!!as.symbol(case_col) := cumsum(!!as.symbol(case_col))) %>%
+      dplyr::mutate(!!as.symbol(case_count) := cumsum(!!as.symbol(case_count))) %>%
       ungroup()
 
     attr(x, "data_type") <- "count-cumulative"

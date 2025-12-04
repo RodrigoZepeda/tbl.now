@@ -10,15 +10,18 @@
 #'
 #' @param .data A `data.frame` or tibble.
 #'
-#' @param date_col A column name (string or tidy-selection) containing dates.
+#' @param date_col A \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column name containing dates.
 #'
 #' @param align_on_day Integer 1–7 indicating the weekday to align to.
 #' Uses [lubridate::wday()] numbering (1 = Sunday, 7 = Saturday).
 #'
-#' @param type Either `"epiweek"` (default) or `"isoweek"`. Determines
-#'   which week/year functions to use.
+#' @param type Either `"epi"` (default) or `"iso"`. Determines
+#'   which week/year functions to use whether [lubridate::epiweek()] or
+#'   [lubridate::isoweek()]
 #'
-#' @param new_date_col Name of the new aligned date column to be created.
+#' @param new_date_col Name of the new aligned date column to be created. By default
+#' it creates a column named `\{date_col\}_aligned` where `date_col` corresponds
+#' to the column name passed to that parameter.
 #'
 #' @return A tibble identical to `.data` but with an added aligned date column.
 #'
@@ -37,17 +40,32 @@
 align_week <- function(.data,
                        date_col,
                        align_on_day = 1,
-                       type = "epiweek",
-                       new_date_col = paste0(deparse(substitute(date_col)), "_aligned")) {
+                       type = "epi",
+                       new_date_col = NULL) {
+
+  #Find the datecol
+  date_col_select <- tidyselect::eval_select(rlang::expr({{ date_col }}), .data)
+  date_col        <- colnames(.data)[date_col_select]
+
+  if (length(date_col) > 1){
+    cli::cli_abort("Can only operate on one column at a time. Columns {date_col} were given.")
+  }
+
+  if (is.null(new_date_col)){
+    new_date_col <- paste0(date_col, "_aligned")
+  }
 
   # Choose functions properly (avoid ifelse)
-  week_fun <- if (type == "epiweek") lubridate::epiweek else lubridate::isoweek
-  year_fun <- if (type == "epiweek") lubridate::epiyear else lubridate::isoyear
+  if (!(type %in% c("epi","iso"))){
+    cli::cli_abort("Invalid type {.val {type}}. Set {.val epi} for {.help lubridate::epiweek} or {.val iso} for {.help lubridate::isoweek}")
+  }
+  week_fun <- if (type == "epi") lubridate::epiweek else lubridate::isoweek
+  year_fun <- if (type == "epi") lubridate::epiyear else lubridate::isoyear
 
   .data %>%
     dplyr::mutate(
-      !!as.symbol("week_col") := week_fun({{ date_col }}),
-      !!as.symbol("year_col") := year_fun({{ date_col }})
+      !!as.symbol("week_col") := week_fun(!!as.symbol(date_col)),
+      !!as.symbol("year_col") := year_fun(!!as.symbol(date_col))
     ) %>%
     week_2_date(
       week_col     = "week_col",
@@ -67,24 +85,31 @@ align_week <- function(.data,
 #' aligning epiweek or isoweek data to a consistent weekday.
 #'
 #' @param .data A data.frame or tibble.
-#' @param week_col Column name (string) containing week numbers.
-#' @param year_col Column name (string) containing year numbers.
-#' @param align_on_day Integer 1–7 (lubridate weekday numbering) indicating
+#' @param week_col \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column
+#' name containing epidemiological week numbers.
+#' @param year_col \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column
+#' name containing epidemiological year numbers.
+#' @param align_on_day Integer 1–7 ([lubridate::wday()] numbering) indicating
 #'   the weekday to align to.
 #' @param week_fun Function that extracts week numbers from a date
-#'   (e.g., [lubridate::epiweek()], [lubridate::isoweek()]).
-#' @param year_fun Function that extracts the epidemiological/ISO year from a date.
+#'   (either [lubridate::epiweek()], [lubridate::isoweek()]).
+#' @param year_fun Function that extracts the epidemiological/ISO year from
+#' a date (either [lubridate::epiyear()] or [lubridate::isoyear()]).
 #' @param date_col_name Name of the resulting date column.
 #'
-#' @return The input dataframe with a new date column appended.
+#' @return The given `data.frame` with a new date column appended.
 #'
 #' @examples
 #' df <- data.frame(
-#'   week_col = 1:5,
-#'   year_col = rep(2024, 5)
+#'   epidemiological_week = 1:5,
+#'   epidemiological_year = rep(2024, 5)
 #' )
 #'
-#' week_2_date(df, week_col = "week_col", year_col = "year_col")
+#' df %>%
+#'   week_2_date(
+#'     week_col = epidemiological_week,
+#'     year_col = epidemiological_year
+#'   )
 #'
 #' @export
 week_2_date <- function(.data,
@@ -95,6 +120,28 @@ week_2_date <- function(.data,
                         year_fun = lubridate::epiyear,
                         date_col_name = "date") {
 
+  #Stop if date_col_name already in .data
+  if (date_col_name %in% colnames(.data)){
+    cli::cli_abort("Column {.val {date_col_name}} is already in `.data`. Cannot proceed to transformation. Choose a different `date_col_name`.")
+  }
+
+  #Parse the week column
+  week_col_select <- tidyselect::eval_select(rlang::expr({{ week_col }}), .data)
+  week_col        <- colnames(.data)[week_col_select]
+
+  if (length(week_col) > 1){
+    cli::cli_abort("Can only operate on one column at a time. Columns {.val {week_col}} were given.")
+  }
+
+  #Parse the year column
+  year_col_select <- tidyselect::eval_select(rlang::expr({{ year_col }}), .data)
+  year_col        <- colnames(.data)[year_col_select]
+
+  if (length(year_col) > 1){
+    cli::cli_abort("Can only operate on one column at a time. Columns {.val {year_col}} were given.")
+  }
+
+  #Get all the years
   years <- .data %>% dplyr::pull(dplyr::all_of(year_col))
 
   yr_min <- min(years) - 1

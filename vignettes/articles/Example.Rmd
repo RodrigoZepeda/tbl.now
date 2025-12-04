@@ -44,14 +44,14 @@ We can try and setup a `tbl_now` by specifying the following:
 
 + `event_date`: When cases happened
 + `report_date`: When cases were reported. 
-+ `case_col`: Column containing information about the number of cases for that observation.
++ `case_count`: Column containing information about the number of cases for that observation.
 + `strata`: A vector containing all of the columns considered strata
 
 Creating the `tbl_now` object like this will throw several warnings: 
 
 ```{r}
 df_wrong <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
-        case_col = "observation", strata = c("location_name"))
+        case_count = "observation", strata = c("location_name"))
 ```
 
 The first and last warnings indicate, for example, that some observations are repeated. You can see that rows `422146`, `422147`, `422148`, `422149` have exactly the same values:
@@ -76,7 +76,7 @@ Then try again the `tbl_now` (spoiler, we still need to fix one last thing):
 
 ```{r}
 df_still_wrong <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
-        case_col = "observation", strata = c("location_name"))
+        case_count = "observation", strata = c("location_name"))
 ```
 
 The data was incorrectly identified as `count-incidence` which means that each event-report date combination corresponds to the number of cases that where observed for the `event_date` and reported **exactly** at `report_date`. That is, the total number of cases that happened at `event_date` is given by the **sum** of all of the cases for each `report_date`. 
@@ -85,7 +85,7 @@ In our case we have `count-cumulative` data where the `report_date` reports the 
 
 ```{r}
 df_flu <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
-        case_col = "observation", strata = c("location_name"), data_type = "count-cumulative")
+        case_count = "observation", strata = c("location_name"), data_type = "count-cumulative")
 ```
 
 And this results in the correct `tbl_now` object:

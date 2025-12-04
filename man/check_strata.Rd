@@ -7,11 +7,12 @@
 check_strata(data, strata)
 }
 \arguments{
-\item{data}{A \code{data.frame} to be converted.}
+\item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 
-\item{strata}{(optional) Character vector or \code{NULL} (default). Name of different variables
-(column names) in strata. Strata correspond to variables that are of interest
-by themselves. For example if it is of interest to generate nowcasts by gender then
+\item{strata}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+or \code{NULL} (default). Name of different variables (column names) in strata.
+Strata correspond to variables that are of interest by themselves.
+For example if it is of interest to generate nowcasts by gender then
 \code{gender} is a \code{strata}.}
 }
 \value{

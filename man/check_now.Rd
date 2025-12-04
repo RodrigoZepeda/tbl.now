@@ -7,11 +7,13 @@
 check_now(data, event_date, report_date, now)
 }
 \arguments{
-\item{data}{A \code{data.frame} to be converted.}
+\item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 
-\item{event_date}{Character. The name of the column containing the event date.}
+\item{event_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+name of the column containing the event date.}
 
-\item{report_date}{Character. The name of the column containing the report date.}
+\item{report_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+name of the column containing the report date.}
 
 \item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
 nowcast. If no \code{now} is given then the function automatically uses the last

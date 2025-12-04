@@ -14,7 +14,7 @@
 \alias{get_data_type}
 \alias{get_temporal_effects}
 \alias{get_is_batched}
-\alias{get_case_col}
+\alias{get_case_count}
 \alias{get_protected_cols}
 \alias{get_protected_generated_cols}
 \alias{get_protected_given_cols}
@@ -44,7 +44,7 @@ get_temporal_effects(x)
 
 get_is_batched(x)
 
-get_case_col(x)
+get_case_count(x)
 
 get_protected_cols(x)
 
@@ -99,7 +99,7 @@ get_event_units(ndata)
 get_data_type(ndata)
 
 #Get the column with cases
-get_case_col(ndata)
+get_case_count(ndata)
 
 #Get temporal effects
 get_temporal_effects(ndata)

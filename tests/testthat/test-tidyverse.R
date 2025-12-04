@@ -14,7 +14,7 @@ dtf <- expand.grid(
 
 dfnow <- tbl_now(dtf, event_date = "event", report_date = "report_date",
                  strata = c("sex","region"), is_batched = "batched",
-                 case_col = "cases", verbose = FALSE)
+                 case_count = "cases", verbose = FALSE)
 
 
 test_that("It doesn't loose class after two applications", {

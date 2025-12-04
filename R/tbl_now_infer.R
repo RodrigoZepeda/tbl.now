@@ -176,14 +176,11 @@ infer_units <- function(data, date_column, date_units) {
 #'
 #' @keywords internal
 infer_data_type <- function(data, data_type, event_date, report_date, strata = NULL,
-                            is_batched = NULL, case_col = NULL, verbose = FALSE) {
+                            is_batched = NULL, case_count = NULL, verbose = FALSE) {
 
-  if (length(case_col) > 1){
-    cli::cli_abort(
-      "Invalid `case_col` must be a vector of length 1 or `NULL`"
-    )
+  if (!is.null(case_count) && length(case_count) != 1){
+    cli::cli_abort("Invalid length = {length(case_count)} for `case_count`. It must be a vector of length 1.")
   }
-
   #Force conversion of data to avoid loops with dplyr_reconstruct
   data <- dplyr::as_tibble(data)
 
@@ -191,7 +188,7 @@ infer_data_type <- function(data, data_type, event_date, report_date, strata = N
   data_type <- data_type[1]
 
   # Check that there is no column `n` if linedata and that there is if counts
-  if (data_type == "auto" && !is.null(case_col) &&  (case_col %in% colnames(data))) {
+  if (data_type == "auto" && !is.null(case_count) &&  (case_count %in% colnames(data))) {
 
     #Check that the data is different
     distinct_data <- data %>%
@@ -209,7 +206,7 @@ infer_data_type <- function(data, data_type, event_date, report_date, strata = N
     summarized_difs <- data %>%
       dplyr::group_by_at(c(event_date, strata, is_batched)) %>%
       dplyr::arrange(!!as.symbol(report_date)) %>%
-      dplyr::mutate(!!as.symbol("difference") := !!as.symbol(case_col) - dplyr::lag(!!as.symbol(case_col))) %>%
+      dplyr::mutate(!!as.symbol("difference") := !!as.symbol(case_count) - dplyr::lag(!!as.symbol(case_count))) %>%
       dplyr::filter(!is.na(!!as.symbol("difference"))) %>%
       dplyr::filter(!!as.symbol("difference") < 0) %>%
       nrow()
@@ -225,7 +222,7 @@ infer_data_type <- function(data, data_type, event_date, report_date, strata = N
     # if (!is.numeric(n_col) || any(ceiling(n_col) != n_col, na.rm = TRUE)){
     #   cli::cli_abort(
     #     paste0(
-    #       "Cannot automatically detect data_type. Data has a column named {.val {case_col}}",
+    #       "Cannot automatically detect data_type. Data has a column named {.val {case_count}}",
     #       "which does not seem to be count data (is not an integer).",
     #       " Please set the {.code data_type} argument to either {.val count}",
     #       " or {.val linelist}."
@@ -234,22 +231,22 @@ infer_data_type <- function(data, data_type, event_date, report_date, strata = N
     # }
 
     #Look for missing values
-    n_col <- data %>% dplyr::filter(is.na(!!as.symbol(case_col))) %>% nrow()
+    n_col <- data %>% dplyr::filter(is.na(!!as.symbol(case_count))) %>% nrow()
     if (n_col > 0){
       cli::cli_warn(
-        "Some observations in the count column {.val {case_col}} contain missing values."
+        "Some observations in the count column {.val {case_count}} contain missing values."
       )
     }
 
     if (verbose) {
       cli::cli_alert_info(
         paste0(
-          "Identified data as <{.emph {data_type}}> with counts in column {.val {case_col}}."
+          "Identified data as <{.emph {data_type}}> with counts in column {.val {case_count}}."
         )
       )
     }
 
-  } else if (data_type == "auto" && (is.null(case_col) || !(case_col %in% colnames(data)))) {
+  } else if (data_type == "auto" && (is.null(case_count) || !(case_count %in% colnames(data)))) {
 
     data_type <- "linelist"
     if (verbose) {
@@ -259,18 +256,18 @@ infer_data_type <- function(data, data_type, event_date, report_date, strata = N
         )
       )
     }
-  } else if (data_type == "linelist" && !is.null(case_col) && case_col %in% colnames(data)) {
+  } else if (data_type == "linelist" && !is.null(case_count) && case_count %in% colnames(data)) {
     cli::cli_warn(
       paste0(
-        "Linelist data contains a column named {.val {case_col}} which will be overwritten.",
+        "Linelist data contains a column named {.val {case_count}} which will be overwritten.",
         " If you are working with count-data set ",
         "{.code data_type = {.val count-incidence}} or {.code data_type = {.val count-cumulative}}"
       )
     )
-  } else if (grepl("count", data_type) && !is.null(case_col) && !(case_col %in% colnames(data))) {
+  } else if (grepl("count", data_type) && !is.null(case_count) && !(case_count %in% colnames(data))) {
     cli::cli_abort(
       paste0(
-        "Count data should have a column named {.val {case_col}} with the number ",
+        "Count data should have a column named {.val {case_count}} with the number ",
         "of tests per event_date-report_date combination. Otherwise set ",
         "{.code data_type = {.val linelist}} if working with line-list data."
       )

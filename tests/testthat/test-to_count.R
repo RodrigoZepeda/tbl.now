@@ -344,6 +344,7 @@ test_that("to_count handles count data by summing", {
     test_data$count_data,
     event_date = "onset_week",
     report_date = "report_week",
+    case_count = n,
     strata = "gender",
     data_type = "count-incidence",
     report_units= "days",
@@ -372,6 +373,7 @@ test_that("to_count sums counts correctly for count data", {
     event_date = "onset_week",
     report_date = "report_week",
     strata = "gender",
+    case_count = n,
     data_type = "count-incidence",
     report_units= "days",
     event_units= "days",
@@ -400,6 +402,7 @@ test_that("to_count maintains count data_type", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "count-incidence",
+    case_count = n,
     report_units= "days",
     event_units= "days",
     warn_non_uniqueness = FALSE
@@ -409,6 +412,38 @@ test_that("to_count maintains count data_type", {
 
   expect_equal(get_data_type(result), "count-incidence")
 })
+
+test_that("to_count works even when column is not n", {
+  test_data <- setup_test_data()
+
+  ndata <- tbl_now(
+    test_data$count_data %>% rename(obs = n),
+    event_date = "onset_week",
+    report_date = "report_week",
+    data_type = "count-incidence",
+    case_count = obs,
+    report_units= "days",
+    event_units= "days",
+    warn_non_uniqueness = FALSE
+  )
+
+  ndata2 <- tbl_now(
+    test_data$count_data,
+    event_date = "onset_week",
+    report_date = "report_week",
+    data_type = "count-incidence",
+    case_count = n,
+    report_units= "days",
+    event_units= "days",
+    warn_non_uniqueness = FALSE
+  )
+
+  result_obs <- to_count(ndata) %>% rename(n = obs)
+  result_n <- to_count(ndata2)
+
+  expect_equal(result_obs, result_n)
+})
+
 
 # Tests for to_count() behavior ----
 test_that("to_count ungroups data before processing", {

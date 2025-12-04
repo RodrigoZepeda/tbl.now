@@ -1,11 +1,6 @@
 # Load libraries (assuming the code depends on these)
 library(dplyr)
 
-# Source all necessary functions for testing.
-# In a real R package, these would be loaded via `load_all()` or your package environment.
-# Since we are in an isolated environment, we assume the functions from the provided
-# R files (like check.R, infer.R, and tbl_now.R) are available.
-
 # --- Test Data Setup ---
 # Linelist data (data_type should be "linelist")
 ll_data <- tibble(
@@ -115,6 +110,7 @@ test_that("tbl_now infers 'count' data_type correctly", {
     event_date = "onset_week",
     report_date = "report_week",
     date_units = "days",
+    case_count = n,
     verbose = FALSE
   )
 
@@ -205,7 +201,7 @@ test_that("tbl_now errors if strata or covariates are not characters", {
       verbose = FALSE,
       date_units = "days"
     ),
-    "doesn't exist|not found"
+    "Can't select columns|doesn't exist|not found"
   )
   expect_error(
     tbl_now(
@@ -216,7 +212,7 @@ test_that("tbl_now errors if strata or covariates are not characters", {
       verbose = FALSE,
       date_units = "days"
     ),
-    "doesn't exist|not found"
+    "Can't select columns|doesn't exist|not found"
   )
 })
 
@@ -243,7 +239,7 @@ test_that("tbl_now throws warning when repeated rows",{
             event_date  = "target_end_date",
             report_date = "report_date",
             strata      = "location_name",
-            case_col    = "observation",
+            case_count    = "observation",
             data_type   = "count-cumulative",
             verbose = FALSE),
     "Data has multiple rows for the same event"
@@ -256,7 +252,7 @@ test_that("tbl_now throws warning when repeated rows",{
             event_date  = "target_end_date",
             report_date = "report_date",
             strata      = "location_name",
-            case_col    = "observation",
+            case_count    = "observation",
             verbose = FALSE),
     "Cannot accurately infer the data-type"
   ))
@@ -292,7 +288,7 @@ test_that("tbl_now correctly identifies data type",{
                    as.Date("2020/09/14"),
                    as.Date("2020/09/15")))
 
-  dtbl2 <- tbl_now(df2, event_date = "event_date", report_date = "report_date", verbose = FALSE)
+  dtbl2 <- tbl_now(df2, event_date = "event_date", report_date = "report_date", case_count = "n", verbose = FALSE)
   expect_equal(get_data_type(dtbl2), "count-incidence")
 
   #COUNT CUMULATIVE
@@ -307,7 +303,8 @@ test_that("tbl_now correctly identifies data type",{
                    as.Date("2020/09/14"),
                    as.Date("2020/09/15")))
 
-  dtbl3 <- tbl_now(df3, event_date = "event_date", report_date = "report_date", verbose = FALSE)
+  dtbl3 <- tbl_now(df3, event_date = "event_date", report_date = "report_date",
+                   case_count = "n", verbose = FALSE)
   expect_equal(get_data_type(dtbl3), "count-cumulative")
 
 })

@@ -54,6 +54,10 @@ ctl_new_pillar.tbl_now <- function(controller, x, width, ...) {
       annotation <- "[strata]"
     } else if (!is.null(get_covariates(controller)) && (cval %in% get_covariates(controller))) {
       annotation <- "[covariate]"
+    } else if (identical(cval, get_is_batched(controller))) {
+      annotation <- "[is_batched]"
+    } else if (identical(cval, get_case_count(controller))) {
+      annotation <- "[cases]"
     } else if (!is.null(get_temporal_effects(controller)) && (cval %in% get_temporal_effects(controller))) {
       annotation <- "[t_effect]"
     } else {
