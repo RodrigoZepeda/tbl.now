@@ -11,6 +11,7 @@
 #' data(denguedat)
 #' as_tbl_now(denguedat, event_date = "onset_week", report_date = "report_week")
 #'
+#' @md
 #' @export
 as_tbl_now <- function(object, event_date, report_date, ...){
   UseMethod("as_tbl_now")

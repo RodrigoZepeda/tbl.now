@@ -4,7 +4,7 @@
 \alias{as_tbl_now}
 \alias{as_tbl_now.tbl_now}
 \alias{as_tbl_now.data.frame}
-\title{Transform into a `tbl_now` object}
+\title{Transform into a \code{tbl_now} object}
 \usage{
 as_tbl_now(object, event_date, report_date, ...)
 
@@ -13,7 +13,7 @@ as_tbl_now(object, event_date, report_date, ...)
 \method{as_tbl_now}{data.frame}(object, event_date, report_date, ...)
 }
 \arguments{
-\item{object}{An object to convert to `tbl_now`.}
+\item{object}{An object to convert to \code{tbl_now}.}
 
 \item{event_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
 name of the column containing the event date.}
@@ -21,10 +21,10 @@ name of the column containing the event date.}
 \item{report_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
 name of the column containing the report date.}
 
-\item{...}{Additional parameters to pass to [tbl_now()]}
+\item{...}{Additional parameters to pass to \code{\link[=tbl_now]{tbl_now()}}}
 }
 \description{
-Takes a `data.frame` or `tbl_now` and transforms it into a `tbl_now` object
+Takes a \code{data.frame} or \code{tbl_now} and transforms it into a \code{tbl_now} object
 }
 \examples{
 #Convert a data.frame to tbl_now

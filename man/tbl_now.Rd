@@ -192,6 +192,9 @@ print(df)
 #> 5 2 2020-09-13  2020-09-14
 #> 6 4 2020-09-13  2020-09-15
 }\if{html}{\out{</div>}}
+
+The \code{\link[=to_count]{to_count()}} function allows you to easily convert from between different
+data-types.
 }
 
 \examples{
@@ -212,12 +215,10 @@ ndata$newcolumn <- "something"
 ndata
 
 #Like removing a column
-ndata <- ndata[,-4]
-ndata
+ndata[,-4]
 
 #Like selecting
 ndata[1:10,]
-ndata
 
 #You can also apply all dplyr functions:
 ndata \%>\%

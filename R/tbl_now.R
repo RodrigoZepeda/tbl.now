@@ -144,6 +144,8 @@
 #' print(df)
 #' ```
 #'
+#' The [to_count()] function allows you to easily convert from between different
+#' data-types.
 #'
 #' @examples
 #' # The `tbl_now` is a data.frame with additional attributes
@@ -163,12 +165,10 @@
 #' ndata
 #'
 #' #Like removing a column
-#' ndata <- ndata[,-4]
-#' ndata
+#' ndata[,-4]
 #'
 #' #Like selecting
 #' ndata[1:10,]
-#' ndata
 #'
 #' #You can also apply all dplyr functions:
 #' ndata %>%
