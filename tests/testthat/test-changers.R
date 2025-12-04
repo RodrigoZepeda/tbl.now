@@ -392,32 +392,32 @@ test_that("change_covariates fails when column not found", {
   )
 })
 
-# Tests for remove_covariate() ----
-test_that("remove_covariate removes specified covariate", {
+# Tests for remove_covariates() ----
+test_that("remove_covariates removes specified covariate", {
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
   # Add multiple covariates first
   ndata <- change_covariates(ndata, c("temperature", "humidity"))
 
-  result <- remove_covariate(ndata, "temperature")
+  result <- remove_covariates(ndata, "temperature")
 
   expect_s3_class(result, "tbl_now")
   expect_equal(get_covariates(result), "humidity")
   expect_equal(get_num_covariates(result), 1)
 })
 
-test_that("remove_covariate removes all if only one covariate", {
+test_that("remove_covariates removes all if only one covariate", {
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
-  result <- remove_covariate(ndata, "temperature")
+  result <- remove_covariates(ndata, "temperature")
 
   expect_s3_class(result, "tbl_now")
   expect_equal(get_num_covariates(result), 0)
 })
 
-test_that("remove_covariate can remove multiple covariates", {
+test_that("remove_covariates can remove multiple covariates", {
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -425,25 +425,25 @@ test_that("remove_covariate can remove multiple covariates", {
   ndata$rainfall <- c(10, 20, 15, 18)
   ndata <- change_covariates(ndata, c("temperature", "humidity", "rainfall"))
 
-  result <- remove_covariate(ndata, c("temperature", "humidity"))
+  result <- remove_covariates(ndata, c("temperature", "humidity"))
 
   expect_equal(get_covariates(result), "rainfall")
   expect_equal(get_num_covariates(result), 1)
 })
 
-# Tests for add_covariate() ----
-test_that("add_covariate adds new covariate", {
+# Tests for add_covariates() ----
+test_that("add_covariates adds new covariate", {
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
-  result <- add_covariate(ndata, "humidity")
+  result <- add_covariates(ndata, "humidity")
 
   expect_s3_class(result, "tbl_now")
   expect_equal(get_covariates(result), c("humidity", "temperature"))
   expect_equal(get_num_covariates(result), 2)
 })
 
-test_that("add_covariate adds to existing covariates", {
+test_that("add_covariates adds to existing covariates", {
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -451,19 +451,19 @@ test_that("add_covariate adds to existing covariates", {
   expect_equal(get_covariates(ndata), "temperature")
 
   # Add another
-  result <- add_covariate(ndata, "humidity")
+  result <- add_covariates(ndata, "humidity")
 
   expect_equal(get_covariates(result), c("humidity", "temperature"))
 })
 
-test_that("add_covariate works when no existing covariates", {
+test_that("add_covariates works when no existing covariates", {
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
   # Remove all covariates first
   ndata <- change_covariates(ndata, NULL)
 
-  result <- add_covariate(ndata, "temperature")
+  result <- add_covariates(ndata, "temperature")
 
   expect_equal(get_covariates(result), "temperature")
   expect_equal(get_num_covariates(result), 1)
@@ -564,7 +564,7 @@ test_that("multiple changer functions work together", {
     change_event_date("new_onset") %>%
     change_report_date("new_report") %>%
     add_strata("age_group") %>%
-    add_covariate("humidity") %>%
+    add_covariates("humidity") %>%
     change_now(as.Date("2020-08-10"))
 
   expect_s3_class(result, "tbl_now")
@@ -619,8 +619,8 @@ test_that("removing and adding same covariate works correctly", {
   ndata <- test_data$ndata
 
   result <- ndata %>%
-    remove_covariate("temperature") %>%
-    add_covariate("temperature")
+    remove_covariates("temperature") %>%
+    add_covariates("temperature")
 
   expect_equal(get_covariates(result), "temperature")
   expect_equal(get_num_covariates(result), 1)

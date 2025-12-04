@@ -8,16 +8,8 @@
 \alias{change_case_count}
 \alias{change_is_batched}
 \alias{change_strata}
-\alias{remove_strata}
-\alias{add_strata}
-\alias{remove_all_strata}
 \alias{change_covariates}
-\alias{remove_covariate}
-\alias{add_covariate}
-\alias{remove_all_covariates}
-\alias{replace_temporal_effects}
-\alias{remove_temporal_effects}
-\title{Change attributes of a `tbl_now` object}
+\title{Change attributes of a \code{tbl_now} object}
 \usage{
 change_now(x, now = NULL)
 
@@ -31,26 +23,10 @@ change_is_batched(x, is_batched)
 
 change_strata(x, ...)
 
-remove_strata(x, ...)
-
-add_strata(x, ...)
-
-remove_all_strata(x)
-
 change_covariates(x, ...)
-
-remove_covariate(x, ...)
-
-add_covariate(x, ...)
-
-remove_all_covariates(x)
-
-replace_temporal_effects(x, t_effects)
-
-remove_temporal_effects(x)
 }
 \arguments{
-\item{x}{A `tbl_now` object}
+\item{x}{A \code{tbl_now} object}
 
 \item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
 nowcast. If no \code{now} is given then the function automatically uses the last
@@ -76,28 +52,25 @@ and is only an upper bound of the real report date
 set \code{is_batched = TRUE}.}
 
 \item{...}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} with the columns
-for the attribute. In the case of `covariates` and `strata` argument `...` can
+for the attribute. In the case of \code{covariates} and \code{strata} argument \code{...} can
 refer to multiple columns.}
-
-\item{t_effects}{(optional) Either \code{NULL} (default), a \code{\link[=temporal_effects]{temporal_effects()}} object
-or a character vector with the names of the columns containing the temporal effects.}
 }
 \value{
-A `tbl_now` object with updated attributes
+A \code{tbl_now} object with updated attributes
 }
 \description{
-Functions to modify the attributes of a `tbl_now` object.
+Functions to change the attributes of a \code{tbl_now} object.
 }
 \details{
-Variable selection can be used with the
-auxiliary dplyr verbs such as [dplyr::starts_with()], [dplyr::all_of()],
-and [dplyr::where()]. See [dplyr::select()] for additional info.
+Variable selection is done via \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+and can be used with the auxiliary dplyr verbs such as \code{\link[dplyr:reexports]{dplyr::starts_with()}}, \code{\link[dplyr:reexports]{dplyr::all_of()}},
+and \code{\link[dplyr:reexports]{dplyr::where()}}. See \code{\link[dplyr:select]{dplyr::select()}} for additional info.
 }
 \examples{
 data(denguedat)
 ndata <- tbl_now(denguedat,
-                 event_date = "onset_week",
-                 report_date = "report_week",
+                 event_date = onset_week,
+                 report_date = report_week,
                  verbose = FALSE)
 
 # Change the event_date column to a different date column
@@ -115,26 +88,10 @@ ndata$age_group <- sample(c("< 18","20-60","60+"), nrow(ndata), replace = TRUE)
 ndata <- ndata \%>\% change_strata(gender, age_group)
 ndata
 
-# Remove some strata
-ndata <- remove_strata(ndata, gender)
-ndata
-
-# Add strata
-ndata <- add_strata(ndata, dplyr::starts_with("gender"))
-ndata
-
 # Change covariates
 ndata$temperature <- rnorm(nrow(ndata), 25, 4)
 ndata$humidity    <- rbeta(nrow(ndata), 0.6, 0.4)
 ndata <- ndata \%>\% change_covariates(temperature, humidity)
-ndata
-
-# Remove some covariates
-ndata <- remove_covariate(ndata, temperature)
-ndata
-
-# Add covariates
-ndata <- add_covariate(ndata, temperature)
 ndata
 
 # Change now
@@ -154,7 +111,13 @@ ndata$is_batched <- FALSE
 ndata \%>\%
   change_is_batched(is_batched)
 
+# Change covariates
+ndata$temperature <- rnorm(nrow(ndata), 25, 4)
+ndata$humidity    <- rbeta(nrow(ndata), 0.6, 0.4)
+ndata <- ndata \%>\% change_covariates(temperature, humidity)
+ndata
+
 }
 \seealso{
-[add_temporal_effects()]
+\code{\link[=add_temporal_effects]{add_temporal_effects()}} \link{add} \link{remove}
 }
