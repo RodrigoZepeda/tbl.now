@@ -139,7 +139,19 @@ framework as well as additional functions that can be applied to a
 
 ### Attributes of a `tbl_now`
 
-### Data types
+#### Data types
+
+#### Temporal effects
+
+#### Modifying the attributes of a `tbl_now`
+
+#### Transforming a `tbl_now` to count data
+
+#### Modifying a `tbl_now` with `dplyr`
+
+#### Updating a `tbl_now`
+
+## Other functions
 
 ## References
 
