@@ -146,7 +146,7 @@ count_data <- ndata \%>\%
   to_count(to = "count-incidence")
 
 count_data \%>\%
-  mutate(n2 = 1.15*n) \%>\%
+  dplyr::mutate(n2 = 1.15*n) \%>\%
   change_case_count(n2)
 
 #Change is_batched
