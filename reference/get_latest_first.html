@@ -9,7 +9,7 @@ been reported for each `event_date`"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,81 +72,51 @@ been reported for each `event_date`</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#Gets the first reported cases (what as initially thought of to be the incidence)</span></span></span>
 <span class="r-in"><span><span class="fu">get_initial_reported_cases</span><span class="op">(</span><span class="va">dengue</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 52,987 × 6</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Groups:   onset_week, gender [2,164]</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    onset_week report_week gender .event_num .report_num .delay</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1990-01-01 1990-01-01  Male            0           0      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1990-01-01 1990-01-01  Female          0           0      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 1990-01-01 1990-01-01  Female          0           0      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1990-01-01 1990-01-08  Female          0           1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1990-01-01 1990-01-08  Male            0           1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 1990-01-01 1990-01-15  Female          0           2      2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1990-01-01 1990-01-15  Female          0           2      2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1990-01-01 1990-01-15  Female          0           2      2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-01 1990-01-22  Female          0           3      3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01 1990-01-08  Female          0           1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 52,977 more rows</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  10,296 × 6</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  2,164 × 7</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    onset_week   report_week   gender   .event_num .report_num .delay</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[strata]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1990-01-01   1990-01-01    Male              0           0      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1990-01-01   1990-01-01    Female            0           0      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 1990-01-01   1990-01-01    Female            0           0      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1990-01-08   1990-01-08    Male              1           1      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1990-01-08   1990-01-08    Female            1           1      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 1990-01-15   1990-01-15    Female            2           2      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1990-01-15   1990-01-15    Male              2           2      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1990-01-15   1990-01-15    Female            2           2      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-15   1990-01-15    Male              2           2      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-15   1990-01-15    Male              2           2      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    onset_week   report_week   .event_num .report_num gender         n .delay</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[cases]</span>  <span style="color: #949494;">[...]</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1990-01-01   1990-01-01             0           0 Female         2      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1990-01-01   1990-01-01             0           0 Male           1      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 1990-01-08   1990-01-08             1           1 Female        16      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1990-01-08   1990-01-08             1           1 Male          13      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1990-01-15   1990-01-15             2           2 Female        34      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 1990-01-15   1990-01-15             2           2 Male           4      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1990-01-22   1990-01-22             3           3 Female        22      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1990-01-22   1990-01-22             3           3 Male          23      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-29   1990-01-29             4           4 Female        17      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-29   1990-01-29             4           4 Male          19      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-20</span> | Event date: <span style="color: #0000BB;">"onset_week"</span> | Report date: <span style="color: #0000BB;">"report_week"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 10,286 more rows</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 2,154 more rows</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#Gets the latest reported cases (what is now thought of to be the incidence)</span></span></span>
 <span class="r-in"><span><span class="fu">get_latest_reported_cases</span><span class="op">(</span><span class="va">dengue</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 52,987 × 6</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Groups:   onset_week, gender [2,164]</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    onset_week report_week gender .event_num .report_num .delay</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1990-01-01 1990-01-01  Male            0           0      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1990-01-01 1990-01-01  Female          0           0      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 1990-01-01 1990-01-01  Female          0           0      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1990-01-01 1990-01-08  Female          0           1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1990-01-01 1990-01-08  Male            0           1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 1990-01-01 1990-01-15  Female          0           2      2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1990-01-01 1990-01-15  Female          0           2      2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1990-01-01 1990-01-15  Female          0           2      2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-01 1990-01-22  Female          0           3      3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01 1990-01-08  Female          0           1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 52,977 more rows</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  4,398 × 6</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  2,164 × 7</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    onset_week   report_week   gender   .event_num .report_num .delay</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[strata]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1990-01-01   1990-03-05    Female            0           9      9</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1990-01-01   1990-02-12    Male              0           6      6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 1990-01-08   1990-02-12    Male              1           6      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1990-01-08   1990-02-12    Male              1           6      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1990-01-08   1990-02-05    Female            1           5      4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 1990-01-15   1990-02-12    Male              2           6      4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1990-01-15   1990-03-05    Female            2           9      7</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1990-01-22   1990-02-19    Female            3           7      4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-22   1990-03-19    Male              3          11      8</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-22   1990-02-19    Female            3           7      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    onset_week   report_week   .event_num .report_num gender         n .delay</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[cases]</span>  <span style="color: #949494;">[...]</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1990-01-01   1990-03-05             0           9 Female         1      9</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1990-01-01   1990-02-12             0           6 Male          12      6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 1990-01-08   1990-02-05             1           5 Female        20      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1990-01-08   1990-02-12             1           6 Male          18      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1990-01-15   1990-03-05             2           9 Female         1      7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 1990-01-15   1990-02-12             2           6 Male          13      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1990-01-22   1990-02-19             3           7 Female         9      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1990-01-22   1990-03-19             3          11 Male           1      8</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-29   1990-03-19             4          11 Female         2      7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-29   1990-03-12             4          10 Male           6      6</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-20</span> | Event date: <span style="color: #0000BB;">"onset_week"</span> | Report date: <span style="color: #0000BB;">"report_week"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 4,388 more rows</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 2,154 more rows</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

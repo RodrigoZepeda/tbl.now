@@ -9,7 +9,7 @@ Each function returns a specific attribute (e.g. event date, strata, covariates,
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,7 +69,7 @@ Each function returns a specific attribute (e.g. event date, strata, covariates,
 <span></span>
 <span><span class="fu">get_is_batched</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">get_case_col</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">get_case_count</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">get_protected_cols</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
@@ -138,8 +138,8 @@ Each function returns a specific attribute (e.g. event date, strata, covariates,
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "linelist"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#Get the column with cases</span></span></span>
-<span class="r-in"><span><span class="fu">get_case_col</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "n"</span>
+<span class="r-in"><span><span class="fu">get_case_count</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#Get temporal effects</span></span></span>
 <span class="r-in"><span><span class="fu">get_temporal_effects</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>

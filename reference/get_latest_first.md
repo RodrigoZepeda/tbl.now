@@ -31,80 +31,50 @@ dengue <- to_count(dengue)
 
 #Gets the first reported cases (what as initially thought of to be the incidence)
 get_initial_reported_cases(dengue)
-#> # A tibble: 52,987 × 6
-#> # Groups:   onset_week, gender [2,164]
-#>    onset_week report_week gender .event_num .report_num .delay
-#>    <date>     <date>      <chr>       <dbl>       <dbl>  <dbl>
-#>  1 1990-01-01 1990-01-01  Male            0           0      0
-#>  2 1990-01-01 1990-01-01  Female          0           0      0
-#>  3 1990-01-01 1990-01-01  Female          0           0      0
-#>  4 1990-01-01 1990-01-08  Female          0           1      1
-#>  5 1990-01-01 1990-01-08  Male            0           1      1
-#>  6 1990-01-01 1990-01-15  Female          0           2      2
-#>  7 1990-01-01 1990-01-15  Female          0           2      2
-#>  8 1990-01-01 1990-01-15  Female          0           2      2
-#>  9 1990-01-01 1990-01-22  Female          0           3      3
-#> 10 1990-01-01 1990-01-08  Female          0           1      1
-#> # ℹ 52,977 more rows
-#> # A tibble:  10,296 × 6
-#> # Data type: "linelist"
+#> # A tibble:  2,164 × 7
+#> # Data type: "count-cumulative"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#>    onset_week   report_week   gender   .event_num .report_num .delay
-#>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl>
-#>    [event_date] [report_date] [strata]      [...]       [...]  [...]
-#>  1 1990-01-01   1990-01-01    Male              0           0      0
-#>  2 1990-01-01   1990-01-01    Female            0           0      0
-#>  3 1990-01-01   1990-01-01    Female            0           0      0
-#>  4 1990-01-08   1990-01-08    Male              1           1      0
-#>  5 1990-01-08   1990-01-08    Female            1           1      0
-#>  6 1990-01-15   1990-01-15    Female            2           2      0
-#>  7 1990-01-15   1990-01-15    Male              2           2      0
-#>  8 1990-01-15   1990-01-15    Female            2           2      0
-#>  9 1990-01-15   1990-01-15    Male              2           2      0
-#> 10 1990-01-15   1990-01-15    Male              2           2      0
+#>    onset_week   report_week   .event_num .report_num gender         n .delay
+#>    <date>       <date>             <dbl>       <dbl> <chr>      <int>  <dbl>
+#>    [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
+#>  1 1990-01-01   1990-01-01             0           0 Female         2      0
+#>  2 1990-01-01   1990-01-01             0           0 Male           1      0
+#>  3 1990-01-08   1990-01-08             1           1 Female        16      0
+#>  4 1990-01-08   1990-01-08             1           1 Male          13      0
+#>  5 1990-01-15   1990-01-15             2           2 Female        34      0
+#>  6 1990-01-15   1990-01-15             2           2 Male           4      0
+#>  7 1990-01-22   1990-01-22             3           3 Female        22      0
+#>  8 1990-01-22   1990-01-22             3           3 Male          23      0
+#>  9 1990-01-29   1990-01-29             4           4 Female        17      0
+#> 10 1990-01-29   1990-01-29             4           4 Male          19      0
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 10,286 more rows
+#> # ℹ 2,154 more rows
 
 #Gets the latest reported cases (what is now thought of to be the incidence)
 get_latest_reported_cases(dengue)
-#> # A tibble: 52,987 × 6
-#> # Groups:   onset_week, gender [2,164]
-#>    onset_week report_week gender .event_num .report_num .delay
-#>    <date>     <date>      <chr>       <dbl>       <dbl>  <dbl>
-#>  1 1990-01-01 1990-01-01  Male            0           0      0
-#>  2 1990-01-01 1990-01-01  Female          0           0      0
-#>  3 1990-01-01 1990-01-01  Female          0           0      0
-#>  4 1990-01-01 1990-01-08  Female          0           1      1
-#>  5 1990-01-01 1990-01-08  Male            0           1      1
-#>  6 1990-01-01 1990-01-15  Female          0           2      2
-#>  7 1990-01-01 1990-01-15  Female          0           2      2
-#>  8 1990-01-01 1990-01-15  Female          0           2      2
-#>  9 1990-01-01 1990-01-22  Female          0           3      3
-#> 10 1990-01-01 1990-01-08  Female          0           1      1
-#> # ℹ 52,977 more rows
-#> # A tibble:  4,398 × 6
-#> # Data type: "linelist"
+#> # A tibble:  2,164 × 7
+#> # Data type: "count-cumulative"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#>    onset_week   report_week   gender   .event_num .report_num .delay
-#>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl>
-#>    [event_date] [report_date] [strata]      [...]       [...]  [...]
-#>  1 1990-01-01   1990-03-05    Female            0           9      9
-#>  2 1990-01-01   1990-02-12    Male              0           6      6
-#>  3 1990-01-08   1990-02-12    Male              1           6      5
-#>  4 1990-01-08   1990-02-12    Male              1           6      5
-#>  5 1990-01-08   1990-02-05    Female            1           5      4
-#>  6 1990-01-15   1990-02-12    Male              2           6      4
-#>  7 1990-01-15   1990-03-05    Female            2           9      7
-#>  8 1990-01-22   1990-02-19    Female            3           7      4
-#>  9 1990-01-22   1990-03-19    Male              3          11      8
-#> 10 1990-01-22   1990-02-19    Female            3           7      4
+#>    onset_week   report_week   .event_num .report_num gender         n .delay
+#>    <date>       <date>             <dbl>       <dbl> <chr>      <int>  <dbl>
+#>    [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
+#>  1 1990-01-01   1990-03-05             0           9 Female         1      9
+#>  2 1990-01-01   1990-02-12             0           6 Male          12      6
+#>  3 1990-01-08   1990-02-05             1           5 Female        20      4
+#>  4 1990-01-08   1990-02-12             1           6 Male          18      5
+#>  5 1990-01-15   1990-03-05             2           9 Female         1      7
+#>  6 1990-01-15   1990-02-12             2           6 Male          13      4
+#>  7 1990-01-22   1990-02-19             3           7 Female         9      4
+#>  8 1990-01-22   1990-03-19             3          11 Male           1      8
+#>  9 1990-01-29   1990-03-19             4          11 Female         2      7
+#> 10 1990-01-29   1990-03-12             4          10 Male           6      6
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 4,388 more rows
+#> # ℹ 2,154 more rows
 
 ```

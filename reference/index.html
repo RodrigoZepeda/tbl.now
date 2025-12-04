@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,6 +60,13 @@
 
         <dt>
 
+          <code><a href="as_tbl_now.html">as_tbl_now()</a></code>
+
+        </dt>
+        <dd>Transform into a `tbl_now` object</dd>
+
+        <dt>
+
           <code><a href="assign_tbl.html">`[`(<i>&lt;tbl_now&gt;</i>)</a></code> <code><a href="assign_tbl.html">`[`(<i>&lt;grouped_tbl_now&gt;</i>)</a></code>
 
         </dt>
@@ -67,7 +74,7 @@
 
         <dt>
 
-          <code><a href="change.html">change_event_date()</a></code> <code><a href="change.html">change_report_date()</a></code> <code><a href="change.html">change_strata()</a></code> <code><a href="change.html">remove_strata()</a></code> <code><a href="change.html">add_strata()</a></code> <code><a href="change.html">remove_all_strata()</a></code> <code><a href="change.html">change_covariates()</a></code> <code><a href="change.html">remove_covariate()</a></code> <code><a href="change.html">add_covariate()</a></code> <code><a href="change.html">remove_all_covariates()</a></code> <code><a href="change.html">change_now()</a></code> <code><a href="change.html">replace_temporal_effects()</a></code> <code><a href="change.html">remove_temporal_effects()</a></code>
+          <code><a href="change.html">change_now()</a></code> <code><a href="change.html">change_event_date()</a></code> <code><a href="change.html">change_report_date()</a></code> <code><a href="change.html">change_case_count()</a></code> <code><a href="change.html">change_is_batched()</a></code> <code><a href="change.html">change_strata()</a></code> <code><a href="change.html">remove_strata()</a></code> <code><a href="change.html">add_strata()</a></code> <code><a href="change.html">remove_all_strata()</a></code> <code><a href="change.html">change_covariates()</a></code> <code><a href="change.html">remove_covariate()</a></code> <code><a href="change.html">add_covariate()</a></code> <code><a href="change.html">remove_all_covariates()</a></code> <code><a href="change.html">replace_temporal_effects()</a></code> <code><a href="change.html">remove_temporal_effects()</a></code>
 
         </dt>
         <dd>Change attributes of a `tbl_now` object</dd>
@@ -137,7 +144,7 @@
 
         <dt>
 
-          <code><a href="nowcast_data_getters.html">get_event_date()</a></code> <code><a href="nowcast_data_getters.html">get_report_date()</a></code> <code><a href="nowcast_data_getters.html">get_strata()</a></code> <code><a href="nowcast_data_getters.html">get_num_strata()</a></code> <code><a href="nowcast_data_getters.html">get_covariates()</a></code> <code><a href="nowcast_data_getters.html">get_num_covariates()</a></code> <code><a href="nowcast_data_getters.html">get_now()</a></code> <code><a href="nowcast_data_getters.html">get_report_units()</a></code> <code><a href="nowcast_data_getters.html">get_event_units()</a></code> <code><a href="nowcast_data_getters.html">get_data_type()</a></code> <code><a href="nowcast_data_getters.html">get_temporal_effects()</a></code> <code><a href="nowcast_data_getters.html">get_is_batched()</a></code> <code><a href="nowcast_data_getters.html">get_case_col()</a></code> <code><a href="nowcast_data_getters.html">get_protected_cols()</a></code> <code><a href="nowcast_data_getters.html">get_protected_generated_cols()</a></code> <code><a href="nowcast_data_getters.html">get_protected_given_cols()</a></code>
+          <code><a href="nowcast_data_getters.html">get_event_date()</a></code> <code><a href="nowcast_data_getters.html">get_report_date()</a></code> <code><a href="nowcast_data_getters.html">get_strata()</a></code> <code><a href="nowcast_data_getters.html">get_num_strata()</a></code> <code><a href="nowcast_data_getters.html">get_covariates()</a></code> <code><a href="nowcast_data_getters.html">get_num_covariates()</a></code> <code><a href="nowcast_data_getters.html">get_now()</a></code> <code><a href="nowcast_data_getters.html">get_report_units()</a></code> <code><a href="nowcast_data_getters.html">get_event_units()</a></code> <code><a href="nowcast_data_getters.html">get_data_type()</a></code> <code><a href="nowcast_data_getters.html">get_temporal_effects()</a></code> <code><a href="nowcast_data_getters.html">get_is_batched()</a></code> <code><a href="nowcast_data_getters.html">get_case_count()</a></code> <code><a href="nowcast_data_getters.html">get_protected_cols()</a></code> <code><a href="nowcast_data_getters.html">get_protected_generated_cols()</a></code> <code><a href="nowcast_data_getters.html">get_protected_given_cols()</a></code>
 
         </dt>
         <dd>Getters for tbl_now attributes</dd>
@@ -162,6 +169,13 @@
 
         </dt>
         <dd>Transform an object to count data</dd>
+
+        <dt>
+
+          <code><a href="update.tbl_now.html">update(<i>&lt;tbl_now&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Update a `tbl_now`</dd>
 
         <dt>
 

@@ -13,14 +13,16 @@ check_strata(data, strata)
 
 - data:
 
-  A `data.frame` to be converted.
+  A `data.frame` or `tibble` to be converted.
 
 - strata:
 
-  (optional) Character vector or `NULL` (default). Name of different
-  variables (column names) in strata. Strata correspond to variables
-  that are of interest by themselves. For example if it is of interest
-  to generate nowcasts by gender then `gender` is a `strata`.
+  (optional)
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  or `NULL` (default). Name of different variables (column names) in
+  strata. Strata correspond to variables that are of interest by
+  themselves. For example if it is of interest to generate nowcasts by
+  gender then `gender` is a `strata`.
 
 ## Value
 

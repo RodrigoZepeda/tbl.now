@@ -12,8 +12,8 @@ align_week(
   .data,
   date_col,
   align_on_day = 1,
-  type = "epiweek",
-  new_date_col = paste0(deparse(substitute(date_col)), "_aligned")
+  type = "epi",
+  new_date_col = NULL
 )
 ```
 
@@ -25,7 +25,9 @@ align_week(
 
 - date_col:
 
-  A column name (string or tidy-selection) containing dates.
+  A
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  column name containing dates.
 
 - align_on_day:
 
@@ -34,12 +36,15 @@ align_week(
 
 - type:
 
-  Either \`"epiweek"\` (default) or \`"isoweek"\`. Determines which
-  week/year functions to use.
+  Either \`"epi"\` (default) or \`"iso"\`. Determines which week/year
+  functions to use whether \[lubridate::epiweek()\] or
+  \[lubridate::isoweek()\]
 
 - new_date_col:
 
-  Name of the new aligned date column to be created.
+  Name of the new aligned date column to be created. By default it
+  creates a column named \`{date_col}\_aligned\` where \`date_col\`
+  corresponds to the column name passed to that parameter.
 
 ## Value
 

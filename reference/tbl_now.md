@@ -1,7 +1,7 @@
 # Create a `tbl_now` object
 
-A special `data.frame` class that includes information for the nowcast.
-See the Attributes section for more information.
+A special `tibble` class that includes information for the nowcast. See
+the Attributes section for more information.
 
 ## Usage
 
@@ -12,12 +12,12 @@ tbl_now(
   report_date,
   strata = NULL,
   covariates = NULL,
+  case_count = NULL,
   is_batched = NULL,
   now = NULL,
   event_units = "auto",
   report_units = "auto",
   data_type = "auto",
-  case_col = NULL,
   t_effects = NULL,
   verbose = TRUE,
   force = FALSE,
@@ -30,40 +30,53 @@ tbl_now(
 
 - data:
 
-  A `data.frame` to be converted.
+  A `data.frame` or `tibble` to be converted.
 
 - event_date:
 
-  Character. The name of the column containing the event date.
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  name of the column containing the event date.
 
 - report_date:
 
-  Character. The name of the column containing the report date.
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  name of the column containing the report date.
 
 - strata:
 
-  (optional) Character vector or `NULL` (default). Name of different
-  variables (column names) in strata. Strata correspond to variables
-  that are of interest by themselves. For example if it is of interest
-  to generate nowcasts by gender then `gender` is a `strata`.
+  (optional)
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  or `NULL` (default). Name of different variables (column names) in
+  strata. Strata correspond to variables that are of interest by
+  themselves. For example if it is of interest to generate nowcasts by
+  gender then `gender` is a `strata`.
 
 - covariates:
 
-  (optional) Character vector or `NULL` (default). Name of different
-  variables (column names) that influence the nowcast but are not
-  strata. For example precipitation might influence a dengue nowcast but
-  in general it is not of interest to generate nowcasts by precipitation
-  levels.
+  (optional)
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  or `NULL` (default). Name of different variables (column names) that
+  influence the nowcast but are not strata. For example precipitation
+  might influence a dengue nowcast but in general it is not of interest
+  to generate nowcasts by precipitation levels.
+
+- case_count:
+
+  (optional)
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  or `NULL` Name of the column with the case counts if `data_type` is
+  "count-incidence" or "count-cumulative".
 
 - is_batched:
 
-  (optional) Character or `NULL` (default). The name of a column
-  containing either `TRUE` or `FALSE` indicating whether the
-  `report_date` is correctly specified or corresponds to a `batch` and
-  thus is censored. In other words, if the `report_date` is accurately
-  measured set `report_date = TRUE` but if the `report_date` corresponds
-  to an error and is only an upper bound of the real, idealized, report
-  date set `is_batched = TRUE`.
+  (optional)
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  or `NULL` (default). The name of a column containing either `TRUE` or
+  `FALSE` indicating whether the `report_date` is correctly specified or
+  corresponds to a `batch` and thus is censored. In other words, if the
+  `report_date` is accurately measured set `is_batched = FALSE` but if
+  the `report_date` corresponds to an error and is only an upper bound
+  of the real report date set `is_batched = TRUE`.
 
 - now:
 
@@ -87,19 +100,12 @@ tbl_now(
   or "count-cumulative". See section below for an explanation on data
   types.
 
-- case_col:
-
-  (optional) Name of the column with the case counts if `data_type` is
-  "count-incidence" or "count-cumulative". If `case_col` is specified
-  even if `data_type` is "linelist" that name will be used if the
-  `to_count` function is applied.
-
 - t_effects:
 
   (optional) Either `NULL` (default), a
   [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
-  object or a vector with the names of the columns containing the
-  temporal effects.
+  object or a character vector with the names of the columns containing
+  the temporal effects.
 
 - verbose:
 
@@ -144,17 +150,9 @@ function:
 
   Names of the columns corresponding to the strata (for modelling).
 
-- num_strata:
-
-  Number of strata. Corresponds to `length(strata)`.
-
 - covariates:
 
   Names of the columns corresponding to covariates (for modelling).
-
-- num_covariates:
-
-  Number of covariates Corresponds to `length(covariates)`.
 
 - now:
 
@@ -273,10 +271,9 @@ cases observed up until `report_date` for `event_date`. The most recent
 ``` r
 # The `tbl_now` is a data.frame with additional attributes
 data(denguedat)
-ndata <- tbl_now(denguedat,
-    event_date = "onset_week",
-    report_date = "report_week",
-    strata = "gender")
+ndata <- denguedat %>%
+  tbl_now(event_date = onset_week, report_date = report_week,
+    strata = gender)
 #> ℹ Identified data as <linelist-data> where each observation is a test.
 
 # You can see that it documents the `event_date`, `report_date`, `strata`,

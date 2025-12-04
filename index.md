@@ -27,7 +27,7 @@ library(tbl.now)
 library(almanac)    #Suggested for holiday effects
 ```
 
-## Introduction
+## Why tbl_now?
 
 Traditionally in epidemiological nowcasting scenarios we have two dates:
 
@@ -38,16 +38,15 @@ Traditionally in epidemiological nowcasting scenarios we have two dates:
 
 The nowcasting problem is to estimate the total number of events **now**
 that have occurred at any past `event_date` given that not all of them
-have been reported yet.
+have been reported yet. In the context of nowcasting, the **tbl_now**
+can be thought of as a specific
+[tibble()](https://tibble.tidyverse.org/reference/tibble.html) that
+**guarantees** an `event_date` and a `report_date`.
 
 ## Example
 
-In the context of nowcasting, the **tbl_now** can be thought of as a
-specific [tibble()](https://tibble.tidyverse.org/reference/tibble.html)
-that **guarantees** an `event_date` and a `report_date`.
-
-For example the following data.frame represents the number of cases `n`
-reported at `report_date` that happened at `event_date`
+Consider the following `data.frame` representing the number of cases `n`
+reported at `report_date` that happened at `event_date`:
 
 ``` r
 df <- tibble(
@@ -120,6 +119,52 @@ df_now %>%
 #> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
+If strata was given, the
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+can easily tag the corresponding strata.
+
+``` r
+#Add the column using dplyr:
+df_now <- df_now %>% 
+  mutate(sex = c("M","M","F","M")) 
+
+df_now
+#> # A tibble:  4 × 7
+#> # Data type: "count-incidence"
+#> # Frequency: Event: `days` | Report: `days`
+#>   event_date   report_date       n .event_num .report_num .delay sex  
+#>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl> <chr>
+#>   [event_date] [report_date] [...]      [...]       [...]  [...] [...]
+#> 1 2023-12-25   2023-12-26       10          0           1      1 M    
+#> 2 2023-12-26   2023-12-26        2          1           1      0 M    
+#> 3 2023-12-25   2023-12-27        5          0           2      2 F    
+#> 4 2023-12-26   2023-12-27       11          1           2      1 M    
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
+To specify strata you can use the `add_strata`:
+
+``` r
+df_now %>% 
+  add_strata("sex")
+#> # A tibble:  4 × 7
+#> # Data type: "count-incidence"
+#> # Frequency: Event: `days` | Report: `days`
+#>   event_date   report_date       n .event_num .report_num .delay sex     
+#>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl> <chr>   
+#>   [event_date] [report_date] [...]      [...]       [...]  [...] [strata]
+#> 1 2023-12-25   2023-12-26       10          0           1      1 M       
+#> 2 2023-12-26   2023-12-26        2          1           1      0 M       
+#> 3 2023-12-25   2023-12-27        5          0           2      2 F       
+#> 4 2023-12-26   2023-12-27       11          1           2      1 M       
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
+#> # Strata: "sex"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
 ## Temporal effects
 
 Temporal effects can be added as covariates of the
@@ -156,16 +201,16 @@ function:
 ``` r
 df_now %>% 
   add_temporal_effects(t_eff)
-#> # A tibble:  4 × 9
+#> # A tibble:  4 × 10
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
-#>   event_date   report_date       n .event_num .report_num .delay
-#>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl>
-#>   [event_date] [report_date] [...]      [...]       [...]  [...]
-#> 1 2023-12-25   2023-12-26       10          0           1      1
-#> 2 2023-12-26   2023-12-26        2          1           1      0
-#> 3 2023-12-25   2023-12-27        5          0           2      2
-#> 4 2023-12-26   2023-12-27       11          1           2      1
+#>   event_date   report_date       n .event_num .report_num .delay sex  
+#>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl> <chr>
+#>   [event_date] [report_date] [...]      [...]       [...]  [...] [...]
+#> 1 2023-12-25   2023-12-26       10          0           1      1 M    
+#> 2 2023-12-26   2023-12-26        2          1           1      0 M    
+#> 3 2023-12-25   2023-12-27        5          0           2      2 F    
+#> 4 2023-12-26   2023-12-27       11          1           2      1 M    
 #>   .event_day_of_week .event_week_of_year .event_holiday
 #>                <int>               <int>          <int>
 #>           [t_effect]          [t_effect]     [t_effect]
@@ -184,3 +229,11 @@ everything corresponds to the first epidemiological week of `2024`, and
 the days of the week correspond to Monday (`event_day_of_week = 2`) and
 Tuesday (`event_day_of_week = 3`). All of these effects can be used as
 covariates in the models.
+
+## Learn more about tbl.now
+
+- Read the whitepaper on
+  [tbl.now](https://rodrigozepeda.github.io/tbl.now/articles/Introduction.html)
+- Read an
+  [example](https://rodrigozepeda.github.io/tbl.now/articles/Example.html)
+  with real data.

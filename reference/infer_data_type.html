@@ -9,7 +9,7 @@ a column named `n`"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,7 +52,7 @@ a column named `n`</p>
 <span>  <span class="va">report_date</span>,</span>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  is_batched <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  case_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  case_count <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -62,7 +62,7 @@ a column named `n`</p>
 
 
 <dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>A <code>data.frame</code> to be converted.</p></dd>
+<dd><p>A <code>data.frame</code> or <code>tibble</code> to be converted.</p></dd>
 
 
 <dt id="arg-data-type">data_type<a class="anchor" aria-label="anchor" href="#arg-data-type"></a></dt>
@@ -72,33 +72,38 @@ an explanation on data types.</p></dd>
 
 
 <dt id="arg-event-date">event_date<a class="anchor" aria-label="anchor" href="#arg-event-date"></a></dt>
-<dd><p>Character. The name of the column containing the event date.</p></dd>
+<dd><p><code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">&lt;`tidy-select`&gt;</a></code>
+name of the column containing the event date.</p></dd>
 
 
 <dt id="arg-report-date">report_date<a class="anchor" aria-label="anchor" href="#arg-report-date"></a></dt>
-<dd><p>Character. The name of the column containing the report date.</p></dd>
+<dd><p><code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">&lt;`tidy-select`&gt;</a></code>
+name of the column containing the report date.</p></dd>
 
 
 <dt id="arg-strata">strata<a class="anchor" aria-label="anchor" href="#arg-strata"></a></dt>
-<dd><p>(optional) Character vector or <code>NULL</code> (default). Name of different variables
-(column names) in strata. Strata correspond to variables that are of interest
-by themselves. For example if it is of interest to generate nowcasts by gender then
+<dd><p>(optional) <code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">&lt;`tidy-select`&gt;</a></code>
+or <code>NULL</code> (default). Name of different variables (column names) in strata.
+Strata correspond to variables that are of interest by themselves.
+For example if it is of interest to generate nowcasts by gender then
 <code>gender</code> is a <code>strata</code>.</p></dd>
 
 
 <dt id="arg-is-batched">is_batched<a class="anchor" aria-label="anchor" href="#arg-is-batched"></a></dt>
-<dd><p>(optional) Character or <code>NULL</code> (default). The name of a column containing either
-<code>TRUE</code> or <code>FALSE</code> indicating whether the <code>report_date</code> is correctly specified
-or corresponds to a <code>batch</code> and thus is censored. In other words, if the
-<code>report_date</code> is accurately measured set <code>report_date = TRUE</code> but if
-the <code>report_date</code> corresponds to an error and is only an upper bound of
-the real, idealized, report date set <code>is_batched = TRUE</code>.</p></dd>
+<dd><p>(optional)
+<code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">&lt;`tidy-select`&gt;</a></code> or <code>NULL</code> (default).
+The name of a column containing either <code>TRUE</code> or <code>FALSE</code> indicating whether
+the <code>report_date</code> is correctly specified or corresponds to a <code>batch</code> and thus
+is censored. In other words, if the <code>report_date</code> is accurately measured
+set <code>is_batched = FALSE</code> but if the <code>report_date</code> corresponds to an error
+and is only an upper bound of the real report date
+set <code>is_batched = TRUE</code>.</p></dd>
 
 
-<dt id="arg-case-col">case_col<a class="anchor" aria-label="anchor" href="#arg-case-col"></a></dt>
-<dd><p>(optional) Name of the column with the case counts if
-<code>data_type</code> is "count-incidence" or "count-cumulative". If <code>case_col</code> is specified even if <code>data_type</code>
-is "linelist" that name will be used if the <code>to_count</code> function is applied.</p></dd>
+<dt id="arg-case-count">case_count<a class="anchor" aria-label="anchor" href="#arg-case-count"></a></dt>
+<dd><p>(optional) <code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">&lt;`tidy-select`&gt;</a></code> or <code>NULL</code>
+Name of the column with the case counts if <code>data_type</code> is "count-incidence"
+or "count-cumulative".</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>

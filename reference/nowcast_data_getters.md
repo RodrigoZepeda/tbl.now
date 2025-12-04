@@ -31,7 +31,7 @@ get_temporal_effects(x)
 
 get_is_batched(x)
 
-get_case_col(x)
+get_case_count(x)
 
 get_protected_cols(x)
 
@@ -98,8 +98,8 @@ get_data_type(ndata)
 #> [1] "linelist"
 
 #Get the column with cases
-get_case_col(ndata)
-#> [1] "n"
+get_case_count(ndata)
+#> NULL
 
 #Get temporal effects
 get_temporal_effects(ndata)

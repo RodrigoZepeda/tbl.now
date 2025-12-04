@@ -49,19 +49,19 @@ to_count(ndata, to = "count-incidence")
 #> # A tibble:  8,265 × 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#>    onset_week   report_week   .event_num .report_num gender       n .delay
-#>    <date>       <date>             <dbl>       <dbl> <chr>    <int>  <dbl>
-#>    [event_date] [report_date]      [...]       [...] [strata] [...]  [...]
-#>  1 1990-01-01   1990-01-01             0           0 Female       2      0
-#>  2 1990-01-01   1990-01-01             0           0 Male         1      0
-#>  3 1990-01-01   1990-01-08             0           1 Female      13      1
-#>  4 1990-01-01   1990-01-08             0           1 Male        11      1
-#>  5 1990-01-01   1990-01-15             0           2 Female      16      2
-#>  6 1990-01-01   1990-01-15             0           2 Male         7      2
-#>  7 1990-01-01   1990-01-22             0           3 Female       7      3
-#>  8 1990-01-01   1990-01-22             0           3 Male         1      3
-#>  9 1990-01-01   1990-01-29             0           4 Male         1      4
-#> 10 1990-01-01   1990-02-12             0           6 Male         1      6
+#>    onset_week   report_week   .event_num .report_num gender         n .delay
+#>    <date>       <date>             <dbl>       <dbl> <chr>      <int>  <dbl>
+#>    [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
+#>  1 1990-01-01   1990-01-01             0           0 Female         2      0
+#>  2 1990-01-01   1990-01-01             0           0 Male           1      0
+#>  3 1990-01-01   1990-01-08             0           1 Female        13      1
+#>  4 1990-01-01   1990-01-08             0           1 Male          11      1
+#>  5 1990-01-01   1990-01-15             0           2 Female        16      2
+#>  6 1990-01-01   1990-01-15             0           2 Male           7      2
+#>  7 1990-01-01   1990-01-22             0           3 Female         7      3
+#>  8 1990-01-01   1990-01-22             0           3 Male           1      3
+#>  9 1990-01-01   1990-01-29             0           4 Male           1      4
+#> 10 1990-01-01   1990-02-12             0           6 Male           1      6
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
@@ -76,23 +76,23 @@ event_date = "date_of_symptom_onset",
               strata = "sex")
 to_count(ndata)
 })
-#> ℹ Identified data as <count-incidence> with counts in column "n".
+#> ℹ Identified data as <linelist-data> where each observation is a test.
 #> # A tibble:  40,822 × 7
-#> # Data type: "count-incidence"
+#> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
-#>    date_of_symptom_onset date_of_registry .event_num .report_num sex          n
-#>    <date>                <date>                <dbl>       <dbl> <chr>    <int>
-#>    [event_date]          [report_date]         [...]       [...] [strata] [...]
-#>  1 2020-03-06            2020-04-05                0          30 FEMALE       1
-#>  2 2020-03-06            2020-04-05                0          30 MALE         1
-#>  3 2020-03-07            2020-04-05                1          30 FEMALE       1
-#>  4 2020-03-11            2020-04-07                5          32 MALE         1
-#>  5 2020-03-18            2020-04-05               12          30 FEMALE       1
-#>  6 2020-03-23            2020-04-08               17          33 FEMALE       1
-#>  7 2020-03-24            2020-04-05               18          30 MALE         1
-#>  8 2020-03-26            2020-04-06               20          31 FEMALE       1
-#>  9 2020-03-27            2020-04-05               21          30 FEMALE       1
-#> 10 2020-03-31            2020-04-05               25          30 FEMALE       1
+#>    date_of_registry date_of_symptom_onset sex          n .event_num .report_num
+#>    <date>           <date>                <chr>    <int>      <dbl>       <dbl>
+#>    [report_date]    [event_date]          [strata] [...]      [...]       [...]
+#>  1 2020-04-05       2020-03-06            FEMALE       1          0          30
+#>  2 2020-04-05       2020-03-06            MALE         1          0          30
+#>  3 2020-04-05       2020-03-07            FEMALE       1          1          30
+#>  4 2020-04-05       2020-03-18            FEMALE       1         12          30
+#>  5 2020-04-05       2020-03-24            MALE         1         18          30
+#>  6 2020-04-05       2020-03-27            FEMALE       1         21          30
+#>  7 2020-04-05       2020-03-31            FEMALE       1         25          30
+#>  8 2020-04-06       2020-03-26            FEMALE       1         20          31
+#>  9 2020-04-07       2020-03-11            MALE         1          5          32
+#> 10 2020-04-07       2020-03-31            MALE         1         25          32
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-01-01 | Event date: "date_of_symptom_onset" | Report date:
 #> # "date_of_registry"

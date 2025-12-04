@@ -12,7 +12,7 @@ check_units(data, date_units)
 
 - data:
 
-  A `data.frame` to be converted.
+  A `data.frame` or `tibble` to be converted.
 
 ## Value
 

@@ -9,7 +9,7 @@ character, integers, or factors."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,13 +53,14 @@ character, integers, or factors.</p>
 
 
 <dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>A <code>data.frame</code> to be converted.</p></dd>
+<dd><p>A <code>data.frame</code> or <code>tibble</code> to be converted.</p></dd>
 
 
 <dt id="arg-strata">strata<a class="anchor" aria-label="anchor" href="#arg-strata"></a></dt>
-<dd><p>(optional) Character vector or <code>NULL</code> (default). Name of different variables
-(column names) in strata. Strata correspond to variables that are of interest
-by themselves. For example if it is of interest to generate nowcasts by gender then
+<dd><p>(optional) <code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">&lt;`tidy-select`&gt;</a></code>
+or <code>NULL</code> (default). Name of different variables (column names) in strata.
+Strata correspond to variables that are of interest by themselves.
+For example if it is of interest to generate nowcasts by gender then
 <code>gender</code> is a <code>strata</code>.</p></dd>
 
 </dl></div>

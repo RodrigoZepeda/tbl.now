@@ -12,7 +12,7 @@ tbl_now_reconstruct_internal(data, template)
 
 - data:
 
-  A `data.frame` to be converted.
+  A `data.frame` or `tibble` to be converted.
 
 ## Value
 

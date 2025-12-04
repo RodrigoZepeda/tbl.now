@@ -14,7 +14,7 @@ check_delay_is_censored(data, delay_is_censored)
 
 - data:
 
-  A `data.frame` to be converted.
+  A `data.frame` or `tibble` to be converted.
 
 ## Value
 

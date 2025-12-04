@@ -26,25 +26,28 @@ week_2_date(
 
 - week_col:
 
-  Column name (string) containing week numbers.
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  column name containing epidemiological week numbers.
 
 - year_col:
 
-  Column name (string) containing year numbers.
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  column name containing epidemiological year numbers.
 
 - align_on_day:
 
-  Integer 1–7 (lubridate weekday numbering) indicating the weekday to
-  align to.
+  Integer 1–7 (\[lubridate::wday()\] numbering) indicating the weekday
+  to align to.
 
 - week_fun:
 
-  Function that extracts week numbers from a date (e.g.,
+  Function that extracts week numbers from a date (either
   \[lubridate::epiweek()\], \[lubridate::isoweek()\]).
 
 - year_fun:
 
-  Function that extracts the epidemiological/ISO year from a date.
+  Function that extracts the epidemiological/ISO year from a date
+  (either \[lubridate::epiyear()\] or \[lubridate::isoyear()\]).
 
 - date_col_name:
 
@@ -52,21 +55,25 @@ week_2_date(
 
 ## Value
 
-The input dataframe with a new date column appended.
+The given \`data.frame\` with a new date column appended.
 
 ## Examples
 
 ``` r
 df <- data.frame(
-  week_col = 1:5,
-  year_col = rep(2024, 5)
+  epidemiological_week = 1:5,
+  epidemiological_year = rep(2024, 5)
 )
 
-week_2_date(df, week_col = "week_col", year_col = "year_col")
-#>   week_col year_col       date
-#> 1        1     2024 2023-12-31
-#> 2        2     2024 2024-01-07
-#> 3        3     2024 2024-01-14
-#> 4        4     2024 2024-01-21
-#> 5        5     2024 2024-01-28
+df %>%
+  week_2_date(
+    week_col = epidemiological_week,
+    year_col = epidemiological_year
+  )
+#>   epidemiological_week epidemiological_year       date
+#> 1                    1                 2024 2023-12-31
+#> 2                    2                 2024 2024-01-07
+#> 3                    3                 2024 2024-01-14
+#> 4                    4                 2024 2024-01-21
+#> 5                    5                 2024 2024-01-28
 ```

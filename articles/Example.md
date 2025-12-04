@@ -77,7 +77,7 @@ We can try and setup a `tbl_now` by specifying the following:
 
 - `event_date`: When cases happened
 - `report_date`: When cases were reported.
-- `case_col`: Column containing information about the number of cases
+- `case_count`: Column containing information about the number of cases
   for that observation.
 - `strata`: A vector containing all of the columns considered strata
 
@@ -85,7 +85,7 @@ Creating the `tbl_now` object like this will throw several warnings:
 
 ``` r
 df_wrong <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
-        case_col = "observation", strata = c("location_name"))
+        case_count = "observation", strata = c("location_name"))
 #> Warning: Cannot accurately infer the data-type when rows are repeated across event and
 #> report dates
 #> Warning: Some observations in the count column "observation"
@@ -133,7 +133,7 @@ thing):
 
 ``` r
 df_still_wrong <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
-        case_col = "observation", strata = c("location_name"))
+        case_count = "observation", strata = c("location_name"))
 #> ℹ Identified data as <count-incidence> with counts in column "observation".
 ```
 
@@ -150,7 +150,7 @@ be specified with the `data_type` option:
 
 ``` r
 df_flu <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
-        case_col = "observation", strata = c("location_name"), data_type = "count-cumulative")
+        case_count = "observation", strata = c("location_name"), data_type = "count-cumulative")
 ```
 
 And this results in the correct `tbl_now` object:
@@ -162,7 +162,7 @@ df_flu
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    as_of        target_end_date location_name observation .event_num .report_num
 #>    <date>       <date>          <chr>               <dbl>      <dbl>       <dbl>
-#>    [report_dat… [event_date]    [strata]            [...]      [...]       [...]
+#>    [report_dat… [event_date]    [strata]          [cases]      [...]       [...]
 #>  1 2023-09-23   2022-02-12      Alabama                10          1          85
 #>  2 2023-09-23   2022-02-12      Alaska                  0          1          85
 #>  3 2023-09-23   2022-02-12      Arizona                64          1          85
@@ -198,7 +198,7 @@ df_florida
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    latest_report target_end_date location_name observation .event_num
 #>    <date>        <date>          <chr>               <dbl>      <dbl>
-#>    [report_date] [event_date]    [strata]            [...]      [...]
+#>    [report_date] [event_date]    [strata]          [cases]      [...]
 #>  1 2023-09-23    2022-02-12      Florida                68          1
 #>  2 2023-09-23    2022-02-19      Florida                66          2
 #>  3 2023-09-23    2022-02-26      Florida                73          3
@@ -231,7 +231,7 @@ df_florida
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    latest_report target_end_date location_name observation .event_num
 #>    <date>        <date>          <chr>               <dbl>      <dbl>
-#>    [report_date] [event_date]    [...]               [...]      [...]
+#>    [report_date] [event_date]    [...]             [cases]      [...]
 #>  1 2023-09-23    2022-02-12      Florida                68          1
 #>  2 2023-09-23    2022-02-19      Florida                66          2
 #>  3 2023-09-23    2022-02-26      Florida                73          3
@@ -270,7 +270,7 @@ df_florida
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    latest_report target_end_date location_name observation .event_num
 #>    <date>        <date>          <chr>               <dbl>      <dbl>
-#>    [report_date] [event_date]    [...]               [...]      [...]
+#>    [report_date] [event_date]    [...]             [cases]      [...]
 #>  1 2023-09-23    2022-02-12      Florida                68          1
 #>  2 2023-09-23    2022-02-19      Florida                66          2
 #>  3 2023-09-23    2022-02-26      Florida                73          3

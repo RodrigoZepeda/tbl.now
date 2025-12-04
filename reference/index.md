@@ -8,12 +8,18 @@
 - [`align_week()`](https://rodrigozepeda.github.io/tbl.now/reference/align_week.md)
   : Align weeks to a common weekday
 
+- [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+  : Transform into a \`tbl_now\` object
+
 - [`` `[`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
   [`` `[`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
   : Subset function for \`tbl_now\` with downgrade-on-subsetting
 
-- [`change_event_date()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
+- [`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
+  [`change_event_date()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_report_date()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
+  [`change_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
+  [`change_is_batched()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`remove_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
@@ -22,7 +28,6 @@
   [`remove_covariate()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`add_covariate()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`remove_all_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
-  [`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`replace_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   : Change attributes of a \`tbl_now\` object
@@ -71,7 +76,7 @@
   [`get_data_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_is_batched()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-  [`get_case_col()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_protected_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_protected_generated_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_protected_given_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
@@ -87,6 +92,9 @@
 
 - [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
   : Transform an object to count data
+
+- [`update(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.md)
+  : Update a \`tbl_now\`
 
 - [`week_2_date()`](https://rodrigozepeda.github.io/tbl.now/reference/week_2_date.md)
   : Convert epidemiological (or ISO) week/year to aligned dates

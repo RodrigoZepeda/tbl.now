@@ -12,15 +12,17 @@ check_now(data, event_date, report_date, now)
 
 - data:
 
-  A `data.frame` to be converted.
+  A `data.frame` or `tibble` to be converted.
 
 - event_date:
 
-  Character. The name of the column containing the event date.
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  name of the column containing the event date.
 
 - report_date:
 
-  Character. The name of the column containing the report date.
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  name of the column containing the report date.
 
 - now:
 
