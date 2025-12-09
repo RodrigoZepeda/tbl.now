@@ -9,6 +9,12 @@ the attributes of a \`tibble\` (or a grouped tibble).
 tbl_now_attributes(x)
 ```
 
+## Arguments
+
+- x:
+
+  A `tbl_now` object
+
 ## Examples
 
 ``` r
