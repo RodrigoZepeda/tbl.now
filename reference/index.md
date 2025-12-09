@@ -96,6 +96,9 @@
 
   Create a `tbl_now` object
 
+- [`tbl_now_attributes()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.md)
+  : Show the names of the attributes of a \`tbl_now\`
+
 - [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
   : Temporal Effects Class
 

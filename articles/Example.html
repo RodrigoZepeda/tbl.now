@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Example analysis • tbl.now</title>
+<title>Example analysis with Flusight • tbl.now</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Example analysis">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Example analysis with Flusight">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -33,7 +33,7 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/Example.html">Example analysis</a></li>
+<li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
     <li><a class="dropdown-item" href="../articles/Introduction.html">tbl.now</a></li>
   </ul>
 </li>
@@ -55,7 +55,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Example analysis</h1>
+      <h1>Example analysis with Flusight</h1>
             
       
 
@@ -74,7 +74,7 @@ with real data from the Center for Disease Control (CDC).</p>
 <div class="section level2">
 <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
 </h2>
-<p>For the example we will use the Flusight data from the CDC which
+<p>For the example, we will use the Flusight data from the CDC which
 contains <strong>weekly</strong> hospital admissions of patients with
 confirmed influenza (see <code><a href="../reference/flusight.html">?flusight</a></code>). The data is reported
 <strong>weekly</strong> starting one week after the observations.</p>
@@ -110,21 +110,13 @@ that were believed to have happend in date <code>target_end_date</code>
 by date <code>as_of</code>. You can see this with an example:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">flusight</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">location_name</span> <span class="op">==</span> <span class="st">"Florida"</span> <span class="op">&amp;</span> <span class="va">target_end_date</span> <span class="op">==</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2024/04/06"</span><span class="op">)</span><span class="op">)</span> </span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 40 × 4</span></span></span>
-<span><span class="co">#&gt;    as_of      target_end_date location_name observation</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2024-04-06 2024-04-06      Florida               307</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2024-04-13 2024-04-06      Florida               314</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2024-04-20 2024-04-06      Florida               314</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2024-04-27 2024-04-06      Florida               314</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2024-11-16 2024-04-06      Florida               312</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2024-11-30 2024-04-06      Florida               312</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2024-12-14 2024-04-06      Florida               312</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2024-12-21 2024-04-06      Florida               312</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2024-12-28 2024-04-06      Florida               312</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2025-01-11 2024-04-06      Florida               312</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 30 more rows</span></span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">location_name</span> <span class="op">==</span> <span class="st">"pr"</span> <span class="op">&amp;</span> <span class="va">target_end_date</span> <span class="op">==</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2024/04/06"</span><span class="op">)</span><span class="op">)</span> </span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 0 × 4</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 variables: as_of &lt;date&gt;, target_end_date &lt;date&gt;, location_name &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   observation &lt;dbl&gt;</span></span></span></code></pre></div>
+<p>Where each <code>as_of</code> the total number of cases that occurred
+in <code>target_end_date</code> are reported in
+<code>observation</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="creating-the-tbl_now">Creating the <code>tbl_now</code><a class="anchor" aria-label="anchor" href="#creating-the-tbl_now"></a>
@@ -146,8 +138,11 @@ considered strata</li>
 <p>Creating the <code>tbl_now</code> object like this will throw several
 warnings:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_wrong</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">flusight</span>, event_date <span class="op">=</span> <span class="st">"target_end_date"</span>, report_date <span class="op">=</span> <span class="st">"as_of"</span>, </span>
-<span>        case_count <span class="op">=</span> <span class="st">"observation"</span>, strata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"location_name"</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">df_wrong</span> <span class="op">&lt;-</span> <span class="va">flusight</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
+<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">target_end_date</span>, </span>
+<span>          report_date <span class="op">=</span> <span class="va">as_of</span>, </span>
+<span>          case_count <span class="op">=</span> <span class="va">observation</span>, </span>
+<span>          strata <span class="op">=</span> <span class="va">location_name</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: Cannot accurately infer the data-type when rows are repeated across event and</span></span>
 <span><span class="co">#&gt; report dates</span></span>
 <span><span class="co">#&gt; Warning: Some observations in the count column <span style="color: #0000BB;">"observation"</span></span></span>
@@ -233,99 +228,111 @@ given by the <strong>sum</strong> of all of the cases for each
 <code>dplyr</code> verbs to do operations. For example by renaming
 columns and filtering out just one state:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_florida</span> <span class="op">&lt;-</span> <span class="va">df_flu</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">df_pr</span> <span class="op">&lt;-</span> <span class="va">df_flu</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>latest_report <span class="op">=</span> <span class="va">as_of</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">location_name</span> <span class="op">==</span> <span class="st">"Florida"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">location_name</span> <span class="op">==</span> <span class="st">"Puerto Rico"</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">target_end_date</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2024/07/01"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">df_florida</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  8,539 × 7</span></span></span>
+<span><span class="va">df_pr</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1,291 × 7</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span></span>
 <span><span class="co">#&gt;    latest_report target_end_date location_name observation .event_num</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt;    <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[event_date]</span>    <span style="color: #949494;">[strata]</span>          <span style="color: #949494;">[cases]</span>      <span style="color: #949494;">[...]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2023-09-23    2022-02-12      Florida                68          1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2023-09-23    2022-02-19      Florida                66          2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2023-09-23    2022-02-26      Florida                73          3</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2023-09-23    2022-03-05      Florida                72          4</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2023-09-23    2022-03-12      Florida                68          5</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2023-09-23    2022-03-19      Florida                71          6</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2023-09-23    2022-03-26      Florida               108          7</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2023-09-23    2022-04-02      Florida               101          8</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2023-09-23    2022-04-09      Florida                97          9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2023-09-23    2022-04-16      Florida               158         10</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2024-11-16    2024-07-06      Puerto Rico             7        126</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2024-11-16    2024-07-13      Puerto Rico             6        127</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2024-11-16    2024-07-20      Puerto Rico             9        128</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2024-11-16    2024-07-27      Puerto Rico             3        129</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2024-11-16    2024-08-03      Puerto Rico             6        130</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2024-11-16    2024-08-10      Puerto Rico             5        131</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2024-11-16    2024-08-17      Puerto Rico             3        132</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2024-11-16    2024-08-24      Puerto Rico             3        133</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2024-11-16    2024-08-31      Puerto Rico             2        134</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2024-11-16    2024-09-07      Puerto Rico             1        135</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2025-11-12</span> | Event date: <span style="color: #0000BB;">"target_end_date"</span> | Report date: <span style="color: #0000BB;">"latest_report"</span></span></span>
 <span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"location_name"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 8,529 more rows</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,281 more rows</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;</span></span></span></code></pre></div>
-<p>Given that in this dataset we only have <code>Florida</code> it makes
-no sense to keep <code>location_name</code> as strata. We can use the
+<p>Given that in this dataset we only have <code>pr</code> it makes no
+sense to keep <code>location_name</code> as strata. We can use the
 <code>remove_strata</code> function to remove it without removing the
 column (though removing the column would also work):</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_florida</span> <span class="op">&lt;-</span> <span class="va">df_florida</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">df_pr</span> <span class="op">&lt;-</span> <span class="va">df_pr</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="../reference/remove.html">remove_strata</a></span><span class="op">(</span><span class="st">"location_name"</span><span class="op">)</span></span>
-<span><span class="va">df_florida</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  8,539 × 7</span></span></span>
+<span><span class="va">df_pr</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1,291 × 7</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span></span>
 <span><span class="co">#&gt;    latest_report target_end_date location_name observation .event_num</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt;    <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[event_date]</span>    <span style="color: #949494;">[...]</span>             <span style="color: #949494;">[cases]</span>      <span style="color: #949494;">[...]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2023-09-23    2022-02-12      Florida                68          1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2023-09-23    2022-02-19      Florida                66          2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2023-09-23    2022-02-26      Florida                73          3</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2023-09-23    2022-03-05      Florida                72          4</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2023-09-23    2022-03-12      Florida                68          5</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2023-09-23    2022-03-19      Florida                71          6</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2023-09-23    2022-03-26      Florida               108          7</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2023-09-23    2022-04-02      Florida               101          8</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2023-09-23    2022-04-09      Florida                97          9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2023-09-23    2022-04-16      Florida               158         10</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2024-11-16    2024-07-06      Puerto Rico             7        126</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2024-11-16    2024-07-13      Puerto Rico             6        127</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2024-11-16    2024-07-20      Puerto Rico             9        128</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2024-11-16    2024-07-27      Puerto Rico             3        129</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2024-11-16    2024-08-03      Puerto Rico             6        130</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2024-11-16    2024-08-10      Puerto Rico             5        131</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2024-11-16    2024-08-17      Puerto Rico             3        132</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2024-11-16    2024-08-24      Puerto Rico             3        133</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2024-11-16    2024-08-31      Puerto Rico             2        134</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2024-11-16    2024-09-07      Puerto Rico             1        135</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2025-11-12</span> | Event date: <span style="color: #0000BB;">"target_end_date"</span> | Report date: <span style="color: #0000BB;">"latest_report"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 8,529 more rows</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,281 more rows</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>The current <code>now</code> for the nowcast is:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">df_florida</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">df_pr</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "2025-11-12"</span></span></code></pre></div>
 <p>However, if we were interested, say, in historical nowcasting
 (i.e. backtesting) we can filter the dates and update the now:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_florida</span> <span class="op">&lt;-</span> <span class="va">df_florida</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">df_pr_new_now</span> <span class="op">&lt;-</span> <span class="va">df_pr</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">latest_report</span> <span class="op">&lt;</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/01"</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="../reference/change.html">change_now</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/01"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">df_florida</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  895 × 7</span></span></span>
+<span><span class="va">df_pr_new_now</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  0 × 7</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span></span>
-<span><span class="co">#&gt;    latest_report target_end_date location_name observation .event_num</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt;    <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[event_date]</span>    <span style="color: #949494;">[...]</span>             <span style="color: #949494;">[cases]</span>      <span style="color: #949494;">[...]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2023-09-23    2022-02-12      Florida                68          1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2023-09-23    2022-02-19      Florida                66          2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2023-09-23    2022-02-26      Florida                73          3</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2023-09-23    2022-03-05      Florida                72          4</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2023-09-23    2022-03-12      Florida                68          5</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2023-09-23    2022-03-19      Florida                71          6</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2023-09-23    2022-03-26      Florida               108          7</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2023-09-23    2022-04-02      Florida               101          8</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2023-09-23    2022-04-09      Florida                97          9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2023-09-23    2022-04-16      Florida               158         10</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2023-12-01</span> | Event date: <span style="color: #0000BB;">"target_end_date"</span> | Report date: <span style="color: #0000BB;">"latest_report"</span></span></span>
+<span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2025-11-12</span> | Event date: <span style="color: #0000BB;">"target_end_date"</span> | Report date: <span style="color: #0000BB;">"latest_report"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 885 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 7 variables: latest_report &lt;date&gt;, target_end_date &lt;date&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   location_name &lt;chr&gt;, observation &lt;dbl&gt;, .event_num &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>Which yields the new value:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">df_florida</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "2023-12-01"</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">df_pr_new_now</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "2025-11-12"</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="reports">Reports<a class="anchor" aria-label="anchor" href="#reports"></a>
+</h2>
+<p>The <code><a href="../reference/get_latest_first.html">get_initial_reported_cases()</a></code> and
+<code><a href="../reference/get_latest_first.html">get_latest_reported_cases()</a></code> obtain the cases with the
+earliest report date for each event or witht he latest report date for
+the event. This allow to compare the data as it came initially and the
+latest report.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">initial_reports</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_latest_first.html">get_initial_reported_cases</a></span><span class="op">(</span><span class="va">df_pr</span><span class="op">)</span></span>
+<span><span class="va">latest_reports</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="va">df_pr</span><span class="op">)</span></span></code></pre></div>
+<p>Graphically this is what they look like:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">initial_reports</span><span class="op">$</span><span class="va">target_end_date</span>, <span class="va">initial_reports</span><span class="op">$</span><span class="va">observation</span>, </span>
+<span>     type <span class="op">=</span> <span class="st">"p"</span>, col <span class="op">=</span> <span class="st">"blue"</span>, xlab <span class="op">=</span> <span class="st">"Date of event"</span>, ylab <span class="op">=</span> <span class="st">"Cases"</span>,</span>
+<span>     main <span class="op">=</span> <span class="st">"Cases in Puerto Rico"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">latest_reports</span><span class="op">$</span><span class="va">target_end_date</span>, <span class="va">latest_reports</span><span class="op">$</span><span class="va">observation</span>, col <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"right"</span>, y <span class="op">=</span> <span class="st">"top"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Initial report"</span>,<span class="st">"Final report"</span><span class="op">)</span>, </span>
+<span>       fill <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"blue"</span>,<span class="st">"red"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="Example_files/figure-html/unnamed-chunk-18-1.png" class="r-plt" width="480"></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

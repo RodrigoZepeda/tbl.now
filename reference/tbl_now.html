@@ -20,7 +20,7 @@ See the Attributes section for more information."></head><body>
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
     <li><a class="dropdown-item" href="../articles/Introduction.html">tbl.now</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -185,6 +185,12 @@ by the <code><a href="validate_tbl_now.html">validate_tbl_now()</a></code> funct
 <dt>covariates</dt>
 <dd><p>Names of the columns corresponding to covariates (for modelling).</p></dd>
 
+<dt>case_count</dt>
+<dd><p>Column containing the number of observations for that moment if <code>data_type</code> is <code>count-incidence</code> or <code>count-cumulative</code>.</p></dd>
+
+<dt>temporal_effects</dt>
+<dd><p>Names of the columns refering to the temporal effects.</p></dd>
+
 <dt>now</dt>
 <dd><p>Date of the <code>now</code> for a nowcast.</p></dd>
 
@@ -208,7 +214,8 @@ by the <code><a href="validate_tbl_now.html">validate_tbl_now()</a></code> funct
 or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)</p></dd>
 
 
-</dl></div>
+</dl><p>You can  list all <code>tbl_now</code> related attributes in a specific <code>tbl_now</code> with <code><a href="tbl_now_attributes.html">tbl_now_attributes()</a></code>.</p>
+    </div>
     <div class="section level2">
     <h2 id="data-types">Data types<a class="anchor" aria-label="anchor" href="#data-types"></a></h2>
 

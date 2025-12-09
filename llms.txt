@@ -336,6 +336,9 @@ covariates in the models.
 
   Create a `tbl_now` object
 
+- [`tbl_now_attributes()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.md)
+  : Show the names of the attributes of a \`tbl_now\`
+
 - [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
   : Temporal Effects Class
 
@@ -352,6 +355,6 @@ covariates in the models.
 
 ### All vignettes
 
-- [Example
-  analysis](https://rodrigozepeda.github.io/tbl.now/articles/Example.md):
+- [Example analysis with
+  Flusight](https://rodrigozepeda.github.io/tbl.now/articles/Example.md):
 - [tbl.now](https://rodrigozepeda.github.io/tbl.now/articles/Introduction.md):
