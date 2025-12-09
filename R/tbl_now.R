@@ -74,6 +74,8 @@
 #'   \item{report_date}{Name of the column refering to when the event of interest was reported.}
 #'   \item{strata}{Names of the columns corresponding to the strata (for modelling).}
 #'   \item{covariates}{Names of the columns corresponding to covariates (for modelling).}
+#'   \item{case_count}{Column containing the number of observations for that moment if `data_type` is `count-incidence` or `count-cumulative`.}
+#'   \item{temporal_effects}{Names of the columns refering to the temporal effects.}
 #'   \item{now}{Date of the `now` for a nowcast.}
 #'   \item{is_batched}{Column indicating whether the measurement is noisy (only upper bound) or not.}
 #'   \item{event_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `event_date`}
@@ -83,6 +85,8 @@
 #'   \item{data_type}{Either `linelist`, `count-incidence` or `count-cumulative` depending on whether it is linelist data
 #'   or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)}
 #' }
+#'
+#' You can  list all `tbl_now` related attributes in a specific `tbl_now` with [tbl_now_attributes()].
 #'
 #' @section Data types:
 #' The following data-types are admitted at `tbl_now` objects.

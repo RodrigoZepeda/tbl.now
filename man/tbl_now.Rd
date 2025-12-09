@@ -103,6 +103,8 @@ by the \code{\link[=validate_tbl_now]{validate_tbl_now()}} function:
 \item{report_date}{Name of the column refering to when the event of interest was reported.}
 \item{strata}{Names of the columns corresponding to the strata (for modelling).}
 \item{covariates}{Names of the columns corresponding to covariates (for modelling).}
+\item{case_count}{Column containing the number of observations for that moment if \code{data_type} is \code{count-incidence} or \code{count-cumulative}.}
+\item{temporal_effects}{Names of the columns refering to the temporal effects.}
 \item{now}{Date of the \code{now} for a nowcast.}
 \item{is_batched}{Column indicating whether the measurement is noisy (only upper bound) or not.}
 \item{event_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}. Corresponds to the units of \code{event_date}}
@@ -112,6 +114,8 @@ by the \code{\link[=validate_tbl_now]{validate_tbl_now()}} function:
 \item{data_type}{Either \code{linelist}, \code{count-incidence} or \code{count-cumulative} depending on whether it is linelist data
 or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)}
 }
+
+You can  list all \code{tbl_now} related attributes in a specific \code{tbl_now} with \code{\link[=tbl_now_attributes]{tbl_now_attributes()}}.
 }
 
 \section{Data types}{

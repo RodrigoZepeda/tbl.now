@@ -1,5 +1,12 @@
 ---
-title: "Example analysis"
+title: "Example analysis with Flusight"
+output: rmarkdown::html_vignette
+bibliography: references.bib
+link-citations: true
+vignette: >
+  %\VignetteIndexEntry{Example analysis with Flusight}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
@@ -22,7 +29,7 @@ library(tbl.now)
 
 ## Data
 
-For the example we will use the Flusight data from the CDC which contains **weekly** hospital admissions of patients with confirmed influenza (see `?flusight`). The data is reported **weekly** starting one week after the observations. 
+For the example, we will use the Flusight data from the CDC which contains **weekly** hospital admissions of patients with confirmed influenza (see `?flusight`). The data is reported **weekly** starting one week after the observations. 
 
 ```{r}
 data(flusight)
@@ -35,8 +42,10 @@ Finally note that the data is reported as cumulative cases (`case-cumulative`). 
 
 ```{r}
 flusight %>% 
-  filter(location_name == "Florida" & target_end_date == ymd("2024/04/06")) 
+  filter(location_name == "pr" & target_end_date == ymd("2024/04/06")) 
 ```
+
+Where each `as_of` the total number of cases that occurred in `target_end_date`  are reported in `observation`.
 
 ## Creating the `tbl_now`
 
@@ -50,8 +59,11 @@ We can try and setup a `tbl_now` by specifying the following:
 Creating the `tbl_now` object like this will throw several warnings: 
 
 ```{r}
-df_wrong <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
-        case_count = "observation", strata = c("location_name"))
+df_wrong <- flusight %>% 
+  tbl_now(event_date = target_end_date, 
+          report_date = as_of, 
+          case_count = observation, 
+          strata = location_name)
 ```
 
 The first and last warnings indicate, for example, that some observations are repeated. You can see that rows `422146`, `422147`, `422148`, `422149` have exactly the same values:
@@ -99,39 +111,63 @@ df_flu
 Once created the `tbl_now` you can use the classic `dplyr` verbs to do operations. For example by renaming columns and filtering out just one state: 
 
 ```{r}
-df_florida <- df_flu %>% 
+df_pr <- df_flu %>% 
   rename(latest_report = as_of) %>% 
-  filter(location_name == "Florida")
+  filter(location_name == "Puerto Rico") %>% 
+  filter(target_end_date >= ymd("2024/07/01"))
 
-df_florida
+df_pr
 ```
 
-Given that in this dataset we only have `Florida` it makes no sense to keep `location_name` as strata. We can use the `remove_strata` function to remove it without removing the column (though removing the column would also work):
+Given that in this dataset we only have `pr` it makes no sense to keep `location_name` as strata. We can use the `remove_strata` function to remove it without removing the column (though removing the column would also work):
 
 ```{r}
-df_florida <- df_florida %>% 
+df_pr <- df_pr %>% 
   remove_strata("location_name")
-df_florida
+df_pr
 ```
 
 The current `now` for the nowcast is:
 
 ```{r}
-get_now(df_florida)
+get_now(df_pr)
 ```
 
 However, if we were interested, say, in historical nowcasting (i.e. backtesting) we can filter the dates and update the now: 
 
 ```{r}
-df_florida <- df_florida %>% 
+df_pr_new_now <- df_pr %>% 
   filter(latest_report < ymd("2023/12/01")) %>% 
   change_now(ymd("2023/12/01"))
 
-df_florida
+df_pr_new_now
 ```
 
 Which yields the new value:
 
 ```{r}
-get_now(df_florida)
+get_now(df_pr_new_now)
 ```
+
+## Reports
+
+The  `get_initial_reported_cases()` and `get_latest_reported_cases()` obtain the cases with the earliest report date for each event or witht he latest report date for the event. This allow to compare the data as it came initially and the latest report. 
+
+```{r}
+initial_reports <- get_initial_reported_cases(df_pr)
+latest_reports  <- get_latest_reported_cases(df_pr)
+```
+
+Graphically this is what they look like:
+
+```{r, fig.width=5, fig.height=3}
+plot(initial_reports$target_end_date, initial_reports$observation, 
+     type = "p", col = "blue", xlab = "Date of event", ylab = "Cases",
+     main = "Cases in Puerto Rico")
+
+lines(latest_reports$target_end_date, latest_reports$observation, col = "red")
+
+legend("right", y = "top", legend = c("Initial report","Final report"), 
+       fill = c("blue","red"))
+```
+

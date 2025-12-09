@@ -82,3 +82,44 @@ is_weekday <- function(date, weekend_days = c("Sat", "Sun")) {
   # TRUE if weekday (not part of weekend)
   !d %in% weekend_idx
 }
+
+#' Show the names of the attributes of a `tbl_now`
+#'
+#' Shows exclusively the attributes of a `tbl_now` that are not part
+#' of the attributes of a `tibble` (or a grouped tibble).
+#'
+#' @examples
+#' data(denguedat)
+#' df_now <- tbl_now(denguedat, event_date = onset_week,
+#'   report_date = report_week, strata = gender, verbose = FALSE)
+#'
+#' #Attributes gets all attributes
+#' attributes(df_now)
+#'
+#' #tbl_now_attributes gets only those associated to the `tbl_now` class
+#' tbl_now_attributes(df_now)
+#'
+#' @export
+tbl_now_attributes <- function(x){
+  if (!is_tbl_now(x)){
+    cli::cli_abort("Object is not a `tbl_now`")
+  }
+
+  #Get the attributes of a tbl now
+  default_attributes <- tbl_now(
+    data.frame(x = as.integer(0), y = as.integer(0)), "x", "y",
+    data_type = "linelist",
+    verbose = FALSE,
+    event_units = "numeric",
+    report_units = "numeric") %>%
+    attributes()
+
+  tibble_attributes <- dplyr::tibble() %>% attributes()
+
+  defattr <- names(default_attributes)[
+    which(!(names(default_attributes)  %in% names(tibble_attributes)))
+  ]
+
+  attributes(x)[defattr]
+
+}
