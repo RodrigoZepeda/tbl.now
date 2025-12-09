@@ -6,6 +6,9 @@
 \usage{
 tbl_now_attributes(x)
 }
+\arguments{
+\item{x}{A \code{tbl_now} object}
+}
 \description{
 Shows exclusively the attributes of a `tbl_now` that are not part
 of the attributes of a `tibble` (or a grouped tibble).

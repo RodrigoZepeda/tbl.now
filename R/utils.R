@@ -88,6 +88,8 @@ is_weekday <- function(date, weekend_days = c("Sat", "Sun")) {
 #' Shows exclusively the attributes of a `tbl_now` that are not part
 #' of the attributes of a `tibble` (or a grouped tibble).
 #'
+#' @inheritParams add
+#'
 #' @examples
 #' data(denguedat)
 #' df_now <- tbl_now(denguedat, event_date = onset_week,
