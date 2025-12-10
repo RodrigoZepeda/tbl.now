@@ -14,25 +14,75 @@ status](https://www.r-pkg.org/badges/version/tbl.now)](https://CRAN.R-project.or
 [![R-CMD-check](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-The **tbl.now** package contains a `data.frame` class that extends the
-[tibble](https://tibble.tidyverse.org/reference/tibble-package.html)
-(and, hence, the [tidyverse](https://tidyverse.org/)) to nowcasting
-data. The main purpose of the package is to provide a unified input
-within the
+`tbl.now` provides a lightweight but rigorous extension of the tibble
+class for storing, validating, and manipulating epidemiological
+nowcasting data. It standardizes the representation of event dates,
+report dates, strata, temporal covariates, and data types (linelist,
+incidence, and cumulative), ensuring that downstream models within the
 [`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/)
-framework.
+ecosystem can rely on a consistent interface.
+
+## Key features
+
+`tbl.now` implements:
+
+### 1. A validated tibble subclass
+
+Each `tbl_now` object guarantees:
+
+- An event date column.
+- A report date column.
+- Internally computed:
+  - numeric event index (.event_num)
+  - numeric report index (.report_num)
+  - delay (.delay).
+- Optional strata (e.g., state, age group).
+- Optional covariates (e.g., state, age group).
+- Optional batch (right-censored report) indicator.
+- Optional temporal covariates (day of week, week of year, holidays).
+
+### 2. Automatic data-type detection
+
+`tbl_now()` infers whether the input represents:
+
+- **Linelist data**: one row per individual event
+- **Count–incidence data**: counts newly reported at each (event,
+  report) pair
+- **Count–cumulative data**: cumulative totals revised over time
+
+This allows a wide range of surveillance systems to be ingested with
+minimal preprocessing.
+
+### 3. Built-in handling of the “now”
+
+Each object records the nowcast horizon (now), defined as the latest
+reporting date unless overridden. This enables backtesting, historical
+reconstruction, and model evaluation under realistic information
+constraints.
+
+### 4. Native compatibility with tidyverse workflows
+
+`tbl_now` objects behave as regular tibbles. Standard operations
+(`filter`, `mutate`, `summarise`, `join`, etc.) preserve metadata
+whenever possible.
+
+### 5. Temporal covariates in one step
+
+Use `temporal_effects()` and `add_temporal_effects()` to generate
+event-date covariates such as: day of week, week of year, and
+user-specified holiday calendars (via almanac). This standardizes
+temporal structures used by nowcasting models.
 
 ## Installation
 
-You can install the development version of tbl.now from
-[GitHub](https://github.com/) with:
+Install the development version from [GitHub](https://github.com/):
 
 ``` r
 # install.packages("remotes")
 remotes::install_github("RodrigoZepeda/tbl.now")
 ```
 
-And after installation:
+Load the package:
 
 ``` r
 library(dplyr)
@@ -41,97 +91,75 @@ library(tbl.now)
 library(almanac)    #Suggested for holiday effects
 ```
 
-## Why tbl_now?
+## A minimal example
 
-Traditionally in epidemiological nowcasting scenarios we have two dates:
-
-- `event_date`: When something happened (e.g. symptom onset or a test
-  was taken).
-- `report_date`: When it was reported (e.g. the patient went to the
-  clinic or the test results were registered).
-
-The nowcasting problem is to estimate the total number of events **now**
-that have occurred at any past `event_date` given that not all of them
-have been reported yet. In the context of nowcasting, the **tbl_now**
-can be thought of as a specific
-[tibble()](https://tibble.tidyverse.org/reference/tibble.html) that
-**guarantees** an `event_date` and a `report_date`.
-
-## Example
-
-Consider the following `data.frame` representing the number of cases `n`
-reported at `report_date` that happened at `event_date`:
+Suppose you have a dataset where n cases reported on report_date belong
+to events occurring on event_date:
 
 ``` r
 df <- tibble(
-  event_date  = c(ymd("2023/12/25"), ymd("2023/12/26"), ymd("2023/12/25"), ymd("2023/12/26")),
-  report_date = c(ymd("2023/12/26"), ymd("2023/12/26"), ymd("2023/12/27"), ymd("2023/12/27")),
+  event_date  = c(ymd("2023-12-25"), ymd("2023-12-26"),
+                  ymd("2023-12-25"), ymd("2023-12-26")),
+  report_date = c(ymd("2023-12-26"), ymd("2023-12-26"),
+                  ymd("2023-12-27"), ymd("2023-12-27")),
   n = c(10, 2, 5, 11)
 )
-
-df
-#> # A tibble: 4 × 3
-#>   event_date report_date     n
-#>   <date>     <date>      <dbl>
-#> 1 2023-12-25 2023-12-26     10
-#> 2 2023-12-26 2023-12-26      2
-#> 3 2023-12-25 2023-12-27      5
-#> 4 2023-12-26 2023-12-27     11
 ```
 
-To convert to a `tbl_now` you can use the
-[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
-function:
+Convert it to a
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html):
 
 ``` r
-df_now <- tbl_now(df, event_date = "event_date", report_date = "report_date")
-#> ℹ Identified data as <linelist-data> where each observation is a test.
+df_now <- df %>% 
+  tbl_now(event_date = event_date, report_date = report_date, case_count = n)
+#> ℹ Identified data as <count-incidence> with counts in column "n".
+
 df_now
 #> # A tibble:  4 × 6
-#> # Data type: "linelist"
+#> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
-#>   event_date   report_date       n .event_num .report_num .delay
-#>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl>
-#>   [event_date] [report_date] [...]      [...]       [...]  [...]
-#> 1 2023-12-25   2023-12-26       10          0           1      1
-#> 2 2023-12-26   2023-12-26        2          1           1      0
-#> 3 2023-12-25   2023-12-27        5          0           2      2
-#> 4 2023-12-26   2023-12-27       11          1           2      1
+#>   event_date   report_date         n .event_num .report_num .delay
+#>   <date>       <date>          <dbl>      <dbl>       <dbl>  <dbl>
+#>   [event_date] [report_date] [cases]      [...]       [...]  [...]
+#> 1 2023-12-25   2023-12-26         10          0           1      1
+#> 2 2023-12-26   2023-12-26          2          1           1      0
+#> 3 2023-12-25   2023-12-27          5          0           2      2
+#> 4 2023-12-26   2023-12-27         11          1           2      1
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
-The
-[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
-automatically detects whether the **data-type** corresponds to
-*linelist*, *count-incidence* or *count-cumulative* data, the
-**date-units** for the event and report dates (frequency), and the
-**now** is given by the latest date (2023-12-27). Additionally it
-transforms the `event_date` into numeric (`.event_num` column) as well
-as the `report_date` (`.report_num` column) and calculates the delay
-(`.delay` column).
+`tbl_now()` automatically:
 
-The
-[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
-is compatible with the usual [dplyr](https://dplyr.tidyverse.org/)
-operations:
+- infers that the **data type** is linelist (one row per event)
+
+- determines the **date units** (daily event and report frequencies)
+
+- computes numerical versions of the dates: `.event_num`, `.report_num`,
+  and `.delay`
+
+- sets the **now** to the most recent reporting date
+
+Use it like any tibble:
 
 ``` r
 df_now %>% 
   filter(n > 5)
 #> # A tibble:  2 × 6
-#> # Data type: "linelist"
+#> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
-#>   event_date   report_date       n .event_num .report_num .delay
-#>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl>
-#>   [event_date] [report_date] [...]      [...]       [...]  [...]
-#> 1 2023-12-25   2023-12-26       10          0           1      1
-#> 2 2023-12-26   2023-12-27       11          1           2      1
+#>   event_date   report_date         n .event_num .report_num .delay
+#>   <date>       <date>          <dbl>      <dbl>       <dbl>  <dbl>
+#>   [event_date] [report_date] [cases]      [...]       [...]  [...]
+#> 1 2023-12-25   2023-12-26         10          0           1      1
+#> 2 2023-12-26   2023-12-27         11          1           2      1
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # ────────────────────────────────────────────────────────────────────────────────
 ```
+
+## Adding strata
 
 If strata was given, the
 [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
@@ -144,56 +172,55 @@ df_now <- df_now %>%
 
 df_now
 #> # A tibble:  4 × 7
-#> # Data type: "linelist"
+#> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
-#>   event_date   report_date       n .event_num .report_num .delay sex  
-#>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl> <chr>
-#>   [event_date] [report_date] [...]      [...]       [...]  [...] [...]
-#> 1 2023-12-25   2023-12-26       10          0           1      1 M    
-#> 2 2023-12-26   2023-12-26        2          1           1      0 M    
-#> 3 2023-12-25   2023-12-27        5          0           2      2 F    
-#> 4 2023-12-26   2023-12-27       11          1           2      1 M    
+#>   event_date   report_date         n .event_num .report_num .delay sex  
+#>   <date>       <date>          <dbl>      <dbl>       <dbl>  <dbl> <chr>
+#>   [event_date] [report_date] [cases]      [...]       [...]  [...] [...]
+#> 1 2023-12-25   2023-12-26         10          0           1      1 M    
+#> 2 2023-12-26   2023-12-26          2          1           1      0 M    
+#> 3 2023-12-25   2023-12-27          5          0           2      2 F    
+#> 4 2023-12-26   2023-12-27         11          1           2      1 M    
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
-To specify strata you can use the `add_strata`:
+Use the `add_strata` to specify the new column is a stratum:
 
 ``` r
 df_now %>% 
   add_strata("sex")
 #> # A tibble:  4 × 7
-#> # Data type: "linelist"
+#> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
-#>   event_date   report_date       n .event_num .report_num .delay sex     
-#>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl> <chr>   
-#>   [event_date] [report_date] [...]      [...]       [...]  [...] [strata]
-#> 1 2023-12-25   2023-12-26       10          0           1      1 M       
-#> 2 2023-12-26   2023-12-26        2          1           1      0 M       
-#> 3 2023-12-25   2023-12-27        5          0           2      2 F       
-#> 4 2023-12-26   2023-12-27       11          1           2      1 M       
+#>   event_date   report_date         n .event_num .report_num .delay sex     
+#>   <date>       <date>          <dbl>      <dbl>       <dbl>  <dbl> <chr>   
+#>   [event_date] [report_date] [cases]      [...]       [...]  [...] [strata]
+#> 1 2023-12-25   2023-12-26         10          0           1      1 M       
+#> 2 2023-12-26   2023-12-26          2          1           1      0 M       
+#> 3 2023-12-25   2023-12-27          5          0           2      2 F       
+#> 4 2023-12-26   2023-12-27         11          1           2      1 M       
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # Strata: "sex"
 #> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
-## Temporal effects
+The object now records `"sex"` as a stratification variable, preserved
+through downstream operations.
 
-Temporal effects can be added as covariates of the
-[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
-using the
-[temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html).
+## Adding temporal effects
 
-For example, we can specify to include covariates for the day of the
-week, the week of the year, and whether it is holiday in the US:
+Temporal covariates help nowcasting models incorporate weekly
+seasonality, holiday effects, etc. Define the effects:
 
 ``` r
 t_eff <- temporal_effects(
   day_of_week  = TRUE,
   week_of_year = TRUE, 
   holidays     = cal_us_federal())
+
 t_eff
 #> 
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
@@ -206,25 +233,21 @@ t_eff
 #>   Peoples' Day, US Veterans Day, US Thanksgiving, and Christmas
 ```
 
-Such effects can be added to the
-[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
-object with the
-[add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html)
-function:
+Attach them to the dataset:
 
 ``` r
 df_now %>% 
   add_temporal_effects(t_eff)
 #> # A tibble:  4 × 10
-#> # Data type: "linelist"
+#> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
-#>   event_date   report_date       n .event_num .report_num .delay sex  
-#>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl> <chr>
-#>   [event_date] [report_date] [...]      [...]       [...]  [...] [...]
-#> 1 2023-12-25   2023-12-26       10          0           1      1 M    
-#> 2 2023-12-26   2023-12-26        2          1           1      0 M    
-#> 3 2023-12-25   2023-12-27        5          0           2      2 F    
-#> 4 2023-12-26   2023-12-27       11          1           2      1 M    
+#>   event_date   report_date         n .event_num .report_num .delay sex  
+#>   <date>       <date>          <dbl>      <dbl>       <dbl>  <dbl> <chr>
+#>   [event_date] [report_date] [cases]      [...]       [...]  [...] [...]
+#> 1 2023-12-25   2023-12-26         10          0           1      1 M    
+#> 2 2023-12-26   2023-12-26          2          1           1      0 M    
+#> 3 2023-12-25   2023-12-27          5          0           2      2 F    
+#> 4 2023-12-26   2023-12-27         11          1           2      1 M    
 #>   .event_day_of_week .event_week_of_year .event_holiday
 #>                <int>               <int>          <int>
 #>           [t_effect]          [t_effect]     [t_effect]
@@ -238,16 +261,62 @@ df_now %>%
 #> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
-Note that Christmas (`2023-12-25`) is marked as an `.event_holiday`,
-everything corresponds to the first epidemiological week of `2024`, and
-the days of the week correspond to Monday (`event_day_of_week = 2`) and
-Tuesday (`event_day_of_week = 3`). All of these effects can be used as
-covariates in the models.
+This expands the table with `.event_day_of_week`, `.event_week_of_year`,
+and `.event_holiday` columns which are automatically aligned with event
+dates.
 
-## Learn more about tbl.now
+You can also attach different effects to the report:
 
-- Read the introduction to
-  [tbl.now](https://rodrigozepeda.github.io/tbl.now/articles/Introduction.html)
-- Read an
-  [example](https://rodrigozepeda.github.io/tbl.now/articles/Example.html)
-  with real data.
+``` r
+r_eff <- temporal_effects(day_of_week = TRUE)
+
+df_now %>% 
+  add_temporal_effects(r_eff, date_type = "report_date")
+#> # A tibble:  4 × 8
+#> # Data type: "count-incidence"
+#> # Frequency: Event: `days` | Report: `days`
+#>   event_date   report_date         n .event_num .report_num .delay sex  
+#>   <date>       <date>          <dbl>      <dbl>       <dbl>  <dbl> <chr>
+#>   [event_date] [report_date] [cases]      [...]       [...]  [...] [...]
+#> 1 2023-12-25   2023-12-26         10          0           1      1 M    
+#> 2 2023-12-26   2023-12-26          2          1           1      0 M    
+#> 3 2023-12-25   2023-12-27          5          0           2      2 F    
+#> 4 2023-12-26   2023-12-27         11          1           2      1 M    
+#>   .report_day_of_week
+#>                 <int>
+#>            [t_effect]
+#> 1                   3
+#> 2                   3
+#> 3                   4
+#> 4                   4
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
+#> # T. effects: ".report_day_of_week"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
+## Working with the “now”
+
+You may override the default now to perform historical evaluation:
+
+``` r
+df_pruned <- df_now %>%
+  filter(report_date <= ymd("2023-12-26")) %>%
+  change_now(ymd("2023-12-26"))
+```
+
+Retrieve the current active nowcast horizon:
+
+``` r
+get_now(df_pruned)
+#> [1] "2023-12-26"
+```
+
+## Learning more
+
+- Introduction vignette:
+  <https://rodrigozepeda.github.io/tbl.now/articles/Introduction.html>
+- Full walk-through with real CDC Flusight data:
+  <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
+- Package reference:
+  <https://rodrigozepeda.github.io/tbl.now/reference/>

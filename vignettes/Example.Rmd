@@ -16,12 +16,14 @@ knitr::opts_chunk$set(
 )
 ```
 
+In this vignette we demonstrate how to use the `tbl.now` framework with real data 
+from the U.S. Centers for Disease Control and Prevention (CDC). 
+Specifically, we work with the Flusight dataset, which contains weekly counts 
+of hospital admissions for laboratory-confirmed influenza.
 
-In this article we show how to use the `tbl.now` framework with real data from the Center for Disease Control (CDC). 
+We begin by loading the required packages:
 
-We start by loading the required packages:
-
-```{r, message=FALSE}
+```{r}
 library(dplyr)
 library(lubridate)
 library(tbl.now)
@@ -29,34 +31,57 @@ library(tbl.now)
 
 ## Data
 
-For the example, we will use the Flusight data from the CDC which contains **weekly** hospital admissions of patients with confirmed influenza (see `?flusight`). The data is reported **weekly** starting one week after the observations. 
+The Flusight dataset (`?flusight`) includes weekly influenza hospital 
+admission counts. For each epidemiological week (`target_end_date`), the CDC
+publishes revised counts across multiple future weeks (`as_of`). Thus, each event 
+week is associated with multiple reporting dates reflecting updates or revisions.
 
 ```{r}
 data(flusight)
-flusight
 ```
 
-The column `target_end_date` corresponds to the **week** of observation while `as_of` corresponds to the **week** when information was updated. The same observation week (`target_end_date`) has then multiple report dates (`as_of`) corresponding to future weeks of update. Data is available for several states and territories of the United States via `location_name`. 
+```{r, echo=FALSE}
+flusight %>% 
+  arrange(location_name) %>% 
+  head(10) %>% 
+  knitr::kable(caption = "The Flusight dataset")
+```
 
-Finally note that the data is reported as cumulative cases (`case-cumulative`). That is, the column `observations` contains not the cases that were updated in date `as_of` but the **overall** number of cases that were believed to have happend in date `target_end_date` by date `as_of`. You can see this with an example:
+The columns are:
+
++ `target_end_date`: the epidemiological week when cases occurred
+
++ `as_of`: the week in which the CDC updated its estimate for that event week
+
++ `location_name`: the state or territory
+
++ `observation`: the reported number of cases for target_end_date as of as_of
+
+The key feature of this dataset is that observation is cumulative: the value for a given `target_end_date` and `as_of` is the latest estimate of total cases up to that event week, not the incremental update for that reporting date. The following example illustrates the structure:
+
 
 ```{r}
 flusight %>% 
-  filter(location_name == "pr" & target_end_date == ymd("2024/04/06")) 
+  filter(location_name == "Puerto Rico" & target_end_date == ymd("2025/04/12")) 
 ```
 
-Where each `as_of` the total number of cases that occurred in `target_end_date`  are reported in `observation`.
+Each unique pair of (`target_end_date`, `as_of`) therefore corresponds to a cumulative estimate.
 
 ## Creating the `tbl_now`
 
-We can try and setup a `tbl_now` by specifying the following:
+Creating the tbl_now Object
 
-+ `event_date`: When cases happened
-+ `report_date`: When cases were reported. 
-+ `case_count`: Column containing information about the number of cases for that observation.
-+ `strata`: A vector containing all of the columns considered strata
+To construct a tbl_now object, we must indicate:
 
-Creating the `tbl_now` object like this will throw several warnings: 
++ `event_date`: the date on which cases occurred
+
++ `report_date`: the date on which the estimate was released
+
++ `case_count`: the column containing case counts
+
++ `strata`: grouping variables that define separate strata (e.g., states)
+
+A first attempt produces several warnings:
 
 ```{r}
 df_wrong <- flusight %>% 
@@ -66,49 +91,56 @@ df_wrong <- flusight %>%
           strata = location_name)
 ```
 
-The first and last warnings indicate, for example, that some observations are repeated. You can see that rows `422146`, `422147`, `422148`, `422149` have exactly the same values:
+These warnings arise because:
+
+1. Duplicate rows exist for some event–report combinations.
+
+2. Missing values appear in the case count column.
+
+3. The data is incorrectly inferred to represent count-incidence rather than count-cumulative, because cumulative-type datasets often contain repeated records.
+
+Inspecting a subset confirms duplicated rows:
 
 ```{r}
 flusight[c(422146, 422147, 422148, 422149), ]
 ```
 
-Using [`dplyr's distinct()](https://dplyr.tidyverse.org/reference/distinct.html) we can clean the repeated rows and fix those warnings:
+Using [`dplyr's distinct()](https://dplyr.tidyverse.org/reference/distinct.html) we remove the duplicates:
 
 ```{r}
 flusight <- flusight %>% distinct()
 ```
 
-**Missing** values are warned by the  `tbl_now` object to make sure the user knows of their presence. We can either ignore the warning, remove or substitute the values. For the purpose of this example, we will filter them out:
+Next, we remove observations with missing case counts:
 
 ```{r}
 flusight <- flusight %>% filter(!is.na(observation))
 ```
 
-Then try again the `tbl_now` (spoiler, we still need to fix one last thing):
+However, reconstructing the object still yields a misclassified data type:
 
 ```{r}
 df_still_wrong <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
         case_count = "observation", strata = c("location_name"))
 ```
 
-The data was incorrectly identified as `count-incidence` which means that each event-report date combination corresponds to the number of cases that where observed for the `event_date` and reported **exactly** at `report_date`. That is, the total number of cases that happened at `event_date` is given by the **sum** of all of the cases for each `report_date`. 
+The function incorrectly infers incidence data (i.e., each row represents the incremental number reported on that report date). In contrast, the Flusight dataset contains cumulative values. We therefore explicitly declare the data type:
 
-In our case we have `count-cumulative` data where the `report_date` reports the latest estimate of the **total** number of cases. This can be specified with the `data_type` option: 
 
 ```{r}
 df_flu <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
         case_count = "observation", strata = c("location_name"), data_type = "count-cumulative")
 ```
 
-And this results in the correct `tbl_now` object:
+This yields a correctly structured `tbl_now` object:
 
 ```{r}
 df_flu
 ```
 
-## Using the `tbl_now`
+## Working with the `tbl_now` Object
 
-Once created the `tbl_now` you can use the classic `dplyr` verbs to do operations. For example by renaming columns and filtering out just one state: 
+`tbl_now` objects are fully compatible with `dplyr` verbs. For example, we may focus on Puerto Rico and observations after mid–2024:
 
 ```{r}
 df_pr <- df_flu %>% 
@@ -119,21 +151,24 @@ df_pr <- df_flu %>%
 df_pr
 ```
 
-Given that in this dataset we only have `pr` it makes no sense to keep `location_name` as strata. We can use the `remove_strata` function to remove it without removing the column (though removing the column would also work):
+Because we are now working with a single geographic unit, the `location_name` variable is no longer meaningful as a stratum. We remove it from the strata definition (without removing the column itself):
 
 ```{r}
 df_pr <- df_pr %>% 
   remove_strata("location_name")
+
 df_pr
 ```
 
-The current `now` for the nowcast is:
+The `now` (the effective horizon for the nowcast) is:
 
 ```{r}
 get_now(df_pr)
 ```
 
-However, if we were interested, say, in historical nowcasting (i.e. backtesting) we can filter the dates and update the now: 
+### Changing the “now” for Historical Backtesting
+
+To perform retrospective analyses (backtesting), we can filter the dataset and explicitly set a historical reporting cutoff:
 
 ```{r}
 df_pr_new_now <- df_pr %>% 
@@ -143,31 +178,40 @@ df_pr_new_now <- df_pr %>%
 df_pr_new_now
 ```
 
-Which yields the new value:
+The new now is:
 
 ```{r}
 get_now(df_pr_new_now)
 ```
 
-## Reports
+## Working with Initial and Latest Reports
 
-The  `get_initial_reported_cases()` and `get_latest_reported_cases()` obtain the cases with the earliest report date for each event or witht he latest report date for the event. This allow to compare the data as it came initially and the latest report. 
+Two helper functions extract initial and final reported values for each event date:
+
++ `get_initial_reported_cases()`: the earliest available report for each event
+
++ `get_latest_reported_cases()`: the most recent report relative to now
+
+A simple plot highlights the differences between initial and final estimates:
 
 ```{r}
 initial_reports <- get_initial_reported_cases(df_pr)
 latest_reports  <- get_latest_reported_cases(df_pr)
 ```
 
-Graphically this is what they look like:
+A simple plot highlights the differences between initial and final estimates:
 
 ```{r, fig.width=5, fig.height=3}
 plot(initial_reports$target_end_date, initial_reports$observation, 
-     type = "p", col = "blue", xlab = "Date of event", ylab = "Cases",
+     type = "p", col = "deepskyblue4",
+     xlab = "Date of event", ylab = "Cases",
      main = "Cases in Puerto Rico")
 
-lines(latest_reports$target_end_date, latest_reports$observation, col = "red")
+lines(latest_reports$target_end_date, latest_reports$observation,
+      col = "tomato4")
 
-legend("right", y = "top", legend = c("Initial report","Final report"), 
-       fill = c("blue","red"))
+legend("right", legend = c("Initial report", "Final report"),
+       fill = c("deepskyblue4", "tomato4"))
+
 ```
 
