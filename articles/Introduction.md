@@ -29,16 +29,17 @@ time-indexes are on the same table, the previous methods are lacking.
 This is where `tbl.now` comes in.
 
 The tibble now (`tbl.now`) is an extension fo the
-[`tibble`](https://tibble.tidyverse.org/reference/tibble.html) that tags
-specific variables as indexes for nowcasting models in the context of
-[`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/).
+[tibble()](https://tibble.tidyverse.org/) that tags specific variables
+as indexes for nowcasting models in the context of
+[diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/).
 The main purpose of the `tbl.now` is to unify the data inputted to
-[`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/)’s
+[diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/)’s
 models while allowing the user to keep a `tidy` structure on the data
-and perform the usual \[`dplyr`\] data cleaning operations. This allows
-the user to move easierly into one of the classical modeling workflow
-frameworks such as ([Gelman et al. 2020](#ref-gelman2020bayesian);
-[Wickham, Çetinkaya-Rundel, and Grolemund 2023](#ref-wickham2023r)):
+and perform the usual [dplyr](https://dplyr.tidyverse.org/) data
+cleaning operations. This allows the user to move easierly into one of
+the classical modeling workflow frameworks such as ([Gelman et al.
+2020](#ref-gelman2020bayesian); [Wickham, Çetinkaya-Rundel, and
+Grolemund 2023](#ref-wickham2023r)):
 
     Data Cleaning -> Modeling -> New Data Cleaning -> New Modeling -> ...
 
@@ -59,8 +60,9 @@ The nowcasting problem is:
 > reported yet (i.e. some `report_date`(s) are potentially in the
 > future).
 
-In the context of nowcasting, the `tbl_now` can be thought of as a
-specific
+In the context of nowcasting, the
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+can be thought of as a specific
 [`tibble()`](https://tibble.tidyverse.org/reference/tibble.html) that
 guarantees an `event_date` and a `report_date.` by tagging them as
 **attributes** and allows for additional operations such as delay
@@ -68,8 +70,10 @@ calculation.
 
 ### Example
 
-The `tbl_now` works from a `data.frame` by specifying the `event_date`
-and `report_date` columns:
+The
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+works from a `data.frame` by specifying the `event_date` and
+`report_date` columns:
 
 ``` r
 df <- data.frame(
@@ -91,7 +95,8 @@ In the previous `data.frame`, column **symptom_onset** represents the
 corresponds to the number of cases which can be specified in the
 `case_count` variable.
 
-The previous options can be specified in the `tbl_now`:
+The previous options can be specified in the
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html):
 
 ``` r
 df %>% 
@@ -113,7 +118,7 @@ df %>%
 ```
 
 Notice that the
-[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
 function does several things at once:
 
 - It auto-detects the **data-type** as `count-incidence`. Other data
@@ -139,9 +144,11 @@ The following sections explain each of these perks of the `tbl.now`
 framework as well as additional functions that can be applied to a
 `tbl.now`.
 
-## Attributes of a `tbl_now`
+## Attributes of a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
 
-A `tbl_now` contains saves several of its column names as
+A
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+contains saves several of its column names as
 [`attributes()`](https://rdrr.io/r/base/attributes.html). They are the
 following:
 
@@ -199,7 +206,7 @@ following:
 
 - **Temporal effects** (`temporal_effects`): \[*optional*\] Refer to the
   temporal effects in the data created by the
-  [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
+  [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html)
   function. See the [temporal effects](#temporal-effects) section for
   more details.
 
@@ -211,19 +218,21 @@ and
 
 ### Data types
 
-The following data-types are admitted at `tbl_now` objects:
+The following data-types are admitted at
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+objects:
 
 - **Linelist**: Each row is an observation that was reported at
   `report_date` as happening at `event_date`.
 
-| patient | event_date | report_date |
-|--------:|:-----------|:------------|
-|       1 | 2020-09-12 | 2020-09-12  |
-|       2 | 2020-09-12 | 2020-09-13  |
-|       3 | 2020-09-12 | 2020-09-14  |
-|       4 | 2020-09-13 | 2020-09-13  |
-|       5 | 2020-09-13 | 2020-09-14  |
-|       6 | 2020-09-13 | 2020-09-15  |
+| patient | event_date | report_date | .event_num | .report_num | .delay |
+|--------:|:-----------|:------------|-----------:|------------:|-------:|
+|       1 | 2020-09-12 | 2020-09-12  |          0 |           0 |      0 |
+|       2 | 2020-09-12 | 2020-09-12  |          0 |           0 |      0 |
+|       3 | 2020-09-12 | 2020-09-13  |          0 |           1 |      1 |
+|       4 | 2020-09-13 | 2020-09-13  |          1 |           1 |      0 |
+|       5 | 2020-09-13 | 2020-09-13  |          1 |           1 |      0 |
+|       6 | 2020-09-13 | 2020-09-13  |          1 |           1 |      0 |
 
 Linelist data
 
@@ -231,14 +240,14 @@ Linelist data
   contains the total number of cases observed *exactly* at `report_date`
   for `event_date`.
 
-|   n | event_date | report_date |
-|----:|:-----------|:------------|
-|   7 | 2020-09-12 | 2020-09-12  |
-|   1 | 2020-09-12 | 2020-09-13  |
-|   9 | 2020-09-12 | 2020-09-14  |
-|   5 | 2020-09-13 | 2020-09-13  |
-|   0 | 2020-09-13 | 2020-09-14  |
-|   2 | 2020-09-13 | 2020-09-15  |
+|   n | event_date | report_date | .event_num | .report_num | .delay |
+|----:|:-----------|:------------|-----------:|------------:|-------:|
+|   7 | 2020-09-12 | 2020-09-12  |          0 |           0 |      0 |
+|   1 | 2020-09-12 | 2020-09-13  |          0 |           1 |      1 |
+|   9 | 2020-09-12 | 2020-09-14  |          0 |           2 |      2 |
+|   5 | 2020-09-13 | 2020-09-13  |          1 |           1 |      0 |
+|   0 | 2020-09-13 | 2020-09-14  |          1 |           2 |      1 |
+|   2 | 2020-09-13 | 2020-09-15  |          1 |           3 |      2 |
 
 Count-incidence data
 
@@ -247,34 +256,325 @@ Count-incidence data
   `event_date`. The most recent `report_date` contains the best
   estimation of cases happening at `event_date`.
 
-|   n | event_date | report_date |
-|----:|:-----------|:------------|
-|   1 | 2020-09-12 | 2020-09-12  |
-|   5 | 2020-09-12 | 2020-09-13  |
-|   8 | 2020-09-12 | 2020-09-14  |
-|   2 | 2020-09-13 | 2020-09-13  |
-|   2 | 2020-09-13 | 2020-09-14  |
-|   4 | 2020-09-13 | 2020-09-15  |
+|   n | event_date | report_date | .event_num | .report_num | .delay |
+|----:|:-----------|:------------|-----------:|------------:|-------:|
+|   1 | 2020-09-12 | 2020-09-12  |          0 |           0 |      0 |
+|   5 | 2020-09-12 | 2020-09-13  |          0 |           1 |      1 |
+|   8 | 2020-09-12 | 2020-09-14  |          0 |           2 |      2 |
+|   2 | 2020-09-13 | 2020-09-13  |          1 |           1 |      0 |
+|   2 | 2020-09-13 | 2020-09-14  |          1 |           2 |      1 |
+|   4 | 2020-09-13 | 2020-09-15  |          1 |           3 |      2 |
 
 Count-cumulative data
 
-The `to_count` function allows you to easily convert between different
-data-types.
+The
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
+function allows you to easily convert between different data-types.
+
+### Transforming a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) to count data
+
+A
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+can do the following transformations via the
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
+function between data types:
+
+- **linelist to count-incidence**: Aggregates each observation in the
+  linelist by report and event date. The `n` column contains how many
+  individuals were specifically observed at that `report_date` for the
+  `event_date` in question.
+
+``` r
+df_linelist %>% 
+  to_count(to = "count-incidence")
+#> # A tibble:  3 × 6
+#> # Data type: "count-incidence"
+#> # Frequency: Event: `days` | Report: `days`
+#>   event_date   report_date   .event_num .report_num       n .delay
+#>   <date>       <date>             <dbl>       <dbl>   <int>  <dbl>
+#>   [event_date] [report_date]      [...]       [...] [cases]  [...]
+#> 1 2020-09-12   2020-09-12             0           0       2      0
+#> 2 2020-09-12   2020-09-13             0           1       1      1
+#> 3 2020-09-13   2020-09-13             1           1       3      0
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-09-13 | Event date: "event_date" | Report date: "report_date"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
+- **linelist to count-cumulative**: Aggregates each observation in the
+  linelist by report and event date. The `n` column contains how many
+  individuals had been observed up untill that `report_date` (including
+  the previous dates) for the `event_date` in question.
+
+``` r
+df_linelist %>% 
+  to_count(to = "count-cumulative")
+#> # A tibble:  3 × 6
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `days` | Report: `days`
+#>   event_date   report_date   .event_num .report_num       n .delay
+#>   <date>       <date>             <dbl>       <dbl>   <int>  <dbl>
+#>   [event_date] [report_date]      [...]       [...] [cases]  [...]
+#> 1 2020-09-12   2020-09-12             0           0       2      0
+#> 2 2020-09-12   2020-09-13             0           1       3      1
+#> 3 2020-09-13   2020-09-13             1           1       3      0
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-09-13 | Event date: "event_date" | Report date: "report_date"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
+> **Note** In the previous example the `n` counts `3` as it is
+> aggregating the `1` observed at `report_date = 2020-09-13` and the `2`
+> observed at `report_date = 2020-09-12`. This is the difference between
+> the **count-incidence** that specifies the ones observed **exactly**
+> on that date and the **count-cumulative** that specifies the ones
+> observed up **until and including** that date.
+
+- **count-incidence to count-cumulative**: Aggregates each observation
+  accumulating how many cases for that `event_date` had been observed up
+  until that `report_date`:
+
+``` r
+df_count_inc %>% 
+  to_count(to = "count-cumulative")
+#> # A tibble:  6 × 6
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `days` | Report: `days`
+#>   event_date   report_date   .event_num .report_num       n .delay
+#>   <date>       <date>             <dbl>       <dbl>   <dbl>  <dbl>
+#>   [event_date] [report_date]      [...]       [...] [cases]  [...]
+#> 1 2020-09-12   2020-09-12             0           0       7      0
+#> 2 2020-09-12   2020-09-13             0           1       8      1
+#> 3 2020-09-12   2020-09-14             0           2      17      2
+#> 4 2020-09-13   2020-09-13             1           1       5      0
+#> 5 2020-09-13   2020-09-14             1           2       5      1
+#> 6 2020-09-13   2020-09-15             1           3       7      2
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-09-15 | Event date: "event_date" | Report date: "report_date"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
+- **Aggregate repeated count-\* events**: The `to_count` function can
+  also be used to aggregate data from one form to the same form. As an
+  example of such a case consider the following
+  [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html):
+
+``` r
+df_example <- data.frame(
+  n           = c(8, 11, 0, 1, 1, 5, 2, 4, 1, 10, 9, 11, 3, 1),
+  sex         = c(rep("M", 3), rep("F", 4), rep("M", 2), rep("F", 5)),
+  event_date  = c(rep(ymd("2020/09/12"), 3),
+                  rep(ymd("2020/09/12"), 4),
+                  rep(ymd("2020/09/13"), 2),
+                  rep(ymd("2020/09/13"), 5)),
+  report_date = c(ymd("2020/09/12"), ymd("2020/09/13"), ymd("2020/09/14"),
+                  ymd("2020/09/12"), ymd("2020/09/13"), ymd("2020/09/14"),
+                  ymd("2020/09/15"), ymd("2020/09/13"), ymd("2020/09/14"),
+                  ymd("2020/09/13"), ymd("2020/09/14"),
+                  ymd("2020/09/15"), ymd("2020/09/16"), ymd("2020/09/17"))) 
+
+tbl_example <- df_example %>% 
+  tbl_now(event_date = event_date, report_date = report_date, 
+          case_count = n, strata = sex, verbose = FALSE)
+
+tbl_example
+#> # A tibble:  14 × 7
+#> # Data type: "count-incidence"
+#> # Frequency: Event: `days` | Report: `days`
+#>          n sex      event_date   report_date   .event_num .report_num .delay
+#>      <dbl> <chr>    <date>       <date>             <dbl>       <dbl>  <dbl>
+#>    [cases] [strata] [event_date] [report_date]      [...]       [...]  [...]
+#>  1       8 M        2020-09-12   2020-09-12             0           0      0
+#>  2      11 M        2020-09-12   2020-09-13             0           1      1
+#>  3       0 M        2020-09-12   2020-09-14             0           2      2
+#>  4       1 F        2020-09-12   2020-09-12             0           0      0
+#>  5       1 F        2020-09-12   2020-09-13             0           1      1
+#>  6       5 F        2020-09-12   2020-09-14             0           2      2
+#>  7       2 F        2020-09-12   2020-09-15             0           3      3
+#>  8       4 M        2020-09-13   2020-09-13             1           1      0
+#>  9       1 M        2020-09-13   2020-09-14             1           2      1
+#> 10      10 F        2020-09-13   2020-09-13             1           1      0
+#> 11       9 F        2020-09-13   2020-09-14             1           2      1
+#> 12      11 F        2020-09-13   2020-09-15             1           3      2
+#> 13       3 F        2020-09-13   2020-09-16             1           4      3
+#> 14       1 F        2020-09-13   2020-09-17             1           5      4
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-09-17 | Event date: "event_date" | Report date: "report_date"
+#> # Strata: "sex"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
+Notice that the data is already in `count-incidence` format with `sex`
+being a strata. If we wanted the **overall** number of cases (not by
+strata) we can remove the strata and then use the `to_count` function to
+aggregate all the races while keeping the `count-incidence` structure:
+
+1.  Remove the strata
+
+``` r
+tbl_example <- tbl_example %>% 
+  remove_all_strata()
+
+#This removes the strata but doesn't aggregate everything
+tbl_example
+#> # A tibble:  14 × 7
+#> # Data type: "count-incidence"
+#> # Frequency: Event: `days` | Report: `days`
+#>          n sex   event_date   report_date   .event_num .report_num .delay
+#>      <dbl> <chr> <date>       <date>             <dbl>       <dbl>  <dbl>
+#>    [cases] [...] [event_date] [report_date]      [...]       [...]  [...]
+#>  1       8 M     2020-09-12   2020-09-12             0           0      0
+#>  2      11 M     2020-09-12   2020-09-13             0           1      1
+#>  3       0 M     2020-09-12   2020-09-14             0           2      2
+#>  4       1 F     2020-09-12   2020-09-12             0           0      0
+#>  5       1 F     2020-09-12   2020-09-13             0           1      1
+#>  6       5 F     2020-09-12   2020-09-14             0           2      2
+#>  7       2 F     2020-09-12   2020-09-15             0           3      3
+#>  8       4 M     2020-09-13   2020-09-13             1           1      0
+#>  9       1 M     2020-09-13   2020-09-14             1           2      1
+#> 10      10 F     2020-09-13   2020-09-13             1           1      0
+#> 11       9 F     2020-09-13   2020-09-14             1           2      1
+#> 12      11 F     2020-09-13   2020-09-15             1           3      2
+#> 13       3 F     2020-09-13   2020-09-16             1           4      3
+#> 14       1 F     2020-09-13   2020-09-17             1           5      4
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-09-17 | Event date: "event_date" | Report date: "report_date"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
+2.  And then aggregate to a `count-incidence`:
+
+``` r
+tbl_example <- tbl_example %>% 
+  to_count(to = "count-incidence")
+
+#It summed all the `n` columns with one entry per observation 
+tbl_example
+#> # A tibble:  9 × 6
+#> # Data type: "count-incidence"
+#> # Frequency: Event: `days` | Report: `days`
+#>   event_date   report_date   .event_num .report_num       n .delay
+#>   <date>       <date>             <dbl>       <dbl>   <dbl>  <dbl>
+#>   [event_date] [report_date]      [...]       [...] [cases]  [...]
+#> 1 2020-09-12   2020-09-12             0           0       9      0
+#> 2 2020-09-12   2020-09-13             0           1      12      1
+#> 3 2020-09-12   2020-09-14             0           2       5      2
+#> 4 2020-09-12   2020-09-15             0           3       2      3
+#> 5 2020-09-13   2020-09-13             1           1      14      0
+#> 6 2020-09-13   2020-09-14             1           2      10      1
+#> 7 2020-09-13   2020-09-15             1           3      11      2
+#> 8 2020-09-13   2020-09-16             1           4       3      3
+#> 9 2020-09-13   2020-09-17             1           5       1      4
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-09-17 | Event date: "event_date" | Report date: "report_date"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
 
 ### Temporal effects
 
-### Modifying the attributes of a `tbl_now`
+Temporal effects can be added as a special type of covariate to the
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+using the
+[temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html)
+function.
 
-A `tbl_now`’s attributes can be modified with the
-[`add_*`](https://rodrigozepeda.github.io/tbl.now/reference/add.html),
-[`change_*`](https://rodrigozepeda.github.io/tbl.now/reference/change.html)
+For example, we can specify to include covariates for the day of the
+week, the week of the year, and whether it is holiday in the US:
+
+``` r
+library(almanac)
+
+t_eff <- temporal_effects(
+  day_of_week  = TRUE,
+  week_of_year = TRUE, 
+  holidays     = cal_us_federal())
+t_eff
+#> 
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "day_of_week"
+#> • "week_of_year"
+#> • "holidays":
+#>   1. New Year's Day, US Martin Luther King Jr. Day, US Presidents' Day, US
+#>   Memorial Day, US Juneteenth, US Independence Day, US Labor Day, US Indigenous
+#>   Peoples' Day, US Veterans Day, US Thanksgiving, and Christmas
+```
+
+Note that the holidays calendar is an
+[rcalendar](https://davisvaughan.github.io/almanac/reference/rcalendar.html)
+object from the
+[almanac](https://davisvaughan.github.io/almanac/articles/almanac.html)
+package.
+
+Temporal effects can be added to the
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+object with the
+[add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html)
+function:
+
+``` r
+data("denguedat")
+
+#Create a tbl_now
+df_now <- denguedat %>% 
+  tbl_now(event_date = onset_week, report_date = report_week,
+          verbose = FALSE, strata = gender)
+
+#Add temporal effects (see them as . columns)
+df_now %>% 
+  add_temporal_effects(t_eff) 
+#> # A tibble:  52,987 × 9
+#> # Data type: "linelist"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>    onset_week   report_week   gender   .event_num .report_num .delay
+#>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl>
+#>    [event_date] [report_date] [strata]      [...]       [...]  [...]
+#>  1 1990-01-01   1990-01-01    Male              0           0      0
+#>  2 1990-01-01   1990-01-01    Female            0           0      0
+#>  3 1990-01-01   1990-01-01    Female            0           0      0
+#>  4 1990-01-01   1990-01-08    Female            0           1      1
+#>  5 1990-01-01   1990-01-08    Male              0           1      1
+#>  6 1990-01-01   1990-01-15    Female            0           2      2
+#>  7 1990-01-01   1990-01-15    Female            0           2      2
+#>  8 1990-01-01   1990-01-15    Female            0           2      2
+#>  9 1990-01-01   1990-01-22    Female            0           3      3
+#> 10 1990-01-01   1990-01-08    Female            0           1      1
+#>    .event_day_of_week .event_week_of_year .event_holiday
+#>                 <int>               <int>          <int>
+#>            [t_effect]          [t_effect]     [t_effect]
+#>  1                  2                   1              1
+#>  2                  2                   1              1
+#>  3                  2                   1              1
+#>  4                  2                   1              1
+#>  5                  2                   1              1
+#>  6                  2                   1              1
+#>  7                  2                   1              1
+#>  8                  2                   1              1
+#>  9                  2                   1              1
+#> 10                  2                   1              1
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
+#> # Strata: "gender"
+#> # T. effects: ".event_day_of_week", ".event_week_of_year", and ".event_holiday"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 52,977 more rows
+```
+
+### Modifying the attributes of a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+
+A
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)’s
+attributes can be modified with the
+[add\_\*](https://rodrigozepeda.github.io/tbl.now/reference/add.html),
+[change\_\*](https://rodrigozepeda.github.io/tbl.now/reference/change.html)
 or
-[`remove_*`](https://rodrigozepeda.github.io/tbl.now/reference/remove.html)
+[remove\_\*](https://rodrigozepeda.github.io/tbl.now/reference/remove.html)
 functions. They follow sort of the same pattern.
 
-Here is an example of creating a `tbl_now` and adding strata and
-temporal effects, changing the strata later and removing the temporal
-effects.
+Here is an example of creating a
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+and adding strata and temporal effects, changing the strata later and
+removing the temporal effects.
 
 ``` r
 data("mpoxdat")
@@ -340,7 +640,8 @@ df_now
 #> # ℹ 1 more variable: RACE_UPPER <chr>
 ```
 
-Temporal effects can be added using `add_temporal_effects`:
+Temporal effects can be added using
+[add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html):
 
 ``` r
 df_now <- df_now %>% 
@@ -404,13 +705,14 @@ df_now
 #> # ℹ 1 more variable: RACE_UPPER <chr>
 ```
 
-### Transforming a `tbl_now` to count data
+### Modifying a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) with `dplyr`
 
-### Modifying a `tbl_now` with `dplyr`
-
-All `tbl_now` objects are extensions of the
-[`tibble()`](https://tibble.tidyverse.org/reference/tibble.html). Hence
-the classical `dplyr` verbs can be used to operate on the `tbl_now`
+All
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+objects are extensions of the [tibble()](https://tibble.tidyverse.org/).
+Hence the classical [dplyr](https://dplyr.tidyverse.org/) verbs can be
+used to operate on the
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
 while it tries to automatically accomodate for the changes. As an
 example, renaming a strata also changes the strata attribute:
 
@@ -439,9 +741,11 @@ get_strata(df_now)
 #> [1] "male_or_female"
 ```
 
-If an object cannot keep its `tbl_now` structure it will collapse into a
-`tibble` which is what happens in this example where summarise collapses
-all dates:
+If an object cannot keep its
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+structure it will collapse into a
+[tibble()](https://tibble.tidyverse.org/) which is what happens in this
+example where summarise collapses all dates:
 
 ``` r
 df_now %>% 
@@ -453,13 +757,17 @@ df_now %>%
 #> 1     0.498
 ```
 
-### Updating a `tbl_now`
+### Updating a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
 
-A `tbl_now` can be updated with the `update` function from another
-`data.frame`, `tibble` or `tbl_now`. As long as they have the same
-columns it will by default copy the strata, covariate and temporal
-effects from the first `tbl_now` and apply it to the update. It also
-updates the `now` estimation.
+A
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+can be updated with the `update` function from another `data.frame`,
+[tibble()](https://tibble.tidyverse.org/) or
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html).
+As long as they have the same columns it will by default copy the
+strata, covariate and temporal effects from the first
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+and apply it to the update. It also updates the `now` estimation.
 
 Consider the following `data.frame`
 
@@ -488,7 +796,11 @@ df_new <- data.frame(
                     ymd("2020/09/15"), ymd("2020/09/16"), ymd("2020/09/17")))
 ```
 
-The full `tbl_now` can be updated with the `update` function:
+The full
+[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
+can be updated with the
+[update()](https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.html)
+function:
 
 ``` r
 df_updated <- update(df_now, new_data = df_new)
@@ -522,11 +834,148 @@ df_updated
 #> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
-## Other functions
+## Other functions (utilities)
+
+### Convert epiweeks to dates
+
+The
+[week_2_date()](https://rodrigozepeda.github.io/tbl.now/reference/week_2_date.html)
+function allows you to convert from a `data.frame` with epidemiological
+weeks and years to specific dates:
+
+``` r
+df <- data.frame(
+  epidemiological_week = 1:5,
+  epidemiological_year = rep(2024, 5)
+)
+
+df %>%
+  week_2_date(
+    week_col = epidemiological_week,
+    year_col = epidemiological_year
+  )
+#>   epidemiological_week epidemiological_year       date
+#> 1                    1                 2024 2023-12-31
+#> 2                    2                 2024 2024-01-07
+#> 3                    3                 2024 2024-01-14
+#> 4                    4                 2024 2024-01-21
+#> 5                    5                 2024 2024-01-28
+```
 
 ### Reports
 
+The
+[get\_\*\_reported_cases()](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.html)
+functions get either the initial or the latest number of reported cases.
+This functions are useful to compare the initial number of cases
+believed to have happened against the latest number of cases. Consider
+the following example where initially 10 cases were suspected to have
+happened but in the latest reported number up to 15 (=10 + 1 + 1 + 3)
+cases happened for the same date:
+
+``` r
+df_reports <- data.frame(
+  n           = c(10, 1, 1, 0, 0, 3),
+  event_date  = rep(ymd("2020/09/12"), 6),
+  report_date = c(ymd("2020/09/12"),
+                  ymd("2020/09/13"),
+                  ymd("2020/09/14"),
+                  ymd("2020/09/15"),
+                  ymd("2020/09/16"),
+                  ymd("2020/09/17"))) 
+
+tbl_reports <- df_reports %>% 
+  tbl_now(event_date = event_date, report_date = report_date, 
+          verbose = FALSE, case_count = n, report_units = "days", 
+          event_units = "days")
+
+tbl_reports
+#> # A tibble:  6 × 6
+#> # Data type: "count-incidence"
+#> # Frequency: Event: `days` | Report: `days`
+#>         n event_date   report_date   .event_num .report_num .delay
+#>     <dbl> <date>       <date>             <dbl>       <dbl>  <dbl>
+#>   [cases] [event_date] [report_date]      [...]       [...]  [...]
+#> 1      10 2020-09-12   2020-09-12             0           0      0
+#> 2       1 2020-09-12   2020-09-13             0           1      1
+#> 3       1 2020-09-12   2020-09-14             0           2      2
+#> 4       0 2020-09-12   2020-09-15             0           3      3
+#> 5       0 2020-09-12   2020-09-16             0           4      4
+#> 6       3 2020-09-12   2020-09-17             0           5      5
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-09-17 | Event date: "event_date" | Report date: "report_date"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
+Initially in the first report this was the number of cases
+
+``` r
+get_initial_reported_cases(tbl_reports)
+#> # A tibble:  1 × 6
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `days` | Report: `days`
+#>   event_date   report_date   .event_num .report_num       n .delay
+#>   <date>       <date>             <dbl>       <dbl>   <dbl>  <dbl>
+#>   [event_date] [report_date]      [...]       [...] [cases]  [...]
+#> 1 2020-09-12   2020-09-12             0           0      10      0
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-09-17 | Event date: "event_date" | Report date: "report_date"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
+But in the end 15 cases were observed:
+
+``` r
+get_latest_reported_cases(tbl_reports)
+#> # A tibble:  1 × 6
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `days` | Report: `days`
+#>   event_date   report_date   .event_num .report_num       n .delay
+#>   <date>       <date>             <dbl>       <dbl>   <dbl>  <dbl>
+#>   [event_date] [report_date]      [...]       [...] [cases]  [...]
+#> 1 2020-09-12   2020-09-17             0           5      15      5
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-09-17 | Event date: "event_date" | Report date: "report_date"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
 ### Week alignment
+
+The
+[align_week()](https://rodrigozepeda.github.io/tbl.now/reference/align_week.html)
+function allows you to take dates from different days of the same
+epidemiological week and set them all to the same date. This is useful
+for computing time differences between weekly reports (to avoid decimal
+times).
+
+``` r
+df <- data.frame(
+  date = c(ymd("2022-10-31"), ymd("2022-11-07"), ymd("2022-11-13")),
+  epiweek = c(44, 45, 46)
+)
+
+# Align to Sundays
+df_aligned <- align_week(df, date_col = date)
+df_aligned
+#>         date epiweek date_aligned
+#> 1 2022-10-31      44   2022-10-30
+#> 2 2022-11-07      45   2022-11-06
+#> 3 2022-11-13      46   2022-11-13
+```
+
+we can check they are actually Sundays with the
+[wday()](https://lubridate.tidyverse.org/reference/day.html) function
+from the [lubridate](https://lubridate.tidyverse.org/index.html)
+package:
+
+``` r
+df_aligned %>% 
+  mutate(day_label = wday(date_aligned, label = TRUE, abbr = FALSE))
+#>         date epiweek date_aligned day_label
+#> 1 2022-10-31      44   2022-10-30    Sunday
+#> 2 2022-11-07      45   2022-11-06    Sunday
+#> 3 2022-11-13      46   2022-11-13    Sunday
+```
 
 ## References
 

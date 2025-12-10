@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -105,10 +105,10 @@
 <p>To convert to a <code>tbl_now</code> you can use the <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a> function:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>, event_date <span class="op">=</span> <span class="st">"event_date"</span>, report_date <span class="op">=</span> <span class="st">"report_date"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ℹ Identified data as count-incidence with counts in column "n".</span></span>
+<span><span class="co">#&gt; ℹ Identified data as &lt;linelist-data&gt; where each observation is a test.</span></span>
 <span><span class="va">df_now</span></span>
 <span><span class="co">#&gt; # A tibble:  4 × 6</span></span>
-<span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
+<span><span class="co">#&gt; # Data type: "linelist"</span></span>
 <span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
 <span><span class="co">#&gt;   event_date   report_date       n .event_num .report_num .delay</span></span>
 <span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;        &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt;</span></span>
@@ -126,7 +126,7 @@
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">n</span> <span class="op">&gt;</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble:  2 × 6</span></span>
-<span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
+<span><span class="co">#&gt; # Data type: "linelist"</span></span>
 <span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
 <span><span class="co">#&gt;   event_date   report_date       n .event_num .report_num .delay</span></span>
 <span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;        &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt;</span></span>
@@ -144,7 +144,7 @@
 <span></span>
 <span><span class="va">df_now</span></span>
 <span><span class="co">#&gt; # A tibble:  4 × 7</span></span>
-<span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
+<span><span class="co">#&gt; # Data type: "linelist"</span></span>
 <span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
 <span><span class="co">#&gt;   event_date   report_date       n .event_num .report_num .delay sex  </span></span>
 <span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;        &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;</span></span>
@@ -161,7 +161,7 @@
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="reference/add.html">add_strata</a></span><span class="op">(</span><span class="st">"sex"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble:  4 × 7</span></span>
-<span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
+<span><span class="co">#&gt; # Data type: "linelist"</span></span>
 <span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
 <span><span class="co">#&gt;   event_date   report_date       n .event_num .report_num .delay sex     </span></span>
 <span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;        &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;   </span></span>
@@ -179,7 +179,7 @@
 <h2 id="temporal-effects">Temporal effects<a class="anchor" aria-label="anchor" href="#temporal-effects"></a>
 </h2>
 <p>Temporal effects can be added as covariates of the <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a> using the <a href="https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html">temporal_effects()</a>.</p>
-<p>For example we can specify it includes the day of the week, the week of the year, and whether it is holiday in the US:</p>
+<p>For example, we can specify to include covariates for the day of the week, the week of the year, and whether it is holiday in the US:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">t_eff</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span></span>
 <span>  day_of_week  <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -200,7 +200,7 @@
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="va">t_eff</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble:  4 × 10</span></span>
-<span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
+<span><span class="co">#&gt; # Data type: "linelist"</span></span>
 <span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
 <span><span class="co">#&gt;   event_date   report_date       n .event_num .report_num .delay sex  </span></span>
 <span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;        &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;</span></span>
@@ -226,7 +226,7 @@
 <h2 id="learn-more-about-tblnow">Learn more about tbl.now<a class="anchor" aria-label="anchor" href="#learn-more-about-tblnow"></a>
 </h2>
 <ul>
-<li>Read the whitepaper on <a href="https://rodrigozepeda.github.io/tbl.now/articles/Introduction.html">tbl.now</a>
+<li>Read the introduction to <a href="https://rodrigozepeda.github.io/tbl.now/articles/Introduction.html">tbl.now</a>
 </li>
 <li>Read an <a href="https://rodrigozepeda.github.io/tbl.now/articles/Example.html">example</a> with real data.</li>
 </ul>

@@ -71,10 +71,10 @@ function:
 
 ``` r
 df_now <- tbl_now(df, event_date = "event_date", report_date = "report_date")
-#> ℹ Identified data as count-incidence with counts in column "n".
+#> ℹ Identified data as <linelist-data> where each observation is a test.
 df_now
 #> # A tibble:  4 × 6
-#> # Data type: "count-incidence"
+#> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date       n .event_num .report_num .delay
 #>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl>
@@ -107,7 +107,7 @@ operations:
 df_now %>% 
   filter(n > 5)
 #> # A tibble:  2 × 6
-#> # Data type: "count-incidence"
+#> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date       n .event_num .report_num .delay
 #>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl>
@@ -130,7 +130,7 @@ df_now <- df_now %>%
 
 df_now
 #> # A tibble:  4 × 7
-#> # Data type: "count-incidence"
+#> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date       n .event_num .report_num .delay sex  
 #>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl> <chr>
@@ -150,7 +150,7 @@ To specify strata you can use the `add_strata`:
 df_now %>% 
   add_strata("sex")
 #> # A tibble:  4 × 7
-#> # Data type: "count-incidence"
+#> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date       n .event_num .report_num .delay sex     
 #>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl> <chr>   
@@ -172,8 +172,8 @@ Temporal effects can be added as covariates of the
 using the
 [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html).
 
-For example we can specify it includes the day of the week, the week of
-the year, and whether it is holiday in the US:
+For example, we can specify to include covariates for the day of the
+week, the week of the year, and whether it is holiday in the US:
 
 ``` r
 t_eff <- temporal_effects(
@@ -202,7 +202,7 @@ function:
 df_now %>% 
   add_temporal_effects(t_eff)
 #> # A tibble:  4 × 10
-#> # Data type: "count-incidence"
+#> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date       n .event_num .report_num .delay sex  
 #>   <date>       <date>        <dbl>      <dbl>       <dbl>  <dbl> <chr>
@@ -232,7 +232,7 @@ covariates in the models.
 
 ## Learn more about tbl.now
 
-- Read the whitepaper on
+- Read the introduction to
   [tbl.now](https://rodrigozepeda.github.io/tbl.now/articles/Introduction.html)
 - Read an
   [example](https://rodrigozepeda.github.io/tbl.now/articles/Example.html)
