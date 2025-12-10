@@ -8,61 +8,6 @@ incidence, and cumulative), ensuring that downstream models within the
 [`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/)
 ecosystem can rely on a consistent interface.
 
-## Key features
-
-`tbl.now` implements:
-
-### 1. A validated tibble subclass
-
-Each `tbl_now` object guarantees:
-
-- An event date column.
-- A report date column.
-- Internally computed:
-  - numeric event index (.event_num)
-  - numeric report index (.report_num)
-  - delay (.delay).
-- Optional strata (e.g., state, age group).
-- Optional covariates (e.g., state, age group).
-- Optional batch (right-censored report) indicator.
-- Optional temporal covariates (day of week, week of year, holidays).
-
-### 2. Automatic data-type detection
-
-[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
-infers whether the input represents:
-
-- **Linelist data**: one row per individual event
-- **Count–incidence data**: counts newly reported at each (event,
-  report) pair
-- **Count–cumulative data**: cumulative totals revised over time
-
-This allows a wide range of surveillance systems to be ingested with
-minimal preprocessing.
-
-### 3. Built-in handling of the “now”
-
-Each object records the nowcast horizon (now), defined as the latest
-reporting date unless overridden. This enables backtesting, historical
-reconstruction, and model evaluation under realistic information
-constraints.
-
-### 4. Native compatibility with tidyverse workflows
-
-`tbl_now` objects behave as regular tibbles. Standard operations
-(`filter`, `mutate`, `summarise`, `join`, etc.) preserve metadata
-whenever possible.
-
-### 5. Temporal covariates in one step
-
-Use
-[`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
-and
-[`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
-to generate event-date covariates such as: day of week, week of year,
-and user-specified holiday calendars (via almanac). This standardizes
-temporal structures used by nowcasting models.
-
 ## Installation
 
 Install the development version from [GitHub](https://github.com/):

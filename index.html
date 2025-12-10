@@ -57,60 +57,34 @@
 <!-- badges: start -->
 
 <p><code>tbl.now</code> provides a lightweight but rigorous extension of the tibble class for storing, validating, and manipulating epidemiological nowcasting data. It standardizes the representation of event dates, report dates, strata, temporal covariates, and data types (linelist, incidence, and cumulative), ensuring that downstream models within the <a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link"><code>diseasenowcasting</code></a> ecosystem can rely on a consistent interface.</p>
-<div class="section level2">
-<h2 id="key-features">Key features<a class="anchor" aria-label="anchor" href="#key-features"></a>
-</h2>
-<p><code>tbl.now</code> implements:</p>
-<div class="section level3">
-<h3 id="id_1-a-validated-tibble-subclass">1. A validated tibble subclass<a class="anchor" aria-label="anchor" href="#id_1-a-validated-tibble-subclass"></a>
-</h3>
-<p>Each <code>tbl_now</code> object guarantees:</p>
-<ul>
-<li>An event date column.</li>
-<li>A report date column.</li>
-<li>Internally computed:
-<ul>
-<li>numeric event index (.event_num)</li>
-<li>numeric report index (.report_num)</li>
-<li>delay (.delay).</li>
-</ul>
-</li>
-<li>Optional strata (e.g., state, age group).</li>
-<li>Optional covariates (e.g., state, age group).</li>
-<li>Optional batch (right-censored report) indicator.</li>
-<li>Optional temporal covariates (day of week, week of year, holidays).</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="id_2-automatic-data-type-detection">2. Automatic data-type detection<a class="anchor" aria-label="anchor" href="#id_2-automatic-data-type-detection"></a>
-</h3>
-<p><code><a href="reference/tbl_now.html">tbl_now()</a></code> infers whether the input represents:</p>
-<ul>
-<li>
-<strong>Linelist data</strong>: one row per individual event</li>
-<li>
-<strong>Count–incidence data</strong>: counts newly reported at each (event, report) pair</li>
-<li>
-<strong>Count–cumulative data</strong>: cumulative totals revised over time</li>
-</ul>
-<p>This allows a wide range of surveillance systems to be ingested with minimal preprocessing.</p>
-</div>
-<div class="section level3">
-<h3 id="id_3-built-in-handling-of-the-now">3. Built-in handling of the “now”<a class="anchor" aria-label="anchor" href="#id_3-built-in-handling-of-the-now"></a>
-</h3>
-<p>Each object records the nowcast horizon (now), defined as the latest reporting date unless overridden. This enables backtesting, historical reconstruction, and model evaluation under realistic information constraints.</p>
-</div>
-<div class="section level3">
-<h3 id="id_4-native-compatibility-with-tidyverse-workflows">4. Native compatibility with tidyverse workflows<a class="anchor" aria-label="anchor" href="#id_4-native-compatibility-with-tidyverse-workflows"></a>
-</h3>
-<p><code>tbl_now</code> objects behave as regular tibbles. Standard operations (<code>filter</code>, <code>mutate</code>, <code>summarise</code>, <code>join</code>, etc.) preserve metadata whenever possible.</p>
-</div>
-<div class="section level3">
-<h3 id="id_5-temporal-covariates-in-one-step">5. Temporal covariates in one step<a class="anchor" aria-label="anchor" href="#id_5-temporal-covariates-in-one-step"></a>
-</h3>
-<p>Use <code><a href="reference/temporal_effects.html">temporal_effects()</a></code> and <code><a href="reference/add_temporal_effects.html">add_temporal_effects()</a></code> to generate event-date covariates such as: day of week, week of year, and user-specified holiday calendars (via almanac). This standardizes temporal structures used by nowcasting models.</p>
-</div>
-</div>
+<!---
+&#10;## Key features
+&#10;`tbl.now` implements:
+&#10;### 1. A validated tibble subclass
+&#10;Each `tbl_now` object guarantees:
+&#10;+ An event date column.
++ A report date column.
++ Internally computed:
+    + numeric event index (.event_num)
+    + numeric report index (.report_num)
+    + delay (.delay).
++ Optional strata (e.g., state, age group).
++ Optional covariates (e.g., state, age group).
++ Optional batch (right-censored report) indicator.
++ Optional temporal covariates (day of week, week of year, holidays).
+&#10;### 2. Automatic data-type detection
+&#10;`tbl_now()` infers whether the input represents:
+&#10;+ **Linelist data**: one row per individual event
++ **Count–incidence data**: counts newly reported at each (event, report) pair
++ **Count–cumulative data**: cumulative totals revised over time
+&#10;This allows a wide range of surveillance systems to be ingested with minimal preprocessing.
+&#10;### 3. Built-in handling of the “now”
+&#10;Each object records the nowcast horizon (now), defined as the latest reporting date unless overridden. This enables backtesting, historical reconstruction, and model evaluation under realistic information constraints.
+&#10;### 4. Native compatibility with tidyverse workflows
+&#10;`tbl_now` objects behave as regular tibbles. Standard operations (`filter`, `mutate`, `summarise`, `join`, etc.) preserve metadata whenever possible.
+&#10;### 5. Temporal covariates in one step
+&#10;Use `temporal_effects()` and `add_temporal_effects()` to generate event-date covariates such as: day of week, week of year, and user-specified holiday calendars (via almanac). This standardizes temporal structures used by nowcasting models.
+&#10;--->
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
