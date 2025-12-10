@@ -99,8 +99,8 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
     #Summarise
     x <- x  %>%
       to_count(to = "count-incidence") %>% #Just to make sure 1 obs per
-      dplyr::group_by_at(c(get_event_date(x), ".event_num", get_is_batched(x), get_strata(x), get_temporal_effects(x))) %>%
-      dplyr::arrange_at(get_report_date(x)) %>%
+      dplyr::group_by_at(c(get_event_date(x), get_is_batched(x), get_strata(x))) %>%
+      dplyr::arrange_at(get_report_date(x), .by_group = TRUE) %>%
       dplyr::mutate(!!as.symbol(case_count) := cumsum(!!as.symbol(case_count))) %>%
       ungroup()
 
@@ -120,6 +120,8 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
     cli::cli_abort("Transformation from `data_type` {get_data_type(x)} to {to} not implemented")
   }
 
+  x <- x %>%
+    dplyr::arrange_at(c(get_event_date(x), get_strata(x), get_is_batched(x)))
   #Return the count
   return(x)
 
