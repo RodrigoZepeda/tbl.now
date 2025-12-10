@@ -25,6 +25,7 @@ options(tibble.width = Inf)
 
 `tbl.now` provides a lightweight but rigorous extension of the tibble class for storing, validating, and manipulating epidemiological nowcasting data. It standardizes the representation of event dates, report dates, strata, temporal covariates, and data types (linelist, incidence, and cumulative), ensuring that downstream models within the [`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/) ecosystem can rely on a consistent interface.
 
+<!---
 
 ## Key features
 
@@ -66,6 +67,8 @@ Each object records the nowcast horizon (now), defined as the latest reporting d
 ### 5. Temporal covariates in one step
 
 Use `temporal_effects()` and `add_temporal_effects()` to generate event-date covariates such as: day of week, week of year, and user-specified holiday calendars (via almanac). This standardizes temporal structures used by nowcasting models.
+
+--->
 
 ## Installation
 
