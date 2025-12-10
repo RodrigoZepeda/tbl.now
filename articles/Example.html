@@ -64,79 +64,170 @@
 
     
     
-<p>In this article we show how to use the <code>tbl.now</code> framework
-with real data from the Center for Disease Control (CDC).</p>
-<p>We start by loading the required packages:</p>
+<p>In this vignette we demonstrate how to use the <code>tbl.now</code>
+framework with real data from the U.S. Centers for Disease Control and
+Prevention (CDC). Specifically, we work with the Flusight dataset, which
+contains weekly counts of hospital admissions for laboratory-confirmed
+influenza.</p>
+<p>We begin by loading the required packages:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     filter, lag</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lubridate.tidyverse.org" class="external-link">lubridate</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'lubridate'</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     date, intersect, setdiff, union</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
 </h2>
-<p>For the example, we will use the Flusight data from the CDC which
-contains <strong>weekly</strong> hospital admissions of patients with
-confirmed influenza (see <code><a href="../reference/flusight.html">?flusight</a></code>). The data is reported
-<strong>weekly</strong> starting one week after the observations.</p>
+<p>The Flusight dataset (<code><a href="../reference/flusight.html">?flusight</a></code>) includes weekly
+influenza hospital admission counts. For each epidemiological week
+(<code>target_end_date</code>), the CDC publishes revised counts across
+multiple future weeks (<code>as_of</code>). Thus, each event week is
+associated with multiple reporting dates reflecting updates or
+revisions.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">flusight</span><span class="op">)</span></span>
-<span><span class="va">flusight</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 491,706 × 4</span></span></span>
-<span><span class="co">#&gt;    as_of      target_end_date location_name        observation</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2023-09-23 2022-02-12      Alabama                       10</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2023-09-23 2022-02-12      Alaska                         0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2023-09-23 2022-02-12      Arizona                       64</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2023-09-23 2022-02-12      Arkansas                      29</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2023-09-23 2022-02-12      California                    36</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2023-09-23 2022-02-12      Colorado                      29</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2023-09-23 2022-02-12      Connecticut                    0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2023-09-23 2022-02-12      Delaware                       2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2023-09-23 2022-02-12      District of Columbia           0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2023-09-23 2022-02-12      Florida                       68</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 491,696 more rows</span></span></span></code></pre></div>
-<p>The column <code>target_end_date</code> corresponds to the
-<strong>week</strong> of observation while <code>as_of</code>
-corresponds to the <strong>week</strong> when information was updated.
-The same observation week (<code>target_end_date</code>) has then
-multiple report dates (<code>as_of</code>) corresponding to future weeks
-of update. Data is available for several states and territories of the
-United States via <code>location_name</code>.</p>
-<p>Finally note that the data is reported as cumulative cases
-(<code>case-cumulative</code>). That is, the column
-<code>observations</code> contains not the cases that were updated in
-date <code>as_of</code> but the <strong>overall</strong> number of cases
-that were believed to have happend in date <code>target_end_date</code>
-by date <code>as_of</code>. You can see this with an example:</p>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">flusight</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<caption>The Flusight dataset</caption>
+<thead><tr class="header">
+<th align="left">as_of</th>
+<th align="left">target_end_date</th>
+<th align="left">location_name</th>
+<th align="right">observation</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">2023-09-23</td>
+<td align="left">2022-02-12</td>
+<td align="left">Alabama</td>
+<td align="right">10</td>
+</tr>
+<tr class="even">
+<td align="left">2023-09-23</td>
+<td align="left">2022-02-19</td>
+<td align="left">Alabama</td>
+<td align="right">22</td>
+</tr>
+<tr class="odd">
+<td align="left">2023-09-23</td>
+<td align="left">2022-02-26</td>
+<td align="left">Alabama</td>
+<td align="right">13</td>
+</tr>
+<tr class="even">
+<td align="left">2023-09-23</td>
+<td align="left">2022-03-05</td>
+<td align="left">Alabama</td>
+<td align="right">31</td>
+</tr>
+<tr class="odd">
+<td align="left">2023-09-23</td>
+<td align="left">2022-03-12</td>
+<td align="left">Alabama</td>
+<td align="right">36</td>
+</tr>
+<tr class="even">
+<td align="left">2023-09-23</td>
+<td align="left">2022-03-19</td>
+<td align="left">Alabama</td>
+<td align="right">27</td>
+</tr>
+<tr class="odd">
+<td align="left">2023-09-23</td>
+<td align="left">2022-03-26</td>
+<td align="left">Alabama</td>
+<td align="right">27</td>
+</tr>
+<tr class="even">
+<td align="left">2023-09-23</td>
+<td align="left">2022-04-02</td>
+<td align="left">Alabama</td>
+<td align="right">32</td>
+</tr>
+<tr class="odd">
+<td align="left">2023-09-23</td>
+<td align="left">2022-04-09</td>
+<td align="left">Alabama</td>
+<td align="right">28</td>
+</tr>
+<tr class="even">
+<td align="left">2023-09-23</td>
+<td align="left">2022-04-16</td>
+<td align="left">Alabama</td>
+<td align="right">19</td>
+</tr>
+</tbody>
+</table>
+<p>The columns are:</p>
+<ul>
+<li><p><code>target_end_date</code>: the epidemiological week when cases
+occurred</p></li>
+<li><p><code>as_of</code>: the week in which the CDC updated its
+estimate for that event week</p></li>
+<li><p><code>location_name</code>: the state or territory</p></li>
+<li><p><code>observation</code>: the reported number of cases for
+target_end_date as of as_of</p></li>
+</ul>
+<p>The key feature of this dataset is that observation is cumulative:
+the value for a given <code>target_end_date</code> and
+<code>as_of</code> is the latest estimate of total cases up to that
+event week, not the incremental update for that reporting date. The
+following example illustrates the structure:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">flusight</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">location_name</span> <span class="op">==</span> <span class="st">"pr"</span> <span class="op">&amp;</span> <span class="va">target_end_date</span> <span class="op">==</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2024/04/06"</span><span class="op">)</span><span class="op">)</span> </span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 0 × 4</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 variables: as_of &lt;date&gt;, target_end_date &lt;date&gt;, location_name &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   observation &lt;dbl&gt;</span></span></span></code></pre></div>
-<p>Where each <code>as_of</code> the total number of cases that occurred
-in <code>target_end_date</code> are reported in
-<code>observation</code>.</p>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">location_name</span> <span class="op">==</span> <span class="st">"Puerto Rico"</span> <span class="op">&amp;</span> <span class="va">target_end_date</span> <span class="op">==</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2025/04/12"</span><span class="op">)</span><span class="op">)</span> </span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 19 × 4</span></span></span>
+<span><span class="co">#&gt;    as_of      target_end_date location_name observation</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2025-04-12 2025-04-12      Puerto Rico           231</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2025-04-19 2025-04-12      Puerto Rico           231</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2025-04-26 2025-04-12      Puerto Rico           231</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2025-05-03 2025-04-12      Puerto Rico           261</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2025-05-10 2025-04-12      Puerto Rico           261</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2025-05-17 2025-04-12      Puerto Rico           261</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2025-05-24 2025-04-12      Puerto Rico           261</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2025-05-31 2025-04-12      Puerto Rico           261</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2025-06-07 2025-04-12      Puerto Rico           261</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2025-06-28 2025-04-12      Puerto Rico           273</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> 2025-07-05 2025-04-12      Puerto Rico           273</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> 2025-07-23 2025-04-12      Puerto Rico           273</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> 2025-09-03 2025-04-12      Puerto Rico           273</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> 2025-09-03 2025-04-12      Puerto Rico           273</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> 2025-09-03 2025-04-12      Puerto Rico           273</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> 2025-09-03 2025-04-12      Puerto Rico           273</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> 2025-09-24 2025-04-12      Puerto Rico           273</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">18</span> 2025-09-24 2025-04-12      Puerto Rico           273</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">19</span> 2025-11-12 2025-04-12      Puerto Rico           274</span></span></code></pre></div>
+<p>Each unique pair of (<code>target_end_date</code>,
+<code>as_of</code>) therefore corresponds to a cumulative estimate.</p>
 </div>
 <div class="section level2">
 <h2 id="creating-the-tbl_now">Creating the <code>tbl_now</code><a class="anchor" aria-label="anchor" href="#creating-the-tbl_now"></a>
 </h2>
-<p>We can try and setup a <code>tbl_now</code> by specifying the
-following:</p>
+<p>Creating the tbl_now Object</p>
+<p>To construct a tbl_now object, we must indicate:</p>
 <ul>
-<li>
-<code>event_date</code>: When cases happened</li>
-<li>
-<code>report_date</code>: When cases were reported.</li>
-<li>
-<code>case_count</code>: Column containing information about the
-number of cases for that observation.</li>
-<li>
-<code>strata</code>: A vector containing all of the columns
-considered strata</li>
+<li><p><code>event_date</code>: the date on which cases
+occurred</p></li>
+<li><p><code>report_date</code>: the date on which the estimate was
+released</p></li>
+<li><p><code>case_count</code>: the column containing case
+counts</p></li>
+<li><p><code>strata</code>: grouping variables that define separate
+strata (e.g., states)</p></li>
 </ul>
-<p>Creating the <code>tbl_now</code> object like this will throw several
-warnings:</p>
+<p>A first attempt produces several warnings:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_wrong</span> <span class="op">&lt;-</span> <span class="va">flusight</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">target_end_date</span>, </span>
@@ -151,10 +242,15 @@ warnings:</p>
 <span><span class="co">#&gt; Warning: *Non-unique*: Data has multiple rows for the same event (target_end_date) and</span></span>
 <span><span class="co">#&gt; report(as_of) dates. Consider using `to_count()` to aggregate the data</span></span>
 <span><span class="co">#&gt; or`distinct()` to remove repeated observations.</span></span></code></pre></div>
-<p>The first and last warnings indicate, for example, that some
-observations are repeated. You can see that rows <code>422146</code>,
-<code>422147</code>, <code>422148</code>, <code>422149</code> have
-exactly the same values:</p>
+<p>These warnings arise because:</p>
+<ol style="list-style-type: decimal">
+<li><p>Duplicate rows exist for some event–report combinations.</p></li>
+<li><p>Missing values appear in the case count column.</p></li>
+<li><p>The data is incorrectly inferred to represent count-incidence
+rather than count-cumulative, because cumulative-type datasets often
+contain repeated records.</p></li>
+</ol>
+<p>Inspecting a subset confirms duplicated rows:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">flusight</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">422146</span>, <span class="fl">422147</span>, <span class="fl">422148</span>, <span class="fl">422149</span><span class="op">)</span>, <span class="op">]</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 4</span></span></span>
@@ -165,37 +261,26 @@ exactly the same values:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2025-09-03 2022-02-05      Alabama                 5</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2025-09-03 2022-02-05      Alabama                 5</span></span></code></pre></div>
 <p>Using <a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">`dplyr’s
-distinct()</a> we can clean the repeated rows and fix those
-warnings:</p>
+distinct()</a> we remove the duplicates:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">flusight</span> <span class="op">&lt;-</span> <span class="va">flusight</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><strong>Missing</strong> values are warned by the
-<code>tbl_now</code> object to make sure the user knows of their
-presence. We can either ignore the warning, remove or substitute the
-values. For the purpose of this example, we will filter them out:</p>
+<p>Next, we remove observations with missing case counts:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">flusight</span> <span class="op">&lt;-</span> <span class="va">flusight</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">observation</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>Then try again the <code>tbl_now</code> (spoiler, we still need to
-fix one last thing):</p>
+<p>However, reconstructing the object still yields a misclassified data
+type:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_still_wrong</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">flusight</span>, event_date <span class="op">=</span> <span class="st">"target_end_date"</span>, report_date <span class="op">=</span> <span class="st">"as_of"</span>, </span>
 <span>        case_count <span class="op">=</span> <span class="st">"observation"</span>, strata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"location_name"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Identified data as &lt;<span style="font-style: italic;">count-incidence</span>&gt; with counts in column <span style="color: #0000BB;">"observation"</span>.</span></span></code></pre></div>
-<p>The data was incorrectly identified as <code>count-incidence</code>
-which means that each event-report date combination corresponds to the
-number of cases that where observed for the <code>event_date</code> and
-reported <strong>exactly</strong> at <code>report_date</code>. That is,
-the total number of cases that happened at <code>event_date</code> is
-given by the <strong>sum</strong> of all of the cases for each
-<code>report_date</code>.</p>
-<p>In our case we have <code>count-cumulative</code> data where the
-<code>report_date</code> reports the latest estimate of the
-<strong>total</strong> number of cases. This can be specified with the
-<code>data_type</code> option:</p>
+<p>The function incorrectly infers incidence data (i.e., each row
+represents the incremental number reported on that report date). In
+contrast, the Flusight dataset contains cumulative values. We therefore
+explicitly declare the data type:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_flu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">flusight</span>, event_date <span class="op">=</span> <span class="st">"target_end_date"</span>, report_date <span class="op">=</span> <span class="st">"as_of"</span>, </span>
 <span>        case_count <span class="op">=</span> <span class="st">"observation"</span>, strata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"location_name"</span><span class="op">)</span>, data_type <span class="op">=</span> <span class="st">"count-cumulative"</span><span class="op">)</span></span></code></pre></div>
-<p>And this results in the correct <code>tbl_now</code> object:</p>
+<p>This yields a correctly structured <code>tbl_now</code> object:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_flu</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  451,415 × 7</span></span></span>
@@ -222,11 +307,11 @@ given by the <strong>sum</strong> of all of the cases for each
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: .delay &lt;dbl&gt;</span></span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="using-the-tbl_now">Using the <code>tbl_now</code><a class="anchor" aria-label="anchor" href="#using-the-tbl_now"></a>
+<h2 id="working-with-the-tbl_now-object">Working with the <code>tbl_now</code> Object<a class="anchor" aria-label="anchor" href="#working-with-the-tbl_now-object"></a>
 </h2>
-<p>Once created the <code>tbl_now</code> you can use the classic
-<code>dplyr</code> verbs to do operations. For example by renaming
-columns and filtering out just one state:</p>
+<p><code>tbl_now</code> objects are fully compatible with
+<code>dplyr</code> verbs. For example, we may focus on Puerto Rico and
+observations after mid–2024:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_pr</span> <span class="op">&lt;-</span> <span class="va">df_flu</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>latest_report <span class="op">=</span> <span class="va">as_of</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
@@ -256,13 +341,14 @@ columns and filtering out just one state:</p>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,281 more rows</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;</span></span></span></code></pre></div>
-<p>Given that in this dataset we only have <code>pr</code> it makes no
-sense to keep <code>location_name</code> as strata. We can use the
-<code>remove_strata</code> function to remove it without removing the
-column (though removing the column would also work):</p>
+<p>Because we are now working with a single geographic unit, the
+<code>location_name</code> variable is no longer meaningful as a
+stratum. We remove it from the strata definition (without removing the
+column itself):</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_pr</span> <span class="op">&lt;-</span> <span class="va">df_pr</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="../reference/remove.html">remove_strata</a></span><span class="op">(</span><span class="st">"location_name"</span><span class="op">)</span></span>
+<span></span>
 <span><span class="va">df_pr</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1,291 × 7</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
@@ -285,12 +371,15 @@ column (though removing the column would also work):</p>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,281 more rows</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;</span></span></span></code></pre></div>
-<p>The current <code>now</code> for the nowcast is:</p>
+<p>The <code>now</code> (the effective horizon for the nowcast) is:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">df_pr</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "2025-11-12"</span></span></code></pre></div>
-<p>However, if we were interested, say, in historical nowcasting
-(i.e. backtesting) we can filter the dates and update the now:</p>
+<div class="section level3">
+<h3 id="changing-the-now-for-historical-backtesting">Changing the “now” for Historical Backtesting<a class="anchor" aria-label="anchor" href="#changing-the-now-for-historical-backtesting"></a>
+</h3>
+<p>To perform retrospective analyses (backtesting), we can filter the
+dataset and explicitly set a historical reporting cutoff:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_pr_new_now</span> <span class="op">&lt;-</span> <span class="va">df_pr</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">latest_report</span> <span class="op">&lt;</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/01"</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
@@ -306,33 +395,42 @@ column (though removing the column would also work):</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 7 variables: latest_report &lt;date&gt;, target_end_date &lt;date&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   location_name &lt;chr&gt;, observation &lt;dbl&gt;, .event_num &lt;dbl&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;</span></span></span></code></pre></div>
-<p>Which yields the new value:</p>
+<p>The new now is:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">df_pr_new_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "2025-11-12"</span></span></code></pre></div>
 </div>
+</div>
 <div class="section level2">
-<h2 id="reports">Reports<a class="anchor" aria-label="anchor" href="#reports"></a>
+<h2 id="working-with-initial-and-latest-reports">Working with Initial and Latest Reports<a class="anchor" aria-label="anchor" href="#working-with-initial-and-latest-reports"></a>
 </h2>
-<p>The <code><a href="../reference/get_latest_first.html">get_initial_reported_cases()</a></code> and
-<code><a href="../reference/get_latest_first.html">get_latest_reported_cases()</a></code> obtain the cases with the
-earliest report date for each event or witht he latest report date for
-the event. This allow to compare the data as it came initially and the
-latest report.</p>
+<p>Two helper functions extract initial and final reported values for
+each event date:</p>
+<ul>
+<li><p><code><a href="../reference/get_latest_first.html">get_initial_reported_cases()</a></code>: the earliest available
+report for each event</p></li>
+<li><p><code><a href="../reference/get_latest_first.html">get_latest_reported_cases()</a></code>: the most recent report
+relative to now</p></li>
+</ul>
+<p>A simple plot highlights the differences between initial and final
+estimates:</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">initial_reports</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_latest_first.html">get_initial_reported_cases</a></span><span class="op">(</span><span class="va">df_pr</span><span class="op">)</span></span>
 <span><span class="va">latest_reports</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="va">df_pr</span><span class="op">)</span></span></code></pre></div>
-<p>Graphically this is what they look like:</p>
+<p>A simple plot highlights the differences between initial and final
+estimates:</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">initial_reports</span><span class="op">$</span><span class="va">target_end_date</span>, <span class="va">initial_reports</span><span class="op">$</span><span class="va">observation</span>, </span>
-<span>     type <span class="op">=</span> <span class="st">"p"</span>, col <span class="op">=</span> <span class="st">"blue"</span>, xlab <span class="op">=</span> <span class="st">"Date of event"</span>, ylab <span class="op">=</span> <span class="st">"Cases"</span>,</span>
+<span>     type <span class="op">=</span> <span class="st">"p"</span>, col <span class="op">=</span> <span class="st">"deepskyblue4"</span>,</span>
+<span>     xlab <span class="op">=</span> <span class="st">"Date of event"</span>, ylab <span class="op">=</span> <span class="st">"Cases"</span>,</span>
 <span>     main <span class="op">=</span> <span class="st">"Cases in Puerto Rico"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">latest_reports</span><span class="op">$</span><span class="va">target_end_date</span>, <span class="va">latest_reports</span><span class="op">$</span><span class="va">observation</span>, col <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">latest_reports</span><span class="op">$</span><span class="va">target_end_date</span>, <span class="va">latest_reports</span><span class="op">$</span><span class="va">observation</span>,</span>
+<span>      col <span class="op">=</span> <span class="st">"tomato4"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"right"</span>, y <span class="op">=</span> <span class="st">"top"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Initial report"</span>,<span class="st">"Final report"</span><span class="op">)</span>, </span>
-<span>       fill <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"blue"</span>,<span class="st">"red"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="Example_files/figure-html/unnamed-chunk-18-1.png" class="r-plt" width="480"></p>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"right"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Initial report"</span>, <span class="st">"Final report"</span><span class="op">)</span>,</span>
+<span>       fill <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"deepskyblue4"</span>, <span class="st">"tomato4"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="Example_files/figure-html/unnamed-chunk-19-1.png" class="r-plt" width="480"></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

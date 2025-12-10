@@ -56,15 +56,69 @@
 </h1></div>
 <!-- badges: start -->
 
-<p>The <strong>tbl.now</strong> package contains a <code>data.frame</code> class that extends the <a href="https://tibble.tidyverse.org/reference/tibble-package.html" class="external-link">tibble</a> (and, hence, the <a href="https://tidyverse.org/" class="external-link">tidyverse</a>) to nowcasting data. The main purpose of the package is to provide a unified input within the <a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link"><code>diseasenowcasting</code></a> framework.</p>
+<p><code>tbl.now</code> provides a lightweight but rigorous extension of the tibble class for storing, validating, and manipulating epidemiological nowcasting data. It standardizes the representation of event dates, report dates, strata, temporal covariates, and data types (linelist, incidence, and cumulative), ensuring that downstream models within the <a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link"><code>diseasenowcasting</code></a> ecosystem can rely on a consistent interface.</p>
+<div class="section level2">
+<h2 id="key-features">Key features<a class="anchor" aria-label="anchor" href="#key-features"></a>
+</h2>
+<p><code>tbl.now</code> implements:</p>
+<div class="section level3">
+<h3 id="id_1-a-validated-tibble-subclass">1. A validated tibble subclass<a class="anchor" aria-label="anchor" href="#id_1-a-validated-tibble-subclass"></a>
+</h3>
+<p>Each <code>tbl_now</code> object guarantees:</p>
+<ul>
+<li>An event date column.</li>
+<li>A report date column.</li>
+<li>Internally computed:
+<ul>
+<li>numeric event index (.event_num)</li>
+<li>numeric report index (.report_num)</li>
+<li>delay (.delay).</li>
+</ul>
+</li>
+<li>Optional strata (e.g., state, age group).</li>
+<li>Optional covariates (e.g., state, age group).</li>
+<li>Optional batch (right-censored report) indicator.</li>
+<li>Optional temporal covariates (day of week, week of year, holidays).</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="id_2-automatic-data-type-detection">2. Automatic data-type detection<a class="anchor" aria-label="anchor" href="#id_2-automatic-data-type-detection"></a>
+</h3>
+<p><code><a href="reference/tbl_now.html">tbl_now()</a></code> infers whether the input represents:</p>
+<ul>
+<li>
+<strong>Linelist data</strong>: one row per individual event</li>
+<li>
+<strong>Count–incidence data</strong>: counts newly reported at each (event, report) pair</li>
+<li>
+<strong>Count–cumulative data</strong>: cumulative totals revised over time</li>
+</ul>
+<p>This allows a wide range of surveillance systems to be ingested with minimal preprocessing.</p>
+</div>
+<div class="section level3">
+<h3 id="id_3-built-in-handling-of-the-now">3. Built-in handling of the “now”<a class="anchor" aria-label="anchor" href="#id_3-built-in-handling-of-the-now"></a>
+</h3>
+<p>Each object records the nowcast horizon (now), defined as the latest reporting date unless overridden. This enables backtesting, historical reconstruction, and model evaluation under realistic information constraints.</p>
+</div>
+<div class="section level3">
+<h3 id="id_4-native-compatibility-with-tidyverse-workflows">4. Native compatibility with tidyverse workflows<a class="anchor" aria-label="anchor" href="#id_4-native-compatibility-with-tidyverse-workflows"></a>
+</h3>
+<p><code>tbl_now</code> objects behave as regular tibbles. Standard operations (<code>filter</code>, <code>mutate</code>, <code>summarise</code>, <code>join</code>, etc.) preserve metadata whenever possible.</p>
+</div>
+<div class="section level3">
+<h3 id="id_5-temporal-covariates-in-one-step">5. Temporal covariates in one step<a class="anchor" aria-label="anchor" href="#id_5-temporal-covariates-in-one-step"></a>
+</h3>
+<p>Use <code><a href="reference/temporal_effects.html">temporal_effects()</a></code> and <code><a href="reference/add_temporal_effects.html">add_temporal_effects()</a></code> to generate event-date covariates such as: day of week, week of year, and user-specified holiday calendars (via almanac). This standardizes temporal structures used by nowcasting models.</p>
+</div>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>You can install the development version of tbl.now from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
+<p>Install the development version from <a href="https://github.com/" class="external-link">GitHub</a>:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"RodrigoZepeda/tbl.now"</span><span class="op">)</span></span></code></pre></div>
-<p>And after installation:</p>
+<p>Load the package:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lubridate.tidyverse.org" class="external-link">lubridate</a></span><span class="op">)</span></span>
@@ -72,70 +126,63 @@
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavisVaughan/almanac" class="external-link">almanac</a></span><span class="op">)</span>    <span class="co">#Suggested for holiday effects</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="why-tbl_now">Why tbl_now?<a class="anchor" aria-label="anchor" href="#why-tbl_now"></a>
+<h2 id="a-minimal-example">A minimal example<a class="anchor" aria-label="anchor" href="#a-minimal-example"></a>
 </h2>
-<p>Traditionally in epidemiological nowcasting scenarios we have two dates:</p>
-<ul>
-<li>
-<code>event_date</code>: When something happened (e.g. symptom onset or a test was taken).</li>
-<li>
-<code>report_date</code>: When it was reported (e.g. the patient went to the clinic or the test results were registered).</li>
-</ul>
-<p>The nowcasting problem is to estimate the total number of events <strong>now</strong> that have occurred at any past <code>event_date</code> given that not all of them have been reported yet. In the context of nowcasting, the <strong>tbl_now</strong> can be thought of as a specific <a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble()</a> that <strong>guarantees</strong> an <code>event_date</code> and a <code>report_date</code>.</p>
-</div>
-<div class="section level2">
-<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
-</h2>
-<p>Consider the following <code>data.frame</code> representing the number of cases <code>n</code> reported at <code>report_date</code> that happened at <code>event_date</code>:</p>
+<p>Suppose you have a dataset where n cases reported on report_date belong to events occurring on event_date:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
-<span>  event_date  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/25"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/26"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/25"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/26"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/26"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/26"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/27"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023/12/27"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  event_date  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023-12-25"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023-12-26"</span><span class="op">)</span>,</span>
+<span>                  <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023-12-25"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023-12-26"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023-12-26"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023-12-26"</span><span class="op">)</span>,</span>
+<span>                  <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023-12-27"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023-12-27"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">2</span>, <span class="fl">5</span>, <span class="fl">11</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">df</span></span>
-<span><span class="co">#&gt; # A tibble: 4 × 3</span></span>
-<span><span class="co">#&gt;   event_date report_date     n</span></span>
-<span><span class="co">#&gt;   &lt;date&gt;     &lt;date&gt;      &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 2023-12-25 2023-12-26     10</span></span>
-<span><span class="co">#&gt; 2 2023-12-26 2023-12-26      2</span></span>
-<span><span class="co">#&gt; 3 2023-12-25 2023-12-27      5</span></span>
-<span><span class="co">#&gt; 4 2023-12-26 2023-12-27     11</span></span></code></pre></div>
-<p>To convert to a <code>tbl_now</code> you can use the <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a> function:</p>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Convert it to a <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a>:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>, event_date <span class="op">=</span> <span class="st">"event_date"</span>, report_date <span class="op">=</span> <span class="st">"report_date"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ℹ Identified data as &lt;linelist-data&gt; where each observation is a test.</span></span>
+<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
+<span>  <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">event_date</span>, report_date <span class="op">=</span> <span class="va">report_date</span>, case_count <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span>
+<span><span class="co">#&gt; ℹ Identified data as &lt;count-incidence&gt; with counts in column "n".</span></span>
+<span></span>
 <span><span class="va">df_now</span></span>
 <span><span class="co">#&gt; # A tibble:  4 × 6</span></span>
-<span><span class="co">#&gt; # Data type: "linelist"</span></span>
+<span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
 <span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
-<span><span class="co">#&gt;   event_date   report_date       n .event_num .report_num .delay</span></span>
-<span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;        &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt;   [event_date] [report_date] [...]      [...]       [...]  [...]</span></span>
-<span><span class="co">#&gt; 1 2023-12-25   2023-12-26       10          0           1      1</span></span>
-<span><span class="co">#&gt; 2 2023-12-26   2023-12-26        2          1           1      0</span></span>
-<span><span class="co">#&gt; 3 2023-12-25   2023-12-27        5          0           2      2</span></span>
-<span><span class="co">#&gt; 4 2023-12-26   2023-12-27       11          1           2      1</span></span>
+<span><span class="co">#&gt;   event_date   report_date         n .event_num .report_num .delay</span></span>
+<span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;          &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt;   [event_date] [report_date] [cases]      [...]       [...]  [...]</span></span>
+<span><span class="co">#&gt; 1 2023-12-25   2023-12-26         10          0           1      1</span></span>
+<span><span class="co">#&gt; 2 2023-12-26   2023-12-26          2          1           1      0</span></span>
+<span><span class="co">#&gt; 3 2023-12-25   2023-12-27          5          0           2      2</span></span>
+<span><span class="co">#&gt; 4 2023-12-26   2023-12-27         11          1           2      1</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
-<p>The <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a> automatically detects whether the <strong>data-type</strong> corresponds to <em>linelist</em>, <em>count-incidence</em> or <em>count-cumulative</em> data, the <strong>date-units</strong> for the event and report dates (frequency), and the <strong>now</strong> is given by the latest date (2023-12-27). Additionally it transforms the <code>event_date</code> into numeric (<code>.event_num</code> column) as well as the <code>report_date</code> (<code>.report_num</code> column) and calculates the delay (<code>.delay</code> column).</p>
-<p>The <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a> is compatible with the usual <a href="https://dplyr.tidyverse.org/" class="external-link">dplyr</a> operations:</p>
+<p><code><a href="reference/tbl_now.html">tbl_now()</a></code> automatically:</p>
+<ul>
+<li><p>infers that the <strong>data type</strong> is linelist (one row per event)</p></li>
+<li><p>determines the <strong>date units</strong> (daily event and report frequencies)</p></li>
+<li><p>computes numerical versions of the dates: <code>.event_num</code>, <code>.report_num</code>, and <code>.delay</code></p></li>
+<li><p>sets the <strong>now</strong> to the most recent reporting date</p></li>
+</ul>
+<p>Use it like any tibble:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">n</span> <span class="op">&gt;</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble:  2 × 6</span></span>
-<span><span class="co">#&gt; # Data type: "linelist"</span></span>
+<span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
 <span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
-<span><span class="co">#&gt;   event_date   report_date       n .event_num .report_num .delay</span></span>
-<span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;        &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt;   [event_date] [report_date] [...]      [...]       [...]  [...]</span></span>
-<span><span class="co">#&gt; 1 2023-12-25   2023-12-26       10          0           1      1</span></span>
-<span><span class="co">#&gt; 2 2023-12-26   2023-12-27       11          1           2      1</span></span>
+<span><span class="co">#&gt;   event_date   report_date         n .event_num .report_num .delay</span></span>
+<span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;          &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt;   [event_date] [report_date] [cases]      [...]       [...]  [...]</span></span>
+<span><span class="co">#&gt; 1 2023-12-25   2023-12-26         10          0           1      1</span></span>
+<span><span class="co">#&gt; 2 2023-12-26   2023-12-27         11          1           2      1</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="adding-strata">Adding strata<a class="anchor" aria-label="anchor" href="#adding-strata"></a>
+</h2>
 <p>If strata was given, the <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a> can easily tag the corresponding strata.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#Add the column using dplyr:</span></span>
@@ -144,47 +191,48 @@
 <span></span>
 <span><span class="va">df_now</span></span>
 <span><span class="co">#&gt; # A tibble:  4 × 7</span></span>
-<span><span class="co">#&gt; # Data type: "linelist"</span></span>
+<span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
 <span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
-<span><span class="co">#&gt;   event_date   report_date       n .event_num .report_num .delay sex  </span></span>
-<span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;        &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;</span></span>
-<span><span class="co">#&gt;   [event_date] [report_date] [...]      [...]       [...]  [...] [...]</span></span>
-<span><span class="co">#&gt; 1 2023-12-25   2023-12-26       10          0           1      1 M    </span></span>
-<span><span class="co">#&gt; 2 2023-12-26   2023-12-26        2          1           1      0 M    </span></span>
-<span><span class="co">#&gt; 3 2023-12-25   2023-12-27        5          0           2      2 F    </span></span>
-<span><span class="co">#&gt; 4 2023-12-26   2023-12-27       11          1           2      1 M    </span></span>
+<span><span class="co">#&gt;   event_date   report_date         n .event_num .report_num .delay sex  </span></span>
+<span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;          &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;</span></span>
+<span><span class="co">#&gt;   [event_date] [report_date] [cases]      [...]       [...]  [...] [...]</span></span>
+<span><span class="co">#&gt; 1 2023-12-25   2023-12-26         10          0           1      1 M    </span></span>
+<span><span class="co">#&gt; 2 2023-12-26   2023-12-26          2          1           1      0 M    </span></span>
+<span><span class="co">#&gt; 3 2023-12-25   2023-12-27          5          0           2      2 F    </span></span>
+<span><span class="co">#&gt; 4 2023-12-26   2023-12-27         11          1           2      1 M    </span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
-<p>To specify strata you can use the <code>add_strata</code>:</p>
+<p>Use the <code>add_strata</code> to specify the new column is a stratum:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="reference/add.html">add_strata</a></span><span class="op">(</span><span class="st">"sex"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble:  4 × 7</span></span>
-<span><span class="co">#&gt; # Data type: "linelist"</span></span>
+<span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
 <span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
-<span><span class="co">#&gt;   event_date   report_date       n .event_num .report_num .delay sex     </span></span>
-<span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;        &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;   </span></span>
-<span><span class="co">#&gt;   [event_date] [report_date] [...]      [...]       [...]  [...] [strata]</span></span>
-<span><span class="co">#&gt; 1 2023-12-25   2023-12-26       10          0           1      1 M       </span></span>
-<span><span class="co">#&gt; 2 2023-12-26   2023-12-26        2          1           1      0 M       </span></span>
-<span><span class="co">#&gt; 3 2023-12-25   2023-12-27        5          0           2      2 F       </span></span>
-<span><span class="co">#&gt; 4 2023-12-26   2023-12-27       11          1           2      1 M       </span></span>
+<span><span class="co">#&gt;   event_date   report_date         n .event_num .report_num .delay sex     </span></span>
+<span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;          &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;   </span></span>
+<span><span class="co">#&gt;   [event_date] [report_date] [cases]      [...]       [...]  [...] [strata]</span></span>
+<span><span class="co">#&gt; 1 2023-12-25   2023-12-26         10          0           1      1 M       </span></span>
+<span><span class="co">#&gt; 2 2023-12-26   2023-12-26          2          1           1      0 M       </span></span>
+<span><span class="co">#&gt; 3 2023-12-25   2023-12-27          5          0           2      2 F       </span></span>
+<span><span class="co">#&gt; 4 2023-12-26   2023-12-27         11          1           2      1 M       </span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"</span></span>
 <span><span class="co">#&gt; # Strata: "sex"</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
+<p>The object now records <code>"sex"</code> as a stratification variable, preserved through downstream operations.</p>
 </div>
 <div class="section level2">
-<h2 id="temporal-effects">Temporal effects<a class="anchor" aria-label="anchor" href="#temporal-effects"></a>
+<h2 id="adding-temporal-effects">Adding temporal effects<a class="anchor" aria-label="anchor" href="#adding-temporal-effects"></a>
 </h2>
-<p>Temporal effects can be added as covariates of the <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a> using the <a href="https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html">temporal_effects()</a>.</p>
-<p>For example, we can specify to include covariates for the day of the week, the week of the year, and whether it is holiday in the US:</p>
+<p>Temporal covariates help nowcasting models incorporate weekly seasonality, holiday effects, etc. Define the effects:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">t_eff</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span></span>
 <span>  day_of_week  <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  week_of_year <span class="op">=</span> <span class="cn">TRUE</span>, </span>
 <span>  holidays     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/cal_us_federal.html" class="external-link">cal_us_federal</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
 <span><span class="va">t_eff</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Temporal Effects ────────────────────────────────────────────────────────────</span></span>
@@ -195,20 +243,20 @@
 <span><span class="co">#&gt;   1. New Year's Day, US Martin Luther King Jr. Day, US Presidents' Day, US</span></span>
 <span><span class="co">#&gt;   Memorial Day, US Juneteenth, US Independence Day, US Labor Day, US Indigenous</span></span>
 <span><span class="co">#&gt;   Peoples' Day, US Veterans Day, US Thanksgiving, and Christmas</span></span></code></pre></div>
-<p>Such effects can be added to the <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a> object with the <a href="https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html">add_temporal_effects()</a> function:</p>
+<p>Attach them to the dataset:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="va">t_eff</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble:  4 × 10</span></span>
-<span><span class="co">#&gt; # Data type: "linelist"</span></span>
+<span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
 <span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
-<span><span class="co">#&gt;   event_date   report_date       n .event_num .report_num .delay sex  </span></span>
-<span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;        &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;</span></span>
-<span><span class="co">#&gt;   [event_date] [report_date] [...]      [...]       [...]  [...] [...]</span></span>
-<span><span class="co">#&gt; 1 2023-12-25   2023-12-26       10          0           1      1 M    </span></span>
-<span><span class="co">#&gt; 2 2023-12-26   2023-12-26        2          1           1      0 M    </span></span>
-<span><span class="co">#&gt; 3 2023-12-25   2023-12-27        5          0           2      2 F    </span></span>
-<span><span class="co">#&gt; 4 2023-12-26   2023-12-27       11          1           2      1 M    </span></span>
+<span><span class="co">#&gt;   event_date   report_date         n .event_num .report_num .delay sex  </span></span>
+<span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;          &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;</span></span>
+<span><span class="co">#&gt;   [event_date] [report_date] [cases]      [...]       [...]  [...] [...]</span></span>
+<span><span class="co">#&gt; 1 2023-12-25   2023-12-26         10          0           1      1 M    </span></span>
+<span><span class="co">#&gt; 2 2023-12-26   2023-12-26          2          1           1      0 M    </span></span>
+<span><span class="co">#&gt; 3 2023-12-25   2023-12-27          5          0           2      2 F    </span></span>
+<span><span class="co">#&gt; 4 2023-12-26   2023-12-27         11          1           2      1 M    </span></span>
 <span><span class="co">#&gt;   .event_day_of_week .event_week_of_year .event_holiday</span></span>
 <span><span class="co">#&gt;                &lt;int&gt;               &lt;int&gt;          &lt;int&gt;</span></span>
 <span><span class="co">#&gt;           [t_effect]          [t_effect]     [t_effect]</span></span>
@@ -220,15 +268,58 @@
 <span><span class="co">#&gt; # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"</span></span>
 <span><span class="co">#&gt; # T. effects: ".event_day_of_week", ".event_week_of_year", and ".event_holiday"</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
-<p>Note that Christmas (<code>2023-12-25</code>) is marked as an <code>.event_holiday</code>, everything corresponds to the first epidemiological week of <code>2024</code>, and the days of the week correspond to Monday (<code>event_day_of_week = 2</code>) and Tuesday (<code>event_day_of_week = 3</code>). All of these effects can be used as covariates in the models.</p>
+<p>This expands the table with <code>.event_day_of_week</code>, <code>.event_week_of_year</code>, and <code>.event_holiday</code> columns which are automatically aligned with event dates.</p>
+<p>You can also attach different effects to the report:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">r_eff</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>day_of_week <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
+<span>  <span class="fu"><a href="reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="va">r_eff</span>, date_type <span class="op">=</span> <span class="st">"report_date"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble:  4 × 8</span></span>
+<span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
+<span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
+<span><span class="co">#&gt;   event_date   report_date         n .event_num .report_num .delay sex  </span></span>
+<span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;          &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;</span></span>
+<span><span class="co">#&gt;   [event_date] [report_date] [cases]      [...]       [...]  [...] [...]</span></span>
+<span><span class="co">#&gt; 1 2023-12-25   2023-12-26         10          0           1      1 M    </span></span>
+<span><span class="co">#&gt; 2 2023-12-26   2023-12-26          2          1           1      0 M    </span></span>
+<span><span class="co">#&gt; 3 2023-12-25   2023-12-27          5          0           2      2 F    </span></span>
+<span><span class="co">#&gt; 4 2023-12-26   2023-12-27         11          1           2      1 M    </span></span>
+<span><span class="co">#&gt;   .report_day_of_week</span></span>
+<span><span class="co">#&gt;                 &lt;int&gt;</span></span>
+<span><span class="co">#&gt;            [t_effect]</span></span>
+<span><span class="co">#&gt; 1                   3</span></span>
+<span><span class="co">#&gt; 2                   3</span></span>
+<span><span class="co">#&gt; 3                   4</span></span>
+<span><span class="co">#&gt; 4                   4</span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"</span></span>
+<span><span class="co">#&gt; # T. effects: ".report_day_of_week"</span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="learn-more-about-tblnow">Learn more about tbl.now<a class="anchor" aria-label="anchor" href="#learn-more-about-tblnow"></a>
+<h2 id="working-with-the-now">Working with the “now”<a class="anchor" aria-label="anchor" href="#working-with-the-now"></a>
+</h2>
+<p>You may override the default now to perform historical evaluation:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df_pruned</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">report_date</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023-12-26"</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="reference/change.html">change_now</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023-12-26"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>Retrieve the current active nowcast horizon:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">df_pruned</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "2023-12-26"</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
 </h2>
 <ul>
-<li>Read the introduction to <a href="https://rodrigozepeda.github.io/tbl.now/articles/Introduction.html">tbl.now</a>
+<li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/Introduction.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/Introduction.html</a>
 </li>
-<li>Read an <a href="https://rodrigozepeda.github.io/tbl.now/articles/Example.html">example</a> with real data.</li>
+<li>Full walk-through with real CDC Flusight data: <a href="https://rodrigozepeda.github.io/tbl.now/articles/Example.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/Example.html</a>
+</li>
+<li>Package reference: <a href="https://rodrigozepeda.github.io/tbl.now/reference/" class="uri">https://rodrigozepeda.github.io/tbl.now/reference/</a>
+</li>
 </ul>
 </div>
 </div>
