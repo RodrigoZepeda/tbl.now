@@ -12,7 +12,10 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  out.width = "90%",
+  dpi = 350,
+  fig.align = "center"
 )
 ```
 
