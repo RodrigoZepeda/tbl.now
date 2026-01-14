@@ -5,6 +5,8 @@ Functions to remove the attributes to a `tbl_now` object.
 ## Usage
 
 ``` r
+remove_is_censored(x)
+
 remove_strata(x, ...)
 
 remove_all_strata(x)
@@ -55,7 +57,8 @@ for additional info.
 ## See also
 
 [`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
-[add](https://rodrigozepeda.github.io/tbl.now/reference/add.md) remove
+[add](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+[change](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
 
 ## Examples
 

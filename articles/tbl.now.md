@@ -184,7 +184,7 @@ primary attributes are:
 - **covariates** (optional): predictor variables that may improve the
   nowcast (e.g., weather covariates).
 
-- **is_batched** (optional): identifies cases where some reports arrive
+- **is_censored** (optional): identifies cases where some reports arrive
   in artificial “batches” representing right-censoring rather than true
   reporting dynamics (e.g. when there is a system error and reports from
   a lab are not registered until a week after)
@@ -416,7 +416,7 @@ tbl_example %>%
 The function ensures that:
 
 - Rows are grouped by `event_date`, `report_date`, and any `strata`, and
-  `is_batched`.
+  `is_censored`.
 
 - The `case_count` column is summed within each group.
 

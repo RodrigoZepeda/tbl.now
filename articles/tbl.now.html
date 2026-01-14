@@ -246,7 +246,7 @@ the nowcast should be computed separately (e.g., age group,
 sex).</p></li>
 <li><p><strong>covariates</strong> (optional): predictor variables that
 may improve the nowcast (e.g., weather covariates).</p></li>
-<li><p><strong>is_batched</strong> (optional): identifies cases where
+<li><p><strong>is_censored</strong> (optional): identifies cases where
 some reports arrive in artificial “batches” representing right-censoring
 rather than true reporting dynamics (e.g. when there is a system error
 and reports from a lab are not registered until a week after)</p></li>
@@ -630,7 +630,7 @@ function can be used to collapse duplicates by summing the
 <ul>
 <li><p>Rows are grouped by <code>event_date</code>,
 <code>report_date</code>, and any <code>strata</code>, and
-<code>is_batched</code>.</p></li>
+<code>is_censored</code>.</p></li>
 <li><p>The <code>case_count</code> column is summed within each
 group.</p></li>
 <li><p>Attributes are preserved so the resulting object remains a valid

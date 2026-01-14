@@ -13,7 +13,7 @@ change_report_date(x, report_date)
 
 change_case_count(x, case_count)
 
-change_is_batched(x, is_batched)
+change_is_censored(x, is_censored)
 
 change_strata(x, ...)
 
@@ -49,16 +49,16 @@ change_covariates(x, ...)
   or `NULL` Name of the column with the case counts if `data_type` is
   "count-incidence" or "count-cumulative".
 
-- is_batched:
+- is_censored:
 
   (optional)
   [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` (default). The name of a column containing either `TRUE` or
   `FALSE` indicating whether the `report_date` is correctly specified or
   corresponds to a `batch` and thus is censored. In other words, if the
-  `report_date` is accurately measured set `is_batched = FALSE` but if
+  `report_date` is accurately measured set `is_censored = FALSE` but if
   the `report_date` corresponds to an error and is only an upper bound
-  of the real report date set `is_batched = TRUE`.
+  of the real report date set `is_censored = TRUE`.
 
 - ...:
 
@@ -266,10 +266,11 @@ count_data %>%
 #> # ℹ 5 more variables: temperature <dbl>, humidity <dbl>, n <int>, .delay <dbl>,
 #> #   n2 <dbl>
 
-#Change is_batched
-ndata$is_batched <- FALSE
-ndata %>%
-  change_is_batched(is_batched)
+#Change is_censored
+ndata$is_censored <- FALSE
+ndata <- ndata %>%
+  change_is_censored(is_censored)
+ndata
 #> # A tibble:  52,987 × 12
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
@@ -288,12 +289,13 @@ ndata %>%
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
+#> # Right-censored indicator: "is_censored"
 #> # Strata: "gender" and "age_group"
 #> # Covariates: "temperature" and "humidity"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 52,977 more rows
 #> # ℹ 5 more variables: new_report_week <date>, age_group <chr>,
-#> #   temperature <dbl>, humidity <dbl>, is_batched <lgl>
+#> #   temperature <dbl>, humidity <dbl>, is_censored <lgl>
 
 # Change covariates
 ndata$temperature <- rnorm(nrow(ndata), 25, 4)
@@ -318,10 +320,11 @@ ndata
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
+#> # Right-censored indicator: "is_censored"
 #> # Strata: "gender" and "age_group"
 #> # Covariates: "temperature" and "humidity"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 52,977 more rows
 #> # ℹ 5 more variables: new_report_week <date>, age_group <chr>,
-#> #   temperature <dbl>, humidity <dbl>, is_batched <lgl>
+#> #   temperature <dbl>, humidity <dbl>, is_censored <lgl>
 ```

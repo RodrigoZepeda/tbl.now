@@ -51,7 +51,7 @@ a column named `n`</p>
 <span>  <span class="va">event_date</span>,</span>
 <span>  <span class="va">report_date</span>,</span>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  is_batched <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  is_censored <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  case_count <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -89,15 +89,15 @@ For example if it is of interest to generate nowcasts by gender then
 <code>gender</code> is a <code>strata</code>.</p></dd>
 
 
-<dt id="arg-is-batched">is_batched<a class="anchor" aria-label="anchor" href="#arg-is-batched"></a></dt>
+<dt id="arg-is-censored">is_censored<a class="anchor" aria-label="anchor" href="#arg-is-censored"></a></dt>
 <dd><p>(optional)
 <code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">&lt;`tidy-select`&gt;</a></code> or <code>NULL</code> (default).
 The name of a column containing either <code>TRUE</code> or <code>FALSE</code> indicating whether
 the <code>report_date</code> is correctly specified or corresponds to a <code>batch</code> and thus
 is censored. In other words, if the <code>report_date</code> is accurately measured
-set <code>is_batched = FALSE</code> but if the <code>report_date</code> corresponds to an error
+set <code>is_censored = FALSE</code> but if the <code>report_date</code> corresponds to an error
 and is only an upper bound of the real report date
-set <code>is_batched = TRUE</code>.</p></dd>
+set <code>is_censored = TRUE</code>.</p></dd>
 
 
 <dt id="arg-case-count">case_count<a class="anchor" aria-label="anchor" href="#arg-case-count"></a></dt>

@@ -2,7 +2,8 @@
 
 ## All functions
 
-- [`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+- [`add_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`add_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   :
 
@@ -27,7 +28,7 @@
   [`change_event_date()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_report_date()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
-  [`change_is_batched()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
+  [`change_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   :
@@ -77,11 +78,12 @@
   [`get_event_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_data_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-  [`get_is_batched()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   : Getters for tbl_now attributes
 
-- [`remove_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
+- [`remove_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
+  [`remove_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
   [`remove_all_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
   [`remove_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
   [`remove_all_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)

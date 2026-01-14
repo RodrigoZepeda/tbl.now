@@ -5,6 +5,8 @@ Functions to add the attributes to a `tbl_now` object.
 ## Usage
 
 ``` r
+add_is_censored(x, is_censored)
+
 add_strata(x, ...)
 
 add_covariates(x, ...)
@@ -15,6 +17,17 @@ add_covariates(x, ...)
 - x:
 
   A `tbl_now` object
+
+- is_censored:
+
+  (optional)
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  or `NULL` (default). The name of a column containing either `TRUE` or
+  `FALSE` indicating whether the `report_date` is correctly specified or
+  corresponds to a `batch` and thus is censored. In other words, if the
+  `report_date` is accurately measured set `is_censored = FALSE` but if
+  the `report_date` corresponds to an error and is only an upper bound
+  of the real report date set `is_censored = TRUE`.
 
 - ...:
 

@@ -17,7 +17,7 @@ update_check_data_frame_internal(object, new_data)
 - new_data:
 
   Another \`tbl_now\` with the same \`strata\`, \`covariates\`,
-  \`is_batched\`, and \`temporal_effects\` or a \`data.frame\` with
+  \`is_censored\`, and \`temporal_effects\` or a \`data.frame\` with
   additional (newer) data not present in \`x\`
 
 ## Value

@@ -29,7 +29,7 @@ get_data_type(x)
 
 get_temporal_effects(x)
 
-get_is_batched(x)
+get_is_censored(x)
 
 get_case_count(x)
 ```
@@ -71,8 +71,8 @@ get_strata(ndata)
 get_covariates(ndata)
 #> NULL
 
-#Get is batched
-get_is_batched(ndata)
+#Get is censored
+get_is_censored(ndata)
 #> NULL
 
 #Get the now

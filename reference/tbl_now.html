@@ -52,7 +52,7 @@ See the Attributes section for more information.</p>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  case_count <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  is_batched <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  is_censored <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  now <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  event_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  report_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
@@ -105,15 +105,15 @@ Name of the column with the case counts if <code>data_type</code> is "count-inci
 or "count-cumulative".</p></dd>
 
 
-<dt id="arg-is-batched">is_batched<a class="anchor" aria-label="anchor" href="#arg-is-batched"></a></dt>
+<dt id="arg-is-censored">is_censored<a class="anchor" aria-label="anchor" href="#arg-is-censored"></a></dt>
 <dd><p>(optional)
 <code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">&lt;`tidy-select`&gt;</a></code> or <code>NULL</code> (default).
 The name of a column containing either <code>TRUE</code> or <code>FALSE</code> indicating whether
 the <code>report_date</code> is correctly specified or corresponds to a <code>batch</code> and thus
 is censored. In other words, if the <code>report_date</code> is accurately measured
-set <code>is_batched = FALSE</code> but if the <code>report_date</code> corresponds to an error
+set <code>is_censored = FALSE</code> but if the <code>report_date</code> corresponds to an error
 and is only an upper bound of the real report date
-set <code>is_batched = TRUE</code>.</p></dd>
+set <code>is_censored = TRUE</code>.</p></dd>
 
 
 <dt id="arg-now">now<a class="anchor" aria-label="anchor" href="#arg-now"></a></dt>
@@ -194,7 +194,7 @@ by the <code><a href="validate_tbl_now.html">validate_tbl_now()</a></code> funct
 <dt>now</dt>
 <dd><p>Date of the <code>now</code> for a nowcast.</p></dd>
 
-<dt>is_batched</dt>
+<dt>is_censored</dt>
 <dd><p>Column indicating whether the measurement is noisy (only upper bound) or not.</p></dd>
 
 <dt>event_units</dt>

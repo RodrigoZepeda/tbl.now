@@ -42,7 +42,9 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">add_strata</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">add_is_censored</span><span class="op">(</span><span class="va">x</span>, <span class="va">is_censored</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">add_strata</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">add_covariates</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -53,6 +55,17 @@
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>A <code>tbl_now</code> object</p></dd>
+
+
+<dt id="arg-is-censored">is_censored<a class="anchor" aria-label="anchor" href="#arg-is-censored"></a></dt>
+<dd><p>(optional)
+<code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">&lt;`tidy-select`&gt;</a></code> or <code>NULL</code> (default).
+The name of a column containing either <code>TRUE</code> or <code>FALSE</code> indicating whether
+the <code>report_date</code> is correctly specified or corresponds to a <code>batch</code> and thus
+is censored. In other words, if the <code>report_date</code> is accurately measured
+set <code>is_censored = FALSE</code> but if the <code>report_date</code> corresponds to an error
+and is only an upper bound of the real report date
+set <code>is_censored = TRUE</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

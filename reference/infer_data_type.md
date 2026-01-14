@@ -12,7 +12,7 @@ infer_data_type(
   event_date,
   report_date,
   strata = NULL,
-  is_batched = NULL,
+  is_censored = NULL,
   case_count = NULL,
   verbose = FALSE
 )
@@ -49,16 +49,16 @@ infer_data_type(
   themselves. For example if it is of interest to generate nowcasts by
   gender then `gender` is a `strata`.
 
-- is_batched:
+- is_censored:
 
   (optional)
   [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` (default). The name of a column containing either `TRUE` or
   `FALSE` indicating whether the `report_date` is correctly specified or
   corresponds to a `batch` and thus is censored. In other words, if the
-  `report_date` is accurately measured set `is_batched = FALSE` but if
+  `report_date` is accurately measured set `is_censored = FALSE` but if
   the `report_date` corresponds to an error and is only an upper bound
-  of the real report date set `is_batched = TRUE`.
+  of the real report date set `is_censored = TRUE`.
 
 - case_count:
 

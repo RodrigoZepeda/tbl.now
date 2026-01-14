@@ -50,7 +50,7 @@
 <span></span>
 <span><span class="fu">change_case_count</span><span class="op">(</span><span class="va">x</span>, <span class="va">case_count</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">change_is_batched</span><span class="op">(</span><span class="va">x</span>, <span class="va">is_batched</span><span class="op">)</span></span>
+<span><span class="fu">change_is_censored</span><span class="op">(</span><span class="va">x</span>, <span class="va">is_censored</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">change_strata</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
@@ -87,15 +87,15 @@ Name of the column with the case counts if <code>data_type</code> is "count-inci
 or "count-cumulative".</p></dd>
 
 
-<dt id="arg-is-batched">is_batched<a class="anchor" aria-label="anchor" href="#arg-is-batched"></a></dt>
+<dt id="arg-is-censored">is_censored<a class="anchor" aria-label="anchor" href="#arg-is-censored"></a></dt>
 <dd><p>(optional)
 <code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">&lt;`tidy-select`&gt;</a></code> or <code>NULL</code> (default).
 The name of a column containing either <code>TRUE</code> or <code>FALSE</code> indicating whether
 the <code>report_date</code> is correctly specified or corresponds to a <code>batch</code> and thus
 is censored. In other words, if the <code>report_date</code> is accurately measured
-set <code>is_batched = FALSE</code> but if the <code>report_date</code> corresponds to an error
+set <code>is_censored = FALSE</code> but if the <code>report_date</code> corresponds to an error
 and is only an upper bound of the real report date
-set <code>is_batched = TRUE</code>.</p></dd>
+set <code>is_censored = TRUE</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -295,10 +295,11 @@ and <code><a href="https://dplyr.tidyverse.org/reference/reexports.html" class="
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 5 more variables: temperature &lt;dbl&gt;, humidity &lt;dbl&gt;, n &lt;int&gt;, .delay &lt;dbl&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   n2 &lt;dbl&gt;</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Change is_batched</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">is_batched</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
-<span class="r-in"><span>  <span class="fu">change_is_batched</span><span class="op">(</span><span class="va">is_batched</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">#Change is_censored</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">is_censored</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  <span class="fu">change_is_censored</span><span class="op">(</span><span class="va">is_censored</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 12</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>
@@ -317,12 +318,13 @@ and <code><a href="https://dplyr.tidyverse.org/reference/reexports.html" class="
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2025-01-01</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Right-censored indicator: <span style="color: #0000BB;">"is_censored"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span> and <span style="color: #0000BB;">"age_group"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Covariates: <span style="color: #0000BB;">"temperature"</span> and <span style="color: #0000BB;">"humidity"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 52,977 more rows</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 5 more variables: new_report_week &lt;date&gt;, age_group &lt;chr&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   temperature &lt;dbl&gt;, humidity &lt;dbl&gt;, is_batched &lt;lgl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   temperature &lt;dbl&gt;, humidity &lt;dbl&gt;, is_censored &lt;lgl&gt;</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Change covariates</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">temperature</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span>, <span class="fl">25</span>, <span class="fl">4</span><span class="op">)</span></span></span>
@@ -347,12 +349,13 @@ and <code><a href="https://dplyr.tidyverse.org/reference/reexports.html" class="
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2025-01-01</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Right-censored indicator: <span style="color: #0000BB;">"is_censored"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span> and <span style="color: #0000BB;">"age_group"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Covariates: <span style="color: #0000BB;">"temperature"</span> and <span style="color: #0000BB;">"humidity"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 52,977 more rows</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 5 more variables: new_report_week &lt;date&gt;, age_group &lt;chr&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   temperature &lt;dbl&gt;, humidity &lt;dbl&gt;, is_batched &lt;lgl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   temperature &lt;dbl&gt;, humidity &lt;dbl&gt;, is_censored &lt;lgl&gt;</span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

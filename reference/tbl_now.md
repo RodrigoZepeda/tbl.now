@@ -13,7 +13,7 @@ tbl_now(
   strata = NULL,
   covariates = NULL,
   case_count = NULL,
-  is_batched = NULL,
+  is_censored = NULL,
   now = NULL,
   event_units = "auto",
   report_units = "auto",
@@ -67,16 +67,16 @@ tbl_now(
   or `NULL` Name of the column with the case counts if `data_type` is
   "count-incidence" or "count-cumulative".
 
-- is_batched:
+- is_censored:
 
   (optional)
   [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` (default). The name of a column containing either `TRUE` or
   `FALSE` indicating whether the `report_date` is correctly specified or
   corresponds to a `batch` and thus is censored. In other words, if the
-  `report_date` is accurately measured set `is_batched = FALSE` but if
+  `report_date` is accurately measured set `is_censored = FALSE` but if
   the `report_date` corresponds to an error and is only an upper bound
-  of the real report date set `is_batched = TRUE`.
+  of the real report date set `is_censored = TRUE`.
 
 - now:
 
@@ -167,7 +167,7 @@ function:
 
   Date of the `now` for a nowcast.
 
-- is_batched:
+- is_censored:
 
   Column indicating whether the measurement is noisy (only upper bound)
   or not.
