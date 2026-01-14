@@ -67,8 +67,8 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
   report_units   <- get_report_units(x)
   event_units    <- get_event_units(x)
   data_type      <- get_data_type(x)
-  is_censored     <- get_is_censored(x)
-  case_count       <- get_case_count(x)
+  is_censored    <- get_is_censored(x)
+  case_count     <- get_case_count(x)
 
   if (data_type == "linelist"){warn_non_uniqueness <- FALSE}
 
@@ -158,6 +158,43 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
         errors <- c(errors, sprintf("Covariate column {.val %s} not found in data", cv))
       }
     }
+  }
+
+  # Check once per category--------------
+
+  # Check that no covariate is in strata and viceversa
+  if (any(covariates %in% strata)){
+
+    #Get those that are repeated
+    repeated_vars <- covariates[which(covariates %in% strata)]
+
+    errors <- c(errors,
+                sprintf("Strata variable {.val %s} cannot also be a covariate", repeated_vars))
+  }
+
+  # Check that no date is in strata
+  if (report_date %in% strata){
+    errors <- c(errors, sprintf("Report date {.val %s} cannot be strata", report_date))
+  }
+  if (event_date %in% strata){
+    errors <- c(errors, sprintf("Event date {.val %s} cannot be strata", event_date))
+  }
+
+  # Check that no date is in covariate
+  if (report_date %in% covariates){
+    errors <- c(errors, sprintf("Report date {.val %s} cannot be a covariate", report_date))
+  }
+  if (event_date %in% covariates){
+    errors <- c(errors, sprintf("Event date {.val %s} cannot be a covariate", event_date))
+  }
+
+  # Check that is_censored is not a covariate / strata
+  if (!is.null(is_censored) && is_censored %in% covariates){
+    errors <- c(errors, sprintf("Censored indicator {.val %s} cannot be also a covariate", is_censored))
+  }
+
+  if (!is.null(is_censored) && is_censored %in% strata){
+    errors <- c(errors, sprintf("Censored indicator {.val %s} cannot be also strata", is_censored))
   }
 
   # === 6. Validate column types ===

@@ -308,3 +308,57 @@ test_that("tbl_now correctly identifies data type",{
   expect_equal(get_data_type(dtbl3), "count-cumulative")
 
 })
+
+test_that("tbl_now fails when strata/covariate have repeated variables",{
+  data(denguedat)
+
+  expect_error(
+    tbl_now(denguedat,
+            event_date = onset_week,
+            report_date = report_week,
+            strata = gender,
+            covariates = gender,
+            verbose = FALSE),
+    "Strata .* covariate"
+  )
+
+  expect_error(
+    tbl_now(denguedat,
+            event_date = onset_week,
+            report_date = report_week,
+            strata = gender,
+            covariates = onset_week,
+            verbose = FALSE),
+    "Event .* covariate"
+  )
+
+  expect_error(
+    tbl_now(denguedat,
+            event_date = onset_week,
+            report_date = report_week,
+            strata = onset_week,
+            covariates = gender,
+            verbose = FALSE),
+    "Event .* strata"
+  )
+
+  expect_error(
+    tbl_now(denguedat,
+            event_date = onset_week,
+            report_date = report_week,
+            strata = gender,
+            covariates = report_week,
+            verbose = FALSE),
+    "Report .* covariate"
+  )
+
+  expect_error(
+    tbl_now(denguedat,
+            event_date = onset_week,
+            report_date = report_week,
+            strata = report_week,
+            covariates = gender,
+            verbose = FALSE),
+    "Report .* strata"
+  )
+})
