@@ -189,11 +189,11 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
   }
 
   # Check that is_censored is not a covariate / strata
-  if (!is.null(is_censored) && is_censored %in% covariates){
+  if (!is.null(is_censored) && any(is_censored %in% covariates)){
     errors <- c(errors, sprintf("Censored indicator {.val %s} cannot be also a covariate", is_censored))
   }
 
-  if (!is.null(is_censored) && is_censored %in% strata){
+  if (!is.null(is_censored) && any(is_censored %in% strata)){
     errors <- c(errors, sprintf("Censored indicator {.val %s} cannot be also strata", is_censored))
   }
 

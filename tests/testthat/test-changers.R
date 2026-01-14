@@ -265,14 +265,15 @@ test_that("remove_strata removes all if only one strata", {
 
 test_that("remove_strata can remove multiple strata", {
   test_data <- setup_test_data()
+  test_data$ndata$temperature2 <- test_data$ndata$temperature*2
   ndata <- test_data$ndata
 
   # Add three strata
-  ndata <- change_strata(ndata, c("gender", "age_group", "temperature"))
+  ndata <- change_strata(ndata, c("gender", "age_group", "temperature2"))
 
   result <- remove_strata(ndata, c("gender", "age_group"))
 
-  expect_equal(get_strata(result), "temperature")
+  expect_equal(get_strata(result), "temperature2")
   expect_equal(get_num_strata(result), 1)
 })
 
