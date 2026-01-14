@@ -5,7 +5,7 @@
 #'
 #' @param object A `tbl_now` object
 #' @param ... Additional arguments to pass to `tbl_now`
-#' @param new_data Another `tbl_now` with the same `strata`, `covariates`, `is_batched`,
+#' @param new_data Another `tbl_now` with the same `strata`, `covariates`, `is_censored`,
 #' and `temporal_effects` or a `data.frame` with additional (newer) data
 #' not present in `x`
 #'
@@ -191,7 +191,7 @@ update.tbl_now <- function(object, ..., new_data,
           report_date = get_report_date(object),
           strata = get_strata(updated_data),
           covariates = get_covariates(updated_data),
-          is_batched = get_is_batched(object),
+          is_censored = get_is_censored(object),
           event_units = get_event_units(object),
           report_units = get_report_units(object),
           data_type = get_data_type(object),
@@ -272,11 +272,11 @@ update_check_tbl_now_internal <- function(object, new_data){
   }
 
   #Check that both objects have the same event and report columns
-  if (!identical(get_is_batched(object), get_is_batched(new_data))){
+  if (!identical(get_is_censored(object), get_is_censored(new_data))){
     cli::cli_abort(
       paste0(
-        "`object` has is_batched = {.val {get_is_batched(object)}} while ",
-        "`new_data` has is_batched = {.val {get_is_batched(new_data)}}. ",
+        "`object` has is_censored = {.val {get_is_censored(object)}} while ",
+        "`new_data` has is_censored = {.val {get_is_censored(new_data)}}. ",
         "They must be the same in order to `update`."
       )
     )
@@ -348,10 +348,10 @@ update_check_data_frame_internal <- function(object, new_data){
   }
 
   #Check that both objects have the same event and report columns
-  if (!is.null(get_is_batched(object)) && !(get_is_batched(object) %in% colnames(new_data))){
+  if (!is.null(get_is_censored(object)) && !(get_is_censored(object) %in% colnames(new_data))){
     cli::cli_abort(
       paste0(
-        "`object` has is_batched = {.val {get_is_batched(object)}} but ",
+        "`object` has is_censored = {.val {get_is_censored(object)}} but ",
         "that column was not found in `new_data`."
       )
     )

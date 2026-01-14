@@ -24,6 +24,9 @@ tbl_format_footer.tbl_now <- function(x, ...) {
   footer <- cli::cli_fmt({
     cli::cli_rule()
     cli::cli_text("Now: {.val {get_now(x)}} | Event date: {.val {get_event_date(x)}} | Report date: {.val {get_report_date(x)}}")
+    if (length(get_is_censored(x)) > 0){
+      cli::cli_text("Right-censored indicator: {.val {get_is_censored(x)}}")
+    }
     if (get_num_strata(x) > 0){
       cli::cli_text("Strata: {.val {get_strata(x)}}")
     }
@@ -54,8 +57,8 @@ ctl_new_pillar.tbl_now <- function(controller, x, width, ...) {
       annotation <- "[strata]"
     } else if (!is.null(get_covariates(controller)) && (cval %in% get_covariates(controller))) {
       annotation <- "[covariate]"
-    } else if (identical(cval, get_is_batched(controller))) {
-      annotation <- "[is_batched]"
+    } else if (identical(cval, get_is_censored(controller))) {
+      annotation <- "[is_censored]"
     } else if (identical(cval, get_case_count(controller))) {
       annotation <- "[cases]"
     } else if (!is.null(get_temporal_effects(controller)) && (cval %in% get_temporal_effects(controller))) {

@@ -10,7 +10,7 @@ infer_data_type(
   event_date,
   report_date,
   strata = NULL,
-  is_batched = NULL,
+  is_censored = NULL,
   case_count = NULL,
   verbose = FALSE
 )
@@ -34,14 +34,14 @@ Strata correspond to variables that are of interest by themselves.
 For example if it is of interest to generate nowcasts by gender then
 \code{gender} is a \code{strata}.}
 
-\item{is_batched}{(optional)
+\item{is_censored}{(optional)
 \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL} (default).
 The name of a column containing either \code{TRUE} or \code{FALSE} indicating whether
 the \code{report_date} is correctly specified or corresponds to a \code{batch} and thus
 is censored. In other words, if the \code{report_date} is accurately measured
-set \code{is_batched = FALSE} but if the \code{report_date} corresponds to an error
+set \code{is_censored = FALSE} but if the \code{report_date} corresponds to an error
 and is only an upper bound of the real report date
-set \code{is_batched = TRUE}.}
+set \code{is_censored = TRUE}.}
 
 \item{case_count}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL}
 Name of the column with the case counts if \code{data_type} is "count-incidence"

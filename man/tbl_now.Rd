@@ -11,7 +11,7 @@ tbl_now(
   strata = NULL,
   covariates = NULL,
   case_count = NULL,
-  is_batched = NULL,
+  is_censored = NULL,
   now = NULL,
   event_units = "auto",
   report_units = "auto",
@@ -48,14 +48,14 @@ is not of interest to generate nowcasts by precipitation levels.}
 Name of the column with the case counts if \code{data_type} is "count-incidence"
 or "count-cumulative".}
 
-\item{is_batched}{(optional)
+\item{is_censored}{(optional)
 \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL} (default).
 The name of a column containing either \code{TRUE} or \code{FALSE} indicating whether
 the \code{report_date} is correctly specified or corresponds to a \code{batch} and thus
 is censored. In other words, if the \code{report_date} is accurately measured
-set \code{is_batched = FALSE} but if the \code{report_date} corresponds to an error
+set \code{is_censored = FALSE} but if the \code{report_date} corresponds to an error
 and is only an upper bound of the real report date
-set \code{is_batched = TRUE}.}
+set \code{is_censored = TRUE}.}
 
 \item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
 nowcast. If no \code{now} is given then the function automatically uses the last
@@ -106,7 +106,7 @@ by the \code{\link[=validate_tbl_now]{validate_tbl_now()}} function:
 \item{case_count}{Column containing the number of observations for that moment if \code{data_type} is \code{count-incidence} or \code{count-cumulative}.}
 \item{temporal_effects}{Names of the columns refering to the temporal effects.}
 \item{now}{Date of the \code{now} for a nowcast.}
-\item{is_batched}{Column indicating whether the measurement is noisy (only upper bound) or not.}
+\item{is_censored}{Column indicating whether the measurement is noisy (only upper bound) or not.}
 \item{event_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}. Corresponds to the units of \code{event_date}}
 \item{report_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}. Corresponds to the units of \code{report_date}}
 \item{repot_num}{Column where the \code{report_date} was transformed to numeric values}

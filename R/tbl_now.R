@@ -15,14 +15,14 @@
 #' Name of the column with the case counts if `data_type` is "count-incidence"
 #' or "count-cumulative".
 #'
-#' @param is_batched (optional)
+#' @param is_censored (optional)
 #' \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or `NULL` (default).
 #' The name of a column containing either `TRUE` or `FALSE` indicating whether
 #' the `report_date` is correctly specified or corresponds to a `batch` and thus
 #' is censored. In other words, if the `report_date` is accurately measured
-#' set `is_batched = FALSE` but if the `report_date` corresponds to an error
+#' set `is_censored = FALSE` but if the `report_date` corresponds to an error
 #' and is only an upper bound of the real report date
-#' set `is_batched = TRUE`.
+#' set `is_censored = TRUE`.
 #'
 #' @param strata (optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
 #' or `NULL` (default). Name of different variables (column names) in strata.
@@ -77,7 +77,7 @@
 #'   \item{case_count}{Column containing the number of observations for that moment if `data_type` is `count-incidence` or `count-cumulative`.}
 #'   \item{temporal_effects}{Names of the columns refering to the temporal effects.}
 #'   \item{now}{Date of the `now` for a nowcast.}
-#'   \item{is_batched}{Column indicating whether the measurement is noisy (only upper bound) or not.}
+#'   \item{is_censored}{Column indicating whether the measurement is noisy (only upper bound) or not.}
 #'   \item{event_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `event_date`}
 #'   \item{report_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `report_date`}
 #'   \item{repot_num}{Column where the `report_date` was transformed to numeric values}
@@ -198,7 +198,7 @@ tbl_now <- function(data,
                     strata = NULL,
                     covariates = NULL,
                     case_count = NULL,
-                    is_batched = NULL,
+                    is_censored = NULL,
                     now = NULL,
                     event_units = "auto",
                     report_units = "auto",
@@ -232,9 +232,9 @@ tbl_now <- function(data,
   case_count        <- colnames(data)[case_count_select]
   if (length(case_count) == 0) case_count <- NULL
 
-  is_batched_select <- tidyselect::eval_select(rlang::expr({{ is_batched }}), data)
-  is_batched        <- colnames(data)[is_batched_select]
-  if (length(is_batched) == 0) is_batched <- NULL
+  is_censored_select <- tidyselect::eval_select(rlang::expr({{ is_censored }}), data)
+  is_censored        <- colnames(data)[is_censored_select]
+  if (length(is_censored) == 0) is_censored <- NULL
 
   strata_select <- tidyselect::eval_select(rlang::expr({{ strata }}), data)
   strata        <- colnames(data)[strata_select]
@@ -295,7 +295,7 @@ tbl_now <- function(data,
   data_type    <- infer_data_type(data, data_type = data_type,
                                   event_date = event_date, report_date = report_date,
                                   strata = strata,
-                                  is_batched = is_batched,
+                                  is_censored = is_censored,
                                   case_count = case_count, verbose = verbose)
 
   # Capture all other attributes
@@ -314,7 +314,7 @@ tbl_now <- function(data,
   attr(data, "event_units")    <- event_units
   attr(data, "report_units")   <- report_units
   attr(data, "data_type")      <- data_type
-  attr(data, "is_batched")     <- is_batched
+  attr(data, "is_censored")     <- is_censored
 
   # Add all other attributes from ...
   for (attr_name in names(other_attrs)) {

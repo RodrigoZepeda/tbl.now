@@ -52,8 +52,8 @@ setup_test_data <- function() {
     temperature = c(25.5, 25.5, 26.0, 25.5, 26.0)
   )
 
-  # Linelist with is_batched
-  linelist_with_batched <- data.frame(
+  # Linelist with is_censored
+  linelist_with_censored <- data.frame(
     onset_week = as.Date(c(
       "2020-07-08", "2020-07-08", "2020-07-08",
       "2020-07-15", "2020-07-15"
@@ -70,7 +70,7 @@ setup_test_data <- function() {
     count_data = count_data,
     linelist_with_strata = linelist_with_strata,
     linelist_with_covariates = linelist_with_covariates,
-    linelist_with_batched = linelist_with_batched
+    linelist_with_censored = linelist_with_censored
   )
 }
 
@@ -292,15 +292,15 @@ test_that("to_count preserves covariate attributes", {
   expect_equal(get_num_covariates(result), 1)
 })
 
-# Tests for to_count.tbl_now() with is_batched ----
-test_that("to_count groups by is_batched when present", {
+# Tests for to_count.tbl_now() with is_censored ----
+test_that("to_count groups by is_censored when present", {
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
-    test_data$linelist_with_batched,
+    test_data$linelist_with_censored,
     event_date = "onset_week",
     report_date = "report_week",
-    is_batched = "is_censored",
+    is_censored = "is_censored",
     data_type = "linelist",
     report_units= "days",
     event_units= "days",
@@ -314,14 +314,14 @@ test_that("to_count groups by is_batched when present", {
   expect_true("is_censored" %in% colnames(result))
 })
 
-test_that("to_count creates separate counts for batched vs non-batched", {
+test_that("to_count creates separate counts for censored vs non-censored", {
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
-    test_data$linelist_with_batched,
+    test_data$linelist_with_censored,
     event_date = "onset_week",
     report_date = "report_week",
-    is_batched = "is_censored",
+    is_censored = "is_censored",
     data_type = "linelist",
     report_units= "days",
     event_units= "days",
@@ -331,9 +331,9 @@ test_that("to_count creates separate counts for batched vs non-batched", {
   result <- to_count(ndata,  to = "count-incidence")
 
   # Should have rows with TRUE and FALSE
-  batched_vals <- unique(result$is_censored)
-  expect_true(any(batched_vals == TRUE))
-  expect_true(any(batched_vals == FALSE))
+  censored_vals <- unique(result$is_censored)
+  expect_true(any(censored_vals == TRUE))
+  expect_true(any(censored_vals == FALSE))
 })
 
 # Tests for to_count.tbl_now() with count data ----

@@ -13,7 +13,7 @@
 \alias{get_event_units}
 \alias{get_data_type}
 \alias{get_temporal_effects}
-\alias{get_is_batched}
+\alias{get_is_censored}
 \alias{get_case_count}
 \title{Getters for tbl_now attributes}
 \usage{
@@ -39,7 +39,7 @@ get_data_type(x)
 
 get_temporal_effects(x)
 
-get_is_batched(x)
+get_is_censored(x)
 
 get_case_count(x)
 }
@@ -74,8 +74,8 @@ get_strata(ndata)
 #Get covariates
 get_covariates(ndata)
 
-#Get is batched
-get_is_batched(ndata)
+#Get is censored
+get_is_censored(ndata)
 
 #Get the now
 get_now(ndata)

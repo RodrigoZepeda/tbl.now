@@ -28,8 +28,8 @@
 #' #Get covariates
 #' get_covariates(ndata)
 #'
-#' #Get is batched
-#' get_is_batched(ndata)
+#' #Get is censored
+#' get_is_censored(ndata)
 #'
 #' #Get the now
 #' get_now(ndata)
@@ -121,8 +121,8 @@ get_temporal_effects <- function(x) {
 
 #' @rdname nowcast_data_getters
 #' @export
-get_is_batched <- function(x) {
-  attr(x, "is_batched", exact = TRUE)
+get_is_censored <- function(x) {
+  attr(x, "is_censored", exact = TRUE)
 }
 
 #' @rdname nowcast_data_getters
@@ -154,7 +154,7 @@ get_protected_generated_cols <- function(x){
 get_protected_given_cols <- function(x){
 
   #Return the protected columns from x
-  protected_cols <- c("event_date"  = get_event_date(x), "report_date" = get_report_date(x), "is_batched"  = get_is_batched(x))
+  protected_cols <- c("event_date"  = get_event_date(x), "report_date" = get_report_date(x), "is_censored"  = get_is_censored(x))
 
   if (!is.null(get_data_type(x)) && grepl("count", get_data_type(x))){
     protected_cols <- c(protected_cols, "case_count" = get_case_count(x))

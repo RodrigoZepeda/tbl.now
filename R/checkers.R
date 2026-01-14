@@ -183,11 +183,11 @@ check_delay_is_censored <- function(data, delay_is_censored) {
   #   dplyr::mutate(!!as.symbol(".delay_is_censored") := as.numeric(!!as.symbol(delay_is_censored)))
   #
   # # Check that values are only 0's and 1's
-  # is_batched_vals <- data %>%
+  # is_censored_vals <- data %>%
   #   dplyr::distinct_at(".delay_is_censored") %>%
   #   dplyr::pull()
   #
-  # if (!all(is_batched_vals %in% c(0, 1))) {
+  # if (!all(is_censored_vals %in% c(0, 1))) {
   #   cli::cli_abort(
   #     "Column {.val {delay_is_censored}} of {.code data} should only have values: {.code TRUE} or {.code FALSE}"
   #   )

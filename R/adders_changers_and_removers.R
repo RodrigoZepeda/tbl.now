@@ -51,10 +51,11 @@
 #'   dplyr::mutate(n2 = 1.15*n) %>%
 #'   change_case_count(n2)
 #'
-#' #Change is_batched
-#' ndata$is_batched <- FALSE
-#' ndata %>%
-#'   change_is_batched(is_batched)
+#' #Change is_censored
+#' ndata$is_censored <- FALSE
+#' ndata <- ndata %>%
+#'   change_is_censored(is_censored)
+#' ndata
 #'
 #' # Change covariates
 #' ndata$temperature <- rnorm(nrow(ndata), 25, 4)
@@ -140,7 +141,7 @@ NULL
 #' ndata %>% remove_covariates(temperature, humidity)
 #'
 #' @name remove
-#' @seealso [add_temporal_effects()] [add] [remove]
+#' @seealso [add_temporal_effects()] [add] [change]
 #' @md
 NULL
 
@@ -279,11 +280,11 @@ change_case_count <- function(x, case_count) {
 
 #' @rdname change
 #' @export
-#Change the `is_batched` to a different column name
-change_is_batched <- function(x, is_batched) {
+#Change the `is_censored` to a different column name
+change_is_censored <- function(x, is_censored) {
 
   #Get the event date
-  value_pos <- tidyselect::eval_select(rlang::expr({{ is_batched }}), x)
+  value_pos <- tidyselect::eval_select(rlang::expr({{ is_censored }}), x)
 
   if (length(value_pos) == 0){
     value <- NULL
@@ -296,18 +297,45 @@ change_is_batched <- function(x, is_batched) {
   }
 
   if (length(value) > 1) {
-    cli::cli_abort("{.arg is_batched} must be the name of one column (length 1)")
+    cli::cli_abort("{.arg is_censored} must be the name of one column (length 1)")
   }
 
   if (!is.null(value) && !rlang::is_logical(x[[value]])) {
     cli::cli_abort("Column {.val {value}} must be logical")
   }
 
-  attr(x, "is_batched") <-  value
+  attr(x, "is_censored") <-  value
 
   validate_tbl_now(x)
 
   return(x)
+}
+
+#' @rdname remove
+#' @export
+# Remove `value`  from is_censored
+remove_is_censored <- function(x){
+  change_is_censored(x, NULL)
+}
+
+#' @rdname add
+#' @export
+# Adds `value`  to existing strata
+add_is_censored <- function(x, value) {
+
+  if (length(get_is_censored(x)) > 0){
+    cli::cli_abort(
+      paste0(
+        "Already has value {.val {get_is_censored(x)}} as censored indicator.",
+        " Use {.help remove_is_censored} to remove it before adding or",
+        " {.help change_is_censored} to change it."
+      )
+    )
+  }
+
+  #Add to censored
+  change_is_censored(x, {{ value }})
+
 }
 
 #' @rdname change

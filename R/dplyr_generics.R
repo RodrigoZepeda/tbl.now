@@ -67,7 +67,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
   report_units   <- get_report_units(x)
   event_units    <- get_event_units(x)
   data_type      <- get_data_type(x)
-  is_batched     <- get_is_batched(x)
+  is_censored     <- get_is_censored(x)
   case_count       <- get_case_count(x)
 
   if (data_type == "linelist"){warn_non_uniqueness <- FALSE}
@@ -126,9 +126,9 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
     ))
   }
 
-  # is_batched must be NULL or character(1)
-  if (!is.null(is_batched) && (length(is_batched) != 1 || !is.character(is_batched))) {
-    errors <- c(errors, "Attribute {.val is_batched} must be {.val NULL} or a character vector of length 1")
+  # is_censored must be NULL or character(1)
+  if (!is.null(is_censored) && (length(is_censored) != 1 || !is.character(is_censored))) {
+    errors <- c(errors, "Attribute {.val is_censored} must be {.val NULL} or a character vector of length 1")
   }
 
   # === 5. Validate columns exist in data ===
@@ -140,8 +140,8 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
     errors <- c(errors, sprintf("Column {.val %s} (report_date) not found in data", report_date))
   }
 
-  if (!is.null(is_batched) && length(is_batched) == 1 && !(is_batched %in% colnames(x))) {
-    errors <- c(errors, sprintf("Column {.val %s} (is_batched) not found in data", is_batched))
+  if (!is.null(is_censored) && length(is_censored) == 1 && !(is_censored %in% colnames(x))) {
+    errors <- c(errors, sprintf("Column {.val %s} (is_censored) not found in data", is_censored))
   }
 
   if (!is.null(strata)) {
@@ -173,9 +173,9 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
     }
   }
 
-  if (!is.null(is_batched) && length(is_batched) == 1 && is_batched %in% colnames(x)) {
-    if (!is.logical(x[[is_batched]])) {
-      errors <- c(errors, sprintf("Column '%s' must be logical (TRUE/FALSE)", is_batched))
+  if (!is.null(is_censored) && length(is_censored) == 1 && is_censored %in% colnames(x)) {
+    if (!is.logical(x[[is_censored]])) {
+      errors <- c(errors, sprintf("Column '%s' must be logical (TRUE/FALSE)", is_censored))
     }
   }
 
@@ -229,7 +229,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
     current_rows  <- nrow(x)
     distinct_rows <- x %>%
       dplyr::as_tibble() %>%
-      dplyr::distinct_at(c(get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x), get_is_batched(x), get_temporal_effects(x))) %>%
+      dplyr::distinct_at(c(get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x), get_is_censored(x), get_temporal_effects(x))) %>%
       nrow()
 
     if (current_rows > distinct_rows){
@@ -510,7 +510,7 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
                  report_date = get_report_date(.data),
                  strata = get_strata(.data),
                  covariates = get_covariates(.data),
-                 is_batched = get_is_batched(.data),
+                 is_censored = get_is_censored(.data),
                  now = get_now(.data),
                  event_units = get_event_units(.data),
                  report_units = get_event_units(.data),
@@ -591,7 +591,7 @@ ungroup.grouped_tbl_now <- function(x, ...) {
                      report_date = get_report_date(x),
                      strata = get_strata(x),
                      covariates = get_covariates(x),
-                     is_batched = get_is_batched(x),
+                     is_censored = get_is_censored(x),
                      now = get_now(x),
                      event_units = get_event_units(x),
                      report_units = get_report_units(x),
@@ -629,7 +629,7 @@ class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_
                 report_date = get_report_date(.data),
                 strata = get_strata(.data),
                 covariates = get_covariates(.data),
-                is_batched = get_is_batched(.data),
+                is_censored = get_is_censored(.data),
                 now = get_now(.data),
                 event_units = get_event_units(.data),
                 report_units = get_event_units(.data),
@@ -682,7 +682,7 @@ reframe.tbl_now <- function(.data, ..., .by = NULL) {
             report_date = get_report_date(.data),
             strata = get_strata(.data),
             covariates = get_covariates(.data),
-            is_batched = get_is_batched(.data),
+            is_censored = get_is_censored(.data),
             now = get_now(.data),
             event_units = get_event_units(.data),
             report_units = get_event_units(.data),

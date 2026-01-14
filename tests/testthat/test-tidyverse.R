@@ -6,14 +6,14 @@ dtf <- expand.grid(
   delay = 1:10,
   sex = c("M","F"),
   region = c("North","East","West","South"),
-  batched = c(T,F)) %>%
+  censored = c(T,F)) %>%
   mutate(report_date = event + weeks(delay)) %>%
   rowwise() %>%
   mutate(cases = rpois(n(), 22)) %>%
   ungroup()
 
 dfnow <- tbl_now(dtf, event_date = "event", report_date = "report_date",
-                 strata = c("sex","region"), is_batched = "batched",
+                 strata = c("sex","region"), is_censored = "censored",
                  case_count = "cases", verbose = FALSE)
 
 
@@ -26,7 +26,7 @@ test_that("It doesn't loose class after two applications", {
 
 
   expect_true(
-    dfnow %>% filter(region == "North") %>% filter(batched) %>% is_tbl_now()
+    dfnow %>% filter(region == "North") %>% filter(censored) %>% is_tbl_now()
   )
 
   # Filtering and then binding should have same

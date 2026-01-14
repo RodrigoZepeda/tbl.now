@@ -20,7 +20,7 @@
 
 \item{...}{Additional arguments to pass to `tbl_now`}
 
-\item{new_data}{Another `tbl_now` with the same `strata`, `covariates`, `is_batched`,
+\item{new_data}{Another `tbl_now` with the same `strata`, `covariates`, `is_censored`,
 and `temporal_effects` or a `data.frame` with additional (newer) data
 not present in `x`}
 

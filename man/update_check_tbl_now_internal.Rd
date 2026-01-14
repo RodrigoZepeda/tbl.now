@@ -9,7 +9,7 @@ update_check_tbl_now_internal(object, new_data)
 \arguments{
 \item{object}{A `tbl_now` object}
 
-\item{new_data}{Another `tbl_now` with the same `strata`, `covariates`, `is_batched`,
+\item{new_data}{Another `tbl_now` with the same `strata`, `covariates`, `is_censored`,
 and `temporal_effects` or a `data.frame` with additional (newer) data
 not present in `x`}
 }
