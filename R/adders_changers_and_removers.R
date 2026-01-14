@@ -76,7 +76,7 @@ NULL
 #' auxiliary dplyr verbs such as [dplyr::starts_with()], [dplyr::all_of()],
 #' and [dplyr::where()]. See [dplyr::select()] for additional info.
 #'
-#' @inheritParams remove
+#' @inheritParams change
 #'
 #' @return A `tbl_now` object with updated attributes
 #'
@@ -321,7 +321,7 @@ remove_is_censored <- function(x){
 #' @rdname add
 #' @export
 # Adds `value`  to existing strata
-add_is_censored <- function(x, value) {
+add_is_censored <- function(x, is_censored) {
 
   if (length(get_is_censored(x)) > 0){
     cli::cli_abort(
@@ -334,7 +334,7 @@ add_is_censored <- function(x, value) {
   }
 
   #Add to censored
-  change_is_censored(x, {{ value }})
+  change_is_censored(x, {{ is_censored }})
 
 }
 

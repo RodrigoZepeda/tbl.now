@@ -7,7 +7,7 @@
 \alias{add_covariates}
 \title{Add attributes to a \code{tbl_now} object}
 \usage{
-add_is_censored(x, value)
+add_is_censored(x, is_censored)
 
 add_strata(x, ...)
 
@@ -15,6 +15,15 @@ add_covariates(x, ...)
 }
 \arguments{
 \item{x}{A \code{tbl_now} object}
+
+\item{is_censored}{(optional)
+\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL} (default).
+The name of a column containing either \code{TRUE} or \code{FALSE} indicating whether
+the \code{report_date} is correctly specified or corresponds to a \code{batch} and thus
+is censored. In other words, if the \code{report_date} is accurately measured
+set \code{is_censored = FALSE} but if the \code{report_date} corresponds to an error
+and is only an upper bound of the real report date
+set \code{is_censored = TRUE}.}
 
 \item{...}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} with the columns
 for the attribute. In the case of \code{covariates} and \code{strata} argument \code{...} can
