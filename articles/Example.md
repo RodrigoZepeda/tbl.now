@@ -336,7 +336,7 @@ df_pr
 #>  9 Puerto Rico             1 2024-09-01      2024-11-10           135
 #> 10 Puerto Rico             0 2024-09-08      2024-11-10           136
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-11-12 | Event date: "target_end_date" | Report date: "latest_report"
+#> # Now: 2025-11-09 | Event date: "target_end_date" | Report date: "latest_report"
 #> # Strata: "location_name"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 1,249 more rows
@@ -369,7 +369,7 @@ df_pr
 #>  9 Puerto Rico             1 2024-09-01      2024-11-10           135
 #> 10 Puerto Rico             0 2024-09-08      2024-11-10           136
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-11-12 | Event date: "target_end_date" | Report date: "latest_report"
+#> # Now: 2025-11-09 | Event date: "target_end_date" | Report date: "latest_report"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 1,249 more rows
 #> # ℹ 2 more variables: .report_num <dbl>, .delay <dbl>
@@ -379,7 +379,7 @@ The `now` (the effective horizon for the nowcast) is:
 
 ``` r
 get_now(df_pr)
-#> [1] "2025-11-12"
+#> [1] "2025-11-09"
 ```
 
 ### Changing the “now” for Historical Backtesting
@@ -397,7 +397,7 @@ df_pr_new_now
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-11-12 | Event date: "target_end_date" | Report date: "latest_report"
+#> # Now: 2025-11-09 | Event date: "target_end_date" | Report date: "latest_report"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 7 variables: location_name <chr>, observation <dbl>,
 #> #   target_end_date <date>, latest_report <date>, .event_num <dbl>,
@@ -408,7 +408,7 @@ The new now is:
 
 ``` r
 get_now(df_pr_new_now)
-#> [1] "2025-11-12"
+#> [1] "2025-11-09"
 ```
 
 ## Working with Initial and Latest Reports
