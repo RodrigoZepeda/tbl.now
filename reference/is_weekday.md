@@ -36,13 +36,13 @@ is_weekday(as.Date("2020-04-19"))                   # FALSE (Sun)
 
 # Middle East weekend (Fri - Sat)
 is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri","Sat"))
-#> [1] TRUE
+#> [1] FALSE
 
 # Weekend only on Friday
 is_weekday(as.Date("2020-04-17"), weekend_days = "Friday")
-#> [1] TRUE
-is_weekday(as.Date("2020-04-18"), weekend_days = "Friday")
 #> [1] FALSE
+is_weekday(as.Date("2020-04-18"), weekend_days = "Friday")
+#> [1] TRUE
 
 # Weekend on Sun - Mon (numeric: 7 = Sun, 1 = Mon)
 is_weekday(as.Date("2020-04-20"), weekend_days = c(7, 1))
