@@ -562,7 +562,7 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
 
 #' @importFrom dplyr rowwise
 #' @exportS3Method dplyr::rowwise
-rowwise.tbl_now <- function(.data, ...) {
+rowwise.tbl_now <- function(data, ...) {
 
   cli::cli_alert_warning(
     "`rowwise` has not yet been implemented for `tbl_now`. Returning a `data.frame`"
