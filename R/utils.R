@@ -66,15 +66,16 @@ is_weekday <- function(date, weekend_days = c("Sat", "Sun")) {
   weekend_idx <- if (is.numeric(weekend_days)) {
     as.integer(weekend_days)
   } else {
-    all_days           <- lubridate::wday(1:7, label = TRUE, abbr = TRUE, week_start = 1)
+    all_days           <- lubridate::wday(1:7, label = TRUE, abbr = TRUE, week_start = 1) %>% sort()
     weekend_days_clean <- tolower(substr(weekend_days, 1, 3))
     day_lookup         <- tolower(substr(as.character(all_days), 1, 3))
     match(weekend_days_clean, day_lookup)
   }
 
   # Invalid weekend specification
-  if (any(is.na(weekend_idx)))
-    cli::cli_abort("Invalid `weekend_days` provided. Must be integer (1 to 7) or day names:{lubridate::wday(1:7, label = TRUE, abbr = TRUE} ")
+  if (any(is.na(weekend_idx)) || any(weekend_idx < 1 | weekend_idx > 7)){
+    cli::cli_abort("Invalid `weekend_days` provided. Must be integer (1 to 7) or day names: {lubridate::wday(1:7, label = TRUE, abbr = TRUE)}")
+  }
 
   # Compute wday with given start-of-week
   d <- lubridate::wday(date, week_start = 1)
