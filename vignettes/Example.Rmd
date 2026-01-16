@@ -154,14 +154,14 @@ In order to remove these decimals which don't work for all nowcasting models, we
 
 
 ```{r}
-df_flu <- df_flu %>% 
+df_flu2 <- df_flu %>% 
   align_weeks()
 ```
 
 And results in integer delays:
 
 ```{r, max.print=300}
-df_flu$.delay %>% unique()
+df_flu2$.delay %>% unique()
 ```
 
 ## Working with the `tbl_now` Object
