@@ -299,14 +299,14 @@ on Sundays. This is done with the
 function:
 
 ``` r
-df_flu2 <- df_flu %>% 
+df_flu <- df_flu %>% 
   align_weeks()
 ```
 
 And results in integer delays:
 
 ``` r
-df_flu2$.delay %>% unique()
+df_flu$.delay %>% unique()
 #>   [1]  84  83  82  81  80  79  78  77  76  75  74  73  72  71  70  69  68  67
 #>  [19]  66  65  64  63  62  61  60  59  58  57  56  55  54  53  52  51  50  49
 #>  [37]  48  47  46  45  44  43  42  41  40  39  38  37  36  35  34  33  32  31
@@ -332,27 +332,27 @@ df_pr <- df_flu %>%
   filter(target_end_date >= ymd("2024/07/01"))
 
 df_pr
-#> # A tibble:  1,291 × 7
+#> # A tibble:  1,259 × 7
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#>    latest_report target_end_date location_name observation .event_num
-#>    <date>        <date>          <chr>               <dbl>      <dbl>
-#>    [report_date] [event_date]    [strata]          [cases]      [...]
-#>  1 2024-11-16    2024-07-06      Puerto Rico             7        126
-#>  2 2024-11-16    2024-07-13      Puerto Rico             6        127
-#>  3 2024-11-16    2024-07-20      Puerto Rico             9        128
-#>  4 2024-11-16    2024-07-27      Puerto Rico             3        129
-#>  5 2024-11-16    2024-08-03      Puerto Rico             6        130
-#>  6 2024-11-16    2024-08-10      Puerto Rico             5        131
-#>  7 2024-11-16    2024-08-17      Puerto Rico             3        132
-#>  8 2024-11-16    2024-08-24      Puerto Rico             3        133
-#>  9 2024-11-16    2024-08-31      Puerto Rico             2        134
-#> 10 2024-11-16    2024-09-07      Puerto Rico             1        135
+#>    location_name observation target_end_date latest_report .event_num
+#>    <chr>               <dbl> <date>          <date>             <dbl>
+#>    [strata]          [cases] [event_date]    [report_date]      [...]
+#>  1 Puerto Rico             6 2024-07-07      2024-11-10           127
+#>  2 Puerto Rico             9 2024-07-14      2024-11-10           128
+#>  3 Puerto Rico             3 2024-07-21      2024-11-10           129
+#>  4 Puerto Rico             6 2024-07-28      2024-11-10           130
+#>  5 Puerto Rico             5 2024-08-04      2024-11-10           131
+#>  6 Puerto Rico             3 2024-08-11      2024-11-10           132
+#>  7 Puerto Rico             3 2024-08-18      2024-11-10           133
+#>  8 Puerto Rico             2 2024-08-25      2024-11-10           134
+#>  9 Puerto Rico             1 2024-09-01      2024-11-10           135
+#> 10 Puerto Rico             0 2024-09-08      2024-11-10           136
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2025-11-12 | Event date: "target_end_date" | Report date: "latest_report"
 #> # Strata: "location_name"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 1,281 more rows
+#> # ℹ 1,249 more rows
 #> # ℹ 2 more variables: .report_num <dbl>, .delay <dbl>
 ```
 
@@ -365,26 +365,26 @@ df_pr <- df_pr %>%
   remove_strata("location_name")
 
 df_pr
-#> # A tibble:  1,291 × 7
+#> # A tibble:  1,259 × 7
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `weeks` | Report: `weeks`
-#>    latest_report target_end_date location_name observation .event_num
-#>    <date>        <date>          <chr>               <dbl>      <dbl>
-#>    [report_date] [event_date]    [...]             [cases]      [...]
-#>  1 2024-11-16    2024-07-06      Puerto Rico             7        126
-#>  2 2024-11-16    2024-07-13      Puerto Rico             6        127
-#>  3 2024-11-16    2024-07-20      Puerto Rico             9        128
-#>  4 2024-11-16    2024-07-27      Puerto Rico             3        129
-#>  5 2024-11-16    2024-08-03      Puerto Rico             6        130
-#>  6 2024-11-16    2024-08-10      Puerto Rico             5        131
-#>  7 2024-11-16    2024-08-17      Puerto Rico             3        132
-#>  8 2024-11-16    2024-08-24      Puerto Rico             3        133
-#>  9 2024-11-16    2024-08-31      Puerto Rico             2        134
-#> 10 2024-11-16    2024-09-07      Puerto Rico             1        135
+#>    location_name observation target_end_date latest_report .event_num
+#>    <chr>               <dbl> <date>          <date>             <dbl>
+#>    [...]             [cases] [event_date]    [report_date]      [...]
+#>  1 Puerto Rico             6 2024-07-07      2024-11-10           127
+#>  2 Puerto Rico             9 2024-07-14      2024-11-10           128
+#>  3 Puerto Rico             3 2024-07-21      2024-11-10           129
+#>  4 Puerto Rico             6 2024-07-28      2024-11-10           130
+#>  5 Puerto Rico             5 2024-08-04      2024-11-10           131
+#>  6 Puerto Rico             3 2024-08-11      2024-11-10           132
+#>  7 Puerto Rico             3 2024-08-18      2024-11-10           133
+#>  8 Puerto Rico             2 2024-08-25      2024-11-10           134
+#>  9 Puerto Rico             1 2024-09-01      2024-11-10           135
+#> 10 Puerto Rico             0 2024-09-08      2024-11-10           136
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2025-11-12 | Event date: "target_end_date" | Report date: "latest_report"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 1,281 more rows
+#> # ℹ 1,249 more rows
 #> # ℹ 2 more variables: .report_num <dbl>, .delay <dbl>
 ```
 
@@ -412,8 +412,8 @@ df_pr_new_now
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2025-11-12 | Event date: "target_end_date" | Report date: "latest_report"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 7 variables: latest_report <date>, target_end_date <date>,
-#> #   location_name <chr>, observation <dbl>, .event_num <dbl>,
+#> # ℹ 7 variables: location_name <chr>, observation <dbl>,
+#> #   target_end_date <date>, latest_report <date>, .event_num <dbl>,
 #> #   .report_num <dbl>, .delay <dbl>
 ```
 
