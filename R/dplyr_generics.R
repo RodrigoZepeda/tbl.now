@@ -555,7 +555,8 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
                  case_count = get_case_count(.data),
                  verbose = FALSE,
                  force = TRUE,
-                 warn_non_uniqueness = FALSE)
+                 warn_non_uniqueness = FALSE,
+                 t_effects = get_temporal_effects(.data))
   }
   x
 }
@@ -648,6 +649,7 @@ ungroup.grouped_tbl_now <- function(x, ...) {
                      case_count = get_case_count(x),
                      verbose = FALSE,
                      force = TRUE,
+                     t_effects = get_temporal_effects(x),
                      warn_non_uniqueness = FALSE)
   }
   return(x)
@@ -687,6 +689,7 @@ class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_
                 verbose = FALSE,
                 force = TRUE,
                 warn_non_uniqueness = FALSE,
+                t_effects =  get_temporal_effects(.data),
                 align_weeks = FALSE)
     },
     error = function(e) {
@@ -741,6 +744,7 @@ reframe.tbl_now <- function(.data, ..., .by = NULL) {
             verbose = FALSE,
             force = TRUE,
             warn_non_uniqueness = FALSE,
+            t_effects =  get_temporal_effects(.data),
             align_weeks = FALSE)
   },
   error = function(e) {
