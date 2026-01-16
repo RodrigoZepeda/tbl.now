@@ -79,8 +79,9 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
   } else if  (get_data_type(x) == "linelist" & to == "count-incidence"){
 
     #Change the attribute first to avoid the warning from summarise
-    attr(x, "data_type") <- "count-incidence"
-    attr(x, "case_count")  <- case_count
+    attr(x, "data_type")  <- "count-incidence"
+    attr(x, "case_count") <- case_count
+
 
     #Summarise
     x <- x %>%
@@ -122,6 +123,7 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
 
   x <- x %>%
     dplyr::arrange_at(c(get_event_date(x), get_strata(x), get_is_censored(x)))
+
   #Return the count
   return(x)
 

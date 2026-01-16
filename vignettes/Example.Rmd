@@ -141,6 +141,29 @@ This yields a correctly structured `tbl_now` object:
 df_flu
 ```
 
+### Aligining weeks
+
+There is however a last caveat. The `as_of` day of the week is sometimes registered a Wednesday and sometimes its a Saturday. This results in some `.delay`s that include decimal components: 
+
+```{r, max.print=300}
+df_flu$.delay %>% unique()
+```
+
+
+In order to remove these decimals which don't work for all nowcasting models, we can align both report and event dates so that they all happen on Sundays. This is done with the `align_weeks()` function: 
+
+
+```{r}
+df_flu <- df_flu %>% 
+  align_weeks()
+```
+
+And results in integer delays:
+
+```{r, max.print=300}
+df_flu$.delay %>% unique()
+```
+
 ## Working with the `tbl_now` Object
 
 `tbl_now` objects are fully compatible with `dplyr` verbs. For example, we may focus on Puerto Rico and observations after mid–2024:

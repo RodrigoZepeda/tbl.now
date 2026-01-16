@@ -193,12 +193,20 @@ change_event_date <- function(x, event_date) {
 
   attr(x, "event_date") <-  value
 
+  #Recalculate the delay when changing event date
+  x <- time_cols_to_numeric(x, event_date = value,
+                            report_date = get_report_date(x),
+                            report_units = get_report_units(x),
+                            event_units = get_event_units(x),
+                            force = TRUE)
+
   # Re-infer now if needed
   now <- tryCatch(
     infer_now(x, now = get_now(x), event_date = value, report_date = get_report_date(x)),
     error = function(e) get_now(x)
   )
   attr(x, "now") <-  now
+
 
   validate_tbl_now(x)
 
@@ -232,6 +240,14 @@ change_report_date <- function(x, report_date) {
   }
 
   attr(x, "report_date") <-  value
+
+  #Recalculate the delay when changing report date
+  x <- time_cols_to_numeric(x, event_date = get_event_date(x),
+                            report_date = value,
+                            report_units = get_report_units(x),
+                            event_units = get_event_units(x),
+                            force = TRUE)
+
 
   # Re-infer now if needed
   now <- tryCatch(

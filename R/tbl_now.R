@@ -62,6 +62,10 @@
 #' has multiple observations for same event and report date (conditional on covariates
 #' and strata)
 #'
+#' @param align_weeks (optional) Logical. If both event and report units are weeks
+#' and `align_weeks = TRUE` it ensures that all weeks start in a Sunday so that
+#' week differences and `.delays` are all integer.
+#'
 #' @param ... Additional metadata to be stored as attributes.
 #'
 #' @section Attributes:
@@ -207,6 +211,7 @@ tbl_now <- function(data,
                     verbose = TRUE,
                     force = FALSE,
                     warn_non_uniqueness = TRUE,
+                    align_weeks = FALSE,
                     ...) {
 
 
@@ -353,6 +358,12 @@ tbl_now <- function(data,
 
   #Validate
   validate_tbl_now(data, warn_non_uniqueness = warn_non_uniqueness)
+
+  #Align weeks
+  if (align_weeks && get_report_units(data) == "weeks" && get_event_units(data) == "weeks"){
+    data <- data %>% align_weeks()
+  }
+
 
   return(data)
 }

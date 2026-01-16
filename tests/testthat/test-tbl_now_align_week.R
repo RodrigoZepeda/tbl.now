@@ -1,40 +1,40 @@
-test_that("align_week returns a data.frame with new aligned date column", {
+test_that("align_weeks returns a data.frame with new aligned date column", {
   df <- data.frame(
     date = as.Date(c("2020-10-31", "2022-11-07", "2022-11-13"))
   )
 
-  out <- align_week(df, date_col = date)
+  out <- align_weeks(df, date_col = date)
 
   expect_s3_class(out, "data.frame")
   expect_true("date_aligned" %in% names(out))
 })
 
-test_that("align_week works with and without ''", {
+test_that("align_weeks works with and without ''", {
   df <- data.frame(
     date = as.Date(c("2020-10-31", "2022-11-07", "2022-11-13"))
   )
 
   expect_equal(
-    align_week(df, date_col = "date"),
-    align_week(df, date_col = date)
+    align_weeks(df, date_col = "date"),
+    align_weeks(df, date_col = date)
   )
 
 })
 
-test_that("align_week aligns dates to the specified weekday", {
+test_that("align_weeks aligns dates to the specified weekday", {
   df <- data.frame(date = as.Date("2022-11-09"))  # Wednesday
 
   # Align to Monday (2)
-  out <- align_week(df, date_col = date, align_on_day = 2)
+  out <- align_weeks(df, date_col = date, align_on_day = 2)
   aligned <- out$date_aligned
 
   expect_equal(lubridate::wday(aligned), 2)
 })
 
-test_that("align_week supports isoweek", {
+test_that("align_weeks supports isoweek", {
   df <- data.frame(date = as.Date("2022-12-31"))
 
-  out <- align_week(df, date_col = date, type = "iso")
+  out <- align_weeks(df, date_col = date, type = "iso")
   aligned <- out$date_aligned
 
   expect_s3_class(out, "data.frame")
@@ -42,20 +42,20 @@ test_that("align_week supports isoweek", {
   expect_true(!is.na(aligned))
 })
 
-test_that("align_week errors with incorrect type", {
+test_that("align_weeks errors with incorrect type", {
   df <- data.frame(date = as.Date("2022-12-31"))
 
   expect_error(
-    align_week(df, date_col = date, type = "something"),
+    align_weeks(df, date_col = date, type = "something"),
     "Invalid type"
   )
 
 })
 
-test_that("align_week does not modify original columns", {
+test_that("align_weeks does not modify original columns", {
   df <- data.frame(date = as.Date("2022-11-09"))
 
-  out <- align_week(df, date_col = date)
+  out <- align_weeks(df, date_col = date)
 
   expect_true("date" %in% names(out))
   expect_true("date_aligned" %in% names(out))

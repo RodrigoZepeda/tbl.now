@@ -1,16 +1,23 @@
 #' Align weeks to a common weekday
 #'
-#' Aligns all dates in a dataset so that week boundaries occur on a
-#' specified day of the week. This is useful in the context of nowcasting
-#' for cases when weekly reports are changed from say Wednesday to Thursday.
+#' Aligns all dates in either a `data.frame` or a `tbl.now` so that week
+#' boundaries occur on a specified day of the week. This is useful in the
+#' context of nowcasting for cases when weekly reports are changed from say
+#' Wednesday to Thursday so that delays don't have a decimal point.
+#'
+#' @details
+#' In some cases, to calculate the delay of information, what matters is the
+#' week distance (reports from week 3 in week 7) and not the specific date distance
+#' (reports from Saturday of week 3 vs Monday in week 7). The `align_weeks`
+#' function ensures that all week reports are aligned to the same day of the week
+#' (if applied to a `tbl_now`) or
+#'
 #'
 #' @note
 #' This is also useful when working with epiweeks
 #' or isoweeks where week boundaries may differ between systems or years
 #'
 #' @param .data A `data.frame` or tibble.
-#'
-#' @param date_col A \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column name containing dates.
 #'
 #' @param align_on_day Integer 1–7 indicating the weekday to align to.
 #' Uses [lubridate::wday()] numbering (1 = Sunday, 7 = Saturday).
@@ -19,6 +26,11 @@
 #'   which week/year functions to use whether [lubridate::epiweek()] or
 #'   [lubridate::isoweek()]
 #'
+#' @param ... Additional arguments to pass to function
+#'
+#' @param date_col A \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column
+#' name containing dates.
+#'
 #' @param new_date_col Name of the new aligned date column to be created. By default
 #' it creates a column named `\{date_col\}_aligned` where `date_col` corresponds
 #' to the column name passed to that parameter.
@@ -26,21 +38,51 @@
 #' @return A tibble identical to `.data` but with an added aligned date column.
 #'
 #' @examples
+#' # DATA.FRAMES:
+#' # The function aligns weekly data to be "reported" on the same day of the week
 #' df <- data.frame(
 #'   date = as.Date(c("2020-10-31", "2022-11-07", "2022-11-13"))
 #' )
 #'
 #' # Align to Sundays
-#' align_week(df, date_col = date)
+#' align_weeks(df, date_col = date)
 #'
 #' # Align to Tuesday
-#' align_week(df, date_col = date, align_on_day = 3)
+#' align_weeks(df, date_col = date, align_on_day = 3)
 #'
+#' ## TBL_NOWS
+#' # If not used you can see the delay has decimal points because
+#' # reports (`as_of`) are sometimes on Saturday and sometimes Wednesday
+#' data(flusight)
+#'
+#' #Get the table
+#' flutbl <- tbl_now(flusight, event_date = "target_end_date",
+#'   report_date = "as_of", case_col = "observation",
+#'   strata = c("location_name"))
+#'
+#' #See that some delays have decimals
+#' suppressWarnings(as.numeric(flutbl[413484, ".delay"]))
+#'
+#' #Align the weeks so that they all start on Sunday
+#' flutbl <- flutbl %>% align_weeks()
+#'
+#' #Delayed decimals are now integer as all weeks start in Sunday!
+#' suppressWarnings(as.numeric(flutbl[413484, ".delay"]))
+#'
+#' @name align_weeks
 #' @export
-align_week <- function(.data,
-                       date_col,
+align_weeks <- function(.data, align_on_day = 1, type = "epi", ...){
+  UseMethod("align_weeks")
+}
+
+
+#' @export
+#' @rdname align_weeks
+align_weeks.data.frame <- function(.data,
                        align_on_day = 1,
                        type = "epi",
+                       ...,
+                       date_col,
                        new_date_col = NULL) {
 
   #Find the datecol
@@ -77,6 +119,33 @@ align_week <- function(.data,
     ) %>%
     dplyr::select(-!!as.symbol("week_col"), -!!as.symbol("year_col"))
 }
+
+#' @export
+#' @rdname align_weeks
+align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
+
+  event_col  <- get_event_date(.data)
+  report_col <- get_report_date(.data)
+
+  .data <- .data %>%
+    align_weeks.data.frame(date_col = event_col, align_on_day = align_on_day, type = type, new_date_col = paste0("temp_", event_col)) %>%
+    align_weeks.data.frame(date_col = report_col, align_on_day = align_on_day, type = type, new_date_col = paste0("temp_", report_col))
+
+  #Throws the warning that its forcing conversion to tibble which we don't need
+  suppressWarnings({
+    .data <- .data %>%
+      dplyr::select(-!!as.symbol(event_col), -!!as.symbol(report_col), -!!as.symbol(".delay"),
+                  -!!as.symbol(".event_num"), -!!as.symbol(".report_num"))
+  })
+
+  .data %>%
+    dplyr::rename(!!as.symbol(event_col) := !!as.symbol(paste0("temp_", event_col))) %>%
+    dplyr::rename(!!as.symbol(report_col) := !!as.symbol(paste0("temp_", report_col))) %>%
+    as_tbl_now(event_date = event_col, report_date = report_col, align_weeks = FALSE, verbose = FALSE)
+
+}
+
+
 
 #' Convert epidemiological (or ISO) week/year to aligned dates
 #'

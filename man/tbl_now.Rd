@@ -20,6 +20,7 @@ tbl_now(
   verbose = TRUE,
   force = FALSE,
   warn_non_uniqueness = TRUE,
+  align_weeks = FALSE,
   ...
 )
 }
@@ -82,6 +83,10 @@ Default = \code{FALSE}.}
 \item{warn_non_uniqueness}{(optional) Logical. Whether to throw a warning if data
 has multiple observations for same event and report date (conditional on covariates
 and strata)}
+
+\item{align_weeks}{(optional) Logical. If both event and report units are weeks
+and \code{align_weeks = TRUE} it ensures that all weeks start in a Sunday so that
+week differences and \code{.delays} are all integer.}
 
 \item{...}{Additional metadata to be stored as attributes.}
 }

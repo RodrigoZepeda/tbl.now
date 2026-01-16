@@ -674,7 +674,8 @@ class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_
                 case_count = get_case_count(.data),
                 verbose = FALSE,
                 force = TRUE,
-                warn_non_uniqueness = FALSE)
+                warn_non_uniqueness = FALSE,
+                align_weeks = FALSE)
     },
     error = function(e) {
       cli::cli_warn("Dropping `tbl_now` attributes and converting to `tibble`")
@@ -727,7 +728,8 @@ reframe.tbl_now <- function(.data, ..., .by = NULL) {
             case_count = get_case_count(.data),
             verbose = FALSE,
             force = TRUE,
-            warn_non_uniqueness = FALSE)
+            warn_non_uniqueness = FALSE,
+            align_weeks = FALSE)
   },
   error = function(e) {
     cli::cli_warn("Dropping `tbl_now` attributes and converting to `tibble`")
