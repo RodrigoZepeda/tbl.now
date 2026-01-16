@@ -141,7 +141,17 @@ align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
   .data %>%
     dplyr::rename(!!as.symbol(event_col) := !!as.symbol(paste0("temp_", event_col))) %>%
     dplyr::rename(!!as.symbol(report_col) := !!as.symbol(paste0("temp_", report_col))) %>%
-    as_tbl_now(event_date = event_col, report_date = report_col, align_weeks = FALSE, verbose = FALSE)
+    as_tbl_now(event_date = event_col, report_date = report_col, align_weeks = FALSE,
+               verbose = FALSE,
+               data_type    = get_data_type(.data),
+               strata       = get_strata(.data),
+               covariates   = get_covariates(.data),
+               case_count   = get_case_count(.data),
+               is_censored  = get_is_censored(.data),
+               event_units  = get_event_units(.data),
+               report_units = get_report_units(.data),
+               now          = get_now(.data),
+               t_effects    = get_temporal_effects(.data)) #TODO: Check temporal effects works
 
 }
 
