@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -1076,7 +1076,7 @@ initial and final reports.</p>
 <div class="section level3">
 <h3 id="week-alignment">Week alignment<a class="anchor" aria-label="anchor" href="#week-alignment"></a>
 </h3>
-<p>The <a href="https://rodrigozepeda.github.io/tbl.now/reference/align_week.html">align_week()</a>
+<p>The <a href="https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.html">align_weeks()</a>
 function standardizes dates within the same epidemiological week to a
 single reference day (for example, the start of the week). This is
 helpful when computing differences across weekly reporting periods,
@@ -1088,7 +1088,7 @@ avoiding fractional time intervals.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Align to Sundays</span></span>
-<span><span class="va">df_aligned</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/align_week.html">align_week</a></span><span class="op">(</span><span class="va">df</span>, date_col <span class="op">=</span> <span class="va">date</span><span class="op">)</span></span>
+<span><span class="va">df_aligned</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/align_weeks.html">align_weeks</a></span><span class="op">(</span><span class="va">df</span>, date_col <span class="op">=</span> <span class="va">date</span><span class="op">)</span></span>
 <span><span class="va">df_aligned</span></span>
 <span><span class="co">#&gt;         date epiweek date_aligned</span></span>
 <span><span class="co">#&gt; 1 2022-10-31      44   2022-10-30</span></span>

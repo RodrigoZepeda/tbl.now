@@ -101,6 +101,10 @@ ndata <- tbl_now(denguedat,
 # Change the event_date column to a different date column
 ndata$new_onset_week <- ndata$onset_week - lubridate::days(1)
 ndata <- ndata %>% change_event_date(new_onset_week)
+#> Warning: Dropped protected column(?s): "report_week", ".event_num", ".report_num", and
+#> ".delay". Returning a `tibble`
+#> Warning: Dropped protected column(?s): "report_week", ".event_num", ".report_num", and
+#> ".delay". Returning a `tibble`
 ndata
 #> # A tibble:  52,987 × 7
 #> # Data type: "linelist"
@@ -108,16 +112,16 @@ ndata
 #>    onset_week report_week   gender .event_num .report_num .delay new_onset_week
 #>    <date>     <date>        <chr>       <dbl>       <dbl>  <dbl> <date>        
 #>    [...]      [report_date] [...]       [...]       [...]  [...] [event_date]  
-#>  1 1990-01-01 1990-01-01    Male            0           0      0 1989-12-31    
-#>  2 1990-01-01 1990-01-01    Female          0           0      0 1989-12-31    
-#>  3 1990-01-01 1990-01-01    Female          0           0      0 1989-12-31    
-#>  4 1990-01-01 1990-01-08    Female          0           1      1 1989-12-31    
-#>  5 1990-01-01 1990-01-08    Male            0           1      1 1989-12-31    
-#>  6 1990-01-01 1990-01-15    Female          0           2      2 1989-12-31    
-#>  7 1990-01-01 1990-01-15    Female          0           2      2 1989-12-31    
-#>  8 1990-01-01 1990-01-15    Female          0           2      2 1989-12-31    
-#>  9 1990-01-01 1990-01-22    Female          0           3      3 1989-12-31    
-#> 10 1990-01-01 1990-01-08    Female          0           1      1 1989-12-31    
+#>  1 1990-01-01 1990-01-01    Male            0       0.143  0.143 1989-12-31    
+#>  2 1990-01-01 1990-01-01    Female          0       0.143  0.143 1989-12-31    
+#>  3 1990-01-01 1990-01-01    Female          0       0.143  0.143 1989-12-31    
+#>  4 1990-01-01 1990-01-08    Female          0       1.14   1.14  1989-12-31    
+#>  5 1990-01-01 1990-01-08    Male            0       1.14   1.14  1989-12-31    
+#>  6 1990-01-01 1990-01-15    Female          0       2.14   2.14  1989-12-31    
+#>  7 1990-01-01 1990-01-15    Female          0       2.14   2.14  1989-12-31    
+#>  8 1990-01-01 1990-01-15    Female          0       2.14   2.14  1989-12-31    
+#>  9 1990-01-01 1990-01-22    Female          0       3.14   3.14  1989-12-31    
+#> 10 1990-01-01 1990-01-08    Female          0       1.14   1.14  1989-12-31    
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "new_onset_week" | Report date: "report_week"
 #> # ────────────────────────────────────────────────────────────────────────────────
@@ -126,6 +130,10 @@ ndata
 # Change the report_date column to a different column
 ndata$new_report_week <- ndata$report_week - lubridate::days(1)
 ndata <- ndata %>% change_report_date(new_report_week)
+#> Warning: Dropped protected column(?s): "new_report_week", ".event_num", ".report_num",
+#> and ".delay". Returning a `tibble`
+#> Warning: Dropped protected column(?s): "new_report_week", ".event_num", ".report_num",
+#> and ".delay". Returning a `tibble`
 ndata
 #> # A tibble:  52,987 × 8
 #> # Data type: "linelist"

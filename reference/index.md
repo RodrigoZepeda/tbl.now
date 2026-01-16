@@ -12,7 +12,7 @@
 - [`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
   : Add temporal effect coding to a \`tbl_now\`
 
-- [`align_week()`](https://rodrigozepeda.github.io/tbl.now/reference/align_week.md)
+- [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
   : Align weeks to a common weekday
 
 - [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)

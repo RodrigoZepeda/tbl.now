@@ -921,7 +921,7 @@ get_latest_reported_cases(tbl_reports)
 ### Week alignment
 
 The
-[align_week()](https://rodrigozepeda.github.io/tbl.now/reference/align_week.html)
+[align_weeks()](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.html)
 function standardizes dates within the same epidemiological week to a
 single reference day (for example, the start of the week). This is
 helpful when computing differences across weekly reporting periods,
@@ -934,7 +934,7 @@ df <- data.frame(
 )
 
 # Align to Sundays
-df_aligned <- align_week(df, date_col = date)
+df_aligned <- align_weeks(df, date_col = date)
 df_aligned
 #>         date epiweek date_aligned
 #> 1 2022-10-31      44   2022-10-30

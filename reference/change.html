@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -130,6 +130,10 @@ and <code><a href="https://dplyr.tidyverse.org/reference/reexports.html" class="
 <span class="r-in"><span><span class="co"># Change the event_date column to a different date column</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">new_onset_week</span> <span class="op">&lt;-</span> <span class="va">ndata</span><span class="op">$</span><span class="va">onset_week</span> <span class="op">-</span> <span class="fu">lubridate</span><span class="fu">::</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/period.html" class="external-link">days</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu">change_event_date</span><span class="op">(</span><span class="va">new_onset_week</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Dropped protected column(?s): <span style="color: #0000BB;">"report_week"</span>, <span style="color: #0000BB;">".event_num"</span>, <span style="color: #0000BB;">".report_num"</span>, and</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">".delay"</span>. Returning a `tibble`</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Dropped protected column(?s): <span style="color: #0000BB;">"report_week"</span>, <span style="color: #0000BB;">".event_num"</span>, <span style="color: #0000BB;">".report_num"</span>, and</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">".delay"</span>. Returning a `tibble`</span>
 <span class="r-in"><span><span class="va">ndata</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
@@ -137,16 +141,16 @@ and <code><a href="https://dplyr.tidyverse.org/reference/reexports.html" class="
 <span class="r-out co"><span class="r-pr">#&gt;</span>    onset_week report_week   gender .event_num .report_num .delay new_onset_week</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[...]</span>      <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span> <span style="color: #949494;">[event_date]</span>  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1990-01-01 1990-01-01    Male            0           0      0 1989-12-31    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1990-01-01 1990-01-01    Female          0           0      0 1989-12-31    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 1990-01-01 1990-01-01    Female          0           0      0 1989-12-31    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1990-01-01 1990-01-08    Female          0           1      1 1989-12-31    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1990-01-01 1990-01-08    Male            0           1      1 1989-12-31    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 1990-01-01 1990-01-15    Female          0           2      2 1989-12-31    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1990-01-01 1990-01-15    Female          0           2      2 1989-12-31    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1990-01-01 1990-01-15    Female          0           2      2 1989-12-31    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-01 1990-01-22    Female          0           3      3 1989-12-31    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01 1990-01-08    Female          0           1      1 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1990-01-01 1990-01-01    Male            0       0.143  0.143 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1990-01-01 1990-01-01    Female          0       0.143  0.143 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 1990-01-01 1990-01-01    Female          0       0.143  0.143 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1990-01-01 1990-01-08    Female          0       1.14   1.14  1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1990-01-01 1990-01-08    Male            0       1.14   1.14  1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 1990-01-01 1990-01-15    Female          0       2.14   2.14  1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1990-01-01 1990-01-15    Female          0       2.14   2.14  1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1990-01-01 1990-01-15    Female          0       2.14   2.14  1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-01 1990-01-22    Female          0       3.14   3.14  1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01 1990-01-08    Female          0       1.14   1.14  1989-12-31    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-20</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"report_week"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
@@ -155,6 +159,10 @@ and <code><a href="https://dplyr.tidyverse.org/reference/reexports.html" class="
 <span class="r-in"><span><span class="co"># Change the report_date column to a different column</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">new_report_week</span> <span class="op">&lt;-</span> <span class="va">ndata</span><span class="op">$</span><span class="va">report_week</span> <span class="op">-</span> <span class="fu">lubridate</span><span class="fu">::</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/period.html" class="external-link">days</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu">change_report_date</span><span class="op">(</span><span class="va">new_report_week</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Dropped protected column(?s): <span style="color: #0000BB;">"new_report_week"</span>, <span style="color: #0000BB;">".event_num"</span>, <span style="color: #0000BB;">".report_num"</span>,</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> and <span style="color: #0000BB;">".delay"</span>. Returning a `tibble`</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Dropped protected column(?s): <span style="color: #0000BB;">"new_report_week"</span>, <span style="color: #0000BB;">".event_num"</span>, <span style="color: #0000BB;">".report_num"</span>,</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> and <span style="color: #0000BB;">".delay"</span>. Returning a `tibble`</span>
 <span class="r-in"><span><span class="va">ndata</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 8</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>

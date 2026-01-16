@@ -9,7 +9,7 @@ See the Attributes section for more information."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,6 +61,7 @@ See the Attributes section for more information.</p>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  force <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  warn_non_uniqueness <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  align_weeks <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -156,6 +157,12 @@ Default = <code>FALSE</code>.</p></dd>
 <dd><p>(optional) Logical. Whether to throw a warning if data
 has multiple observations for same event and report date (conditional on covariates
 and strata)</p></dd>
+
+
+<dt id="arg-align-weeks">align_weeks<a class="anchor" aria-label="anchor" href="#arg-align-weeks"></a></dt>
+<dd><p>(optional) Logical. If both event and report units are weeks
+and <code>align_weeks = TRUE</code> it ensures that all weeks start in a Sunday so that
+week differences and <code>.delays</code> are all integer.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
