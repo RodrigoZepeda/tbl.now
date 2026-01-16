@@ -227,7 +227,7 @@ test_that("infer_units_one_column fails with less than 2 observations", {
       date_column = "event_date",
       date_units = "auto"
     ),
-    "Cannot infer time units"
+    "Cannot infer time"
   )
 })
 
@@ -272,7 +272,7 @@ test_that("infer_units_one_column handles irregular spacing", {
       date_column = "event_date",
       date_units = "auto"
     ),
-    "Cannot infer time date_units"
+    "Cannot infer time"
   )
 })
 

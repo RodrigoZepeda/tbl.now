@@ -133,7 +133,7 @@ infer_units_one_column <- function(data, date_column, date_units) {
         date_units <- "years"
       } else {
         cli::cli_abort(
-          "Cannot infer time date_units. Specify between {.code date_units = {.val {valid_units}}}"
+          "Cannot infer time units. Specify either `report_units` or `event_units` with the following options {.val {valid_units}}"
         )
       }
     } else if (is.numeric(date_vals)) {
