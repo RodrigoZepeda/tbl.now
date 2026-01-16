@@ -26,7 +26,7 @@ of hospital admissions for laboratory-confirmed influenza.
 
 We begin by loading the required packages:
 
-```{r}
+```{r, message=FALSE}
 library(dplyr)
 library(lubridate)
 library(tbl.now)

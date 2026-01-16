@@ -560,6 +560,18 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
   x
 }
 
+#' @importFrom dplyr rowwise
+#' @exportS3Method dplyr::rowwise
+rowwise.tbl_now <- function(.data, ...) {
+
+  cli::cli_alert_warning(
+    "`rowwise` has not yet been implemented for `tbl_now`. Returning a `data.frame`"
+  )
+
+  NextMethod()
+}
+
+
 
 #' @importFrom dplyr dplyr_row_slice
 #' @exportS3Method dplyr::dplyr_row_slice
