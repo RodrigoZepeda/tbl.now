@@ -207,7 +207,7 @@ tbl_now <- function(data,
                     event_units = "auto",
                     report_units = "auto",
                     data_type = "auto",
-                    t_effects = NULL, #FIXME: Do tidy select here too
+                    t_effects = character(0), #FIXME: Do tidy select here too
                     verbose = TRUE,
                     force = FALSE,
                     warn_non_uniqueness = TRUE,

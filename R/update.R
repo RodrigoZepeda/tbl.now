@@ -182,7 +182,7 @@ update.tbl_now <- function(object, ..., new_data,
   #FIXME: Allow the temporal effects to be calculated a posteriori
   #this requires saving the temporal effect function or at least the holiday calendar
   #Re-do the temporal effects
-  if (!identical(get_temporal_effects(new_data), get_temporal_effects(object))){
+  if (!identical(get_temporal_effects(new_data), get_temporal_effects(object)) && (length(get_temporal_effects(new_data)) > 0 | length(get_temporal_effects(object)) > 0)){
     cli::cli_abort("Cannot handle different temporal_effects")
   }
 
@@ -196,7 +196,7 @@ update.tbl_now <- function(object, ..., new_data,
           report_units = get_report_units(object),
           data_type = get_data_type(object),
           case_count = get_case_count(object),
-          t_effects = NULL,
+          t_effects = character(0),
           force = TRUE,
           ...)
 
