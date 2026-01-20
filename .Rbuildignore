@@ -18,3 +18,4 @@
 ^\.repomixignore$
 ^repomix-output\.xml$
 ^cache$
+^\.covrignore$
