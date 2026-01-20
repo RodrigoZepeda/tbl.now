@@ -492,7 +492,7 @@ replace_temporal_effects <- function(x, t_effects) {
     cli::cli_abort("{.arg x} must be a {.code tbl_now} object")
   }
 
-  if (!is.null(t_effects) && S7::S7_inherits(t_effects, temporal_effects)) {
+  if (!is.null(t_effects) && !S7::S7_inherits(t_effects, temporal_effects)) {
     cli::cli_abort("{.arg t_effects} must be {.val NULL} or a `temporal_effects()`")
   }
 
@@ -502,7 +502,7 @@ replace_temporal_effects <- function(x, t_effects) {
   attr(x, "temporal_effects") <- NULL
 
   if (!is.null(t_effects)){
-    x <- add_temporal_effects(x, t_effects = TRUE, overwrite = TRUE)
+    x <- add_temporal_effects(x, t_effects = t_effects, overwrite = TRUE)
   }
 
   x
