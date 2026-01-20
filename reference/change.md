@@ -101,10 +101,6 @@ ndata <- tbl_now(denguedat,
 # Change the event_date column to a different date column
 ndata$new_onset_week <- ndata$onset_week - lubridate::days(1)
 ndata <- ndata %>% change_event_date(new_onset_week)
-#> Warning: Dropped protected column(?s): "report_week", ".event_num", ".report_num", and
-#> ".delay". Returning a `tibble`
-#> Warning: Dropped protected column(?s): "report_week", ".event_num", ".report_num", and
-#> ".delay". Returning a `tibble`
 ndata
 #> # A tibble:  52,987 × 7
 #> # Data type: "linelist"
@@ -130,10 +126,6 @@ ndata
 # Change the report_date column to a different column
 ndata$new_report_week <- ndata$report_week - lubridate::days(1)
 ndata <- ndata %>% change_report_date(new_report_week)
-#> Warning: Dropped protected column(?s): "new_report_week", ".event_num", ".report_num",
-#> and ".delay". Returning a `tibble`
-#> Warning: Dropped protected column(?s): "new_report_week", ".event_num", ".report_num",
-#> and ".delay". Returning a `tibble`
 ndata
 #> # A tibble:  52,987 × 8
 #> # Data type: "linelist"

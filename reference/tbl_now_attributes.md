@@ -4470,6 +4470,9 @@ attributes(df_now)
 #> $data_type
 #> [1] "linelist"
 #> 
+#> $temporal_effects
+#> character(0)
+#> 
 
 #tbl_now_attributes gets only those associated to the `tbl_now` class
 tbl_now_attributes(df_now)
@@ -4490,5 +4493,8 @@ tbl_now_attributes(df_now)
 #> 
 #> $data_type
 #> [1] "linelist"
+#> 
+#> $temporal_effects
+#> character(0)
 #> 
 ```
