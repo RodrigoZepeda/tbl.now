@@ -349,6 +349,7 @@ tbl_now <- function(data,
   class(data) <- c("tbl_now", class(data))
 
   #Add temporal effects
+  attr(data, "temporal_effects") <- character(0)
   if (!is.null(t_effects) && S7::S7_inherits(t_effects, class = temporal_effects)){
     data <- data %>%
       add_temporal_effects(t_effects= t_effects)
