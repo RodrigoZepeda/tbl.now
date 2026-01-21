@@ -16,7 +16,7 @@ tbl_now(
   event_units = "auto",
   report_units = "auto",
   data_type = "auto",
-  t_effects = NULL,
+  t_effects = character(0),
   verbose = TRUE,
   force = FALSE,
   warn_non_uniqueness = TRUE,
