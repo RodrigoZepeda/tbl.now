@@ -84,20 +84,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
     errors <- c(errors, "Attribute {.val report_date} must be a Date of length 1")
   }
 
-  #Warn ig they have missing values
-  missing_events <- x %>%
-    ungroup() %>%
-    dplyr::filter(is.na(!!as.symbol(event_date)) | is.null(!!as.symbol(event_date)))
-  if (nrow(missing_events) > 0){
-    warnings <- c(warnings, "{.val {nrow(missing_events)}} rows have NULL or NA values in column `event_date ={.val event_date}`.")
-  }
 
-  missing_reports <- x %>%
-    ungroup() %>%
-    dplyr::filter(is.na(!!as.symbol(report_date)) | is.null(!!as.symbol(report_date)))
-  if (nrow(missing_reports) > 0){
-    warnings <- c(warnings, "{.val {nrow(missing_reports)}} rows have NULL or NA values in column `report_date = {.val report_date}`.")
-  }
 
 
   # strata must be NULL or character
@@ -275,6 +262,29 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
   }
 
   #FIXME: Throw warning when now is too far in the future or in the past
+
+  #Warn ig they have missing values
+  if (event_date %in% colnames(x)){
+    missing_events <- x %>%
+      ungroup() %>%
+      dplyr::filter(is.na(!!as.symbol(event_date)) | is.null(!!as.symbol(event_date)))
+
+    if (nrow(missing_events) > 0){
+      warnings <- c(warnings, "{.val {nrow(missing_events)}} rows have NULL or NA values in column `event_date ={.val event_date}`.")
+    }
+  }
+
+
+  if (report_date %in% colnames(x)){
+    missing_reports <- x %>%
+      ungroup() %>%
+      dplyr::filter(is.na(!!as.symbol(report_date)) | is.null(!!as.symbol(report_date)))
+
+    if (nrow(missing_reports) > 0){
+      warnings <- c(warnings, "{.val {nrow(missing_reports)}} rows have NULL or NA values in column `report_date = {.val report_date}`.")
+    }
+  }
+
 
 
   #Validate that event_date and report_date don't have repeated values for same strata/covariates----
