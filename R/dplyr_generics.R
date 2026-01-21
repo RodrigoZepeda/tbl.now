@@ -84,6 +84,21 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
     errors <- c(errors, "Attribute {.val report_date} must be a Date of length 1")
   }
 
+  #Warn ig they have missing values
+  missing_events <- x %>%
+    ungroup() %>%
+    dplyr::filter(is.na(!!as.symbol(event_date)) | is.null(!!as.symbol(event_date)))
+  if (nrow(missing_events) > 0){
+    warnings <- c(warnings, "{.val {nrow(missing_events)}} rows have NULL or NA values in column `event_date ={.val event_date}`.")
+  }
+
+  missing_reports <- x %>%
+    ungroup() %>%
+    dplyr::filter(is.na(!!as.symbol(report_date)) | is.null(!!as.symbol(report_date)))
+  if (nrow(missing_reports) > 0){
+    warnings <- c(warnings, "{.val {nrow(missing_reports)}} rows have NULL or NA values in column `report_date = {.val report_date}`.")
+  }
+
 
   # strata must be NULL or character
   if (!is.null(strata) && !is.character(strata)) {
