@@ -836,6 +836,9 @@ functions:</p>
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/remove.html">remove_temporal_effects</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/remove.html">remove_all_strata</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: *Non-unique*: Data has multiple rows for the same event (dx_date) and</span></span>
+<span><span class="co">#&gt; report(dx_report_date) dates. Consider using `to_count()` to aggregate the data</span></span>
+<span><span class="co">#&gt; or`distinct()` to remove repeated observations.</span></span>
 <span></span>
 <span><span class="va">df_now</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1,417 × 8</span></span></span>
@@ -953,10 +956,6 @@ data.</p>
 <p>We can update the original object by incorporating the new data:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_updated</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">df_now</span>, new_data <span class="op">=</span> <span class="va">df_new</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Attribute 'now' (2020-09-15) seems to be in the past (before maximum</span></span>
-<span><span class="co">#&gt; report_date (2020-09-17))</span></span>
-<span><span class="co">#&gt; Attribute 'now' (2020-09-15) seems to be in the past (before maximum</span></span>
-<span><span class="co">#&gt; report_date (2020-09-17))</span></span>
 <span></span>
 <span><span class="va">df_updated</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  13 × 6</span></span></span>

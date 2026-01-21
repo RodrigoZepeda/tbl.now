@@ -6,7 +6,7 @@ required attributes and valid data.
 ## Usage
 
 ``` r
-validate_tbl_now(x, warn_non_uniqueness = FALSE)
+validate_tbl_now(x, warn_non_uniqueness = FALSE, warn_now = TRUE)
 ```
 
 ## Arguments
@@ -20,6 +20,11 @@ validate_tbl_now(x, warn_non_uniqueness = FALSE)
   (optional) Logical. Whether to throw a warning if data has multiple
   observations for same event and report date (conditional on covariates
   and strata)
+
+- warn_now:
+
+  Boolean. Whether to warn if now is before last report or too far in
+  the future.
 
 ## Value
 

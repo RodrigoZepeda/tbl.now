@@ -15,9 +15,9 @@ change_case_count(x, case_count)
 
 change_is_censored(x, is_censored)
 
-change_strata(x, ...)
+change_strata(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
 
-change_covariates(x, ...)
+change_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
 ```
 
 ## Arguments
@@ -65,6 +65,17 @@ change_covariates(x, ...)
   [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   with the columns for the attribute. In the case of `covariates` and
   `strata` argument `...` can refer to multiple columns.
+
+- warn_now:
+
+  Boolean. Whether to warn if now is before last report or too far in
+  the future.
+
+- warn_non_uniqueness:
+
+  (optional) Logical. Whether to throw a warning if data has multiple
+  observations for same event and report date (conditional on covariates
+  and strata)
 
 ## Value
 

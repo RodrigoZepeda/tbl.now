@@ -651,6 +651,9 @@ functions:
 df_now <- df_now %>%
   remove_temporal_effects() %>%
   remove_all_strata()
+#> Warning: *Non-unique*: Data has multiple rows for the same event (dx_date) and
+#> report(dx_report_date) dates. Consider using `to_count()` to aggregate the data
+#> or`distinct()` to remove repeated observations.
 
 df_now
 #> # A tibble:  1,417 × 8
@@ -790,10 +793,6 @@ We can update the original object by incorporating the new data:
 
 ``` r
 df_updated <- update(df_now, new_data = df_new)
-#> Warning: Attribute 'now' (2020-09-15) seems to be in the past (before maximum
-#> report_date (2020-09-17))
-#> Attribute 'now' (2020-09-15) seems to be in the past (before maximum
-#> report_date (2020-09-17))
 
 df_updated
 #> # A tibble:  13 × 6

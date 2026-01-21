@@ -52,9 +52,9 @@
 <span></span>
 <span><span class="fu">change_is_censored</span><span class="op">(</span><span class="va">x</span>, <span class="va">is_censored</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">change_strata</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
+<span><span class="fu">change_strata</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, warn_now <span class="op">=</span> <span class="cn">TRUE</span>, warn_non_uniqueness <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">change_covariates</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">change_covariates</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, warn_now <span class="op">=</span> <span class="cn">TRUE</span>, warn_non_uniqueness <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -102,6 +102,16 @@ set <code>is_censored = TRUE</code>.</p></dd>
 <dd><p><code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">&lt;`tidy-select`&gt;</a></code> with the columns
 for the attribute. In the case of <code>covariates</code> and <code>strata</code> argument <code>...</code> can
 refer to multiple columns.</p></dd>
+
+
+<dt id="arg-warn-now">warn_now<a class="anchor" aria-label="anchor" href="#arg-warn-now"></a></dt>
+<dd><p>Boolean. Whether to warn if now is before last report or too far in the future.</p></dd>
+
+
+<dt id="arg-warn-non-uniqueness">warn_non_uniqueness<a class="anchor" aria-label="anchor" href="#arg-warn-non-uniqueness"></a></dt>
+<dd><p>(optional) Logical. Whether to throw a warning if data
+has multiple observations for same event and report date (conditional on covariates
+and strata)</p></dd>
 
 </dl></div>
     <div class="section level2">
