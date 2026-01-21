@@ -37,7 +37,7 @@ time_cols_to_numeric <- function(data, event_date, report_date, event_units, rep
 
     if (report_level < event_level) {
       cli::cli_abort(
-        "report_units ('{report_units}') must be coarser than or equal to event_units ('{event_units}'). Change them manually to `numeric`"
+        "report_units ('{report_units}') must be coarser than or equal to event_units ('{event_units}'). Set them manually with the `report_units` and `event_units` arguments or change them to `numeric`."
       )
     }
   }

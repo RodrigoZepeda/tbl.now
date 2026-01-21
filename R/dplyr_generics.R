@@ -13,6 +13,7 @@
 #' @param x An object to validate
 #'
 #' @inheritParams tbl_now
+#' @param warn_now Boolean. Whether to warn if now is before last report or too far in the future.
 #'
 #' @return Returns `TRUE` invisibly or throws an error. Called for its side effects.
 #'
@@ -31,7 +32,7 @@
 #' }
 #'
 #' @keywords internal
-validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
+validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
 
 
   #Get required attributes
@@ -247,7 +248,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE) {
     }
 
     # Check that 'now' is >= max(report_date)
-    if (nrow(x) > 0){
+    if (nrow(x) > 0 & warn_now){
       max_report <- max(x[[report_date]], na.rm = TRUE)
       if (!is.na(max_report) && !is.null(now) && lubridate::is.Date(now) && now < max_report) {
         warnings <- c(warnings, sprintf(

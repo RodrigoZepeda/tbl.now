@@ -66,18 +66,23 @@ update.tbl_now <- function(object, ..., new_data,
     dplyr::bind_rows(new_data)
 
   if (grepl("count", get_data_type(object)) && remove_duplicates){
-    updated_data <- updated_data %>%
-      dplyr::distinct()
-  } else if (grepl("count", get_data_type(object)) && remove_duplicates){
+      suppressWarnings(
+        updated_data <- updated_data %>%
+          dplyr::distinct(dplyr::pick(-dplyr::one_of(get_protected_generated_cols())), .keep_all = TRUE)
+      )
+
+
+  } else if (!grepl("count", get_data_type(object)) && remove_duplicates){
     cli::cli_warn(
       "Cannot remove duplicates from data_type = {.val {get_data_type(object)}}"
     )
   }
 
+
   #Re-do the strata----
   if (strata == "left"){
     #Check if exists
-    if (!is.null(get_strata(new_data)) && !(get_strata(object) %in% colnames(new_data))){
+    if (!is.null(get_strata(object)) && !(get_strata(object) %in% colnames(new_data))){
       not_in_new <- get_strata(object)[which(!(get_strata(object) %in% colnames(new_data)))]
       cli::cli_abort(
         "Strata {.val {not_in_new}} was not present in `new_data`."
@@ -85,7 +90,7 @@ update.tbl_now <- function(object, ..., new_data,
     }
 
     #Update
-    updated_data <- updated_data %>% change_strata(get_strata(object))
+    updated_data <- updated_data %>% change_strata(get_strata(object), warn_now = FALSE, warn_non_uniqueness = FALSE)
   } else if (strata == "right"){
 
     #Check if exists
@@ -97,7 +102,7 @@ update.tbl_now <- function(object, ..., new_data,
     }
 
     #Update
-    updated_data <- updated_data %>% change_strata(get_strata(new_data))
+    updated_data <- updated_data %>% change_strata(get_strata(new_data), warn_now = FALSE, warn_non_uniqueness = FALSE)
 
   } else if (strata == "both"){
 
@@ -118,7 +123,7 @@ update.tbl_now <- function(object, ..., new_data,
     }
 
     #Update
-    updated_data <- updated_data %>% change_strata(unique(c(get_strata(object), get_strata(new_data))))
+    updated_data <- updated_data %>% change_strata(unique(c(get_strata(object), get_strata(new_data))), warn_now = FALSE, warn_non_uniqueness = FALSE)
 
   } else {
     cli::cli_abort(
@@ -138,7 +143,7 @@ update.tbl_now <- function(object, ..., new_data,
     }
 
     #Update
-    updated_data <- updated_data %>% change_covariates(get_covariates(object))
+    updated_data <- updated_data %>% change_covariates(get_covariates(object), warn_now = FALSE, warn_non_uniqueness = FALSE)
 
   } else if (covariates == "right"){
 
@@ -151,7 +156,8 @@ update.tbl_now <- function(object, ..., new_data,
     }
 
     #Update
-    updated_data <- updated_data %>% change_covariates(get_covariates(new_data))
+    updated_data <- updated_data %>%
+      change_covariates(get_covariates(new_data), warn_now = FALSE, warn_non_uniqueness = FALSE)
 
   } else if (covariates == "both"){
 
@@ -171,7 +177,8 @@ update.tbl_now <- function(object, ..., new_data,
     }
 
     #Update
-    updated_data <- updated_data %>% change_covariates(unique(c(get_covariates(object), get_covariates(new_data))))
+    updated_data <- updated_data %>%
+      change_covariates(unique(c(get_covariates(object), get_covariates(new_data))), warn_now = FALSE, warn_non_uniqueness = FALSE)
 
   } else {
     cli::cli_abort(
@@ -197,6 +204,7 @@ update.tbl_now <- function(object, ..., new_data,
           data_type = get_data_type(object),
           case_count = get_case_count(object),
           t_effects = character(0),
+          now = now,
           force = TRUE,
           ...)
 

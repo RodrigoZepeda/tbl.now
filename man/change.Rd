@@ -21,9 +21,9 @@ change_case_count(x, case_count)
 
 change_is_censored(x, is_censored)
 
-change_strata(x, ...)
+change_strata(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
 
-change_covariates(x, ...)
+change_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
 }
 \arguments{
 \item{x}{A \code{tbl_now} object}
@@ -54,6 +54,12 @@ set \code{is_censored = TRUE}.}
 \item{...}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} with the columns
 for the attribute. In the case of \code{covariates} and \code{strata} argument \code{...} can
 refer to multiple columns.}
+
+\item{warn_now}{Boolean. Whether to warn if now is before last report or too far in the future.}
+
+\item{warn_non_uniqueness}{(optional) Logical. Whether to throw a warning if data
+has multiple observations for same event and report date (conditional on covariates
+and strata)}
 }
 \value{
 A \code{tbl_now} object with updated attributes

@@ -8,6 +8,7 @@
 #'
 #' @inheritParams remove
 #' @inheritParams tbl_now
+#' @inheritParams validate_tbl_now
 #'
 #' @return A `tbl_now` object with updated attributes
 #'
@@ -357,7 +358,7 @@ add_is_censored <- function(x, is_censored) {
 #' @rdname change
 #' @export
 # Change all of the strata to whatever is added in ...
-change_strata <- function(x, ...) {
+change_strata <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE) {
 
   if (!inherits(x, "tbl_now")) {
     cli::cli_abort("{.arg x} must be a {.code tbl_now} object")
@@ -376,7 +377,7 @@ change_strata <- function(x, ...) {
   attr(x, "strata") <-  value
 
   #Verify it works
-  validate_tbl_now(x)
+  validate_tbl_now(x, warn_now = warn_now, warn_non_uniqueness = warn_non_uniqueness)
 
   return(x)
 
@@ -422,7 +423,7 @@ remove_all_strata <- function(x) {
 #' @rdname change
 #' @export
 # Change the existing covariates to the ones in value
-change_covariates <- function(x, ...) {
+change_covariates <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE) {
 
   if (!inherits(x, "tbl_now")) {
     cli::cli_abort("{.arg x} must be a {.code tbl_now} object")
@@ -440,7 +441,7 @@ change_covariates <- function(x, ...) {
   #Assign the values
   attr(x, "covariates") <-  value
 
-  validate_tbl_now(x)
+  validate_tbl_now(x, warn_now = warn_now, warn_non_uniqueness = warn_non_uniqueness)
 
   return(x)
 }

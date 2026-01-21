@@ -4,7 +4,7 @@
 \alias{validate_tbl_now}
 \title{Validate a tbl_now object}
 \usage{
-validate_tbl_now(x, warn_non_uniqueness = FALSE)
+validate_tbl_now(x, warn_non_uniqueness = FALSE, warn_now = TRUE)
 }
 \arguments{
 \item{x}{An object to validate}
@@ -12,6 +12,8 @@ validate_tbl_now(x, warn_non_uniqueness = FALSE)
 \item{warn_non_uniqueness}{(optional) Logical. Whether to throw a warning if data
 has multiple observations for same event and report date (conditional on covariates
 and strata)}
+
+\item{warn_now}{Boolean. Whether to warn if now is before last report or too far in the future.}
 }
 \value{
 Returns `TRUE` invisibly or throws an error. Called for its side effects.
