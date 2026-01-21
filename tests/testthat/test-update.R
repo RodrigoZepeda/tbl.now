@@ -1187,3 +1187,558 @@ test_that("update with empty tbl_now works", {
 })
 
 
+# Additional tests for update.R to improve coverage
+
+# Tests for strata = "right" (lines 76-78, 94, 97-101, 105, 107)
+test_that("update can use right strata", {
+  test_data <- setup_test_data()
+
+  # Create initial data with gender strata
+  initial_data <- test_data$count_initial
+  initial_data$age_group <- c("20-30", "30-40", "20-30", "20-30")
+
+  initial_tbl <- tbl_now(initial_data,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         strata = "gender",
+                         case_count = "n",
+                         verbose = FALSE)
+
+  # Create new data with age_group strata
+  update_data <- test_data$count_update
+  update_data$age_group <- c("20-30", "30-40")
+
+  new_tbl <- tbl_now(update_data,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     strata = "age_group",
+                     case_count = "n",
+                     verbose = FALSE)
+
+  result <- update(initial_tbl, new_data = new_tbl, strata = "right")
+
+  expect_equal(get_strata(result), "age_group")
+})
+
+test_that("update fails when right strata not in object", {
+  test_data <- setup_test_data()
+
+  initial_tbl <- tbl_now(test_data$count_initial,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         strata = "gender",
+                         case_count = "n",
+                         verbose = FALSE)
+
+  # Create new data with strata not in initial
+  update_data <- test_data$count_update
+  update_data$region <- c("North", "South")
+
+  new_tbl <- tbl_now(update_data,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     strata = "region",
+                     case_count = "n",
+                     verbose = FALSE)
+
+  expect_error(
+    update(initial_tbl, new_data = new_tbl, strata = "right"),
+    "Strata.*was not present in.*object"
+  )
+})
+
+# Tests for strata = "both" (lines 110-126, 129-131)
+test_that("update can use both strata", {
+  test_data <- setup_test_data()
+
+  # Create initial data with gender strata
+  initial_data <- test_data$count_initial
+  initial_data$age_group <- c("20-30", "30-40", "20-30","20-30")
+
+  initial_tbl <- tbl_now(initial_data,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         strata = "gender",
+                         case_count = "n",
+                         verbose = FALSE)
+
+  # Create new data with both gender and age_group strata
+  update_data <- test_data$count_update
+  update_data$age_group <- c("20-30", "30-40")
+
+  new_tbl <- tbl_now(update_data,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     strata = c("gender", "age_group"),
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     case_count = "n",
+                     verbose = FALSE)
+
+  result <- update(initial_tbl, new_data = new_tbl, strata = "both")
+
+  expect_true("gender" %in% get_strata(result))
+  expect_true("age_group" %in% get_strata(result))
+})
+
+test_that("update fails when both strata has column not in new_data", {
+  test_data <- setup_test_data()
+
+  # Initial has gender
+  initial_data <- test_data$count_initial
+  initial_data$age_group <- c("20-30", "30-40", "20-30","20-30")
+
+  initial_tbl <- tbl_now(initial_data,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         strata = c("gender", "age_group"),
+                         case_count = "n",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         verbose = FALSE)
+
+  # New data only has gender (missing age_group)
+  new_tbl <- tbl_now(test_data$count_update,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     strata = "gender",
+                     case_count = "n",
+                     verbose = FALSE)
+
+  expect_error(
+    update(initial_tbl, new_data = new_tbl, strata = "both"),
+    "Strata.*age_group.*was not present in.*new_data"
+  )
+})
+
+test_that("update fails when both strata has column not in object", {
+  test_data <- setup_test_data()
+
+  # Initial has only gender
+  initial_tbl <- tbl_now(test_data$count_initial,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         strata = "gender",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         case_count = "n",
+                         verbose = FALSE)
+
+  # New data has gender and age_group
+  update_data <- test_data$count_update
+  update_data$age_group <- c("20-30", "30-40")
+
+  new_tbl <- tbl_now(update_data,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     strata = c("gender", "age_group"),
+                     case_count = "n",
+                     verbose = FALSE)
+
+  expect_error(
+    update(initial_tbl, new_data = new_tbl, strata = "both"),
+    "Strata.*age_group.*was not present in.*object"
+  )
+})
+
+# Tests for covariates = "right" (lines 148, 151-155, 159-160, 162)
+test_that("update can use right covariates", {
+  test_data <- setup_test_data()
+
+  # Create initial data with temperature covariate
+  initial_data <- test_data$count_initial
+  initial_data$temperature <- c(25.5, 26.0, 24.8, 22)
+  initial_data$humidity <- c(0.6, 0.65, 0.7, 0.1)
+
+  initial_tbl <- tbl_now(initial_data,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         covariates = "temperature",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         case_count = "n",
+                         verbose = FALSE)
+
+  # Create new data with humidity covariate
+  update_data <- test_data$count_update
+  update_data$temperature <- c(25.2, 25.8)
+  update_data$humidity <- c(0.68, 0.62)
+
+  new_tbl <- tbl_now(update_data,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     covariates = "humidity",
+                     case_count = "n",
+                     verbose = FALSE)
+
+  result <- update(initial_tbl, new_data = new_tbl, covariates = "right")
+
+  expect_equal(get_covariates(result), "humidity")
+})
+
+test_that("update fails when right covariate not in object", {
+  test_data <- setup_test_data()
+
+  initial_tbl <- tbl_now(test_data$count_initial,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         case_count = "n",
+                         verbose = FALSE)
+
+  # Create new data with covariate not in initial
+  update_data <- test_data$count_update
+  update_data$temperature <- c(25.2, 25.8)
+
+  new_tbl <- tbl_now(update_data,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     covariates = "temperature",
+                     case_count = "n",
+                     verbose = FALSE)
+
+  expect_error(
+    update(initial_tbl, new_data = new_tbl, covariates = "right"),
+    "Covariate.*temperature.*was not present in.*object"
+  )
+})
+
+# Tests for covariates = "both" (lines 165-180, 184-186)
+test_that("update can use both covariates", {
+  test_data <- setup_test_data()
+
+  # Create initial data with temperature
+  initial_data <- test_data$count_initial
+  initial_data$temperature <- c(25.5, 26.0, 24.8, 22)
+  initial_data$humidity <- c(0.6, 0.65, 0.7, 0.1)
+
+  initial_tbl <- tbl_now(initial_data,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         covariates = "temperature",
+                         case_count = "n",
+                         verbose = FALSE)
+
+  # Create new data with both
+  update_data <- test_data$count_update
+  update_data$temperature <- c(25.2, 25.8)
+  update_data$humidity <- c(0.68, 0.62)
+
+  new_tbl <- tbl_now(update_data,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     covariates = c("temperature", "humidity"),
+                     case_count = "n",
+                     verbose = FALSE)
+
+  result <- update(initial_tbl, new_data = new_tbl, covariates = "both")
+
+  expect_true("temperature" %in% get_covariates(result))
+  expect_true("humidity" %in% get_covariates(result))
+})
+
+test_that("update fails when both covariates has column not in new_data", {
+  test_data <- setup_test_data()
+
+  # Initial has temperature and humidity
+  initial_data <- test_data$count_initial
+  initial_data$temperature <- c(25.5, 26.0, 24.8, 22)
+  initial_data$humidity <- c(0.6, 0.65, 0.7, 0.1)
+
+  initial_tbl <- tbl_now(initial_data,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         covariates = c("temperature", "humidity"),
+                         case_count = "n",
+                         verbose = FALSE)
+
+  # New data only has temperature
+  update_data <- test_data$count_update
+  update_data$temperature <- c(25.2, 25.8)
+
+  new_tbl <- tbl_now(update_data,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     covariates = "temperature",
+                     case_count = "n",
+                     verbose = FALSE)
+
+  expect_error(
+    update(initial_tbl, new_data = new_tbl, covariates = "both"),
+    "Covariate.*humidity.*was not present in.*new_data"
+  )
+})
+
+test_that("update fails when both covariates has column not in object", {
+  test_data <- setup_test_data()
+
+  # Initial has only temperature
+  initial_data <- test_data$count_initial
+  initial_data$temperature <- c(25.5, 26.0, 24.8, 22)
+
+  initial_tbl <- tbl_now(initial_data,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         covariates = "temperature",
+                         case_count = "n",
+                         verbose = FALSE)
+
+  # New data has both
+  update_data <- test_data$count_update
+  update_data$temperature <- c(25.2, 25.8)
+  update_data$humidity <- c(0.68, 0.62)
+
+  new_tbl <- tbl_now(update_data,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     covariates = c("temperature", "humidity"),
+                     case_count = "n",
+                     verbose = FALSE)
+
+  expect_error(
+    update(initial_tbl, new_data = new_tbl, covariates = "both"),
+    "Covariate.*humidity.*was not present in.*object"
+  )
+})
+
+# Tests for update_check_tbl_now_internal error conditions (lines 224, 251-257, 262-268, 273-279, 284-290, 295-301)
+test_that("update_check_tbl_now_internal fails with different event_date", {
+  test_data <- setup_test_data()
+
+  initial_tbl <- tbl_now(test_data$count_initial,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         case_count = "n",
+                         verbose = FALSE)
+
+  # Create new_tbl with different event_date name
+  update_data <- test_data$count_update
+  update_data$event_week <- update_data$onset_week
+
+  new_tbl <- tbl_now(update_data,
+                     event_date = "event_week",
+                     report_date = "report_week",
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     case_count = "n",
+                     verbose = FALSE)
+
+  expect_error(
+    update(initial_tbl, new_data = new_tbl),
+    "event_date.*onset_week.*event_date.*event_week"
+  )
+})
+
+test_that("update_check_tbl_now_internal fails with different data_type", {
+  test_data <- setup_test_data()
+
+  initial_tbl <- tbl_now(test_data$count_initial,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         case_count = "n",
+                         data_type = "count-incidence",
+                         verbose = FALSE)
+
+  new_tbl <- tbl_now(test_data$count_update,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     case_count = "n",
+                     data_type = "count-cumulative",
+                     verbose = FALSE)
+
+  expect_error(
+    update(initial_tbl, new_data = new_tbl),
+    "data_type.*count-incidence.*data_type.*count-cumulative"
+  )
+})
+
+test_that("update_check_tbl_now_internal fails with different event_units", {
+  test_data <- setup_test_data()
+
+  # Create data with different units
+  initial_data <- test_data$count_initial
+  initial_data$onset_num <- c(1L, 2L, 3L, 2L)
+  initial_data$report_num <- c(4L, 5L, 6L, 6L)
+
+  initial_tbl <- tbl_now(initial_data,
+                         event_date = "onset_num",
+                         report_date = "report_num",
+                         case_count = "n",
+                         event_units = "numeric",
+                         report_units = "numeric",
+                         data_type = "count-cumulative",
+                         verbose = FALSE)
+
+  test_data$count_update$onset_num <- test_data$count_update$onset_week
+  test_data$count_update$report_num <- test_data$count_update$report_week
+  new_tbl <- tbl_now(test_data$count_update,
+                     event_date = "onset_num",
+                     report_date = "report_num",
+                     case_count = "n",
+                     event_units = "days",
+                     report_units = "days",
+                     data_type = "count-cumulative",
+                     verbose = FALSE)
+
+  expect_error(
+    update(initial_tbl, new_data = new_tbl),
+    "event_units.*numeric.*event_units.*days"
+  )
+})
+
+test_that("update_check_tbl_now_internal fails with different report_units", {
+  test_data <- setup_test_data()
+
+  # This is tricky - need different report_units but same event_units
+  # Create weekly event data but different report units
+  initial_data <- data.frame(
+    onset_week = as.Date(c("2020-07-08", "2020-07-15")),
+    report_week = as.Date(c("2020-07-11", "2020-07-18")),
+    n = c(5L, 3L)
+  )
+
+  initial_tbl <- tbl_now(initial_data,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         case_count = "n",
+                         event_units = "weeks",
+                         report_units = "weeks",
+                         verbose = FALSE)
+
+  update_data <- data.frame(
+    onset_week = as.Date(c("2020-07-22", "2020-07-29")),
+    report_week = as.Date(c("2020-07-25", "2020-08-01")),
+    n = c(7L, 4L)
+  )
+
+  new_tbl <- tbl_now(update_data,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     case_count = "n",
+                     event_units = "weeks",
+                     report_units = "months",
+                     verbose = FALSE)
+
+  expect_error(
+    update(initial_tbl, new_data = new_tbl),
+    "report_units.*weeks.*report_units.*months"
+  )
+})
+
+test_that("update_check_tbl_now_internal fails with different case_count", {
+  test_data <- setup_test_data()
+
+  initial_tbl <- tbl_now(test_data$count_initial,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         case_count = "n",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         verbose = FALSE)
+
+  # Rename case_count column
+  update_data <- test_data$count_update
+  update_data$cases <- update_data$n
+
+  new_tbl <- tbl_now(update_data,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     case_count = "cases",
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     verbose = FALSE)
+
+  expect_error(
+    update(initial_tbl, new_data = new_tbl),
+    "case_count.*n.*case_count.*cases"
+  )
+})
+
+test_that("update_check_tbl_now_internal fails with different is_censored", {
+  test_data <- setup_test_data()
+
+  initial_data <- test_data$count_initial
+  initial_data$censored1 <- FALSE
+
+  initial_tbl <- tbl_now(initial_data,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         case_count = "n",
+                         is_censored = "censored1",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         verbose = FALSE)
+
+  update_data <- test_data$count_update
+  update_data$censored2 <- FALSE
+
+  new_tbl <- tbl_now(update_data,
+                     event_date = "onset_week",
+                     report_date = "report_week",
+                     case_count = "n",
+                     is_censored = "censored2",
+                     report_units = "weeks",
+                     event_units = "weeks",
+                     verbose = FALSE)
+
+  expect_error(
+    update(initial_tbl, new_data = new_tbl),
+    "is_censored.*censored1.*is_censored.*censored2"
+  )
+})
+
+# Tests for update_check_data_frame_internal (lines 321, 325)
+test_that("update_check_data_frame_internal fails with non-data.frame", {
+  test_data <- setup_test_data()
+
+  initial_tbl <- tbl_now(test_data$count_initial,
+                         event_date = "onset_week",
+                         report_date = "report_week",
+                         report_units = "weeks",
+                         event_units = "weeks",
+                         case_count = "n",
+                         verbose = FALSE)
+
+  # This should be caught earlier, but testing the internal function
+  expect_error(
+    update_check_data_frame_internal(initial_tbl, list(x = 1:10)),
+    "must be a data.frame"
+  )
+})

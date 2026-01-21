@@ -81,8 +81,9 @@ update.tbl_now <- function(object, ..., new_data,
 
   #Re-do the strata----
   if (strata == "left"){
+
     #Check if exists
-    if (!is.null(get_strata(object)) && !(get_strata(object) %in% colnames(new_data))){
+    if (!is.null(get_strata(object)) && !all(get_strata(object) %in% colnames(new_data))){
       not_in_new <- get_strata(object)[which(!(get_strata(object) %in% colnames(new_data)))]
       cli::cli_abort(
         "Strata {.val {not_in_new}} was not present in `new_data`."
@@ -94,7 +95,7 @@ update.tbl_now <- function(object, ..., new_data,
   } else if (strata == "right"){
 
     #Check if exists
-    if (!is.null(get_strata(new_data)) && !(get_strata(new_data) %in% colnames(object))){
+    if (!is.null(get_strata(new_data)) && !all(get_strata(new_data) %in% colnames(object))){
       not_in_new <- get_strata(new_data)[which(!(get_strata(new_data) %in% colnames(object)))]
       cli::cli_abort(
         "Strata {.val {not_in_new}} was not present in `object`."
@@ -107,7 +108,7 @@ update.tbl_now <- function(object, ..., new_data,
   } else if (strata == "both"){
 
     #Check if exists for new_data
-    if (!is.null(get_strata(new_data)) && !(get_strata(new_data) %in% colnames(object))){
+    if (!is.null(get_strata(new_data)) && !all(get_strata(new_data) %in% colnames(object))){
       not_in_new <- get_strata(new_data)[which(!(get_strata(new_data) %in% colnames(object)))]
       cli::cli_abort(
         "Strata {.val {not_in_new}} was not present in `object`."
@@ -115,7 +116,7 @@ update.tbl_now <- function(object, ..., new_data,
     }
 
     #Check if exists for object
-    if (!is.null(get_strata(object)) && !(get_strata(object) %in% colnames(new_data))){
+    if (!is.null(get_strata(object)) && !all(get_strata(object) %in% colnames(new_data))){
       not_in_new <- get_strata(object)[which(!(get_strata(object) %in% colnames(new_data)))]
       cli::cli_abort(
         "Strata {.val {not_in_new}} was not present in `new_data`."
@@ -135,7 +136,7 @@ update.tbl_now <- function(object, ..., new_data,
   if (covariates == "left"){
 
     #Check if exists
-    if (!is.null(get_covariates(object)) && !(get_covariates(object) %in% colnames(new_data))){
+    if (!is.null(get_covariates(object)) && !all(get_covariates(object) %in% colnames(new_data))){
       not_in_new <- get_covariates(object)[which(!(get_covariates(object) %in% colnames(new_data)))]
       cli::cli_abort(
         "Covariate {.val {not_in_new}} was not present in `new_data`."
@@ -148,7 +149,7 @@ update.tbl_now <- function(object, ..., new_data,
   } else if (covariates == "right"){
 
     #Check if exists
-    if (!is.null(get_covariates(new_data)) && !(get_covariates(new_data) %in% colnames(object))){
+    if (!is.null(get_covariates(new_data)) && !all(get_covariates(new_data) %in% colnames(object))){
       not_in_new <- get_covariates(new_data)[which(!(get_covariates(new_data) %in% colnames(object)))]
       cli::cli_abort(
         "Covariate {.val {not_in_new}} was not present in `object`."
@@ -162,14 +163,14 @@ update.tbl_now <- function(object, ..., new_data,
   } else if (covariates == "both"){
 
     #Check if exists
-    if (!is.null(get_covariates(new_data)) && !(get_covariates(new_data) %in% colnames(object))){
+    if (!is.null(get_covariates(new_data)) && !all(get_covariates(new_data) %in% colnames(object))){
       not_in_new <- get_covariates(new_data)[which(!(get_covariates(new_data) %in% colnames(object)))]
       cli::cli_abort(
         "Covariate {.val {not_in_new}} was not present in `object`."
       )
     }
 
-    if (!is.null(get_covariates(object)) && !(get_covariates(object) %in% colnames(new_data))){
+    if (!is.null(get_covariates(object)) && !all(get_covariates(object) %in% colnames(new_data))){
       not_in_new <- get_covariates(object)[which(!(get_covariates(object) %in% colnames(new_data)))]
       cli::cli_abort(
         "Covariate {.val {not_in_new}} was not present in `new_data`."
