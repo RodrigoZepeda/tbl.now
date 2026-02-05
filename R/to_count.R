@@ -110,7 +110,7 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
   } else if (get_data_type(x) == "count-cumulative" & to == "count-cumulative"){
 
     x <- x %>%
-      ungroup()
+      summarise(!!as.symbol(case_count) := sum(!!as.symbol(case_count)), .groups = "drop")
 
   } else if (get_data_type(x) == "linelist" & to == "linelist"){
 
