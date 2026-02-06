@@ -83,22 +83,37 @@ complete_zeroes <- function(x, max_delay = 1){
   }
 
   #Create a table with all dates
-  complete_x <- dplyr::tibble(!!as.symbol(get_event_date(x)) := seq(min_event, max_event, by = units_by)) %>%
+  event_dates <- dplyr::tibble(!!as.symbol(get_event_date(x)) := seq(min_event, max_event, by = units_by))
+
+  event_dict <- event_dates %>%
     dplyr::mutate(.event_num_new = 1:dplyr::n())
 
   #Add report num
   complete_x <- tidyr::expand_grid(
-      complete_x,
+    event_dates,
       .delay = seq(0, max_delay, by = 1),
-      suppressWarnings(
         x %>%
-          dplyr::distinct(dplyr::across(dplyr::all_of(tbl.now::get_strata(x))))
-      ),
-      suppressWarnings(
+          as.data.frame() %>%
+          dplyr::distinct(dplyr::across(dplyr::all_of(tbl.now::get_strata(x)))),
         x %>%
-          dplyr::distinct(dplyr::across(dplyr::all_of(tbl.now::get_is_censored(x))))
-      )
+          as.data.frame() %>%
+          dplyr::distinct(dplyr::across(dplyr::all_of(tbl.now::get_is_censored(x)))),
     ) %>%
+    #Add the additional rows you lose by not completing them
+    dplyr::bind_rows(
+      x %>%
+        as.data.frame() %>%
+        dplyr::filter(!!as.symbol(".delay") > !!max_delay) %>%
+        dplyr::distinct(
+          dplyr::across(
+            dplyr::all_of(
+              c(get_strata(x), get_is_censored(x), get_event_date(x), get_report_date(x), ".delay")
+            )
+          )
+        )
+      ) %>%
+    dplyr::distinct() %>%
+    dplyr::left_join(event_dict, by = get_event_date(x)) %>%
     dplyr::mutate(!!as.symbol(".report_num_new") := !!as.symbol(".event_num_new") + !!as.symbol(".delay"))
 
   #Now add reports back
