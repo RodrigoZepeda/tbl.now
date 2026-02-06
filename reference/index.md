@@ -35,6 +35,9 @@
 
   Change attributes of a `tbl_now` object
 
+- [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+  : Complete zeroes
+
 - [`covidat`](https://rodrigozepeda.github.io/tbl.now/reference/covidat.md)
   : covidat: COVID-19 reporting data from Mexico City (2020-2022)
 
