@@ -86,7 +86,7 @@ complete_zeroes <- function(x, max_delay = 1){
   event_dates <- dplyr::tibble(!!as.symbol(get_event_date(x)) := seq(min_event, max_event, by = units_by))
 
   event_dict <- event_dates %>%
-    dplyr::mutate(.event_num_new = 1:dplyr::n())
+    dplyr::mutate(.event_num_new = 0:(dplyr::n() - 1))
 
   #Add report num
   complete_x <- tidyr::expand_grid(
