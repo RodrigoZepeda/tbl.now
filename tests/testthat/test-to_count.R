@@ -736,3 +736,4 @@ test_that("to_count validates output", {
   expect_true(validate_tbl_now(result))
 })
 
+

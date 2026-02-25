@@ -708,7 +708,7 @@ class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_
  }
 
  result <- tryCatch({
-    tbl_now(data = summarised_tbl,
+    tbl_now(data = ungroup(summarised_tbl),
                 event_date = get_event_date(.data),
                 report_date = get_report_date(.data),
                 strata = get_strata(.data),

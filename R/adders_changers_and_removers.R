@@ -332,6 +332,11 @@ change_is_censored <- function(x, is_censored) {
 #' @export
 # Remove `value`  from is_censored
 remove_is_censored <- function(x){
+  if (get_data_type(x) == "count-cumulative"){
+    cli::cli_alert_warning(
+      "Removing is_censored column from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
+    )
+  }
   change_is_censored(x, NULL)
 }
 
@@ -387,7 +392,11 @@ change_strata <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE) {
 #' @export
 # Remove `value`  from strata
 remove_strata <- function(x, ...){
-
+  if (get_data_type(x) == "count-cumulative"){
+    cli::cli_alert_warning(
+      "Removing strata from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
+    )
+  }
   #Get the values
   value_pos <- tidyselect::eval_select(rlang::expr(c(...)), x)
   value     <- colnames(x)[value_pos]
@@ -416,6 +425,11 @@ add_strata <- function(x, ...) {
 #' @export
 # Remove all `values`  from strata
 remove_all_strata <- function(x) {
+  if (get_data_type(x) == "count-cumulative"){
+    cli::cli_alert_warning(
+      "Removing strata from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
+    )
+  }
   change_strata(x, NULL)
 }
 
@@ -450,7 +464,11 @@ change_covariates <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRU
 #' @export
 # Removes the specific covariate `value`
 remove_covariates <- function(x, ...) {
-
+  if (get_data_type(x) == "count-cumulative"){
+    cli::cli_alert_warning(
+      "Removing covariates from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
+    )
+  }
   #Get the values
   value_pos <- tidyselect::eval_select(rlang::expr(c(...)), x)
   value     <- colnames(x)[value_pos]
@@ -480,6 +498,11 @@ add_covariates <- function(x, ...) {
 #' @export
 # Removes all covariates
 remove_all_covariates <- function(x) {
+  if (get_data_type(x) == "count-cumulative"){
+    cli::cli_alert_warning(
+      "Removing covariates from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
+    )
+  }
   change_covariates(x, NULL)
 }
 
@@ -488,6 +511,11 @@ remove_all_covariates <- function(x) {
 #' @rdname remove
 #' @export
 replace_temporal_effects <- function(x, t_effects) {
+  if (get_data_type(x) == "count-cumulative"){
+    cli::cli_alert_warning(
+      "Removing temporal effects from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
+    )
+  }
 
   if (!inherits(x, "tbl_now")) {
     cli::cli_abort("{.arg x} must be a {.code tbl_now} object")
