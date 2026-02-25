@@ -429,6 +429,7 @@ column itself):</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_pr</span> <span class="op">&lt;-</span> <span class="va">df_pr</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="../reference/remove.html">remove_strata</a></span><span class="op">(</span><span class="st">"location_name"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Removing strata from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`</span></span>
 <span></span>
 <span><span class="va">df_pr</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1,259 × 7</span></span></span>

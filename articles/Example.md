@@ -350,6 +350,7 @@ it from the strata definition (without removing the column itself):
 ``` r
 df_pr <- df_pr %>% 
   remove_strata("location_name")
+#> ! Removing strata from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`
 
 df_pr
 #> # A tibble:  1,259 × 7
