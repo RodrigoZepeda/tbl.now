@@ -35,7 +35,16 @@
 #'  dplyr::arrange(event, sex, report)
 #'
 #' @export
-complete_zeroes <- function(x, max_delay = 1){
+complete_zeroes <- function(x, max_delay = NULL){
+
+  if (is.null(max_delay)){
+    max_delay <- suppressWarnings(
+      x %>%
+        dplyr::distinct(!!as.symbol(".delay")) %>%
+        dplyr::pull() %>%
+        max()
+    )
+  }
 
   if (!is_tbl_now(x)){
     cli::cli_abort(
