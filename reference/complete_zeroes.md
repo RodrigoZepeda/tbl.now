@@ -6,7 +6,7 @@ onset_weeks that have not been registered by each strata with a 0
 ## Usage
 
 ``` r
-complete_zeroes(x, max_delay = 1)
+complete_zeroes(x, max_delay = NULL)
 ```
 
 ## Arguments
