@@ -4,7 +4,7 @@
 \alias{complete_zeroes}
 \title{Complete zeroes}
 \usage{
-complete_zeroes(x, max_delay = 1)
+complete_zeroes(x, max_delay = NULL)
 }
 \arguments{
 \item{x}{A `tbl.now` object.}
