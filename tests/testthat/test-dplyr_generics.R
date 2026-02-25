@@ -269,7 +269,7 @@ test_that("validate_tbl_now fails when required attributes are missing", {
   attr(ndata, "event_date") <- NULL
 
   expect_error(
-    validate_tbl_now(ndata),
+   suppressWarnings(validate_tbl_now(ndata)),
     "Missing required attribute"
   )
 })
@@ -281,7 +281,7 @@ test_that("validate_tbl_now fails when event_date is not character", {
   attr(ndata, "event_date") <- 123
 
   expect_error(
-    validate_tbl_now(ndata),
+   suppressWarnings(validate_tbl_now(ndata)),
     "event_date.*must be"
   )
 })
@@ -293,7 +293,7 @@ test_that("validate_tbl_now fails when report_date is not character", {
   attr(ndata, "report_date") <- 123
 
   expect_error(
-    validate_tbl_now(ndata),
+    suppressWarnings(validate_tbl_now(ndata)),
     "report_date.*must be"
   )
 })
@@ -308,7 +308,7 @@ test_that("validate_tbl_now fails when report or event date is not date", {
       dplyr::mutate(!!as.symbol(attr(ndata, type)) := as.character(!!as.symbol(attr(ndata, type))))
 
     expect_error(
-      validate_tbl_now(ndata),
+      suppressWarnings(validate_tbl_now(ndata)),
       "must be of class Date"
     )
   }
@@ -321,7 +321,7 @@ test_that("validate_tbl_now fails when is_censored is not logical", {
       dplyr::mutate(!!as.symbol(attr(ndata, "is_censored")) := as.character(!!as.symbol(attr(ndata, "is_censored"))))
 
   expect_error(
-    validate_tbl_now(ndata),
+    suppressWarnings(validate_tbl_now(ndata)),
     "must be logical"
   )
 
@@ -334,7 +334,7 @@ test_that("validate_tbl_now fails when now is not date", {
   attr(ndata, "now") <- "error"
 
   expect_error(
-    validate_tbl_now(ndata),
+   suppressWarnings(validate_tbl_now(ndata)),
     "now.*must be"
   )
 })
@@ -346,7 +346,7 @@ test_that("validate_tbl_now fails when data_type is not count, linelist or offic
   attr(ndata, "data_type") <- "error"
 
   expect_error(
-    validate_tbl_now(ndata),
+   suppressWarnings(validate_tbl_now(ndata)),
     "data_type.*must be"
   )
 })
@@ -358,19 +358,19 @@ test_that("validate_tbl_now fails when is_censored is not specified correctly", 
   attr(ndata, "is_censored") <- 2
 
   expect_error(
-    validate_tbl_now(ndata),
+   suppressWarnings(validate_tbl_now(ndata)),
     "is_censored.*must be"
   )
 
   attr(ndata, "is_censored") <- c("a","b")
   expect_error(
-    validate_tbl_now(ndata),
+   suppressWarnings(validate_tbl_now(ndata)),
     "is_censored.*must be"
   )
 
   attr(ndata, "is_censored") <- "not_a_column"
   expect_error(
-    validate_tbl_now(ndata),
+   suppressWarnings(validate_tbl_now(ndata)),
     "Column.*not found in data"
   )
 
@@ -384,12 +384,34 @@ test_that("validate_tbl_now fails when units is not valid", {
     attr(ndata, unit_type) <- "error"
 
     expect_error(
-      validate_tbl_now(ndata),
+     suppressWarnings(validate_tbl_now(ndata)),
       "Attribute.*must be one of.*days.*weeks"
     )
   }
 })
 
+test_that("arrange then mutate respects all groups (e.g. gender)", {
+  test_data <- setup_test_data()
+
+  result <- test_data$ndata %>%
+    to_count("count-incidence") %>%
+    group_by(onset_week, gender) %>%
+    dplyr::arrange(report_week) %>%
+    dplyr::mutate(lagged = dplyr::lag(n))
+
+  # The first row of each (onset_week, gender) group must have NA lag
+  first_in_group <- result %>%
+    dplyr::filter(dplyr::row_number() == 1L)  # per group after arrange
+
+  # No lagged value should bleed across gender groups
+  # i.e. for a fixed onset_week, the first Male row should not carry
+  # the last Female value as its lag
+  cross_group_bleed <- result %>%
+    dplyr::mutate(prev_gender = dplyr::lag(gender)) %>%
+    dplyr::filter(!is.na(prev_gender), prev_gender != gender, !is.na(lagged))
+
+  expect_equal(nrow(cross_group_bleed), 0L)
+})
 
 
 
@@ -401,7 +423,7 @@ test_that("validate_tbl_now fails when columns don't exist", {
   attr(ndata, "event_date") <- "nonexistent"
 
   expect_error(
-    validate_tbl_now(ndata),
+   suppressWarnings(validate_tbl_now(ndata)),
     "not found in data"
   )
 })
@@ -423,7 +445,7 @@ test_that("validate_tbl_now warns when report_date before event_date", {
 
   # Should create with warning
   expect_warning(
-    validate_tbl_now(ndata),
+   validate_tbl_now(ndata),
     "report_date.*before.*event_date"
   )
 })
@@ -1037,3 +1059,4 @@ test_that("operations on grouped_tbl_now maintain structure", {
                     group_by(gender) %>%
                     dplyr::filter(value > 15), "grouped_tbl_now")
 })
+

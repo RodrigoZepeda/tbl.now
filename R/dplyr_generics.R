@@ -617,15 +617,22 @@ dplyr_col_modify.grouped_tbl_now  <- function(data, cols) {
 #' @importFrom dplyr dplyr_reconstruct
 #' @exportS3Method dplyr::dplyr_reconstruct
 dplyr_reconstruct.grouped_tbl_now <- function(data, template) {
-  # First reconstruct as tbl_now
   reconstructed <- tbl_now_reconstruct(data, template)
 
-  # If reconstruction was successful and template was grouped
   if (is_tbl_now(reconstructed) && dplyr::is_grouped_df(template)) {
-    reconstructed <- new_grouped_tbl_now(reconstructed, groups =  dplyr::group_data(template))
+    # Re-compute group_data from the current row order of `data`,
+    # not from the (now stale) template. This is critical after
+    # arrange() reorders rows — copying template's group indices
+    # would point to wrong rows and break subsequent mutate/lag.
+    group_vars   <- dplyr::group_vars(template)
+    regrouped    <- dplyr::group_by(dplyr::as_tibble(reconstructed),
+                                    dplyr::across(dplyr::all_of(group_vars)))
+    fresh_groups <- dplyr::group_data(regrouped)
+    reconstructed <- new_grouped_tbl_now(reconstructed, groups = fresh_groups)
   }
 
   return(reconstructed)
+
 }
 
 

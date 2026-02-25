@@ -11,13 +11,13 @@
 #' @examples
 #' ndata <- dplyr::tibble(
 #'   event  = rep(c(as.Date("2020/01/01"), as.Date("2020/01/01"),
-#'                  as.Date("2020/01/02"), as.Date("2020/01/02"), as.Date("2020/01/04"),
+#'                  as.Date("2020/01/02"), as.Date("2020/01/04"),
 #'                  as.Date("2020/01/04")), 2),
 #'   report = rep(c(as.Date("2020/01/01"), as.Date("2020/01/02"),
-#'                  as.Date("2020/01/02"), as.Date("2020/01/03"), as.Date("2020/01/04"),
+#'                  as.Date("2020/01/02"), as.Date("2020/01/04"),
 #'                  as.Date("2020/01/05")), 2),
-#'   n = rpois(12, lambda = 5),
-#'   sex = c(rep("Male", 6), rep("Female", 6))
+#'   n = rpois(10, lambda = 5),
+#'   sex = c(rep("Male", 5), rep("Female", 5))
 #' )
 #' ndata <- tbl_now(ndata, event_date = event, report_date = report,
 #'      verbose = FALSE, strata = sex, case_count = n, data_type = "count-incidence")
@@ -26,8 +26,14 @@
 #' ndata
 #'
 #' #But complete zeroes adds it with a 0
-#' ndata <- complete_zeroes(ndata)
-#' ndata
+#' complete_zeroes(ndata)
+#'
+#' #Also works for count-cumulative
+#' ndata %>%
+#'  to_count("count-cumulative") %>%
+#'  complete_zeroes() %>%
+#'  dplyr::arrange(event, sex, report)
+#'
 #' @export
 complete_zeroes <- function(x, max_delay = 1){
 
@@ -57,6 +63,14 @@ complete_zeroes <- function(x, max_delay = 1){
       dplyr::filter(!!as.symbol(get_event_date(x)) == max(!!as.symbol(get_event_date(x)))) %>%
       dplyr::distinct(!!as.symbol(get_event_date(x))) %>%
       dplyr::pull()
+  )
+
+  #Get the final report
+  max_report <- suppressWarnings(
+    x %>%
+      dplyr::distinct(!!as.symbol(get_report_date(x))) %>%
+      dplyr::pull() %>%
+      max()
   )
 
 
@@ -136,8 +150,39 @@ complete_zeroes <- function(x, max_delay = 1){
   x <- x %>%
     dplyr::mutate(!!as.symbol(".event_num") := !!as.symbol(".event_num_new")) %>%
     dplyr::mutate(!!as.symbol(".report_num") := !!as.symbol(".report_num_new")) %>%
-    dplyr::select(-!!as.symbol(".event_num_new"), -!!as.symbol(".report_num_new")) %>%
-    dplyr::mutate(!!as.symbol(get_case_count(x)) := tidyr::replace_na(!!as.symbol(get_case_count(x)), 0))
+    dplyr::select(-!!as.symbol(".event_num_new"), -!!as.symbol(".report_num_new"))
+
+  #Fix the 0 case for count-cumulative
+  if (get_data_type(x) == "count-cumulative"){
+    x <- x %>%
+      dplyr::mutate(!!as.symbol(get_case_count(x)) :=
+                      dplyr::if_else(is.na(!!as.symbol(get_case_count(x)) & !!as.symbol(".delay") == 0), 0, !!as.symbol(get_case_count(x))))
+
+
+    if (max_delay > 0){
+      for (dval in 1:max_delay){
+
+        x <- x %>%
+          dplyr::arrange(!!as.symbol(get_report_date(x))) %>%
+          group_by(dplyr::pick(get_event_date(x), get_strata(x)), get_is_censored(x))
+
+        x <- x %>%
+          dplyr::mutate(!!as.symbol(get_case_count(x)) :=
+                          dplyr::if_else(is.na(!!as.symbol(get_case_count(x))) & !!as.symbol(".delay") == !!dval,
+                                         dplyr::lag(!!as.symbol(get_case_count(x)), default = 0.0), !!as.symbol(get_case_count(x)))) %>%
+          ungroup()
+
+      }
+    }
+  }
+
+  # #Replace whatever is missing with 0
+   x <- x %>%
+     dplyr::mutate(!!as.symbol(get_case_count(x)) := tidyr::replace_na(!!as.symbol(get_case_count(x)), 0.0))
+
+   # Don't look into the future
+   x <- x %>%
+     dplyr::filter(!!as.symbol(get_report_date(x)) < !!max_report)
 
   return(x)
 

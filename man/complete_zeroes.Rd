@@ -20,13 +20,13 @@ by each strata with a 0
 \examples{
 ndata <- dplyr::tibble(
   event  = rep(c(as.Date("2020/01/01"), as.Date("2020/01/01"),
-                 as.Date("2020/01/02"), as.Date("2020/01/02"), as.Date("2020/01/04"),
+                 as.Date("2020/01/02"), as.Date("2020/01/04"),
                  as.Date("2020/01/04")), 2),
   report = rep(c(as.Date("2020/01/01"), as.Date("2020/01/02"),
-                 as.Date("2020/01/02"), as.Date("2020/01/03"), as.Date("2020/01/04"),
+                 as.Date("2020/01/02"), as.Date("2020/01/04"),
                  as.Date("2020/01/05")), 2),
-  n = rpois(12, lambda = 5),
-  sex = c(rep("Male", 6), rep("Female", 6))
+  n = rpois(10, lambda = 5),
+  sex = c(rep("Male", 5), rep("Female", 5))
 )
 ndata <- tbl_now(ndata, event_date = event, report_date = report,
      verbose = FALSE, strata = sex, case_count = n, data_type = "count-incidence")
@@ -35,6 +35,12 @@ ndata <- tbl_now(ndata, event_date = event, report_date = report,
 ndata
 
 #But complete zeroes adds it with a 0
-ndata <- complete_zeroes(ndata)
-ndata
+complete_zeroes(ndata)
+
+#Also works for count-cumulative
+ndata \%>\%
+ to_count("count-cumulative") \%>\%
+ complete_zeroes() \%>\%
+ dplyr::arrange(event, sex, report)
+
 }
