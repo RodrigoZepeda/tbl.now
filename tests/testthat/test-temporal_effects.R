@@ -374,7 +374,7 @@ test_that("add_temporal_effects.data.frame custom name_prefix works", {
 })
 
 # ============================================================================
-# Tests for add_temporal_effects.tbl_now()
+# Tests for add_temporal_effects.tbl_now() — lazy (no columns added)
 # ============================================================================
 
 test_that("add_temporal_effects.tbl_now returns unchanged when t_effects is NULL", {
@@ -393,53 +393,40 @@ test_that("add_temporal_effects.tbl_now returns unchanged when t_effects is NULL
   expect_identical(result, df_now)
 })
 
-test_that("add_temporal_effects.tbl_now adds to event_date by default", {
+test_that("add_temporal_effects.tbl_now stores spec lazily — no columns added", {
   data(denguedat)
 
   df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      verbose = FALSE
-    )
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE)
 
-  t_eff <- temporal_effects(day_of_week = TRUE)
-
+  t_eff  <- temporal_effects(day_of_week = TRUE)
   result <- add_temporal_effects(df_now, t_effects = t_eff)
 
-  # Should add effect to event_date
-  expect_true(".event_day_of_week" %in% names(result))
-  expect_false(".report_day_of_week" %in% names(result))
+  # No new columns should have been added
+  expect_equal(ncol(result), ncol(df_now))
+  expect_false(".event_day_of_week" %in% names(result))
+  # Spec is stored
+  expect_equal(length(get_temporal_effects(result)), 1L)
 })
 
-test_that("add_temporal_effects.tbl_now adds to report_date when specified", {
+test_that("add_temporal_effects.tbl_now stores date_type in spec", {
   data(denguedat)
 
   df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      verbose = FALSE
-    )
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE)
 
-  t_eff <- temporal_effects(day_of_week = TRUE)
-
+  t_eff  <- temporal_effects(day_of_week = TRUE)
   result <- add_temporal_effects(df_now, t_effects = t_eff, date_type = "report_date")
 
-  # Should add effect to report_date
-  expect_true(".report_day_of_week" %in% names(result))
-  expect_false(".event_day_of_week" %in% names(result))
+  spec <- get_temporal_effects(result)[[1]]
+  expect_equal(spec$date_type, "report_date")
 })
 
 test_that("add_temporal_effects.tbl_now fails with invalid date_type", {
   data(denguedat)
 
   df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      verbose = FALSE
-    )
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE)
 
   t_eff <- temporal_effects(day_of_week = TRUE)
 
@@ -449,101 +436,34 @@ test_that("add_temporal_effects.tbl_now fails with invalid date_type", {
   )
 })
 
-test_that("add_temporal_effects.tbl_now updates temporal_effects attribute", {
+test_that("add_temporal_effects.tbl_now accumulates specs with multiple calls", {
   data(denguedat)
 
   df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      verbose = FALSE
-    )
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE)
 
-  # Initially no temporal effects
-  expect_equal(get_temporal_effects(df_now), character(0))
+  t_eff_event  <- temporal_effects(day_of_week = TRUE)
+  t_eff_report <- temporal_effects(weekend = TRUE)
 
-  t_eff <- temporal_effects(day_of_week = TRUE, week_of_year = TRUE)
+  result <- df_now %>%
+    add_temporal_effects(t_eff_event,  date_type = "event_date") %>%
+    add_temporal_effects(t_eff_report, date_type = "report_date")
 
-  result <- add_temporal_effects(df_now, t_effects = t_eff)
-
-  # Should update attribute
-  temporal_cols <- get_temporal_effects(result)
-  expect_gt(length(temporal_cols), 0)
-  expect_true(".event_day_of_week" %in% temporal_cols)
-  expect_true(".event_week_of_year" %in% temporal_cols)
-})
-
-test_that("add_temporal_effects.tbl_now appends to existing temporal_effects", {
-  data(denguedat)
-
-  df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      verbose = FALSE
-    ) %>%
-    add_temporal_effects(temporal_effects(day_of_week = TRUE))
-
-  # Add more effects
-  result <- add_temporal_effects(df_now, temporal_effects(week_of_year = TRUE))
-
-  temporal_cols <- get_temporal_effects(result)
-
-  # Should have both old and new
-  expect_true(".event_day_of_week" %in% temporal_cols)
-  expect_true(".event_week_of_year" %in% temporal_cols)
-})
-
-test_that("add_temporal_effects.tbl_now uses .event_num for seasons on event_date", {
-  data(denguedat)
-
-  df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      verbose = FALSE
-    )
-
-  t_eff <- temporal_effects(seasons = 52)
-
-  result <- add_temporal_effects(df_now, t_effects = t_eff, date_type = "event_date")
-
-  # Should create season columns using .event_num
-  expect_true(".event_season_52_cos" %in% names(result))
-  expect_true(".event_season_52_sin" %in% names(result))
-})
-
-test_that("add_temporal_effects.tbl_now uses .report_num for seasons on report_date", {
-  data(denguedat)
-
-  df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      verbose = FALSE
-    )
-
-  t_eff <- temporal_effects(seasons = 52)
-
-  result <- add_temporal_effects(df_now, t_effects = t_eff, date_type = "report_date")
-
-  # Should create season columns using .report_num
-  expect_true(".report_season_52_cos" %in% names(result))
-  expect_true(".report_season_52_sin" %in% names(result))
+  specs <- get_temporal_effects(result)
+  expect_equal(length(specs), 2L)
+  expect_equal(specs[[1]]$date_type, "event_date")
+  expect_equal(specs[[2]]$date_type, "report_date")
+  # Still no computed columns
+  expect_equal(length(get_temporal_effect_cols(result)), 0L)
 })
 
 test_that("add_temporal_effects.tbl_now preserves tbl_now class", {
   data(denguedat)
 
   df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      verbose = FALSE
-    )
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE)
 
-  t_eff <- temporal_effects(day_of_week = TRUE)
-
+  t_eff  <- temporal_effects(day_of_week = TRUE)
   result <- add_temporal_effects(df_now, t_effects = t_eff)
 
   expect_s3_class(result, "tbl_now")
@@ -554,18 +474,12 @@ test_that("add_temporal_effects.tbl_now preserves all tbl_now attributes", {
   data(denguedat)
 
   df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      strata = "gender",
-      verbose = FALSE
-    )
+    tbl_now(event_date = "onset_week", report_date = "report_week",
+            strata = "gender", verbose = FALSE)
 
-  t_eff <- temporal_effects(week_of_year = TRUE)
-
+  t_eff  <- temporal_effects(week_of_year = TRUE)
   result <- add_temporal_effects(df_now, t_effects = t_eff)
 
-  # Check attributes preserved
   expect_equal(get_event_date(result), get_event_date(df_now))
   expect_equal(get_report_date(result), get_report_date(df_now))
   expect_equal(get_strata(result), get_strata(df_now))
@@ -573,134 +487,352 @@ test_that("add_temporal_effects.tbl_now preserves all tbl_now attributes", {
   expect_equal(get_data_type(result), get_data_type(df_now))
 })
 
-test_that("add_temporal_effects.tbl_now works with count data", {
+# ============================================================================
+# Tests for compute_temporal_effects()
+# ============================================================================
+
+test_that("compute_temporal_effects returns unchanged when no spec", {
   data(denguedat)
 
   df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      verbose = FALSE
-    ) %>%
-    to_count(to = "count-incidence")
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE)
 
-  t_eff <- temporal_effects(day_of_week = TRUE)
+  result <- compute_temporal_effects(df_now)
 
-  result <- add_temporal_effects(df_now, t_effects = t_eff)
+  expect_identical(result, df_now)
+})
+
+test_that("compute_temporal_effects adds day_of_week columns to event_date", {
+  data(denguedat)
+
+  df_now <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(day_of_week = TRUE))
+
+  result <- compute_temporal_effects(df_now)
+
+  expect_true(".event_day_of_week" %in% names(result))
+  expect_false(".report_day_of_week" %in% names(result))
+})
+
+test_that("compute_temporal_effects adds columns to report_date when specified", {
+  data(denguedat)
+
+  df_now <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(day_of_week = TRUE), date_type = "report_date")
+
+  result <- compute_temporal_effects(df_now)
+
+  expect_true(".report_day_of_week" %in% names(result))
+  expect_false(".event_day_of_week" %in% names(result))
+})
+
+test_that("compute_temporal_effects populates computed_temporal_effect_cols", {
+  data(denguedat)
+
+  df_now <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(day_of_week = TRUE, week_of_year = TRUE))
+
+  # Before computation: no computed cols
+  expect_equal(get_temporal_effect_cols(df_now), character(0))
+
+  result <- compute_temporal_effects(df_now)
+
+  cols <- get_temporal_effect_cols(result)
+  expect_gt(length(cols), 0)
+  expect_true(".event_day_of_week" %in% cols)
+  expect_true(".event_week_of_year" %in% cols)
+})
+
+test_that("compute_temporal_effects handles multiple specs (event + report)", {
+  data(denguedat)
+
+  df_now <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(day_of_week = TRUE), date_type = "event_date") %>%
+    add_temporal_effects(temporal_effects(weekend = TRUE),     date_type = "report_date")
+
+  result <- compute_temporal_effects(df_now)
+
+  expect_true(".event_day_of_week" %in% names(result))
+  expect_true(".report_weekend"    %in% names(result))
+  cols <- get_temporal_effect_cols(result)
+  expect_true(".event_day_of_week" %in% cols)
+  expect_true(".report_weekend"    %in% cols)
+})
+
+test_that("compute_temporal_effects uses .event_num for seasons on event_date", {
+  data(denguedat)
+
+  df_now <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(seasons = 52))
+
+  result <- compute_temporal_effects(df_now)
+
+  expect_true(".event_season_52_cos" %in% names(result))
+  expect_true(".event_season_52_sin" %in% names(result))
+})
+
+test_that("compute_temporal_effects uses .report_num for seasons on report_date", {
+  data(denguedat)
+
+  df_now <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(seasons = 52), date_type = "report_date")
+
+  result <- compute_temporal_effects(df_now)
+
+  expect_true(".report_season_52_cos" %in% names(result))
+  expect_true(".report_season_52_sin" %in% names(result))
+})
+
+test_that("compute_temporal_effects preserves tbl_now class", {
+  data(denguedat)
+
+  df_now <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(day_of_week = TRUE))
+
+  result <- compute_temporal_effects(df_now)
+
+  expect_s3_class(result, "tbl_now")
+  expect_true(is_tbl_now(result))
+})
+
+test_that("compute_temporal_effects preserves the temporal_effects spec", {
+  data(denguedat)
+
+  df_now <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(day_of_week = TRUE))
+
+  result <- compute_temporal_effects(df_now)
+
+  # Spec should still be present after computation
+  spec <- get_temporal_effects(result)
+  expect_equal(length(spec), 1L)
+  expect_true(spec[[1]]$t_effects@day_of_week)
+})
+
+test_that("compute_temporal_effects works with count data", {
+  data(denguedat)
+
+  df_now <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    to_count(to = "count-incidence") %>%
+    add_temporal_effects(temporal_effects(day_of_week = TRUE))
+
+  result <- compute_temporal_effects(df_now)
 
   expect_s3_class(result, "tbl_now")
   expect_equal(get_data_type(result), "count-incidence")
   expect_true(".event_day_of_week" %in% names(result))
 })
 
-test_that("add_temporal_effects.tbl_now weekend effect respects weekend_days parameter", {
+test_that("compute_temporal_effects weekend effect respects weekend_days parameter", {
   data(denguedat)
 
   df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      verbose = FALSE
-    )
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(weekend = TRUE), weekend_days = c("Fri", "Sat"))
 
-  t_eff <- temporal_effects(weekend = TRUE)
-
-  # Use Friday-Saturday weekend
-  result <- add_temporal_effects(
-    df_now,
-    t_effects = t_eff,
-    weekend_days = c("Fri", "Sat")
-  )
+  result <- compute_temporal_effects(df_now)
 
   expect_true(".event_weekend" %in% names(result))
   expect_true(all(result$.event_weekend %in% c(0, 1)))
 })
 
-# ============================================================================
-# Edge cases and integration
-# ============================================================================
-
-test_that("add_temporal_effects handles all effects together on tbl_now", {
+test_that("compute_temporal_effects handles all effects together", {
   skip_if_not_installed("almanac")
 
   data(denguedat)
 
-  df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      verbose = FALSE
-    )
-
   t_eff <- temporal_effects(
-    day_of_week = TRUE,
-    weekend = TRUE,
-    day_of_month = TRUE,
-    month_of_year = TRUE,
-    week_of_year = TRUE,
-    seasons = c(52, 365),
-    holidays = almanac::cal_us_federal()
+    day_of_week = TRUE, weekend = TRUE, day_of_month = TRUE,
+    month_of_year = TRUE, week_of_year = TRUE,
+    seasons = c(52, 365), holidays = almanac::cal_us_federal()
   )
 
-  result <- add_temporal_effects(df_now, t_effects = t_eff)
+  result <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(t_eff) %>%
+    compute_temporal_effects()
 
-  # Check all effects were added
-  temporal_cols <- get_temporal_effects(result)
-  expect_true(".event_day_of_week" %in% temporal_cols)
-  expect_true(".event_weekend" %in% temporal_cols)
-  expect_true(".event_day_of_month" %in% temporal_cols)
-  expect_true(".event_month_of_year" %in% temporal_cols)
-  expect_true(".event_week_of_year" %in% temporal_cols)
-  expect_true(".event_season_52_cos" %in% temporal_cols)
-  expect_true(".event_season_52_sin" %in% temporal_cols)
-  expect_true(".event_season_365_cos" %in% temporal_cols)
-  expect_true(".event_season_365_sin" %in% temporal_cols)
-  expect_true(".event_holiday" %in% temporal_cols)
+  cols <- get_temporal_effect_cols(result)
+  expect_true(".event_day_of_week"   %in% cols)
+  expect_true(".event_weekend"       %in% cols)
+  expect_true(".event_day_of_month"  %in% cols)
+  expect_true(".event_month_of_year" %in% cols)
+  expect_true(".event_week_of_year"  %in% cols)
+  expect_true(".event_season_52_cos" %in% cols)
+  expect_true(".event_season_52_sin" %in% cols)
+  expect_true(".event_season_365_cos"%in% cols)
+  expect_true(".event_season_365_sin"%in% cols)
+  expect_true(".event_holiday"       %in% cols)
 })
 
-test_that("add_temporal_effects can add to both event and report dates separately", {
+test_that("compute_temporal_effects preserves data integrity", {
   data(denguedat)
 
   df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      verbose = FALSE
-    )
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(day_of_week = TRUE, week_of_year = TRUE))
 
-  t_eff_event <- temporal_effects(day_of_week = TRUE)
-  t_eff_report <- temporal_effects(weekend = TRUE)
-
-  result <- df_now %>%
-    add_temporal_effects(t_eff_event, date_type = "event_date") %>%
-    add_temporal_effects(t_eff_report, date_type = "report_date")
-
-  # Should have effects for both dates
-  expect_true(".event_day_of_week" %in% names(result))
-  expect_true(".report_weekend" %in% names(result))
-
-  temporal_cols <- get_temporal_effects(result)
-  expect_true(".event_day_of_week" %in% temporal_cols)
-  expect_true(".report_weekend" %in% temporal_cols)
-})
-
-test_that("add_temporal_effects preserves data integrity", {
-  data(denguedat)
-
-  df_now <- denguedat %>%
-    tbl_now(
-      event_date = "onset_week",
-      report_date = "report_week",
-      verbose = FALSE
-    )
-
-  original_rows <- nrow(df_now)
+  original_rows  <- nrow(df_now)
   original_event <- df_now$onset_week
 
-  t_eff <- temporal_effects(day_of_week = TRUE, week_of_year = TRUE)
-  result <- add_temporal_effects(df_now, t_effects = t_eff)
+  result <- compute_temporal_effects(df_now)
 
-  # Data should be unchanged except for new columns
   expect_equal(nrow(result), original_rows)
   expect_equal(result$onset_week, original_event)
+})
+
+# ============================================================================
+# dplyr operations must NOT alter the temporal_effects spec
+# ============================================================================
+
+test_that("dplyr::filter preserves the temporal_effects spec", {
+  data(denguedat)
+
+  df_now <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(week_of_year = TRUE, day_of_week = TRUE))
+
+  spec_before <- get_temporal_effects(df_now)
+
+  filtered <- df_now %>%
+    dplyr::filter(report_week <= as.Date("1991-01-02"))
+
+  expect_equal(get_temporal_effects(filtered), spec_before)
+  expect_equal(get_temporal_effect_cols(filtered), character(0))
+})
+
+test_that("dplyr::select preserves the temporal_effects spec", {
+  data(denguedat)
+
+  df_now <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week",
+            strata = "gender", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(week_of_year = TRUE))
+
+  spec_before <- get_temporal_effects(df_now)
+
+  selected <- df_now %>%
+    dplyr::select(-gender)
+
+  expect_equal(get_temporal_effects(selected), spec_before)
+})
+
+test_that("dplyr::mutate preserves the temporal_effects spec", {
+  data(denguedat)
+
+  df_now <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(month_of_year = TRUE))
+
+  spec_before <- get_temporal_effects(df_now)
+
+  mutated <- df_now %>%
+    dplyr::mutate(new_col = 1L)
+
+  expect_equal(get_temporal_effects(mutated), spec_before)
+  expect_equal(get_temporal_effect_cols(mutated), character(0))
+})
+
+test_that("dplyr operations preserve computed_temporal_effect_cols after compute", {
+  data(denguedat)
+
+  df_computed <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(day_of_week = TRUE)) %>%
+    compute_temporal_effects()
+
+  cols_before <- get_temporal_effect_cols(df_computed)
+  spec_before <- get_temporal_effects(df_computed)
+
+  # filter should keep computed cols (they still exist as columns)
+  filtered <- df_computed %>%
+    dplyr::filter(report_week <= as.Date("1991-01-02"))
+
+  expect_equal(get_temporal_effect_cols(filtered), cols_before)
+  expect_equal(get_temporal_effects(filtered), spec_before)
+})
+
+test_that("selecting away a computed temporal-effect column removes it from computed_temporal_effect_cols", {
+  data(denguedat)
+
+  df_computed <- denguedat %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(day_of_week = TRUE)) %>%
+    compute_temporal_effects()
+
+  # Spec is still preserved; computed col tracking is pruned
+  selected <- suppressWarnings(
+    df_computed %>% dplyr::select(-".event_day_of_week")
+  )
+
+  expect_false(".event_day_of_week" %in% get_temporal_effect_cols(selected))
+  # Spec remains
+  expect_equal(length(get_temporal_effects(selected)), 1L)
+})
+
+# ============================================================================
+# Integration: tbl_now constructor + compute_temporal_effects
+# ============================================================================
+
+test_that("temporal_effects can be passed to tbl_now constructor (lazy)", {
+  data(denguedat)
+
+  t_eff <- temporal_effects(week_of_year = TRUE, month_of_year = TRUE)
+
+  result <- tbl_now(
+    denguedat[1:100, ],
+    event_date  = "onset_week",
+    report_date = "report_week",
+    t_effects   = t_eff,
+    verbose     = FALSE
+  )
+
+  expect_s3_class(result, "tbl_now")
+  # Spec stored but NOT computed
+  expect_equal(length(get_temporal_effects(result)), 1L)
+  expect_equal(get_temporal_effect_cols(result), character(0))
+  expect_false(".event_week_of_year" %in% names(result))
+
+  # Now compute
+  computed <- compute_temporal_effects(result)
+  expect_true(".event_week_of_year"  %in% names(computed))
+  expect_true(".event_month_of_year" %in% names(computed))
+})
+
+test_that("temporal_effects with seasons integrates correctly", {
+  data(denguedat)
+
+  result <- denguedat[1:100, ] %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(seasons = c(52, 365))) %>%
+    compute_temporal_effects()
+
+  expect_s3_class(result, "tbl_now")
+  cols <- get_temporal_effect_cols(result)
+  expect_true(any(grepl("season.*cos", cols)))
+  expect_true(any(grepl("season.*sin", cols)))
+})
+
+test_that("temporal_effects with holidays integrates correctly", {
+  skip_if_not_installed("almanac")
+
+  data(denguedat)
+
+  result <- denguedat[1:100, ] %>%
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+    add_temporal_effects(temporal_effects(holidays = almanac::cal_us_federal())) %>%
+    compute_temporal_effects()
+
+  expect_s3_class(result, "tbl_now")
+  cols <- get_temporal_effect_cols(result)
+  expect_true(any(grepl("holiday", cols)))
 })

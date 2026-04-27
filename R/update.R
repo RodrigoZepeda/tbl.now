@@ -194,7 +194,7 @@ update.tbl_now <- function(object, ..., new_data,
     cli::cli_abort("Cannot handle different temporal_effects")
   }
 
-  tbl_now(updated_data,
+  result <- tbl_now(updated_data,
           event_date = get_event_date(object),
           report_date = get_report_date(object),
           strata = get_strata(updated_data),
@@ -204,10 +204,13 @@ update.tbl_now <- function(object, ..., new_data,
           report_units = get_report_units(object),
           data_type = get_data_type(object),
           case_count = get_case_count(object),
-          t_effects = character(0),
           now = now,
           force = TRUE,
           ...)
+
+  # Preserve the lazy temporal-effects spec from the original object
+  attr(result, "temporal_effects") <- get_temporal_effects(object)
+  result
 
 }
 

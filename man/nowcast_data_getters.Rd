@@ -13,6 +13,7 @@
 \alias{get_event_units}
 \alias{get_data_type}
 \alias{get_temporal_effects}
+\alias{get_temporal_effect_cols}
 \alias{get_is_censored}
 \alias{get_case_count}
 \title{Getters for tbl_now attributes}
@@ -39,6 +40,8 @@ get_data_type(x)
 
 get_temporal_effects(x)
 
+get_temporal_effect_cols(x)
+
 get_is_censored(x)
 
 get_case_count(x)
@@ -60,7 +63,8 @@ ndata <- denguedat \%>\%
          report_date = report_week,
          strata = gender,
          t_effects = temporal_effects(month_of_year = TRUE),
-         verbose = FALSE)
+         verbose = FALSE) \%>\%
+ compute_temporal_effects()
 
 #Get the event date
 get_event_date(ndata)

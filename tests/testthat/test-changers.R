@@ -1196,7 +1196,7 @@ test_that("replace_temporal_effects with NULL removes all", {
 
   result <- replace_temporal_effects(ndata, NULL)
 
-  expect_null(get_temporal_effects(result))
+  expect_equal(length(get_temporal_effects(result)), 0L)
 })
 
 test_that("replace_temporal_effects fails with non-temporal_effects object", {
@@ -1217,14 +1217,16 @@ test_that("remove_temporal_effects removes all temporal effect columns", {
       week_of_year = TRUE
     ))
 
-  old_cols <- get_temporal_effects(ndata)
-  expect_gt(length(old_cols), 0)
+  # Spec is stored (lazy — no columns yet)
+  old_spec <- get_temporal_effects(ndata)
+  expect_gt(length(old_spec), 0)
 
   result <- remove_temporal_effects(ndata)
 
-  # All temporal effect columns should be removed
-  expect_false(any(old_cols %in% names(result)))
-  expect_null(get_temporal_effects(result))
+  # Spec cleared
+  expect_equal(length(get_temporal_effects(result)), 0L)
+  # No computed columns (none were created)
+  expect_equal(get_temporal_effect_cols(result), character(0))
 })
 
 # ============================================================================

@@ -525,13 +525,18 @@ replace_temporal_effects <- function(x, t_effects) {
     cli::cli_abort("{.arg t_effects} must be {.val NULL} or a `temporal_effects()`")
   }
 
-  #Get the columns to remove
-  cols_to_remove <- get_temporal_effects(x)
-  x <- x %>% dplyr::select(-dplyr::one_of(cols_to_remove))
-  attr(x, "temporal_effects") <- NULL
+  # Drop already-computed columns
+  cols_to_remove <- get_temporal_effect_cols(x)
+  if (length(cols_to_remove) > 0) {
+    x <- x %>% dplyr::select(-dplyr::one_of(cols_to_remove))
+  }
+
+  # Reset both spec and computed-cols attributes
+  attr(x, "temporal_effects")              <- list()
+  attr(x, "computed_temporal_effect_cols") <- character(0)
 
   if (!is.null(t_effects)){
-    x <- add_temporal_effects(x, t_effects = t_effects, overwrite = TRUE)
+    x <- add_temporal_effects(x, t_effects = t_effects)
   }
 
   x
@@ -540,8 +545,6 @@ replace_temporal_effects <- function(x, t_effects) {
 #' @rdname remove
 #' @export
 remove_temporal_effects <- function(x) {
-
-  #Get the strata that is not value
   replace_temporal_effects(x, t_effects = NULL)
 }
 

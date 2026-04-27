@@ -348,13 +348,14 @@ tbl_now <- function(data,
   # Prepend the S3 class. It will inherit from data.frame.
   class(data) <- c("tbl_now", class(data))
 
-  #Add temporal effects
-  attr(data, "temporal_effects") <- character(0)
+  # Temporal effects: stored lazily as a list of specs; columns computed only by compute_temporal_effects()
+  attr(data, "temporal_effects")              <- list()
+  attr(data, "computed_temporal_effect_cols") <- character(0)
   if (!is.null(t_effects) && S7::S7_inherits(t_effects, class = temporal_effects)){
-    data <- data %>%
-      add_temporal_effects(t_effects= t_effects)
+    data <- add_temporal_effects(data, t_effects = t_effects)
   } else if (!is.null(t_effects) && is.character(t_effects)){
-    attr(data, "temporal_effects") <- t_effects
+    # Backward-compat: caller supplies already-computed column names directly
+    attr(data, "computed_temporal_effect_cols") <- t_effects
   }
 
   #Validate

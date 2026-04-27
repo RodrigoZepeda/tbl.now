@@ -143,8 +143,7 @@ are not registered until a week after)
 + **case_count** (optional): the column storing case counts when the dataset 
 is aggregated.
 
-+ **temporal_effects** (optional): references temporal effects added via 
-[temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html) function. See the [temporal effects](#temporal-effects) section for more details. 
++ **temporal_effects** (optional): a lazy specification (list of [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html) configs) stored via [add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html). Columns are only materialised when [compute_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html) is called. See the [temporal effects](#temporal-effects) section for more details.
 
 You can access any attribute using the corresponding [getter](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html), e.g. [get_event_date()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html) or [get_strata()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html.
 
@@ -292,41 +291,91 @@ The function ensures that:
 
 ### Temporal effects
 
-Often, temporal covariates improve nowcasting performance by helping adjust for systematic changes occurring within the calendar cycle (e.g., day-of-week effects, seasonal effects, or reporting artefacts). The [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html)  function creates standardized temporal features aligned to the event or report date.
+Often, temporal covariates improve nowcasting performance by helping adjust for systematic changes occurring within the calendar cycle (e.g., day-of-week effects, seasonal effects, or reporting artefacts). The [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html) function creates a *specification* (recipe) of the features to compute:
 
 ```{r}
 library(almanac)
 
 t_eff <- temporal_effects(
   day_of_week  = TRUE,
-  week_of_year = TRUE, 
+  week_of_year = TRUE,
   holidays     = cal_us_federal())
 t_eff
 ```
 
-> Note that the holidays calendar is an [rcalendar](https://davisvaughan.github.io/almanac/reference/rcalendar.html) object from the [almanac](https://davisvaughan.github.io/almanac/articles/almanac.html) package. 
+> Note that the holidays calendar is an [rcalendar](https://davisvaughan.github.io/almanac/reference/rcalendar.html) object from the [almanac](https://davisvaughan.github.io/almanac/articles/almanac.html) package.
 
-Temporal effects can be added to A [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) with the [add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html) function:
+#### Lazy evaluation: attach first, compute later
+
+Temporal effects in `tbl.now` follow a **lazy evaluation** pattern:
+
+1. **Attach the spec** with [add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html) (or via the `t_effects` argument of `tbl_now()`). This records *what* should be computed but adds **no columns** yet.
+
+2. **Materialise the columns** with [compute_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html) when you are ready to use them in a model.
 
 ```{r, R.options=list(pillar.width=250)}
 data("denguedat")
 
-#Create a tbl_now
-df_now <- denguedat %>% 
+# Step 1 — create the tbl_now and attach the spec (no columns added yet)
+df_now <- denguedat %>%
   tbl_now(event_date = onset_week, report_date = report_week,
           verbose = FALSE, strata = gender)
 
-#Add temporal effects (see them as . columns)
-df_now %>% 
-  add_temporal_effects(t_eff) 
+df_now <- df_now %>%
+  add_temporal_effects(t_eff)
+
+# The footer shows "T. effects (lazy): ..." — spec is recorded but not computed
+df_now
 ```
 
-This: 
+The footer now shows the spec with `(lazy)` to signal that the columns have not been computed yet. No new columns appear in the tibble at this point.
 
-+ Computes periodic features (e.g., day-of-week indicators, week-of-year effects).
-+ Encodes them in a consistent numerical structure suitable for statistical models.
-+ Registers the resulting variables in the `temporal_effects` attribute for later retrieval in modelling workflows.
+```{r, R.options=list(pillar.width=250)}
+# Step 2 — materialise the columns when needed
+df_computed <- compute_temporal_effects(df_now)
 
+# Columns are now present and annotated [t_effect]
+df_computed
+```
+
+After `compute_temporal_effects()`:
+
++ The effect columns (`.event_day_of_week`, `.event_week_of_year`, `.event_holiday`) are added.
++ `get_temporal_effect_cols()` lists them.
++ The original spec remains accessible via `get_temporal_effects()`, so you always know which effects were requested even after further dplyr operations.
+
+```{r}
+get_temporal_effects(df_computed)   # The spec (list of configs)
+get_temporal_effect_cols(df_computed) # The computed column names
+```
+
+#### dplyr operations preserve the spec
+
+A key design property: **`filter()`, `select()`, `mutate()`, and all other dplyr verbs preserve the `temporal_effects` spec**. They do not trigger re-computation. Only `compute_temporal_effects()` computes the columns.
+
+```{r}
+# Filtering changes the rows but keeps the spec intact
+df_filtered <- df_now %>%
+  dplyr::filter(report_week <= as.Date("1991-06-01"))
+
+identical(get_temporal_effects(df_filtered), get_temporal_effects(df_now))
+```
+
+#### You can also supply the spec directly to `tbl_now()`
+
+```{r}
+df_with_spec <- denguedat %>%
+  tbl_now(event_date = onset_week, report_date = report_week,
+          t_effects = temporal_effects(week_of_year = TRUE),
+          verbose = FALSE)
+
+# No effect columns yet — spec is stored lazily
+".event_week_of_year" %in% names(df_with_spec)
+
+# Compute on demand
+df_with_spec <- compute_temporal_effects(df_with_spec)
+".event_week_of_year" %in% names(df_with_spec)
+```
 
 ### Modifying a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) with `dplyr`
 
@@ -360,22 +409,21 @@ df_now <- df_now %>%
 get_strata(df_now)
 ```
 
-To add temporal effects, use [add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html):
+To attach a lazy temporal-effects spec, use [add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html), then materialise with [compute_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html):
 
 ```{r, R.options=list(pillar.width = 250)}
 df_now <- df_now %>%
   add_temporal_effects(temporal_effects(week_of_year = TRUE))
 
-df_now
-```
-
-You can see them as attributes too:
-
-```{r}
+# Spec is stored (lazy):
 get_temporal_effects(df_now)
+
+# Compute to add columns:
+df_now <- compute_temporal_effects(df_now)
+get_temporal_effect_cols(df_now)
 ```
 
-Attributes can be removed using the corresponding [remove_*](https://rodrigozepeda.github.io/tbl.now/reference/remove.html) functions:
+Attributes can be removed using the corresponding [remove_*](https://rodrigozepeda.github.io/tbl.now/reference/remove.html) functions. `remove_temporal_effects()` drops both the spec and any computed columns:
 
 ```{r, R.options=list(pillar.width = 250)}
 df_now <- df_now %>%
@@ -385,10 +433,9 @@ df_now <- df_now %>%
 df_now
 ```
 
-Notice that these don't remove the columns they just remove the attributes:
-
 ```{r}
-get_temporal_effects(df_now)
+get_temporal_effects(df_now)  # Empty list — no spec
+get_temporal_effect_cols(df_now)  # character(0) — no computed cols
 get_strata(df_now)
 ```
 

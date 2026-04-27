@@ -279,9 +279,12 @@ test_that("get_initial_reported_cases preserves temporal effects", {
 
   result <- get_initial_reported_cases(ndata)
 
-  temporal_cols <- get_temporal_effects(result)
+  # Spec preserved; call compute_temporal_effects to get actual columns
+  expect_true(length(get_temporal_effects(result)) > 0)
+  computed <- compute_temporal_effects(result)
+  temporal_cols <- get_temporal_effect_cols(computed)
   expect_true(length(temporal_cols) > 0)
-  expect_true(all(temporal_cols %in% names(result)))
+  expect_true(all(temporal_cols %in% names(computed)))
 })
 
 test_that("get_initial_reported_cases is ungrouped", {
@@ -510,9 +513,12 @@ test_that("get_latest_reported_cases preserves temporal effects", {
 
   result <- get_latest_reported_cases(ndata)
 
-  temporal_cols <- get_temporal_effects(result)
+  # Spec preserved; call compute_temporal_effects to get actual columns
+  expect_true(length(get_temporal_effects(result)) > 0)
+  computed <- compute_temporal_effects(result)
+  temporal_cols <- get_temporal_effect_cols(computed)
   expect_true(length(temporal_cols) > 0)
-  expect_true(all(temporal_cols %in% names(result)))
+  expect_true(all(temporal_cols %in% names(computed)))
 })
 
 test_that("get_latest_reported_cases is ungrouped", {
