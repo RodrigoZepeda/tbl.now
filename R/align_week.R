@@ -85,8 +85,11 @@ align_weeks.data.frame <- function(.data,
                        date_col,
                        new_date_col = NULL) {
 
-  #Find the datecol
-  date_col_select <- tidyselect::eval_select(rlang::expr({{ date_col }}), .data)
+  #Find the datecol — capture as quosure so .tbl_now_eval_select() can detect
+  #character-valued variables and wrap them in all_of(), suppressing the
+  #tidyselect "external vector" deprecation warning.
+  date_col_quo    <- rlang::enquo(date_col)
+  date_col_select <- .tbl_now_eval_select(date_col_quo, .data)
   date_col        <- colnames(.data)[date_col_select]
 
   if (length(date_col) > 1){

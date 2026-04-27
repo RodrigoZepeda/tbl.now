@@ -82,7 +82,7 @@ remotes::install_github("RodrigoZepeda/tbl.now")
 Load the package:
 
 ```{r, message=FALSE, warning=FALSE}
-library(dplyr)
+library(dplyr, quietly = TRUE)
 library(lubridate)
 library(tbl.now)
 library(almanac)    #Suggested for holiday effects
@@ -163,13 +163,20 @@ t_eff
 Attach them to the dataset:
 
 ```{r}
-df_now %>% 
+df_now <- df_now %>% 
   add_temporal_effects(t_eff)
+
+df_now
 ```
 
-This expands the table with `.event_day_of_week`, `.event_week_of_year`, and `.event_holiday` columns which are automatically aligned with event dates.
+This lazily adds to the table  `day_of_week`, `week_of_year`, and `holiday` related to `event_date`. However it does not compute. Use `compute_temporal_effects()` to add them as columns:
 
-You can also attach different effects to the report:
+```{r}
+df_now %>% 
+  compute_temporal_effects()
+```
+
+You can also attach effects related to the `report_date`:
 
 ```{r}
 r_eff <- temporal_effects(day_of_week = TRUE)
@@ -177,6 +184,7 @@ r_eff <- temporal_effects(day_of_week = TRUE)
 df_now %>% 
   add_temporal_effects(r_eff, date_type = "report_date")
 ```
+
 ## Working with the “now”
 
 You may override the default now to perform historical evaluation:

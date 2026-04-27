@@ -1,5 +1,5 @@
-library(dplyr)
-library(lubridate)
+library(dplyr, quietly = TRUE, warn.conflicts = FALSE)
+library(lubridate, quietly = TRUE, warn.conflicts = FALSE)
 
 dtf <- expand.grid(
   event = seq(ymd("2010/01/01"), ymd("2021/01/01"), by = "1 week"),

@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup, message=FALSE}
-library(dplyr)
+library(dplyr, quietly = TRUE)
 library(lubridate)
 library(tbl.now)
 ```
@@ -145,7 +145,7 @@ is aggregated.
 
 + **temporal_effects** (optional): a lazy specification (list of [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html) configs) stored via [add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html). Columns are only materialised when [compute_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html) is called. See the [temporal effects](#temporal-effects) section for more details.
 
-You can access any attribute using the corresponding [getter](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html), e.g. [get_event_date()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html) or [get_strata()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html.
+You can access any attribute using the corresponding [getter](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html), e.g. [get_event_date()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html) or [get_strata()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html).
 
 [^1]: Optional attributes are set to `NULL` by default. 
 
@@ -445,7 +445,7 @@ get_strata(df_now)
 verbs. The class attempts to preserve and adapt its internal attributes when operations are performed. For example, renaming a strata column will automatically update the stored strata attribute.
 
 ```{r}
-library(dplyr)
+library(dplyr, quietly = TRUE)
 data(denguedat)
 
 df_now <- tbl_now(denguedat, event_date = onset_week, 
@@ -587,6 +587,33 @@ You can verify the resulting weekday using the [wday() function from the lubrida
 df_aligned %>%
   mutate(day_label = wday(date_aligned, label = TRUE, abbr = FALSE))
 ```
+
+### Complete zeroes
+
+The [complete_zeroes()](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.html) function fills with zeroes those cases where the `event` or `report` weeks have not been observed. 
+
+Consider for example the following data with just two observations per date:
+
+```{r}
+ndata <- tibble(
+  event_date  = c(as.Date("2021/01/12"), as.Date("2021/01/14"), as.Date("2021/01/14")),
+  report_date = c(as.Date("2021/01/13"), as.Date("2021/01/15"), as.Date("2021/01/18")),
+  case_count = c(10, 5, 1)
+)
+
+ndata <- tbl_now(ndata, event_date, report_date,
+     verbose = FALSE, case_count = case_count, data_type = "count-incidence")
+
+ndata
+```
+
+Notice that there are no observations for `2021/01/13`. Furthermore, if we assume that the maximum possible observed  We can fill the unobserved cases with:
+
+```{r}
+complete_zeroes(ndata)
+```
+
+Which looks at all the possible report dates and event dates and sets the counts to zero if they have not been observed. 
 
 ## References
 

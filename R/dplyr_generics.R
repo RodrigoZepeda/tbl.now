@@ -292,7 +292,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
     current_rows  <- nrow(x)
     distinct_rows <- x %>%
       dplyr::as_tibble() %>%
-      dplyr::distinct_at(c(get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x), get_is_censored(x), get_temporal_effect_cols(x))) %>%
+      dplyr::distinct(dplyr::across(dplyr::all_of(c(get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x), get_is_censored(x), get_temporal_effect_cols(x))))) %>%
       nrow()
 
     if (current_rows > distinct_rows){
@@ -759,11 +759,28 @@ summarize.grouped_tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
 #' @exportS3Method dplyr::reframe
 reframe.tbl_now <- function(.data, ..., .by = NULL) {
 
-  #Remove the tbl_now attribute
-  class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_now")))]
+  # Extract the grouping vars BEFORE stripping so we can pass them to dplyr
+  # explicitly (via all_of()) rather than relying on the groups attribute,
+  # which would cause dplyr's eval_select_by to fire an "external vector" warning.
+  if (is.null(.by) && dplyr::is.grouped_df(.data)) {
+    .by <- dplyr::group_vars(.data)
+    if (length(.by) == 0L) .by <- NULL
+  }
 
-  #Do normal reframe
-  reframed_tbl <- dplyr::reframe(.data, ..., .by = .by)
+  # Strip tbl_now / grouping classes AND the groups attribute so dplyr sees a
+  # plain data frame with no residual grouping metadata.
+  class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_now","grouped_df")))]
+  attr(.data, "groups") <- NULL
+
+  #Do normal reframe — pass .by lazily (as a promise inside the call) so that
+  #all_of() is evaluated inside dplyr's selecting context rather than eagerly
+  #outside it, avoiding both the "external vector" and the "all_of() outside
+  #selection" tidyselect deprecation warnings.
+  if (!is.null(.by) && length(.by) > 0L) {
+    reframed_tbl <- dplyr::reframe(.data, ..., .by = dplyr::all_of(.by))
+  } else {
+    reframed_tbl <- dplyr::reframe(.data, ...)
+  }
 
   result <- tryCatch({
     tmp <- tbl_now(data = reframed_tbl,
@@ -817,8 +834,10 @@ rename.tbl_now <- function(.data, ...) {
 #' @exportS3Method dplyr::rename_with
 rename_with.tbl_now <- function(.data, .fn, .cols = dplyr::everything(), ...) {
 
-  #Check the cols
-  loc        <- tidyselect::eval_select(rlang::enquo(.cols), .data, allow_rename = FALSE)
+  # Use .tbl_now_eval_select so that a plain character .cols (e.g. "sex") is
+  # resolved via all_of() instead of being treated as an external variable,
+  # suppressing the tidyselect "external vector" deprecation warning.
+  loc        <- .tbl_now_eval_select(rlang::enquo(.cols), .data)
   names(loc) <- sapply(names(loc), .fn)
   .data      <- rename_attributes(.data, loc)
 

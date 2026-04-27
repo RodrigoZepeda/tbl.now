@@ -75,5 +75,16 @@ disease_data <- tbl_now(denguedat,
     strata = "gender")
 
 # Add an effect for epidemiological week
-add_temporal_effects(disease_data, t_effects= temporal_effects(week_of_year = TRUE))
+disease_data <- disease_data \%>\%
+  add_temporal_effects(t_effects= temporal_effects(week_of_year = TRUE))
+
+#Use the compute to calculate them
+disease_data \%>\% compute_temporal_effects()
+
+#Use replace to change them
+disease_data \%>\%
+  replace_temporal_effects(t_effects= temporal_effects(seasons = 52))
+
+#Use remove to delete them
+disease_data \%>\% remove_temporal_effects()
 }

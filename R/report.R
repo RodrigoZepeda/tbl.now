@@ -39,10 +39,10 @@ get_latest_reported_cases <- function(x){
   x %>%
     ungroup() %>%
     to_count(to = "count-cumulative") %>%
-    dplyr::group_by_at(c(get_event_date(x), get_is_censored(x), get_covariates(x), get_strata(x), get_temporal_effect_cols(x))) %>%
+    dplyr::group_by(dplyr::across(dplyr::all_of(c(get_event_date(x), get_is_censored(x), get_covariates(x), get_strata(x), get_temporal_effect_cols(x))))) %>%
     dplyr::filter(!!as.symbol(get_report_date(x)) == max(!!as.symbol(get_report_date(x)), na.rm = TRUE)) %>%
     ungroup() %>%
-    dplyr::arrange_at(c(get_event_date(x), get_strata(x), get_is_censored(x), get_covariates(x)))
+    dplyr::arrange(dplyr::across(dplyr::all_of(c(get_event_date(x), get_strata(x), get_is_censored(x), get_covariates(x)))))
 
 }
 
@@ -59,10 +59,10 @@ get_initial_reported_cases <- function(x){
   x %>%
     ungroup() %>%
     to_count(to = "count-cumulative") %>%
-    dplyr::group_by_at(c(get_event_date(x), get_is_censored(x), get_covariates(x), get_strata(x), get_temporal_effect_cols(x))) %>%
+    dplyr::group_by(dplyr::across(dplyr::all_of(c(get_event_date(x), get_is_censored(x), get_covariates(x), get_strata(x), get_temporal_effect_cols(x))))) %>%
     dplyr::filter(!!as.symbol(get_report_date(x)) == min(!!as.symbol(get_report_date(x)), na.rm = TRUE)) %>%
     ungroup() %>%
-    dplyr::arrange_at(c(get_event_date(x), get_strata(x), get_is_censored(x), get_covariates(x)))
+    dplyr::arrange(dplyr::across(dplyr::all_of(c(get_event_date(x), get_strata(x), get_is_censored(x), get_covariates(x)))))
 
 }
 

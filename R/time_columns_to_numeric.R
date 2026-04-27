@@ -47,7 +47,7 @@ time_cols_to_numeric <- function(data, event_date, report_date, event_units, rep
   suppressWarnings(
     min_event_date <- data %>%
       ungroup() %>%
-      dplyr::distinct_at(.vars = event_date) %>%
+      dplyr::distinct(dplyr::across(dplyr::all_of(event_date))) %>%
       dplyr::filter(!is.na(!!as.symbol(event_date))) %>%
       dplyr::summarise(!!as.symbol("min_date") := min(!!as.symbol(event_date))) %>%
       dplyr::pull(!!as.symbol("min_date"))

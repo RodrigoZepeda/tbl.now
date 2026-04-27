@@ -6,8 +6,9 @@
 \usage{
 tbl_now(
   data,
-  event_date,
-  report_date,
+  event_date = NULL,
+  report_date = NULL,
+  delay = NULL,
   strata = NULL,
   covariates = NULL,
   case_count = NULL,
@@ -28,10 +29,21 @@ tbl_now(
 \item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 
 \item{event_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
-name of the column containing the event date.}
+name of the column containing the event date. Optional when \code{delay} is
+provided together with \code{report_date}; the event date will be computed as
+\code{report_date - delay}.}
 
 \item{report_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
-name of the column containing the report date.}
+name of the column containing the report date. Optional when \code{delay} is
+provided together with \code{event_date}; the report date will be computed as
+\code{event_date + delay}.}
+
+\item{delay}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+or \code{NULL} (default). Name of a numeric column containing the delay (in
+\code{event_units}) between \code{event_date} and \code{report_date}. When provided with
+only one of \code{event_date} or \code{report_date}, the missing date is reconstructed
+from the known date and the delay. Requires units to be known (either
+specified via \code{event_units} or inferrable from the provided date column).}
 
 \item{strata}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
 or \code{NULL} (default). Name of different variables (column names) in strata.

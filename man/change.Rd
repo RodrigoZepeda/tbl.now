@@ -33,10 +33,14 @@ nowcast. If no \code{now} is given then the function automatically uses the last
 \code{event_date}.}
 
 \item{event_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
-name of the column containing the event date.}
+name of the column containing the event date. Optional when \code{delay} is
+provided together with \code{report_date}; the event date will be computed as
+\code{report_date - delay}.}
 
 \item{report_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
-name of the column containing the report date.}
+name of the column containing the report date. Optional when \code{delay} is
+provided together with \code{event_date}; the report date will be computed as
+\code{event_date + delay}.}
 
 \item{case_count}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL}
 Name of the column with the case counts if \code{data_type} is "count-incidence"
@@ -123,6 +127,20 @@ ndata$temperature <- rnorm(nrow(ndata), 25, 4)
 ndata$humidity    <- rbeta(nrow(ndata), 0.6, 0.4)
 ndata <- ndata \%>\% change_covariates(temperature, humidity)
 ndata
+
+# Add temporal effects, remove and replace them
+ndata <- ndata \%>\%
+    add_temporal_effects(disease_data,
+    t_effects= temporal_effects(week_of_year = TRUE, month_of_year = TRUE))
+
+#Use the compute to calculate them
+ndata \%>\% compute_temporal_effects()
+
+#Use replace to change them
+ndata \%>\% replace_temporal_effects(t_effects= temporal_effects(seasons = 52))
+
+#Use remove to delete them
+ndata \%>\% remove_temporal_effects()
 
 }
 \seealso{

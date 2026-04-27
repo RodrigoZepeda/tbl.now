@@ -21,3 +21,4 @@
 ^\.covrignore$
 ^\.positai$
 ^\.claude$
+^CLAUDE.md$

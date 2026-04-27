@@ -1,6 +1,6 @@
 # --- Test Data Setup ---
 # Simple data to create a tbl_now object
-library(dplyr)
+library(dplyr, quietly = TRUE, warn.conflicts = FALSE)
 
 ll_data <- tibble(
   event_date_col = as.Date(c("2023-01-01", "2023-01-02")),

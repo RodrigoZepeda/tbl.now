@@ -200,7 +200,7 @@ replace_temporal_effects(x, t_effects)
 
 ## dplyr Integration
 
-`tbl_now` implements all major dplyr generics:
+`tbl_now` implements the following major dplyr generics:
 
 | Generic | Behaviour |
 |---------|-----------|
@@ -217,6 +217,9 @@ object to a plain tibble with a warning.
 
 Removing a **strata** or **covariate** column silently drops that column from
 the attribute.
+
+Importantly, those generics not explained above (such as `rowwise` are 
+not implemented and behaviour is unknown). 
 
 ---
 
@@ -249,7 +252,7 @@ data(mpoxdat)     # mpox count-incidence data
 
 ```r
 library(tbl.now)
-library(dplyr)
+library(dplyr, quietly = TRUE)
 
 # 1. Create
 df_now <- denguedat |>

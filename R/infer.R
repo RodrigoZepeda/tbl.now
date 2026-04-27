@@ -192,7 +192,7 @@ infer_data_type <- function(data, data_type, event_date, report_date, strata = N
 
     #Check that the data is different
     distinct_data <- data %>%
-      dplyr::distinct_at(c(event_date, report_date, strata, is_censored)) %>%
+      dplyr::distinct(dplyr::across(dplyr::all_of(c(event_date, report_date, strata, is_censored)))) %>%
       nrow()
 
     if (distinct_data != nrow(data)){
@@ -204,7 +204,7 @@ infer_data_type <- function(data, data_type, event_date, report_date, strata = N
     #Check that data should be always increasing by strata, event date, report date
     #for that purpose get the differences
     summarized_difs <- data %>%
-      dplyr::group_by_at(c(event_date, strata, is_censored)) %>%
+      dplyr::group_by(dplyr::across(dplyr::all_of(c(event_date, strata, is_censored)))) %>%
       dplyr::arrange(!!as.symbol(report_date)) %>%
       dplyr::mutate(!!as.symbol("difference") := !!as.symbol(case_count) - dplyr::lag(!!as.symbol(case_count))) %>%
       dplyr::filter(!is.na(!!as.symbol("difference"))) %>%

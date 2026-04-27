@@ -6,10 +6,21 @@
 #' @param data A `data.frame` or `tibble` to be converted.
 #'
 #' @param event_date \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
-#' name of the column containing the event date.
+#' name of the column containing the event date. Optional when `delay` is
+#' provided together with `report_date`; the event date will be computed as
+#' `report_date - delay`.
 #'
 #' @param report_date \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
-#' name of the column containing the report date.
+#' name of the column containing the report date. Optional when `delay` is
+#' provided together with `event_date`; the report date will be computed as
+#' `event_date + delay`.
+#'
+#' @param delay (optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+#' or `NULL` (default). Name of a numeric column containing the delay (in
+#' `event_units`) between `event_date` and `report_date`. When provided with
+#' only one of `event_date` or `report_date`, the missing date is reconstructed
+#' from the known date and the delay. Requires units to be known (either
+#' specified via `event_units` or inferrable from the provided date column).
 #'
 #' @param case_count (optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or `NULL`
 #' Name of the column with the case counts if `data_type` is "count-incidence"
@@ -197,8 +208,9 @@
 #' @export
 #' @md
 tbl_now <- function(data,
-                    event_date,
-                    report_date,
+                    event_date = NULL,
+                    report_date = NULL,
+                    delay = NULL,
                     strata = NULL,
                     covariates = NULL,
                     case_count = NULL,
@@ -207,7 +219,7 @@ tbl_now <- function(data,
                     event_units = "auto",
                     report_units = "auto",
                     data_type = "auto",
-                    t_effects = character(0), #FIXME: Do tidy select here too
+                    t_effects = character(0),
                     verbose = TRUE,
                     force = FALSE,
                     warn_non_uniqueness = TRUE,
@@ -226,27 +238,111 @@ tbl_now <- function(data,
   }
 
 
+  # Capture quosures first so we can detect NULL vs supplied and avoid the
+  # tidyselect "external vector" deprecation in .tbl_now_eval_select().
+  event_date_quo  <- rlang::enquo(event_date)
+  report_date_quo <- rlang::enquo(report_date)
+  delay_quo       <- rlang::enquo(delay)
+  strata_quo      <- rlang::enquo(strata)
+  covariates_quo  <- rlang::enquo(covariates)
+  case_count_quo  <- rlang::enquo(case_count)
+  is_censored_quo <- rlang::enquo(is_censored)
+
   #Get event date column
-  event_col_select <- tidyselect::eval_select(rlang::expr({{ event_date }}), data)
-  event_date       <- colnames(data)[event_col_select]
+  if (!rlang::quo_is_null(event_date_quo)) {
+    event_col_select <- .tbl_now_eval_select(event_date_quo, data)
+    event_date       <- colnames(data)[event_col_select]
+  } else {
+    event_date <- character(0)
+  }
 
-  report_col_select <- tidyselect::eval_select(rlang::expr({{ report_date }}), data)
-  report_date       <- colnames(data)[report_col_select]
+  if (!rlang::quo_is_null(report_date_quo)) {
+    report_col_select <- .tbl_now_eval_select(report_date_quo, data)
+    report_date       <- colnames(data)[report_col_select]
+  } else {
+    report_date <- character(0)
+  }
 
-  case_count_select <- tidyselect::eval_select(rlang::expr({{ case_count }}), data)
-  case_count        <- colnames(data)[case_count_select]
+  if (!rlang::quo_is_null(delay_quo)) {
+    delay_col_select <- .tbl_now_eval_select(delay_quo, data)
+    delay_col        <- colnames(data)[delay_col_select]
+  } else {
+    delay_col <- character(0)
+  }
+
+  has_event  <- length(event_date)  == 1
+  has_report <- length(report_date) == 1
+  has_delay  <- length(delay_col)   == 1
+
+  # Validate that we have enough information to determine both dates
+  if (!has_event && !has_report) {
+    cli::cli_abort("Must provide at least one of {.arg event_date} or {.arg report_date}.")
+  }
+  if (!has_event && !has_delay) {
+    cli::cli_abort(
+      "Must provide {.arg event_date}, or provide {.arg delay} together with {.arg report_date}."
+    )
+  }
+  if (!has_report && !has_delay) {
+    cli::cli_abort(
+      "Must provide {.arg report_date}, or provide {.arg delay} together with {.arg event_date}."
+    )
+  }
+
+  # Reconstruct the missing date column from delay
+  if (!has_event && has_report && has_delay) {
+    pre_units <- if (event_units == "auto") {
+      infer_units(data, date_column = report_date[1], date_units = "auto")
+    } else {
+      event_units
+    }
+    if (delay_col[1] == ".event_date") {
+      cli::cli_abort("Delay column cannot be named {.val .event_date}; that name is reserved for the reconstructed column.")
+    }
+    data        <- .reconstruct_date_from_delay(data, known_col = report_date[1],
+                                                delay_col = delay_col[1], units = pre_units,
+                                                new_col_name = ".event_date", direction = "subtract")
+    event_date  <- ".event_date"
+    event_units <- pre_units
+    if (verbose) cli::cli_alert_info("Computed {.val .event_date} from {.val {report_date[1]}} - delay ({pre_units}).")
+  } else if (!has_report && has_event && has_delay) {
+    pre_units <- if (event_units == "auto") {
+      infer_units(data, date_column = event_date[1], date_units = "auto")
+    } else {
+      event_units
+    }
+    if (delay_col[1] == ".report_date") {
+      cli::cli_abort("Delay column cannot be named {.val .report_date}; that name is reserved for the reconstructed column.")
+    }
+    data         <- .reconstruct_date_from_delay(data, known_col = event_date[1],
+                                                 delay_col = delay_col[1], units = pre_units,
+                                                 new_col_name = ".report_date", direction = "add")
+    report_date  <- ".report_date"
+    event_units  <- pre_units
+    if (report_units == "auto") report_units <- pre_units
+    if (verbose) cli::cli_alert_info("Computed {.val .report_date} from {.val {event_date[1]}} + delay ({pre_units}).")
+  }
+
+  # If the user's delay column is named ".delay" it will conflict with time_cols_to_numeric;
+  # drop it now since it will be recomputed from the numerics.
+  if (has_delay && delay_col[1] == ".delay" && ".delay" %in% colnames(data)) {
+    data <- data %>% dplyr::select(-!!as.symbol(".delay"))
+  }
+
+  case_count_select  <- .tbl_now_eval_select(case_count_quo,  data)
+  case_count         <- colnames(data)[case_count_select]
   if (length(case_count) == 0) case_count <- NULL
 
-  is_censored_select <- tidyselect::eval_select(rlang::expr({{ is_censored }}), data)
+  is_censored_select <- .tbl_now_eval_select(is_censored_quo, data)
   is_censored        <- colnames(data)[is_censored_select]
   if (length(is_censored) == 0) is_censored <- NULL
 
-  strata_select <- tidyselect::eval_select(rlang::expr({{ strata }}), data)
-  strata        <- colnames(data)[strata_select]
+  strata_select      <- .tbl_now_eval_select(strata_quo,      data)
+  strata             <- colnames(data)[strata_select]
   if (length(strata) == 0) strata <- NULL
 
-  covariates_select <- tidyselect::eval_select(rlang::expr({{ covariates }}), data)
-  covariates        <- colnames(data)[covariates_select]
+  covariates_select  <- .tbl_now_eval_select(covariates_quo,  data)
+  covariates         <- colnames(data)[covariates_select]
   if (length(covariates) == 0) covariates <- NULL
 
 
@@ -354,7 +450,10 @@ tbl_now <- function(data,
   if (!is.null(t_effects) && S7::S7_inherits(t_effects, class = temporal_effects)){
     data <- add_temporal_effects(data, t_effects = t_effects)
   } else if (!is.null(t_effects) && is.character(t_effects)){
-    # Backward-compat: caller supplies already-computed column names directly
+    # Caller supplies already-computed column names directly
+    cli::cli_warn(
+      "Please use a `temporal_effects` object. Setting from colnames is not recommended and could lead to unexpected behaviour."
+    )
     attr(data, "computed_temporal_effect_cols") <- t_effects
   }
 
@@ -371,3 +470,86 @@ tbl_now <- function(data,
 }
 
 
+# Safe wrapper around tidyselect::eval_select that avoids the "external vector"
+# deprecation warning.  Handles three cases:
+#   1. Literal string(s)  — e.g. event_date = "onset_week"
+#   2. NULL expression    — empty selection
+#   3. Symbol / call that *evaluates* to a character vector (e.g. the internal
+#      reconstruction calls `strata = get_strata(.data)`, or a user writing
+#      `strata_var <- "sex"; tbl_now(d, strata = strata_var)`)
+#      → wrap in all_of() so tidyselect doesn't see an "external vector"
+#   4. Everything else (bare column names, tidy-select expressions) → eval_select
+.tbl_now_eval_select <- function(quo, data) {
+
+  .EVAL_FAILED <- new.env(parent = emptyenv())  # sentinel for failed eval_tidy
+
+  expr <- rlang::quo_get_expr(quo)
+
+  # Case 1: explicit NULL (e.g. strata = NULL passed directly)
+  if (is.null(expr)) {
+    return(stats::setNames(integer(0), character(0)))
+  }
+
+  # Case 2: literal string(s) — fast path, no eval_select needed
+  if (is.character(expr)) {
+    idx     <- match(expr, colnames(data))
+    missing <- expr[is.na(idx)]
+    if (length(missing) > 0) {
+      cli::cli_abort("Column{?s} {.val {missing}} not found in data.")
+    }
+    return(stats::setNames(idx, expr))
+  }
+
+  # Case 3 + 4: symbol, call, or complex tidy-select expression.
+  # Try evaluating in the quosure's own environment first.
+  val <- tryCatch(rlang::eval_tidy(quo), error = function(e) .EVAL_FAILED)
+
+  if (identical(val, .EVAL_FAILED)) {
+    # Could not evaluate (bare column names like `sex`, tidy-select calls like
+    # `c(sex, age)`, `starts_with("x")` …) — let eval_select resolve them.
+    tidyselect::eval_select(quo, data)
+  } else if (is.null(val)) {
+    # Expression evaluates to NULL (e.g. `strata_var <- NULL`)
+    stats::setNames(integer(0), character(0))
+  } else if (is.character(val)) {
+    # Expression evaluates to a character vector of column names — use all_of()
+    # to suppress the tidyselect "external vector" deprecation.
+    if (length(val) == 0L) return(stats::setNames(integer(0), character(0)))
+    tidyselect::eval_select(rlang::expr(dplyr::all_of(!!val)), data)
+  } else {
+    # Fallback: hand off to eval_select for anything else
+    tidyselect::eval_select(quo, data)
+  }
+}
+
+#' Reconstruct a missing date column from integer delay
+#'
+#' @keywords internal
+.reconstruct_date_from_delay <- function(data, known_col, delay_col, units, new_col_name, direction) {
+
+  known_vals <- data[[known_col]]
+  delay_vals <- data[[delay_col]]
+
+  if (!is.numeric(delay_vals)) {
+    cli::cli_abort("Delay column {.val {delay_col}} must be numeric.")
+  }
+
+  int_delay <- as.integer(round(delay_vals))
+
+  if (units == "numeric") {
+    new_vals <- if (direction == "add") known_vals + delay_vals else known_vals - delay_vals
+  } else if (units == "days") {
+    new_vals <- if (direction == "add") known_vals + lubridate::days(int_delay) else known_vals - lubridate::days(int_delay)
+  } else if (units == "weeks") {
+    new_vals <- if (direction == "add") known_vals + lubridate::weeks(int_delay) else known_vals - lubridate::weeks(int_delay)
+  } else if (units == "months") {
+    new_vals <- if (direction == "add") lubridate::`%m+%`(known_vals, months(int_delay)) else lubridate::`%m-%`(known_vals, months(int_delay))
+  } else if (units == "years") {
+    new_vals <- if (direction == "add") known_vals + lubridate::years(int_delay) else known_vals - lubridate::years(int_delay)
+  } else {
+    cli::cli_abort("Unknown units: {.val {units}}. Must be one of: days, weeks, months, years, numeric.")
+  }
+
+  data[[new_col_name]] <- new_vals
+  return(data)
+}

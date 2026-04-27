@@ -1,6 +1,6 @@
 ## code to prepare `DATASET` dataset goes here
 library(lubridate)
-library(dplyr)
+library(dplyr, quietly = TRUE)
 library(readr)
 set.seed(28654)
 mpox <- readr::read_csv("https://raw.githubusercontent.com/nychealth/mpox_nowcast_eval/refs/heads/main/evaluation_df_public.csv")

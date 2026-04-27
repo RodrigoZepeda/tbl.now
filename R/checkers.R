@@ -96,7 +96,7 @@ check_strata <- function(data, strata) {
 
       #Check that strata has correct values (character, integer or factor)
       strata_col <- data %>%
-        dplyr::distinct_at(strata_colname) %>%
+        dplyr::distinct(dplyr::across(dplyr::all_of(strata_colname))) %>%
         dplyr::pull(!!as.symbol(strata_colname))
 
       if(!rlang::is_integer(strata_col) & !rlang::is_character(strata_col) & !is.factor(strata_col)){
@@ -110,7 +110,7 @@ check_strata <- function(data, strata) {
     #Check that there is more than one observation per strata
     #Compute the number of observations in strata
     n_strata <- data %>%
-      dplyr::distinct_at(strata) %>%
+      dplyr::distinct(dplyr::across(dplyr::all_of(strata))) %>%
       dplyr::tally() %>%
       dplyr::pull()
 
@@ -153,7 +153,7 @@ check_delay_is_censored <- function(data, delay_is_censored) {
     }
 
     #Check values are 0 or 1
-    censored_vals <- data %>% dplyr::distinct_at(delay_is_censored) %>% dplyr::pull()
+    censored_vals <- data %>% dplyr::distinct(dplyr::across(dplyr::all_of(delay_is_censored))) %>% dplyr::pull()
 
     if (!all(censored_vals %in% c(0, 1))) {
       #Get one of the not censored values

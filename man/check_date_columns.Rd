@@ -10,10 +10,14 @@ check_date_columns(data, event_date, report_date)
 \item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 
 \item{event_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
-name of the column containing the event date.}
+name of the column containing the event date. Optional when \code{delay} is
+provided together with \code{report_date}; the event date will be computed as
+\code{report_date - delay}.}
 
 \item{report_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
-name of the column containing the report date.}
+name of the column containing the report date. Optional when \code{delay} is
+provided together with \code{event_date}; the report date will be computed as
+\code{event_date + delay}.}
 }
 \value{
 `TRUE` (invisible) if the `event_date` and `report_date` are

@@ -64,6 +64,20 @@
 #' ndata <- ndata %>% change_covariates(temperature, humidity)
 #' ndata
 #'
+#' # Add temporal effects, remove and replace them
+#' ndata <- ndata %>%
+#'     add_temporal_effects(disease_data,
+#'     t_effects= temporal_effects(week_of_year = TRUE, month_of_year = TRUE))
+#'
+#' #Use the compute to calculate them
+#' ndata %>% compute_temporal_effects()
+#'
+#' #Use replace to change them
+#' ndata %>% replace_temporal_effects(t_effects= temporal_effects(seasons = 52))
+#'
+#' #Use remove to delete them
+#' ndata %>% remove_temporal_effects()
+#'
 #' @md
 #' @name change
 #' @seealso [add_temporal_effects()] [add] [remove]
@@ -405,7 +419,7 @@ remove_strata <- function(x, ...){
   strata_to_keep <- get_strata(x)
   strata_to_keep <- strata_to_keep[which(!(strata_to_keep %in% c(value)))]
 
-  change_strata(x, strata_to_keep)
+  change_strata(x, dplyr::all_of(strata_to_keep))
 }
 
 #' @rdname add
@@ -413,10 +427,10 @@ remove_strata <- function(x, ...){
 # Adds `value`  to existing strata
 add_strata <- function(x, ...) {
 
-  value <- tidyselect::eval_select(rlang::expr(c(...)), x)
+  value_names <- colnames(x)[tidyselect::eval_select(rlang::expr(c(...)), x)]
 
-  #Add to strata
-  change_strata(x, c(value, get_strata(x)))
+  #Add to strata — pass as all_of() to avoid external-vector deprecation
+  change_strata(x, dplyr::all_of(c(value_names, get_strata(x))))
 
 }
 
@@ -477,7 +491,7 @@ remove_covariates <- function(x, ...) {
   covariates_to_keep <- get_covariates(x)
   covariates_to_keep <- covariates_to_keep[which(!(covariates_to_keep %in% c(value)))]
 
-  change_covariates(x, covariates_to_keep)
+  change_covariates(x, dplyr::all_of(covariates_to_keep))
 }
 
 #' @rdname add
@@ -486,10 +500,10 @@ remove_covariates <- function(x, ...) {
 add_covariates <- function(x, ...) {
 
   #Pass value to covariate
-  value <- tidyselect::eval_select(rlang::expr(c(...)), x)
+  value_names <- colnames(x)[tidyselect::eval_select(rlang::expr(c(...)), x)]
 
-  #Add to strata
-  change_covariates(x, c(value, get_covariates(x)))
+  #Add to covariates — pass as all_of() to avoid external-vector deprecation
+  change_covariates(x, dplyr::all_of(c(value_names, get_covariates(x))))
 
 }
 

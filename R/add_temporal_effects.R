@@ -43,7 +43,18 @@
 #'     strata = "gender")
 #'
 #' # Add an effect for epidemiological week
-#' add_temporal_effects(disease_data, t_effects= temporal_effects(week_of_year = TRUE))
+#' disease_data <- disease_data %>%
+#'   add_temporal_effects(t_effects= temporal_effects(week_of_year = TRUE))
+#'
+#' #Use the compute to calculate them
+#' disease_data %>% compute_temporal_effects()
+#'
+#' #Use replace to change them
+#' disease_data %>%
+#'   replace_temporal_effects(t_effects= temporal_effects(seasons = 52))
+#'
+#' #Use remove to delete them
+#' disease_data %>% remove_temporal_effects()
 #' @name add_temporal_effects
 #' @export
 add_temporal_effects <- function(x, t_effects= NULL, overwrite = FALSE, ...) {
@@ -83,6 +94,17 @@ add_temporal_effects.data.frame <- function(x, t_effects= NULL, overwrite = FALS
       "Column {.value {numeric_col}} is not a column in `x`"
     )
   }
+
+  if (is.null(date_col)){
+    cli::cli_abort(
+      "Please specify a `date_col`"
+    )
+  }
+
+  if (!is.null(t_effects@seasons) && length(t_effects@seasons) > 0 && is.null(numeric_col)){
+    cli::cli_abort("Please specify a `numeric_col` to calculate the seasons")
+  }
+
 
   # Get the initial date (this is for codifying the month and epiweek effects so that they start in 1)
   init_date <- x %>%
@@ -187,6 +209,7 @@ add_temporal_effects.data.frame <- function(x, t_effects= NULL, overwrite = FALS
           dplyr::mutate(!!as.symbol(paste0(season_name,"_sin")) := sin(2*base::pi*as.numeric(!!as.symbol(numeric_col))  / m))
       }
     }
+
 
     # Add holiday effect-----
     if (!is.null(t_effects@holidays) & length(t_effects@holidays) > 0 & !is.null(date_col)) {
