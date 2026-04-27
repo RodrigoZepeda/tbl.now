@@ -1,4 +1,17 @@
 url: https://rodrigozepeda.github.io/tbl.now/
+
 template:
   bootstrap: 5
 
+navbar:
+  structure:
+    right: [twitter, github]
+  components:
+    twitter:
+      icon: fab fa-twitter
+      href: https://twitter.com/rodzepeda
+      aria-label: Twitter
+    github:
+      icon: fab fa-github
+      href: https://github.com/rodrigozepeda/tbl.now
+      aria-label: GitHub
