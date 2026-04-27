@@ -28,7 +28,7 @@
 #'
 #' @param ... Additional arguments to pass to function
 #'
-#' @param date_col A \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column
+#' @param date_col A [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) column
 #' name containing dates.
 #'
 #' @param new_date_col Name of the new aligned date column to be created. By default
@@ -177,9 +177,9 @@ align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
 #' aligning epiweek or isoweek data to a consistent weekday.
 #'
 #' @param .data A data.frame or tibble.
-#' @param week_col \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column
+#' @param week_col [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) column
 #' name containing epidemiological week numbers.
-#' @param year_col \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column
+#' @param year_col [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) column
 #' name containing epidemiological year numbers.
 #' @param align_on_day Integer 1–7 ([lubridate::wday()] numbering) indicating
 #'   the weekday to align to.

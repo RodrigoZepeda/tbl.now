@@ -17,10 +17,10 @@ week_2_date(
 \arguments{
 \item{.data}{A data.frame or tibble.}
 
-\item{week_col}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column
+\item{week_col}{[tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) column
 name containing epidemiological week numbers.}
 
-\item{year_col}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column
+\item{year_col}{[tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) column
 name containing epidemiological year numbers.}
 
 \item{align_on_day}{Integer 1–7 ([lubridate::wday()] numbering) indicating

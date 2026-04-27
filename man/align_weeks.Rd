@@ -31,7 +31,7 @@ which week/year functions to use whether [lubridate::epiweek()] or
 
 \item{...}{Additional arguments to pass to function}
 
-\item{date_col}{A \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} column
+\item{date_col}{A [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) column
 name containing dates.}
 
 \item{new_date_col}{Name of the new aligned date column to be created. By default

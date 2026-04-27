@@ -17,7 +17,7 @@ add_covariates(x, ...)
 \item{x}{A \code{tbl_now} object}
 
 \item{is_censored}{(optional)
-\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL} (default).
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL} (default).
 The name of a column containing either \code{TRUE} or \code{FALSE} indicating whether
 the \code{report_date} is correctly specified or corresponds to a \code{batch} and thus
 is censored. In other words, if the \code{report_date} is accurately measured
@@ -25,7 +25,7 @@ set \code{is_censored = FALSE} but if the \code{report_date} corresponds to an e
 and is only an upper bound of the real report date
 set \code{is_censored = TRUE}.}
 
-\item{...}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} with the columns
+\item{...}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} with the columns
 for the attribute. In the case of \code{covariates} and \code{strata} argument \code{...} can
 refer to multiple columns.}
 }

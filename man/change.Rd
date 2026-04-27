@@ -32,22 +32,22 @@ change_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
 nowcast. If no \code{now} is given then the function automatically uses the last
 \code{event_date}.}
 
-\item{event_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+\item{event_date}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 name of the column containing the event date. Optional when \code{delay} is
 provided together with \code{report_date}; the event date will be computed as
 \code{report_date - delay}.}
 
-\item{report_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+\item{report_date}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 name of the column containing the report date. Optional when \code{delay} is
 provided together with \code{event_date}; the report date will be computed as
 \code{event_date + delay}.}
 
-\item{case_count}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL}
+\item{case_count}{(optional) \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL}
 Name of the column with the case counts if \code{data_type} is "count-incidence"
 or "count-cumulative".}
 
 \item{is_censored}{(optional)
-\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL} (default).
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL} (default).
 The name of a column containing either \code{TRUE} or \code{FALSE} indicating whether
 the \code{report_date} is correctly specified or corresponds to a \code{batch} and thus
 is censored. In other words, if the \code{report_date} is accurately measured
@@ -55,7 +55,7 @@ set \code{is_censored = FALSE} but if the \code{report_date} corresponds to an e
 and is only an upper bound of the real report date
 set \code{is_censored = TRUE}.}
 
-\item{...}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} with the columns
+\item{...}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} with the columns
 for the attribute. In the case of \code{covariates} and \code{strata} argument \code{...} can
 refer to multiple columns.}
 
@@ -72,7 +72,7 @@ A \code{tbl_now} object with updated attributes
 Functions to change the attributes of a \code{tbl_now} object.
 }
 \details{
-Variable selection is done via \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+Variable selection is done via \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 and can be used with the auxiliary dplyr verbs such as \code{\link[dplyr:reexports]{dplyr::starts_with()}}, \code{\link[dplyr:reexports]{dplyr::all_of()}},
 and \code{\link[dplyr:reexports]{dplyr::where()}}. See \code{\link[dplyr:select]{dplyr::select()}} for additional info.
 }

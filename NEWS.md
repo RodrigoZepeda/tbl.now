@@ -1,3 +1,12 @@
+# tbl.now 0.6.2
+
+* Removed warning when using columns for temporal effects that cascaded into `to_count`.
+* Changed DESCRIPTION to fix ortographic error and trigger less messages of unknown words. 
+
+# tbl.now 0.6.1
+
+* Changed links in description of `tidy-select`
+
 # tbl.now 0.6.0
 
 * Changed temporal effects to be lazy (as required by #17) so that now its

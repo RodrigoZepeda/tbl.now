@@ -28,41 +28,41 @@ tbl_now(
 \arguments{
 \item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 
-\item{event_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+\item{event_date}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 name of the column containing the event date. Optional when \code{delay} is
 provided together with \code{report_date}; the event date will be computed as
 \code{report_date - delay}.}
 
-\item{report_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+\item{report_date}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 name of the column containing the report date. Optional when \code{delay} is
 provided together with \code{event_date}; the report date will be computed as
 \code{event_date + delay}.}
 
-\item{delay}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+\item{delay}{(optional) \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 or \code{NULL} (default). Name of a numeric column containing the delay (in
 \code{event_units}) between \code{event_date} and \code{report_date}. When provided with
 only one of \code{event_date} or \code{report_date}, the missing date is reconstructed
 from the known date and the delay. Requires units to be known (either
 specified via \code{event_units} or inferrable from the provided date column).}
 
-\item{strata}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+\item{strata}{(optional) \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 or \code{NULL} (default). Name of different variables (column names) in strata.
 Strata correspond to variables that are of interest by themselves.
 For example if it is of interest to generate nowcasts by gender then
 \code{gender} is a \code{strata}.}
 
-\item{covariates}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+\item{covariates}{(optional) \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 or \code{NULL} (default). Name of different variables
 (column names) that influence the nowcast but are not strata.
 For example precipitation might influence a dengue nowcast but in general it
 is not of interest to generate nowcasts by precipitation levels.}
 
-\item{case_count}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL}
+\item{case_count}{(optional) \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL}
 Name of the column with the case counts if \code{data_type} is "count-incidence"
 or "count-cumulative".}
 
 \item{is_censored}{(optional)
-\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL} (default).
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL} (default).
 The name of a column containing either \code{TRUE} or \code{FALSE} indicating whether
 the \code{report_date} is correctly specified or corresponds to a \code{batch} and thus
 is censored. In other words, if the \code{report_date} is accurately measured

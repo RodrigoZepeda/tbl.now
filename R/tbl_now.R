@@ -5,29 +5,29 @@
 #'
 #' @param data A `data.frame` or `tibble` to be converted.
 #'
-#' @param event_date \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+#' @param event_date [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 #' name of the column containing the event date. Optional when `delay` is
 #' provided together with `report_date`; the event date will be computed as
 #' `report_date - delay`.
 #'
-#' @param report_date \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+#' @param report_date [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 #' name of the column containing the report date. Optional when `delay` is
 #' provided together with `event_date`; the report date will be computed as
 #' `event_date + delay`.
 #'
-#' @param delay (optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+#' @param delay (optional) [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 #' or `NULL` (default). Name of a numeric column containing the delay (in
 #' `event_units`) between `event_date` and `report_date`. When provided with
 #' only one of `event_date` or `report_date`, the missing date is reconstructed
 #' from the known date and the delay. Requires units to be known (either
 #' specified via `event_units` or inferrable from the provided date column).
 #'
-#' @param case_count (optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or `NULL`
+#' @param case_count (optional) [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) or `NULL`
 #' Name of the column with the case counts if `data_type` is "count-incidence"
 #' or "count-cumulative".
 #'
 #' @param is_censored (optional)
-#' \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or `NULL` (default).
+#' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) or `NULL` (default).
 #' The name of a column containing either `TRUE` or `FALSE` indicating whether
 #' the `report_date` is correctly specified or corresponds to a `batch` and thus
 #' is censored. In other words, if the `report_date` is accurately measured
@@ -35,13 +35,13 @@
 #' and is only an upper bound of the real report date
 #' set `is_censored = TRUE`.
 #'
-#' @param strata (optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+#' @param strata (optional) [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 #' or `NULL` (default). Name of different variables (column names) in strata.
 #' Strata correspond to variables that are of interest by themselves.
 #' For example if it is of interest to generate nowcasts by gender then
 #' `gender` is a `strata`.
 #'
-#' @param covariates (optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+#' @param covariates (optional) [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 #' or `NULL` (default). Name of different variables
 #' (column names) that influence the nowcast but are not strata.
 #' For example precipitation might influence a dengue nowcast but in general it
@@ -450,10 +450,7 @@ tbl_now <- function(data,
   if (!is.null(t_effects) && S7::S7_inherits(t_effects, class = temporal_effects)){
     data <- add_temporal_effects(data, t_effects = t_effects)
   } else if (!is.null(t_effects) && is.character(t_effects)){
-    # Caller supplies already-computed column names directly
-    cli::cli_warn(
-      "Please use a `temporal_effects` object. Setting from colnames is not recommended and could lead to unexpected behaviour."
-    )
+    # Caller supplies already-computed column names directly  (for example in `to_count`)
     attr(data, "computed_temporal_effect_cols") <- t_effects
   }
 

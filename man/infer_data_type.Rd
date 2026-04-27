@@ -22,24 +22,24 @@ infer_data_type(
 "count-incidence" or "count-cumulative". See section below for
 an explanation on data types.}
 
-\item{event_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+\item{event_date}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 name of the column containing the event date. Optional when \code{delay} is
 provided together with \code{report_date}; the event date will be computed as
 \code{report_date - delay}.}
 
-\item{report_date}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+\item{report_date}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 name of the column containing the report date. Optional when \code{delay} is
 provided together with \code{event_date}; the report date will be computed as
 \code{event_date + delay}.}
 
-\item{strata}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+\item{strata}{(optional) \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 or \code{NULL} (default). Name of different variables (column names) in strata.
 Strata correspond to variables that are of interest by themselves.
 For example if it is of interest to generate nowcasts by gender then
 \code{gender} is a \code{strata}.}
 
 \item{is_censored}{(optional)
-\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL} (default).
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL} (default).
 The name of a column containing either \code{TRUE} or \code{FALSE} indicating whether
 the \code{report_date} is correctly specified or corresponds to a \code{batch} and thus
 is censored. In other words, if the \code{report_date} is accurately measured
@@ -47,7 +47,7 @@ set \code{is_censored = FALSE} but if the \code{report_date} corresponds to an e
 and is only an upper bound of the real report date
 set \code{is_censored = TRUE}.}
 
-\item{case_count}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} or \code{NULL}
+\item{case_count}{(optional) \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL}
 Name of the column with the case counts if \code{data_type} is "count-incidence"
 or "count-cumulative".}
 

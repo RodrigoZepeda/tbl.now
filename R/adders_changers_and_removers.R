@@ -2,7 +2,7 @@
 #'
 #' @description Functions to change the attributes of a `tbl_now` object.
 #'
-#' @details Variable selection is done via \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+#' @details Variable selection is done via [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 #' and can be used with the auxiliary dplyr verbs such as [dplyr::starts_with()], [dplyr::all_of()],
 #' and [dplyr::where()]. See [dplyr::select()] for additional info.
 #'
@@ -129,7 +129,7 @@ NULL
 #'
 #' @inheritParams tbl_now
 #'
-#' @param ... 	\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} with the columns
+#' @param ... 	[tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) with the columns
 #' for the attribute. In the case of `covariates` and `strata` argument `...` can
 #' refer to multiple columns.
 #'

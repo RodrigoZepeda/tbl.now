@@ -28,7 +28,7 @@ remove_temporal_effects(x)
 \arguments{
 \item{x}{A \code{tbl_now} object}
 
-\item{...}{\code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}} with the columns
+\item{...}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} with the columns
 for the attribute. In the case of \code{covariates} and \code{strata} argument \code{...} can
 refer to multiple columns.}
 

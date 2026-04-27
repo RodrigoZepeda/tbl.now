@@ -9,7 +9,7 @@ check_strata(data, strata)
 \arguments{
 \item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 
-\item{strata}{(optional) \code{\link[dplyr:dplyr_tidy_select]{<`tidy-select`>}}
+\item{strata}{(optional) \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 or \code{NULL} (default). Name of different variables (column names) in strata.
 Strata correspond to variables that are of interest by themselves.
 For example if it is of interest to generate nowcasts by gender then

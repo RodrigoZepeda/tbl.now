@@ -4,9 +4,9 @@
 \name{tbl.now-package}
 \alias{tbl.now}
 \alias{tbl.now-package}
-\title{tbl.now: Tibble Extension for Nowcasts}
+\title{tbl.now: Tidy Extension for Nowcasting}
 \description{
-Provides a 'tbl_now' class for temporal data for performing nowcasts. The 'tbl_now' allows for easy manipulation of event dates, report dates, strata and covariates for implementing different nowcasting models while at the same time permiting ease of use with `dplyr` functions.
+Provides a 'tbl_now' class for temporal data for performing nowcasts. The 'tbl_now' allows for easy manipulation of event dates, report dates, strata and covariates for implementing different nowcasting models while at the same time permitting ease of use with 'dplyr' functions.
 }
 \seealso{
 Useful links:
