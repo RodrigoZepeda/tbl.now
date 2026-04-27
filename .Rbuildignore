@@ -19,3 +19,5 @@
 ^repomix-output\.xml$
 ^cache$
 ^\.covrignore$
+^\.positai$
+^\.claude$
