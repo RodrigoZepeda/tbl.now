@@ -90,9 +90,9 @@ complete_zeroes <- function(x, max_delay = NULL){
   }
 
   #Warn to recalculate temporal effects
-  if (length(get_temporal_effects(x)) > 0){
+  if (length(get_temporal_effect_cols(x)) > 0){
     cli::cli_alert_warning(
-      "Some temporal effects have been lost. Please recalculate and add with {.help add_temporal_effects}"
+      "Computed temporal-effect columns have been lost. Call {.fn compute_temporal_effects} again after {.fn complete_zeroes}."
     )
   }
 

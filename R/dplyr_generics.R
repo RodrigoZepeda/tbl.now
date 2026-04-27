@@ -292,7 +292,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
     current_rows  <- nrow(x)
     distinct_rows <- x %>%
       dplyr::as_tibble() %>%
-      dplyr::distinct_at(c(get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x), get_is_censored(x), get_temporal_effects(x))) %>%
+      dplyr::distinct_at(c(get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x), get_is_censored(x), get_temporal_effect_cols(x))) %>%
       nrow()
 
     if (current_rows > distinct_rows){
@@ -406,13 +406,11 @@ tbl_now_reconstruct_internal <- function(data, template){
     attr(data, "covariates")      <- covariates
   }
 
-  # Update temporal effects if columns were dropped
-  if (!is.null(get_temporal_effects(template)) && length(get_temporal_effects(template)) > 0) {
-    #Get the temporal effects still  here
-    temporal_effects <- intersect(get_temporal_effects(template), names(data))
-
-    #Reattach
-    attr(data, "temporal_effects") <- temporal_effects
+  # Preserve the lazy temporal_effects spec unchanged (it does not reference columns)
+  # Only prune the computed_temporal_effect_cols to columns that still exist
+  existing_computed <- attr(template, "computed_temporal_effect_cols")
+  if (!is.null(existing_computed)) {
+    attr(data, "computed_temporal_effect_cols") <- intersect(existing_computed, names(data))
   }
 
 
@@ -567,7 +565,7 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
     # Restore original attributes and add grouping information
     x <- new_grouped_tbl_now(.data, groups = grouping_structure)
   } else {
-    # This is an edge case if no groups are actually provided. Then simply return a regular subclass
+    # Edge case: no groups were actually provided — reconstruct without losing temporal-effects spec
     x <- tbl_now(data = .data,
                  event_date = get_event_date(.data),
                  report_date = get_report_date(.data),
@@ -581,8 +579,9 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
                  case_count = get_case_count(.data),
                  verbose = FALSE,
                  force = TRUE,
-                 warn_non_uniqueness = FALSE,
-                 t_effects = get_temporal_effects(.data))
+                 warn_non_uniqueness = FALSE)
+    attr(x, "temporal_effects")              <- get_temporal_effects(.data)
+    attr(x, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(x))
   }
   x
 }
@@ -669,21 +668,23 @@ ungroup.grouped_tbl_now <- function(x, ...) {
     # Otherwise the tibble is completely ungrouped and we need to reapply custom attributes, but remove grouping
     # This is most simplest done by simply creating a new tibble subclass
     # This is an edge case if no groups are actually provided. Then simply return a regular subclass
+    old_x <- x
     x <- tbl_now(data = tbl,
-                     event_date = get_event_date(x),
-                     report_date = get_report_date(x),
-                     strata = get_strata(x),
-                     covariates = get_covariates(x),
-                     is_censored = get_is_censored(x),
-                     now = get_now(x),
-                     event_units = get_event_units(x),
-                     report_units = get_report_units(x),
-                     data_type = get_data_type(x),
-                     case_count = get_case_count(x),
+                     event_date = get_event_date(old_x),
+                     report_date = get_report_date(old_x),
+                     strata = get_strata(old_x),
+                     covariates = get_covariates(old_x),
+                     is_censored = get_is_censored(old_x),
+                     now = get_now(old_x),
+                     event_units = get_event_units(old_x),
+                     report_units = get_report_units(old_x),
+                     data_type = get_data_type(old_x),
+                     case_count = get_case_count(old_x),
                      verbose = FALSE,
                      force = TRUE,
-                     t_effects = get_temporal_effects(x),
                      warn_non_uniqueness = FALSE)
+    attr(x, "temporal_effects")              <- get_temporal_effects(old_x)
+    attr(x, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(old_x), names(x))
   }
   return(x)
 }
@@ -708,7 +709,7 @@ class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_
  }
 
  result <- tryCatch({
-    tbl_now(data = ungroup(summarised_tbl),
+    tmp <- tbl_now(data = ungroup(summarised_tbl),
                 event_date = get_event_date(.data),
                 report_date = get_report_date(.data),
                 strata = get_strata(.data),
@@ -722,8 +723,10 @@ class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_
                 verbose = FALSE,
                 force = TRUE,
                 warn_non_uniqueness = FALSE,
-                t_effects =  get_temporal_effects(.data),
                 align_weeks = FALSE)
+    attr(tmp, "temporal_effects")              <- get_temporal_effects(.data)
+    attr(tmp, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(tmp))
+    tmp
     },
     error = function(e) {
       cli::cli_warn("Dropping `tbl_now` attributes and converting to `tibble`")
@@ -763,7 +766,7 @@ reframe.tbl_now <- function(.data, ..., .by = NULL) {
   reframed_tbl <- dplyr::reframe(.data, ..., .by = .by)
 
   result <- tryCatch({
-    tbl_now(data = reframed_tbl,
+    tmp <- tbl_now(data = reframed_tbl,
             event_date = get_event_date(.data),
             report_date = get_report_date(.data),
             strata = get_strata(.data),
@@ -777,8 +780,10 @@ reframe.tbl_now <- function(.data, ..., .by = NULL) {
             verbose = FALSE,
             force = TRUE,
             warn_non_uniqueness = FALSE,
-            t_effects =  get_temporal_effects(.data),
             align_weeks = FALSE)
+    attr(tmp, "temporal_effects")              <- get_temporal_effects(.data)
+    attr(tmp, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(tmp))
+    tmp
   },
   error = function(e) {
     cli::cli_warn("Dropping `tbl_now` attributes and converting to `tibble`")

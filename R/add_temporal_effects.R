@@ -221,29 +221,23 @@ add_temporal_effects.tbl_now <- function(x, t_effects= NULL, overwrite = FALSE, 
                                          date_type = "event_date",
                                          weekend_days = c("Sat","Sun")){
 
-  if (date_type == "event_date"){
-    date_col    <- get_event_date(x)
-    date_name   <- "event"
-    numeric_col <- ".event_num"
-  } else if (date_type == "report_date"){
-    date_col    <- get_report_date(x)
-    date_name   <- "report"
-    numeric_col <- ".report_num"
-  } else {
+  if (is.null(t_effects)) return(x)
+
+  if (!S7::S7_inherits(t_effects, class = temporal_effects)){
+    cli::cli_abort(
+      "`t_effects` should be a {.code temporal_effects} object. Use `temporal_effects` to create it."
+    )
+  }
+
+  if (!date_type %in% c("event_date", "report_date")) {
     cli::cli_abort("Invalid `date_type` use {.val event_date} or {.val report_date}")
   }
 
-  old_cols <- colnames(x)
-  x        <- add_temporal_effects.data.frame(x,
-                                              t_effects= t_effects,
-                                              date_col = date_col,
-                                              numeric_col = numeric_col,
-                                              name_prefix = paste0(".", date_name), ...)
-  new_cols <- colnames(x)
-
-  #Temporal effects are the ones in new_cols but not in old_cols
-  temporal_effect_cols        <- setdiff(new_cols, old_cols)
-  attr(x, "temporal_effects") <- c(attr(x, "temporal_effects"), temporal_effect_cols)
+  # Store the spec lazily — columns are computed only when compute_temporal_effects() is called
+  new_spec      <- list(t_effects = t_effects, date_type = date_type, weekend_days = weekend_days)
+  existing_spec <- attr(x, "temporal_effects")
+  if (is.null(existing_spec)) existing_spec <- list()
+  attr(x, "temporal_effects") <- c(existing_spec, list(new_spec))
 
   return(x)
 

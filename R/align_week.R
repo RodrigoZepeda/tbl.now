@@ -144,7 +144,7 @@ align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
                          new_date_col = "new_now") %>%
     dplyr::pull(!!as.symbol("new_now"))
 
-  .data %>%
+  result <- .data %>%
     dplyr::rename(!!as.symbol(event_col) := !!as.symbol(paste0("temp_", event_col))) %>%
     dplyr::rename(!!as.symbol(report_col) := !!as.symbol(paste0("temp_", report_col))) %>%
     as_tbl_now(event_date = event_col, report_date = report_col, align_weeks = FALSE,
@@ -156,8 +156,12 @@ align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
                is_censored  = get_is_censored(.data),
                event_units  = get_event_units(.data),
                report_units = get_report_units(.data),
-               now          = new_now,
-               t_effects    = get_temporal_effects(.data)) #TODO: Check temporal effects works
+               now          = new_now)
+
+  # Preserve the lazy temporal-effects spec (computed cols are invalidated by
+  # the date-realignment so they are intentionally dropped)
+  attr(result, "temporal_effects") <- get_temporal_effects(.data)
+  result
 
 }
 

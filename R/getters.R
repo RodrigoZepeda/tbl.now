@@ -14,7 +14,8 @@
 #'          report_date = report_week,
 #'          strata = gender,
 #'          t_effects = temporal_effects(month_of_year = TRUE),
-#'          verbose = FALSE)
+#'          verbose = FALSE) %>%
+#'  compute_temporal_effects()
 #'
 #' #Get the event date
 #' get_event_date(ndata)
@@ -117,6 +118,13 @@ get_data_type <- function(x) {
 #' @export
 get_temporal_effects <- function(x) {
   attr(x, "temporal_effects", exact = TRUE)
+}
+
+#' @rdname nowcast_data_getters
+#' @export
+get_temporal_effect_cols <- function(x) {
+  val <- attr(x, "computed_temporal_effect_cols", exact = TRUE)
+  if (is.null(val)) character(0) else val
 }
 
 #' @rdname nowcast_data_getters
