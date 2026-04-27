@@ -21,7 +21,7 @@ add_covariates(x, ...)
 - is_censored:
 
   (optional)
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` (default). The name of a column containing either `TRUE` or
   `FALSE` indicating whether the `report_date` is correctly specified or
   corresponds to a `batch` and thus is censored. In other words, if the
@@ -31,7 +31,7 @@ add_covariates(x, ...)
 
 - ...:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   with the columns for the attribute. In the case of `covariates` and
   `strata` argument `...` can refer to multiple columns.
 
@@ -64,8 +64,6 @@ ndata <- tbl_now(denguedat,
                  event_date = onset_week,
                  report_date = report_week,
                  verbose = FALSE)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 # Add strata
 ndata <- ndata %>% add_strata(dplyr::starts_with("gender"))

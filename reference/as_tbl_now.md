@@ -23,14 +23,14 @@ as_tbl_now(object, event_date, report_date, ...)
 
 - event_date:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   name of the column containing the event date. Optional when `delay` is
   provided together with `report_date`; the event date will be computed
   as `report_date - delay`.
 
 - report_date:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   name of the column containing the report date. Optional when `delay`
   is provided together with `event_date`; the report date will be
   computed as `event_date + delay`.
@@ -47,8 +47,6 @@ as_tbl_now(object, event_date, report_date, ...)
 data(denguedat)
 as_tbl_now(denguedat, event_date = "onset_week", report_date = "report_week")
 #> ℹ Identified data as <linelist-data> where each observation is a test.
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  52,987 × 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`

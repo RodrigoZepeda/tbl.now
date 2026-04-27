@@ -26,12 +26,12 @@ week_2_date(
 
 - week_col:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  \[tidy-select\](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   column name containing epidemiological week numbers.
 
 - year_col:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  \[tidy-select\](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   column name containing epidemiological year numbers.
 
 - align_on_day:

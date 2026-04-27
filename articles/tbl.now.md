@@ -120,8 +120,6 @@ We can convert this into a
 df %>% 
   tbl_now(event_date = symptom_onset, report_date = medical_visit, case_count = n)
 #> ℹ Identified data as <count-incidence> with counts in column "n".
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  4 × 6
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
@@ -217,11 +215,6 @@ can represent one of three data structures:
 
 1.  **Linelist**: Each row corresponds to a single reported observation.
 
-&nbsp;
-
-    #> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-    #> recommended and could lead to unexpected behaviour.
-
 | patient | event_date | report_date | .event_num | .report_num | .delay |
 |--------:|:-----------|:------------|-----------:|------------:|-------:|
 |       1 | 2020-09-12 | 2020-09-12  |          0 |           0 |      0 |
@@ -235,11 +228,6 @@ Linelist data
 
 2.  **Count-incidence**: Each row summarizes how many events with a
     given `event_date` were reported exactly on that `report_date.`
-
-&nbsp;
-
-    #> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-    #> recommended and could lead to unexpected behaviour.
 
 |   n | event_date | report_date | .event_num | .report_num | .delay |
 |----:|:-----------|:------------|-----------:|------------:|-------:|
@@ -256,11 +244,6 @@ Count-incidence data
     given `event_date` had been reported up to and including that
     `report_date`. The distinction is crucial for nowcasting models that
     operate either on daily increments or cumulative totals.
-
-&nbsp;
-
-    #> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-    #> recommended and could lead to unexpected behaviour.
 
 |   n | event_date | report_date | .event_num | .report_num | .delay |
 |----:|:-----------|:------------|-----------:|------------:|-------:|
@@ -289,8 +272,6 @@ function supports structured transformations:
 ``` r
 df_linelist %>% 
   to_count(to = "count-incidence")
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  3 × 6
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
@@ -311,24 +292,6 @@ df_linelist %>%
 ``` r
 df_linelist %>% 
   to_count(to = "count-cumulative")
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  3 × 6
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
@@ -356,20 +319,6 @@ df_linelist %>%
 ``` r
 df_count_inc %>% 
   to_count(to = "count-cumulative")
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  6 × 6
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
@@ -411,8 +360,6 @@ tbl_example <- df_example %>%
   tbl_now(event_date = event_date, report_date = report_date, 
           data_type = "count-incidence", case_count = n, verbose = FALSE,
           warn_non_uniqueness = FALSE)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 tbl_example
 #> # A tibble:  14 × 7
@@ -450,8 +397,6 @@ column.
 ``` r
 tbl_example %>% 
   to_count(to = "count-incidence")
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  9 × 6
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
@@ -536,8 +481,6 @@ data("denguedat")
 df_now <- denguedat %>%
   tbl_now(event_date = onset_week, report_date = report_week,
           verbose = FALSE, strata = gender)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 df_now <- df_now %>%
   add_temporal_effects(t_eff)
@@ -713,8 +656,6 @@ data("mpoxdat")
 df_now <- mpoxdat %>%
   tbl_now(event_date = dx_date, report_date = dx_report_date,
           case_count = n, verbose = FALSE, strata = race)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 df_now
 #> # A tibble:  1,417 × 7
@@ -868,8 +809,6 @@ data(denguedat)
 df_now <- tbl_now(denguedat, event_date = onset_week, 
                   report_date = report_week, strata = gender,
                   verbose = FALSE)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 #Current strata
 get_strata(df_now)
@@ -927,8 +866,6 @@ df <- data.frame(
 
 df_now <- tbl_now(df, event_date = event_date,
                   report_date = report_date, verbose = FALSE)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 ```
 
 And a follow-up dataset containing newly reported cases:
@@ -948,8 +885,6 @@ We can update the original object by incorporating the new data:
 
 ``` r
 df_updated <- update(df_now, new_data = df_new)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 df_updated
 #> # A tibble:  13 × 6
@@ -1023,8 +958,6 @@ tbl_reports <- df_reports %>%
   tbl_now(event_date = event_date, report_date = report_date, 
           verbose = FALSE, case_count = n, report_units = "days",
           event_units = "days")
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 tbl_reports
 #> # A tibble:  6 × 6
@@ -1048,26 +981,6 @@ The initial reported cases:
 
 ``` r
 get_initial_reported_cases(tbl_reports)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  1 × 6
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
@@ -1084,26 +997,6 @@ and the latest totals:
 
 ``` r
 get_latest_reported_cases(tbl_reports)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  1 × 6
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
@@ -1171,8 +1064,6 @@ ndata <- tibble(
 
 ndata <- tbl_now(ndata, event_date, report_date,
      verbose = FALSE, case_count = case_count, data_type = "count-incidence")
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 ndata
 #> # A tibble:  3 × 6

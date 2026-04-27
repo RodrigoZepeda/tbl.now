@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -185,8 +185,6 @@ event–report combination.</p></li>
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">symptom_onset</span>, report_date <span class="op">=</span> <span class="va">medical_visit</span>, case_count <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Identified data as &lt;<span style="font-style: italic;">count-incidence</span>&gt; with counts in column <span style="color: #0000BB;">"n"</span>.</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  4 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
@@ -275,8 +273,6 @@ can represent one of three data structures:</p>
 <strong>Linelist</strong>: Each row corresponds to a single reported
 observation.</li>
 </ol>
-<pre><code><span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span></code></pre>
 <table class="table">
 <caption>Linelist data</caption>
 <thead><tr class="header">
@@ -345,8 +341,6 @@ events with a given <code>event_date</code> were reported exactly on
 that <code>report_date.</code>
 </li>
 </ol>
-<pre><code><span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span></code></pre>
 <table class="table">
 <caption>Count-incidence data</caption>
 <thead><tr class="header">
@@ -416,8 +410,6 @@ including that <code>report_date</code>. The distinction is crucial for
 nowcasting models that operate either on daily increments or cumulative
 totals.</li>
 </ol>
-<pre><code><span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span></code></pre>
 <table class="table">
 <caption>Count-cumulative data</caption>
 <thead><tr class="header">
@@ -492,11 +484,9 @@ function supports structured transformations:</p>
 <strong>Linelist → Count-Incidence</strong>: Aggregates by
 event–report date, counting only cases reported on that date.</li>
 </ul>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_linelist</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="../reference/to_count.html">to_count</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"count-incidence"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  3 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
@@ -515,27 +505,9 @@ event–report date, counting only cases reported on that date.</li>
 event–report date, producing cumulative counts up to each report
 date.</li>
 </ul>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_linelist</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="../reference/to_count.html">to_count</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"count-cumulative"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  3 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
@@ -563,23 +535,9 @@ the <strong>count-incidence</strong> that specifies the ones observed
 <strong>Count-Incidence → Count-Cumulative</strong>: Computes
 cumulative sums for each event date across report dates.</li>
 </ul>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_count_inc</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="../reference/to_count.html">to_count</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"count-cumulative"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  6 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
@@ -602,7 +560,7 @@ may also be used to re-aggregate datasets that contain duplicate
 event–report pairs. This is useful when raw surveillance feeds contain
 repeated entries such as in this case:</li>
 </ul>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  n           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">11</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">1</span>, <span class="fl">10</span>, <span class="fl">9</span>, <span class="fl">11</span>, <span class="fl">3</span>, <span class="fl">1</span><span class="op">)</span>,</span>
 <span>  sex         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"M"</span>, <span class="fl">3</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"F"</span>, <span class="fl">4</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"M"</span>, <span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"F"</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -620,8 +578,6 @@ repeated entries such as in this case:</li>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">event_date</span>, report_date <span class="op">=</span> <span class="va">report_date</span>, </span>
 <span>          data_type <span class="op">=</span> <span class="st">"count-incidence"</span>, case_count <span class="op">=</span> <span class="va">n</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>          warn_non_uniqueness <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span></span>
 <span><span class="va">tbl_example</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  14 × 7</span></span></span>
@@ -652,11 +608,9 @@ pairs within each stratum. If the user wants to aggregate redundant
 rows, the <a href="https://rodrigozepeda.github.io/tbl.now/reference/to_count.html">to_count()</a>
 function can be used to collapse duplicates by summing the
 <code>case_count</code> column.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tbl_example</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="../reference/to_count.html">to_count</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"count-incidence"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  9 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
@@ -694,7 +648,7 @@ adjust for systematic changes occurring within the calendar cycle (e.g.,
 day-of-week effects, seasonal effects, or reporting artefacts). The <a href="https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html">temporal_effects()</a>
 function creates a <em>specification</em> (recipe) of the features to
 compute:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavisVaughan/almanac" class="external-link">almanac</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">t_eff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span></span>
@@ -729,15 +683,13 @@ columns</strong> yet.</p></li>
 <li><p><strong>Materialise the columns</strong> with <a href="https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html">compute_temporal_effects()</a>
 when you are ready to use them in a model.</p></li>
 </ol>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"denguedat"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Step 1 — create the tbl_now and attach the spec (no columns added yet)</span></span>
 <span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">onset_week</span>, report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
 <span>          verbose <span class="op">=</span> <span class="cn">FALSE</span>, strata <span class="op">=</span> <span class="va">gender</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span></span>
 <span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="va">t_eff</span><span class="op">)</span></span>
@@ -769,7 +721,7 @@ when you are ready to use them in a model.</p></li>
 <p>The footer now shows the spec with <code>(lazy)</code> to signal that
 the columns have not been computed yet. No new columns appear in the
 tibble at this point.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Step 2 — materialise the columns when needed</span></span>
 <span><span class="va">df_computed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_temporal_effects.html">compute_temporal_effects</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span></span>
 <span></span>
@@ -823,7 +775,7 @@ added.</li>
 <code><a href="../reference/nowcast_data_getters.html">get_temporal_effects()</a></code>, so you always know which effects
 were requested even after further dplyr operations.</li>
 </ul>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="va">df_computed</span><span class="op">)</span>   <span class="co"># The spec (list of configs)</span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
 <span><span class="co">#&gt; [[1]]$t_effects</span></span>
@@ -853,7 +805,7 @@ were requested even after further dplyr operations.</li>
 preserve the <code>temporal_effects</code> spec</strong>. They do not
 trigger re-computation. Only <code><a href="../reference/compute_temporal_effects.html">compute_temporal_effects()</a></code>
 computes the columns.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Filtering changes the rows but keeps the spec intact</span></span>
 <span><span class="va">df_filtered</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">report_week</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"1991-06-01"</span><span class="op">)</span><span class="op">)</span></span>
@@ -864,7 +816,7 @@ computes the columns.</p>
 <div class="section level4">
 <h4 id="you-can-also-supply-the-spec-directly-to-tbl_now">You can also supply the spec directly to <code>tbl_now()</code><a class="anchor" aria-label="anchor" href="#you-can-also-supply-the-spec-directly-to-tbl_now"></a>
 </h4>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_with_spec</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">onset_week</span>, report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
 <span>          t_effects <span class="op">=</span> <span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
@@ -893,14 +845,12 @@ incrementally manipulate strata, covariates, and temporal effects.</p>
 <p>The example below demonstrates how to create a <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a>,
 add strata and temporal effects, later modify the strata, and finally
 remove the temporal effects.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"mpoxdat"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">mpoxdat</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">dx_date</span>, report_date <span class="op">=</span> <span class="va">dx_report_date</span>,</span>
 <span>          case_count <span class="op">=</span> <span class="va">n</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, strata <span class="op">=</span> <span class="va">race</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span></span>
 <span><span class="va">df_now</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1,417 × 7</span></span></span>
@@ -926,14 +876,14 @@ remove the temporal effects.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,407 more rows</span></span></span></code></pre></div>
 <p>You can see that the strata is <code>race</code> with the
 corresponding <a href="https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html">get_*</a>:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_strata</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "race"</span></span></code></pre></div>
 <p>Strata can be modified with the <a href="https://rodrigozepeda.github.io/tbl.now/reference/change.html">change_*</a>
 family of functions. The following example adds a new column containing
 an uppercase version of the existing race variable and sets it as the
 new strata:</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>RACE_UPPER <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">toupper</a></span><span class="op">(</span><span class="va">race</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/change.html">change_strata</a></span><span class="op">(</span><span class="va">RACE_UPPER</span><span class="op">)</span></span>
@@ -942,7 +892,7 @@ new strata:</p>
 <span><span class="co">#&gt; [1] "RACE_UPPER"</span></span></code></pre></div>
 <p>To attach a lazy temporal-effects spec, use <a href="https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html">add_temporal_effects()</a>,
 then materialise with <a href="https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html">compute_temporal_effects()</a>:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -968,7 +918,7 @@ then materialise with <a href="https://rodrigozepeda.github.io/tbl.now/reference
 <p>Attributes can be removed using the corresponding <a href="https://rodrigozepeda.github.io/tbl.now/reference/remove.html">remove_*</a>
 functions. <code><a href="../reference/remove.html">remove_temporal_effects()</a></code> drops both the spec
 and any computed columns:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/remove.html">remove_temporal_effects</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/remove.html">remove_all_strata</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -1010,7 +960,7 @@ and any computed columns:</p>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2023-05-19</span> | Event date: <span style="color: #0000BB;">"dx_date"</span> | Report date: <span style="color: #0000BB;">"dx_report_date"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,407 more rows</span></span></span></code></pre></div>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span>  <span class="co"># Empty list — no spec</span></span>
 <span><span class="co">#&gt; list()</span></span>
 <span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effect_cols</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span>  <span class="co"># character(0) — no computed cols</span></span>
@@ -1028,22 +978,20 @@ therefore support standard <a href="https://dplyr.tidyverse.org/" class="externa
 to preserve and adapt its internal attributes when operations are
 performed. For example, renaming a strata column will automatically
 update the stored strata attribute.</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>, event_date <span class="op">=</span> <span class="va">onset_week</span>, </span>
 <span>                  report_date <span class="op">=</span> <span class="va">report_week</span>, strata <span class="op">=</span> <span class="va">gender</span>,</span>
 <span>                  verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span></span>
 <span><span class="co">#Current strata</span></span>
 <span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_strata</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "gender"</span></span></code></pre></div>
 <p>After renaming the column, the strata attribute updates
 accordingly:</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>male_or_female <span class="op">=</span> <span class="va">gender</span><span class="op">)</span></span>
 <span></span>
@@ -1053,7 +1001,7 @@ accordingly:</p>
 object to drop back to a standard tibble. This occurs when the operation
 removes necessary structure—for example, collapsing all data into a
 single row with <a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise()</a>:</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>number_males <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">male_or_female</span> <span class="op">==</span> <span class="st">"Male"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: Dropping `tbl_now` attributes and converting to `tibble`</span></span>
@@ -1072,7 +1020,7 @@ retains the strata, covariate, and temporal-effect attributes from the
 original object, and recalculates “now” estimates using the combined
 data.</p>
 <p>Below is an example using an initial dataset:</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  patient <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span>,</span>
 <span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -1080,11 +1028,9 @@ data.</p>
 <span>                  <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>, event_date <span class="op">=</span> <span class="va">event_date</span>,</span>
-<span>                  report_date <span class="op">=</span> <span class="va">report_date</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span></code></pre></div>
+<span>                  report_date <span class="op">=</span> <span class="va">report_date</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p>And a follow-up dataset containing newly reported cases:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  patient <span class="op">=</span> <span class="fl">7</span><span class="op">:</span><span class="fl">13</span>,</span>
 <span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, </span>
@@ -1094,10 +1040,8 @@ data.</p>
 <span>                  <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/16"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/16"</span><span class="op">)</span>, </span>
 <span>                  <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/17"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>We can update the original object by incorporating the new data:</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_updated</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">df_now</span>, new_data <span class="op">=</span> <span class="va">df_new</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span></span>
 <span><span class="va">df_updated</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  13 × 6</span></span></span>
@@ -1133,7 +1077,7 @@ data.</p>
 <p>The function <a href="https://rodrigozepeda.github.io/tbl.now/reference/week_2_date.html">week_2_date()</a>
 converts epidemiological week/year combinations into an aligned calendar
 date.</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  epidemiological_week <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,</span>
 <span>  epidemiological_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">2024</span>, <span class="fl">5</span><span class="op">)</span></span>
@@ -1159,7 +1103,7 @@ and get_latest_reported_cases()</a> extract the number of cases first
 reported for each event date and the most recently reported totals,
 respectively. These utilities allow users to quantify revisions between
 initial and final reports.</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_reports</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>    n           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>    event_date  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fl">6</span><span class="op">)</span>,</span>
@@ -1170,8 +1114,6 @@ initial and final reports.</p>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">event_date</span>, report_date <span class="op">=</span> <span class="va">report_date</span>, </span>
 <span>          verbose <span class="op">=</span> <span class="cn">FALSE</span>, case_count <span class="op">=</span> <span class="va">n</span>, report_units <span class="op">=</span> <span class="st">"days"</span>,</span>
 <span>          event_units <span class="op">=</span> <span class="st">"days"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span></span>
 <span><span class="va">tbl_reports</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  6 × 6</span></span></span>
@@ -1190,28 +1132,8 @@ initial and final reports.</p>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-09-17</span> | Event date: <span style="color: #0000BB;">"event_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 <p>The initial reported cases:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_latest_first.html">get_initial_reported_cases</a></span><span class="op">(</span><span class="va">tbl_reports</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
@@ -1223,28 +1145,8 @@ initial and final reports.</p>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-09-17</span> | Event date: <span style="color: #0000BB;">"event_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 <p>and the latest totals:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="va">tbl_reports</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
-<span><span class="co">#&gt; Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
@@ -1264,7 +1166,7 @@ function standardizes dates within the same epidemiological week to a
 single reference day (for example, the start of the week). This is
 helpful when computing differences across weekly reporting periods,
 avoiding fractional time intervals.</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-10-31"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-11-07"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-11-13"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  epiweek <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">44</span>, <span class="fl">45</span>, <span class="fl">46</span><span class="op">)</span></span>
@@ -1279,7 +1181,7 @@ avoiding fractional time intervals.</p>
 <span><span class="co">#&gt; 3 2022-11-13      46   2022-11-13</span></span></code></pre></div>
 <p>You can verify the resulting weekday using the <a href="https://lubridate.tidyverse.org/reference/day.html" class="external-link">wday()
 function from the lubridate package</a>:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_aligned</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>day_label <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/day.html" class="external-link">wday</a></span><span class="op">(</span><span class="va">date_aligned</span>, label <span class="op">=</span> <span class="cn">TRUE</span>, abbr <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;         date epiweek date_aligned day_label</span></span>
@@ -1295,7 +1197,7 @@ function fills with zeroes those cases where the <code>event</code> or
 <code>report</code> weeks have not been observed.</p>
 <p>Consider for example the following data with just two observations
 per date:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
 <span>  event_date  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/12"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/14"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/14"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/13"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/15"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/18"</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -1304,8 +1206,6 @@ per date:</p>
 <span></span>
 <span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">ndata</span>, <span class="va">event_date</span>, <span class="va">report_date</span>,</span>
 <span>     verbose <span class="op">=</span> <span class="cn">FALSE</span>, case_count <span class="op">=</span> <span class="va">case_count</span>, data_type <span class="op">=</span> <span class="st">"count-incidence"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Please use a `temporal_effects` object. Setting from colnames is not</span></span>
-<span><span class="co">#&gt; recommended and could lead to unexpected behaviour.</span></span>
 <span></span>
 <span><span class="va">ndata</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  3 × 6</span></span></span>
@@ -1323,7 +1223,7 @@ per date:</p>
 <p>Notice that there are no observations for <code>2021/01/13</code>.
 Furthermore, if we assume that the maximum possible observed We can fill
 the unobserved cases with:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/complete_zeroes.html">complete_zeroes</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  14 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span></span>

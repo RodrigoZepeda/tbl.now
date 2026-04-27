@@ -16,14 +16,14 @@ check_now(data, event_date, report_date, now)
 
 - event_date:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   name of the column containing the event date. Optional when `delay` is
   provided together with `report_date`; the event date will be computed
   as `report_date - delay`.
 
 - report_date:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   name of the column containing the report date. Optional when `delay`
   is provided together with `event_date`; the report date will be
   computed as `event_date + delay`.

@@ -28,7 +28,7 @@ remove_temporal_effects(x)
 
 - ...:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   with the columns for the attribute. In the case of `covariates` and
   `strata` argument `...` can refer to multiple columns.
 
@@ -69,8 +69,6 @@ ndata <- tbl_now(denguedat,
                  report_date = report_week,
                  strata = gender,
                  verbose = FALSE)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 # Add strata
 ndata <- remove_strata(ndata, gender)

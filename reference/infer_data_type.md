@@ -32,14 +32,14 @@ infer_data_type(
 
 - event_date:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   name of the column containing the event date. Optional when `delay` is
   provided together with `report_date`; the event date will be computed
   as `report_date - delay`.
 
 - report_date:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   name of the column containing the report date. Optional when `delay`
   is provided together with `event_date`; the report date will be
   computed as `event_date + delay`.
@@ -47,7 +47,7 @@ infer_data_type(
 - strata:
 
   (optional)
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` (default). Name of different variables (column names) in
   strata. Strata correspond to variables that are of interest by
   themselves. For example if it is of interest to generate nowcasts by
@@ -56,7 +56,7 @@ infer_data_type(
 - is_censored:
 
   (optional)
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` (default). The name of a column containing either `TRUE` or
   `FALSE` indicating whether the `report_date` is correctly specified or
   corresponds to a `batch` and thus is censored. In other words, if the
@@ -67,7 +67,7 @@ infer_data_type(
 - case_count:
 
   (optional)
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` Name of the column with the case counts if `data_type` is
   "count-incidence" or "count-cumulative".
 

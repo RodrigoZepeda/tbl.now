@@ -36,14 +36,14 @@ tbl_now(
 
 - event_date:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   name of the column containing the event date. Optional when `delay` is
   provided together with `report_date`; the event date will be computed
   as `report_date - delay`.
 
 - report_date:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   name of the column containing the report date. Optional when `delay`
   is provided together with `event_date`; the report date will be
   computed as `event_date + delay`.
@@ -51,7 +51,7 @@ tbl_now(
 - delay:
 
   (optional)
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` (default). Name of a numeric column containing the delay (in
   `event_units`) between `event_date` and `report_date`. When provided
   with only one of `event_date` or `report_date`, the missing date is
@@ -62,7 +62,7 @@ tbl_now(
 - strata:
 
   (optional)
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` (default). Name of different variables (column names) in
   strata. Strata correspond to variables that are of interest by
   themselves. For example if it is of interest to generate nowcasts by
@@ -71,7 +71,7 @@ tbl_now(
 - covariates:
 
   (optional)
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` (default). Name of different variables (column names) that
   influence the nowcast but are not strata. For example precipitation
   might influence a dengue nowcast but in general it is not of interest
@@ -80,14 +80,14 @@ tbl_now(
 - case_count:
 
   (optional)
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` Name of the column with the case counts if `data_type` is
   "count-incidence" or "count-cumulative".
 
 - is_censored:
 
   (optional)
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` (default). The name of a column containing either `TRUE` or
   `FALSE` indicating whether the `report_date` is correctly specified or
   corresponds to a `batch` and thus is censored. In other words, if the
@@ -315,8 +315,6 @@ ndata <- denguedat %>%
   tbl_now(event_date = onset_week, report_date = report_week,
     strata = gender)
 #> ℹ Identified data as <linelist-data> where each observation is a test.
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 # You can see that it documents the `event_date`, `report_date`, `strata`,
 # `covariates` as well as the `now`.

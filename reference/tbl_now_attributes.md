@@ -21,8 +21,6 @@ tbl_now_attributes(x)
 data(denguedat)
 df_now <- tbl_now(denguedat, event_date = onset_week,
   report_date = report_week, strata = gender, verbose = FALSE)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 #Attributes gets all attributes
 attributes(df_now)
@@ -4481,8 +4479,6 @@ attributes(df_now)
 
 #tbl_now_attributes gets only those associated to the `tbl_now` class
 tbl_now_attributes(df_now)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 #> $event_date
 #> [1] "onset_week"
 #> 

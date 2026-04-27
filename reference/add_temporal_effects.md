@@ -98,8 +98,6 @@ disease_data <- tbl_now(denguedat,
     report_date = "report_week",
     strata = "gender")
 #> ℹ Identified data as <linelist-data> where each observation is a test.
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 # Add an effect for epidemiological week
 disease_data <- disease_data %>%

@@ -34,14 +34,14 @@ change_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
 
 - event_date:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   name of the column containing the event date. Optional when `delay` is
   provided together with `report_date`; the event date will be computed
   as `report_date - delay`.
 
 - report_date:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   name of the column containing the report date. Optional when `delay`
   is provided together with `event_date`; the report date will be
   computed as `event_date + delay`.
@@ -49,14 +49,14 @@ change_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
 - case_count:
 
   (optional)
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` Name of the column with the case counts if `data_type` is
   "count-incidence" or "count-cumulative".
 
 - is_censored:
 
   (optional)
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` (default). The name of a column containing either `TRUE` or
   `FALSE` indicating whether the `report_date` is correctly specified or
   corresponds to a `batch` and thus is censored. In other words, if the
@@ -66,7 +66,7 @@ change_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
 
 - ...:
 
-  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   with the columns for the attribute. In the case of `covariates` and
   `strata` argument `...` can refer to multiple columns.
 
@@ -88,7 +88,7 @@ A `tbl_now` object with updated attributes
 ## Details
 
 Variable selection is done via
-[`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+[tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 and can be used with the auxiliary dplyr verbs such as
 [`dplyr::starts_with()`](https://dplyr.tidyverse.org/reference/reexports.html),
 [`dplyr::all_of()`](https://dplyr.tidyverse.org/reference/reexports.html),
@@ -112,8 +112,6 @@ ndata <- tbl_now(denguedat,
                  event_date = onset_week,
                  report_date = report_week,
                  verbose = FALSE)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 # Change the event_date column to a different date column
 ndata$new_onset_week <- ndata$onset_week - lubridate::days(1)
@@ -254,8 +252,6 @@ ndata
 #Change case count column
 count_data <- ndata %>%
   to_count(to = "count-incidence")
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 count_data %>%
   dplyr::mutate(n2 = 1.15*n) %>%

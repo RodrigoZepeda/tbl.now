@@ -36,8 +36,6 @@ ndata <- dplyr::tibble(
 )
 ndata <- tbl_now(ndata, event_date = event, report_date = report,
      verbose = FALSE, strata = sex, case_count = n, data_type = "count-incidence")
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 
 #Notice that ndata has no 2020-01-03 event date
 ndata
@@ -94,12 +92,6 @@ ndata %>%
  to_count("count-cumulative") %>%
  complete_zeroes() %>%
  dplyr::arrange(event, sex, report)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  14 × 7
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`

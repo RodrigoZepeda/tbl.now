@@ -117,8 +117,6 @@ df_wrong <- flusight %>%
 #> Warning: Some observations in the count column "observation"
 #> contain missing values.
 #> ℹ Identified data as <count-incidence> with counts in column "observation".
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 #> Warning: *Non-unique*: Data has multiple rows for the same event (target_end_date) and
 #> report(as_of) dates. Consider using `to_count()` to aggregate the data
 #> or`distinct()` to remove repeated observations.
@@ -168,8 +166,6 @@ type:
 df_still_wrong <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
         case_count = "observation", strata = c("location_name"))
 #> ℹ Identified data as <count-incidence> with counts in column "observation".
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 ```
 
 The function incorrectly infers incidence data (i.e., each row
@@ -180,8 +176,6 @@ explicitly declare the data type:
 ``` r
 df_flu <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
         case_count = "observation", strata = c("location_name"), data_type = "count-cumulative")
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 ```
 
 This yields a correctly structured `tbl_now` object:
@@ -294,8 +288,6 @@ function:
 ``` r
 df_flu <- df_flu %>% 
   align_weeks()
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 ```
 
 And results in integer delays:
@@ -436,23 +428,7 @@ estimates:
 
 ``` r
 initial_reports <- get_initial_reported_cases(df_pr)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 latest_reports  <- get_latest_reported_cases(df_pr)
-#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
-#> Please use a `temporal_effects` object. Setting from colnames is not
-#> recommended and could lead to unexpected behaviour.
 ```
 
 A simple plot highlights the differences between initial and final
