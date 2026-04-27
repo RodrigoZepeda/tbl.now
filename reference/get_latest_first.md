@@ -26,11 +26,39 @@ dengue <- tbl_now(denguedat,
                   event_date = "onset_week",
                   strata = "gender",
                   verbose = FALSE)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 dengue <- to_count(dengue)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 #Gets the first reported cases (what as initially thought of to be the incidence)
 get_initial_reported_cases(dengue)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  2,164 × 7
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `weeks` | Report: `weeks`
@@ -55,6 +83,30 @@ get_initial_reported_cases(dengue)
 
 #Gets the latest reported cases (what is now thought of to be the incidence)
 get_latest_reported_cases(dengue)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  2,164 × 7
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `weeks` | Report: `weeks`

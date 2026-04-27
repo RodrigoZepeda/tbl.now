@@ -29,6 +29,8 @@ get_data_type(x)
 
 get_temporal_effects(x)
 
+get_temporal_effect_cols(x)
+
 get_is_censored(x)
 
 get_case_count(x)
@@ -53,7 +55,8 @@ ndata <- denguedat %>%
          report_date = report_week,
          strata = gender,
          t_effects = temporal_effects(month_of_year = TRUE),
-         verbose = FALSE)
+         verbose = FALSE) %>%
+ compute_temporal_effects()
 
 #Get the event date
 get_event_date(ndata)
@@ -97,5 +100,18 @@ get_case_count(ndata)
 
 #Get temporal effects
 get_temporal_effects(ndata)
-#> [1] ".event_month_of_year"
+#> [[1]]
+#> [[1]]$t_effects
+#> 
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "month_of_year"
+#> 
+#> [[1]]$date_type
+#> [1] "event_date"
+#> 
+#> [[1]]$weekend_days
+#> [1] "Sat" "Sun"
+#> 
+#> 
 ```

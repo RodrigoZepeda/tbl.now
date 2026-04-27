@@ -44,8 +44,12 @@ ndata <- tbl_now(denguedat,
     report_date = "report_week",
     strata = "gender")
 #> ℹ Identified data as <linelist-data> where each observation is a test.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 to_count(ndata, to = "count-incidence")
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  8,265 × 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `weeks` | Report: `weeks`

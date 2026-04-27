@@ -98,9 +98,15 @@ disease_data <- tbl_now(denguedat,
     report_date = "report_week",
     strata = "gender")
 #> ℹ Identified data as <linelist-data> where each observation is a test.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 # Add an effect for epidemiological week
-add_temporal_effects(disease_data, t_effects= temporal_effects(week_of_year = TRUE))
+disease_data <- disease_data %>%
+  add_temporal_effects(t_effects= temporal_effects(week_of_year = TRUE))
+
+#Use the compute to calculate them
+disease_data %>% compute_temporal_effects()
 #> # A tibble:  52,987 × 7
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
@@ -120,8 +126,59 @@ add_temporal_effects(disease_data, t_effects= temporal_effects(week_of_year = TR
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
-#> # T. effects: ".event_week_of_year"
+#> # T. effects: [event_date] week_of_year
+#> # T. effect cols: ".event_week_of_year"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 52,977 more rows
 #> # ℹ 1 more variable: .event_week_of_year <int>
+
+#Use replace to change them
+disease_data %>%
+  replace_temporal_effects(t_effects= temporal_effects(seasons = 52))
+#> # A tibble:  52,987 × 6
+#> # Data type: "linelist"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>    onset_week   report_week   gender   .event_num .report_num .delay
+#>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl>
+#>    [event_date] [report_date] [strata]      [...]       [...]  [...]
+#>  1 1990-01-01   1990-01-01    Male              0           0      0
+#>  2 1990-01-01   1990-01-01    Female            0           0      0
+#>  3 1990-01-01   1990-01-01    Female            0           0      0
+#>  4 1990-01-01   1990-01-08    Female            0           1      1
+#>  5 1990-01-01   1990-01-08    Male              0           1      1
+#>  6 1990-01-01   1990-01-15    Female            0           2      2
+#>  7 1990-01-01   1990-01-15    Female            0           2      2
+#>  8 1990-01-01   1990-01-15    Female            0           2      2
+#>  9 1990-01-01   1990-01-22    Female            0           3      3
+#> 10 1990-01-01   1990-01-08    Female            0           1      1
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
+#> # Strata: "gender"
+#> # T. effects (lazy): [event_date] season(52)
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 52,977 more rows
+
+#Use remove to delete them
+disease_data %>% remove_temporal_effects()
+#> # A tibble:  52,987 × 6
+#> # Data type: "linelist"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>    onset_week   report_week   gender   .event_num .report_num .delay
+#>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl>
+#>    [event_date] [report_date] [strata]      [...]       [...]  [...]
+#>  1 1990-01-01   1990-01-01    Male              0           0      0
+#>  2 1990-01-01   1990-01-01    Female            0           0      0
+#>  3 1990-01-01   1990-01-01    Female            0           0      0
+#>  4 1990-01-01   1990-01-08    Female            0           1      1
+#>  5 1990-01-01   1990-01-08    Male              0           1      1
+#>  6 1990-01-01   1990-01-15    Female            0           2      2
+#>  7 1990-01-01   1990-01-15    Female            0           2      2
+#>  8 1990-01-01   1990-01-15    Female            0           2      2
+#>  9 1990-01-01   1990-01-22    Female            0           3      3
+#> 10 1990-01-01   1990-01-08    Female            0           1      1
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
+#> # Strata: "gender"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 52,977 more rows
 ```

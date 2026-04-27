@@ -38,6 +38,9 @@
 - [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
   : Complete zeroes
 
+- [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
+  : Compute temporal effects for a \`tbl_now\`
+
 - [`covidat`](https://rodrigozepeda.github.io/tbl.now/reference/covidat.md)
   : covidat: COVID-19 reporting data from Mexico City (2020-2022)
 
@@ -81,6 +84,7 @@
   [`get_event_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_data_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_temporal_effect_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   : Getters for tbl_now attributes

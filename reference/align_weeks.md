@@ -107,6 +107,8 @@ flutbl <- tbl_now(flusight, event_date = "target_end_date",
   report_date = "as_of", case_col = "observation",
   strata = c("location_name"))
 #> ℹ Identified data as <linelist-data> where each observation is a test.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 #See that some delays have decimals
 suppressWarnings(as.numeric(flutbl[413484, ".delay"]))
@@ -114,6 +116,8 @@ suppressWarnings(as.numeric(flutbl[413484, ".delay"]))
 
 #Align the weeks so that they all start on Sunday
 flutbl <- flutbl %>% align_weeks()
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 #Delayed decimals are now integer as all weeks start in Sunday!
 suppressWarnings(as.numeric(flutbl[413484, ".delay"]))

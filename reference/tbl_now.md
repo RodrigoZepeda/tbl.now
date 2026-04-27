@@ -8,8 +8,9 @@ the Attributes section for more information.
 ``` r
 tbl_now(
   data,
-  event_date,
-  report_date,
+  event_date = NULL,
+  report_date = NULL,
+  delay = NULL,
   strata = NULL,
   covariates = NULL,
   case_count = NULL,
@@ -36,12 +37,27 @@ tbl_now(
 - event_date:
 
   [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
-  name of the column containing the event date.
+  name of the column containing the event date. Optional when `delay` is
+  provided together with `report_date`; the event date will be computed
+  as `report_date - delay`.
 
 - report_date:
 
   [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
-  name of the column containing the report date.
+  name of the column containing the report date. Optional when `delay`
+  is provided together with `event_date`; the report date will be
+  computed as `event_date + delay`.
+
+- delay:
+
+  (optional)
+  [`` <`tidy-select`> ``](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  or `NULL` (default). Name of a numeric column containing the delay (in
+  `event_units`) between `event_date` and `report_date`. When provided
+  with only one of `event_date` or `report_date`, the missing date is
+  reconstructed from the known date and the delay. Requires units to be
+  known (either specified via `event_units` or inferrable from the
+  provided date column).
 
 - strata:
 
@@ -299,6 +315,8 @@ ndata <- denguedat %>%
   tbl_now(event_date = onset_week, report_date = report_week,
     strata = gender)
 #> ℹ Identified data as <linelist-data> where each observation is a test.
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 # You can see that it documents the `event_date`, `report_date`, `strata`,
 # `covariates` as well as the `now`.

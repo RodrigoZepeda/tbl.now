@@ -69,6 +69,8 @@ ndata <- tbl_now(denguedat,
                  report_date = report_week,
                  strata = gender,
                  verbose = FALSE)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 # Add strata
 ndata <- remove_strata(ndata, gender)
@@ -105,16 +107,16 @@ ndata
 #>    onset_week   report_week   gender .event_num .report_num .delay temperature
 #>    <date>       <date>        <chr>       <dbl>       <dbl>  <dbl>       <dbl>
 #>    [event_date] [report_date] [...]       [...]       [...]  [...] [covariate]
-#>  1 1990-01-01   1990-01-01    Male            0           0      0        20.9
-#>  2 1990-01-01   1990-01-01    Female          0           0      0        24.7
-#>  3 1990-01-01   1990-01-01    Female          0           0      0        29.0
-#>  4 1990-01-01   1990-01-08    Female          0           1      1        23.9
-#>  5 1990-01-01   1990-01-08    Male            0           1      1        26.3
-#>  6 1990-01-01   1990-01-15    Female          0           2      2        21.2
-#>  7 1990-01-01   1990-01-15    Female          0           2      2        28.6
-#>  8 1990-01-01   1990-01-15    Female          0           2      2        21.0
-#>  9 1990-01-01   1990-01-22    Female          0           3      3        14.4
-#> 10 1990-01-01   1990-01-08    Female          0           1      1        25.3
+#>  1 1990-01-01   1990-01-01    Male            0           0      0        26.3
+#>  2 1990-01-01   1990-01-01    Female          0           0      0        25.7
+#>  3 1990-01-01   1990-01-01    Female          0           0      0        23.1
+#>  4 1990-01-01   1990-01-08    Female          0           1      1        25.0
+#>  5 1990-01-01   1990-01-08    Male            0           1      1        25.8
+#>  6 1990-01-01   1990-01-15    Female          0           2      2        28.2
+#>  7 1990-01-01   1990-01-15    Female          0           2      2        24.1
+#>  8 1990-01-01   1990-01-15    Female          0           2      2        26.6
+#>  9 1990-01-01   1990-01-22    Female          0           3      3        27.2
+#> 10 1990-01-01   1990-01-08    Female          0           1      1        21.1
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # Covariates: "temperature" and "humidity"
@@ -129,16 +131,16 @@ ndata %>% remove_covariates(temperature, humidity)
 #>    onset_week   report_week   gender .event_num .report_num .delay temperature
 #>    <date>       <date>        <chr>       <dbl>       <dbl>  <dbl>       <dbl>
 #>    [event_date] [report_date] [...]       [...]       [...]  [...]       [...]
-#>  1 1990-01-01   1990-01-01    Male            0           0      0        20.9
-#>  2 1990-01-01   1990-01-01    Female          0           0      0        24.7
-#>  3 1990-01-01   1990-01-01    Female          0           0      0        29.0
-#>  4 1990-01-01   1990-01-08    Female          0           1      1        23.9
-#>  5 1990-01-01   1990-01-08    Male            0           1      1        26.3
-#>  6 1990-01-01   1990-01-15    Female          0           2      2        21.2
-#>  7 1990-01-01   1990-01-15    Female          0           2      2        28.6
-#>  8 1990-01-01   1990-01-15    Female          0           2      2        21.0
-#>  9 1990-01-01   1990-01-22    Female          0           3      3        14.4
-#> 10 1990-01-01   1990-01-08    Female          0           1      1        25.3
+#>  1 1990-01-01   1990-01-01    Male            0           0      0        26.3
+#>  2 1990-01-01   1990-01-01    Female          0           0      0        25.7
+#>  3 1990-01-01   1990-01-01    Female          0           0      0        23.1
+#>  4 1990-01-01   1990-01-08    Female          0           1      1        25.0
+#>  5 1990-01-01   1990-01-08    Male            0           1      1        25.8
+#>  6 1990-01-01   1990-01-15    Female          0           2      2        28.2
+#>  7 1990-01-01   1990-01-15    Female          0           2      2        24.1
+#>  8 1990-01-01   1990-01-15    Female          0           2      2        26.6
+#>  9 1990-01-01   1990-01-22    Female          0           3      3        27.2
+#> 10 1990-01-01   1990-01-08    Female          0           1      1        21.1
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # ────────────────────────────────────────────────────────────────────────────────

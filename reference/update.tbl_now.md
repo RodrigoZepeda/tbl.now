@@ -81,9 +81,13 @@ update_data  <- denguedat[501:1000,]
 initial_tbl <- tbl_now(denguedat, event_date = "onset_week",
                        report_date = "report_week", strata = "gender",
                        verbose = FALSE)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 #Update collapses everything into a single data.frame
 update(initial_tbl, new_data = update_data)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  53,487 × 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`

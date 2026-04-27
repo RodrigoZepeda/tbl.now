@@ -1,5 +1,6 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/404.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/CLAUDE.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE-text.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/Example.html</loc></url>
@@ -7,6 +8,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/authors.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/index.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/news/index.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/add.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.html</loc></url>
@@ -23,8 +25,10 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/check_units.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/check_verbose.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/covidat.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/denguedat.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/dot-reconstruct_date_from_delay.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/flusight.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/get_protected_generated_cols.html</loc></url>

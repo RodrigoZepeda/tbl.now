@@ -1,7 +1,7 @@
 # tbl.now
 
 ``` r
-library(dplyr)
+library(dplyr, quietly = TRUE)
 library(lubridate)
 library(tbl.now)
 ```
@@ -120,6 +120,8 @@ We can convert this into a
 df %>% 
   tbl_now(event_date = symptom_onset, report_date = medical_visit, case_count = n)
 #> ℹ Identified data as <count-incidence> with counts in column "n".
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  4 × 6
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
@@ -192,16 +194,20 @@ primary attributes are:
 - **case_count** (optional): the column storing case counts when the
   dataset is aggregated.
 
-- **temporal_effects** (optional): references temporal effects added via
+- **temporal_effects** (optional): a lazy specification (list of
   [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html)
-  function. See the [temporal effects](#temporal-effects) section for
+  configs) stored via
+  [add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html).
+  Columns are only materialised when
+  [compute_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html)
+  is called. See the [temporal effects](#temporal-effects) section for
   more details.
 
 You can access any attribute using the corresponding
 [getter](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html),
 e.g. [get_event_date()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html)
 or
-\[get_strata()\](<https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html>.
+[get_strata()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html).
 
 ### Data types
 
@@ -210,6 +216,11 @@ A
 can represent one of three data structures:
 
 1.  **Linelist**: Each row corresponds to a single reported observation.
+
+&nbsp;
+
+    #> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+    #> recommended and could lead to unexpected behaviour.
 
 | patient | event_date | report_date | .event_num | .report_num | .delay |
 |--------:|:-----------|:------------|-----------:|------------:|-------:|
@@ -224,6 +235,11 @@ Linelist data
 
 2.  **Count-incidence**: Each row summarizes how many events with a
     given `event_date` were reported exactly on that `report_date.`
+
+&nbsp;
+
+    #> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+    #> recommended and could lead to unexpected behaviour.
 
 |   n | event_date | report_date | .event_num | .report_num | .delay |
 |----:|:-----------|:------------|-----------:|------------:|-------:|
@@ -240,6 +256,11 @@ Count-incidence data
     given `event_date` had been reported up to and including that
     `report_date`. The distinction is crucial for nowcasting models that
     operate either on daily increments or cumulative totals.
+
+&nbsp;
+
+    #> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+    #> recommended and could lead to unexpected behaviour.
 
 |   n | event_date | report_date | .event_num | .report_num | .delay |
 |----:|:-----------|:------------|-----------:|------------:|-------:|
@@ -268,6 +289,8 @@ function supports structured transformations:
 ``` r
 df_linelist %>% 
   to_count(to = "count-incidence")
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  3 × 6
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
@@ -288,6 +311,24 @@ df_linelist %>%
 ``` r
 df_linelist %>% 
   to_count(to = "count-cumulative")
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  3 × 6
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
@@ -315,6 +356,20 @@ df_linelist %>%
 ``` r
 df_count_inc %>% 
   to_count(to = "count-cumulative")
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  6 × 6
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
@@ -356,6 +411,8 @@ tbl_example <- df_example %>%
   tbl_now(event_date = event_date, report_date = report_date, 
           data_type = "count-incidence", case_count = n, verbose = FALSE,
           warn_non_uniqueness = FALSE)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 tbl_example
 #> # A tibble:  14 × 7
@@ -393,6 +450,8 @@ column.
 ``` r
 tbl_example %>% 
   to_count(to = "count-incidence")
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  9 × 6
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
@@ -429,15 +488,14 @@ Often, temporal covariates improve nowcasting performance by helping
 adjust for systematic changes occurring within the calendar cycle (e.g.,
 day-of-week effects, seasonal effects, or reporting artefacts). The
 [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html)
-function creates standardized temporal features aligned to the event or
-report date.
+function creates a *specification* (recipe) of the features to compute:
 
 ``` r
 library(almanac)
 
 t_eff <- temporal_effects(
   day_of_week  = TRUE,
-  week_of_year = TRUE, 
+  week_of_year = TRUE,
   holidays     = cal_us_federal())
 t_eff
 #> 
@@ -457,23 +515,69 @@ t_eff
 > [almanac](https://davisvaughan.github.io/almanac/articles/almanac.html)
 > package.
 
-Temporal effects can be added to A
-[tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)
-with the
-[add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html)
-function:
+#### Lazy evaluation: attach first, compute later
+
+Temporal effects in `tbl.now` follow a **lazy evaluation** pattern:
+
+1.  **Attach the spec** with
+    [add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html)
+    (or via the `t_effects` argument of
+    [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)).
+    This records *what* should be computed but adds **no columns** yet.
+
+2.  **Materialise the columns** with
+    [compute_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html)
+    when you are ready to use them in a model.
 
 ``` r
 data("denguedat")
 
-#Create a tbl_now
-df_now <- denguedat %>% 
+# Step 1 — create the tbl_now and attach the spec (no columns added yet)
+df_now <- denguedat %>%
   tbl_now(event_date = onset_week, report_date = report_week,
           verbose = FALSE, strata = gender)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
-#Add temporal effects (see them as . columns)
-df_now %>% 
-  add_temporal_effects(t_eff) 
+df_now <- df_now %>%
+  add_temporal_effects(t_eff)
+
+# The footer shows "T. effects (lazy): ..." — spec is recorded but not computed
+df_now
+#> # A tibble:  52,987 × 6
+#> # Data type: "linelist"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>    onset_week   report_week   gender   .event_num .report_num .delay
+#>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl>
+#>    [event_date] [report_date] [strata]      [...]       [...]  [...]
+#>  1 1990-01-01   1990-01-01    Male              0           0      0
+#>  2 1990-01-01   1990-01-01    Female            0           0      0
+#>  3 1990-01-01   1990-01-01    Female            0           0      0
+#>  4 1990-01-01   1990-01-08    Female            0           1      1
+#>  5 1990-01-01   1990-01-08    Male              0           1      1
+#>  6 1990-01-01   1990-01-15    Female            0           2      2
+#>  7 1990-01-01   1990-01-15    Female            0           2      2
+#>  8 1990-01-01   1990-01-15    Female            0           2      2
+#>  9 1990-01-01   1990-01-22    Female            0           3      3
+#> 10 1990-01-01   1990-01-08    Female            0           1      1
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
+#> # Strata: "gender"
+#> # T. effects (lazy): [event_date] day_of_week, week_of_year, holidays
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 52,977 more rows
+```
+
+The footer now shows the spec with `(lazy)` to signal that the columns
+have not been computed yet. No new columns appear in the tibble at this
+point.
+
+``` r
+# Step 2 — materialise the columns when needed
+df_computed <- compute_temporal_effects(df_now)
+
+# Columns are now present and annotated [t_effect]
+df_computed
 #> # A tibble:  52,987 × 9
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
@@ -506,19 +610,85 @@ df_now %>%
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
-#> # T. effects: ".event_day_of_week", ".event_week_of_year", and ".event_holiday"
+#> # T. effects: [event_date] day_of_week, week_of_year, holidays
+#> # T. effect cols: ".event_day_of_week", ".event_week_of_year", and
+#> # ".event_holiday"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 52,977 more rows
 ```
 
-This:
+After
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md):
 
-- Computes periodic features (e.g., day-of-week indicators, week-of-year
-  effects).
-- Encodes them in a consistent numerical structure suitable for
-  statistical models.
-- Registers the resulting variables in the `temporal_effects` attribute
-  for later retrieval in modelling workflows.
+- The effect columns (`.event_day_of_week`, `.event_week_of_year`,
+  `.event_holiday`) are added.
+- [`get_temporal_effect_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  lists them.
+- The original spec remains accessible via
+  [`get_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md),
+  so you always know which effects were requested even after further
+  dplyr operations.
+
+``` r
+get_temporal_effects(df_computed)   # The spec (list of configs)
+#> [[1]]
+#> [[1]]$t_effects
+#> 
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "day_of_week"
+#> • "week_of_year"
+#> • "holidays":
+#>   1. New Year's Day, US Martin Luther King Jr. Day, US Presidents' Day, US
+#>   Memorial Day, US Juneteenth, US Independence Day, US Labor Day, US Indigenous
+#>   Peoples' Day, US Veterans Day, US Thanksgiving, and Christmas
+#> 
+#> [[1]]$date_type
+#> [1] "event_date"
+#> 
+#> [[1]]$weekend_days
+#> [1] "Sat" "Sun"
+get_temporal_effect_cols(df_computed) # The computed column names
+#> [1] ".event_day_of_week"  ".event_week_of_year" ".event_holiday"
+```
+
+#### dplyr operations preserve the spec
+
+A key design property:
+**[`filter()`](https://dplyr.tidyverse.org/reference/filter.html),
+[`select()`](https://dplyr.tidyverse.org/reference/select.html),
+[`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html), and all
+other dplyr verbs preserve the `temporal_effects` spec**. They do not
+trigger re-computation. Only
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
+computes the columns.
+
+``` r
+# Filtering changes the rows but keeps the spec intact
+df_filtered <- df_now %>%
+  dplyr::filter(report_week <= as.Date("1991-06-01"))
+
+identical(get_temporal_effects(df_filtered), get_temporal_effects(df_now))
+#> [1] TRUE
+```
+
+#### You can also supply the spec directly to `tbl_now()`
+
+``` r
+df_with_spec <- denguedat %>%
+  tbl_now(event_date = onset_week, report_date = report_week,
+          t_effects = temporal_effects(week_of_year = TRUE),
+          verbose = FALSE)
+
+# No effect columns yet — spec is stored lazily
+".event_week_of_year" %in% names(df_with_spec)
+#> [1] FALSE
+
+# Compute on demand
+df_with_spec <- compute_temporal_effects(df_with_spec)
+".event_week_of_year" %in% names(df_with_spec)
+#> [1] TRUE
+```
 
 ### Modifying a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) with `dplyr`
 
@@ -543,6 +713,8 @@ data("mpoxdat")
 df_now <- mpoxdat %>%
   tbl_now(event_date = dx_date, report_date = dx_report_date,
           case_count = n, verbose = FALSE, strata = race)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 df_now
 #> # A tibble:  1,417 × 7
@@ -591,61 +763,41 @@ get_strata(df_now)
 #> [1] "RACE_UPPER"
 ```
 
-To add temporal effects, use
-[add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html):
+To attach a lazy temporal-effects spec, use
+[add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html),
+then materialise with
+[compute_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html):
 
 ``` r
 df_now <- df_now %>%
   add_temporal_effects(temporal_effects(week_of_year = TRUE))
 
-df_now
-#> # A tibble:  1,417 × 9
-#> # Data type: "count-incidence"
-#> # Frequency: Event: `days` | Report: `days`
-#>    dx_date      dx_report_date race                     n .event_num .report_num
-#>    <date>       <date>         <chr>                <int>      <dbl>       <dbl>
-#>    [event_date] [report_date]  [...]              [cases]      [...]       [...]
-#>  1 2022-07-08   2022-07-12     Asian                    4          0           4
-#>  2 2022-07-08   2022-07-12     Black                    6          0           4
-#>  3 2022-07-08   2022-07-12     Hispanic                 6          0           4
-#>  4 2022-07-08   2022-07-12     Non-Hispanic White       6          0           4
-#>  5 2022-07-08   2022-07-13     Asian                    2          0           5
-#>  6 2022-07-08   2022-07-13     Black                    3          0           5
-#>  7 2022-07-08   2022-07-13     Hispanic                 8          0           5
-#>  8 2022-07-08   2022-07-13     Non-Hispanic White       5          0           5
-#>  9 2022-07-08   2022-07-14     Black                    1          0           6
-#> 10 2022-07-08   2022-07-14     Hispanic                 3          0           6
-#>    .delay RACE_UPPER         .event_week_of_year
-#>     <dbl> <chr>                            <int>
-#>     [...] [strata]                    [t_effect]
-#>  1      4 ASIAN                                1
-#>  2      4 BLACK                                1
-#>  3      4 HISPANIC                             1
-#>  4      4 NON-HISPANIC WHITE                   1
-#>  5      5 ASIAN                                1
-#>  6      5 BLACK                                1
-#>  7      5 HISPANIC                             1
-#>  8      5 NON-HISPANIC WHITE                   1
-#>  9      6 BLACK                                1
-#> 10      6 HISPANIC                             1
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2023-05-19 | Event date: "dx_date" | Report date: "dx_report_date"
-#> # Strata: "RACE_UPPER"
-#> # T. effects: ".event_week_of_year"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 1,407 more rows
-```
-
-You can see them as attributes too:
-
-``` r
+# Spec is stored (lazy):
 get_temporal_effects(df_now)
+#> [[1]]
+#> [[1]]$t_effects
+#> 
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "week_of_year"
+#> 
+#> [[1]]$date_type
+#> [1] "event_date"
+#> 
+#> [[1]]$weekend_days
+#> [1] "Sat" "Sun"
+
+# Compute to add columns:
+df_now <- compute_temporal_effects(df_now)
+get_temporal_effect_cols(df_now)
 #> [1] ".event_week_of_year"
 ```
 
 Attributes can be removed using the corresponding
 [remove\_\*](https://rodrigozepeda.github.io/tbl.now/reference/remove.html)
-functions:
+functions.
+[`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
+drops both the spec and any computed columns:
 
 ``` r
 df_now <- df_now %>%
@@ -691,12 +843,11 @@ df_now
 #> # ℹ 1,407 more rows
 ```
 
-Notice that these don’t remove the columns they just remove the
-attributes:
-
 ``` r
-get_temporal_effects(df_now)
-#> NULL
+get_temporal_effects(df_now)  # Empty list — no spec
+#> list()
+get_temporal_effect_cols(df_now)  # character(0) — no computed cols
+#> character(0)
 get_strata(df_now)
 #> NULL
 ```
@@ -711,12 +862,14 @@ are performed. For example, renaming a strata column will automatically
 update the stored strata attribute.
 
 ``` r
-library(dplyr)
+library(dplyr, quietly = TRUE)
 data(denguedat)
 
 df_now <- tbl_now(denguedat, event_date = onset_week, 
                   report_date = report_week, strata = gender,
                   verbose = FALSE)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 #Current strata
 get_strata(df_now)
@@ -774,6 +927,8 @@ df <- data.frame(
 
 df_now <- tbl_now(df, event_date = event_date,
                   report_date = report_date, verbose = FALSE)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 ```
 
 And a follow-up dataset containing newly reported cases:
@@ -793,6 +948,8 @@ We can update the original object by incorporating the new data:
 
 ``` r
 df_updated <- update(df_now, new_data = df_new)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 df_updated
 #> # A tibble:  13 × 6
@@ -866,6 +1023,8 @@ tbl_reports <- df_reports %>%
   tbl_now(event_date = event_date, report_date = report_date, 
           verbose = FALSE, case_count = n, report_units = "days",
           event_units = "days")
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 
 tbl_reports
 #> # A tibble:  6 × 6
@@ -889,6 +1048,26 @@ The initial reported cases:
 
 ``` r
 get_initial_reported_cases(tbl_reports)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  1 × 6
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
@@ -905,6 +1084,26 @@ and the latest totals:
 
 ``` r
 get_latest_reported_cases(tbl_reports)
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+#> Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
 #> # A tibble:  1 × 6
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
@@ -952,6 +1151,77 @@ df_aligned %>%
 #> 2 2022-11-07      45   2022-11-06    Sunday
 #> 3 2022-11-13      46   2022-11-13    Sunday
 ```
+
+### Complete zeroes
+
+The
+[complete_zeroes()](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.html)
+function fills with zeroes those cases where the `event` or `report`
+weeks have not been observed.
+
+Consider for example the following data with just two observations per
+date:
+
+``` r
+ndata <- tibble(
+  event_date  = c(as.Date("2021/01/12"), as.Date("2021/01/14"), as.Date("2021/01/14")),
+  report_date = c(as.Date("2021/01/13"), as.Date("2021/01/15"), as.Date("2021/01/18")),
+  case_count = c(10, 5, 1)
+)
+
+ndata <- tbl_now(ndata, event_date, report_date,
+     verbose = FALSE, case_count = case_count, data_type = "count-incidence")
+#> Warning: Please use a `temporal_effects` object. Setting from colnames is not
+#> recommended and could lead to unexpected behaviour.
+
+ndata
+#> # A tibble:  3 × 6
+#> # Data type: "count-incidence"
+#> # Frequency: Event: `days` | Report: `days`
+#>   event_date   report_date   case_count .event_num .report_num .delay
+#>   <date>       <date>             <dbl>      <dbl>       <dbl>  <dbl>
+#>   [event_date] [report_date]    [cases]      [...]       [...]  [...]
+#> 1 2021-01-12   2021-01-13            10          0           1      1
+#> 2 2021-01-14   2021-01-15             5          2           3      1
+#> 3 2021-01-14   2021-01-18             1          2           6      4
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2021-01-18 | Event date: "event_date" | Report date: "report_date"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
+Notice that there are no observations for `2021/01/13`. Furthermore, if
+we assume that the maximum possible observed We can fill the unobserved
+cases with:
+
+``` r
+complete_zeroes(ndata)
+#> # A tibble:  14 × 6
+#> # Data type: "count-incidence"
+#> # Frequency: Event: `days` | Report: `days`
+#>    event_date   report_date   case_count .event_num .report_num .delay
+#>    <date>       <date>             <dbl>      <int>       <dbl>  <dbl>
+#>    [event_date] [report_date]    [cases]      [...]       [...]  [...]
+#>  1 2021-01-12   2021-01-13            10          0           1      1
+#>  2 2021-01-14   2021-01-15             5          2           3      1
+#>  3 2021-01-12   2021-01-12             0          0           0      0
+#>  4 2021-01-12   2021-01-14             0          0           2      2
+#>  5 2021-01-12   2021-01-15             0          0           3      3
+#>  6 2021-01-12   2021-01-16             0          0           4      4
+#>  7 2021-01-13   2021-01-13             0          1           1      0
+#>  8 2021-01-13   2021-01-14             0          1           2      1
+#>  9 2021-01-13   2021-01-15             0          1           3      2
+#> 10 2021-01-13   2021-01-16             0          1           4      3
+#> 11 2021-01-13   2021-01-17             0          1           5      4
+#> 12 2021-01-14   2021-01-14             0          2           2      0
+#> 13 2021-01-14   2021-01-16             0          2           4      2
+#> 14 2021-01-14   2021-01-17             0          2           5      3
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2021-01-18 | Event date: "event_date" | Report date: "report_date"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
+Which looks at all the possible report dates and event dates and sets
+the counts to zero if they have not been observed.
 
 ## References
 
