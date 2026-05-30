@@ -8,6 +8,7 @@ weekly counts of hospital admissions for laboratory-confirmed influenza.
 We begin by loading the required packages:
 
 ``` r
+
 library(dplyr, quietly = TRUE)
 library(lubridate)
 library(tbl.now)
@@ -24,6 +25,7 @@ associated with multiple reporting dates reflecting updates or
 revisions.
 
 ``` r
+
 data(flusight)
 ```
 
@@ -40,7 +42,7 @@ data(flusight)
 | 2023-09-23 | 2022-04-09      | Alabama       |          28 |
 | 2023-09-23 | 2022-04-16      | Alabama       |          19 |
 
-The Flusight dataset
+The Flusight dataset {.table}
 
 The columns are:
 
@@ -60,6 +62,7 @@ of total cases up to that event week, not the incremental update for
 that reporting date. The following example illustrates the structure:
 
 ``` r
+
 flusight %>% 
   filter(location_name == "Puerto Rico" & target_end_date == ymd("2025/04/12")) 
 #> # A tibble: 19 × 4
@@ -107,6 +110,7 @@ To construct a tbl_now object, we must indicate:
 A first attempt produces several warnings:
 
 ``` r
+
 df_wrong <- flusight %>% 
   tbl_now(event_date = target_end_date, 
           report_date = as_of, 
@@ -135,6 +139,7 @@ These warnings arise because:
 Inspecting a subset confirms duplicated rows:
 
 ``` r
+
 flusight[c(422146, 422147, 422148, 422149), ]
 #> # A tibble: 4 × 4
 #>   as_of      target_end_date location_name observation
@@ -150,12 +155,14 @@ distinct()](https://dplyr.tidyverse.org/reference/distinct.html) we
 remove the duplicates:
 
 ``` r
+
 flusight <- flusight %>% distinct()
 ```
 
 Next, we remove observations with missing case counts:
 
 ``` r
+
 flusight <- flusight %>% filter(!is.na(observation))
 ```
 
@@ -163,6 +170,7 @@ However, reconstructing the object still yields a misclassified data
 type:
 
 ``` r
+
 df_still_wrong <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
         case_count = "observation", strata = c("location_name"))
 #> ℹ Identified data as <count-incidence> with counts in column "observation".
@@ -174,6 +182,7 @@ contrast, the Flusight dataset contains cumulative values. We therefore
 explicitly declare the data type:
 
 ``` r
+
 df_flu <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
         case_count = "observation", strata = c("location_name"), data_type = "count-cumulative")
 ```
@@ -181,6 +190,7 @@ df_flu <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of
 This yields a correctly structured `tbl_now` object:
 
 ``` r
+
 df_flu
 #> # A tibble:  451,415 × 7
 #> # Data type: "count-cumulative"
@@ -213,6 +223,7 @@ registered a Wednesday and sometimes its a Saturday. This results in
 some `.delay`s that include decimal components:
 
 ``` r
+
 df_flu$.delay %>% unique()
 #>   [1]  84.0000000  83.0000000  82.0000000  81.0000000  80.0000000  79.0000000
 #>   [7]  78.0000000  77.0000000  76.0000000  75.0000000  74.0000000  73.0000000
@@ -286,6 +297,7 @@ on Sundays. This is done with the
 function:
 
 ``` r
+
 df_flu <- df_flu %>% 
   align_weeks()
 ```
@@ -293,6 +305,7 @@ df_flu <- df_flu %>%
 And results in integer delays:
 
 ``` r
+
 df_flu$.delay %>% unique()
 #>   [1]  84  83  82  81  80  79  78  77  76  75  74  73  72  71  70  69  68  67
 #>  [19]  66  65  64  63  62  61  60  59  58  57  56  55  54  53  52  51  50  49
@@ -313,6 +326,7 @@ df_flu$.delay %>% unique()
 we may focus on Puerto Rico and observations after mid–2024:
 
 ``` r
+
 df_pr <- df_flu %>% 
   rename(latest_report = as_of) %>% 
   filter(location_name == "Puerto Rico") %>% 
@@ -348,6 +362,7 @@ Because we are now working with a single geographic unit, the
 it from the strata definition (without removing the column itself):
 
 ``` r
+
 df_pr <- df_pr %>% 
   remove_strata("location_name")
 #> ! Removing strata from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`
@@ -379,6 +394,7 @@ df_pr
 The `now` (the effective horizon for the nowcast) is:
 
 ``` r
+
 get_now(df_pr)
 #> [1] "2025-11-09"
 ```
@@ -389,6 +405,7 @@ To perform retrospective analyses (backtesting), we can filter the
 dataset and explicitly set a historical reporting cutoff:
 
 ``` r
+
 df_pr_new_now <- df_pr %>% 
   filter(latest_report < ymd("2023/12/01")) %>% 
   change_now(ymd("2023/12/01"))
@@ -408,6 +425,7 @@ df_pr_new_now
 The new now is:
 
 ``` r
+
 get_now(df_pr_new_now)
 #> [1] "2025-11-09"
 ```
@@ -427,6 +445,7 @@ A simple plot highlights the differences between initial and final
 estimates:
 
 ``` r
+
 initial_reports <- get_initial_reported_cases(df_pr)
 latest_reports  <- get_latest_reported_cases(df_pr)
 ```
@@ -435,6 +454,7 @@ A simple plot highlights the differences between initial and final
 estimates:
 
 ``` r
+
 plot(initial_reports$target_end_date, initial_reports$observation, 
      type = "p", col = "deepskyblue4",
      xlab = "Date of event", ylab = "Cases",

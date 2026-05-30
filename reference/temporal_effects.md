@@ -86,7 +86,7 @@ if (rlang::is_installed("almanac")) {
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
 #> The following effects are in place:
 #> • "day_of_month"
-#> • "season" lengths: 7 and 365
+#> • "season" periods: 7, 365
 #> • "holidays":
 #>   1. Christmas
 ```

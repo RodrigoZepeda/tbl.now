@@ -17,6 +17,7 @@ The main downstream consumer is `diseasenowcasting`.
 ### Creating a `tbl_now`
 
 ``` r
+
 tbl_now(
   data,
   event_date,       # <tidy-select> column of event dates (Date or integer)
@@ -40,15 +41,16 @@ tbl_now(
 **Auto-generated columns** (protected — removing them downgrades to
 tibble):
 
-| Column        | Description                                                   |
-|---------------|---------------------------------------------------------------|
-| `.event_num`  | Numeric version of `event_date` anchored at `min(event_date)` |
-| `.report_num` | Numeric version of `report_date` anchored at same anchor      |
-| `.delay`      | `.report_num - .event_num`                                    |
+| Column | Description |
+|----|----|
+| `.event_num` | Numeric version of `event_date` anchored at `min(event_date)` |
+| `.report_num` | Numeric version of `report_date` anchored at same anchor |
+| `.delay` | `.report_num - .event_num` |
 
 ### Key validators / predicates
 
 ``` r
+
 is_tbl_now(x)                  # TRUE if valid tbl_now
 validate_tbl_now(x)            # throws on invalid
 tbl_now_can_reconstruct(x)     # safe wrapper returning TRUE/FALSE
@@ -62,6 +64,7 @@ tbl_now_attributes(x)          # list of tbl_now-specific attributes
 Every attribute has a `get_*()` getter:
 
 ``` r
+
 get_event_date(x)      # character(1) — column name
 get_report_date(x)     # character(1) — column name
 get_strata(x)          # character or NULL
@@ -82,11 +85,11 @@ get_temporal_effect_cols(x)  # character — computed column names (after comput
 
 ## Data Types
 
-| Type                 | Description                                                             |
-|----------------------|-------------------------------------------------------------------------|
-| `"linelist"`         | Each row = one individual observation                                   |
-| `"count-incidence"`  | Each row = count reported **exactly** on `report_date` for `event_date` |
-| `"count-cumulative"` | Each row = **cumulative** count up to `report_date` for `event_date`    |
+| Type | Description |
+|----|----|
+| `"linelist"` | Each row = one individual observation |
+| `"count-incidence"` | Each row = count reported **exactly** on `report_date` for `event_date` |
+| `"count-cumulative"` | Each row = **cumulative** count up to `report_date` for `event_date` |
 
 Convert between types with `to_count(x, to = "count-incidence")`.
 
@@ -99,6 +102,7 @@ Temporal effects follow a **two-step lazy pattern**:
 ### Step 1: Attach the spec (no columns added)
 
 ``` r
+
 t_eff <- temporal_effects(
   day_of_week   = FALSE,
   weekend       = FALSE,
@@ -123,6 +127,7 @@ Multiple calls with different `date_type` values are supported.
 ### Step 2: Materialise the columns
 
 ``` r
+
 df_computed <- compute_temporal_effects(df_now, overwrite = FALSE)
 ```
 
@@ -134,6 +139,7 @@ for each stored spec and records the created column names in the
 ### Inspecting state
 
 ``` r
+
 get_temporal_effects(df_now)       # list of specs; length > 0 → spec attached
 get_temporal_effect_cols(df_now)   # character(0) before compute; col names after
 ```
@@ -167,6 +173,7 @@ dropped from `computed_temporal_effect_cols` but the spec in
 ### Removing / replacing effects
 
 ``` r
+
 remove_temporal_effects(x)               # clears spec AND removes computed cols
 replace_temporal_effects(x, t_effects)   # replaces with new spec (and drops old cols)
 ```
@@ -178,6 +185,7 @@ replace_temporal_effects(x, t_effects)   # replaces with new spec (and drops old
 ### Changers (replace the attribute)
 
 ``` r
+
 change_now(x, now)
 change_event_date(x, event_date)
 change_report_date(x, report_date)
@@ -190,6 +198,7 @@ change_is_censored(x, is_censored)
 ### Adders (append to existing)
 
 ``` r
+
 add_strata(x, ...)
 add_covariates(x, ...)
 add_is_censored(x, is_censored)
@@ -199,6 +208,7 @@ add_temporal_effects(x, t_effects, date_type = "event_date", weekend_days = c("S
 ### Removers
 
 ``` r
+
 remove_strata(x, ...)
 remove_all_strata(x)
 remove_covariates(x, ...)
@@ -214,14 +224,14 @@ replace_temporal_effects(x, t_effects)
 
 `tbl_now` implements the following major dplyr generics:
 
-| Generic                  | Behaviour                                                               |
-|--------------------------|-------------------------------------------------------------------------|
-| `filter` / `slice`       | `dplyr_row_slice` → reconstructs tbl_now                                |
-| `select` / `mutate`      | `dplyr_col_modify` → reconstructs; drops class if protected col removed |
-| `group_by`               | returns `grouped_tbl_now`; attributes preserved                         |
-| `ungroup`                | reconstructs tbl_now                                                    |
-| `summarise` / `reframe`  | attempts reconstruction; falls back to tibble                           |
-| `rename` / `rename_with` | updates attribute references automatically                              |
+| Generic | Behaviour |
+|----|----|
+| `filter` / `slice` | `dplyr_row_slice` → reconstructs tbl_now |
+| `select` / `mutate` | `dplyr_col_modify` → reconstructs; drops class if protected col removed |
+| `group_by` | returns `grouped_tbl_now`; attributes preserved |
+| `ungroup` | reconstructs tbl_now |
+| `summarise` / `reframe` | attempts reconstruction; falls back to tibble |
+| `rename` / `rename_with` | updates attribute references automatically |
 
 Removing a **protected** column (`.event_num`, `.report_num`, `.delay`,
 `event_date`, `report_date`, or `case_count` for count types) downgrades
@@ -238,6 +248,7 @@ not implemented and behaviour is unknown).
 ## Utility Functions
 
 ``` r
+
 to_count(x, to)            # convert data type
 complete_zeroes(x, ...)    # fill missing event/report/strata combos with 0
 update(x, new_data, ...)   # bind new data, preserving attributes
@@ -254,6 +265,7 @@ tbl_now_attributes(x)               # list of tbl_now-specific attrs only
 ## Package Data
 
 ``` r
+
 data(denguedat)   # dengue surveillance linelist (weekly, Brazil)
 data(mpoxdat)     # mpox count-incidence data
 ```
@@ -263,6 +275,7 @@ data(mpoxdat)     # mpox count-incidence data
 ## Typical Workflow
 
 ``` r
+
 library(tbl.now)
 library(dplyr, quietly = TRUE)
 

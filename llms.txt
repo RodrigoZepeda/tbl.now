@@ -13,6 +13,7 @@ ecosystem can rely on a consistent interface.
 Install the development version from [GitHub](https://github.com/):
 
 ``` r
+
 # install.packages("remotes")
 remotes::install_github("RodrigoZepeda/tbl.now")
 ```
@@ -20,6 +21,7 @@ remotes::install_github("RodrigoZepeda/tbl.now")
 Load the package:
 
 ``` r
+
 library(dplyr, quietly = TRUE)
 library(lubridate)
 library(tbl.now)
@@ -32,6 +34,7 @@ Suppose you have a dataset where n cases reported on report_date belong
 to events occurring on event_date:
 
 ``` r
+
 df <- tibble(
   event_date  = c(ymd("2023-12-25"), ymd("2023-12-26"),
                   ymd("2023-12-25"), ymd("2023-12-26")),
@@ -45,6 +48,7 @@ Convert it to a
 [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html):
 
 ``` r
+
 df_now <- df %>% 
   tbl_now(event_date = event_date, report_date = report_date, case_count = n)
 #> ℹ Identified data as <count-incidence> with counts in column "n".
@@ -80,6 +84,7 @@ automatically:
 Use it like any tibble:
 
 ``` r
+
 df_now %>% 
   filter(n > 5)
 #> # A tibble:  2 × 6
@@ -102,6 +107,7 @@ If strata was given, the
 can easily tag the corresponding strata.
 
 ``` r
+
 #Add the column using dplyr:
 df_now <- df_now %>% 
   mutate(sex = c("M","M","F","M")) 
@@ -125,6 +131,7 @@ df_now
 Use the `add_strata` to specify the new column is a stratum:
 
 ``` r
+
 df_now %>% 
   add_strata("sex")
 #> # A tibble:  4 × 7
@@ -152,6 +159,7 @@ Temporal covariates help nowcasting models incorporate weekly
 seasonality, holiday effects, etc. Define the effects:
 
 ``` r
+
 t_eff <- temporal_effects(
   day_of_week  = TRUE,
   week_of_year = TRUE, 
@@ -172,6 +180,7 @@ t_eff
 Attach them to the dataset:
 
 ``` r
+
 df_now <- df_now %>% 
   add_temporal_effects(t_eff)
 
@@ -198,6 +207,7 @@ This lazily adds to the table `day_of_week`, `week_of_year`, and
 to add them as columns:
 
 ``` r
+
 df_now %>% 
   compute_temporal_effects()
 #> # A tibble:  4 × 10
@@ -228,6 +238,7 @@ df_now %>%
 You can also attach effects related to the `report_date`:
 
 ``` r
+
 r_eff <- temporal_effects(day_of_week = TRUE)
 
 df_now %>% 
@@ -254,6 +265,7 @@ df_now %>%
 You may override the default now to perform historical evaluation:
 
 ``` r
+
 df_pruned <- df_now %>%
   filter(report_date <= ymd("2023-12-26")) %>%
   change_now(ymd("2023-12-26"))
@@ -262,6 +274,7 @@ df_pruned <- df_now %>%
 Retrieve the current active nowcast horizon:
 
 ``` r
+
 get_now(df_pruned)
 #> [1] "2023-12-26"
 ```

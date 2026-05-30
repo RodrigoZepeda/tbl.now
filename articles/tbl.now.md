@@ -1,6 +1,7 @@
 # tbl.now
 
 ``` r
+
 library(dplyr, quietly = TRUE)
 library(lubridate)
 library(tbl.now)
@@ -16,14 +17,14 @@ approach is commonly referred to as tidy data ([Wickham
 Several tidyverse extensions exist for working with time series data,
 including [tsibble](https://tsibble.tidyverts.org/),
 [tibbletime](https://business-science.github.io/tibbletime/), and
-[timetk](https://business-science.github.io/timetk/) ([E. Wang, Cook,
-and Hyndman 2020](#ref-wang2020new); [Y. Wang 2019](#ref-wang2019tidy);
-[Dancho and Vaughan 2023](#ref-timetk)). These packages provide
-time-aware tibbles and tools that integrate smoothly with the tidyverse.
-However, epidemiological nowcasting requires two time indices
-simultaneously: an **event time** and a **reporting time**. Classical
-time-series abstractions assume only a single index and therefore do not
-fully support this structure.
+[timetk](https://business-science.github.io/timetk/) ([Wang et al.
+2020](#ref-wang2020new); [Wang 2019](#ref-wang2019tidy); [Dancho and
+Vaughan 2023](#ref-timetk)). These packages provide time-aware tibbles
+and tools that integrate smoothly with the tidyverse. However,
+epidemiological nowcasting requires two time indices simultaneously: an
+**event time** and a **reporting time**. Classical time-series
+abstractions assume only a single index and therefore do not fully
+support this structure.
 
 The `tbl.now` class and package addresses this gap. The `tbl.now`
 extends a regular [tibble()](https://tibble.tidyverse.org/) to
@@ -44,8 +45,8 @@ More concretely, tbl.now was designed to:
   operations.
 
 - Facilitate seamless integration into iterative modeling workflows
-  ([Gelman et al. 2020](#ref-gelman2020bayesian); [Wickham,
-  Çetinkaya-Rundel, and Grolemund 2023](#ref-wickham2023r)):
+  ([Gelman et al. 2020](#ref-gelman2020bayesian); [Wickham et al.
+  2023](#ref-wickham2023r)):
 
 &nbsp;
 
@@ -87,6 +88,7 @@ A `tbl.now` object is therefore a specialized
 Consider the following dataset:
 
 ``` r
+
 df <- data.frame(
   symptom_onset = c(ymd("2023/12/25"), ymd("2023/12/26"), ymd("2023/12/25"), ymd("2023/12/26")),
   medical_visit = c(ymd("2023/12/26"), ymd("2023/12/26"), ymd("2023/12/27"), ymd("2023/12/27")),
@@ -103,7 +105,7 @@ knitr::kable(df, caption = "Example dataset")
 | 2023-12-25    | 2023-12-27    |   5 |
 | 2023-12-26    | 2023-12-27    |  11 |
 
-Example dataset
+Example dataset {.table}
 
 Here:
 
@@ -117,6 +119,7 @@ We can convert this into a
 [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html):
 
 ``` r
+
 df %>% 
   tbl_now(event_date = symptom_onset, report_date = medical_visit, case_count = n)
 #> ℹ Identified data as <count-incidence> with counts in column "n".
@@ -178,8 +181,8 @@ primary attributes are:
   - count-incidence
   - count-cumulative.
 
-- **strata** (optional)[¹](#fn1): variables for which the nowcast should
-  be computed separately (e.g., age group, sex).
+- **strata** (optional)[^1]: variables for which the nowcast should be
+  computed separately (e.g., age group, sex).
 
 - **covariates** (optional): predictor variables that may improve the
   nowcast (e.g., weather covariates).
@@ -224,7 +227,7 @@ can represent one of three data structures:
 |       5 | 2020-09-13 | 2020-09-13  |          1 |           1 |      0 |
 |       6 | 2020-09-13 | 2020-09-13  |          1 |           1 |      0 |
 
-Linelist data
+Linelist data {.table}
 
 2.  **Count-incidence**: Each row summarizes how many events with a
     given `event_date` were reported exactly on that `report_date.`
@@ -238,7 +241,7 @@ Linelist data
 |   0 | 2020-09-13 | 2020-09-14  |          1 |           2 |      1 |
 |   2 | 2020-09-13 | 2020-09-15  |          1 |           3 |      2 |
 
-Count-incidence data
+Count-incidence data {.table}
 
 3.  **Count-cumulative** Each row summarizes how many events with a
     given `event_date` had been reported up to and including that
@@ -254,7 +257,7 @@ Count-incidence data
 |   2 | 2020-09-13 | 2020-09-14  |          1 |           2 |      1 |
 |   4 | 2020-09-13 | 2020-09-15  |          1 |           3 |      2 |
 
-Count-cumulative data
+Count-cumulative data {.table}
 
 The
 [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
@@ -270,6 +273,7 @@ function supports structured transformations:
   counting only cases reported on that date.
 
 ``` r
+
 df_linelist %>% 
   to_count(to = "count-incidence")
 #> # A tibble:  3 × 6
@@ -290,6 +294,7 @@ df_linelist %>%
   producing cumulative counts up to each report date.
 
 ``` r
+
 df_linelist %>% 
   to_count(to = "count-cumulative")
 #> # A tibble:  3 × 6
@@ -317,6 +322,7 @@ df_linelist %>%
   each event date across report dates.
 
 ``` r
+
 df_count_inc %>% 
   to_count(to = "count-cumulative")
 #> # A tibble:  6 × 6
@@ -343,6 +349,7 @@ df_count_inc %>%
   repeated entries such as in this case:
 
 ``` r
+
 df_example <- data.frame(
   n           = c(8, 11, 0, 1, 1, 5, 2, 4, 1, 10, 9, 11, 3, 1),
   sex         = c(rep("M", 3), rep("F", 4), rep("M", 2), rep("F", 5)),
@@ -395,6 +402,7 @@ function can be used to collapse duplicates by summing the `case_count`
 column.
 
 ``` r
+
 tbl_example %>% 
   to_count(to = "count-incidence")
 #> # A tibble:  9 × 6
@@ -436,6 +444,7 @@ day-of-week effects, seasonal effects, or reporting artefacts). The
 function creates a *specification* (recipe) of the features to compute:
 
 ``` r
+
 library(almanac)
 
 t_eff <- temporal_effects(
@@ -475,6 +484,7 @@ Temporal effects in `tbl.now` follow a **lazy evaluation** pattern:
     when you are ready to use them in a model.
 
 ``` r
+
 data("denguedat")
 
 # Step 1 — create the tbl_now and attach the spec (no columns added yet)
@@ -516,6 +526,7 @@ have not been computed yet. No new columns appear in the tibble at this
 point.
 
 ``` r
+
 # Step 2 — materialise the columns when needed
 df_computed <- compute_temporal_effects(df_now)
 
@@ -573,6 +584,7 @@ After
   dplyr operations.
 
 ``` r
+
 get_temporal_effects(df_computed)   # The spec (list of configs)
 #> [[1]]
 #> [[1]]$t_effects
@@ -607,6 +619,7 @@ trigger re-computation. Only
 computes the columns.
 
 ``` r
+
 # Filtering changes the rows but keeps the spec intact
 df_filtered <- df_now %>%
   dplyr::filter(report_week <= as.Date("1991-06-01"))
@@ -618,6 +631,7 @@ identical(get_temporal_effects(df_filtered), get_temporal_effects(df_now))
 #### You can also supply the spec directly to `tbl_now()`
 
 ``` r
+
 df_with_spec <- denguedat %>%
   tbl_now(event_date = onset_week, report_date = report_week,
           t_effects = temporal_effects(week_of_year = TRUE),
@@ -651,6 +665,7 @@ add strata and temporal effects, later modify the strata, and finally
 remove the temporal effects.
 
 ``` r
+
 data("mpoxdat")
 
 df_now <- mpoxdat %>%
@@ -685,6 +700,7 @@ You can see that the strata is `race` with the corresponding
 [get\_\*](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html):
 
 ``` r
+
 get_strata(df_now)
 #> [1] "race"
 ```
@@ -696,6 +712,7 @@ an uppercase version of the existing race variable and sets it as the
 new strata:
 
 ``` r
+
 df_now <- df_now %>%
   mutate(RACE_UPPER = toupper(race)) %>%
   change_strata(RACE_UPPER)
@@ -710,6 +727,7 @@ then materialise with
 [compute_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html):
 
 ``` r
+
 df_now <- df_now %>%
   add_temporal_effects(temporal_effects(week_of_year = TRUE))
 
@@ -741,6 +759,7 @@ functions.
 drops both the spec and any computed columns:
 
 ``` r
+
 df_now <- df_now %>%
   remove_temporal_effects() %>%
   remove_all_strata()
@@ -785,6 +804,7 @@ df_now
 ```
 
 ``` r
+
 get_temporal_effects(df_now)  # Empty list — no spec
 #> list()
 get_temporal_effect_cols(df_now)  # character(0) — no computed cols
@@ -803,6 +823,7 @@ are performed. For example, renaming a strata column will automatically
 update the stored strata attribute.
 
 ``` r
+
 library(dplyr, quietly = TRUE)
 data(denguedat)
 
@@ -818,6 +839,7 @@ get_strata(df_now)
 After renaming the column, the strata attribute updates accordingly:
 
 ``` r
+
 df_now <- df_now %>% 
   rename(male_or_female = gender)
 
@@ -833,6 +855,7 @@ single row with
 [summarise()](https://dplyr.tidyverse.org/reference/summarise.html):
 
 ``` r
+
 df_now %>%
   summarise(number_males = sum(male_or_female == "Male"))
 #> Warning: Dropping `tbl_now` attributes and converting to `tibble`
@@ -858,6 +881,7 @@ data.
 Below is an example using an initial dataset:
 
 ``` r
+
 df <- data.frame(
   patient = 1:6,
   event_date = c(rep(ymd("2020/09/12"), 3), rep(ymd("2020/09/13"), 3)),
@@ -871,6 +895,7 @@ df_now <- tbl_now(df, event_date = event_date,
 And a follow-up dataset containing newly reported cases:
 
 ``` r
+
 df_new <- data.frame(
   patient = 7:13,
   event_date = c(ymd("2020/09/13"), 
@@ -884,6 +909,7 @@ df_new <- data.frame(
 We can update the original object by incorporating the new data:
 
 ``` r
+
 df_updated <- update(df_now, new_data = df_new)
 
 df_updated
@@ -921,6 +947,7 @@ converts epidemiological week/year combinations into an aligned calendar
 date.
 
 ``` r
+
 df <- data.frame(
   epidemiological_week = 1:5,
   epidemiological_year = rep(2024, 5)
@@ -948,6 +975,7 @@ most recently reported totals, respectively. These utilities allow users
 to quantify revisions between initial and final reports.
 
 ``` r
+
 df_reports <- data.frame(
     n           = c(10, 1, 1, 0, 0, 3),
     event_date  = rep(ymd("2020/09/12"), 6),
@@ -980,6 +1008,7 @@ tbl_reports
 The initial reported cases:
 
 ``` r
+
 get_initial_reported_cases(tbl_reports)
 #> # A tibble:  1 × 6
 #> # Data type: "count-cumulative"
@@ -996,6 +1025,7 @@ get_initial_reported_cases(tbl_reports)
 and the latest totals:
 
 ``` r
+
 get_latest_reported_cases(tbl_reports)
 #> # A tibble:  1 × 6
 #> # Data type: "count-cumulative"
@@ -1019,6 +1049,7 @@ helpful when computing differences across weekly reporting periods,
 avoiding fractional time intervals.
 
 ``` r
+
 df <- data.frame(
   date = c(ymd("2022-10-31"), ymd("2022-11-07"), ymd("2022-11-13")),
   epiweek = c(44, 45, 46)
@@ -1037,6 +1068,7 @@ You can verify the resulting weekday using the [wday() function from the
 lubridate package](https://lubridate.tidyverse.org/reference/day.html):
 
 ``` r
+
 df_aligned %>%
   mutate(day_label = wday(date_aligned, label = TRUE, abbr = FALSE))
 #>         date epiweek date_aligned day_label
@@ -1056,6 +1088,7 @@ Consider for example the following data with just two observations per
 date:
 
 ``` r
+
 ndata <- tibble(
   event_date  = c(as.Date("2021/01/12"), as.Date("2021/01/14"), as.Date("2021/01/14")),
   report_date = c(as.Date("2021/01/13"), as.Date("2021/01/15"), as.Date("2021/01/18")),
@@ -1085,6 +1118,7 @@ we assume that the maximum possible observed We can fill the unobserved
 cases with:
 
 ``` r
+
 complete_zeroes(ndata)
 #> # A tibble:  14 × 6
 #> # Data type: "count-incidence"
@@ -1119,10 +1153,8 @@ the counts to zero if they have not been observed.
 Dancho, Matt, and Davis Vaughan. 2023. *Timetk: A Tool Kit for Working
 with Time Series*. <https://doi.org/10.32614/CRAN.package.timetk>.
 
-Gelman, Andrew, Aki Vehtari, Daniel Simpson, Charles C Margossian, Bob
-Carpenter, Yuling Yao, Lauren Kennedy, Jonah Gabry, Paul-Christian
-Bürkner, and Martin Modrák. 2020. “Bayesian Workflow.” *arXiv Preprint
-arXiv:2011.01808*.
+Gelman, Andrew, Aki Vehtari, Daniel Simpson, et al. 2020. “Bayesian
+Workflow.” *arXiv Preprint arXiv:2011.01808*.
 
 Wang, Earo, Dianne Cook, and Rob J Hyndman. 2020. “A New Tidy Data
 Structure to Support Exploration and Modeling of Temporal Data.”
@@ -1134,15 +1166,12 @@ Data Analysis.” PhD thesis, Monash University.
 Wickham, Hadley. 2014. “Tidy Data.” *Journal of Statistical Software*
 59: 1–23.
 
-Wickham, Hadley, Mara Averick, Jennifer Bryan, Winston Chang, Lucy
-D’Agostino McGowan, Romain François, Garrett Grolemund, et al. 2019.
-“Welcome to the tidyverse.” *Journal of Open Source Software* 4 (43):
-1686. <https://doi.org/10.21105/joss.01686>.
+Wickham, Hadley, Mara Averick, Jennifer Bryan, et al. 2019. “Welcome to
+the tidyverse.” *Journal of Open Source Software* 4 (43): 1686.
+<https://doi.org/10.21105/joss.01686>.
 
 Wickham, Hadley, Mine Çetinkaya-Rundel, and Garrett Grolemund. 2023. *R
 for Data Science: Import, Tidy, Transform, Visualize, and Model Data*.
 O’Reilly Media, Inc.
 
-------------------------------------------------------------------------
-
-1.  Optional attributes are set to `NULL` by default.
+[^1]: Optional attributes are set to `NULL` by default.
