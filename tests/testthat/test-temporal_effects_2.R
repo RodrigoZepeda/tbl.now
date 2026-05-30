@@ -425,16 +425,12 @@ test_that("temporal_effects handles fractional seasons (coerces to numeric)", {
   expect_equal(length(t_eff@seasons), 3)
 })
 
-test_that("temporal_effects handles zero season", {
-  t_eff <- temporal_effects(seasons = 0)
-  expect_equal(t_eff@seasons, 0)
+test_that("temporal_effects rejects zero season", {
+  expect_error(temporal_effects(seasons = 0), "seasons")
 })
 
-test_that("temporal_effects handles negative seasons", {
-  t_eff <- temporal_effects(seasons = c(-1, -7, -52))
-
-  expect_equal(length(t_eff@seasons), 3)
-  expect_true(all(c(-1, -7, -52) %in% t_eff@seasons))
+test_that("temporal_effects rejects negative seasons", {
+  expect_error(temporal_effects(seasons = c(-1, -7, -52)), "seasons")
 })
 
 # ============================================================================
@@ -514,4 +510,114 @@ test_that("replace_temporal_effects replaces spec with new one", {
   expect_true(spec[[1]]$t_effects@week_of_year)
   # Old computed cols removed
   expect_false(".event_day_of_week" %in% names(replaced))
+})
+
+
+# ============================================================================
+# Tests for season_length parameter
+# ============================================================================
+
+test_that("season_length defaults to numeric(0) when seasons is empty", {
+  t_eff <- temporal_effects()
+  expect_equal(length(t_eff@season_length), 0L)
+  expect_true(is.numeric(t_eff@season_length))
+})
+
+test_that("season_length defaults to 1 for a single season", {
+  t_eff <- temporal_effects(seasons = 52)
+  expect_equal(t_eff@season_length, 1)
+  expect_equal(t_eff@seasons, 52)
+})
+
+test_that("season_length = 1 gives period equal to seasons (backward compatible)", {
+  t_eff <- temporal_effects(seasons = c(7, 52, 365), season_length = 1)
+  expect_equal(t_eff@seasons,       c(7, 52, 365))
+  expect_equal(t_eff@season_length, c(1,  1,   1))
+  # periods == seasons when season_length == 1
+  expect_equal(t_eff@seasons * t_eff@season_length, c(7, 52, 365))
+})
+
+test_that("scalar season_length is recycled to match seasons length", {
+  t_eff <- temporal_effects(seasons = c(52, 4), season_length = 7)
+  expect_equal(t_eff@season_length, c(7, 7))
+  expect_equal(t_eff@seasons * t_eff@season_length, c(364, 28))
+})
+
+test_that("vector season_length of same length as seasons is stored correctly", {
+  t_eff <- temporal_effects(seasons = c(52, 4), season_length = c(7, 13))
+  expect_equal(t_eff@seasons,       c(52, 4))
+  expect_equal(t_eff@season_length, c(7, 13))
+  expect_equal(t_eff@seasons * t_eff@season_length, c(364, 52))
+})
+
+test_that("duplicate periods are removed (season_length deduplication by period)", {
+  # seasons=52, season_length=7 → period 364; seasons=364, season_length=1 → period 364: duplicate
+  t_eff <- temporal_effects(seasons = c(52, 364), season_length = c(7, 1))
+  expect_equal(length(t_eff@seasons), 1L)
+  expect_equal(t_eff@seasons * t_eff@season_length, 364)
+})
+
+test_that("season_length wrong length errors", {
+  expect_error(
+    temporal_effects(seasons = c(52, 4), season_length = c(7, 7, 1)),
+    "season_length"
+  )
+})
+
+test_that("season_length zero or negative errors", {
+  expect_error(temporal_effects(seasons = 52, season_length = 0),  "season_length")
+  expect_error(temporal_effects(seasons = 52, season_length = -7), "season_length")
+})
+
+test_that("seasons zero or negative errors", {
+  expect_error(temporal_effects(seasons = 0),           "seasons")
+  expect_error(temporal_effects(seasons = -52),         "seasons")
+  expect_error(temporal_effects(seasons = c(52, -1)),   "seasons")
+})
+
+test_that("add_temporal_effects uses period (seasons * season_length) for column names", {
+  df <- data.frame(
+    date        = as.Date(c("2020-01-01", "2020-07-01")),
+    numeric_col = c(0, 26)
+  )
+  # seasons = 52, season_length = 7 → period = 364
+  t_eff  <- temporal_effects(seasons = 52, season_length = 7)
+  result <- add_temporal_effects.data.frame(
+    df, t_effects = t_eff,
+    date_col = "date", numeric_col = "numeric_col", name_prefix = ".date"
+  )
+  expect_true(".date_season_364_cos" %in% names(result))
+  expect_true(".date_season_364_sin" %in% names(result))
+  # The old column name (based on seasons alone) should NOT exist
+  expect_false(".date_season_52_cos" %in% names(result))
+})
+
+test_that("add_temporal_effects season_length=1 gives same column names as before", {
+  df <- data.frame(
+    date        = as.Date(c("2020-01-01", "2020-07-01")),
+    numeric_col = c(0, 26)
+  )
+  t_eff  <- temporal_effects(seasons = 52, season_length = 1)
+  result <- add_temporal_effects.data.frame(
+    df, t_effects = t_eff,
+    date_col = "date", numeric_col = "numeric_col", name_prefix = ".date"
+  )
+  # period = 52 × 1 = 52 → backward-compatible column name
+  expect_true(".date_season_52_cos" %in% names(result))
+  expect_true(".date_season_52_sin" %in% names(result))
+})
+
+test_that("Fourier values are computed with the correct period", {
+  df <- data.frame(
+    date        = as.Date("2020-01-01"),
+    numeric_col = 0
+  )
+  # seasons=52, season_length=7 → period=364; at t=0: cos(0)=1, sin(0)=0
+  t_eff  <- temporal_effects(seasons = 52, season_length = 7)
+  result <- add_temporal_effects.data.frame(
+    df, t_effects = t_eff,
+    date_col = "date", numeric_col = "numeric_col", name_prefix = ".date"
+  )
+  expect_equal(result$.date_season_364_cos, 1)
+  expect_equal(result$.date_season_364_sin, 0)
 })

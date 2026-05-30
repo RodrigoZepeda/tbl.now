@@ -191,22 +191,27 @@ add_temporal_effects.data.frame <- function(x, t_effects= NULL, overwrite = FALS
 
     # Add seasons-----
     if (!is.null(t_effects@seasons) & length(t_effects@seasons) > 0 & !is.null(numeric_col)) {
-      #For each season add a column
-      for (m in t_effects@seasons){
+      #For each season add a pair of Fourier (sin/cos) columns
+      for (i in seq_along(t_effects@seasons)){
 
-        #Create season name
-        season_name <- paste0(name_prefix,"_season_", m)
-        #Add the season names
+        # Period = seasons * season_length (season_length defaults to 1 → period = seasons)
+        period <- t_effects@seasons[i] * t_effects@season_length[i]
+
+        #Create column name from the actual period
+        season_name <- paste0(name_prefix, "_season_", period)
+
         if ((paste0(season_name, "_cos") %in% colnames(x)) || (paste0(season_name, "_sin") %in% colnames(x)) && !overwrite){
           cli::cli_abort(
             "At least one of the columns: {.val {season_name}_cos} or {.val {season_name}_sin} already exist in data. Set `overwrite = TRUE` to overwrite them."
           )
         }
 
-        #Add the sine and cosine component of the fourier terms
+        #Add the sine and cosine components of the Fourier term
         x <- x %>%
-          dplyr::mutate(!!as.symbol(paste0(season_name,"_cos")) := cos(2*base::pi*as.numeric(!!as.symbol(numeric_col)) / m)) %>%
-          dplyr::mutate(!!as.symbol(paste0(season_name,"_sin")) := sin(2*base::pi*as.numeric(!!as.symbol(numeric_col))  / m))
+          dplyr::mutate(
+            !!as.symbol(paste0(season_name, "_cos")) := cos(2*base::pi*as.numeric(!!as.symbol(numeric_col)) / period),
+            !!as.symbol(paste0(season_name, "_sin")) := sin(2*base::pi*as.numeric(!!as.symbol(numeric_col)) / period)
+          )
       }
     }
 

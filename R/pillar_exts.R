@@ -15,8 +15,10 @@
     if (t@day_of_month)  effs <- c(effs, "day_of_month")
     if (t@month_of_year) effs <- c(effs, "month_of_year")
     if (t@week_of_year)  effs <- c(effs, "week_of_year")
-    if (length(t@seasons) > 0)
-      effs <- c(effs, paste0("season(", paste(t@seasons, collapse = ","), ")"))
+    if (length(t@seasons) > 0) {
+      periods <- t@seasons * t@season_length
+      effs <- c(effs, paste0("season(", paste(periods, collapse = ","), ")"))
+    }
     if (!is.null(t@holidays)) effs <- c(effs, "holidays")
     label <- if (sp$date_type == "event_date") "[event_date]" else "[report_date]"
     paste0(label, " ", paste(effs, collapse = ", "))

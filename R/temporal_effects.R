@@ -9,8 +9,15 @@
 #' @param day_of_month Logical. Whether to include an effect for the day of the month (1 to 31).
 #' @param month_of_year Logical. Whether to include an effect for the month of the year.
 #' @param week_of_year Logical. Whether to include an effect for the epidemiological week.
-#' @param seasons Vector. Either `integer(0)` or a vector where each entry is the length of the
-#' seasons included in the model.
+#' @param seasons Vector. Either `integer(0)` (no seasonal effects) or a positive-numeric
+#' vector where each entry is the number of seasons (cycles) to model. The actual Fourier
+#' period for the i-th entry is `seasons[i] * season_length[i]`.
+#' @param season_length Either a single positive number or a vector of the same length as
+#' `seasons`. Specifies the duration (in data units) of each season cycle. Defaults to `1`,
+#' meaning the period equals `seasons` directly — the same behaviour as before.
+#' Use a value greater than 1 when the data unit is finer than the season.
+#' For example, to model 52-week annual seasonality in **daily** data set
+#' `seasons = 52, season_length = 7` (period = 364 days).
 #' @param holidays Either `NULL` or an [`almanac::rcalendar()`] specifying how to calculate holidays.
 #'
 #' @details
@@ -29,6 +36,12 @@
 #' @examples
 #' temporal_effects(day_of_week = TRUE, week_of_year = TRUE)
 #'
+#' # Annual seasonality in weekly data (period = 52 weeks)
+#' temporal_effects(seasons = 52)
+#'
+#' # Annual seasonality in daily data (52 weeks × 7 days = 364-day period)
+#' temporal_effects(seasons = 52, season_length = 7)
+#'
 #' if (rlang::is_installed("almanac")) {
 #'   cal <- almanac::rcalendar(almanac::hol_christmas())
 #'   temporal_effects(holidays = cal, day_of_month = TRUE, seasons = c(7, 365))
@@ -45,6 +58,7 @@ temporal_effects <- S7::new_class(
     month_of_year = FALSE,
     week_of_year = FALSE,
     seasons = integer(0),
+    season_length = 1,
     holidays = NULL
   ) {
 
@@ -55,8 +69,30 @@ temporal_effects <- S7::new_class(
     check_bool(month_of_year, "month_of_year")
     check_bool(week_of_year, "week_of_year")
 
-    #Check seasons
-    seasons <- unique(seasons)
+    # Validate and normalise seasons + season_length
+    if (length(seasons) > 0) {
+      if (!is.numeric(seasons) || any(seasons <= 0)) {
+        cli::cli_abort("{.arg seasons} must be a vector of positive numbers.")
+      }
+      if (!is.numeric(season_length) || length(season_length) == 0 || any(season_length <= 0)) {
+        cli::cli_abort("{.arg season_length} must be a positive number or a vector of positive numbers.")
+      }
+      if (length(season_length) != 1L && length(season_length) != length(seasons)) {
+        cli::cli_abort(
+          "{.arg season_length} must be length 1 or the same length as {.arg seasons} ({length(seasons)})."
+        )
+      }
+      # Recycle season_length to match seasons, then deduplicate by computed period
+      season_length <- rep_len(as.numeric(season_length), length(seasons))
+      seasons       <- as.numeric(seasons)
+      periods       <- seasons * season_length
+      keep          <- !duplicated(periods)
+      seasons       <- seasons[keep]
+      season_length <- season_length[keep]
+    } else {
+      seasons       <- numeric(0)
+      season_length <- numeric(0)
+    }
 
     # Holidays must be NULL or almanac_rcalendar
     if (!is.null(holidays) && !inherits(holidays, "almanac_rcalendar")) {
@@ -72,6 +108,7 @@ temporal_effects <- S7::new_class(
       month_of_year = month_of_year,
       week_of_year  = week_of_year,
       seasons       = seasons,
+      season_length = season_length,
       holidays      = holidays
     )
   },
@@ -83,6 +120,7 @@ temporal_effects <- S7::new_class(
     month_of_year = S7::class_logical,
     week_of_year  = S7::class_logical,
     seasons       = S7::class_numeric,
+    season_length = S7::class_numeric,
     holidays      = S7::class_any      #to allow NULL or almanac_rcalendar
   )
 )
@@ -97,6 +135,7 @@ temporal_effects <- S7::new_class(
 #' print(temporal_effects(day_of_week = TRUE, week_of_year = TRUE))
 #' print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE))
 #' print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE, seasons = 52))
+#' print(temporal_effects(seasons = 52, season_length = 7))
 #' @name print_temporal_effects
 #' @keywords internal
 S7::method(print, temporal_effects) <- function(x, ...) {
@@ -115,7 +154,17 @@ S7::method(print, temporal_effects) <- function(x, ...) {
     }
 
     if (has_seasons){
-      cli::cli_li("{.val season} lengths: {x@seasons}")
+      # Show periods; include season_length breakdown when it differs from 1
+      periods     <- x@seasons * x@season_length
+      all_unit    <- all(x@season_length == 1)
+      season_strs <- if (all_unit) {
+        as.character(periods)
+      } else {
+        mapply(function(s, l, p) {
+          if (l == 1) as.character(p) else paste0(s, "×", l, "=", p)
+        }, x@seasons, x@season_length, periods)
+      }
+      cli::cli_li("{.val season} periods: {paste(season_strs, collapse = ', ')}")
     }
 
     if (has_holidays) {
