@@ -14,7 +14,7 @@
 #' period for the i-th entry is `seasons[i] * season_length[i]`.
 #' @param season_length Either a single positive number or a vector of the same length as
 #' `seasons`. Specifies the duration (in data units) of each season cycle. Defaults to `1`,
-#' meaning the period equals `seasons` directly — the same behaviour as before.
+#' meaning the period equals `seasons` directly.
 #' Use a value greater than 1 when the data unit is finer than the season.
 #' For example, to model 52-week annual seasonality in **daily** data set
 #' `seasons = 52, season_length = 7` (period = 364 days).
@@ -39,7 +39,7 @@
 #' # Annual seasonality in weekly data (period = 52 weeks)
 #' temporal_effects(seasons = 52)
 #'
-#' # Annual seasonality in daily data (52 weeks × 7 days = 364-day period)
+#' # Annual seasonality in daily data (52 weeks x 7 days = 364-day period)
 #' temporal_effects(seasons = 52, season_length = 7)
 #'
 #' if (rlang::is_installed("almanac")) {
@@ -161,7 +161,7 @@ S7::method(print, temporal_effects) <- function(x, ...) {
         as.character(periods)
       } else {
         mapply(function(s, l, p) {
-          if (l == 1) as.character(p) else paste0(s, "×", l, "=", p)
+          if (l == 1) as.character(p) else paste0(s, "*", l, "=", p)
         }, x@seasons, x@season_length, periods)
       }
       cli::cli_li("{.val season} periods: {paste(season_strs, collapse = ', ')}")

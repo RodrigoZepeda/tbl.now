@@ -15,5 +15,6 @@ Print function for printing the a [temporal_effects()].
 print(temporal_effects(day_of_week = TRUE, week_of_year = TRUE))
 print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE))
 print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE, seasons = 52))
+print(temporal_effects(seasons = 52, season_length = 7))
 }
 \keyword{internal}
