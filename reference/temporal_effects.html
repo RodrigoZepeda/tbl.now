@@ -9,7 +9,7 @@ should be included in a nowcasting model (e.g., day of week, month, holidays, et
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,6 +53,7 @@ should be included in a nowcasting model (e.g., day of week, month, holidays, et
 <span>  month_of_year <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  week_of_year <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  seasons <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">integer</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>,</span>
+<span>  season_length <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  holidays <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -82,8 +83,18 @@ should be included in a nowcasting model (e.g., day of week, month, holidays, et
 
 
 <dt id="arg-seasons">seasons<a class="anchor" aria-label="anchor" href="#arg-seasons"></a></dt>
-<dd><p>Vector. Either <code>integer(0)</code> or a vector where each entry is the length of the
-seasons included in the model.</p></dd>
+<dd><p>Vector. Either <code>integer(0)</code> (no seasonal effects) or a positive-numeric
+vector where each entry is the number of seasons (cycles) to model. The actual Fourier
+period for the i-th entry is <code>seasons[i] * season_length[i]</code>.</p></dd>
+
+
+<dt id="arg-season-length">season_length<a class="anchor" aria-label="anchor" href="#arg-season-length"></a></dt>
+<dd><p>Either a single positive number or a vector of the same length as
+<code>seasons</code>. Specifies the duration (in data units) of each season cycle. Defaults to <code>1</code>,
+meaning the period equals <code>seasons</code> directly.
+Use a value greater than 1 when the data unit is finer than the season.
+For example, to model 52-week annual seasonality in <strong>daily</strong> data set
+<code>seasons = 52, season_length = 7</code> (period = 364 days).</p></dd>
 
 
 <dt id="arg-holidays">holidays<a class="anchor" aria-label="anchor" href="#arg-holidays"></a></dt>
@@ -110,6 +121,20 @@ seasons included in the model.</p></dd>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"day_of_week"</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"week_of_year"</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Annual seasonality in weekly data (period = 52 weeks)</span></span></span>
+<span class="r-in"><span><span class="fu">temporal_effects</span><span class="op">(</span>seasons <span class="op">=</span> <span class="fl">52</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Temporal Effects</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"season"</span> periods: 52</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Annual seasonality in daily data (52 weeks x 7 days = 364-day period)</span></span></span>
+<span class="r-in"><span><span class="fu">temporal_effects</span><span class="op">(</span>seasons <span class="op">=</span> <span class="fl">52</span>, season_length <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Temporal Effects</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"season"</span> periods: 52*7=364</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu">rlang</span><span class="fu">::</span><span class="fu"><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">is_installed</a></span><span class="op">(</span><span class="st">"almanac"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="va">cal</span> <span class="op">&lt;-</span> <span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rcalendar.html" class="external-link">rcalendar</a></span><span class="op">(</span><span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_christmas</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>

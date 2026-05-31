@@ -30,4 +30,9 @@ print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE, seasons = 52))
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
 #> The following effects are in place:
 #> • "season" periods: 52
+print(temporal_effects(seasons = 52, season_length = 7))
+#> 
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "season" periods: 52*7=364
 ```

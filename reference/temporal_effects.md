@@ -14,6 +14,7 @@ temporal_effects(
   month_of_year = FALSE,
   week_of_year = FALSE,
   seasons = integer(0),
+  season_length = 1,
   holidays = NULL
 )
 ```
@@ -44,8 +45,19 @@ temporal_effects(
 
 - seasons:
 
-  Vector. Either `integer(0)` or a vector where each entry is the length
-  of the seasons included in the model.
+  Vector. Either `integer(0)` (no seasonal effects) or a
+  positive-numeric vector where each entry is the number of seasons
+  (cycles) to model. The actual Fourier period for the i-th entry is
+  `seasons[i] * season_length[i]`.
+
+- season_length:
+
+  Either a single positive number or a vector of the same length as
+  `seasons`. Specifies the duration (in data units) of each season
+  cycle. Defaults to `1`, meaning the period equals `seasons` directly.
+  Use a value greater than 1 when the data unit is finer than the
+  season. For example, to model 52-week annual seasonality in **daily**
+  data set `seasons = 52, season_length = 7` (period = 364 days).
 
 - holidays:
 
@@ -77,6 +89,20 @@ temporal_effects(day_of_week = TRUE, week_of_year = TRUE)
 #> The following effects are in place:
 #> • "day_of_week"
 #> • "week_of_year"
+
+# Annual seasonality in weekly data (period = 52 weeks)
+temporal_effects(seasons = 52)
+#> 
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "season" periods: 52
+
+# Annual seasonality in daily data (52 weeks x 7 days = 364-day period)
+temporal_effects(seasons = 52, season_length = 7)
+#> 
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "season" periods: 52*7=364
 
 if (rlang::is_installed("almanac")) {
   cal <- almanac::rcalendar(almanac::hol_christmas())
