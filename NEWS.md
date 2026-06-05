@@ -1,3 +1,13 @@
+# tbl.now 0.6.4
+
+* Fixed dependency on R >= 4.2.0
+* Update function now defaults the censoring to FALSE if the update
+is censored but the original is not. 
+
+# tbl.now 0.6.3
+
+* Added season length to seasons so we can get weekly seasonality. 
+
 # tbl.now 0.6.2
 
 * Removed warning when using columns for temporal effects that cascaded into `to_count`.

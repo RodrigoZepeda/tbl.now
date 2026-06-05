@@ -61,9 +61,30 @@ update.tbl_now <- function(object, ..., new_data,
     update_check_data_frame_internal(object, new_data)
   }
 
+  # Resolve the is_censored column name for the result before binding
+  cens_obj <- get_is_censored(object)
+  cens_new <- if (is_tbl_now(new_data)) get_is_censored(new_data) else NULL
+
   #Bind rows
   updated_data <- object %>%
     dplyr::bind_rows(new_data)
+
+  # If object had no censored column but new_data does, the old rows will have
+  # NA in that column after bind_rows.  Fill those NAs with 0 (= not censored).
+  if (is.null(cens_obj) && !is.null(cens_new) && cens_new %in% colnames(updated_data)) {
+    updated_data <- updated_data %>%
+      dplyr::mutate(
+        !!as.symbol(cens_new) := dplyr::coalesce(!!as.symbol(cens_new), FALSE)
+      )
+    cli::cli_inform(
+      "Rows from {.arg object} had no censored column; setting {.code {cens_new} = FALSE} for those rows."
+    )
+  }
+
+  # Determine which censored column name to register on the result.
+  # Priority: object's column first (it was explicitly registered); fall back
+  # to new_data's column when object had none.
+  result_is_censored <- if (!is.null(cens_obj)) cens_obj else cens_new
 
   if (grepl("count", get_data_type(object)) && remove_duplicates){
       suppressWarnings(
@@ -187,9 +208,6 @@ update.tbl_now <- function(object, ..., new_data,
     )
   }
 
-  #FIXME: Allow the temporal effects to be calculated a posteriori
-  #this requires saving the temporal effect function or at least the holiday calendar
-  #Re-do the temporal effects
   if (!identical(get_temporal_effects(new_data), get_temporal_effects(object)) && (length(get_temporal_effects(new_data)) > 0 | length(get_temporal_effects(object)) > 0)){
     cli::cli_abort("Cannot handle different temporal_effects")
   }
@@ -199,7 +217,7 @@ update.tbl_now <- function(object, ..., new_data,
           report_date = get_report_date(object),
           strata = get_strata(updated_data),
           covariates = get_covariates(updated_data),
-          is_censored = get_is_censored(object),
+          is_censored = result_is_censored,
           event_units = get_event_units(object),
           report_units = get_report_units(object),
           data_type = get_data_type(object),
@@ -283,13 +301,19 @@ update_check_tbl_now_internal <- function(object, new_data){
     )
   }
 
-  #Check that both objects have the same event and report columns
-  if (!identical(get_is_censored(object), get_is_censored(new_data))){
+  # Censored-column compatibility:
+  # • Both have one with the SAME name → OK
+  # • Only new_data has one               → OK (old rows will be filled with FALSE)
+  # • Only object has one                 → OK (new rows must carry the column;
+  #                                              update_check_data_frame_internal handles that)
+  # • Both have one with DIFFERENT names  → error
+  if (!is.null(get_is_censored(object)) && !is.null(get_is_censored(new_data)) &&
+      !identical(get_is_censored(object), get_is_censored(new_data))) {
     cli::cli_abort(
       paste0(
         "`object` has is_censored = {.val {get_is_censored(object)}} while ",
         "`new_data` has is_censored = {.val {get_is_censored(new_data)}}. ",
-        "They must be the same in order to `update`."
+        "They must be the same column name in order to `update`."
       )
     )
   }
