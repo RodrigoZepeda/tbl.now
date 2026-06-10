@@ -88,10 +88,6 @@
 
     
     
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lubridate.tidyverse.org" class="external-link">lubridate</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span></code></pre></div>
 <p>Within <code>R</code>, the <a href="https://tidyverse.org/" class="external-link">tidyverse</a> ecosystem <span class="citation">(<a href="#ref-tidyverse">Wickham et al.
 2019</a>)</span> provides a widely adopted framework for data analysis.
 In this paradigm, data is structured such that rows represent individual
@@ -125,6 +121,11 @@ compatibility so users can continue to apply familiar <a href="https://dplyr.tid
 2023</a>)</span>:</p></li>
 </ul>
 <pre><code>Data Cleaning -&gt; Modeling -&gt; New Data Cleaning -&gt; New Modeling -&gt; ...</code></pre>
+<p>We’ll begin by loading the required packages:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lubridate.tidyverse.org" class="external-link">lubridate</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="the-tbl-now-framework">The <code>tbl.now</code> Framework<a class="anchor" aria-label="anchor" href="#the-tbl-now-framework"></a>
 </h2>

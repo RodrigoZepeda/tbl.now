@@ -87,7 +87,7 @@ data(denguedat)
 dengue <- tbl_now(denguedat, event_date = "onset_week",
                   report_date = "report_week", verbose = FALSE)
 autoplot(dengue)
-#> Error in autoplot(dengue): could not find function "autoplot"
+
 
 # Zoom the delay panel to delays of 0-10 weeks
 if (FALSE){

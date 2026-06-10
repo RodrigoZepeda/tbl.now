@@ -1,12 +1,5 @@
 # tbl.now
 
-``` r
-
-library(dplyr, quietly = TRUE)
-library(lubridate)
-library(tbl.now)
-```
-
 Within `R`, the [tidyverse](https://tidyverse.org/) ecosystem ([Wickham
 et al. 2019](#ref-tidyverse)) provides a widely adopted framework for
 data analysis. In this paradigm, data is structured such that rows
@@ -51,6 +44,15 @@ More concretely, tbl.now was designed to:
 &nbsp;
 
     Data Cleaning -> Modeling -> New Data Cleaning -> New Modeling -> ...
+
+We’ll begin by loading the required packages:
+
+``` r
+
+library(dplyr, quietly = TRUE)
+library(lubridate)
+library(tbl.now)
+```
 
 ## The `tbl.now` Framework
 
