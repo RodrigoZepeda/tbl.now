@@ -2,7 +2,7 @@
 % Please edit documentation in R/checkers.R
 \name{check_units}
 \alias{check_units}
-\title{Check the `date_units` argument}
+\title{Check the \code{date_units} argument}
 \usage{
 check_units(data, date_units)
 }
@@ -10,9 +10,9 @@ check_units(data, date_units)
 \item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 }
 \value{
-(invisible) `TRUE` if the date_units are valid or NULL
+(invisible) \code{TRUE} if the date_units are valid or NULL
 }
 \description{
-Check the `date_units` argument
+Check the \code{date_units} argument
 }
 \keyword{internal}

@@ -14,42 +14,14 @@ status](https://www.r-pkg.org/badges/version/tbl.now)](https://CRAN.R-project.or
 [![R-CMD-check](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-`tbl.now` provides a lightweight but rigorous extension of the tibble
-class for storing, validating, and manipulating epidemiological
-nowcasting data. It standardizes the representation of event dates,
-report dates, strata, temporal covariates, and data types (linelist,
-incidence, and cumulative), ensuring that downstream models within the
+[`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) provides an
+extension of the [`tibble()`](https://tibble.tidyverse.org/) for
+storing, validating, and manipulating epidemiological nowcasting data.
+It standardizes the representation of event dates, report dates, strata,
+temporal covariates, and data types (linelist and cumulative), ensuring
+that downstream models within the
 [`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/)
 ecosystem can rely on a consistent interface.
-
-<!---
-&#10;## Key features
-&#10;`tbl.now` implements:
-&#10;### 1. A validated tibble subclass
-&#10;Each `tbl_now` object guarantees:
-&#10;+ An event date column.
-+ A report date column.
-+ Internally computed:
-    + numeric event index (.event_num)
-    + numeric report index (.report_num)
-    + delay (.delay).
-+ Optional strata (e.g., state, age group).
-+ Optional covariates (e.g., state, age group).
-+ Optional batch (right-censored report) indicator.
-+ Optional temporal covariates (day of week, week of year, holidays).
-&#10;### 2. Automatic data-type detection
-&#10;`tbl_now()` infers whether the input represents:
-&#10;+ **Linelist data**: one row per individual event
-+ **Count–incidence data**: counts newly reported at each (event, report) pair
-+ **Count–cumulative data**: cumulative totals revised over time
-&#10;This allows a wide range of surveillance systems to be ingested with minimal preprocessing.
-&#10;### 3. Built-in handling of the “now”
-&#10;Each object records the nowcast horizon (now), defined as the latest reporting date unless overridden. This enables backtesting, historical reconstruction, and model evaluation under realistic information constraints. 
-&#10;### 4. Native compatibility with tidyverse workflows
-&#10;`tbl_now` objects behave as regular tibbles. Standard operations (`filter`, `mutate`, `summarise`, `join`, etc.) preserve metadata whenever possible.
-&#10;### 5. Temporal covariates in one step
-&#10;Use `temporal_effects()` and `add_temporal_effects()` to generate event-date covariates such as: day of week, week of year, and user-specified holiday calendars (via almanac). This standardizes temporal structures used by nowcasting models.
-&#10;--->
 
 ## Installation
 
@@ -306,6 +278,28 @@ Retrieve the current active nowcast horizon:
 get_now(df_pruned)
 #> [1] "2023-12-26"
 ```
+
+## Visualizing a `tbl_now`
+
+The
+[autoplot()](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html)
+method gives a quick diagnostic overview of a `tbl_now`.
+
+``` r
+library(ggplot2)
+library(patchwork)
+data("flusight")
+
+flusight_now <- tbl_now(flusight,
+                      event_date  = target_end_date,
+                      report_date = as_of,
+                      case_count = observation,
+                      verbose     = FALSE)
+
+autoplot(flusight_now, level = 1)
+```
+
+<img src="man/figures/README-autoplot-1.png" alt="" width="100%" />
 
 ## Learning more
 

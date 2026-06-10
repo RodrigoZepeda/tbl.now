@@ -10,8 +10,8 @@ is_tbl_now(x)
 \item{x}{any R object}
 }
 \value{
-(boolean) `TRUE` if object is a `tbl_now`
-`FALSE` if not.
+(boolean) \code{TRUE} if object is a \code{tbl_now}
+\code{FALSE} if not.
 }
 \description{
 Check if an object is a tbl_now

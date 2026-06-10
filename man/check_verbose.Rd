@@ -2,7 +2,7 @@
 % Please edit documentation in R/checkers.R
 \name{check_verbose}
 \alias{check_verbose}
-\title{Check the `verbose` argument among the options}
+\title{Check the \code{verbose} argument among the options}
 \usage{
 check_verbose(verbose)
 }
@@ -10,9 +10,9 @@ check_verbose(verbose)
 \item{verbose}{(optional) Logical. Whether to throw a message. Default = \code{TRUE}.}
 }
 \value{
-(invisible) `TRUE` if the verbose argument is valid
+(invisible) \code{TRUE} if the verbose argument is valid
 }
 \description{
-Check the `verbose` argument among the options
+Check the \code{verbose} argument among the options
 }
 \keyword{internal}

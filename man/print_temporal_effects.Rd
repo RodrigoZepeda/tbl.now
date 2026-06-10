@@ -4,12 +4,12 @@
 \alias{print_temporal_effects}
 \title{Print temporal effects}
 \arguments{
-\item{x}{A temporal_effects object created with [temporal_effects()]}
+\item{x}{A temporal_effects object created with \code{\link[=temporal_effects]{temporal_effects()}}}
 
 \item{...}{Additional arguments to pass to print.}
 }
 \description{
-Print function for printing the a [temporal_effects()].
+Print function for printing the a \code{\link[=temporal_effects]{temporal_effects()}}.
 }
 \examples{
 print(temporal_effects(day_of_week = TRUE, week_of_year = TRUE))

@@ -16,10 +16,10 @@ and strata)}
 \item{warn_now}{Boolean. Whether to warn if now is before last report or too far in the future.}
 }
 \value{
-Returns `TRUE` invisibly or throws an error. Called for its side effects.
+Returns \code{TRUE} invisibly or throws an error. Called for its side effects.
 }
 \description{
-Checks that an object is a properly constructed `tbl_now`
+Checks that an object is a properly constructed \code{tbl_now}
 with all required attributes and valid data.
 }
 \examples{

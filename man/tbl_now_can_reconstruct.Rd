@@ -2,7 +2,7 @@
 % Please edit documentation in R/dplyr_generics.R
 \name{tbl_now_can_reconstruct}
 \alias{tbl_now_can_reconstruct}
-\title{Checks whether the `tbl_now` object is valid}
+\title{Checks whether the \code{tbl_now} object is valid}
 \usage{
 tbl_now_can_reconstruct(data)
 }
@@ -10,12 +10,12 @@ tbl_now_can_reconstruct(data)
 \item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 }
 \value{
-A boolean logical (`TRUE` or `FALSE`)
+A boolean logical (\code{TRUE} or \code{FALSE})
 }
 \description{
-This is a wrapper for [`validate_tbl_now`] in a [`tryCatch()`]
-in order to not error if the input object is invalid and returns `TRUE` or
-`FALSE` on if the object is valid. If the object is valid it can be
-"reconstructed" and not downgraded to a `data.frame`.
+This is a wrapper for \code{\link{validate_tbl_now}} in a \code{\link[=tryCatch]{tryCatch()}}
+in order to not error if the input object is invalid and returns \code{TRUE} or
+\code{FALSE} on if the object is valid. If the object is valid it can be
+"reconstructed" and not downgraded to a \code{data.frame}.
 }
 \keyword{internal}

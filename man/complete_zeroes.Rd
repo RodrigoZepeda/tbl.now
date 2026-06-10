@@ -7,13 +7,13 @@
 complete_zeroes(x, max_delay = NULL)
 }
 \arguments{
-\item{x}{A `tbl.now` object.}
+\item{x}{A \code{tbl.now} object.}
 
 \item{max_delay}{Maximum delay to fill. For example if set to 5 it will complete
 with 0's all reports with delays 0 to 4. But will not fill other delays (say 6)}
 }
 \description{
-Takes a `tbl.now` object and completes observations
+Takes a \code{tbl.now} object and completes observations
 for event_dates or onset_weeks that have not been registered
 by each strata with a 0
 }

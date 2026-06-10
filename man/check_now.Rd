@@ -2,7 +2,7 @@
 % Please edit documentation in R/checkers.R
 \name{check_now}
 \alias{check_now}
-\title{Check the `now` argument}
+\title{Check the \code{now} argument}
 \usage{
 check_now(data, event_date, report_date, now)
 }
@@ -24,12 +24,12 @@ nowcast. If no \code{now} is given then the function automatically uses the last
 \code{event_date}.}
 }
 \value{
-(invisible) TRUE if the `now` date is achievable considering
-the `data` dataset and the columns `event_date` and
-`report_date`
+(invisible) TRUE if the \code{now} date is achievable considering
+the \code{data} dataset and the columns \code{event_date} and
+\code{report_date}
 }
 \description{
-Checks that the `now` argument is a date and within range
+Checks that the \code{now} argument is a date and within range
 of the data
 }
 \keyword{internal}

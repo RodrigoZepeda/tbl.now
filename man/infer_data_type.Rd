@@ -2,7 +2,7 @@
 % Please edit documentation in R/infer.R
 \name{infer_data_type}
 \alias{infer_data_type}
-\title{Automatically infer the `data_type`}
+\title{Automatically infer the \code{data_type}}
 \usage{
 infer_data_type(
   data,
@@ -54,10 +54,10 @@ or "count-cumulative".}
 \item{verbose}{(optional) Logical. Whether to throw a message. Default = \code{TRUE}.}
 }
 \value{
-Whether the data is `count` or `linelist`
+Whether the data is \code{count} or \code{linelist}
 }
 \description{
 Infers whether the data is line-data or count-data whether it has (or has not)
-a column named `n`
+a column named \code{n}
 }
 \keyword{internal}

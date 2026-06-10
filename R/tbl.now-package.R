@@ -7,6 +7,7 @@ NULL
 
 ## usethis namespace: start
 #' @importFrom dplyr %>%
+#' @importFrom lifecycle deprecated
 #' @importFrom rlang :=
 ## usethis namespace: end
 NULL

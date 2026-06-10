@@ -834,16 +834,27 @@ rename.tbl_now <- function(.data, ...) {
 #' @exportS3Method dplyr::rename_with
 rename_with.tbl_now <- function(.data, .fn, .cols = dplyr::everything(), ...) {
 
-  # Use .tbl_now_eval_select so that a plain character .cols (e.g. "sex") is
-  # resolved via all_of() instead of being treated as an external variable,
-  # suppressing the tidyselect "external vector" deprecation warning.
+  # Resolve the columns to positions with .tbl_now_eval_select so that a plain
+  # character .cols (e.g. "sex") does not trigger the tidyselect
+  # "external vector" deprecation. We then rename by position directly instead
+  # of delegating to NextMethod(): NextMethod() would re-evaluate the original
+  # .cols promise inside dplyr's rename_with.data.frame and re-raise that warning.
+  .fn        <- rlang::as_function(.fn)
   loc        <- .tbl_now_eval_select(rlang::enquo(.cols), .data)
-  names(loc) <- sapply(names(loc), .fn)
-  .data      <- rename_attributes(.data, loc)
+  old_names  <- names(.data)[loc]
+  new_names  <- vapply(old_names, .fn, character(1), ...)
+  names(loc) <- new_names
 
-  NextMethod()
+  # Update the tbl_now attribute references (uses the *old* column names, so do
+  # this before renaming the columns themselves).
+  .data <- rename_attributes(.data, loc)
 
+  # Rename the selected columns in place.
+  all_names      <- names(.data)
+  all_names[loc] <- new_names
+  names(.data)   <- all_names
 
+  .data
 }
 
 #' Function to rename attributes given a `rename` is applied

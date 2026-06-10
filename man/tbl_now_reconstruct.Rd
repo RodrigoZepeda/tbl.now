@@ -2,7 +2,7 @@
 % Please edit documentation in R/dplyr_generics.R
 \name{tbl_now_reconstruct}
 \alias{tbl_now_reconstruct}
-\title{Decides whether `tbl_now` object can be reconstructed from input}
+\title{Decides whether \code{tbl_now} object can be reconstructed from input}
 \usage{
 tbl_now_reconstruct(data, template)
 }
@@ -10,11 +10,11 @@ tbl_now_reconstruct(data, template)
 \item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 }
 \value{
-A `tbl_now` object (if the input is valid) or a `data.frame`
+A \code{tbl_now} object (if the input is valid) or a \code{data.frame}
 }
 \description{
-Uses [`tbl_now_reconstruct_internal()`] to determine whether the
-data input can be reconstructed in a valid `tbl_now` object. If it can
-not, it is returned as a `data.frame`.
+Uses \code{\link[=tbl_now_reconstruct_internal]{tbl_now_reconstruct_internal()}} to determine whether the
+data input can be reconstructed in a valid \code{tbl_now} object. If it can
+not, it is returned as a \code{data.frame}.
 }
 \keyword{internal}

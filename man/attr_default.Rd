@@ -7,14 +7,14 @@
 attr_default(x, name, default = NULL)
 }
 \arguments{
-\item{x}{An object with attribute `name`}
+\item{x}{An object with attribute \code{name}}
 
-\item{name}{The name of the attribute in `x`}
+\item{name}{The name of the attribute in \code{x}}
 
-\item{default}{(optional) The default value of attribute `name` in `x`}
+\item{default}{(optional) The default value of attribute \code{name} in \code{x}}
 }
 \description{
-Checks if attribute exists in object and returns `default` if not
+Checks if attribute exists in object and returns \code{default} if not
 }
 \examples{
 \dontrun{

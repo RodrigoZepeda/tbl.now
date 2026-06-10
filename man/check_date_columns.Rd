@@ -20,8 +20,8 @@ provided together with \code{event_date}; the report date will be computed as
 \code{event_date + delay}.}
 }
 \value{
-`TRUE` (invisible) if the `event_date` and `report_date` are
-date columns present in the data and `event_date` <= `report_date` for
+\code{TRUE} (invisible) if the \code{event_date} and \code{report_date} are
+date columns present in the data and \code{event_date} <= \code{report_date} for
 all observations. Called for its side effects
 }
 \description{

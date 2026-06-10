@@ -2,7 +2,7 @@
 % Please edit documentation in R/update.R
 \name{update.tbl_now}
 \alias{update.tbl_now}
-\title{Update a `tbl_now`}
+\title{Update a \code{tbl_now}}
 \usage{
 \method{update}{tbl_now}(
   object,
@@ -16,39 +16,39 @@
 )
 }
 \arguments{
-\item{object}{A `tbl_now` object}
+\item{object}{A \code{tbl_now} object}
 
-\item{...}{Additional arguments to pass to `tbl_now`}
+\item{...}{Additional arguments to pass to \code{tbl_now}}
 
-\item{new_data}{Another `tbl_now` with the same `strata`, `covariates`, `is_censored`,
-and `temporal_effects` or a `data.frame` with additional (newer) data
-not present in `x`}
+\item{new_data}{Another \code{tbl_now} with the same \code{strata}, \code{covariates}, \code{is_censored},
+and \code{temporal_effects} or a \code{data.frame} with additional (newer) data
+not present in \code{x}}
 
-\item{strata}{(optional) Whether to keep the strata from `object` ("left"),
-from `new_data` ("right") or from `both` ("both")}
+\item{strata}{(optional) Whether to keep the strata from \code{object} ("left"),
+from \code{new_data} ("right") or from \code{both} ("both")}
 
-\item{covariates}{(optional) Whether to keep the covariates from `object` ("left"),
-from `new_data` ("right") or from `both` ("both")}
+\item{covariates}{(optional) Whether to keep the covariates from \code{object} ("left"),
+from \code{new_data} ("right") or from \code{both} ("both")}
 
-\item{t_effects}{(optional) Whether to keep the temporal_effects from `object` ("left"),
-from `new_data` ("right") or from `both` ("both")}
+\item{t_effects}{(optional) Whether to keep the temporal_effects from \code{object} ("left"),
+from \code{new_data} ("right") or from \code{both} ("both")}
 
 \item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
 nowcast. If no \code{now} is given then the function automatically uses the last
 \code{event_date}.}
 
-\item{remove_duplicates}{Whether to remove duplicated rows from data (only applies for `count` data)}
+\item{remove_duplicates}{Whether to remove duplicated rows from data (only applies for \code{count} data)}
 }
 \value{
-A `tbl_now` object with all the properties of `object`
+A \code{tbl_now} object with all the properties of \code{object}
 }
 \description{
-Updates a `tbl_now` object with new observations
-either from another `tbl_now` or a `data.frame`
+Updates a \code{tbl_now} object with new observations
+either from another \code{tbl_now} or a \code{data.frame}
 }
 \note{
-By default it keeps the strata, covariates and temporal effects of `object`. Use
-the `strata`, `covariates` and `t_effects` arguments to change it.
+By default it keeps the strata, covariates and temporal effects of \code{object}. Use
+the \code{strata}, \code{covariates} and \code{t_effects} arguments to change it.
 }
 \examples{
 data(denguedat)

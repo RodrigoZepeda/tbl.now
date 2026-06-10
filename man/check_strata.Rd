@@ -16,11 +16,11 @@ For example if it is of interest to generate nowcasts by gender then
 \code{gender} is a \code{strata}.}
 }
 \value{
-(invisible) `TRUE` if the columns in `strata` are NULL or
-are character, integers, or factors in the tibble `data`.
+(invisible) \code{TRUE} if the columns in \code{strata} are NULL or
+are character, integers, or factors in the tibble \code{data}.
 }
 \description{
-The `strata` columns should be present in the data and should be
+The \code{strata} columns should be present in the data and should be
 character, integers, or factors.
 }
 \keyword{internal}

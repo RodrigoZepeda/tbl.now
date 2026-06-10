@@ -2,16 +2,16 @@
 % Please edit documentation in R/infer.R
 \name{infer_units}
 \alias{infer_units}
-\title{Automatically infer which value is `date_units`}
+\title{Automatically infer which value is \code{date_units}}
 \usage{
 infer_units(data, date_column, date_units)
 }
 \value{
-Whether the data's date_units are `days` or `weeks`.
+Whether the data's date_units are \code{days} or \code{weeks}.
 }
 \description{
 Function returns whether data is daily or weekly
-`date_column`.
+\code{date_column}.
 }
 \details{
 @inheritParams tbl_now

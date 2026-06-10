@@ -4,21 +4,21 @@
 \alias{assign_tbl}
 \alias{[.tbl_now}
 \alias{[.grouped_tbl_now}
-\title{Subset function for `tbl_now` with downgrade-on-subsetting}
+\title{Subset function for \code{tbl_now} with downgrade-on-subsetting}
 \usage{
 \method{[}{tbl_now}(x, ...)
 
 \method{[}{grouped_tbl_now}(x, ...)
 }
 \arguments{
-\item{x}{A `tbl_now` object}
+\item{x}{A \code{tbl_now} object}
 
 \item{...}{further arguments to be passed to or from other methods.}
 }
 \value{
-A `tbl_now` object or a `data.frame`
+A \code{tbl_now} object or a \code{data.frame}
 }
 \description{
-IF the subsetting invalidates the class then a `data.frame`
+IF the subsetting invalidates the class then a \code{data.frame}
 will be returned.
 }

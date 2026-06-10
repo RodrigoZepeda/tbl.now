@@ -2,11 +2,11 @@
 % Please edit documentation in R/dplyr_generics.R
 \name{rename_attributes}
 \alias{rename_attributes}
-\title{Function to rename attributes given a `rename` is applied}
+\title{Function to rename attributes given a \code{rename} is applied}
 \usage{
 rename_attributes(.data, loc)
 }
 \description{
-Function to rename attributes given a `rename` is applied
+Function to rename attributes given a \code{rename} is applied
 }
 \keyword{internal}

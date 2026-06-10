@@ -20,29 +20,29 @@ align_weeks(.data, align_on_day = 1, type = "epi", ...)
 \method{align_weeks}{tbl_now}(.data, align_on_day = 1, type = "epi", ...)
 }
 \arguments{
-\item{.data}{A `data.frame` or tibble.}
+\item{.data}{A \code{data.frame} or tibble.}
 
 \item{align_on_day}{Integer 1–7 indicating the weekday to align to.
-Uses [lubridate::wday()] numbering (1 = Sunday, 7 = Saturday).}
+Uses \code{\link[lubridate:day]{lubridate::wday()}} numbering (1 = Sunday, 7 = Saturday).}
 
-\item{type}{Either `"epi"` (default) or `"iso"`. Determines
-which week/year functions to use whether [lubridate::epiweek()] or
-[lubridate::isoweek()]}
+\item{type}{Either \code{"epi"} (default) or \code{"iso"}. Determines
+which week/year functions to use whether \code{\link[lubridate:week]{lubridate::epiweek()}} or
+\code{\link[lubridate:week]{lubridate::isoweek()}}}
 
 \item{...}{Additional arguments to pass to function}
 
-\item{date_col}{A [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) column
+\item{date_col}{A \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} column
 name containing dates.}
 
 \item{new_date_col}{Name of the new aligned date column to be created. By default
-it creates a column named `\{date_col\}_aligned` where `date_col` corresponds
+it creates a column named \verb{\\\{date_col\\\}_aligned} where \code{date_col} corresponds
 to the column name passed to that parameter.}
 }
 \value{
-A tibble identical to `.data` but with an added aligned date column.
+A tibble identical to \code{.data} but with an added aligned date column.
 }
 \description{
-Aligns all dates in either a `data.frame` or a `tbl.now` so that week
+Aligns all dates in either a \code{data.frame} or a \code{tbl.now} so that week
 boundaries occur on a specified day of the week. This is useful in the
 context of nowcasting for cases when weekly reports are changed from say
 Wednesday to Thursday so that delays don't have a decimal point.
@@ -50,9 +50,9 @@ Wednesday to Thursday so that delays don't have a decimal point.
 \details{
 In some cases, to calculate the delay of information, what matters is the
 week distance (reports from week 3 in week 7) and not the specific date distance
-(reports from Saturday of week 3 vs Monday in week 7). The `align_weeks`
+(reports from Saturday of week 3 vs Monday in week 7). The \code{align_weeks}
 function ensures that all week reports are aligned to the same day of the week
-(if applied to a `tbl_now`) or
+(if applied to a \code{tbl_now}) or
 }
 \note{
 This is also useful when working with epiweeks

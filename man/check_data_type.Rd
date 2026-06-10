@@ -12,7 +12,7 @@ check_data_type(data_type)
 an explanation on data types.}
 }
 \value{
-`TRUE` (invisible) if the data_type is one of the valid
+\code{TRUE} (invisible) if the data_type is one of the valid
 types for the model's inference.
 }
 \description{

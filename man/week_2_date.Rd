@@ -17,25 +17,25 @@ week_2_date(
 \arguments{
 \item{.data}{A data.frame or tibble.}
 
-\item{week_col}{[tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) column
+\item{week_col}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} column
 name containing epidemiological week numbers.}
 
-\item{year_col}{[tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) column
+\item{year_col}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} column
 name containing epidemiological year numbers.}
 
-\item{align_on_day}{Integer 1–7 ([lubridate::wday()] numbering) indicating
+\item{align_on_day}{Integer 1–7 (\code{\link[lubridate:day]{lubridate::wday()}} numbering) indicating
 the weekday to align to.}
 
 \item{week_fun}{Function that extracts week numbers from a date
-(either [lubridate::epiweek()], [lubridate::isoweek()]).}
+(either \code{\link[lubridate:week]{lubridate::epiweek()}}, \code{\link[lubridate:week]{lubridate::isoweek()}}).}
 
 \item{year_fun}{Function that extracts the epidemiological/ISO year from
-a date (either [lubridate::epiyear()] or [lubridate::isoyear()]).}
+a date (either \code{\link[lubridate:year]{lubridate::epiyear()}} or \code{\link[lubridate:year]{lubridate::isoyear()}}).}
 
 \item{date_col_name}{Name of the resulting date column.}
 }
 \value{
-The given `data.frame` with a new date column appended.
+The given \code{data.frame} with a new date column appended.
 }
 \description{
 Takes week numbers and year numbers and returns the date corresponding

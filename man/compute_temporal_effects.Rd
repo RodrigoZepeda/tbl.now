@@ -2,28 +2,28 @@
 % Please edit documentation in R/compute_temporal_effects.R
 \name{compute_temporal_effects}
 \alias{compute_temporal_effects}
-\title{Compute temporal effects for a `tbl_now`}
+\title{Compute temporal effects for a \code{tbl_now}}
 \usage{
 compute_temporal_effects(x, overwrite = FALSE)
 }
 \arguments{
-\item{x}{A `tbl_now` object.}
+\item{x}{A \code{tbl_now} object.}
 
-\item{overwrite}{Logical.  When `TRUE`, existing columns are silently
-overwritten.  When `FALSE` (default) an error is thrown if a column that
+\item{overwrite}{Logical.  When \code{TRUE}, existing columns are silently
+overwritten.  When \code{FALSE} (default) an error is thrown if a column that
 would be created already exists.}
 }
 \value{
-A `tbl_now` with the temporal-effect columns appended.  The
-  `temporal_effects` attribute (the specification) is **preserved** so the
-  spec is always visible when printing; in addition a new internal attribute
-  `computed_temporal_effect_cols` records the names of the columns that were
-  just created.
+A \code{tbl_now} with the temporal-effect columns appended.  The
+\code{temporal_effects} attribute (the specification) is \strong{preserved} so the
+spec is always visible when printing; in addition a new internal attribute
+\code{computed_temporal_effect_cols} records the names of the columns that were
+just created.
 }
 \description{
-Materializes the lazy [temporal_effects()] specification stored in a `tbl_now`
-into actual columns.  [add_temporal_effects()] and the `t_effects` argument of
-[tbl_now()] only *record* what should be computed; this function performs the
+Materializes the lazy \code{\link[=temporal_effects]{temporal_effects()}} specification stored in a \code{tbl_now}
+into actual columns.  \code{\link[=add_temporal_effects]{add_temporal_effects()}} and the \code{t_effects} argument of
+\code{\link[=tbl_now]{tbl_now()}} only \emph{record} what should be computed; this function performs the
 computation.  If no temporal effects have been configured the object is
 returned unchanged.
 }
@@ -46,5 +46,5 @@ df_computed <- compute_temporal_effects(df_now)
 
 }
 \seealso{
-[add_temporal_effects()], [temporal_effects()], [remove_temporal_effects()]
+\code{\link[=add_temporal_effects]{add_temporal_effects()}}, \code{\link[=temporal_effects]{temporal_effects()}}, \code{\link[=remove_temporal_effects]{remove_temporal_effects()}}
 }

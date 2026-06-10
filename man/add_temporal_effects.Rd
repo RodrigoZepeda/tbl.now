@@ -4,7 +4,7 @@
 \alias{add_temporal_effects}
 \alias{add_temporal_effects.data.frame}
 \alias{add_temporal_effects.tbl_now}
-\title{Add temporal effect coding to a `tbl_now`}
+\title{Add temporal effect coding to a \code{tbl_now}}
 \usage{
 add_temporal_effects(x, t_effects = NULL, overwrite = FALSE, ...)
 
@@ -29,40 +29,40 @@ add_temporal_effects(x, t_effects = NULL, overwrite = FALSE, ...)
 )
 }
 \arguments{
-\item{x}{A `tbl_now` object or a `data.frame`.}
+\item{x}{A \code{tbl_now} object or a \code{data.frame}.}
 
-\item{t_effects}{A [temporal_effects()] object codifying the
+\item{t_effects}{A \code{\link[=temporal_effects]{temporal_effects()}} object codifying the
 temporal effects to be used.}
 
-\item{overwrite}{If `TRUE` ignores that the columns already exist and overwrites them.
-If `FALSE` it throws an errors if the columns it is creating already exist (default).}
+\item{overwrite}{If \code{TRUE} ignores that the columns already exist and overwrites them.
+If \code{FALSE} it throws an errors if the columns it is creating already exist (default).}
 
 \item{...}{Additional arguments (unused)}
 
-\item{date_col}{The column which contains the `<Date>` values from which
-effects will be calculated. This applies to all `temporal_effects` except
-for `seasonal`.}
+\item{date_col}{The column which contains the \verb{<Date>} values from which
+effects will be calculated. This applies to all \code{temporal_effects} except
+for \code{seasonal}.}
 
 \item{numeric_col}{The column which contains the values from which
 the seasonal effects will be calculated. This applies only to seasonal
 effects. For date-related effects (such as month or day of the week)
-use `date_col`.}
+use \code{date_col}.}
 
 \item{name_prefix}{What preffix to add to the column names}
 
 \item{weekend_days}{A character or numeric vector defining weekend days.
--Numeric: must be integers in 1-7 corresponding to [lubridate::wday()] when `week_start = 1`.
+-Numeric: must be integers in 1-7 corresponding to \code{\link[lubridate:day]{lubridate::wday()}} when \code{week_start = 1}.
 -Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
 Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).}
 
-\item{date_type}{Either `event_date` (default) or `report_date`
+\item{date_type}{Either \code{event_date} (default) or \code{report_date}
 to add temporal effects to those columns.}
 }
 \value{
-A `tbl_now` or `data.frame` containing all of the effects as new columns.
+A \code{tbl_now} or \code{data.frame} containing all of the effects as new columns.
 }
 \description{
-Takes a `tbl_now` or a `data.frame` and adds the temporal effects `t_effect` as
+Takes a \code{tbl_now} or a \code{data.frame} and adds the temporal effects \code{t_effect} as
 columns
 }
 \examples{

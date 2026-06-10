@@ -2,20 +2,20 @@
 % Please edit documentation in R/infer.R
 \name{infer_units_one_column}
 \alias{infer_units_one_column}
-\title{Automatically infer which value is `date_units` for one column.}
+\title{Automatically infer which value is \code{date_units} for one column.}
 \usage{
 infer_units_one_column(data, date_column, date_units)
 }
 \arguments{
-\item{date_column}{Name of a column of `data`
+\item{date_column}{Name of a column of \code{data}
 that contains the dates.}
 }
 \value{
-Whether the data's date_units are `days`, `weeks`, `months`, `years` or `numeric`.
+Whether the data's date_units are \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}.
 }
 \description{
 Function returns whether data is daily or weekly
-`date_column`.
+\code{date_column}.
 }
 \details{
 @inheritParams tbl_now

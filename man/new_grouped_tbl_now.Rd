@@ -7,7 +7,7 @@
 new_grouped_tbl_now(x, groups)
 }
 \arguments{
-\item{x}{A `tbl_now`}
+\item{x}{A \code{tbl_now}}
 
 \item{groups}{Column grops to group_by}
 }

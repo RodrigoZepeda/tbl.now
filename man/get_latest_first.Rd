@@ -11,11 +11,11 @@ get_latest_reported_cases(x)
 get_initial_reported_cases(x)
 }
 \arguments{
-\item{x}{A `tbl_now` object}
+\item{x}{A \code{tbl_now} object}
 }
 \description{
 Function that gets the latest (respectively first) number of cases that has
-been reported for each `event_date`
+been reported for each \code{event_date}
 }
 \examples{
 data(denguedat)

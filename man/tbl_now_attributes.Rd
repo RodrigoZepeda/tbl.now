@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{tbl_now_attributes}
 \alias{tbl_now_attributes}
-\title{Show the names of the attributes of a `tbl_now`}
+\title{Show the names of the attributes of a \code{tbl_now}}
 \usage{
 tbl_now_attributes(x)
 }
@@ -10,8 +10,8 @@ tbl_now_attributes(x)
 \item{x}{A \code{tbl_now} object}
 }
 \description{
-Shows exclusively the attributes of a `tbl_now` that are not part
-of the attributes of a `tibble` (or a grouped tibble).
+Shows exclusively the attributes of a \code{tbl_now} that are not part
+of the attributes of a \code{tibble} (or a grouped tibble).
 }
 \examples{
 data(denguedat)

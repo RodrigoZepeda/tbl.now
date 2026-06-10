@@ -4,7 +4,7 @@
 \alias{names_tbl_now}
 \alias{names<-.tbl_now}
 \alias{names<-.grouped_tbl_now}
-\title{Set names on `tbl_now` class}
+\title{Set names on \code{tbl_now} class}
 \usage{
 \method{names}{tbl_now}(x) <- value
 
@@ -17,10 +17,10 @@
     \code{NULL}.}
 }
 \value{
-A `tbl_now` object or a `data.frame`
+A \code{tbl_now} object or a \code{data.frame}
 }
 \description{
-If the modifying the names invalidates the `tbl_now` object
+If the modifying the names invalidates the \code{tbl_now} object
 the subsetting will return a data frame with the other attributes of the
 class preserved.
 }

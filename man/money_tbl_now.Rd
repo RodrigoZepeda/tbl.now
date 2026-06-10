@@ -4,14 +4,14 @@
 \alias{money_tbl_now}
 \alias{$<-.tbl_now}
 \alias{$<-.grouped_tbl_now}
-\title{Set accessor for `tbl_now` class}
+\title{Set accessor for \code{tbl_now} class}
 \usage{
 \method{$}{tbl_now}(x, name) <- value
 
 \method{$}{grouped_tbl_now}(x, name) <- value
 }
 \arguments{
-\item{x}{A `tbl_now` object}
+\item{x}{A \code{tbl_now} object}
 
 \item{name}{
     a literal character string or a \link[base]{name} (possibly \link[base]{backtick}
@@ -24,8 +24,8 @@
     \code{x}.}
 }
 \value{
-A `tbl_now` object or a `data.frame`
+A \code{tbl_now} object or a \code{data.frame}
 }
 \description{
-Set accessor for `tbl_now` class
+Set accessor for \code{tbl_now} class
 }

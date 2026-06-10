@@ -2,17 +2,17 @@
 % Please edit documentation in R/infer.R
 \name{infer_now}
 \alias{infer_now}
-\title{Automatically infer the `now`.}
+\title{Automatically infer the \code{now}.}
 \usage{
 infer_now(data, now, event_date, report_date)
 }
 \value{
-The `now` value for the nowcast which can be the last date
+The \code{now} value for the nowcast which can be the last date
 of the data or specified by the user
 }
 \description{
-Function returns the maximum onset date of `data` if `now = NULL`.
-Else it returns the `now` it was given.
+Function returns the maximum onset date of \code{data} if \code{now = NULL}.
+Else it returns the \code{now} it was given.
 }
 \details{
 @inheritParams tbl_now

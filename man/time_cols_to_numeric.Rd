@@ -20,17 +20,17 @@ time_cols_to_numeric(
 
 \item{report_date}{Name of the column corresponding to date of the report}
 
-\item{event_units}{Either `days`, `weeks`, `months`, `years` or `numeric`}
+\item{event_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}}
 
-\item{report_units}{Either `days`, `weeks`, `months`, `years` or `numeric`}
+\item{report_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}}
 }
 \value{
-The dataframe `data` with two additional columns `.event_num` and
-`.report_num` corresponding to transforming the dates to numeric.
+The dataframe \code{data} with two additional columns \code{.event_num} and
+\code{.report_num} corresponding to transforming the dates to numeric.
 }
 \description{
-Function that takes a dataframe `data` with two columns
-with names `event_date` and `report_date` which can either be
+Function that takes a dataframe \code{data} with two columns
+with names \code{event_date} and \code{report_date} which can either be
 dates or numeric. It transforms the dates
 }
 \keyword{internal}

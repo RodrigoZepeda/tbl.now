@@ -10,7 +10,7 @@ tbl_now_reconstruct_internal(data, template)
 \item{data}{A \code{data.frame} or \code{tibble} to be converted.}
 }
 \value{
-A `tbl_now` object or a `data.frame`
+A \code{tbl_now} object or a \code{data.frame}
 }
 \description{
 Reconstruct a tbl_now

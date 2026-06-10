@@ -1,12 +1,34 @@
 url: https://rodrigozepeda.github.io/tbl.now/
 
+home:
+  title: tbl.now — Tibble now
+  description: >
+    Extension of the tibble class for storing, validating, and manipulating
+    epidemiological nowcasting data.
+
 template:
   bootstrap: 5
+  includes:
+    in_header: pkgdown/extra.css
+  math-rendering: katex
+  bslib:
+    bootswatch: flatly
+    primary: "#5F7E62"      # dark sage green
+    secondary: "#A8BFA9"    # light sage
+    success: "#5F7E62"
+    danger: "#B85348"       # desaturated red
+    dark: "#262626"         # charcoal
+
 
 navbar:
   structure:
-    right: [twitter, github]
+    left:  [get_started, reference, articles, news]
+    right: [search, github, twitter]
+
   components:
+    get_started:
+      text: Get started
+      href: articles/tbl.now.html
     twitter:
       icon: fab fa-twitter
       href: https://twitter.com/rodzepeda

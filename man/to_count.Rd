@@ -10,9 +10,9 @@ to_count(x, to = NULL, ...)
 \method{to_count}{tbl_now}(x, to = NULL, ...)
 }
 \arguments{
-\item{x}{Data to be transformed from `linelist` to count data}
+\item{x}{Data to be transformed from \code{linelist} to count data}
 
-\item{to}{Either `linelist`, `count-incidence` or `count-cumulative`
+\item{to}{Either \code{linelist}, \code{count-incidence} or \code{count-cumulative}
 the resulting data-type to be created.}
 
 \item{...}{Additional arguments}
@@ -20,12 +20,13 @@ the resulting data-type to be created.}
 \description{
 This is an S3 generic. This package provides methods for the
 following classes:
-
-* `tbl_now`: takes a `tbl_now` object and creates a new column with
-name `n` of counts of observations if `data_type = "linelist"`.
+\itemize{
+\item \code{tbl_now}: takes a \code{tbl_now} object and creates a new column with
+name \code{n} of counts of observations if \code{data_type = "linelist"}.
+}
 }
 \note{
-`linelist` data cannot be reconstructed from `count-*` data. Tring
+\code{linelist} data cannot be reconstructed from \verb{count-*} data. Tring
 this will throw an error as you cannot un-count aggregated data.
 }
 \examples{

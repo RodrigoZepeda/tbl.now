@@ -15,7 +15,7 @@ check_bool(x, name)
 invisible (TRUE). Called for its side effects.
 }
 \description{
-Function that checks whether a boolean variable is `TRUE` or `FALSE`
+Function that checks whether a boolean variable is \code{TRUE} or \code{FALSE}
 }
 \examples{
 \dontrun{

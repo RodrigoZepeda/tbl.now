@@ -1,7 +1,7 @@
 Package: tbl.now
 Type: Package
 Title: Tidy Extension for Nowcasting
-Version: 0.6.4
+Version: 0.7.0
 Authors@R: 
     c(person("Rodrigo", "Zepeda-Tello", , "rzepeda17@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-4471-5270")),
@@ -19,16 +19,25 @@ Encoding: UTF-8
 LazyData: true
 Depends: 
     R (>= 4.2.0)
-Suggests: 
+Suggests:
     almanac,
+    baselinenowcast,
+    data.table,
+    epidist,
+    EpiNow2,
+    epinowcast,
+    ggplot2,
     knitr,
+    patchwork,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    tsibble
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 Imports: 
     cli,
     dplyr,
+    lifecycle,
     lubridate,
     pillar,
     rlang,
@@ -39,3 +48,4 @@ RoxygenNote: 7.3.3
 URL: https://rodrigozepeda.github.io/tbl.now/
 VignetteBuilder: knitr
 Config/Needs/website: rmarkdown
+Roxygen: list(markdown = TRUE)
