@@ -1,6 +1,6 @@
-# Check the \`now\` argument
+# Check the `now` argument
 
-Checks that the \`now\` argument is a date and within range of the data
+Checks that the `now` argument is a date and within range of the data
 
 ## Usage
 
@@ -36,5 +36,5 @@ check_now(data, event_date, report_date, now)
 
 ## Value
 
-(invisible) TRUE if the \`now\` date is achievable considering the
-\`data\` dataset and the columns \`event_date\` and \`report_date\`
+(invisible) TRUE if the `now` date is achievable considering the `data`
+dataset and the columns `event_date` and `report_date`

@@ -30,6 +30,6 @@ check_date_columns(data, event_date, report_date)
 
 ## Value
 
-\`TRUE\` (invisible) if the \`event_date\` and \`report_date\` are date
-columns present in the data and \`event_date\` \<= \`report_date\` for
-all observations. Called for its side effects
+`TRUE` (invisible) if the `event_date` and `report_date` are date
+columns present in the data and `event_date` \<= `report_date` for all
+observations. Called for its side effects

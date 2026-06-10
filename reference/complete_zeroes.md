@@ -1,6 +1,6 @@
 # Complete zeroes
 
-Takes a \`tbl.now\` object and completes observations for event_dates or
+Takes a `tbl.now` object and completes observations for event_dates or
 onset_weeks that have not been registered by each strata with a 0
 
 ## Usage
@@ -13,7 +13,7 @@ complete_zeroes(x, max_delay = NULL)
 
 - x:
 
-  A \`tbl.now\` object.
+  A `tbl.now` object.
 
 - max_delay:
 

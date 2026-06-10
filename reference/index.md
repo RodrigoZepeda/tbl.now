@@ -10,7 +10,9 @@
   Add attributes to a `tbl_now` object
 
 - [`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
-  : Add temporal effect coding to a \`tbl_now\`
+  :
+
+  Add temporal effect coding to a `tbl_now`
 
 - [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
   : Align weeks to a common weekday
@@ -22,7 +24,14 @@
 
 - [`` `[`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
   [`` `[`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
-  : Subset function for \`tbl_now\` with downgrade-on-subsetting
+  :
+
+  Subset function for `tbl_now` with downgrade-on-subsetting
+
+- [`autoplot(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.md)
+  :
+
+  Diagnostic `autoplot` for a `tbl_now`
 
 - [`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_event_date()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
@@ -39,7 +48,9 @@
   : Complete zeroes
 
 - [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
-  : Compute temporal effects for a \`tbl_now\`
+  :
+
+  Compute temporal effects for a `tbl_now`
 
 - [`covidat`](https://rodrigozepeda.github.io/tbl.now/reference/covidat.md)
   : covidat: COVID-19 reporting data from Mexico City (2020-2022)
@@ -64,14 +75,18 @@
 
 - [`` `$<-`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/money_tbl_now.md)
   [`` `$<-`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/money_tbl_now.md)
-  : Set accessor for \`tbl_now\` class
+  :
+
+  Set accessor for `tbl_now` class
 
 - [`mpoxdat`](https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.md)
   : mpoxdat: Mpox reporting data from the 2022 New York City outbreak
 
 - [`` `names<-`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/names_tbl_now.md)
   [`` `names<-`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/names_tbl_now.md)
-  : Set names on \`tbl_now\` class
+  :
+
+  Set names on `tbl_now` class
 
 - [`get_event_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_report_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
@@ -106,7 +121,44 @@
   Create a `tbl_now` object
 
 - [`tbl_now_attributes()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.md)
-  : Show the names of the attributes of a \`tbl_now\`
+  :
+
+  Show the names of the attributes of a `tbl_now`
+
+- [`tbl_now_from_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
+  [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
+  :
+
+  Convert between `tbl_now` and baselinenowcast
+
+- [`tbl_now_from_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md)
+  [`tbl_now_to_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md)
+  :
+
+  Convert between `tbl_now` and data.table
+
+- [`tbl_now_from_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+  [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+  :
+
+  Convert between `tbl_now` and epidist
+
+- [`tbl_now_from_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+  [`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+  :
+
+  Convert between `tbl_now` and epinowcast
+
+- [`tbl_now_to_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_to_EpiNow2.md)
+  :
+
+  Convert a `tbl_now` into EpiNow2 input
+
+- [`tbl_now_from_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md)
+  [`tbl_now_to_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md)
+  :
+
+  Convert between `tbl_now` and tsibble
 
 - [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
   : Temporal Effects Class
@@ -115,7 +167,9 @@
   : Transform an object to count data
 
 - [`update(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.md)
-  : Update a \`tbl_now\`
+  :
+
+  Update a `tbl_now`
 
 - [`week_2_date()`](https://rodrigozepeda.github.io/tbl.now/reference/week_2_date.md)
   : Convert epidemiological (or ISO) week/year to aligned dates

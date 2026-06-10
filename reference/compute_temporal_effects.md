@@ -1,10 +1,14 @@
-# Compute temporal effects for a \`tbl_now\`
+# Compute temporal effects for a `tbl_now`
 
-Materializes the lazy \[temporal_effects()\] specification stored in a
-\`tbl_now\` into actual columns. \[add_temporal_effects()\] and the
-\`t_effects\` argument of \[tbl_now()\] only \*record\* what should be
-computed; this function performs the computation. If no temporal effects
-have been configured the object is returned unchanged.
+Materializes the lazy
+[`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
+specification stored in a `tbl_now` into actual columns.
+[`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
+and the `t_effects` argument of
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+only *record* what should be computed; this function performs the
+computation. If no temporal effects have been configured the object is
+returned unchanged.
 
 ## Usage
 
@@ -16,26 +20,27 @@ compute_temporal_effects(x, overwrite = FALSE)
 
 - x:
 
-  A \`tbl_now\` object.
+  A `tbl_now` object.
 
 - overwrite:
 
-  Logical. When \`TRUE\`, existing columns are silently overwritten.
-  When \`FALSE\` (default) an error is thrown if a column that would be
-  created already exists.
+  Logical. When `TRUE`, existing columns are silently overwritten. When
+  `FALSE` (default) an error is thrown if a column that would be created
+  already exists.
 
 ## Value
 
-A \`tbl_now\` with the temporal-effect columns appended. The
-\`temporal_effects\` attribute (the specification) is \*\*preserved\*\*
-so the spec is always visible when printing; in addition a new internal
-attribute \`computed_temporal_effect_cols\` records the names of the
+A `tbl_now` with the temporal-effect columns appended. The
+`temporal_effects` attribute (the specification) is **preserved** so the
+spec is always visible when printing; in addition a new internal
+attribute `computed_temporal_effect_cols` records the names of the
 columns that were just created.
 
 ## See also
 
-\[add_temporal_effects()\], \[temporal_effects()\],
-\[remove_temporal_effects()\]
+[`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md),
+[`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md),
+[`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
 
 ## Examples
 

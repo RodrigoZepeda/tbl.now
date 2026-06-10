@@ -26,28 +26,33 @@ week_2_date(
 
 - week_col:
 
-  \[tidy-select\](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   column name containing epidemiological week numbers.
 
 - year_col:
 
-  \[tidy-select\](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   column name containing epidemiological year numbers.
 
 - align_on_day:
 
-  Integer 1–7 (\[lubridate::wday()\] numbering) indicating the weekday
-  to align to.
+  Integer 1–7
+  ([`lubridate::wday()`](https://lubridate.tidyverse.org/reference/day.html)
+  numbering) indicating the weekday to align to.
 
 - week_fun:
 
   Function that extracts week numbers from a date (either
-  \[lubridate::epiweek()\], \[lubridate::isoweek()\]).
+  [`lubridate::epiweek()`](https://lubridate.tidyverse.org/reference/week.html),
+  [`lubridate::isoweek()`](https://lubridate.tidyverse.org/reference/week.html)).
 
 - year_fun:
 
   Function that extracts the epidemiological/ISO year from a date
-  (either \[lubridate::epiyear()\] or \[lubridate::isoyear()\]).
+  (either
+  [`lubridate::epiyear()`](https://lubridate.tidyverse.org/reference/year.html)
+  or
+  [`lubridate::isoyear()`](https://lubridate.tidyverse.org/reference/year.html)).
 
 - date_col_name:
 
@@ -55,7 +60,7 @@ week_2_date(
 
 ## Value
 
-The given \`data.frame\` with a new date column appended.
+The given `data.frame` with a new date column appended.
 
 ## Examples
 

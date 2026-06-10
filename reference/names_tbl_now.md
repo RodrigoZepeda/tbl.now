@@ -1,6 +1,6 @@
-# Set names on \`tbl_now\` class
+# Set names on `tbl_now` class
 
-If the modifying the names invalidates the \`tbl_now\` object the
+If the modifying the names invalidates the `tbl_now` object the
 subsetting will return a data frame with the other attributes of the
 class preserved.
 
@@ -26,4 +26,4 @@ names(x) <- value
 
 ## Value
 
-A \`tbl_now\` object or a \`data.frame\`
+A `tbl_now` object or a `data.frame`

@@ -1,6 +1,6 @@
-# Automatically infer which value is \`date_units\` for one column.
+# Automatically infer which value is `date_units` for one column.
 
-Function returns whether data is daily or weekly \`date_column\`.
+Function returns whether data is daily or weekly `date_column`.
 
 ## Usage
 
@@ -12,12 +12,12 @@ infer_units_one_column(data, date_column, date_units)
 
 - date_column:
 
-  Name of a column of \`data\` that contains the dates.
+  Name of a column of `data` that contains the dates.
 
 ## Value
 
-Whether the data's date_units are \`days\`, \`weeks\`, \`months\`,
-\`years\` or \`numeric\`.
+Whether the data's date_units are `days`, `weeks`, `months`, `years` or
+`numeric`.
 
 ## Details
 

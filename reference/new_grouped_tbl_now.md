@@ -12,7 +12,7 @@ new_grouped_tbl_now(x, groups)
 
 - x:
 
-  A \`tbl_now\`
+  A `tbl_now`
 
 - groups:
 

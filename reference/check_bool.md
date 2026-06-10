@@ -1,6 +1,6 @@
 # Check a boolean value
 
-Function that checks whether a boolean variable is \`TRUE\` or \`FALSE\`
+Function that checks whether a boolean variable is `TRUE` or `FALSE`
 
 ## Usage
 

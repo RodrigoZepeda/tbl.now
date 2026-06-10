@@ -16,4 +16,4 @@ tbl_now_reconstruct_internal(data, template)
 
 ## Value
 
-A \`tbl_now\` object or a \`data.frame\`
+A `tbl_now` object or a `data.frame`

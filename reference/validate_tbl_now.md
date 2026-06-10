@@ -1,6 +1,6 @@
 # Validate a tbl_now object
 
-Checks that an object is a properly constructed \`tbl_now\` with all
+Checks that an object is a properly constructed `tbl_now` with all
 required attributes and valid data.
 
 ## Usage
@@ -28,7 +28,7 @@ validate_tbl_now(x, warn_non_uniqueness = FALSE, warn_now = TRUE)
 
 ## Value
 
-Returns \`TRUE\` invisibly or throws an error. Called for its side
+Returns `TRUE` invisibly or throws an error. Called for its side
 effects.
 
 ## Examples

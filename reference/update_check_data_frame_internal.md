@@ -12,13 +12,13 @@ update_check_data_frame_internal(object, new_data)
 
 - object:
 
-  A \`tbl_now\` object
+  A `tbl_now` object
 
 - new_data:
 
-  Another \`tbl_now\` with the same \`strata\`, \`covariates\`,
-  \`is_censored\`, and \`temporal_effects\` or a \`data.frame\` with
-  additional (newer) data not present in \`x\`
+  Another `tbl_now` with the same `strata`, `covariates`, `is_censored`,
+  and `temporal_effects` or a `data.frame` with additional (newer) data
+  not present in `x`
 
 ## Value
 

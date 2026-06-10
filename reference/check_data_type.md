@@ -18,5 +18,5 @@ check_data_type(data_type)
 
 ## Value
 
-\`TRUE\` (invisible) if the data_type is one of the valid types for the
+`TRUE` (invisible) if the data_type is one of the valid types for the
 model's inference.

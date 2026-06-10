@@ -1,7 +1,7 @@
 # Get the latest/first reported cases for each event date
 
 Function that gets the latest (respectively first) number of cases that
-has been reported for each \`event_date\`
+has been reported for each `event_date`
 
 ## Usage
 
@@ -15,7 +15,7 @@ get_initial_reported_cases(x)
 
 - x:
 
-  A \`tbl_now\` object
+  A `tbl_now` object
 
 ## Examples
 

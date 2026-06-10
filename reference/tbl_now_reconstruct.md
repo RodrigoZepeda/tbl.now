@@ -1,8 +1,9 @@
-# Decides whether \`tbl_now\` object can be reconstructed from input
+# Decides whether `tbl_now` object can be reconstructed from input
 
-Uses \[\`tbl_now_reconstruct_internal()\`\] to determine whether the
-data input can be reconstructed in a valid \`tbl_now\` object. If it can
-not, it is returned as a \`data.frame\`.
+Uses
+[`tbl_now_reconstruct_internal()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_reconstruct_internal.md)
+to determine whether the data input can be reconstructed in a valid
+`tbl_now` object. If it can not, it is returned as a `data.frame`.
 
 ## Usage
 
@@ -18,4 +19,4 @@ tbl_now_reconstruct(data, template)
 
 ## Value
 
-A \`tbl_now\` object (if the input is valid) or a \`data.frame\`
+A `tbl_now` object (if the input is valid) or a `data.frame`

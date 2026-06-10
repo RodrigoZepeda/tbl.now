@@ -13,6 +13,21 @@ as_tbl_now(object, event_date, report_date, ...)
 
 # S3 method for class 'data.frame'
 as_tbl_now(object, event_date, report_date, ...)
+
+# S3 method for class 'enw_preprocess_data'
+as_tbl_now(object, event_date, report_date, ...)
+
+# S3 method for class 'reporting_triangle'
+as_tbl_now(object, event_date, report_date, ...)
+
+# S3 method for class 'epidist_linelist_data'
+as_tbl_now(object, event_date, report_date, ...)
+
+# S3 method for class 'tbl_ts'
+as_tbl_now(object, event_date, report_date, ...)
+
+# S3 method for class 'data.table'
+as_tbl_now(object, event_date, report_date, ...)
 ```
 
 ## Arguments

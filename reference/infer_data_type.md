@@ -1,7 +1,7 @@
-# Automatically infer the \`data_type\`
+# Automatically infer the `data_type`
 
 Infers whether the data is line-data or count-data whether it has (or
-has not) a column named \`n\`
+has not) a column named `n`
 
 ## Usage
 
@@ -77,4 +77,4 @@ infer_data_type(
 
 ## Value
 
-Whether the data is \`count\` or \`linelist\`
+Whether the data is `count` or `linelist`

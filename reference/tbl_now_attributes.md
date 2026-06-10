@@ -1,7 +1,7 @@
-# Show the names of the attributes of a \`tbl_now\`
+# Show the names of the attributes of a `tbl_now`
 
-Shows exclusively the attributes of a \`tbl_now\` that are not part of
-the attributes of a \`tibble\` (or a grouped tibble).
+Shows exclusively the attributes of a `tbl_now` that are not part of the
+attributes of a `tibble` (or a grouped tibble).
 
 ## Usage
 

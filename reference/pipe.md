@@ -1,6 +1,6 @@
 # Pipe operator
 
-See `magrittr::%>%` for details.
+See `magrittr::[\%>\%][magrittr::pipe]` for details.
 
 ## Usage
 
@@ -20,4 +20,4 @@ lhs %>% rhs
 
 ## Value
 
-The result of calling \`rhs(lhs)\`.
+The result of calling `rhs(lhs)`.

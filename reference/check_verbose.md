@@ -1,6 +1,6 @@
-# Check the \`verbose\` argument among the options
+# Check the `verbose` argument among the options
 
-Check the \`verbose\` argument among the options
+Check the `verbose` argument among the options
 
 ## Usage
 
@@ -16,4 +16,4 @@ check_verbose(verbose)
 
 ## Value
 
-(invisible) \`TRUE\` if the verbose argument is valid
+(invisible) `TRUE` if the verbose argument is valid

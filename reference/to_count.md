@@ -3,8 +3,8 @@
 This is an S3 generic. This package provides methods for the following
 classes:
 
-\* \`tbl_now\`: takes a \`tbl_now\` object and creates a new column with
-name \`n\` of counts of observations if \`data_type = "linelist"\`.
+- `tbl_now`: takes a `tbl_now` object and creates a new column with name
+  `n` of counts of observations if `data_type = "linelist"`.
 
 ## Usage
 
@@ -19,11 +19,11 @@ to_count(x, to = NULL, ...)
 
 - x:
 
-  Data to be transformed from \`linelist\` to count data
+  Data to be transformed from `linelist` to count data
 
 - to:
 
-  Either \`linelist\`, \`count-incidence\` or \`count-cumulative\` the
+  Either `linelist`, `count-incidence` or `count-cumulative` the
   resulting data-type to be created.
 
 - ...:
@@ -32,8 +32,8 @@ to_count(x, to = NULL, ...)
 
 ## Note
 
-\`linelist\` data cannot be reconstructed from \`count-\*\` data. Tring
-this will throw an error as you cannot un-count aggregated data.
+`linelist` data cannot be reconstructed from `count-*` data. Tring this
+will throw an error as you cannot un-count aggregated data.
 
 ## Examples
 

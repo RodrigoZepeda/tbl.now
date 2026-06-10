@@ -1,7 +1,7 @@
-# Automatically infer the \`now\`.
+# Automatically infer the `now`.
 
-Function returns the maximum onset date of \`data\` if \`now = NULL\`.
-Else it returns the \`now\` it was given.
+Function returns the maximum onset date of `data` if `now = NULL`. Else
+it returns the `now` it was given.
 
 ## Usage
 
@@ -11,7 +11,7 @@ infer_now(data, now, event_date, report_date)
 
 ## Value
 
-The \`now\` value for the nowcast which can be the last date of the data
+The `now` value for the nowcast which can be the last date of the data
 or specified by the user
 
 ## Details

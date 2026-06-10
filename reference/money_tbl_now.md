@@ -1,6 +1,6 @@
-# Set accessor for \`tbl_now\` class
+# Set accessor for `tbl_now` class
 
-Set accessor for \`tbl_now\` class
+Set accessor for `tbl_now` class
 
 ## Usage
 
@@ -16,7 +16,7 @@ x$name <- value
 
 - x:
 
-  A \`tbl_now\` object
+  A `tbl_now` object
 
 - name:
 
@@ -33,4 +33,4 @@ x$name <- value
 
 ## Value
 
-A \`tbl_now\` object or a \`data.frame\`
+A `tbl_now` object or a `data.frame`

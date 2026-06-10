@@ -15,6 +15,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/attr_default.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/change.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/check_bool.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/check_data_type.html</loc></url>
@@ -52,9 +53,15 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl.now-package.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_can_reconstruct.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_reconstruct.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_reconstruct_internal.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_to_EpiNow2.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/time_cols_to_numeric.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/to_count.html</loc></url>

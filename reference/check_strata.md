@@ -1,6 +1,6 @@
 # Check the strata columns
 
-The \`strata\` columns should be present in the data and should be
+The `strata` columns should be present in the data and should be
 character, integers, or factors.
 
 ## Usage
@@ -26,5 +26,5 @@ check_strata(data, strata)
 
 ## Value
 
-(invisible) \`TRUE\` if the columns in \`strata\` are NULL or are
-character, integers, or factors in the tibble \`data\`.
+(invisible) `TRUE` if the columns in `strata` are NULL or are character,
+integers, or factors in the tibble `data`.

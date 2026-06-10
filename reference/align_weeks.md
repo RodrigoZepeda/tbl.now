@@ -1,9 +1,9 @@
 # Align weeks to a common weekday
 
-Aligns all dates in either a \`data.frame\` or a \`tbl.now\` so that
-week boundaries occur on a specified day of the week. This is useful in
-the context of nowcasting for cases when weekly reports are changed from
-say Wednesday to Thursday so that delays don't have a decimal point.
+Aligns all dates in either a `data.frame` or a `tbl.now` so that week
+boundaries occur on a specified day of the week. This is useful in the
+context of nowcasting for cases when weekly reports are changed from say
+Wednesday to Thursday so that delays don't have a decimal point.
 
 ## Usage
 
@@ -28,18 +28,21 @@ align_weeks(.data, align_on_day = 1, type = "epi", ...)
 
 - .data:
 
-  A \`data.frame\` or tibble.
+  A `data.frame` or tibble.
 
 - align_on_day:
 
   Integer 1–7 indicating the weekday to align to. Uses
-  \[lubridate::wday()\] numbering (1 = Sunday, 7 = Saturday).
+  [`lubridate::wday()`](https://lubridate.tidyverse.org/reference/day.html)
+  numbering (1 = Sunday, 7 = Saturday).
 
 - type:
 
-  Either \`"epi"\` (default) or \`"iso"\`. Determines which week/year
-  functions to use whether \[lubridate::epiweek()\] or
-  \[lubridate::isoweek()\]
+  Either `"epi"` (default) or `"iso"`. Determines which week/year
+  functions to use whether
+  [`lubridate::epiweek()`](https://lubridate.tidyverse.org/reference/week.html)
+  or
+  [`lubridate::isoweek()`](https://lubridate.tidyverse.org/reference/week.html)
 
 - ...:
 
@@ -48,26 +51,26 @@ align_weeks(.data, align_on_day = 1, type = "epi", ...)
 - date_col:
 
   A
-  \[tidy-select\](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   column name containing dates.
 
 - new_date_col:
 
   Name of the new aligned date column to be created. By default it
-  creates a column named \`{date_col}\_aligned\` where \`date_col\`
+  creates a column named `\{date_col\}_aligned` where `date_col`
   corresponds to the column name passed to that parameter.
 
 ## Value
 
-A tibble identical to \`.data\` but with an added aligned date column.
+A tibble identical to `.data` but with an added aligned date column.
 
 ## Details
 
 In some cases, to calculate the delay of information, what matters is
 the week distance (reports from week 3 in week 7) and not the specific
 date distance (reports from Saturday of week 3 vs Monday in week 7). The
-\`align_weeks\` function ensures that all week reports are aligned to
-the same day of the week (if applied to a \`tbl_now\`) or
+`align_weeks` function ensures that all week reports are aligned to the
+same day of the week (if applied to a `tbl_now`) or
 
 ## Note
 

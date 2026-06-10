@@ -1,12 +1,14 @@
 # Print temporal effects
 
-Print function for printing the a \[temporal_effects()\].
+Print function for printing the a
+[`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md).
 
 ## Arguments
 
 - x:
 
-  A temporal_effects object created with \[temporal_effects()\]
+  A temporal_effects object created with
+  [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
 
 - ...:
 

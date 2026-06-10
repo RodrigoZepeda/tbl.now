@@ -1,7 +1,7 @@
-# Add temporal effect coding to a \`tbl_now\`
+# Add temporal effect coding to a `tbl_now`
 
-Takes a \`tbl_now\` or a \`data.frame\` and adds the temporal effects
-\`t_effect\` as columns
+Takes a `tbl_now` or a `data.frame` and adds the temporal effects
+`t_effect` as columns
 
 ## Usage
 
@@ -35,18 +35,19 @@ add_temporal_effects(
 
 - x:
 
-  A \`tbl_now\` object or a \`data.frame\`.
+  A `tbl_now` object or a `data.frame`.
 
 - t_effects:
 
-  A \[temporal_effects()\] object codifying the temporal effects to be
-  used.
+  A
+  [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
+  object codifying the temporal effects to be used.
 
 - overwrite:
 
-  If \`TRUE\` ignores that the columns already exist and overwrites
-  them. If \`FALSE\` it throws an errors if the columns it is creating
-  already exist (default).
+  If `TRUE` ignores that the columns already exist and overwrites them.
+  If `FALSE` it throws an errors if the columns it is creating already
+  exist (default).
 
 - ...:
 
@@ -54,16 +55,16 @@ add_temporal_effects(
 
 - date_col:
 
-  The column which contains the \`\<Date\>\` values from which effects
-  will be calculated. This applies to all \`temporal_effects\` except
-  for \`seasonal\`.
+  The column which contains the `<Date>` values from which effects will
+  be calculated. This applies to all `temporal_effects` except for
+  `seasonal`.
 
 - numeric_col:
 
   The column which contains the values from which the seasonal effects
   will be calculated. This applies only to seasonal effects. For
   date-related effects (such as month or day of the week) use
-  \`date_col\`.
+  `date_col`.
 
 - name_prefix:
 
@@ -72,19 +73,20 @@ add_temporal_effects(
 - weekend_days:
 
   A character or numeric vector defining weekend days. -Numeric: must be
-  integers in 1-7 corresponding to \[lubridate::wday()\] when
-  \`week_start = 1\`. -Character: any of c("Mon","Tuesday","wed",...)
+  integers in 1-7 corresponding to
+  [`lubridate::wday()`](https://lubridate.tidyverse.org/reference/day.html)
+  when `week_start = 1`. -Character: any of c("Mon","Tuesday","wed",...)
   case-insensitive. Defaults to Saturday and Sunday (weekend_days =
   c("Sat", "Sun")).
 
 - date_type:
 
-  Either \`event_date\` (default) or \`report_date\` to add temporal
-  effects to those columns.
+  Either `event_date` (default) or `report_date` to add temporal effects
+  to those columns.
 
 ## Value
 
-A \`tbl_now\` or \`data.frame\` containing all of the effects as new
+A `tbl_now` or `data.frame` containing all of the effects as new
 columns.
 
 ## Examples

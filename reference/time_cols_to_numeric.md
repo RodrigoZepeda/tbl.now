@@ -1,8 +1,8 @@
 # Report and event units to numeric
 
-Function that takes a dataframe \`data\` with two columns with names
-\`event_date\` and \`report_date\` which can either be dates or numeric.
-It transforms the dates
+Function that takes a dataframe `data` with two columns with names
+`event_date` and `report_date` which can either be dates or numeric. It
+transforms the dates
 
 ## Usage
 
@@ -33,13 +33,13 @@ time_cols_to_numeric(
 
 - event_units:
 
-  Either \`days\`, \`weeks\`, \`months\`, \`years\` or \`numeric\`
+  Either `days`, `weeks`, `months`, `years` or `numeric`
 
 - report_units:
 
-  Either \`days\`, \`weeks\`, \`months\`, \`years\` or \`numeric\`
+  Either `days`, `weeks`, `months`, `years` or `numeric`
 
 ## Value
 
-The dataframe \`data\` with two additional columns \`.event_num\` and
-\`.report_num\` corresponding to transforming the dates to numeric.
+The dataframe `data` with two additional columns `.event_num` and
+`.report_num` corresponding to transforming the dates to numeric.

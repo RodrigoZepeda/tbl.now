@@ -1,7 +1,7 @@
-# Update a \`tbl_now\`
+# Update a `tbl_now`
 
-Updates a \`tbl_now\` object with new observations either from another
-\`tbl_now\` or a \`data.frame\`
+Updates a `tbl_now` object with new observations either from another
+`tbl_now` or a `data.frame`
 
 ## Usage
 
@@ -23,32 +23,32 @@ update(
 
 - object:
 
-  A \`tbl_now\` object
+  A `tbl_now` object
 
 - ...:
 
-  Additional arguments to pass to \`tbl_now\`
+  Additional arguments to pass to `tbl_now`
 
 - new_data:
 
-  Another \`tbl_now\` with the same \`strata\`, \`covariates\`,
-  \`is_censored\`, and \`temporal_effects\` or a \`data.frame\` with
-  additional (newer) data not present in \`x\`
+  Another `tbl_now` with the same `strata`, `covariates`, `is_censored`,
+  and `temporal_effects` or a `data.frame` with additional (newer) data
+  not present in `x`
 
 - strata:
 
-  (optional) Whether to keep the strata from \`object\` ("left"), from
-  \`new_data\` ("right") or from \`both\` ("both")
+  (optional) Whether to keep the strata from `object` ("left"), from
+  `new_data` ("right") or from `both` ("both")
 
 - covariates:
 
-  (optional) Whether to keep the covariates from \`object\` ("left"),
-  from \`new_data\` ("right") or from \`both\` ("both")
+  (optional) Whether to keep the covariates from `object` ("left"), from
+  `new_data` ("right") or from `both` ("both")
 
 - t_effects:
 
-  (optional) Whether to keep the temporal_effects from \`object\`
-  ("left"), from \`new_data\` ("right") or from \`both\` ("both")
+  (optional) Whether to keep the temporal_effects from `object`
+  ("left"), from `new_data` ("right") or from `both` ("both")
 
 - now:
 
@@ -58,18 +58,18 @@ update(
 
 - remove_duplicates:
 
-  Whether to remove duplicated rows from data (only applies for
-  \`count\` data)
+  Whether to remove duplicated rows from data (only applies for `count`
+  data)
 
 ## Value
 
-A \`tbl_now\` object with all the properties of \`object\`
+A `tbl_now` object with all the properties of `object`
 
 ## Note
 
 By default it keeps the strata, covariates and temporal effects of
-\`object\`. Use the \`strata\`, \`covariates\` and \`t_effects\`
-arguments to change it.
+`object`. Use the `strata`, `covariates` and `t_effects` arguments to
+change it.
 
 ## Examples
 

@@ -1,6 +1,6 @@
-# Subset function for \`tbl_now\` with downgrade-on-subsetting
+# Subset function for `tbl_now` with downgrade-on-subsetting
 
-IF the subsetting invalidates the class then a \`data.frame\` will be
+IF the subsetting invalidates the class then a `data.frame` will be
 returned.
 
 ## Usage
@@ -17,7 +17,7 @@ x[...]
 
 - x:
 
-  A \`tbl_now\` object
+  A `tbl_now` object
 
 - ...:
 
@@ -25,4 +25,4 @@ x[...]
 
 ## Value
 
-A \`tbl_now\` object or a \`data.frame\`
+A `tbl_now` object or a `data.frame`

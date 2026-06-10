@@ -16,7 +16,7 @@ is_tbl_now(x)
 
 ## Value
 
-(boolean) \`TRUE\` if object is a \`tbl_now\` \`FALSE\` if not.
+(boolean) `TRUE` if object is a `tbl_now` `FALSE` if not.
 
 ## Examples
 

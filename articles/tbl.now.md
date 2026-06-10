@@ -937,6 +937,44 @@ df_updated
 #> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
+## Visualizing a `tbl_now`
+
+The
+[autoplot()](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html)
+method gives a quick four-panel diagnostic overview of a `tbl_now`.
+Using [ggplot2](https://ggplot2.tidyverse.org/) and
+[patchwork](https://patchwork.data-imaginist.com/), it shows:
+
+1.  **Empirical delay distribution**: a case-count weighted histogram of
+    the reporting delay.
+2.  **Observed epidemic process**: the latest reported counts per
+    `event_date`.
+3.  **Calendar effect**: boxplots of the *normalized* effect (each event
+    date’s cases divided by the overall mean, so 1 is average), built
+    directly from the data.
+4.  **Seasonality** — a periodogram of the incidence series whose
+    dominant peak suggests a Fourier season length to pass to
+    [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html).
+
+``` r
+
+library(ggplot2)
+library(patchwork)
+
+dengue_now <- tbl_now(denguedat,
+                      event_date  = "onset_week",
+                      report_date = "report_week",
+                      verbose     = FALSE)
+
+autoplot(dengue_now)
+```
+
+![](tbl.now_files/figure-html/autoplot-1.png)
+
+For the weekly dengue data the periodogram peaks near 52 weeks,
+suggesting an annual cycle. We could capture this with a Fourier term of
+`temporal_effects(seasons = 52)`.
+
 ## Other functions (utilities)
 
 ### Convert epidemiological weeks to dates
@@ -1147,6 +1185,113 @@ complete_zeroes(ndata)
 
 Which looks at all the possible report dates and event dates and sets
 the counts to zero if they have not been observed.
+
+### Converting to data formats from other packages
+
+> **NOTE** This is still work in progress
+
+`tbl.now` ships converters that move data between a `tbl_now` and the
+data structures used by other nowcasting and delay-estimation packages.
+They all follow the same naming convention:
+
+- `tbl_now_from_*()` builds a `tbl_now` (it wraps
+  [as_tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.html),
+  so `...` is forwarded to
+  [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)).
+
+- `tbl_now_to_*()` converts a `tbl_now` into that package’s native
+  object.
+
+Each function accepts a `verbose` argument that reports the choices it
+made (the inferred `now`, the data type, the units, the column mapping,
+and so on). The supported packages —
+[epinowcast](https://package.epinowcast.org/),
+[baselinenowcast](https://baselinenowcast.epinowcast.org/),
+[EpiNow2](https://epiforecasts.io/EpiNow2/),
+[epidist](https://epidist.epinowcast.org/),
+[data.table](https://rdatatable.gitlab.io/data.table/) and
+[tsibble](https://tsibble.tidyverts.org/) — are all optional
+(`Suggests`).
+
+| Package | `from` | `to` | Maps to |
+|----|----|----|----|
+| `epinowcast` | yes | yes | `count-cumulative` (`reference_date`, `report_date`, `confirm`) |
+| `baselinenowcast` | yes | yes | `count-incidence` (long data frame or reporting-triangle matrix) |
+| `EpiNow2` | — | yes | a single `date`/`confirm` incidence series |
+| `data.table` | yes | yes | any data type |
+| `epidist` | yes | yes | `linelist` (primary/secondary event dates) |
+| `tsibble` | yes | yes | a `tbl_ts` (one date as index, the other date + strata as key) |
+
+The object produced by any `tbl_now_to_*()` can be converted straight
+back with
+[as_tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.html),
+which has methods for each of these classes:
+
+``` r
+
+dengue_now <- tbl_now(denguedat, event_date = "onset_week",
+                      report_date = "report_week", strata = "gender",
+                      verbose = FALSE)
+
+# tbl_now -> tsibble -> tbl_now
+dengue_ts <- tbl_now_to_tsibble(dengue_now, verbose = FALSE)
+#> Warning: tsibble requires unique index/key rows; aggregating linelist to
+#> "count-incidence" with `to_count()`.
+as_tbl_now(dengue_ts, event_date = "onset_week", verbose = FALSE)
+#> # A tibble:  8,265 × 7
+#> # Data type: "linelist"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>    onset_week   report_week   gender       n .event_num .report_num .delay
+#>    <date>       <date>        <chr>    <int>      <dbl>       <dbl>  <dbl>
+#>    [event_date] [report_date] [strata] [...]      [...]       [...]  [...]
+#>  1 1990-01-01   1990-01-01    Female       2          0           0      0
+#>  2 1990-01-01   1990-01-08    Female      13          0           1      1
+#>  3 1990-01-01   1990-01-15    Female      16          0           2      2
+#>  4 1990-01-01   1990-01-22    Female       7          0           3      3
+#>  5 1990-01-01   1990-03-05    Female       1          0           9      9
+#>  6 1990-01-01   1990-01-01    Male         1          0           0      0
+#>  7 1990-01-01   1990-01-08    Male        11          0           1      1
+#>  8 1990-01-01   1990-01-15    Male         7          0           2      2
+#>  9 1990-01-01   1990-01-22    Male         1          0           3      3
+#> 10 1990-01-01   1990-01-29    Male         1          0           4      4
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
+#> # Strata: "gender"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 8,255 more rows
+```
+
+For example, the [epinowcast](https://package.epinowcast.org/)
+hospitalization data ships in long cumulative format and converts
+straight into a `count-cumulative` `tbl_now`:
+
+``` r
+
+germany_hospitalizations <- head(epinowcast::germany_covid19_hosp, 1000)
+
+hospitalizations_now <- tbl_now_from_epinowcast(
+  germany_hospitalizations,
+  strata = c("location", "age_group")
+)
+
+hospitalizations_now
+```
+
+Going the other way,
+[`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+returns an `enw_preprocess_data` object ready for
+[epinowcast::epinowcast()](https://package.epinowcast.org/reference/epinowcast.html):
+
+``` r
+
+epinowcast_object <- tbl_now_to_epinowcast(hospitalizations_now, verbose = FALSE)
+class(epinowcast_object)
+```
+
+The same pattern works for the other packages, for example
+[`tbl_now_to_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_to_EpiNow2.md)
+collapses the object into the single `date`/`confirm` time series that
+[EpiNow2](https://epiforecasts.io/EpiNow2/) expects.
 
 ## References
 

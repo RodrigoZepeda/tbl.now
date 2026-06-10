@@ -1,6 +1,6 @@
-# Check the \`date_units\` argument
+# Check the `date_units` argument
 
-Check the \`date_units\` argument
+Check the `date_units` argument
 
 ## Usage
 
@@ -16,4 +16,4 @@ check_units(data, date_units)
 
 ## Value
 
-(invisible) \`TRUE\` if the date_units are valid or NULL
+(invisible) `TRUE` if the date_units are valid or NULL

@@ -1,10 +1,11 @@
 # Tibble now (tbl.now)
 
-`tbl.now` provides a lightweight but rigorous extension of the tibble
-class for storing, validating, and manipulating epidemiological
-nowcasting data. It standardizes the representation of event dates,
-report dates, strata, temporal covariates, and data types (linelist,
-incidence, and cumulative), ensuring that downstream models within the
+[`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) provides an
+extension of the [`tibble()`](https://tibble.tidyverse.org/) for
+storing, validating, and manipulating epidemiological nowcasting data.
+It standardizes the representation of event dates, report dates, strata,
+temporal covariates, and data types (linelist and cumulative), ensuring
+that downstream models within the
 [`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/)
 ecosystem can rely on a consistent interface.
 
@@ -278,6 +279,29 @@ Retrieve the current active nowcast horizon:
 get_now(df_pruned)
 #> [1] "2023-12-26"
 ```
+
+## Visualizing a `tbl_now`
+
+The
+[autoplot()](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html)
+method gives a quick diagnostic overview of a `tbl_now`.
+
+``` r
+
+library(ggplot2)
+library(patchwork)
+data("flusight")
+
+flusight_now <- tbl_now(flusight,
+                      event_date  = target_end_date,
+                      report_date = as_of,
+                      case_count = observation,
+                      verbose     = FALSE)
+
+autoplot(flusight_now, level = 1)
+```
+
+![](reference/figures/README-autoplot-1.png)
 
 ## Learning more
 

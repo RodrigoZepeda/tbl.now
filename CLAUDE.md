@@ -272,6 +272,55 @@ data(mpoxdat)     # mpox count-incidence data
 
 ------------------------------------------------------------------------
 
+## Interop Converters (`R/converters.R`)
+
+Convert to/from other nowcasting packages. File is organised: helpers →
+all `tbl_now_from_*()` → all `tbl_now_to_*()` → `as_tbl_now.*` methods.
+`tbl_now_from_*()` wrap
+[`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+(so `...` is forwarded to
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md));
+`tbl_now_to_*()` call into the target package (guarded by
+`requireNamespace`). All take `verbose = TRUE` which prints the chosen
+`now`, data type, units, strata, mapping, etc. The target packages are
+in **Suggests** (`epinowcast`, `baselinenowcast`, `EpiNow2`, `epidist`,
+`data.table`, `tsibble`).
+[`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+has methods for the to\_\* output classes (`enw_preprocess_data`,
+`reporting_triangle`, `epidist_linelist_data`, `tbl_ts`, `data.table`)
+for round-tripping. `.build_tbl_now()` strips reserved generated columns
+(`.event_num/.report_num/.delay`) so round-trips don’t error.
+
+| Package | from | to | Mapping |
+|----|----|----|----|
+| epinowcast | ✅ | ✅ | `reference_date`/`report_date`/`confirm` ↔︎ count-cumulative; strata auto-detected; `to` builds `enw_preprocess_data` (or completed `data.table` with `preprocess=FALSE`) |
+| baselinenowcast | ✅ | ✅ | long df **or** reporting-triangle matrix ↔︎ count-incidence; `to` has `format=c("long","matrix")` |
+| EpiNow2 | ❌ | ✅ | `to` only — collapses to a single `date`/`confirm` series (latest reported counts); single time index, no `from` |
+| data.table | ✅ | ✅ | function names use underscores: [`tbl_now_from_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md) / [`tbl_now_to_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md) |
+| epidist | ✅ | ✅ | epidist 0.4.0 interval-censored dates (`pdate_lwr/upr`, `sdate_lwr/upr`); `format="linelist"` uses lower bounds as dates; `format="interval"` attaches upper bounds as covariates (warns) |
+| tsibble | ✅ | ✅ | `to` builds a `tbl_ts` with `index=` (default `report_date`) and key = other date + strata; linelist auto-aggregated to count-incidence. `from` needs `event_date`; `report_date` defaults to the tsibble index; strata recovered from key vars |
+
+------------------------------------------------------------------------
+
+## Plotting (`R/autoplot.R`)
+
+`autoplot(x)` (registered for
+[`ggplot2::autoplot`](https://ggplot2.tidyverse.org/reference/autoplot.html),
+deps `ggplot2`+`patchwork` in Suggests) returns a 4-panel `patchwork`
+diagnostic: 1. weighted kernel density of `.delay`; 2. observed epidemic
+process (`get_latest_reported_cases` by event_date) + dashed
+incompleteness line at `now - weighted_quantile(delay, level)`
+(`level=0.95` default); 3. day-of-week / week-of-year / month bars
+depending on
+[`get_event_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md);
+4. periodogram
+([`stats::spec.pgram`](https://rdrr.io/r/stats/spec.pgram.html)) whose
+peak period suggests a Fourier `seasons`.
+
+Override colours with the `palette` arg (default `.tbl_now_palette()`).
+
+------------------------------------------------------------------------
+
 ## Typical Workflow
 
 ``` r
