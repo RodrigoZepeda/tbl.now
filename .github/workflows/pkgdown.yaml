@@ -35,6 +35,8 @@ jobs:
         with:
           extra-packages: any::pkgdown, local::.
           needs: website
+          # epidist / epinowcast (and their dep primarycensored) are not on CRAN
+          extra-repositories: https://epinowcast.r-universe.dev
 
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)

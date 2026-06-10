@@ -31,15 +31,6 @@ jobs:
 
     steps:
 
-    - name: Set repositories
-        run: |
-          options(
-            repos = c(
-              epinowcast = "https://epinowcast.r-universe.dev",
-              CRAN = "https://cloud.r-project.org"
-            )
-          )
-
       - uses: actions/checkout@v4
 
       - uses: r-lib/actions/setup-pandoc@v2
@@ -54,6 +45,8 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
+          # epidist / epinowcast (and their dep primarycensored) are not on CRAN
+          extra-repositories: https://epinowcast.r-universe.dev
 
       - uses: r-lib/actions/check-r-package@v2
         with:

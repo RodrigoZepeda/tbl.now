@@ -26,6 +26,8 @@ jobs:
         with:
           extra-packages: any::covr, any::xml2
           needs: coverage
+          # epidist / epinowcast (and their dep primarycensored) are not on CRAN
+          extra-repositories: https://epinowcast.r-universe.dev
 
       - name: Test coverage
         run: |
