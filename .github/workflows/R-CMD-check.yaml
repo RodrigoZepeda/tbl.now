@@ -30,6 +30,16 @@ jobs:
       R_KEEP_PKG_SOURCE: yes
 
     steps:
+
+    - name: Set repositories
+        run: |
+          options(
+            repos = c(
+              epinowcast = "https://epinowcast.r-universe.dev",
+              CRAN = "https://cloud.r-project.org"
+            )
+          )
+
       - uses: actions/checkout@v4
 
       - uses: r-lib/actions/setup-pandoc@v2

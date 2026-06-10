@@ -60,13 +60,15 @@ event dates that fall on a holiday are marked with red dots in panel 2.
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \examples{
-\dontshow{if (requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("patchwork", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+\dontshow{if (requireNamespace("patchwork", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
 dengue <- tbl_now(denguedat, event_date = "onset_week",
                   report_date = "report_week", verbose = FALSE)
-ggplot2::autoplot(dengue)
+autoplot(dengue)
 
 # Zoom the delay panel to delays of 0-10 weeks
-ggplot2::autoplot(dengue, delay_distribution_xlim = c(0, 10))
+if (FALSE){
+  autoplot(dengue, delay_distribution_xlim = c(0, 10))
+}
 \dontshow{\}) # examplesIf}
 }

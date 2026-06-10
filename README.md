@@ -28,8 +28,8 @@ ecosystem can rely on a consistent interface.
 Install the development version from [GitHub](https://github.com/):
 
 ``` r
-# install.packages("remotes")
-remotes::install_github("RodrigoZepeda/tbl.now")
+# install.packages("pak") # <- uncomment if you do not have `pak`
+pak::pkg_install("RodrigoZepeda/tbl.now")
 ```
 
 Load the package:

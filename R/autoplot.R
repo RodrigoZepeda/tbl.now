@@ -187,7 +187,6 @@
 .tbl_now_panel_calendar <- function(epidemic_process, grouping, palette) {
 
   overall_mean <- mean(epidemic_process$case_count, na.rm = TRUE)
-  overall_sd   <- sd(epidemic_process$case_count, na.rm = TRUE)
   if (is.na(overall_mean) || overall_mean == 0) {
     return(.tbl_now_empty_panel("No cases to compute a calendar effect", palette))
   }
@@ -216,7 +215,7 @@
   }
 
   plot_data <- dplyr::mutate(grouped,
-                             normalized_effect = (.data$case_count - overall_mean) / overall_sd)
+                             normalized_effect = .data$case_count / overall_mean)
 
   ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$calendar_group, y = .data$normalized_effect)) +
     ggplot2::geom_boxplot(
@@ -349,15 +348,16 @@
 #'
 #' @return A \pkg{patchwork} object combining the four panels.
 #'
-#' @examplesIf requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("patchwork", quietly = TRUE)
+#' @examplesIf requireNamespace("patchwork", quietly = TRUE)
 #' data(denguedat)
 #' dengue <- tbl_now(denguedat, event_date = "onset_week",
 #'                   report_date = "report_week", verbose = FALSE)
-#' ggplot2::autoplot(dengue)
+#' autoplot(dengue)
 #'
 #' # Zoom the delay panel to delays of 0-10 weeks
-#' ggplot2::autoplot(dengue, delay_distribution_xlim = c(0, 10))
-#'
+#' if (FALSE){
+#'   autoplot(dengue, delay_distribution_xlim = c(0, 10))
+#' }
 #' @importFrom rlang .data
 #' @importFrom ggplot2 autoplot
 #' @exportS3Method ggplot2::autoplot
