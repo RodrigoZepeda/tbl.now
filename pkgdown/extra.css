@@ -14,11 +14,11 @@
 }
 
 .navbar .submenu {
-  background-color: #B85348; /* Changes the background color */
+  background-color: #B85348 !important; /* Changes the background color */
 }
 
 [data-bs-theme="dark"] .navbar .submenu {
-  background-color: #C55F53; /* Changes the background color */
+  background-color: #C55F53 !important; /* Changes the background color */
 }
 
 
