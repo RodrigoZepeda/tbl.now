@@ -87,33 +87,18 @@
     dplyr::arrange(.data$event_date)
 }
 
-# ---------------------------------------------------------------------------
-# Individual panels
-# ---------------------------------------------------------------------------
+# Individual panels-----
 
 .tbl_now_panel_delay <- function(delay_distribution, palette) {
   normalised_weight <- delay_distribution$weight / sum(delay_distribution$weight)
   plot_data         <- dplyr::mutate(delay_distribution, normalised_weight = normalised_weight)
 
-  base_plot <- ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$delay))
-  enough_variation <- length(unique(delay_distribution$delay)) >= 2
-
-  if (enough_variation) {
-    base_plot <- base_plot +
-      ggplot2::geom_density(
-        ggplot2::aes(weight = .data$normalised_weight),
-        fill = palette[["light_green"]], colour = palette[["primary_green"]],
-        alpha = 0.7, linewidth = 0.7
-      )
-  } else {
-    base_plot <- base_plot +
-      ggplot2::geom_histogram(
-        ggplot2::aes(weight = .data$normalised_weight),
-        fill = palette[["light_green"]], colour = palette[["primary_green"]], bins = 10
-      )
-  }
-
-  base_plot +
+  ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$delay)) +
+    ggplot2::geom_histogram(
+      ggplot2::aes(weight = .data$normalised_weight),
+      fill = palette[["light_red"]], colour = palette[["accent_red"]],
+      binwidth = 1, center = 0
+    ) +
     ggplot2::labs(
       title = "Empirical delay distribution",
       x     = "Reporting delay", y = "Density"
@@ -126,8 +111,8 @@
     epidemic_process,
     ggplot2::aes(x = .data$event_date, y = .data$case_count)
   ) +
-    ggplot2::geom_area(fill = palette[["light_green"]], alpha = 0.5) +
-    ggplot2::geom_line(colour = palette[["primary_green"]], linewidth = 0.7)
+    ggplot2::geom_area(fill = palette[["light_red"]]) +
+    ggplot2::geom_line(colour = palette[["accent_red"]])
 
   # Mark event dates that fall on a holiday (from the temporal-effects spec)
   if (!is.null(holiday_points) && nrow(holiday_points) > 0) {
@@ -135,7 +120,12 @@
       ggplot2::geom_point(
         data = holiday_points,
         ggplot2::aes(x = .data$event_date, y = .data$case_count),
-        colour = palette[["accent_red"]], size = 2
+        colour = palette[["medium_green"]], size = 2
+      ) +
+      ggplot2::geom_point(
+        data = holiday_points,
+        ggplot2::aes(x = .data$event_date, y = .data$case_count),
+        colour = "white", size = 1
       )
   }
 
@@ -143,13 +133,13 @@
     base_plot <- base_plot +
       ggplot2::geom_vline(
         xintercept = incomplete_threshold,
-        colour = palette[["accent_red"]], linetype = "dashed", linewidth = 0.7
+        colour = palette[["medium_green"]], linetype = "dashed", linewidth = 0.7
       ) +
       ggplot2::annotate(
         "label", x = incomplete_threshold, y = Inf,
         label = paste0("Incomplete (<", round(100 * level), "% reported)"),
         vjust = 1.1, hjust = 1.02, size = 3,
-        colour = palette[["accent_red"]], fill = "white"
+        colour = palette[["medium_green"]], fill = "white"
       )
   }
 
@@ -197,6 +187,7 @@
 .tbl_now_panel_calendar <- function(epidemic_process, grouping, palette) {
 
   overall_mean <- mean(epidemic_process$case_count, na.rm = TRUE)
+  overall_sd   <- sd(epidemic_process$case_count, na.rm = TRUE)
   if (is.na(overall_mean) || overall_mean == 0) {
     return(.tbl_now_empty_panel("No cases to compute a calendar effect", palette))
   }
@@ -225,18 +216,18 @@
   }
 
   plot_data <- dplyr::mutate(grouped,
-                             normalized_effect = .data$case_count / overall_mean)
+                             normalized_effect = (.data$case_count - overall_mean) / overall_sd)
 
   ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$calendar_group, y = .data$normalized_effect)) +
     ggplot2::geom_boxplot(
-      fill = palette[["medium_green"]], colour = palette[["dark_green"]],
-      outlier.colour = palette[["muted_green"]], outlier.size = 0.6, linewidth = 0.4
+      fill = palette[["light_red"]], colour = palette[["accent_red"]],
+      outlier.colour = palette[["near_black"]], outlier.size = 0.6, linewidth = 0.4
     ) +
     ggplot2::geom_hline(yintercept = 1, linetype = "dashed",
                         colour = palette[["near_black"]], linewidth = 0.4) +
     ggplot2::labs(
       title    = panel_title,
-      subtitle = "Distribution of cases relative to the overall mean (1 = average)",
+      subtitle = "Normalized distribution of cases (0 = average)",
       x = x_label, y = "Normalized effect"
     ) +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
@@ -281,16 +272,16 @@
     years = "years", "units")
 
   ggplot2::ggplot(periodogram, ggplot2::aes(x = .data$period, y = .data$power)) +
-    ggplot2::geom_line(colour = palette[["dark_green"]], linewidth = 0.7) +
+    ggplot2::geom_line(colour = palette[["light_red"]], linewidth = 0.7) +
     ggplot2::geom_vline(
       xintercept = dominant_period,
-      colour = palette[["accent_red"]], linetype = "dashed", linewidth = 0.7
+      colour = palette[["medium_green"]], linetype = "dashed", linewidth = 0.7
     ) +
     ggplot2::annotate(
       "label", x = dominant_period, y = Inf,
       label = paste0("~", round(dominant_period, 1), " ", unit_label),
       vjust = 1.1, hjust = -0.05, size = 3,
-      colour = palette[["accent_red"]], fill = "white"
+      colour = palette[["medium_green"]], fill = "white"
     ) +
     ggplot2::labs(
       title    = "Seasonality (periodogram)",
@@ -303,7 +294,7 @@
 .tbl_now_empty_panel <- function(message, palette) {
   ggplot2::ggplot() +
     ggplot2::annotate("text", x = 0, y = 0, label = message,
-                      colour = palette[["muted_green"]], size = 3.5) +
+                      colour = palette[["accent_red"]], size = 3.5) +
     ggplot2::theme_void()
 }
 
@@ -316,11 +307,12 @@
   plot + ggplot2::coord_cartesian(xlim = xlim)
 }
 
-# ---------------------------------------------------------------------------
-# autoplot method
-# ---------------------------------------------------------------------------
+
+# autoplot-----
 
 #' Diagnostic `autoplot` for a `tbl_now`
+#'
+#' `r lifecycle::badge("experimental")`
 #'
 #' @description
 #' Produces a four-panel diagnostic overview of a `tbl_now` using
@@ -367,8 +359,9 @@
 #' ggplot2::autoplot(dengue, delay_distribution_xlim = c(0, 10))
 #'
 #' @importFrom rlang .data
+#' @importFrom ggplot2 autoplot
 #' @exportS3Method ggplot2::autoplot
-autoplot.tbl_now <- function(object, ..., level = 0.95,
+autoplot.tbl_now <- function(object, ..., level = 1,
                              palette = .tbl_now_palette(),
                              delay_distribution_xlim = NULL,
                              event_date_xlim = NULL,

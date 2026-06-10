@@ -1,6 +1,8 @@
 #' Transform into a `tbl_now` object
 #'
-#' Takes a `data.frame` or `tbl_now` and transforms it into a `tbl_now` object
+#' `r lifecycle::badge("experimental")`
+#'
+#' Takes an object  and transforms it into a `tbl_now`.
 #'
 #' @param object An object to convert to `tbl_now`.
 #' @inheritParams tbl_now

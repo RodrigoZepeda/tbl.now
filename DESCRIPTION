@@ -23,13 +23,17 @@ Suggests:
     almanac,
     baselinenowcast,
     data.table,
+    epidist,
     EpiNow2,
+    epinowcast,
     ggplot2,
     knitr,
     patchwork,
     rmarkdown,
     testthat (>= 3.0.0),
     tsibble
+Additional_repositories:
+    https://epinowcast.r-universe.dev
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 Imports: 

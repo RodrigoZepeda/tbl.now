@@ -1,5 +1,7 @@
 #' Complete zeroes
 #'
+#' `r lifecycle::badge("experimental")`
+#'
 #' Takes a `tbl.now` object and completes observations
 #' for event_dates or onset_weeks that have not been registered
 #' by each strata with a 0

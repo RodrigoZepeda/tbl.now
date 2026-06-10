@@ -7,7 +7,7 @@
 \method{autoplot}{tbl_now}(
   object,
   ...,
-  level = 0.95,
+  level = 1,
   palette = .tbl_now_palette(),
   delay_distribution_xlim = NULL,
   event_date_xlim = NULL,
@@ -55,6 +55,9 @@ peak suggests a Fourier season length for \code{\link[=temporal_effects]{tempora
 
 If the attached \code{\link[=temporal_effects]{temporal_effects()}} spec contains a holidays calendar, the
 event dates that fall on a holiday are marked with red dots in panel 2.
+}
+\details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \examples{
 \dontshow{if (requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("patchwork", quietly = TRUE)) withAutoprint(\{ # examplesIf}

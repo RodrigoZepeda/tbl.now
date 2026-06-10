@@ -42,12 +42,14 @@ to the column name passed to that parameter.}
 A tibble identical to \code{.data} but with an added aligned date column.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
+\details{
 Aligns all dates in either a \code{data.frame} or a \code{tbl.now} so that week
 boundaries occur on a specified day of the week. This is useful in the
 context of nowcasting for cases when weekly reports are changed from say
 Wednesday to Thursday so that delays don't have a decimal point.
-}
-\details{
+
 In some cases, to calculate the delay of information, what matters is the
 week distance (reports from week 3 in week 7) and not the specific date distance
 (reports from Saturday of week 3 vs Monday in week 7). The \code{align_weeks}

@@ -1,5 +1,7 @@
 #' Align weeks to a common weekday
 #'
+#' `r lifecycle::badge("experimental")`
+#'
 #' Aligns all dates in either a `data.frame` or a `tbl.now` so that week
 #' boundaries occur on a specified day of the week. This is useful in the
 #' context of nowcasting for cases when weekly reports are changed from say

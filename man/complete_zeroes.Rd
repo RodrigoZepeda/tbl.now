@@ -13,6 +13,9 @@ complete_zeroes(x, max_delay = NULL)
 with 0's all reports with delays 0 to 4. But will not fill other delays (say 6)}
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
+\details{
 Takes a \code{tbl.now} object and completes observations
 for event_dates or onset_weeks that have not been registered
 by each strata with a 0

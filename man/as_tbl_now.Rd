@@ -43,7 +43,10 @@ provided together with \code{event_date}; the report date will be computed as
 \item{...}{Additional parameters to pass to \code{\link[=tbl_now]{tbl_now()}}}
 }
 \description{
-Takes a \code{data.frame} or \code{tbl_now} and transforms it into a \code{tbl_now} object
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
+\details{
+Takes an object  and transforms it into a \code{tbl_now}.
 }
 \examples{
 #Convert a data.frame to tbl_now

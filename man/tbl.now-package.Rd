@@ -6,6 +6,8 @@
 \alias{tbl.now-package}
 \title{tbl.now: Tidy Extension for Nowcasting}
 \description{
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+
 Provides a 'tbl_now' class for temporal data for performing nowcasts. The 'tbl_now' allows for easy manipulation of event dates, report dates, strata and covariates for implementing different nowcasting models while at the same time permitting ease of use with 'dplyr' functions.
 }
 \seealso{

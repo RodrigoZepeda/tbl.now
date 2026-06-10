@@ -18,6 +18,9 @@ the resulting data-type to be created.}
 \item{...}{Additional arguments}
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
+\details{
 This is an S3 generic. This package provides methods for the
 following classes:
 \itemize{

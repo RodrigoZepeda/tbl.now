@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# Tibble now (tbl.now)
+# Tibble now (tbl.now) <a href="https://rodrigozepeda.github.io/tbl.now/"><img src="man/figures/logo.png" align="right" height="139" alt="tbl.now website" /></a>
 
 <!-- badges: start -->
 
@@ -291,10 +291,10 @@ library(patchwork)
 data("flusight")
 
 flusight_now <- tbl_now(flusight,
-                      event_date  = target_end_date,
-                      report_date = as_of,
-                      case_count = observation,
-                      verbose     = FALSE)
+                        event_date  = target_end_date,
+                        report_date = as_of,
+                        case_count  = observation,
+                        verbose     = FALSE)
 
 autoplot(flusight_now, level = 1)
 ```
