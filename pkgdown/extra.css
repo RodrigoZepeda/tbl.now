@@ -13,6 +13,15 @@
   background-color: #C55F53 !important;
 }
 
+.navbar .submenu {
+  background-color: #B85348; /* Changes the background color */
+}
+
+[data-bs-theme="dark"] .navbar .submenu {
+  background-color: #C55F53; /* Changes the background color */
+}
+
+
 .navbar .navbar-brand,
 .navbar .nav-link {
   color: white !important;
