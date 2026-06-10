@@ -40,13 +40,13 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
+          # epidist / epinowcast (and their dep primarycensored) are not on CRAN
+          extra-repositories: https://epinowcast.r-universe.dev
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
           needs: check
-          # epidist / epinowcast (and their dep primarycensored) are not on CRAN
-          extra-repositories: https://epinowcast.r-universe.dev
 
       - uses: r-lib/actions/check-r-package@v2
         with:
