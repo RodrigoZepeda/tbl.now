@@ -1275,6 +1275,28 @@ hospitalizations_now <- tbl_now_from_epinowcast(
 )
 
 hospitalizations_now
+#> # A tibble:  1,000 × 8
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `days` | Report: `days`
+#>    reference_date location age_group confirm report_date  .event_num .report_num
+#>    <IDate>        <fct>    <fct>       <int> <date>            <dbl>       <dbl>
+#>    [event_date]   [strata] [strata]  [cases] [report_dat…      [...]       [...]
+#>  1 2021-04-06     DE       00+           149 2021-04-06            0           0
+#>  2 2021-04-07     DE       00+           312 2021-04-07            1           1
+#>  3 2021-04-08     DE       00+           424 2021-04-08            2           2
+#>  4 2021-04-09     DE       00+           288 2021-04-09            3           3
+#>  5 2021-04-10     DE       00+           273 2021-04-10            4           4
+#>  6 2021-04-11     DE       00+           107 2021-04-11            5           5
+#>  7 2021-04-12     DE       00+           130 2021-04-12            6           6
+#>  8 2021-04-13     DE       00+           291 2021-04-13            7           7
+#>  9 2021-04-14     DE       00+           305 2021-04-14            8           8
+#> 10 2021-04-15     DE       00+           329 2021-04-15            9           9
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2021-10-20 | Event date: "reference_date" | Report date: "report_date"
+#> # Strata: "location" and "age_group"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 990 more rows
+#> # ℹ 1 more variable: .delay <dbl>
 ```
 
 Going the other way,
@@ -1286,6 +1308,7 @@ returns an `enw_preprocess_data` object ready for
 
 epinowcast_object <- tbl_now_to_epinowcast(hospitalizations_now, verbose = FALSE)
 class(epinowcast_object)
+#> [1] "enw_preprocess_data" "data.table"          "data.frame"
 ```
 
 The same pattern works for the other packages, for example

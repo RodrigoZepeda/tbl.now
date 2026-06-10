@@ -4,7 +4,7 @@ epidist models the delay between a *primary* event (e.g. symptom onset)
 and a *secondary* event (e.g. report), storing each as an
 interval-censored pair of date columns: `pdate_lwr`/`pdate_upr` for the
 primary event and `sdate_lwr`/`sdate_upr` for the secondary event (see
-`epidist::as_epidist_linelist_data()`).
+[`epidist::as_epidist_linelist_data()`](https://epidist.epinowcast.org/reference/as_epidist_linelist_data.html)).
 
 `tbl_now_from_epidist()` converts such data into a `tbl_now`:
 
@@ -18,9 +18,9 @@ primary event and `sdate_lwr`/`sdate_upr` for the secondary event (see
 
 `tbl_now_to_epidist()` performs the inverse and builds an
 `epidist_linelist_data` object via
-`epidist::as_epidist_linelist_data()`. For `format = "interval"` the
-upper bounds are taken from covariate columns named in `primary_upper` /
-`secondary_upper`.
+[`epidist::as_epidist_linelist_data()`](https://epidist.epinowcast.org/reference/as_epidist_linelist_data.html).
+For `format = "interval"` the upper bounds are taken from covariate
+columns named in `primary_upper` / `secondary_upper`.
 
 ## Usage
 
@@ -56,7 +56,9 @@ tbl_now_to_epidist(
 
   Forwarded to
   [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
-  (`from`) or `epidist::as_epidist_linelist_data()` (`to`).
+  (`from`) or
+  [`epidist::as_epidist_linelist_data()`](https://epidist.epinowcast.org/reference/as_epidist_linelist_data.html)
+  (`to`).
 
 - format:
 
@@ -87,11 +89,29 @@ A `tbl_now` (`from`) or an `epidist_linelist_data` object (`to`).
 ## Examples
 
 ``` r
-if (FALSE) { # requireNamespace("epidist", quietly = TRUE)
 df <- data.frame(
   pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
   sdate_lwr = as.Date(c("2020-03-05", "2020-03-04"))
 )
 tbl_now_from_epidist(df, event_units = "days", report_units = "days")
-}
+#> 
+#> ── Converted epidist <data> into a <tbl_now> 
+#> • event_date: "pdate_lwr"
+#> • report_date: "sdate_lwr"
+#> • data_type: "linelist"
+#> • now: "2020-03-05"
+#> • units: event = "days", report = "days"
+#> • format: linelist (primary lower bound -> event_date, secondary lower bound ->
+#> report_date)
+#> # A tibble:  2 × 5
+#> # Data type: "linelist"
+#> # Frequency: Event: `days` | Report: `days`
+#>   pdate_lwr    sdate_lwr     .event_num .report_num .delay
+#>   <date>       <date>             <dbl>       <dbl>  <dbl>
+#>   [event_date] [report_date]      [...]       [...]  [...]
+#> 1 2020-03-01   2020-03-05             0           4      4
+#> 2 2020-03-02   2020-03-04             1           3      2
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-03-05 | Event date: "pdate_lwr" | Report date: "sdate_lwr"
+#> # ────────────────────────────────────────────────────────────────────────────────
 ```

@@ -6,6 +6,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>tbl.now • tbl.now</title>
+<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
+<link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" sizes="any" href="../favicon.ico">
+<link rel="manifest" href="../site.webmanifest">
 <!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
@@ -36,7 +41,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,8 +79,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-
-      <h1>tbl.now</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>tbl.now</h1>
             
       
 
@@ -1426,19 +1430,42 @@ which has methods for each of these classes:</p>
 data ships in long cumulative format and converts straight into a
 <code>count-cumulative</code> <code>tbl_now</code>:</p>
 <div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">germany_hospitalizations</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">epinowcast</span><span class="fu">::</span><span class="va">germany_covid19_hosp</span>, <span class="fl">1000</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">germany_hospitalizations</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">epinowcast</span><span class="fu">::</span><span class="va"><a href="https://package.epinowcast.org/reference/germany_covid19_hosp.html" class="external-link">germany_covid19_hosp</a></span>, <span class="fl">1000</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">hospitalizations_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_from_epinowcast</a></span><span class="op">(</span></span>
 <span>  <span class="va">germany_hospitalizations</span>,</span>
 <span>  strata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"location"</span>, <span class="st">"age_group"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">hospitalizations_now</span></span></code></pre></div>
+<span><span class="va">hospitalizations_now</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1,000 × 8</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
+<span><span class="co">#&gt;    reference_date location age_group confirm report_date  .event_num .report_num</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;IDate&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt;    <span style="color: #949494;">[event_date]</span>   <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[strata]</span>  <span style="color: #949494;">[cases]</span> <span style="color: #949494;">[report_dat</span>…      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2021-04-06     DE       00+           149 2021-04-06            0           0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2021-04-07     DE       00+           312 2021-04-07            1           1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2021-04-08     DE       00+           424 2021-04-08            2           2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2021-04-09     DE       00+           288 2021-04-09            3           3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2021-04-10     DE       00+           273 2021-04-10            4           4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2021-04-11     DE       00+           107 2021-04-11            5           5</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2021-04-12     DE       00+           130 2021-04-12            6           6</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2021-04-13     DE       00+           291 2021-04-13            7           7</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2021-04-14     DE       00+           305 2021-04-14            8           8</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2021-04-15     DE       00+           329 2021-04-15            9           9</span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2021-10-20</span> | Event date: <span style="color: #0000BB;">"reference_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
+<span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"location"</span> and <span style="color: #0000BB;">"age_group"</span></span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 990 more rows</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: .delay &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>Going the other way, <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> returns an
 <code>enw_preprocess_data</code> object ready for <a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast::epinowcast()</a>:</p>
 <div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">epinowcast_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">hospitalizations_now</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">epinowcast_object</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">epinowcast_object</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "enw_preprocess_data" "data.table"          "data.frame"</span></span></code></pre></div>
 <p>The same pattern works for the other packages, for example
 <code><a href="../reference/tbl_now_to_EpiNow2.html">tbl_now_to_EpiNow2()</a></code> collapses the object into the single
 <code>date</code>/<code>confirm</code> time series that <a href="https://epiforecasts.io/EpiNow2/" class="external-link">EpiNow2</a> expects.</p>

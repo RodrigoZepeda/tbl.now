@@ -1,7 +1,6 @@
 # Transform into a `tbl_now` object
 
-Takes a `data.frame` or `tbl_now` and transforms it into a `tbl_now`
-object
+**\[experimental\]**
 
 ## Usage
 
@@ -54,6 +53,10 @@ as_tbl_now(object, event_date, report_date, ...)
 
   Additional parameters to pass to
   [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+
+## Details
+
+Takes an object and transforms it into a `tbl_now`.
 
 ## Examples
 

@@ -6,8 +6,9 @@ by epinowcast (with `reference_date`, `report_date` and a cumulative
 `tbl_now` of `data_type = "count-cumulative"`.
 
 `tbl_now_to_epinowcast()` takes a `tbl_now` and builds an
-`epinowcast::enw_preprocess_data()` object (or, with
-`preprocess = FALSE`, the completed observation `data.table`).
+[`epinowcast::enw_preprocess_data()`](https://package.epinowcast.org/reference/enw_preprocess_data.html)
+object (or, with `preprocess = FALSE`, the completed observation
+`data.table`).
 
 ## Usage
 
@@ -41,7 +42,9 @@ tbl_now_to_epinowcast(
 
   Additional arguments forwarded to
   [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
-  (for `from`) or to `epinowcast::enw_preprocess_data()` (for `to`).
+  (for `from`) or to
+  [`epinowcast::enw_preprocess_data()`](https://package.epinowcast.org/reference/enw_preprocess_data.html)
+  (for `to`).
 
 - reference_date, report_date, confirm:
 
@@ -84,8 +87,15 @@ tbl_now_to_epinowcast(
 ## Examples
 
 ``` r
-if (FALSE) { # requireNamespace("epinowcast", quietly = TRUE)
 obs <- epinowcast::germany_covid19_hosp
 nowobj <- tbl_now_from_epinowcast(obs, strata = c("location", "age_group"))
-}
+#> 
+#> ── Converted epinowcast <data> into a <tbl_now> 
+#> • event_date: "reference_date"
+#> • report_date: "report_date"
+#> • data_type: "count-cumulative"
+#> • now: "2021-10-20"
+#> • units: event = "days", report = "days"
+#> • strata: "location" and "age_group"
+#> • case_count: "confirm"
 ```

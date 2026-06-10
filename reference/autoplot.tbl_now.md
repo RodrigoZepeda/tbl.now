@@ -33,7 +33,7 @@ holiday are marked with red dots in panel 2.
 autoplot(
   object,
   ...,
-  level = 0.95,
+  level = 1,
   palette = .tbl_now_palette(),
   delay_distribution_xlim = NULL,
   event_date_xlim = NULL,
@@ -76,15 +76,21 @@ autoplot(
 
 A patchwork object combining the four panels.
 
+## Details
+
+**\[experimental\]**
+
 ## Examples
 
 ``` r
 data(denguedat)
 dengue <- tbl_now(denguedat, event_date = "onset_week",
                   report_date = "report_week", verbose = FALSE)
-ggplot2::autoplot(dengue)
-
+autoplot(dengue)
+#> Error in autoplot(dengue): could not find function "autoplot"
 
 # Zoom the delay panel to delays of 0-10 weeks
-ggplot2::autoplot(dengue, delay_distribution_xlim = c(0, 10))
+if (FALSE){
+  autoplot(dengue, delay_distribution_xlim = c(0, 10))
+}
 ```

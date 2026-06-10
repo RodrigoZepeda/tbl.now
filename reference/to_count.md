@@ -1,10 +1,6 @@
 # Transform an object to count data
 
-This is an S3 generic. This package provides methods for the following
-classes:
-
-- `tbl_now`: takes a `tbl_now` object and creates a new column with name
-  `n` of counts of observations if `data_type = "linelist"`.
+**\[experimental\]**
 
 ## Usage
 
@@ -29,6 +25,14 @@ to_count(x, to = NULL, ...)
 - ...:
 
   Additional arguments
+
+## Details
+
+This is an S3 generic. This package provides methods for the following
+classes:
+
+- `tbl_now`: takes a `tbl_now` object and creates a new column with name
+  `n` of counts of observations if `data_type = "linelist"`.
 
 ## Note
 

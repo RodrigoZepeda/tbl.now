@@ -15,10 +15,10 @@
   Add temporal effect coding to a `tbl_now`
 
 - [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
-  : Align weeks to a common weekday
+  **\[experimental\]** : Align weeks to a common weekday
 
 - [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
-  :
+  **\[experimental\]** :
 
   Transform into a `tbl_now` object
 
@@ -45,7 +45,7 @@
   Change attributes of a `tbl_now` object
 
 - [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
-  : Complete zeroes
+  **\[experimental\]** : Complete zeroes
 
 - [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
   :
@@ -164,7 +164,7 @@
   : Temporal Effects Class
 
 - [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
-  : Transform an object to count data
+  **\[experimental\]** : Transform an object to count data
 
 - [`update(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.md)
   :

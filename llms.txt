@@ -15,8 +15,8 @@ Install the development version from [GitHub](https://github.com/):
 
 ``` r
 
-# install.packages("remotes")
-remotes::install_github("RodrigoZepeda/tbl.now")
+# install.packages("pak") # <- uncomment if you do not have `pak`
+pak::pkg_install("RodrigoZepeda/tbl.now")
 ```
 
 Load the package:
@@ -293,10 +293,10 @@ library(patchwork)
 data("flusight")
 
 flusight_now <- tbl_now(flusight,
-                      event_date  = target_end_date,
-                      report_date = as_of,
-                      case_count = observation,
-                      verbose     = FALSE)
+                        event_date  = target_end_date,
+                        report_date = as_of,
+                        case_count  = observation,
+                        verbose     = FALSE)
 
 autoplot(flusight_now, level = 1)
 ```
@@ -329,10 +329,10 @@ autoplot(flusight_now, level = 1)
   Add temporal effect coding to a `tbl_now`
 
 - [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
-  : Align weeks to a common weekday
+  **\[experimental\]** : Align weeks to a common weekday
 
 - [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
-  :
+  **\[experimental\]** :
 
   Transform into a `tbl_now` object
 
@@ -359,7 +359,7 @@ autoplot(flusight_now, level = 1)
   Change attributes of a `tbl_now` object
 
 - [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
-  : Complete zeroes
+  **\[experimental\]** : Complete zeroes
 
 - [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
   :
@@ -478,7 +478,7 @@ autoplot(flusight_now, level = 1)
   : Temporal Effects Class
 
 - [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
-  : Transform an object to count data
+  **\[experimental\]** : Transform an object to count data
 
 - [`update(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.md)
   :

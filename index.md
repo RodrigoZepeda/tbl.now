@@ -15,8 +15,8 @@ Install the development version from [GitHub](https://github.com/):
 
 ``` r
 
-# install.packages("remotes")
-remotes::install_github("RodrigoZepeda/tbl.now")
+# install.packages("pak") # <- uncomment if you do not have `pak`
+pak::pkg_install("RodrigoZepeda/tbl.now")
 ```
 
 Load the package:
@@ -293,10 +293,10 @@ library(patchwork)
 data("flusight")
 
 flusight_now <- tbl_now(flusight,
-                      event_date  = target_end_date,
-                      report_date = as_of,
-                      case_count = observation,
-                      verbose     = FALSE)
+                        event_date  = target_end_date,
+                        report_date = as_of,
+                        case_count  = observation,
+                        verbose     = FALSE)
 
 autoplot(flusight_now, level = 1)
 ```
