@@ -16,11 +16,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup, message=FALSE}
-library(dplyr, quietly = TRUE)
-library(lubridate)
-library(tbl.now)
-```
 
 Within `R`, the [tidyverse](https://tidyverse.org/) ecosystem [@tidyverse] provides a widely adopted framework for data analysis. In this paradigm, data is structured such that rows represent individual observations and columns represent variables. This approach is commonly referred to as tidy data [@wickham2014tidy].
 
@@ -39,6 +34,15 @@ More concretely, tbl.now was designed to:
 ```
 Data Cleaning -> Modeling -> New Data Cleaning -> New Modeling -> ...
 ```
+
+We'll begin by loading the required packages:
+
+```{r setup, message=FALSE}
+library(dplyr, quietly = TRUE)
+library(lubridate)
+library(tbl.now)
+```
+
 
 
 ## The `tbl.now` Framework 

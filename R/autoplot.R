@@ -309,6 +309,12 @@
 
 # autoplot-----
 
+# Re-export the ggplot2 `autoplot()` generic so users (and examples) can call
+# `autoplot()` directly after `library(tbl.now)` without attaching ggplot2.
+#' @importFrom ggplot2 autoplot
+#' @export
+ggplot2::autoplot
+
 #' Diagnostic `autoplot` for a `tbl_now`
 #'
 #' `r lifecycle::badge("experimental")`
