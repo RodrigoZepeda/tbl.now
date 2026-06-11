@@ -304,7 +304,7 @@ autoplot(flusight_now, level = 1)
 ## Learning more
 
 - Introduction vignette:
-  <https://rodrigozepeda.github.io/tbl.now/articles/Introduction.html>
+  <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html>
 - Full walk-through with real CDC Flusight data:
   <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
 - Package reference:
