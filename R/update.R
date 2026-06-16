@@ -1,5 +1,7 @@
 #' Update a `tbl_now`
 #'
+#' `r lifecycle::badge('experimental')`
+#'
 #' Updates a `tbl_now` object with new observations
 #' either from another `tbl_now` or a `data.frame`
 #'

@@ -1,3 +1,8 @@
+# tbl.now 0.7.3
+
+* Added the `update_now()` function to make it more intuitive to update
+the now. 
+
 # tbl.now 0.7.0
 
 * Added an `autoplot()` method for `tbl_now` objects that produces a multi-panel

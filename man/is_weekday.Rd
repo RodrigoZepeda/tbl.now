@@ -20,6 +20,9 @@ A logical vector: TRUE if weekday, FALSE if weekend.
 \description{
 Function that checks whether a date object is a weekday or weekend.
 }
+\details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+}
 \examples{
 is_weekday(as.Date("2020-04-22"))                   # TRUE (Wed)
 is_weekday(as.Date("2020-04-19"))                   # FALSE (Sun)

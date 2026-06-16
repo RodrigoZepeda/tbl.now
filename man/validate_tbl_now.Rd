@@ -23,7 +23,6 @@ Checks that an object is a properly constructed \code{tbl_now}
 with all required attributes and valid data.
 }
 \examples{
-\dontrun{
 data(denguedat)
 ndata <- tbl_now(denguedat, event_date = "onset_week",
   report_date = "report_week", verbose = FALSE)
@@ -32,9 +31,10 @@ ndata <- tbl_now(denguedat, event_date = "onset_week",
 validate_tbl_now(ndata)
 
 # Validate with errors
-validate_tbl_now(data.frame(x = 1:3))
-
+if (FALSE){
+  validate_tbl_now(data.frame(x = 1:3))
 }
+
 
 }
 \keyword{internal}

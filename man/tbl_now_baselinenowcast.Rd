@@ -55,6 +55,9 @@ and converts it into a \code{tbl_now} of \code{data_type = "count-incidence"}.
 \code{reporting_triangle} matrix (\code{format = "matrix"}) via
 \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}}.
 }
+\details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
 \examples{
 \dontshow{if (requireNamespace("baselinenowcast", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 rt <- baselinenowcast::example_reporting_triangle

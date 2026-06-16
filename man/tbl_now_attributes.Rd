@@ -13,6 +13,9 @@ tbl_now_attributes(x)
 Shows exclusively the attributes of a \code{tbl_now} that are not part
 of the attributes of a \code{tibble} (or a grouped tibble).
 }
+\details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+}
 \examples{
 data(denguedat)
 df_now <- tbl_now(denguedat, event_date = onset_week,

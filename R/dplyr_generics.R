@@ -18,7 +18,6 @@
 #' @return Returns `TRUE` invisibly or throws an error. Called for its side effects.
 #'
 #' @examples
-#' \dontrun{
 #' data(denguedat)
 #' ndata <- tbl_now(denguedat, event_date = "onset_week",
 #'   report_date = "report_week", verbose = FALSE)
@@ -27,9 +26,10 @@
 #' validate_tbl_now(ndata)
 #'
 #' # Validate with errors
-#' validate_tbl_now(data.frame(x = 1:3))
-#'
+#' if (FALSE){
+#'   validate_tbl_now(data.frame(x = 1:3))
 #' }
+#'
 #'
 #' @keywords internal
 validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {

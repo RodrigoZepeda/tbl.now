@@ -43,6 +43,9 @@ nowcast. If no \code{now} is given then the function automatically uses the last
 A \code{tbl_now} object with all the properties of \code{object}
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
+\details{
 Updates a \code{tbl_now} object with new observations
 either from another \code{tbl_now} or a \code{data.frame}
 }

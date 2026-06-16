@@ -70,6 +70,9 @@ primary event and \code{sdate_lwr}/\code{sdate_upr} for the secondary event
 For \code{format = "interval"} the upper bounds are taken from covariate columns
 named in \code{primary_upper} / \code{secondary_upper}.
 }
+\details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
 \examples{
 \dontshow{if (requireNamespace("epidist", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 df <- data.frame(

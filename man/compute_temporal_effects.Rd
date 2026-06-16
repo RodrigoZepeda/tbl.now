@@ -26,6 +26,8 @@ into actual columns.  \code{\link[=add_temporal_effects]{add_temporal_effects()}
 \code{\link[=tbl_now]{tbl_now()}} only \emph{record} what should be computed; this function performs the
 computation.  If no temporal effects have been configured the object is
 returned unchanged.
+
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \examples{
 data(denguedat)

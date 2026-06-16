@@ -1,5 +1,7 @@
 #' Change attributes of a `tbl_now` object
 #'
+#' `r lifecycle::badge('stable')`
+#'
 #' @description Functions to change the attributes of a `tbl_now` object.
 #'
 #' @details Variable selection is done via [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
@@ -9,6 +11,7 @@
 #' @inheritParams remove
 #' @inheritParams tbl_now
 #' @inheritParams validate_tbl_now
+#'
 #'
 #' @return A `tbl_now` object with updated attributes
 #'
@@ -134,7 +137,7 @@ NULL
 #' refer to multiple columns.
 #'
 #' @return A `tbl_now` object with updated attributes
-#'
+#' `r lifecycle::badge('stable')`
 #' @examples
 #' data(denguedat)
 #' ndata <- tbl_now(denguedat,
@@ -184,6 +187,13 @@ change_now <- function(x, now = NULL) {
 
   return(x)
 }
+
+#' @rdname change
+#' @export
+update_now <- function(x) {
+  change_now(x)
+}
+
 
 #' @rdname change
 #' @export

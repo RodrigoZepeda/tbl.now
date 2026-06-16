@@ -1,5 +1,7 @@
 #' Add temporal effect coding to a `tbl_now`
 #'
+#' `r lifecycle::badge("stable")`
+#'
 #' @description
 #' Takes a `tbl_now` or a `data.frame` and adds the temporal effects `t_effect` as
 #' columns

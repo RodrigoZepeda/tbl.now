@@ -65,6 +65,9 @@ A \code{tbl_now} or \code{data.frame} containing all of the effects as new colum
 Takes a \code{tbl_now} or a \code{data.frame} and adds the temporal effects \code{t_effect} as
 columns
 }
+\details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+}
 \examples{
 data(denguedat)
 

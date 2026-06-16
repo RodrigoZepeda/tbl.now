@@ -1,5 +1,7 @@
 #' Temporal Effects Class
 #'
+#' `r lifecycle::badge('stable')`
+#'
 #' @description
 #' The `temporal_effects` class specifies which temporal covariates or effects
 #' should be included in a nowcasting model (e.g., day of week, month, holidays, etc.).

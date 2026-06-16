@@ -2,6 +2,8 @@
 #'
 #' Checks if attribute exists in object and returns `default` if not
 #'
+#' `r lifecycle::badge('experimental')`
+#'
 #' @param x An object with attribute `name`
 #' @param name The name of the attribute in `x`
 #' @param default (optional) The default value of attribute `name` in `x`
@@ -35,6 +37,8 @@ attr_default <- function(x, name, default = NULL) {
 #' Check whether a date is a weekday vs weekend (international definition)
 #'
 #' Function that checks whether a date object is a weekday or weekend.
+#'
+#' `r lifecycle::badge('stable')`
 #'
 #' @param date A Date (or POSIXt) object.
 #' @param weekend_days A character or numeric vector defining weekend days.
@@ -88,6 +92,8 @@ is_weekday <- function(date, weekend_days = c("Sat", "Sun")) {
 #'
 #' Shows exclusively the attributes of a `tbl_now` that are not part
 #' of the attributes of a `tibble` (or a grouped tibble).
+#'
+#' `r lifecycle::badge('stable')`
 #'
 #' @inheritParams add
 #'

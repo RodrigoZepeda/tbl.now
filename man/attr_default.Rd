@@ -16,6 +16,9 @@ attr_default(x, name, default = NULL)
 \description{
 Checks if attribute exists in object and returns \code{default} if not
 }
+\details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
 \examples{
 \dontrun{
 #Create an object

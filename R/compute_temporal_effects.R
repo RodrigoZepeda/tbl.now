@@ -7,6 +7,8 @@
 #' computation.  If no temporal effects have been configured the object is
 #' returned unchanged.
 #'
+#' `r lifecycle::badge("experimental")`
+#'
 #' @param x A `tbl_now` object.
 #' @param overwrite Logical.  When `TRUE`, existing columns are silently
 #'   overwritten.  When `FALSE` (default) an error is thrown if a column that

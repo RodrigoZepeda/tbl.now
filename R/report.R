@@ -3,6 +3,8 @@
 #' Function that gets the latest (respectively first) number of cases that has
 #' been reported for each `event_date`
 #'
+#' `r lifecycle::badge('stable')`
+#'
 #' @param x A `tbl_now` object
 #'
 #' @examples
@@ -12,8 +14,6 @@
 #'                   event_date = "onset_week",
 #'                   strata = "gender",
 #'                   verbose = FALSE)
-#'
-#' dengue <- to_count(dengue)
 #'
 #' #Gets the first reported cases (what as initially thought of to be the incidence)
 #' get_initial_reported_cases(dengue)

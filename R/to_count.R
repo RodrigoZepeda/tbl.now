@@ -1,6 +1,6 @@
 #' Transform an object to count data
 #'
-#' `r lifecycle::badge("experimental")`
+#' `r lifecycle::badge("stable")`
 #'
 #' This is an S3 generic. This package provides methods for the
 #' following classes:

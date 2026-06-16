@@ -47,6 +47,8 @@ The \code{temporal_effects} class specifies which temporal covariates or effects
 should be included in a nowcasting model (e.g., day of week, month, holidays, etc.).
 }
 \details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
 US Federal holidays can be passed by providing the \code{\link[almanac:cal_us_federal]{almanac::cal_us_federal()}} calendar.
 
 Example:

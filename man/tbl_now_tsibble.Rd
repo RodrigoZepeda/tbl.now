@@ -61,6 +61,9 @@ index (\code{\link[tsibble:index-rd]{tsibble::index_var()}}).
 the other date plus the strata as the key. Linelist data is aggregated to
 \code{count-incidence} first (a tsibble requires unique index/key combinations).
 }
+\details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
 \examples{
 \dontshow{if (requireNamespace("tsibble", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)

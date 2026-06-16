@@ -37,6 +37,7 @@ or a character vector with the names of the columns containing the temporal effe
 }
 \value{
 A \code{tbl_now} object with updated attributes
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 }
 \description{
 Functions to remove the attributes to a \code{tbl_now} object.

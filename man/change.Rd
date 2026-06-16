@@ -3,6 +3,7 @@
 \name{change}
 \alias{change}
 \alias{change_now}
+\alias{update_now}
 \alias{change_event_date}
 \alias{change_report_date}
 \alias{change_case_count}
@@ -12,6 +13,8 @@
 \title{Change attributes of a \code{tbl_now} object}
 \usage{
 change_now(x, now = NULL)
+
+update_now(x)
 
 change_event_date(x, event_date)
 
@@ -72,6 +75,8 @@ A \code{tbl_now} object with updated attributes
 Functions to change the attributes of a \code{tbl_now} object.
 }
 \details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
 Variable selection is done via \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 and can be used with the auxiliary dplyr verbs such as \code{\link[dplyr:reexports]{dplyr::starts_with()}}, \code{\link[dplyr:reexports]{dplyr::all_of()}},
 and \code{\link[dplyr:reexports]{dplyr::where()}}. See \code{\link[dplyr:select]{dplyr::select()}} for additional info.

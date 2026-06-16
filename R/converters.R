@@ -173,6 +173,8 @@ tbl_now_from_epinowcast <- function(data, ...,
 
 #' Convert between `tbl_now` and \pkg{baselinenowcast}
 #'
+#' `r lifecycle::badge("experimental")`
+#'
 #' @description
 #' `tbl_now_from_baselinenowcast()` accepts either the long `data.frame`
 #' (`reference_date`, `report_date`, `count`) or a `reporting_triangle`
@@ -239,6 +241,8 @@ tbl_now_from_baselinenowcast <- function(data, ...,
 
 #' Convert between `tbl_now` and \pkg{data.table}
 #'
+#' `r lifecycle::badge("experimental")`
+#'
 #' @description
 #' `tbl_now_from_data_table()` converts a `data.table` into a `tbl_now`
 #' (requires explicit `event_date` / `report_date` columns).
@@ -280,6 +284,8 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 }
 
 #' Convert between `tbl_now` and \pkg{epidist}
+#'
+#' `r lifecycle::badge("experimental")`
 #'
 #' @description
 #' \pkg{epidist} models the delay between a *primary* event (e.g. symptom
@@ -377,6 +383,8 @@ tbl_now_from_epidist <- function(data, ..., format = c("linelist", "interval"),
 }
 
 #' Convert between `tbl_now` and \pkg{tsibble}
+#'
+#' `r lifecycle::badge("experimental")`
 #'
 #' @description
 #' A [tsibble::tsibble()] has a single time `index` and a `key` identifying each
@@ -555,6 +563,8 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("long", "matrix"),
 }
 
 #' Convert a `tbl_now` into \pkg{EpiNow2} input
+#'
+#' `r lifecycle::badge("experimental")`
 #'
 #' @description
 #' \pkg{EpiNow2} works with a single incidence time series (`date`, `confirm`)

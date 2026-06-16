@@ -5,6 +5,8 @@
 #'
 #' @param x A `tbl_now` object.
 #'
+#' `r lifecycle::badge("stable")`
+#'
 #' @return The requested attribute (character, date, logical, etc.).
 #'
 #' @examples

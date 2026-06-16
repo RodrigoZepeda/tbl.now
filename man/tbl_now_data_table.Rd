@@ -31,6 +31,9 @@ A \code{tbl_now} (\code{from}) or a \code{data.table} (\code{to}).
 \code{tbl_now_to_data_table()} strips the \code{tbl_now} class and returns a
 \code{data.table}.
 }
+\details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
 \examples{
 \dontshow{if (requireNamespace("data.table", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)

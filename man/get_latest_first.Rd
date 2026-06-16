@@ -17,6 +17,9 @@ get_initial_reported_cases(x)
 Function that gets the latest (respectively first) number of cases that has
 been reported for each \code{event_date}
 }
+\details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+}
 \examples{
 data(denguedat)
 dengue <- tbl_now(denguedat,
@@ -24,8 +27,6 @@ dengue <- tbl_now(denguedat,
                   event_date = "onset_week",
                   strata = "gender",
                   verbose = FALSE)
-
-dengue <- to_count(dengue)
 
 #Gets the first reported cases (what as initially thought of to be the incidence)
 get_initial_reported_cases(dengue)

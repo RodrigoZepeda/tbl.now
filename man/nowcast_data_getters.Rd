@@ -47,7 +47,9 @@ get_is_censored(x)
 get_case_count(x)
 }
 \arguments{
-\item{x}{A \code{tbl_now} object.}
+\item{x}{A \code{tbl_now} object.
+
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}}
 }
 \value{
 The requested attribute (character, date, logical, etc.).

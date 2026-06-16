@@ -25,6 +25,9 @@ most recently reported counts (see \code{\link[=get_latest_reported_cases]{get_l
 Because \pkg{EpiNow2} has only one time index, there is intentionally \strong{no}
 \code{tbl_now_from_EpiNow2()}.
 }
+\details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
 \examples{
 \dontshow{if (requireNamespace("data.table", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(mpoxdat)
