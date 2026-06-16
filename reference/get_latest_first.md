@@ -17,6 +17,10 @@ get_initial_reported_cases(x)
 
   A `tbl_now` object
 
+## Details
+
+**\[stable\]**
+
 ## Examples
 
 ``` r
@@ -26,8 +30,6 @@ dengue <- tbl_now(denguedat,
                   event_date = "onset_week",
                   strata = "gender",
                   verbose = FALSE)
-
-dengue <- to_count(dengue)
 
 #Gets the first reported cases (what as initially thought of to be the incidence)
 get_initial_reported_cases(dengue)

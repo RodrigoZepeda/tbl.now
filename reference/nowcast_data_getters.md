@@ -42,6 +42,8 @@ get_case_count(x)
 
   A `tbl_now` object.
 
+  **\[stable\]**
+
 ## Value
 
 The requested attribute (character, date, logical, etc.).

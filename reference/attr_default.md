@@ -22,6 +22,10 @@ attr_default(x, name, default = NULL)
 
   (optional) The default value of attribute `name` in `x`
 
+## Details
+
+**\[experimental\]**
+
 ## Examples
 
 ``` r

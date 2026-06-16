@@ -348,6 +348,7 @@ autoplot(flusight_now, level = 1)
   Diagnostic `autoplot` for a `tbl_now`
 
 - [`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
+  [`update_now()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_event_date()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_report_date()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
@@ -362,7 +363,7 @@ autoplot(flusight_now, level = 1)
   **\[experimental\]** : Complete zeroes
 
 - [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
-  :
+  **\[experimental\]** :
 
   Compute temporal effects for a `tbl_now`
 
@@ -478,10 +479,10 @@ autoplot(flusight_now, level = 1)
   : Temporal Effects Class
 
 - [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
-  **\[experimental\]** : Transform an object to count data
+  **\[stable\]** : Transform an object to count data
 
 - [`update(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.md)
-  :
+  **\[experimental\]** :
 
   Update a `tbl_now`
 

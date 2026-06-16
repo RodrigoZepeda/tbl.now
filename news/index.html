@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,6 +52,10 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.3" id="tblnow-073">tbl.now 0.7.3<a class="anchor" aria-label="anchor" href="#tblnow-073"></a></h2>
+<ul><li>Added the <code><a href="../reference/change.html">update_now()</a></code> function to make it more intuitive to update the now.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.0" id="tblnow-070">tbl.now 0.7.0<a class="anchor" aria-label="anchor" href="#tblnow-070"></a></h2>
 <ul><li>Added an <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> method for <code>tbl_now</code> objects that produces a multi-panel diagnostic overview: the empirical delay distribution, the observed epidemic process with an incompleteness line (controlled by <code>level</code>), normalized calendar-effect boxplots (cases relative to the overall mean), and a periodogram to help choose Fourier <code>seasons</code>. Daily data shows both a day-of-week and a week-of-year boxplot panel; weekly data shows week-of-year. Built on <code>ggplot2</code> and <code>patchwork</code>. The x-axis limits of each panel can be set individually (<code>delay_distribution_xlim</code>, <code>event_date_xlim</code>, <code>calendar_effect_xlim</code>, <code>seasonality_xlim</code>), and holidays from the temporal-effects spec are marked with red dots on the epidemic process.</li>

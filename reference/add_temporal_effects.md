@@ -89,6 +89,10 @@ add_temporal_effects(
 A `tbl_now` or `data.frame` containing all of the effects as new
 columns.
 
+## Details
+
+**\[stable\]**
+
 ## Examples
 
 ``` r

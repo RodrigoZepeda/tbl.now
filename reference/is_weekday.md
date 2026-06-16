@@ -27,6 +27,10 @@ is_weekday(date, weekend_days = c("Sat", "Sun"))
 
 A logical vector: TRUE if weekday, FALSE if weekend.
 
+## Details
+
+**\[stable\]**
+
 ## Examples
 
 ``` r

@@ -84,6 +84,10 @@ tbl_now_to_tsibble(
 
 A `tbl_now` (`from`) or a `tbl_ts` (`to`).
 
+## Details
+
+**\[experimental\]**
+
 ## Examples
 
 ``` r

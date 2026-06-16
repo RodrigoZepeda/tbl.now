@@ -86,6 +86,10 @@ tbl_now_to_epidist(
 
 A `tbl_now` (`from`) or an `epidist_linelist_data` object (`to`).
 
+## Details
+
+**\[experimental\]**
+
 ## Examples
 
 ``` r

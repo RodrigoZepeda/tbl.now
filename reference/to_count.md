@@ -1,6 +1,6 @@
 # Transform an object to count data
 
-**\[experimental\]**
+**\[stable\]**
 
 ## Usage
 

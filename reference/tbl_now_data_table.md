@@ -44,6 +44,10 @@ tbl_now_to_data_table(x, ..., verbose = TRUE)
 
 A `tbl_now` (`from`) or a `data.table` (`to`).
 
+## Details
+
+**\[experimental\]**
+
 ## Examples
 
 ``` r

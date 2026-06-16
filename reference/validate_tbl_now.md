@@ -34,16 +34,17 @@ effects.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
 data(denguedat)
 ndata <- tbl_now(denguedat, event_date = "onset_week",
   report_date = "report_week", verbose = FALSE)
 
 # Validate without errors
 validate_tbl_now(ndata)
+#> Error in validate_tbl_now(ndata): could not find function "validate_tbl_now"
 
 # Validate with errors
-validate_tbl_now(data.frame(x = 1:3))
+if (FALSE){
+  validate_tbl_now(data.frame(x = 1:3))
+}
 
-} # }
 ```

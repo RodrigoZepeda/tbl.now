@@ -1,7 +1,6 @@
 # Update a `tbl_now`
 
-Updates a `tbl_now` object with new observations either from another
-`tbl_now` or a `data.frame`
+**\[experimental\]**
 
 ## Usage
 
@@ -64,6 +63,11 @@ update(
 ## Value
 
 A `tbl_now` object with all the properties of `object`
+
+## Details
+
+Updates a `tbl_now` object with new observations either from another
+`tbl_now` or a `data.frame`
 
 ## Note
 

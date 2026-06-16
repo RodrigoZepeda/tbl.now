@@ -7,6 +7,8 @@ Functions to change the attributes of a `tbl_now` object.
 ``` r
 change_now(x, now = NULL)
 
+update_now(x)
+
 change_event_date(x, event_date)
 
 change_report_date(x, report_date)
@@ -86,6 +88,8 @@ change_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
 A `tbl_now` object with updated attributes
 
 ## Details
+
+**\[stable\]**
 
 Variable selection is done via
 [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)

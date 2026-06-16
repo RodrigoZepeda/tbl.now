@@ -10,6 +10,8 @@ only *record* what should be computed; this function performs the
 computation. If no temporal effects have been configured the object is
 returned unchanged.
 
+**\[experimental\]**
+
 ## Usage
 
 ``` r

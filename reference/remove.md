@@ -41,7 +41,7 @@ remove_temporal_effects(x)
 
 ## Value
 
-A `tbl_now` object with updated attributes
+A `tbl_now` object with updated attributes **\[stable\]**
 
 ## Details
 

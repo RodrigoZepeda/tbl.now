@@ -15,6 +15,10 @@ tbl_now_attributes(x)
 
   A `tbl_now` object
 
+## Details
+
+**\[stable\]**
+
 ## Examples
 
 ``` r

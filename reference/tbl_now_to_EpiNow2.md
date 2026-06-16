@@ -34,6 +34,10 @@ tbl_now_to_EpiNow2(x, ..., verbose = TRUE)
 
 A `data.table` with columns `date` and `confirm`.
 
+## Details
+
+**\[experimental\]**
+
 ## Examples
 
 ``` r

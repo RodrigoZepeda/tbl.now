@@ -71,6 +71,8 @@ An object of class `temporal_effects`.
 
 ## Details
 
+**\[stable\]**
+
 US Federal holidays can be passed by providing the
 [`almanac::cal_us_federal()`](https://rdrr.io/pkg/almanac/man/cal_us_federal.html)
 calendar.

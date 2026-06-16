@@ -1,5 +1,11 @@
 # Changelog
 
+## tbl.now 0.7.3
+
+- Added the
+  [`update_now()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
+  function to make it more intuitive to update the now.
+
 ## tbl.now 0.7.0
 
 - Added an
