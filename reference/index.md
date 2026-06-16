@@ -172,5 +172,8 @@
 
   Update a `tbl_now`
 
+- [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
+  : Validate a tbl_now object
+
 - [`week_2_date()`](https://rodrigozepeda.github.io/tbl.now/reference/week_2_date.md)
   : Convert epidemiological (or ISO) week/year to aligned dates

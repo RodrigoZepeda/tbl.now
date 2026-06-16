@@ -40,11 +40,9 @@ ndata <- tbl_now(denguedat, event_date = "onset_week",
 
 # Validate without errors
 validate_tbl_now(ndata)
-#> Error in validate_tbl_now(ndata): could not find function "validate_tbl_now"
 
 # Validate with errors
 if (FALSE){
   validate_tbl_now(data.frame(x = 1:3))
 }
-
 ```
