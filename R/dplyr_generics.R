@@ -30,8 +30,7 @@
 #'   validate_tbl_now(data.frame(x = 1:3))
 #' }
 #'
-#'
-#' @keywords internal
+#' @export
 validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
 
 

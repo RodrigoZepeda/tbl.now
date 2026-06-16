@@ -35,6 +35,4 @@ if (FALSE){
   validate_tbl_now(data.frame(x = 1:3))
 }
 
-
 }
-\keyword{internal}
