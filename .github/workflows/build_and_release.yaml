@@ -3,7 +3,7 @@ name: Build and Release Package
 on:
   push:
     branches:
-      - [master, main]
+      - main
 
 jobs:
   build-and-release:
