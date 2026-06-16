@@ -1,0 +1,50 @@
+name: Build and Release Package
+
+on:
+  push:
+    branches:
+      - [master, main]
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to create the GitHub release and deploy pages
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - name: Setup pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Install dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck, any::pkgdown
+
+      - name: Extract version from DESCRIPTION
+        id: version
+        run: |
+          VERSION=$(grep "^Version:" DESCRIPTION | awk '{print $2}')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "PKG_FILE=tbl.now_${VERSION}.tar.gz" >> $GITHUB_ENV
+
+      - name: Build package bundle
+        run: |
+          R CMD build .
+        shell: bash
+
+      - name: Create or Update GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ env.VERSION }}
+          name: tbl.now v${{ env.VERSION }}
+          artifacts: "${{ env.PKG_FILE }}"
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
