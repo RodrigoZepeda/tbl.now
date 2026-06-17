@@ -41,7 +41,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -1314,10 +1314,41 @@ the unobserved cases with:</p>
 the counts to zero if they have not been observed.</p>
 </div>
 <div class="section level3">
+<h3 id="censoring-extreme-delays">Censoring extreme delays<a class="anchor" aria-label="anchor" href="#censoring-extreme-delays"></a>
+</h3>
+<p>The function <code><a href="../reference/censor_delays_above.html">censor_delays_above()</a></code> marks all delays
+above a threshold value (<code>max_delay</code>) as censored. This is
+useful to indicate extreme delays in some nowcast models:</p>
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>onset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-01-01"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>                 reported <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-01-01"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">2</span>, <span class="fl">300</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>, event_date <span class="op">=</span> <span class="va">onset</span>, report_date <span class="op">=</span> <span class="va">reported</span>,</span>
+<span>              data_type <span class="op">=</span> <span class="st">"linelist"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># the 300-day report becomes censored (an upper bound on its delay)</span></span>
+<span><span class="fu"><a href="../reference/censor_delays_above.html">censor_delays_above</a></span><span class="op">(</span><span class="va">tn</span>, max_delay <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Marked 1 report with delay &gt; 60 days as censored.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> This delay is now an upper bound (is_censored).</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  4 × 6</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
+<span><span class="co">#&gt;   onset        reported      .event_num .report_num .delay .is_censored </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>        </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span> <span style="color: #949494;">[is_censored]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-01-01   2020-01-02             0           1      1 FALSE        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-01-01   2020-01-06             0           5      5 FALSE        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-01-02   2020-01-03             1           2      1 FALSE        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2020-01-03   2020-10-27             2         300    298 TRUE         </span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-10-27</span> | Event date: <span style="color: #0000BB;">"onset"</span> | Report date: <span style="color: #0000BB;">"reported"</span></span></span>
+<span><span class="co">#&gt; # Right-censored indicator: <span style="color: #0000BB;">".is_censored"</span></span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
+</div>
+<div class="section level3">
 <h3 id="converting-to-data-formats-from-other-packages">Converting to data formats from other packages<a class="anchor" aria-label="anchor" href="#converting-to-data-formats-from-other-packages"></a>
 </h3>
 <blockquote>
-<p><strong>NOTE</strong> This is still work in progress</p>
+<p><strong>NOTE</strong> This is still work in progress </p>
 </blockquote>
 <p><code>tbl.now</code> ships converters that move data between a
 <code>tbl_now</code> and the data structures used by other nowcasting
@@ -1396,7 +1427,7 @@ key)</td>
 <p>The object produced by any <code>tbl_now_to_*()</code> can be
 converted straight back with <a href="https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.html">as_tbl_now()</a>,
 which has methods for each of these classes:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>, event_date <span class="op">=</span> <span class="st">"onset_week"</span>,</span>
 <span>                      report_date <span class="op">=</span> <span class="st">"report_week"</span>, strata <span class="op">=</span> <span class="st">"gender"</span>,</span>
 <span>                      verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -1430,7 +1461,7 @@ which has methods for each of these classes:</p>
 <p>For example, the <a href="https://package.epinowcast.org/" class="external-link">epinowcast</a> hospitalization
 data ships in long cumulative format and converts straight into a
 <code>count-cumulative</code> <code>tbl_now</code>:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">germany_hospitalizations</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">epinowcast</span><span class="fu">::</span><span class="va"><a href="https://package.epinowcast.org/reference/germany_covid19_hosp.html" class="external-link">germany_covid19_hosp</a></span>, <span class="fl">1000</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">hospitalizations_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_from_epinowcast</a></span><span class="op">(</span></span>
@@ -1439,7 +1470,7 @@ data ships in long cumulative format and converts straight into a
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">hospitalizations_now</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1,000 × 8</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  893 × 8</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
 <span><span class="co">#&gt;    reference_date location age_group confirm report_date  .event_num .report_num</span></span>
@@ -1459,11 +1490,11 @@ data ships in long cumulative format and converts straight into a
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2021-10-20</span> | Event date: <span style="color: #0000BB;">"reference_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
 <span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"location"</span> and <span style="color: #0000BB;">"age_group"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 990 more rows</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 883 more rows</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: .delay &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>Going the other way, <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> returns an
 <code>enw_preprocess_data</code> object ready for <a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast::epinowcast()</a>:</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">epinowcast_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">hospitalizations_now</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">epinowcast_object</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "enw_preprocess_data" "data.table"          "data.frame"</span></span></code></pre></div>

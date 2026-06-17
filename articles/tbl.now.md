@@ -1188,6 +1188,40 @@ complete_zeroes(ndata)
 Which looks at all the possible report dates and event dates and sets
 the counts to zero if they have not been observed.
 
+### Censoring extreme delays
+
+The function
+[`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+marks all delays above a threshold value (`max_delay`) as censored. This
+is useful to indicate extreme delays in some nowcast models:
+
+``` r
+
+df <- data.frame(onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
+                 reported = as.Date("2020-01-01") + c(1, 5, 2, 300))
+tn <- tbl_now(df, event_date = onset, report_date = reported,
+              data_type = "linelist", verbose = FALSE)
+
+# the 300-day report becomes censored (an upper bound on its delay)
+censor_delays_above(tn, max_delay = 60)
+#> ℹ Marked 1 report with delay > 60 days as censored.
+#> • This delay is now an upper bound (is_censored).
+#> # A tibble:  4 × 6
+#> # Data type: "linelist"
+#> # Frequency: Event: `days` | Report: `days`
+#>   onset        reported      .event_num .report_num .delay .is_censored 
+#>   <date>       <date>             <dbl>       <dbl>  <dbl> <lgl>        
+#>   [event_date] [report_date]      [...]       [...]  [...] [is_censored]
+#> 1 2020-01-01   2020-01-02             0           1      1 FALSE        
+#> 2 2020-01-01   2020-01-06             0           5      5 FALSE        
+#> 3 2020-01-02   2020-01-03             1           2      1 FALSE        
+#> 4 2020-01-03   2020-10-27             2         300    298 TRUE         
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-10-27 | Event date: "onset" | Report date: "reported"
+#> # Right-censored indicator: ".is_censored"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
 ### Converting to data formats from other packages
 
 > **NOTE** This is still work in progress
@@ -1277,7 +1311,7 @@ hospitalizations_now <- tbl_now_from_epinowcast(
 )
 
 hospitalizations_now
-#> # A tibble:  1,000 × 8
+#> # A tibble:  893 × 8
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
 #>    reference_date location age_group confirm report_date  .event_num .report_num
@@ -1297,7 +1331,7 @@ hospitalizations_now
 #> # Now: 2021-10-20 | Event date: "reference_date" | Report date: "report_date"
 #> # Strata: "location" and "age_group"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 990 more rows
+#> # ℹ 883 more rows
 #> # ℹ 1 more variable: .delay <dbl>
 ```
 

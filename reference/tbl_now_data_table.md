@@ -1,5 +1,7 @@
 # Convert between `tbl_now` and data.table
 
+**\[experimental\]**
+
 `tbl_now_from_data_table()` converts a `data.table` into a `tbl_now`
 (requires explicit `event_date` / `report_date` columns).
 `tbl_now_to_data_table()` strips the `tbl_now` class and returns a
@@ -43,10 +45,6 @@ tbl_now_to_data_table(x, ..., verbose = TRUE)
 ## Value
 
 A `tbl_now` (`from`) or a `data.table` (`to`).
-
-## Details
-
-**\[experimental\]**
 
 ## Examples
 

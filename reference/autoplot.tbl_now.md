@@ -1,6 +1,9 @@
 # Diagnostic `autoplot` for a `tbl_now`
 
-Produces a four-panel diagnostic overview of a `tbl_now` using ggplot2
+**\[experimental\]**
+
+Produces a four-panel diagnostic overview of a `tbl_now` using
+[`ggplot2::ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
 and patchwork:
 
 1.  **Empirical delay distribution** — a (case-count weighted) kernel
@@ -24,7 +27,7 @@ and patchwork:
 If the attached
 [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
 spec contains a holidays calendar, the event dates that fall on a
-holiday are marked with red dots in panel 2.
+holiday are marked with dots in panel 2.
 
 ## Usage
 
@@ -75,10 +78,6 @@ autoplot(
 ## Value
 
 A patchwork object combining the four panels.
-
-## Details
-
-**\[experimental\]**
 
 ## Examples
 

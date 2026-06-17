@@ -1,5 +1,7 @@
 # Convert between `tbl_now` and baselinenowcast
 
+**\[experimental\]**
+
 `tbl_now_from_baselinenowcast()` accepts either the long `data.frame`
 (`reference_date`, `report_date`, `count`) or a `reporting_triangle`
 matrix (rownames = reference dates, colnames = delays, incremental
@@ -72,10 +74,6 @@ tbl_now_to_baselinenowcast(
 ## Value
 
 A `tbl_now` (`from`), or a `data.frame`/`reporting_triangle` (`to`).
-
-## Details
-
-**\[experimental\]**
 
 ## Examples
 

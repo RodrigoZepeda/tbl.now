@@ -1,6 +1,8 @@
 # Add attributes to a `tbl_now` object
 
-Functions to add the attributes to a `tbl_now` object.
+**\[stable\]**
+
+Functions to add attributes to a `tbl_now` object.
 
 ## Usage
 

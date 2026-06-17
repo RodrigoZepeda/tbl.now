@@ -1,5 +1,7 @@
 # Convert epidemiological (or ISO) week/year to aligned dates
 
+**\[experimental\]**
+
 Takes week numbers and year numbers and returns the date corresponding
 to a specified weekday within that week. This is typically used for
 aligning epiweek or isoweek data to a consistent weekday.

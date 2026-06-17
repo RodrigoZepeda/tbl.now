@@ -1,5 +1,7 @@
 # Add temporal effect coding to a `tbl_now`
 
+**\[stable\]**
+
 Takes a `tbl_now` or a `data.frame` and adds the temporal effects
 `t_effect` as columns
 
@@ -72,12 +74,14 @@ add_temporal_effects(
 
 - weekend_days:
 
-  A character or numeric vector defining weekend days. -Numeric: must be
-  integers in 1-7 corresponding to
-  [`lubridate::wday()`](https://lubridate.tidyverse.org/reference/day.html)
-  when `week_start = 1`. -Character: any of c("Mon","Tuesday","wed",...)
-  case-insensitive. Defaults to Saturday and Sunday (weekend_days =
-  c("Sat", "Sun")).
+  A character or numeric vector defining weekend days.
+
+  - Numeric: must be integers in 1-7 corresponding to
+    [`lubridate::wday()`](https://lubridate.tidyverse.org/reference/day.html)
+    when `week_start = 1`.
+
+  - Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
+    Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).
 
 - date_type:
 
@@ -89,9 +93,12 @@ add_temporal_effects(
 A `tbl_now` or `data.frame` containing all of the effects as new
 columns.
 
-## Details
+## See also
 
-**\[stable\]**
+[`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
+[add](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+[remove](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
+[change](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
 
 ## Examples
 

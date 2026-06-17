@@ -1,6 +1,8 @@
 # Getters for tbl_now attributes
 
-These functions extract the attributes from a `tbl_now` object. Each
+**\[experimental\]**
+
+Functions that extract the attributes from a `tbl_now` object. Each
 function returns a specific attribute (e.g. event date, strata,
 covariates, etc).
 
@@ -41,8 +43,6 @@ get_case_count(x)
 - x:
 
   A `tbl_now` object.
-
-  **\[stable\]**
 
 ## Value
 

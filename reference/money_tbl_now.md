@@ -1,6 +1,8 @@
 # Set accessor for `tbl_now` class
 
-Set accessor for `tbl_now` class
+**\[stable\]**
+
+Accessor for `tbl_now` columns
 
 ## Usage
 

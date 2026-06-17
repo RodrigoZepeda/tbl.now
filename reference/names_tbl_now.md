@@ -1,8 +1,8 @@
 # Set names on `tbl_now` class
 
-If the modifying the names invalidates the `tbl_now` object the
-subsetting will return a data frame with the other attributes of the
-class preserved.
+**\[experimental\]**
+
+Function for modifying the names of a `tbl_now`
 
 ## Usage
 
@@ -27,3 +27,9 @@ names(x) <- value
 ## Value
 
 A `tbl_now` object or a `data.frame`
+
+## Details
+
+If the modifying the names invalidates the `tbl_now` object the
+subsetting will return a data frame with the other attributes of the
+class preserved.

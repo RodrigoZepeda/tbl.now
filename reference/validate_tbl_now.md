@@ -1,5 +1,7 @@
 # Validate a tbl_now object
 
+**\[experimental\]**
+
 Checks that an object is a properly constructed `tbl_now` with all
 required attributes and valid data.
 
@@ -30,8 +32,6 @@ validate_tbl_now(x, warn_non_uniqueness = FALSE, warn_now = TRUE)
 
 Returns `TRUE` invisibly or throws an error. Called for its side
 effects.
-
-**\[stable\]**
 
 ## Examples
 

@@ -1,6 +1,10 @@
 # Transform an object to count data
 
-**\[stable\]**
+**\[stable\]** Transforms a `tbl.now` from:
+
+- `linelist`: to `count-incidence` or `count-cumulative`
+
+- `count-incidence`: to `count-cumulative`
 
 ## Usage
 
@@ -26,6 +30,11 @@ to_count(x, to = NULL, ...)
 
   Additional arguments
 
+## Value
+
+A `tbl_now` object of the requested `to` data type, with the counts
+aggregated into the `case_count` column.
+
 ## Details
 
 This is an S3 generic. This package provides methods for the following
@@ -36,7 +45,7 @@ classes:
 
 ## Note
 
-`linelist` data cannot be reconstructed from `count-*` data. Tring this
+`linelist` data cannot be reconstructed from `count-*` data. Trying this
 will throw an error as you cannot un-count aggregated data.
 
 ## Examples

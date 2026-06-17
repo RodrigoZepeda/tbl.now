@@ -1,0 +1,60 @@
+# Flag reports with an implausibly long delay as censored
+
+**\[experimental\]**
+
+Marks every report whose reporting delay exceeds `max_delay` (in event
+units) as *censored*: the recorded delay becomes an upper bound rather
+than an exact value. This is the natural response to a "delay too long"
+outlier: instead of letting, say, a 300-day delay drag the delay
+distribution, you tell the model only that the case arrived *by* that
+delay.
+
+The delay is read from the `tbl_now`'s generated `.delay` column (the
+report date minus the event date, in the data's event units). The
+`is_censored` column is updated (or created) and merged with any
+existing censoring flags (already-censored reports stay censored).
+
+## Usage
+
+``` r
+censor_delays_above(data, max_delay, quiet = FALSE)
+```
+
+## Arguments
+
+- data:
+
+  A `tbl_now` object.
+
+- max_delay:
+
+  Numeric. Reports with delay strictly greater than this (in the data's
+  event units) are flagged as censored.
+
+- quiet:
+
+  If `TRUE`, suppress the informational message.
+
+## Value
+
+The `tbl_now` with its `is_censored` column updated (created if absent).
+
+## See also
+
+[`add_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md),
+[`change_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md),
+[`remove_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
+
+## Examples
+
+``` r
+df <- data.frame(onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
+                 reported = as.Date("2020-01-01") + c(1, 5, 2, 300))
+tn <- tbl_now(df, event_date = onset, report_date = reported,
+              data_type = "linelist", verbose = FALSE)
+
+# the 300-day report becomes censored (an upper bound on its delay)
+tn <- censor_delays_above(tn, max_delay = 60)
+#> ℹ Marked 1 report with delay > 60 days as censored.
+#> • This delay is now an upper bound (is_censored).
+```

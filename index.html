@@ -47,7 +47,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -157,6 +157,9 @@
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
+<blockquote>
+<p><strong>Note</strong> Linelist, count-incidence and count-cumulative data is available for a <code>tbl_now</code>. See the <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html#data-types">data types</a> section of <code><a href="reference/tbl_now.html">tbl_now()</a></code> for more information.</p>
+</blockquote>
 </div>
 <div class="section level2">
 <h2 id="adding-strata">Adding strata<a class="anchor" aria-label="anchor" href="#adding-strata"></a>
@@ -321,6 +324,35 @@
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">flusight_now</span>, level <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-autoplot-1.png" alt="" width="100%"></p>
+</div>
+<div class="section level2">
+<h2 id="extreme-delays">Extreme delays<a class="anchor" aria-label="anchor" href="#extreme-delays"></a>
+</h2>
+<p>Extreme delays can be censored with the <code><a href="reference/censor_delays_above.html">censor_delays_above()</a></code> function that assigns upper bounds to the delay. In the following data frame for example, an extreme delay of 300 is marked as <code>censored</code> with that function:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>onset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-01-01"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>                 reported <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-01-01"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">2</span>, <span class="fl">300</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>, event_date <span class="op">=</span> <span class="va">onset</span>, report_date <span class="op">=</span> <span class="va">reported</span>,</span>
+<span>              data_type <span class="op">=</span> <span class="st">"linelist"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># the 300-day report becomes censored (an upper bound on its delay)</span></span>
+<span><span class="fu"><a href="reference/censor_delays_above.html">censor_delays_above</a></span><span class="op">(</span><span class="va">tn</span>, max_delay <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span>
+<span><span class="co">#&gt; ℹ Marked 1 report with delay &gt; 60 event units as censored.</span></span>
+<span><span class="co">#&gt; • Their delay is now an upper bound; re-fit downstream to use it.</span></span>
+<span><span class="co">#&gt; # A tibble:  4 × 6</span></span>
+<span><span class="co">#&gt; # Data type: "linelist"</span></span>
+<span><span class="co">#&gt; # Frequency: Event: `days` | Report: `days`</span></span>
+<span><span class="co">#&gt;   onset        reported      .event_num .report_num .delay .is_censored </span></span>
+<span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;             &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt; &lt;lgl&gt;        </span></span>
+<span><span class="co">#&gt;   [event_date] [report_date]      [...]       [...]  [...] [is_censored]</span></span>
+<span><span class="co">#&gt; 1 2020-01-01   2020-01-02             0           1      1 FALSE        </span></span>
+<span><span class="co">#&gt; 2 2020-01-01   2020-01-06             0           5      5 FALSE        </span></span>
+<span><span class="co">#&gt; 3 2020-01-02   2020-01-03             1           2      1 FALSE        </span></span>
+<span><span class="co">#&gt; 4 2020-01-03   2020-10-27             2         300    298 TRUE         </span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # Now: 2020-10-27 | Event date: "onset" | Report date: "reported"</span></span>
+<span><span class="co">#&gt; # Right-censored indicator: ".is_censored"</span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>

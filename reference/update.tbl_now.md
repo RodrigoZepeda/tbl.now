@@ -2,6 +2,9 @@
 
 **\[experimental\]**
 
+Updates a `tbl_now` object with new observations either from another
+`tbl_now` or a `data.frame`
+
 ## Usage
 
 ``` r
@@ -46,8 +49,9 @@ update(
 
 - t_effects:
 
-  (optional) Whether to keep the temporal_effects from `object`
-  ("left"), from `new_data` ("right") or from `both` ("both")
+  (optional) Which temporal-effects spec to keep: from `object`
+  (`"left"`, the default), from `new_data` (`"right"`) or the union of
+  both (`"both"`).
 
 - now:
 
@@ -63,11 +67,6 @@ update(
 ## Value
 
 A `tbl_now` object with all the properties of `object`
-
-## Details
-
-Updates a `tbl_now` object with new observations either from another
-`tbl_now` or a `data.frame`
 
 ## Note
 

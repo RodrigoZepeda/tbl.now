@@ -1,5 +1,7 @@
 # Convert between `tbl_now` and epidist
 
+**\[experimental\]**
+
 epidist models the delay between a *primary* event (e.g. symptom onset)
 and a *secondary* event (e.g. report), storing each as an
 interval-censored pair of date columns: `pdate_lwr`/`pdate_upr` for the
@@ -85,10 +87,6 @@ tbl_now_to_epidist(
 ## Value
 
 A `tbl_now` (`from`) or an `epidist_linelist_data` object (`to`).
-
-## Details
-
-**\[experimental\]**
 
 ## Examples
 

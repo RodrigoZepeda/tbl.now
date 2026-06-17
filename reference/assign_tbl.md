@@ -1,7 +1,9 @@
-# Subset function for `tbl_now` with downgrade-on-subsetting
+# Subset function for `tbl_now`
 
-IF the subsetting invalidates the class then a `data.frame` will be
-returned.
+**\[stable\]**
+
+Accesors to `tbl_now` elements (rows and columns) as if it was a
+data.frame
 
 ## Usage
 
@@ -26,3 +28,7 @@ x[...]
 ## Value
 
 A `tbl_now` object or a `data.frame`
+
+## Details
+
+If the subsetting invalidates the class then a `data.frame` is returned.

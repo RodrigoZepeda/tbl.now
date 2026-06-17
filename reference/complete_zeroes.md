@@ -1,6 +1,9 @@
-# Complete zeroes
+# Complete with zeroes
 
 **\[experimental\]**
+
+Takes a `tbl.now` object and completes observations for event_dates or
+report_dates that have not been registered (by each strata) with a 0.
 
 ## Usage
 
@@ -20,10 +23,10 @@ complete_zeroes(x, max_delay = NULL)
   0's all reports with delays 0 to 4. But will not fill other delays
   (say 6)
 
-## Details
+## Value
 
-Takes a `tbl.now` object and completes observations for event_dates or
-onset_weeks that have not been registered by each strata with a 0
+A `tbl.now` object with the same columns that includes the `0`
+observations in the `case_count`.
 
 ## Examples
 

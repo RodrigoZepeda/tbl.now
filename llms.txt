@@ -101,6 +101,13 @@ df_now %>%
 #> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
+> **Note** Linelist, count-incidence and count-cumulative data is
+> available for a `tbl_now`. See the [data
+> types](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html#data-types)
+> section of
+> [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+> for more information.
+
 ## Adding strata
 
 If strata was given, the
@@ -303,6 +310,41 @@ autoplot(flusight_now, level = 1)
 
 ![](reference/figures/README-autoplot-1.png)
 
+## Extreme delays
+
+Extreme delays can be censored with the
+[`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+function that assigns upper bounds to the delay. In the following data
+frame for example, an extreme delay of 300 is marked as `censored` with
+that function:
+
+``` r
+
+df <- data.frame(onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
+                 reported = as.Date("2020-01-01") + c(1, 5, 2, 300))
+tn <- tbl_now(df, event_date = onset, report_date = reported,
+              data_type = "linelist", verbose = FALSE)
+
+# the 300-day report becomes censored (an upper bound on its delay)
+censor_delays_above(tn, max_delay = 60)
+#> ℹ Marked 1 report with delay > 60 event units as censored.
+#> • Their delay is now an upper bound; re-fit downstream to use it.
+#> # A tibble:  4 × 6
+#> # Data type: "linelist"
+#> # Frequency: Event: `days` | Report: `days`
+#>   onset        reported      .event_num .report_num .delay .is_censored 
+#>   <date>       <date>             <dbl>       <dbl>  <dbl> <lgl>        
+#>   [event_date] [report_date]      [...]       [...]  [...] [is_censored]
+#> 1 2020-01-01   2020-01-02             0           1      1 FALSE        
+#> 2 2020-01-01   2020-01-06             0           5      5 FALSE        
+#> 3 2020-01-02   2020-01-03             1           2      1 FALSE        
+#> 4 2020-01-03   2020-10-27             2         300    298 TRUE         
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-10-27 | Event date: "onset" | Report date: "reported"
+#> # Right-censored indicator: ".is_censored"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
+
 ## Learning more
 
 - Introduction vignette:
@@ -319,12 +361,12 @@ autoplot(flusight_now, level = 1)
 - [`add_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`add_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-  :
+  **\[stable\]** :
 
   Add attributes to a `tbl_now` object
 
 - [`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
-  :
+  **\[stable\]** :
 
   Add temporal effect coding to a `tbl_now`
 
@@ -338,14 +380,18 @@ autoplot(flusight_now, level = 1)
 
 - [`` `[`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
   [`` `[`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
-  :
+  **\[stable\]** :
 
-  Subset function for `tbl_now` with downgrade-on-subsetting
+  Subset function for `tbl_now`
 
 - [`autoplot(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.md)
-  :
+  **\[experimental\]** :
 
   Diagnostic `autoplot` for a `tbl_now`
+
+- [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+  **\[experimental\]** : Flag reports with an implausibly long delay as
+  censored
 
 - [`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`update_now()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
@@ -355,12 +401,12 @@ autoplot(flusight_now, level = 1)
   [`change_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
   [`change_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
-  :
+  **\[stable\]** :
 
-  Change attributes of a `tbl_now` object
+  Change/update the attributes of a `tbl_now` object
 
 - [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
-  **\[experimental\]** : Complete zeroes
+  **\[experimental\]** : Complete with zeroes
 
 - [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
   **\[experimental\]** :
@@ -379,18 +425,19 @@ autoplot(flusight_now, level = 1)
 
 - [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
   [`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
-  : Get the latest/first reported cases for each event date
+  **\[stable\]** : Get the latest/first reported cases for each event
+  date
 
 - [`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/is_tbl_now.md)
-  : Check if an object is a tbl_now
+  **\[experimental\]** : Check if an object is a tbl_now
 
 - [`is_weekday()`](https://rodrigozepeda.github.io/tbl.now/reference/is_weekday.md)
-  : Check whether a date is a weekday vs weekend (international
-  definition)
+  **\[stable\]** : Check whether a date is a weekday vs weekend
+  (international definition)
 
 - [`` `$<-`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/money_tbl_now.md)
   [`` `$<-`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/money_tbl_now.md)
-  :
+  **\[stable\]** :
 
   Set accessor for `tbl_now` class
 
@@ -399,7 +446,7 @@ autoplot(flusight_now, level = 1)
 
 - [`` `names<-`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/names_tbl_now.md)
   [`` `names<-`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/names_tbl_now.md)
-  :
+  **\[experimental\]** :
 
   Set names on `tbl_now` class
 
@@ -417,10 +464,10 @@ autoplot(flusight_now, level = 1)
   [`get_temporal_effect_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-  : Getters for tbl_now attributes
+  **\[experimental\]** : Getters for tbl_now attributes
 
 - [`print()`](https://rodrigozepeda.github.io/tbl.now/reference/print.md)
-  : Print temporal effects
+  **\[stable\]** : Print temporal effects
 
 - [`remove_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
   [`remove_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
@@ -429,9 +476,9 @@ autoplot(flusight_now, level = 1)
   [`remove_all_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
   [`replace_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
   [`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
-  :
+  **\[stable\]** :
 
-  Remove attributes from a `tbl_now` object
+  Remove/replace attributes from a `tbl_now` object
 
 - [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
   :
@@ -439,31 +486,31 @@ autoplot(flusight_now, level = 1)
   Create a `tbl_now` object
 
 - [`tbl_now_attributes()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.md)
-  :
+  **\[stable\]** :
 
   Show the names of the attributes of a `tbl_now`
 
 - [`tbl_now_from_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
   [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
-  :
+  **\[experimental\]** :
 
   Convert between `tbl_now` and baselinenowcast
 
 - [`tbl_now_from_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md)
   [`tbl_now_to_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md)
-  :
+  **\[experimental\]** :
 
   Convert between `tbl_now` and data.table
 
 - [`tbl_now_from_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
   [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
-  :
+  **\[experimental\]** :
 
   Convert between `tbl_now` and epidist
 
 - [`tbl_now_from_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
   [`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
-  :
+  **\[experimental\]** :
 
   Convert between `tbl_now` and epinowcast
 
@@ -474,12 +521,12 @@ autoplot(flusight_now, level = 1)
 
 - [`tbl_now_from_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md)
   [`tbl_now_to_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md)
-  :
+  **\[experimental\]** :
 
   Convert between `tbl_now` and tsibble
 
 - [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
-  : Temporal Effects Class
+  **\[stable\]** : Temporal Effects Class
 
 - [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
   **\[stable\]** : Transform an object to count data
@@ -490,10 +537,11 @@ autoplot(flusight_now, level = 1)
   Update a `tbl_now`
 
 - [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-  : Validate a tbl_now object
+  **\[experimental\]** : Validate a tbl_now object
 
 - [`week_2_date()`](https://rodrigozepeda.github.io/tbl.now/reference/week_2_date.md)
-  : Convert epidemiological (or ISO) week/year to aligned dates
+  **\[experimental\]** : Convert epidemiological (or ISO) week/year to
+  aligned dates
 
 # Articles
 

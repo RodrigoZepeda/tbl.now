@@ -2,6 +2,8 @@
 
 **\[experimental\]**
 
+Takes an object and transforms it into a `tbl_now`.
+
 ## Usage
 
 ``` r
@@ -54,9 +56,9 @@ as_tbl_now(object, event_date, report_date, ...)
   Additional parameters to pass to
   [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
 
-## Details
+## Value
 
-Takes an object and transforms it into a `tbl_now`.
+A `tbl_now` object.
 
 ## Examples
 

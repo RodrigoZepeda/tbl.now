@@ -1,5 +1,7 @@
 # Check whether a date is a weekday vs weekend (international definition)
 
+**\[stable\]**
+
 Function that checks whether a date object is a weekday or weekend.
 
 ## Usage
@@ -16,20 +18,18 @@ is_weekday(date, weekend_days = c("Sat", "Sun"))
 
 - weekend_days:
 
-  A character or numeric vector defining weekend days. -Numeric: must be
-  integers in 1-7 corresponding to
-  [`lubridate::wday()`](https://lubridate.tidyverse.org/reference/day.html)
-  when `week_start = 1`. -Character: any of c("Mon","Tuesday","wed",...)
-  case-insensitive. Defaults to Saturday and Sunday (weekend_days =
-  c("Sat", "Sun")).
+  A character or numeric vector defining weekend days.
+
+  - Numeric: must be integers in 1-7 corresponding to
+    [`lubridate::wday()`](https://lubridate.tidyverse.org/reference/day.html)
+    when `week_start = 1`.
+
+  - Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
+    Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).
 
 ## Value
 
 A logical vector: TRUE if weekday, FALSE if weekend.
-
-## Details
-
-**\[stable\]**
 
 ## Examples
 

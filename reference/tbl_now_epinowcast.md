@@ -1,5 +1,7 @@
 # Convert between `tbl_now` and epinowcast
 
+**\[experimental\]**
+
 `tbl_now_from_epinowcast()` takes the long observation `data.frame` used
 by epinowcast (with `reference_date`, `report_date` and a cumulative
 `confirm` column, plus optional grouping columns) and converts it into a
@@ -79,10 +81,6 @@ tbl_now_to_epinowcast(
 `tbl_now_from_epinowcast()` returns a `tbl_now`.
 `tbl_now_to_epinowcast()` returns an `enw_preprocess_data` object or a
 `data.table`.
-
-## Details
-
-**\[experimental\]**
 
 ## Examples
 

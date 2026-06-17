@@ -1,5 +1,7 @@
 # Convert between `tbl_now` and tsibble
 
+**\[experimental\]**
+
 A
 [`tsibble::tsibble()`](https://tsibble.tidyverts.org/reference/tsibble.html)
 has a single time `index` and a `key` identifying each series.
@@ -83,10 +85,6 @@ tbl_now_to_tsibble(
 ## Value
 
 A `tbl_now` (`from`) or a `tbl_ts` (`to`).
-
-## Details
-
-**\[experimental\]**
 
 ## Examples
 

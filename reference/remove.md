@@ -1,6 +1,9 @@
-# Remove attributes from a `tbl_now` object
+# Remove/replace attributes from a `tbl_now` object
 
-Functions to remove the attributes to a `tbl_now` object.
+**\[stable\]**
+
+Functions that remove or replace the specified attributes of a `tbl_now`
+object.
 
 ## Usage
 
@@ -41,7 +44,7 @@ remove_temporal_effects(x)
 
 ## Value
 
-A `tbl_now` object with updated attributes **\[stable\]**
+A `tbl_now` object with updated attributes
 
 ## Details
 

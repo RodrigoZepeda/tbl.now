@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,14 +64,14 @@
       <dl><dt>
 
           <code><a href="add.html">add_is_censored()</a></code> <code><a href="add.html">add_strata()</a></code> <code><a href="add.html">add_covariates()</a></code>
-
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Add attributes to a <code>tbl_now</code> object</dd>
 
         <dt>
 
           <code><a href="add_temporal_effects.html">add_temporal_effects()</a></code>
-
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Add temporal effect coding to a <code>tbl_now</code></dd>
 
@@ -92,30 +92,37 @@
         <dt>
 
           <code><a href="assign_tbl.html">`[`(<i>&lt;tbl_now&gt;</i>)</a></code> <code><a href="assign_tbl.html">`[`(<i>&lt;grouped_tbl_now&gt;</i>)</a></code>
-
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
-        <dd>Subset function for <code>tbl_now</code> with downgrade-on-subsetting</dd>
+        <dd>Subset function for <code>tbl_now</code></dd>
 
         <dt>
 
           <code><a href="autoplot.tbl_now.html">autoplot(<i>&lt;tbl_now&gt;</i>)</a></code>
-
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Diagnostic <code>autoplot</code> for a <code>tbl_now</code></dd>
 
         <dt>
 
-          <code><a href="change.html">change_now()</a></code> <code><a href="change.html">update_now()</a></code> <code><a href="change.html">change_event_date()</a></code> <code><a href="change.html">change_report_date()</a></code> <code><a href="change.html">change_case_count()</a></code> <code><a href="change.html">change_is_censored()</a></code> <code><a href="change.html">change_strata()</a></code> <code><a href="change.html">change_covariates()</a></code>
-
+          <code><a href="censor_delays_above.html">censor_delays_above()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
-        <dd>Change attributes of a <code>tbl_now</code> object</dd>
+        <dd>Flag reports with an implausibly long delay as censored</dd>
+
+        <dt>
+
+          <code><a href="change.html">change_now()</a></code> <code><a href="change.html">update_now()</a></code> <code><a href="change.html">change_event_date()</a></code> <code><a href="change.html">change_report_date()</a></code> <code><a href="change.html">change_case_count()</a></code> <code><a href="change.html">change_is_censored()</a></code> <code><a href="change.html">change_strata()</a></code> <code><a href="change.html">change_covariates()</a></code>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
+        </dt>
+        <dd>Change/update the attributes of a <code>tbl_now</code> object</dd>
 
         <dt>
 
           <code><a href="complete_zeroes.html">complete_zeroes()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
-        <dd>Complete zeroes</dd>
+        <dd>Complete with zeroes</dd>
 
         <dt>
 
@@ -148,28 +155,28 @@
         <dt>
 
           <code><a href="get_latest_first.html">get_latest_reported_cases()</a></code> <code><a href="get_latest_first.html">get_initial_reported_cases()</a></code>
-
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Get the latest/first reported cases for each event date</dd>
 
         <dt>
 
           <code><a href="is_tbl_now.html">is_tbl_now()</a></code>
-
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Check if an object is a tbl_now</dd>
 
         <dt>
 
           <code><a href="is_weekday.html">is_weekday()</a></code>
-
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Check whether a date is a weekday vs weekend (international definition)</dd>
 
         <dt>
 
           <code><a href="money_tbl_now.html">`$&lt;-`(<i>&lt;tbl_now&gt;</i>)</a></code> <code><a href="money_tbl_now.html">`$&lt;-`(<i>&lt;grouped_tbl_now&gt;</i>)</a></code>
-
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Set accessor for <code>tbl_now</code> class</dd>
 
@@ -183,30 +190,30 @@
         <dt>
 
           <code><a href="names_tbl_now.html">`names&lt;-`(<i>&lt;tbl_now&gt;</i>)</a></code> <code><a href="names_tbl_now.html">`names&lt;-`(<i>&lt;grouped_tbl_now&gt;</i>)</a></code>
-
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Set names on <code>tbl_now</code> class</dd>
 
         <dt>
 
           <code><a href="nowcast_data_getters.html">get_event_date()</a></code> <code><a href="nowcast_data_getters.html">get_report_date()</a></code> <code><a href="nowcast_data_getters.html">get_strata()</a></code> <code><a href="nowcast_data_getters.html">get_num_strata()</a></code> <code><a href="nowcast_data_getters.html">get_covariates()</a></code> <code><a href="nowcast_data_getters.html">get_num_covariates()</a></code> <code><a href="nowcast_data_getters.html">get_now()</a></code> <code><a href="nowcast_data_getters.html">get_report_units()</a></code> <code><a href="nowcast_data_getters.html">get_event_units()</a></code> <code><a href="nowcast_data_getters.html">get_data_type()</a></code> <code><a href="nowcast_data_getters.html">get_temporal_effects()</a></code> <code><a href="nowcast_data_getters.html">get_temporal_effect_cols()</a></code> <code><a href="nowcast_data_getters.html">get_is_censored()</a></code> <code><a href="nowcast_data_getters.html">get_case_count()</a></code>
-
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Getters for tbl_now attributes</dd>
 
         <dt>
 
           <code><a href="print.html">print()</a></code>
-
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Print temporal effects</dd>
 
         <dt>
 
           <code><a href="remove.html">remove_is_censored()</a></code> <code><a href="remove.html">remove_strata()</a></code> <code><a href="remove.html">remove_all_strata()</a></code> <code><a href="remove.html">remove_covariates()</a></code> <code><a href="remove.html">remove_all_covariates()</a></code> <code><a href="remove.html">replace_temporal_effects()</a></code> <code><a href="remove.html">remove_temporal_effects()</a></code>
-
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
-        <dd>Remove attributes from a <code>tbl_now</code> object</dd>
+        <dd>Remove/replace attributes from a <code>tbl_now</code> object</dd>
 
         <dt>
 
@@ -218,35 +225,35 @@
         <dt>
 
           <code><a href="tbl_now_attributes.html">tbl_now_attributes()</a></code>
-
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Show the names of the attributes of a <code>tbl_now</code></dd>
 
         <dt>
 
           <code><a href="tbl_now_baselinenowcast.html">tbl_now_from_baselinenowcast()</a></code> <code><a href="tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code>
-
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Convert between <code>tbl_now</code> and <span class="pkg">baselinenowcast</span></dd>
 
         <dt>
 
           <code><a href="tbl_now_data_table.html">tbl_now_from_data_table()</a></code> <code><a href="tbl_now_data_table.html">tbl_now_to_data_table()</a></code>
-
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Convert between <code>tbl_now</code> and <span class="pkg">data.table</span></dd>
 
         <dt>
 
           <code><a href="tbl_now_epidist.html">tbl_now_from_epidist()</a></code> <code><a href="tbl_now_epidist.html">tbl_now_to_epidist()</a></code>
-
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Convert between <code>tbl_now</code> and <span class="pkg">epidist</span></dd>
 
         <dt>
 
           <code><a href="tbl_now_epinowcast.html">tbl_now_from_epinowcast()</a></code> <code><a href="tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code>
-
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Convert between <code>tbl_now</code> and <span class="pkg">epinowcast</span></dd>
 
@@ -260,14 +267,14 @@
         <dt>
 
           <code><a href="tbl_now_tsibble.html">tbl_now_from_tsibble()</a></code> <code><a href="tbl_now_tsibble.html">tbl_now_to_tsibble()</a></code>
-
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Convert between <code>tbl_now</code> and <span class="pkg">tsibble</span></dd>
 
         <dt>
 
           <code><a href="temporal_effects.html">temporal_effects()</a></code>
-
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Temporal Effects Class</dd>
 
@@ -288,14 +295,14 @@
         <dt>
 
           <code><a href="validate_tbl_now.html">validate_tbl_now()</a></code>
-
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Validate a tbl_now object</dd>
 
         <dt>
 
           <code><a href="week_2_date.html">week_2_date()</a></code>
-
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Convert epidemiological (or ISO) week/year to aligned dates</dd>
       </dl></div>

@@ -1,6 +1,8 @@
 # Check if an object is a tbl_now
 
-Check if an object is a tbl_now
+**\[experimental\]**
+
+Checks if object x is a `tbl.now`
 
 ## Usage
 

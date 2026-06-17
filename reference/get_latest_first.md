@@ -1,7 +1,9 @@
 # Get the latest/first reported cases for each event date
 
-Function that gets the latest (respectively first) number of cases that
-has been reported for each `event_date`
+**\[stable\]**
+
+Function that gets the latest (respectively initially observed) number
+of cases that has been reported for each `event_date`
 
 ## Usage
 
@@ -15,11 +17,24 @@ get_initial_reported_cases(x)
 
 - x:
 
-  A `tbl_now` object
+  A `tbl.now` object
 
-## Details
+## Value
 
-**\[stable\]**
+A `tbl.now` containing the following columns:
+
+- `event_date` The date the event happened. Its numerical version is
+  `.event_num`.
+
+- `report_date` The date of the latest report for events happening on
+  `event_date`. Its numerical version is `.report_num`.
+
+- `n` The total number of events happening at `event_date`
+
+- `.delay` The maximum delay observed for that `event_date`
+
+- Other columns that include the strata or the censoring indicators and
+  the temporal effects for that event.
 
 ## Examples
 

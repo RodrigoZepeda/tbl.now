@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,6 +52,17 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.0" id="tblnow-080">tbl.now 0.8.0<a class="anchor" aria-label="anchor" href="#tblnow-080"></a></h2>
+<ul><li>Modified the <code>update</code> as the <code>t_effect</code> argument was not doing anything.</li>
+<li>Fixed bug that errored <code>complete_zeroes</code> when <code>is_censored</code> was given.</li>
+<li>Removed explicit zeroes from the converters (<code>tbl_now_from_*</code>) as they are not necessary in <code>tbl_now</code>.</li>
+<li>Added <code><a href="../reference/censor_delays_above.html">censor_delays_above()</a></code> to flag reports with an implausibly long delay as censored (their delay becomes an upper bound).</li>
+<li>Improved documentation and README</li>
+<li>Documented all internal functions with roxygen (<code>@keywords internal</code> + <code>@noRd</code>) and ensured every exported function has a <code>@return</code>.</li>
+<li>Homogenized <code>lifecycle</code> badges.</li>
+<li>Brought the <code>censor_delays_above</code> function from <code>diseasenowcasting</code> to <code>tbl_now</code>.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.5" id="tblnow-075">tbl.now 0.7.5<a class="anchor" aria-label="anchor" href="#tblnow-075"></a></h2>
 <ul><li>Bumped roxygen to version 8.0.0. This also resulted in updated documentation.</li>

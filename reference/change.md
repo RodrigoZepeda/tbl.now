@@ -1,4 +1,6 @@
-# Change attributes of a `tbl_now` object
+# Change/update the attributes of a `tbl_now` object
+
+**\[stable\]**
 
 Functions to change the attributes of a `tbl_now` object.
 
@@ -89,8 +91,6 @@ A `tbl_now` object with updated attributes
 
 ## Details
 
-**\[stable\]**
-
 Variable selection is done via
 [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 and can be used with the auxiliary dplyr verbs such as
@@ -100,7 +100,37 @@ and
 [`dplyr::where()`](https://tidyselect.r-lib.org/reference/where.html).
 See
 [`dplyr::select()`](https://dplyr.tidyverse.org/reference/select.html)
-for additional info.
+for additional information.
+
+The `update_now()` function updates the now to the latest date in a
+tibble. For example:
+
+    #Get the data
+    data(denguedat)
+    ndata <- tbl_now(denguedat,
+                     event_date = onset_week,
+                     report_date = report_week,
+                     verbose = FALSE)
+
+    #The now is in 2010 because the data reaches all the way there
+    get_now(ndata)
+    #> [1] "2010-12-20"
+
+    #We can filter the data
+    ndata_1992 <- ndata %>%
+     dplyr::filter(onset_week <= as.Date("1992/01/01") &
+                   report_week <= as.Date("1992/01/01"))
+
+    #But the now will still be in 2010
+    get_now(ndata_1992)
+    #> [1] "2010-12-20"
+
+    #The update now brings it to the closest date before the cut
+    ndata_1992 <- ndata_1992 %>% update_now()
+
+    #Which is now correct and set to the latest date before the cut
+    get_now(ndata_1992)
+    #> [1] "1991-12-30"
 
 ## See also
 
