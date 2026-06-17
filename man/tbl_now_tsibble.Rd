@@ -33,7 +33,7 @@ the tsibble index.}
 \item{strata}{Optional character vector of strata columns (\code{from}). If \code{NULL}
 (default) the tsibble key columns other than the date columns are used.}
 
-\item{...}{Forwarded to \code{\link[=as_tbl_now]{as_tbl_now()}} (\code{from}) or \code{\link[tsibble:as-tsibble]{tsibble::as_tsibble()}}
+\item{...}{Forwarded to \code{\link[=as_tbl_now]{as_tbl_now()}} (\code{from}) or \code{\link[tsibble:as_tsibble]{tsibble::as_tsibble()}}
 (\code{to}).}
 
 \item{verbose}{Logical. Print the choices that were made.}
@@ -54,7 +54,7 @@ becomes part of the \code{key}.
 
 \code{tbl_now_from_tsibble()} converts a \code{tbl_ts} into a \code{tbl_now}. You must say
 which column is the \code{event_date}; \code{report_date} defaults to the tsibble's
-index (\code{\link[tsibble:index-rd]{tsibble::index_var()}}).
+index (\code{\link[tsibble:index_var]{tsibble::index_var()}}).
 
 \code{tbl_now_to_tsibble()} converts a \code{tbl_now} into a \code{tbl_ts}, using \code{index}
 (\code{"report_date"}, the default, or \code{"event_date"}) as the tsibble index and

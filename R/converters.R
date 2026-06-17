@@ -527,7 +527,20 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("long", "matrix"),
 
   if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 
-    if (get_data_type(x) != "count-incidence") {
+    # baselinenowcast needs incremental (count-incidence) counts.
+    #  - count-incidence: use as-is.
+    #  - linelist: aggregating to incidence is well defined.
+    #  - count-cumulative: NOT convertible — cumulative totals get revised
+    #    downward (cases un-confirmed), so de-accumulating would yield negative
+    #    "incidence". Refuse rather than produce nonsense.
+    dtype <- get_data_type(x)
+    if (dtype == "count-cumulative") {
+      cli::cli_abort(c(
+        "Cannot convert {.val count-cumulative} data to the incremental counts {.pkg baselinenowcast} requires.",
+        "i" = "Cumulative totals can be revised downward, so de-accumulating them may give negative incidence.",
+        "i" = "Supply {.val count-incidence} or {.val linelist} data instead."
+      ))
+    } else if (dtype != "count-incidence") {
       cli::cli_warn(
         "baselinenowcast expects incremental counts; converting {.arg x} to {.val count-incidence} with {.fn to_count}."
       )

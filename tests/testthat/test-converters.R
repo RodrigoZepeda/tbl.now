@@ -458,3 +458,237 @@ test_that("as_tbl_now.data.table errors without event/report dates", {
   dt <- data.table::as.data.table(data.frame(a = 1, b = 2))
   expect_error(as_tbl_now(dt), "event_date")
 })
+
+# ============================================================
+# Internal helpers & error/fallback branches
+# ============================================================
+
+test_that(".need_pkg aborts for a missing package", {
+  expect_error(
+    tbl.now:::.need_pkg("a_package_that_surely_does_not_exist_xyz"),
+    "required"
+  )
+})
+
+test_that(".reporting_triangle_to_long needs reference dates as row names", {
+  m <- matrix(1:4, nrow = 2)
+  expect_error(tbl.now:::.reporting_triangle_to_long(m), "row names")
+})
+
+test_that(".reporting_triangle_to_long falls back to 0-based delays for non-numeric colnames", {
+  m <- matrix(c(1, 2, NA, 4), nrow = 2,
+              dimnames = list(c("2020-01-01", "2020-01-02"), c("a", "b")))
+  res <- tbl.now:::.reporting_triangle_to_long(m, delays_unit = "days")
+  expect_s3_class(res, "data.frame")
+  expect_setequal(names(res), c("reference_date", "report_date", "count"))
+  # NA cell dropped → 3 rows
+  expect_equal(nrow(res), 3L)
+})
+
+test_that("tbl_now_from_baselinenowcast errors on a long df missing columns", {
+  expect_error(
+    tbl_now_from_baselinenowcast(data.frame(a = 1, b = 2, c = 3), verbose = FALSE),
+    "not found"
+  )
+})
+
+test_that("tbl_now_from_tsibble needs report_date for a non-tsibble input", {
+  skip_if_not_installed("tsibble")
+  expect_error(
+    tbl_now_from_tsibble(data.frame(ev = 1, rp = 2), event_date = "ev"),
+    "report_date"
+  )
+})
+
+# ============================================================
+# from_* verbose summaries (strata / covariates / case_count lines)
+# ============================================================
+
+test_that("tbl_now_from_epinowcast verbose prints strata and case_count", {
+  skip_if_not_installed("epinowcast")
+  obs <- head(epinowcast::germany_covid19_hosp, 200)
+  expect_message(
+    tbl_now_from_epinowcast(obs, strata = c("location", "age_group"), verbose = TRUE),
+    "case_count"
+  )
+})
+
+test_that("tbl_now_from_epidist interval verbose prints covariates", {
+  iv <- data.frame(
+    pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
+    pdate_upr = as.Date(c("2020-03-02", "2020-03-03")),
+    sdate_lwr = as.Date(c("2020-03-05", "2020-03-04")),
+    sdate_upr = as.Date(c("2020-03-06", "2020-03-05"))
+  )
+  expect_message(
+    suppressWarnings(
+      tbl_now_from_epidist(iv, format = "interval",
+                           event_units = "days", report_units = "days", verbose = TRUE)
+    ),
+    "covariates"
+  )
+})
+
+# ============================================================
+# to_* verbose printing blocks + data-type coercion warnings
+# ============================================================
+
+# Shared count fixtures (weekly, strata + counts)
+make_incidence_now <- function() {
+  tbl_now(
+    data.frame(
+      ev  = as.Date("2020-01-01") + rep(c(0, 7, 14), each = 2),
+      rp  = as.Date("2020-01-01") + c(0, 7, 7, 14, 14, 21),
+      grp = rep(c("A", "B"), 3),
+      n   = c(3, 2, 4, 1, 5, 2)
+    ),
+    event_date = "ev", report_date = "rp", case_count = "n", strata = "grp",
+    data_type = "count-incidence", event_units = "weeks", report_units = "weeks",
+    verbose = FALSE
+  )
+}
+
+test_that("tbl_now_to_epinowcast verbose prints the conversion summary", {
+  skip_if_not_installed("epinowcast")
+  cumul <- to_count(make_incidence_now(), to = "count-cumulative")
+  expect_message(
+    suppressWarnings(tbl_now_to_epinowcast(cumul, verbose = TRUE)),
+    "epinowcast"
+  )
+})
+
+test_that("tbl_now_to_epinowcast warns + coerces non-cumulative input", {
+  skip_if_not_installed("epinowcast")
+  expect_warning(
+    suppressMessages(tbl_now_to_epinowcast(make_incidence_now(), verbose = FALSE)),
+    "cumulative"
+  )
+})
+
+test_that("tbl_now_to_baselinenowcast verbose prints the conversion summary", {
+  skip_if_not_installed("baselinenowcast")
+  expect_message(
+    tbl_now_to_baselinenowcast(make_incidence_now(), format = "long", verbose = TRUE),
+    "baselinenowcast"
+  )
+})
+
+test_that("tbl_now_to_baselinenowcast warns + coerces linelist input", {
+  # linelist -> count-incidence is the supported coercion path
+  data(denguedat)
+  ll <- tbl_now(denguedat, event_date = "onset_week", report_date = "report_week",
+                verbose = FALSE)
+  expect_warning(
+    suppressMessages(tbl_now_to_baselinenowcast(ll, format = "long", verbose = FALSE)),
+    "incremental"
+  )
+})
+
+test_that("tbl_now_to_baselinenowcast errors on count-cumulative input", {
+  skip_if_not_installed("baselinenowcast")
+  # Cumulative totals can be revised downward, so de-accumulating them would give
+  # negative incidence; the converter must refuse rather than produce nonsense.
+  cumul <- to_count(make_incidence_now(), to = "count-cumulative")
+  expect_error(
+    tbl_now_to_baselinenowcast(cumul, format = "long", verbose = FALSE),
+    "count-cumulative"
+  )
+})
+
+test_that("tbl_now_to_EpiNow2 verbose prints the conversion summary", {
+  skip_if_not_installed("data.table")
+  expect_message(
+    tbl_now_to_EpiNow2(make_incidence_now(), verbose = TRUE),
+    "EpiNow2"
+  )
+})
+
+test_that("tbl_now_to_data_table verbose prints the conversion summary", {
+  skip_if_not_installed("data.table")
+  expect_message(
+    tbl_now_to_data_table(make_incidence_now(), verbose = TRUE),
+    "data.table"
+  )
+})
+
+test_that("tbl_now_to_tsibble verbose prints the conversion summary", {
+  skip_if_not_installed("tsibble")
+  expect_message(
+    tbl_now_to_tsibble(make_incidence_now(), verbose = TRUE),
+    "tsibble"
+  )
+})
+
+test_that("tbl_now_to_epidist verbose prints the conversion summary", {
+  skip_if_not_installed("epidist")
+  data(denguedat)
+  ll <- tbl_now(denguedat, event_date = "onset_week", report_date = "report_week",
+                verbose = FALSE)
+  expect_message(
+    suppressWarnings(tbl_now_to_epidist(ll, format = "linelist", verbose = TRUE)),
+    "epidist"
+  )
+})
+
+# ============================================================
+# Remaining reachable branches
+# ============================================================
+
+test_that("tbl_now_from_data_table warns when input is not a data.table", {
+  data(denguedat)
+  expect_warning(
+    tbl_now_from_data_table(as.data.frame(denguedat),
+                            event_date = "onset_week", report_date = "report_week",
+                            verbose = FALSE),
+    "not a"
+  )
+})
+
+test_that("tbl_now_from_epinowcast sets strata to NULL when there are no extra columns", {
+  skip_if_not_installed("epinowcast")
+  obs <- data.frame(
+    reference_date = as.Date("2021-01-01") + rep(c(0, 7, 14), each = 2),
+    report_date    = as.Date("2021-01-01") + c(0, 7, 7, 14, 14, 21),
+    confirm        = c(1, 3, 2, 5, 4, 7)
+  )
+  res <- tbl_now_from_epinowcast(obs, event_units = "weeks", report_units = "weeks",
+                                 verbose = FALSE)
+  expect_null(get_strata(res))
+})
+
+test_that("tbl_now_from_tsibble sets strata to NULL when the key holds only dates", {
+  skip_if_not_installed("tsibble")
+  df <- data.frame(
+    event  = as.Date("2021-01-01") + rep(c(0, 7, 14), each = 2),
+    report = as.Date("2021-01-01") + c(0, 7, 7, 14, 14, 21),
+    n      = c(1, 3, 2, 5, 4, 7)
+  )
+  ts  <- tsibble::as_tsibble(df, index = report, key = event)
+  res <- tbl_now_from_tsibble(ts, event_date = "event",
+                              event_units = "weeks", report_units = "weeks",
+                              verbose = FALSE)
+  expect_null(get_strata(res))
+})
+
+test_that("tbl_now_from_epidist interval errors on missing bound columns", {
+  expect_error(
+    tbl_now_from_epidist(data.frame(pdate_lwr = as.Date("2020-01-01")),
+                         format = "interval", verbose = FALSE),
+    "not found"
+  )
+})
+
+test_that("tbl_now_to_epidist interval errors when named upper-bound columns are absent", {
+  skip_if_not_installed("epidist")
+  data(denguedat)
+  ll <- tbl_now(denguedat, event_date = "onset_week", report_date = "report_week",
+                verbose = FALSE)
+  expect_error(
+    suppressWarnings(
+      tbl_now_to_epidist(ll, format = "interval",
+                         primary_upper = "no_such_col", secondary_upper = "nope",
+                         verbose = FALSE)
+    ),
+    "Upper-bound"
+  )
+})

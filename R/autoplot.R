@@ -367,7 +367,7 @@ ggplot2::autoplot
 #' @importFrom rlang .data
 #' @importFrom ggplot2 autoplot
 #' @exportS3Method ggplot2::autoplot
-autoplot.tbl_now <- function(object, ..., level = 1,
+autoplot.tbl_now <- function(object, ..., level = 0.95,
                              palette = .tbl_now_palette(),
                              delay_distribution_xlim = NULL,
                              event_date_xlim = NULL,

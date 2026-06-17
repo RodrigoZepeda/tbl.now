@@ -3,6 +3,10 @@
 \name{print_temporal_effects}
 \alias{print_temporal_effects}
 \title{Print temporal effects}
+\usage{
+## S7 method for class <tbl.now::temporal_effects>
+print(x, ...)
+}
 \arguments{
 \item{x}{A temporal_effects object created with \code{\link[=temporal_effects]{temporal_effects()}}}
 

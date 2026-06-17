@@ -44,8 +44,8 @@ Functions to remove the attributes to a \code{tbl_now} object.
 }
 \details{
 Variable selection can be used with the
-auxiliary dplyr verbs such as \code{\link[dplyr:reexports]{dplyr::starts_with()}}, \code{\link[dplyr:reexports]{dplyr::all_of()}},
-and \code{\link[dplyr:reexports]{dplyr::where()}}. See \code{\link[dplyr:select]{dplyr::select()}} for additional info.
+auxiliary dplyr verbs such as \code{\link[dplyr:starts_with]{dplyr::starts_with()}}, \code{\link[dplyr:all_of]{dplyr::all_of()}},
+and \code{\link[dplyr:where]{dplyr::where()}}. See \code{\link[dplyr:select]{dplyr::select()}} for additional info.
 }
 \examples{
 data(denguedat)

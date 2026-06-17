@@ -51,7 +51,7 @@ use \code{date_col}.}
 \item{name_prefix}{What preffix to add to the column names}
 
 \item{weekend_days}{A character or numeric vector defining weekend days.
--Numeric: must be integers in 1-7 corresponding to \code{\link[lubridate:day]{lubridate::wday()}} when \code{week_start = 1}.
+-Numeric: must be integers in 1-7 corresponding to \code{\link[lubridate:wday]{lubridate::wday()}} when \code{week_start = 1}.
 -Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
 Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).}
 

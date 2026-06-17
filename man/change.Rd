@@ -78,8 +78,8 @@ Functions to change the attributes of a \code{tbl_now} object.
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Variable selection is done via \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
-and can be used with the auxiliary dplyr verbs such as \code{\link[dplyr:reexports]{dplyr::starts_with()}}, \code{\link[dplyr:reexports]{dplyr::all_of()}},
-and \code{\link[dplyr:reexports]{dplyr::where()}}. See \code{\link[dplyr:select]{dplyr::select()}} for additional info.
+and can be used with the auxiliary dplyr verbs such as \code{\link[dplyr:starts_with]{dplyr::starts_with()}}, \code{\link[dplyr:all_of]{dplyr::all_of()}},
+and \code{\link[dplyr:where]{dplyr::where()}}. See \code{\link[dplyr:select]{dplyr::select()}} for additional info.
 }
 \examples{
 data(denguedat)

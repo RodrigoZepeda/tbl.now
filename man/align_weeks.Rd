@@ -23,11 +23,11 @@ align_weeks(.data, align_on_day = 1, type = "epi", ...)
 \item{.data}{A \code{data.frame} or tibble.}
 
 \item{align_on_day}{Integer 1–7 indicating the weekday to align to.
-Uses \code{\link[lubridate:day]{lubridate::wday()}} numbering (1 = Sunday, 7 = Saturday).}
+Uses \code{\link[lubridate:wday]{lubridate::wday()}} numbering (1 = Sunday, 7 = Saturday).}
 
 \item{type}{Either \code{"epi"} (default) or \code{"iso"}. Determines
-which week/year functions to use whether \code{\link[lubridate:week]{lubridate::epiweek()}} or
-\code{\link[lubridate:week]{lubridate::isoweek()}}}
+which week/year functions to use whether \code{\link[lubridate:epiweek]{lubridate::epiweek()}} or
+\code{\link[lubridate:isoweek]{lubridate::isoweek()}}}
 
 \item{...}{Additional arguments to pass to function}
 
