@@ -452,7 +452,8 @@ get_initial_reported_cases(x) / get_latest_reported_cases(x)
 ## Reference: package data
 
 ```r
-data(denguedat)   # dengue surveillance linelist (weekly, Brazil)
+data(flusight)    # flu data in the United States (count-cumulative)
+data(denguedat)   # dengue surveillance linelist (weekly, Puerto Rico)
 data(mpoxdat)     # mpox count-incidence data (has a `race` stratum + `n` counts)
 ```
 
