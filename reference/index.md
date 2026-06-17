@@ -105,6 +105,9 @@
   [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   : Getters for tbl_now attributes
 
+- [`print()`](https://rodrigozepeda.github.io/tbl.now/reference/print.md)
+  : Print temporal effects
+
 - [`remove_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
   [`remove_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
   [`remove_all_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)

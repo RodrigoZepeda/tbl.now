@@ -1,12 +1,21 @@
 # Print temporal effects
 
-Print function for printing the a \[temporal_effects()\].
+Print function for printing the a
+[`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md).
+
+## Usage
+
+``` r
+## S7 method for class <tbl.now::temporal_effects>
+print(x, ...)
+```
 
 ## Arguments
 
 - x:
 
-  A temporal_effects object created with \[temporal_effects()\]
+  A temporal_effects object created with
+  [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
 
 - ...:
 
@@ -16,30 +25,23 @@ Print function for printing the a \[temporal_effects()\].
 
 ``` r
 print(temporal_effects(day_of_week = TRUE, week_of_year = TRUE))
-#> <tbl.now::temporal_effects>
-#>  @ day_of_week  : logi TRUE
-#>  @ weekend      : logi FALSE
-#>  @ day_of_month : logi FALSE
-#>  @ month_of_year: logi FALSE
-#>  @ week_of_year : logi TRUE
-#>  @ seasons      : int(0) 
-#>  @ holidays     : NULL
+#> 
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "day_of_week"
+#> • "week_of_year"
 print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE))
-#> <tbl.now::temporal_effects>
-#>  @ day_of_week  : logi FALSE
-#>  @ weekend      : logi FALSE
-#>  @ day_of_month : logi FALSE
-#>  @ month_of_year: logi FALSE
-#>  @ week_of_year : logi FALSE
-#>  @ seasons      : int(0) 
-#>  @ holidays     : NULL
+#> 
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> No temporal effects are considered.
 print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE, seasons = 52))
-#> <tbl.now::temporal_effects>
-#>  @ day_of_week  : logi FALSE
-#>  @ weekend      : logi FALSE
-#>  @ day_of_month : logi FALSE
-#>  @ month_of_year: logi FALSE
-#>  @ week_of_year : logi FALSE
-#>  @ seasons      : num 52
-#>  @ holidays     : NULL
+#> 
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "season" periods: 52
+print(temporal_effects(seasons = 52, season_length = 7))
+#> 
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "season" periods: 52*7=364
 ```
