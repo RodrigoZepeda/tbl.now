@@ -1,5 +1,16 @@
 # Changelog
 
+## tbl.now 0.7.5
+
+- Bumped roxygen to version 8.0.0. This also resulted in updated
+  documentation.
+- Changed
+  [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)’s
+  default level to 0.95
+- Added tests for converters and pillars.
+- Throws warning when converting to `baselinenowcast` if data is
+  `"count-cumulative"`.
+
 ## tbl.now 0.7.3
 
 - Added the

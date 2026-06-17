@@ -3,6 +3,13 @@
 Print function for printing the a
 [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md).
 
+## Usage
+
+``` r
+## S7 method for class <tbl.now::temporal_effects>
+print(x, ...)
+```
+
 ## Arguments
 
 - x:

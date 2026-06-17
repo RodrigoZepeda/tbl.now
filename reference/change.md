@@ -94,10 +94,10 @@ A `tbl_now` object with updated attributes
 Variable selection is done via
 [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 and can be used with the auxiliary dplyr verbs such as
-[`dplyr::starts_with()`](https://dplyr.tidyverse.org/reference/reexports.html),
-[`dplyr::all_of()`](https://dplyr.tidyverse.org/reference/reexports.html),
+[`dplyr::starts_with()`](https://tidyselect.r-lib.org/reference/starts_with.html),
+[`dplyr::all_of()`](https://tidyselect.r-lib.org/reference/all_of.html),
 and
-[`dplyr::where()`](https://dplyr.tidyverse.org/reference/reexports.html).
+[`dplyr::where()`](https://tidyselect.r-lib.org/reference/where.html).
 See
 [`dplyr::select()`](https://dplyr.tidyverse.org/reference/select.html)
 for additional info.

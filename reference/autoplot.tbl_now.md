@@ -33,7 +33,7 @@ holiday are marked with red dots in panel 2.
 autoplot(
   object,
   ...,
-  level = 1,
+  level = 0.95,
   palette = .tbl_now_palette(),
   delay_distribution_xlim = NULL,
   event_date_xlim = NULL,
