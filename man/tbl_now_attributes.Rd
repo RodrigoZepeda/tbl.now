@@ -9,12 +9,15 @@ tbl_now_attributes(x)
 \arguments{
 \item{x}{A \code{tbl_now} object}
 }
+\value{
+A named list with the attributes that are specific to the \code{tbl_now}
+class (i.e. those not shared with a plain \code{tibble}).
+}
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
 Shows exclusively the attributes of a \code{tbl_now} that are not part
 of the attributes of a \code{tibble} (or a grouped tibble).
-}
-\details{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 }
 \examples{
 data(denguedat)
@@ -22,9 +25,9 @@ df_now <- tbl_now(denguedat, event_date = onset_week,
   report_date = report_week, strata = gender, verbose = FALSE)
 
 #Attributes gets all attributes
-attributes(df_now)
+attributes(df_now) \%>\% names()
 
 #tbl_now_attributes gets only those associated to the `tbl_now` class
-tbl_now_attributes(df_now)
+tbl_now_attributes(df_now) \%>\% names()
 
 }

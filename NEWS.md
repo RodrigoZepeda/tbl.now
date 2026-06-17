@@ -1,3 +1,17 @@
+# tbl.now 0.8.0
+
+* Modified the `update` as the `t_effect` argument was not doing anything. 
+* Fixed bug that errored `complete_zeroes` when `is_censored` was given. 
+* Removed explicit zeroes from the converters (`tbl_now_from_*`) as they
+are not necessary in `tbl_now`. 
+* Added `censor_delays_above()` to flag reports with an implausibly long delay
+as censored (their delay becomes an upper bound).
+* Improved documentation and README
+* Documented all internal functions with roxygen (`@keywords internal` + `@noRd`)
+and ensured every exported function has a `@return`.
+* Homogenized `lifecycle` badges. 
+* Brought the `censor_delays_above` function from `diseasenowcasting` to `tbl_now`. 
+
 # tbl.now 0.7.5
 
 * Bumped roxygen to version 8.0.0. This also resulted in updated documentation. 

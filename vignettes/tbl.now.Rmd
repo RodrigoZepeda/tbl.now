@@ -647,9 +647,23 @@ complete_zeroes(ndata)
 
 Which looks at all the possible report dates and event dates and sets the counts to zero if they have not been observed.
 
+### Censoring extreme delays
+
+The function `censor_delays_above()` marks all delays above a threshold value (`max_delay`) as censored. This is useful to indicate extreme delays in some nowcast models:
+
+```{r}
+df <- data.frame(onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
+                 reported = as.Date("2020-01-01") + c(1, 5, 2, 300))
+tn <- tbl_now(df, event_date = onset, report_date = reported,
+              data_type = "linelist", verbose = FALSE)
+
+# the 300-day report becomes censored (an upper bound on its delay)
+censor_delays_above(tn, max_delay = 60)
+```
+
 ### Converting to data formats from other packages
 
-> **NOTE** This is still work in progress
+> **NOTE** This is still work in progress  `r lifecycle::badge("experimental")`
 
 `tbl.now` ships converters that move data between a `tbl_now` and the data structures used by other nowcasting and delay-estimation packages. They all follow the same naming convention:
 

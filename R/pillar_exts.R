@@ -3,7 +3,18 @@
 # See the Custom Formatting vignette from pillar for more info:
 # https://pillar.r-lib.org/articles/extending.html
 
-# Helper: format a list of temporal-effect specs into a human-readable string
+#' Format temporal-effect specs into a human-readable string
+#'
+#' Turns the list of lazy temporal-effect specs stored on a `tbl_now` into a
+#' single string for the print footer, e.g.
+#' `"[event_date] week_of_year, season(52) | [report_date] holidays"`.
+#'
+#' @param specs The list of specs as returned by [get_temporal_effects()].
+#'
+#' @return A length-1 character string, or `NULL` when there are no specs.
+#'
+#' @keywords internal
+#' @noRd
 .format_temporal_effects_spec <- function(specs) {
   if (is.null(specs) || length(specs) == 0) return(NULL)
 

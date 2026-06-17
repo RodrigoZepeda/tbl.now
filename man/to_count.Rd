@@ -17,8 +17,17 @@ the resulting data-type to be created.}
 
 \item{...}{Additional arguments}
 }
+\value{
+A \code{tbl_now} object of the requested \code{to} data type, with the counts
+aggregated into the \code{case_count} column.
+}
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+Transforms a \code{tbl.now} from:
+\itemize{
+\item \code{linelist}: to \code{count-incidence} or \code{count-cumulative}
+\item \code{count-incidence}: to  \code{count-cumulative}
+}
 }
 \details{
 This is an S3 generic. This package provides methods for the
@@ -29,7 +38,7 @@ name \code{n} of counts of observations if \code{data_type = "linelist"}.
 }
 }
 \note{
-\code{linelist} data cannot be reconstructed from \verb{count-*} data. Tring
+\code{linelist} data cannot be reconstructed from \verb{count-*} data. Trying
 this will throw an error as you cannot un-count aggregated data.
 }
 \examples{

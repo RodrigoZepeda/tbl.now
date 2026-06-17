@@ -1,6 +1,6 @@
 #' Update a `tbl_now`
 #'
-#' `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('experimental')`
 #'
 #' Updates a `tbl_now` object with new observations
 #' either from another `tbl_now` or a `data.frame`
@@ -17,8 +17,9 @@
 #' from `new_data` ("right") or from `both` ("both")
 #' @param covariates (optional) Whether to keep the covariates from `object` ("left"),
 #' from `new_data` ("right") or from `both` ("both")
-#' @param t_effects (optional) Whether to keep the temporal_effects from `object` ("left"),
-#' from `new_data` ("right") or from `both` ("both")
+#' @param t_effects (optional) Which temporal-effects spec to keep: from `object`
+#' (`"left"`, the default), from `new_data` (`"right"`) or the union of both
+#' (`"both"`).
 #' @param remove_duplicates Whether to remove duplicated rows from data (only applies for `count` data)
 #'
 #' @note By default it keeps the strata, covariates and temporal effects of `object`. Use
@@ -210,8 +211,41 @@ update.tbl_now <- function(object, ..., new_data,
     )
   }
 
-  if (!identical(get_temporal_effects(new_data), get_temporal_effects(object)) && (length(get_temporal_effects(new_data)) > 0 | length(get_temporal_effects(object)) > 0)){
-    cli::cli_abort("Cannot handle different temporal_effects")
+  # --- Temporal effects -------------------------------------------------------
+  # Pick / merge the lazy specs according to `t_effects`, drop any already
+  # computed temporal-effect columns (they are stale once new rows are bound),
+  # and recompute after the merge if the inputs had their effects materialised.
+  te_object <- get_temporal_effects(object)
+  te_new    <- if (is_tbl_now(new_data)) get_temporal_effects(new_data) else list()
+
+  merged_t_effects <- switch(
+    t_effects,
+    left  = te_object,
+    right = te_new,
+    both  = c(te_object, te_new),
+    cli::cli_abort(
+      "Option for `t_effects` should be {.val {c('left','right','both')}}. Don't know how to handle value {.val {t_effects}}"
+    )
+  )
+  # De-duplicate identical specs (relevant mostly for `both`)
+  if (length(merged_t_effects) > 1) {
+    merged_t_effects <- merged_t_effects[!duplicated(merged_t_effects)]
+  }
+
+  # Were the temporal effects materialised on either input?
+  had_computed_t_effects <-
+    length(get_temporal_effect_cols(object)) > 0 ||
+    (is_tbl_now(new_data) && length(get_temporal_effect_cols(new_data)) > 0)
+
+  # Remove already-computed temporal-effect columns carried in by bind_rows;
+  # they will be recomputed from the merged spec below.
+  stale_t_effect_cols <- union(
+    get_temporal_effect_cols(object),
+    if (is_tbl_now(new_data)) get_temporal_effect_cols(new_data) else character(0)
+  )
+  stale_t_effect_cols <- intersect(stale_t_effect_cols, colnames(updated_data))
+  if (length(stale_t_effect_cols) > 0) {
+    updated_data <- updated_data %>% dplyr::select(-dplyr::all_of(stale_t_effect_cols))
   }
 
   result <- tbl_now(updated_data,
@@ -228,8 +262,13 @@ update.tbl_now <- function(object, ..., new_data,
           force = TRUE,
           ...)
 
-  # Preserve the lazy temporal-effects spec from the original object
-  attr(result, "temporal_effects") <- get_temporal_effects(object)
+  # Attach the merged temporal-effects spec. Start from a clean (uncomputed)
+  # state, then recompute on the merged data when the inputs had been computed.
+  attr(result, "temporal_effects")              <- merged_t_effects
+  attr(result, "computed_temporal_effect_cols") <- character(0)
+  if (length(merged_t_effects) > 0 && had_computed_t_effects) {
+    result <- compute_temporal_effects(result, overwrite = TRUE)
+  }
   result
 
 }

@@ -641,33 +641,82 @@ test_that("update.tbl_now works when new_data is tbl_now", {
   expect_equal(length(get_temporal_effects(result)), 0)
 })
 
-test_that("update fails when temporal effects don't match", {
+## --- temporal effects: left / right / both ---------------------------------
+
+# Build two tbl_now with *different* lazy temporal-effects specs
+setup_te_pair <- function() {
   test_data <- setup_test_data()
-
-  initial_tbl <- tbl_now(
-    test_data$initial_data,
-    event_date = "onset_week",
-    report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
-    verbose = FALSE
-  ) %>%
+  left <- tbl_now(test_data$initial_data, event_date = "onset_week",
+                  report_date = "report_week", report_units = "weeks",
+                  event_units = "weeks", verbose = FALSE) %>%
     add_temporal_effects(temporal_effects(week_of_year = TRUE))
-
-  update_tbl <- tbl_now(
-    test_data$update_data,
-    event_date = "onset_week",
-    report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
-    verbose = FALSE
-  ) %>%
+  right <- tbl_now(test_data$update_data, event_date = "onset_week",
+                   report_date = "report_week", report_units = "weeks",
+                   event_units = "weeks", verbose = FALSE) %>%
     add_temporal_effects(temporal_effects(day_of_week = TRUE))
+  list(left = left, right = right)
+}
 
-  expect_error(
-    update(initial_tbl, new_data = update_tbl),
-    "different temporal_effects"
-  )
+# Helper: does a tbl_now's spec list contain a given effect?
+te_has <- function(x, effect) {
+  any(vapply(get_temporal_effects(x),
+             function(s) isTRUE(S7::prop(s$t_effects, effect)), logical(1)))
+}
+
+test_that("update t_effects = 'left' keeps object's spec (no error)", {
+  p <- setup_te_pair()
+  res <- update(p$left, new_data = p$right, t_effects = "left")
+  expect_length(get_temporal_effects(res), 1L)
+  expect_true(te_has(res, "week_of_year"))
+  expect_false(te_has(res, "day_of_week"))
+})
+
+test_that("update t_effects = 'right' keeps new_data's spec", {
+  p <- setup_te_pair()
+  res <- update(p$left, new_data = p$right, t_effects = "right")
+  expect_length(get_temporal_effects(res), 1L)
+  expect_true(te_has(res, "day_of_week"))
+  expect_false(te_has(res, "week_of_year"))
+})
+
+test_that("update t_effects = 'both' merges the two specs", {
+  p <- setup_te_pair()
+  res <- update(p$left, new_data = p$right, t_effects = "both")
+  expect_length(get_temporal_effects(res), 2L)
+  expect_true(te_has(res, "week_of_year"))
+  expect_true(te_has(res, "day_of_week"))
+})
+
+test_that("update keeps lazy specs lazy (no computed columns)", {
+  p <- setup_te_pair()
+  res <- update(p$left, new_data = p$right, t_effects = "both")
+  expect_length(get_temporal_effect_cols(res), 0L)
+})
+
+test_that("update recomputes temporal effects when inputs were computed", {
+  p <- setup_te_pair()
+  left  <- compute_temporal_effects(p$left)
+  right <- compute_temporal_effects(p$right)
+
+  res <- update(left, new_data = right, t_effects = "both")
+  cols <- get_temporal_effect_cols(res)
+  expect_true(".event_week_of_year" %in% cols)
+  expect_true(".event_day_of_week"  %in% cols)
+  # recomputed columns have no missing values (i.e. not stale/partial)
+  expect_false(anyNA(res[[".event_week_of_year"]]))
+  expect_false(anyNA(res[[".event_day_of_week"]]))
+})
+
+test_that("update t_effects = 'right' with a plain data.frame yields no spec", {
+  p <- setup_te_pair()
+  res <- update(p$left, new_data = setup_test_data()$update_data, t_effects = "right")
+  expect_length(get_temporal_effects(res), 0L)
+})
+
+test_that("update errors on an unknown t_effects option", {
+  p <- setup_te_pair()
+  expect_error(update(p$left, new_data = p$right, t_effects = "middle"),
+               "left.*right.*both")
 })
 
 test_that("update preserves data integrity", {

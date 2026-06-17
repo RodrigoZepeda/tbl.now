@@ -49,6 +49,8 @@ lower-bound dates. Default to epidist's \code{"pdate_lwr"} / \code{"sdate_lwr"}.
 A \code{tbl_now} (\code{from}) or an \code{epidist_linelist_data} object (\code{to}).
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 \pkg{epidist} models the delay between a \emph{primary} event (e.g. symptom
 onset) and a \emph{secondary} event (e.g. report), storing each as an
 interval-censored pair of date columns: \code{pdate_lwr}/\code{pdate_upr} for the
@@ -69,9 +71,6 @@ primary event and \code{sdate_lwr}/\code{sdate_upr} for the secondary event
 \code{epidist_linelist_data} object via \code{\link[epidist:as_epidist_linelist_data]{epidist::as_epidist_linelist_data()}}.
 For \code{format = "interval"} the upper bounds are taken from covariate columns
 named in \code{primary_upper} / \code{secondary_upper}.
-}
-\details{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \examples{
 \dontshow{if (requireNamespace("epidist", quietly = TRUE)) withAutoprint(\{ # examplesIf}

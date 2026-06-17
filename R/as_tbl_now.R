@@ -1,12 +1,14 @@
 #' Transform into a `tbl_now` object
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description  `r lifecycle::badge("experimental")`
 #'
 #' Takes an object  and transforms it into a `tbl_now`.
 #'
 #' @param object An object to convert to `tbl_now`.
 #' @inheritParams tbl_now
 #' @param ... Additional parameters to pass to [tbl_now()]
+#'
+#' @return A `tbl_now` object.
 #'
 #' @examples
 #' #Convert a data.frame to tbl_now

@@ -20,6 +20,11 @@
 A \code{tbl_now} object or a \code{data.frame}
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+Function for modifying the names of a \code{tbl_now}
+}
+\details{
 If the modifying the names invalidates the \code{tbl_now} object
 the subsetting will return a data frame with the other attributes of the
 class preserved.

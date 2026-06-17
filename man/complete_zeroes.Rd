@@ -2,7 +2,7 @@
 % Please edit documentation in R/complete_zeroes.R
 \name{complete_zeroes}
 \alias{complete_zeroes}
-\title{Complete zeroes}
+\title{Complete with zeroes}
 \usage{
 complete_zeroes(x, max_delay = NULL)
 }
@@ -12,13 +12,16 @@ complete_zeroes(x, max_delay = NULL)
 \item{max_delay}{Maximum delay to fill. For example if set to 5 it will complete
 with 0's all reports with delays 0 to 4. But will not fill other delays (say 6)}
 }
+\value{
+A \code{tbl.now} object with the same columns that includes
+the \code{0} observations in the \code{case_count}.
+}
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Takes a \code{tbl.now} object and completes observations
-for event_dates or onset_weeks that have not been registered
-by each strata with a 0
+for event_dates or report_dates that have not been registered
+(by each strata) with a 0.
 }
 \examples{
 ndata <- dplyr::tibble(

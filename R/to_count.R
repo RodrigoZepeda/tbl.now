@@ -1,7 +1,11 @@
 #' Transform an object to count data
 #'
-#' `r lifecycle::badge("stable")`
+#' @description `r lifecycle::badge("stable")`
+#' Transforms a `tbl.now` from:
+#' * `linelist`: to `count-incidence` or `count-cumulative`
+#' * `count-incidence`: to  `count-cumulative`
 #'
+#' @details
 #' This is an S3 generic. This package provides methods for the
 #' following classes:
 #'
@@ -15,8 +19,11 @@
 #'
 #' @param ... Additional arguments
 #'
-#' @note `linelist` data cannot be reconstructed from `count-*` data. Tring
+#' @note `linelist` data cannot be reconstructed from `count-*` data. Trying
 #' this will throw an error as you cannot un-count aggregated data.
+#'
+#' @return A `tbl_now` object of the requested `to` data type, with the counts
+#' aggregated into the `case_count` column.
 #'
 #' @examples
 #' data(denguedat)

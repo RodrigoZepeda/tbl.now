@@ -1,12 +1,42 @@
-#' Change attributes of a `tbl_now` object
+#' Change/update the attributes of a `tbl_now` object
 #'
-#' `r lifecycle::badge('stable')`
+#' @description `r lifecycle::badge("stable")`
 #'
-#' @description Functions to change the attributes of a `tbl_now` object.
+#' Functions to change the attributes of a `tbl_now` object.
 #'
 #' @details Variable selection is done via [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 #' and can be used with the auxiliary dplyr verbs such as [dplyr::starts_with()], [dplyr::all_of()],
-#' and [dplyr::where()]. See [dplyr::select()] for additional info.
+#' and [dplyr::where()]. See [dplyr::select()] for additional information.
+#'
+#' The `update_now()` function updates the now to the latest date in
+#' a tibble. For example:
+#'
+#' ```{r}
+#' #Get the data
+#' data(denguedat)
+#' ndata <- tbl_now(denguedat,
+#'                  event_date = onset_week,
+#'                  report_date = report_week,
+#'                  verbose = FALSE)
+#'
+#' #The now is in 2010 because the data reaches all the way there
+#' get_now(ndata)
+#'
+#' #We can filter the data
+#' ndata_1992 <- ndata %>%
+#'  dplyr::filter(onset_week <= as.Date("1992/01/01") &
+#'                report_week <= as.Date("1992/01/01"))
+#'
+#' #But the now will still be in 2010
+#' get_now(ndata_1992)
+#'
+#' #The update now brings it to the closest date before the cut
+#' ndata_1992 <- ndata_1992 %>% update_now()
+#'
+#' #Which is now correct and set to the latest date before the cut
+#' get_now(ndata_1992)
+#' ```
+#'
 #'
 #' @inheritParams remove
 #' @inheritParams tbl_now
@@ -88,7 +118,9 @@ NULL
 
 #' Add attributes to a `tbl_now` object
 #'
-#' @description Functions to add the attributes to a `tbl_now` object.
+#' @description `r lifecycle::badge("stable")`
+#'
+#' Functions to add attributes to a `tbl_now` object.
 #'
 #' @details Variable selection can be used with the
 #' auxiliary dplyr verbs such as [dplyr::starts_with()], [dplyr::all_of()],
@@ -120,9 +152,11 @@ NULL
 #' @seealso [add_temporal_effects()] [change] [remove]
 NULL
 
-#' Remove attributes from a `tbl_now` object
+#' Remove/replace attributes from a `tbl_now` object
 #'
-#' @description Functions to remove the attributes to a `tbl_now` object.
+#' @description `r lifecycle::badge('stable')`
+#'
+#' Functions that remove or replace the specified attributes of a `tbl_now` object.
 #'
 #' @details Variable selection can be used with the
 #' auxiliary dplyr verbs such as [dplyr::starts_with()], [dplyr::all_of()],
@@ -137,7 +171,7 @@ NULL
 #' refer to multiple columns.
 #'
 #' @return A `tbl_now` object with updated attributes
-#' `r lifecycle::badge('stable')`
+#'
 #' @examples
 #' data(denguedat)
 #' ndata <- tbl_now(denguedat,

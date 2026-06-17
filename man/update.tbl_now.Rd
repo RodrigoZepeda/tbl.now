@@ -30,8 +30,9 @@ from \code{new_data} ("right") or from \code{both} ("both")}
 \item{covariates}{(optional) Whether to keep the covariates from \code{object} ("left"),
 from \code{new_data} ("right") or from \code{both} ("both")}
 
-\item{t_effects}{(optional) Whether to keep the temporal_effects from \code{object} ("left"),
-from \code{new_data} ("right") or from \code{both} ("both")}
+\item{t_effects}{(optional) Which temporal-effects spec to keep: from \code{object}
+(\code{"left"}, the default), from \code{new_data} (\code{"right"}) or the union of both
+(\code{"both"}).}
 
 \item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
 nowcast. If no \code{now} is given then the function automatically uses the last
@@ -44,8 +45,7 @@ A \code{tbl_now} object with all the properties of \code{object}
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Updates a \code{tbl_now} object with new observations
 either from another \code{tbl_now} or a \code{data.frame}
 }

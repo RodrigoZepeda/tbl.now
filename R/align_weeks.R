@@ -1,6 +1,7 @@
 #' Align weeks to a common weekday
 #'
-#' `r lifecycle::badge("experimental")`
+#'
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Aligns all dates in either a `data.frame` or a `tbl.now` so that week
 #' boundaries occur on a specified day of the week. This is useful in the
@@ -173,6 +174,8 @@ align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
 
 
 #' Convert epidemiological (or ISO) week/year to aligned dates
+#'
+#' @description `r lifecycle::badge('experimental')`
 #'
 #' Takes week numbers and year numbers and returns the date corresponding
 #' to a specified weekday within that week. This is typically used for

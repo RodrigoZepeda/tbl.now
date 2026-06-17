@@ -10,7 +10,7 @@
 \alias{change_is_censored}
 \alias{change_strata}
 \alias{change_covariates}
-\title{Change attributes of a \code{tbl_now} object}
+\title{Change/update the attributes of a \code{tbl_now} object}
 \usage{
 change_now(x, now = NULL)
 
@@ -72,14 +72,45 @@ and strata)}
 A \code{tbl_now} object with updated attributes
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
 Functions to change the attributes of a \code{tbl_now} object.
 }
 \details{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
-
 Variable selection is done via \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 and can be used with the auxiliary dplyr verbs such as \code{\link[dplyr:starts_with]{dplyr::starts_with()}}, \code{\link[dplyr:all_of]{dplyr::all_of()}},
-and \code{\link[dplyr:where]{dplyr::where()}}. See \code{\link[dplyr:select]{dplyr::select()}} for additional info.
+and \code{\link[dplyr:where]{dplyr::where()}}. See \code{\link[dplyr:select]{dplyr::select()}} for additional information.
+
+The \code{update_now()} function updates the now to the latest date in
+a tibble. For example:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{#Get the data
+data(denguedat)
+ndata <- tbl_now(denguedat,
+                 event_date = onset_week,
+                 report_date = report_week,
+                 verbose = FALSE)
+
+#The now is in 2010 because the data reaches all the way there
+get_now(ndata)
+#> [1] "2010-12-20"
+
+#We can filter the data
+ndata_1992 <- ndata \%>\%
+ dplyr::filter(onset_week <= as.Date("1992/01/01") &
+               report_week <= as.Date("1992/01/01"))
+
+#But the now will still be in 2010
+get_now(ndata_1992)
+#> [1] "2010-12-20"
+
+#The update now brings it to the closest date before the cut
+ndata_1992 <- ndata_1992 \%>\% update_now()
+
+#Which is now correct and set to the latest date before the cut
+get_now(ndata_1992)
+#> [1] "1991-12-30"
+}\if{html}{\out{</div>}}
 }
 \examples{
 data(denguedat)

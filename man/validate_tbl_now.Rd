@@ -17,10 +17,10 @@ and strata)}
 }
 \value{
 Returns \code{TRUE} invisibly or throws an error. Called for its side effects.
-
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 Checks that an object is a properly constructed \code{tbl_now}
 with all required attributes and valid data.
 }

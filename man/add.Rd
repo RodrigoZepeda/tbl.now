@@ -33,7 +33,9 @@ refer to multiple columns.}
 A \code{tbl_now} object with updated attributes
 }
 \description{
-Functions to add the attributes to a \code{tbl_now} object.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
+Functions to add attributes to a \code{tbl_now} object.
 }
 \details{
 Variable selection can be used with the

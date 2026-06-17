@@ -467,15 +467,24 @@ tbl_now <- function(data,
 }
 
 
-# Safe wrapper around tidyselect::eval_select that avoids the "external vector"
-# deprecation warning.  Handles three cases:
-#   1. Literal string(s)  — e.g. event_date = "onset_week"
-#   2. NULL expression    — empty selection
-#   3. Symbol / call that *evaluates* to a character vector (e.g. the internal
-#      reconstruction calls `strata = get_strata(.data)`, or a user writing
-#      `strata_var <- "sex"; tbl_now(d, strata = strata_var)`)
-#      → wrap in all_of() so tidyselect doesn't see an "external vector"
-#   4. Everything else (bare column names, tidy-select expressions) → eval_select
+#' Safe `tidyselect::eval_select()` wrapper
+#'
+#' Avoids the tidyselect "external vector" deprecation warning. Handles:
+#' 1. literal string(s), e.g. `event_date = "onset_week"`;
+#' 2. a `NULL` expression (empty selection);
+#' 3. a symbol/call that *evaluates* to a character vector (e.g. internal calls
+#'    such as `strata = get_strata(.data)`, or `v <- "sex"; tbl_now(d, strata = v)`)
+#'    — wrapped in `all_of()` so tidyselect does not treat it as an external vector;
+#' 4. anything else (bare column names, tidy-select expressions) → `eval_select`.
+#'
+#' @param quo A quosure capturing the selection (from [rlang::enquo()]).
+#' @param data The data frame to select columns from.
+#'
+#' @return A named integer vector of selected column positions (the
+#'   [tidyselect::eval_select()] return value).
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_eval_select <- function(quo, data) {
 
   .EVAL_FAILED <- new.env(parent = emptyenv())  # sentinel for failed eval_tidy
@@ -519,9 +528,26 @@ tbl_now <- function(data,
   }
 }
 
-#' Reconstruct a missing date column from integer delay
+#' Reconstruct a missing date column from a known date and an integer delay
+#'
+#' Used by [tbl_now()] when the user supplies only one of `event_date` /
+#' `report_date` together with a `delay` column: the missing date is rebuilt by
+#' adding (or subtracting) the delay, in the appropriate time `units`, from the
+#' known date.
+#'
+#' @param data A data frame containing `known_col` and `delay_col`.
+#' @param known_col Name of the known date (or numeric) column.
+#' @param delay_col Name of the (numeric) delay column.
+#' @param units Time units of the delay: one of `"days"`, `"weeks"`,
+#'   `"months"`, `"years"` or `"numeric"`.
+#' @param new_col_name Name of the date column to create.
+#' @param direction `"add"` (reconstruct the report date) or `"subtract"`
+#'   (reconstruct the event date).
+#'
+#' @return `data` with the reconstructed date column `new_col_name` added.
 #'
 #' @keywords internal
+#' @noRd
 .reconstruct_date_from_delay <- function(data, known_col, delay_col, units, new_col_name, direction) {
 
   known_vals <- data[[known_col]]

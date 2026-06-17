@@ -47,6 +47,8 @@ the tsibble index.}
 A \code{tbl_now} (\code{from}) or a \code{tbl_ts} (\code{to}).
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 A \code{\link[tsibble:tsibble]{tsibble::tsibble()}} has a single time \code{index} and a \code{key} identifying each
 series. Nowcasting needs two time indices, so the conversion keeps both date
 columns: the \code{index} is one of the dates and the other date (plus any strata)
@@ -60,9 +62,6 @@ index (\code{\link[tsibble:index_var]{tsibble::index_var()}}).
 (\code{"report_date"}, the default, or \code{"event_date"}) as the tsibble index and
 the other date plus the strata as the key. Linelist data is aggregated to
 \code{count-incidence} first (a tsibble requires unique index/key combinations).
-}
-\details{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \examples{
 \dontshow{if (requireNamespace("tsibble", quietly = TRUE)) withAutoprint(\{ # examplesIf}

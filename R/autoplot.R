@@ -1,15 +1,9 @@
-# Diagnostic autoplot for a `tbl_now`.
-#
-# `autoplot.tbl_now()` builds a four-panel overview using ggplot2 + patchwork:
-#   1. Empirical delay distribution (weighted kernel density of `.delay`).
-#   2. The observed epidemic process with a vertical line marking the date
-#      beyond which the data are still incomplete (less than `level` of the
-#      delay distribution has arrived).
-#   3. Day-of-week (daily data) or week-of-year (weekly data) bars built from
-#      the data itself (not from any temporal-effects spec).
-#   4. A periodogram of the incidence series to help choose Fourier `seasons`.
-
-# The default colour palette used across the panels.
+#' Default colour palette for `autoplot.tbl_now()`
+#'
+#' @return A named character vector of hex colours used across the panels.
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_palette <- function() {
   c(
     primary_green  = "#5F7E62",
@@ -23,7 +17,14 @@
   )
 }
 
-# A shared minimal theme tinted with the palette's near-black ink.
+#' Shared ggplot2 theme for the diagnostic panels
+#'
+#' @param palette A named colour palette (see `.tbl_now_palette()`).
+#'
+#' @return A ggplot2 theme object.
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_theme <- function(palette) {
   ggplot2::theme_minimal(base_size = 11) +
     ggplot2::theme(
@@ -35,7 +36,16 @@
     )
 }
 
-# Multiplier converting one delay unit into days (for the Date vertical line).
+#' Multiplier converting one delay unit into days
+#'
+#' Used to place the incompleteness vertical line on a `Date` axis.
+#'
+#' @param units One of `"days"`, `"weeks"`, `"months"`, `"years"`, `"numeric"`.
+#'
+#' @return A numeric multiplier (days per unit).
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_units_to_days <- function(units) {
   switch(units,
     days    = 1,
@@ -47,8 +57,19 @@
   )
 }
 
-# Weighted quantile (linear, lower index): smallest value whose cumulative
-# weight reaches `probability`.
+#' Weighted quantile (lower index)
+#'
+#' Smallest value whose cumulative weight reaches `probability`.
+#'
+#' @param values Numeric vector of values.
+#' @param weights Numeric vector of non-negative weights, same length as `values`.
+#' @param probability Target cumulative probability in `(0, 1)`.
+#'
+#' @return The weighted quantile (a single value), or `NA_real_` if there are
+#'   no positive-weight values.
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_weighted_quantile <- function(values, weights, probability) {
   keep    <- !is.na(values) & !is.na(weights) & weights > 0
   values  <- values[keep]
@@ -61,7 +82,16 @@
   values[which(cumulative_weight >= probability)[1]]
 }
 
-# Delays weighted by case counts (works for linelist and count data alike).
+#' Reporting delays weighted by case counts
+#'
+#' Works for linelist and count data alike (counts come from `to_count()`).
+#'
+#' @param object A `tbl_now` object.
+#'
+#' @return A tibble with columns `delay` and `weight` (positive weights only).
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_delay_distribution <- function(object) {
   incidence          <- object %>% ungroup() %>% to_count(to = "count-incidence")
   case_count_column  <- get_case_count(incidence)
@@ -72,7 +102,16 @@
     dplyr::filter(!is.na(.data$delay), !is.na(.data$weight), .data$weight > 0)
 }
 
-# Observed incidence per event_date (latest reported counts, summed over strata).
+#' Observed incidence per event date
+#'
+#' The latest reported counts per `event_date`, summed over strata.
+#'
+#' @param object A `tbl_now` object.
+#'
+#' @return A tibble with columns `event_date` and `case_count`, sorted by date.
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_epidemic_process <- function(object) {
   latest             <- get_latest_reported_cases(object)
   case_count_column  <- get_case_count(latest)
@@ -89,6 +128,15 @@
 
 # Individual panels-----
 
+#' Panel: empirical delay distribution
+#'
+#' @param delay_distribution A tibble from `.tbl_now_delay_distribution()`.
+#' @param palette A named colour palette.
+#'
+#' @return A ggplot object.
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_panel_delay <- function(delay_distribution, palette) {
   normalised_weight <- delay_distribution$weight / sum(delay_distribution$weight)
   plot_data         <- dplyr::mutate(delay_distribution, normalised_weight = normalised_weight)
@@ -105,6 +153,20 @@
     )
 }
 
+#' Panel: observed epidemic process
+#'
+#' @param epidemic_process A tibble from `.tbl_now_epidemic_process()`.
+#' @param incomplete_threshold Date/number at which to draw the incompleteness
+#'   line, or `NA` to omit it.
+#' @param level Completeness level (used only for the annotation label).
+#' @param palette A named colour palette.
+#' @param holiday_points Optional subset of `epidemic_process` whose event dates
+#'   are holidays; drawn as red dots.
+#'
+#' @return A ggplot object.
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_panel_epidemic <- function(epidemic_process, incomplete_threshold, level,
                                     palette, holiday_points = NULL) {
   base_plot <- ggplot2::ggplot(
@@ -157,8 +219,20 @@
     )
 }
 
-# Event dates that are holidays per any holiday calendar in the temporal-effects
-# spec. Returns the matching rows of `epidemic_process` (so we know their y).
+#' Event dates that fall on a holiday
+#'
+#' Looks up the holiday calendar(s) in the object's temporal-effects spec and
+#' returns the matching rows of `epidemic_process` (so the caller knows their y
+#' position for plotting).
+#'
+#' @param object A `tbl_now` object.
+#' @param epidemic_process A tibble from `.tbl_now_epidemic_process()`.
+#'
+#' @return The subset of `epidemic_process` rows whose `event_date` is a holiday
+#'   (empty when there is no holiday calendar or \pkg{almanac} is unavailable).
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_holiday_points <- function(object, epidemic_process) {
   specs <- get_temporal_effects(object)
   if (length(specs) == 0) return(epidemic_process[0, , drop = FALSE])
@@ -181,9 +255,19 @@
   epidemic_process[is_holiday, , drop = FALSE]
 }
 
-# Boxplots of a *normalized* effect: each event date's reported cases divided by
-# the overall mean (so 1 marks an average level). `grouping` is one of
-# "weekday", "week" or "month".
+#' Panel: calendar effect (normalized boxplots)
+#'
+#' Boxplots of a *normalized* effect: each event date's reported cases divided
+#' by the overall mean (so 1 marks an average level).
+#'
+#' @param epidemic_process A tibble from `.tbl_now_epidemic_process()`.
+#' @param grouping One of `"weekday"`, `"week"` or `"month"`.
+#' @param palette A named colour palette.
+#'
+#' @return A ggplot object (or an empty panel when there are no cases).
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_panel_calendar <- function(epidemic_process, grouping, palette) {
 
   overall_mean <- mean(epidemic_process$case_count, na.rm = TRUE)
@@ -226,14 +310,23 @@
                         colour = palette[["near_black"]], linewidth = 0.4) +
     ggplot2::labs(
       title    = panel_title,
-      subtitle = "Normalized distribution of cases (0 = average)",
+      subtitle = "Normalized distribution of cases (1 = average)",
       x = x_label, y = "Normalized effect"
     ) +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
 }
 
-# The calendar groupings to display for a given event unit. Daily data gets
-# both a day-of-week and a week-of-year panel.
+#' Calendar groupings to display for a given event unit
+#'
+#' Daily data gets both a day-of-week and a week-of-year panel.
+#'
+#' @param event_units The event units (`"days"`, `"weeks"`, `"months"`, ...).
+#'
+#' @return A character vector of groupings (`"weekday"`, `"week"`, `"month"`),
+#'   possibly empty.
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_calendar_groupings <- function(event_units) {
   switch(event_units,
     days   = c("weekday", "week"),
@@ -243,6 +336,19 @@
   )
 }
 
+#' Panel: seasonality periodogram
+#'
+#' A periodogram ([stats::spec.pgram()]) of the incidence series whose dominant
+#' peak suggests a Fourier season length.
+#'
+#' @param epidemic_process A tibble from `.tbl_now_epidemic_process()`.
+#' @param event_units The event units (used to label the period axis).
+#' @param palette A named colour palette.
+#'
+#' @return A ggplot object (or an empty panel when the series is too short).
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_panel_periodogram <- function(epidemic_process, event_units, palette) {
 
   case_count_series <- epidemic_process$case_count
@@ -289,7 +395,15 @@
     )
 }
 
-# A blank panel carrying an explanatory message.
+#' A blank panel carrying an explanatory message
+#'
+#' @param message The text to display.
+#' @param palette A named colour palette.
+#'
+#' @return A ggplot object with a centred text annotation.
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_empty_panel <- function(message, palette) {
   ggplot2::ggplot() +
     ggplot2::annotate("text", x = 0, y = 0, label = message,
@@ -297,7 +411,17 @@
     ggplot2::theme_void()
 }
 
-# Apply x-axis limits to a panel without dropping data (coord_cartesian).
+#' Apply x-axis limits to a panel without dropping data
+#'
+#' Uses [ggplot2::coord_cartesian()] so points are clipped, not removed.
+#'
+#' @param plot A ggplot object.
+#' @param xlim A length-2 vector of limits, or `NULL` to leave the panel as-is.
+#'
+#' @return The (possibly zoomed) ggplot object.
+#'
+#' @keywords internal
+#' @noRd
 .tbl_now_apply_xlim <- function(plot, xlim) {
   if (is.null(xlim)) return(plot)
   if (length(xlim) != 2) {
@@ -317,11 +441,10 @@ ggplot2::autoplot
 
 #' Diagnostic `autoplot` for a `tbl_now`
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
-#' @description
 #' Produces a four-panel diagnostic overview of a `tbl_now` using
-#' \pkg{ggplot2} and \pkg{patchwork}:
+#' [ggplot2::ggplot()] and \pkg{patchwork}:
 #'
 #' 1. **Empirical delay distribution** — a (case-count weighted) kernel
 #'    density of the reporting delay (`.delay`).
@@ -336,7 +459,7 @@ ggplot2::autoplot
 #'    peak suggests a Fourier season length for [temporal_effects()].
 #'
 #' If the attached [temporal_effects()] spec contains a holidays calendar, the
-#' event dates that fall on a holiday are marked with red dots in panel 2.
+#' event dates that fall on a holiday are marked with dots in panel 2.
 #'
 #' @param object A `tbl_now` object.
 #' @param level Completeness level used for the incompleteness line in panel 2.

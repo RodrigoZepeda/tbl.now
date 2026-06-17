@@ -37,8 +37,10 @@ pass \code{Date}s; the others take numeric limits.}
 A \pkg{patchwork} object combining the four panels.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 Produces a four-panel diagnostic overview of a \code{tbl_now} using
-\pkg{ggplot2} and \pkg{patchwork}:
+\code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} and \pkg{patchwork}:
 \enumerate{
 \item \strong{Empirical delay distribution} — a (case-count weighted) kernel
 density of the reporting delay (\code{.delay}).
@@ -54,10 +56,7 @@ peak suggests a Fourier season length for \code{\link[=temporal_effects]{tempora
 }
 
 If the attached \code{\link[=temporal_effects]{temporal_effects()}} spec contains a holidays calendar, the
-event dates that fall on a holiday are marked with red dots in panel 2.
-}
-\details{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+event dates that fall on a holiday are marked with dots in panel 2.
 }
 \examples{
 \dontshow{if (requireNamespace("patchwork", quietly = TRUE)) withAutoprint(\{ # examplesIf}

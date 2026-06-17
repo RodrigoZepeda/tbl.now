@@ -9,7 +9,7 @@
 \alias{remove_all_covariates}
 \alias{replace_temporal_effects}
 \alias{remove_temporal_effects}
-\title{Remove attributes from a \code{tbl_now} object}
+\title{Remove/replace attributes from a \code{tbl_now} object}
 \usage{
 remove_is_censored(x)
 
@@ -37,10 +37,11 @@ or a character vector with the names of the columns containing the temporal effe
 }
 \value{
 A \code{tbl_now} object with updated attributes
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 }
 \description{
-Functions to remove the attributes to a \code{tbl_now} object.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
+Functions that remove or replace the specified attributes of a \code{tbl_now} object.
 }
 \details{
 Variable selection can be used with the

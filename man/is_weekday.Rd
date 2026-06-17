@@ -10,18 +10,19 @@ is_weekday(date, weekend_days = c("Sat", "Sun"))
 \item{date}{A Date (or POSIXt) object.}
 
 \item{weekend_days}{A character or numeric vector defining weekend days.
--Numeric: must be integers in 1-7 corresponding to \code{\link[lubridate:wday]{lubridate::wday()}} when \code{week_start = 1}.
--Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
-Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).}
+\itemize{
+\item Numeric: must be integers in 1-7 corresponding to \code{\link[lubridate:wday]{lubridate::wday()}} when \code{week_start = 1}.
+\item Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
+Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).
+}}
 }
 \value{
 A logical vector: TRUE if weekday, FALSE if weekend.
 }
 \description{
-Function that checks whether a date object is a weekday or weekend.
-}
-\details{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
+Function that checks whether a date object is a weekday or weekend.
 }
 \examples{
 is_weekday(as.Date("2020-04-22"))                   # TRUE (Wed)

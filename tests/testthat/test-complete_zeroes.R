@@ -159,3 +159,45 @@ test_that("complete_zeroes emits message when temporal-effect columns exist", {
     compute_temporal_effects()
   expect_message(complete_zeroes(x), "compute_temporal_effects")
 })
+
+# === complete_zeroes with an is_censored column ===========================
+
+make_censored_incidence <- function() {
+  d <- dplyr::tibble(
+    event  = as.Date(c("2020-01-01", "2020-01-01", "2020-01-02",
+                       "2020-01-04", "2020-01-04")),
+    report = as.Date(c("2020-01-01", "2020-01-02", "2020-01-02",
+                       "2020-01-04", "2020-01-05")),
+    n      = c(3, 1, 2, 4, 1),
+    cens   = c(FALSE, FALSE, TRUE, FALSE, TRUE)
+  )
+  tbl_now(d, event_date = event, report_date = report, case_count = n,
+          is_censored = cens, data_type = "count-incidence",
+          event_units = "days", report_units = "days", verbose = FALSE)
+}
+
+test_that("complete_zeroes works with an is_censored column (count-incidence)", {
+  cz <- complete_zeroes(make_censored_incidence())
+
+  expect_true(is_tbl_now(cz))
+  expect_equal(get_is_censored(cz), "cens")
+  # the censored column survives and has no NAs
+  expect_false(anyNA(cz[["cens"]]))
+  # completion happens for BOTH censored states
+  expect_setequal(unique(cz[["cens"]]), c(FALSE, TRUE))
+  # the missing event date (2020-01-03) is filled for both censored states
+  filled <- dplyr::filter(as.data.frame(cz), event == as.Date("2020-01-03"))
+  expect_true(all(filled[["n"]] == 0))
+  expect_setequal(unique(filled[["cens"]]), c(FALSE, TRUE))
+})
+
+test_that("complete_zeroes works with is_censored on count-cumulative data", {
+  cz <- make_censored_incidence() |>
+    to_count("count-cumulative") |>
+    complete_zeroes()
+
+  expect_true(is_tbl_now(cz))
+  expect_equal(get_data_type(cz), "count-cumulative")
+  expect_false(anyNA(cz[["cens"]]))
+  expect_false(anyNA(cz[[get_case_count(cz)]]))
+})

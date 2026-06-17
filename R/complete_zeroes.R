@@ -1,14 +1,17 @@
-#' Complete zeroes
+#' Complete with zeroes
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Takes a `tbl.now` object and completes observations
-#' for event_dates or onset_weeks that have not been registered
-#' by each strata with a 0
+#' for event_dates or report_dates that have not been registered
+#' (by each strata) with a 0.
 #'
 #' @param x A `tbl.now` object.
 #' @param max_delay Maximum delay to fill. For example if set to 5 it will complete
 #' with 0's all reports with delays 0 to 4. But will not fill other delays (say 6)
+#'
+#' @return A `tbl.now` object with the same columns that includes
+#' the `0` observations in the `case_count`.
 #'
 #' @examples
 #' ndata <- dplyr::tibble(
@@ -153,9 +156,12 @@ complete_zeroes <- function(x, max_delay = NULL){
       dplyr::mutate(!!as.symbol(get_report_date(x)) := !!as.symbol(get_event_date(x)) + !!as.symbol(".delay"))
   }
 
-  #Now complete
+  #Now complete. Include the is_censored column in the join key (when present)
+  #so the censored indicator is not duplicated/suffixed and lost.
+  join_keys <- c(get_event_date(x), get_strata(x), get_is_censored(x),
+                 get_report_date(x), ".delay")
   x <- x %>%
-    dplyr::full_join(complete_x, by = c(get_event_date(x), get_strata(x), get_report_date(x), ".delay"))
+    dplyr::full_join(complete_x, by = join_keys)
 
   #Remove and rename
   x <- x %>%
@@ -175,7 +181,9 @@ complete_zeroes <- function(x, max_delay = NULL){
 
         x <- x %>%
           dplyr::arrange(!!as.symbol(get_report_date(x))) %>%
-          group_by(dplyr::pick(get_event_date(x), get_strata(x)), get_is_censored(x))
+          dplyr::group_by(dplyr::across(dplyr::all_of(
+            c(get_event_date(x), get_strata(x), get_is_censored(x))
+          )))
 
         x <- x %>%
           dplyr::mutate(!!as.symbol(get_case_count(x)) :=

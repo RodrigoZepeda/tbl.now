@@ -12,12 +12,22 @@ print(x, ...)
 
 \item{...}{Additional arguments to pass to print.}
 }
+\value{
+The \code{temporal_effects} object \code{x}, invisibly. Called for the
+side effect of printing.
+}
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
 Print function for printing the a \code{\link[=temporal_effects]{temporal_effects()}}.
 }
 \examples{
+
 print(temporal_effects(day_of_week = TRUE, week_of_year = TRUE))
+
 print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE))
+
 print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE, seasons = 52))
+
 print(temporal_effects(seasons = 52, season_length = 7))
 }

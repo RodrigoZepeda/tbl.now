@@ -19,8 +19,24 @@
 # 1. Internal helpers
 # ===========================================================================
 
-# Wrap as_tbl_now(), injecting verbose = FALSE unless the caller passed it in
-# `...` (we do our own reporting in the from_* functions).
+#' Build a `tbl_now` from a converter's data frame
+#'
+#' Thin wrapper around [as_tbl_now()] used by every `tbl_now_from_*()`
+#' converter. It drops the reserved generated columns (in case the data came
+#' from a previously exported `tbl_now`) and forces `verbose = FALSE` unless the
+#' caller passes it through `dots`, because the converters print their own
+#' summary.
+#'
+#' @param df A data frame to convert.
+#' @param dots A list of extra arguments forwarded by the caller (the converter's
+#'   `...`), passed on to [as_tbl_now()].
+#' @param ... Fixed arguments set by the converter (e.g. `event_date`,
+#'   `data_type`), passed on to [as_tbl_now()].
+#'
+#' @return A `tbl_now` object.
+#'
+#' @keywords internal
+#' @noRd
 .build_tbl_now <- function(df, dots, ...) {
   # Drop the reserved generated columns if they were carried over (e.g. when a
   # tbl_now was exported via tbl_now_to_*() and is being converted back). They
@@ -35,7 +51,17 @@
   do.call(as_tbl_now, args)
 }
 
-# Pretty-print the resulting tbl_now's chosen attributes.
+#' Print a conversion summary for a `tbl_now_from_*()` converter
+#'
+#' @param result The resulting `tbl_now`.
+#' @param source Name of the source package (for the message).
+#' @param verbose Logical; nothing is printed when `FALSE`.
+#' @param extra Optional character vector of extra bullet lines to show.
+#'
+#' @return `result`, invisibly.
+#'
+#' @keywords internal
+#' @noRd
 .report_from <- function(result, source, verbose, extra = NULL) {
   if (!isTRUE(verbose)) return(invisible(result))
   cli::cli_h3("Converted {.pkg {source}} {.cls data} into a {.cls tbl_now}")
@@ -53,7 +79,15 @@
   invisible(result)
 }
 
-# Abort if a Suggested package is not installed.
+#' Abort if a Suggested package is not installed
+#'
+#' @param pkg Name of the package required for a conversion.
+#'
+#' @return `NULL`, invisibly (called for its side effect of aborting when the
+#'   package is missing).
+#'
+#' @keywords internal
+#' @noRd
 .need_pkg <- function(pkg) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
     cli::cli_abort(
@@ -62,14 +96,62 @@
   }
 }
 
-# Guard that `x` is a tbl_now for the to_* direction.
+#' Assert that `x` is a `tbl_now` (for the `to_*` converters)
+#'
+#' @param x Object to check.
+#' @param fn Name of the calling function, used in the error message.
+#'
+#' @return `NULL`, invisibly (aborts when `x` is not a `tbl_now`).
+#'
+#' @keywords internal
+#' @noRd
 .assert_tbl_now <- function(x, fn) {
   if (!is_tbl_now(x)) {
     cli::cli_abort("{.arg x} must be a {.cls tbl_now} object for {.fn {fn}}.")
   }
 }
 
-# Expand a reporting-triangle matrix into a long incremental data.frame
+#' Drop explicit zero-count rows so the resulting `tbl_now` is minimal
+#'
+#' External complete-grid formats (epinowcast's completed observations, a
+#' baselinenowcast reporting triangle) carry explicit zeros for every
+#' reference-date x delay cell. A `tbl_now` does not need those: a missing cell
+#' is implicitly zero, and [complete_zeroes()] can re-create them on demand. So
+#' converting *from* such a format strips the zeros to stay minimal.
+#'
+#' @param x A `tbl_now` object.
+#'
+#' @return `x` with zero-`case_count` rows removed (unchanged for linelist data
+#'   or data without a `case_count` column).
+#'
+#' @keywords internal
+#' @noRd
+.drop_zero_counts <- function(x) {
+  case_count_column <- get_case_count(x)
+  if (is.null(case_count_column) || !grepl("count", get_data_type(x))) {
+    return(x)
+  }
+  x %>%
+    dplyr::filter(
+      is.na(.data[[case_count_column]]) | .data[[case_count_column]] != 0
+    )
+}
+
+#' Expand a reporting-triangle matrix into a long incremental data frame
+#'
+#' Row names are taken as reference dates and column names as integer delays
+#' (falling back to 0-based delays when the column names are not numeric); each
+#' non-`NA` cell becomes one row.
+#'
+#' @param m A reporting-triangle matrix (rownames = reference dates,
+#'   colnames = delays).
+#' @param delays_unit Unit of the delay axis: `"days"`, `"weeks"`, `"months"`
+#'   or `"years"`.
+#'
+#' @return A data frame with columns `reference_date`, `report_date`, `count`.
+#'
+#' @keywords internal
+#' @noRd
 .reporting_triangle_to_long <- function(m, delays_unit = "days") {
   ref_chr <- rownames(m)
   if (is.null(ref_chr)) {
@@ -103,9 +185,8 @@
 
 #' Convert between `tbl_now` and \pkg{epinowcast}
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
-#' @description
 #' `tbl_now_from_epinowcast()` takes the long observation `data.frame` used by
 #' \pkg{epinowcast} (with `reference_date`, `report_date` and a cumulative
 #' `confirm` column, plus optional grouping columns) and converts it into a
@@ -167,15 +248,18 @@ tbl_now_from_epinowcast <- function(data, ...,
     data_type   = "count-cumulative"
   )
 
+  # epinowcast data is completed (explicit zeros); keep the tbl_now minimal.
+  result <- .drop_zero_counts(result)
+
   .report_from(result, "epinowcast", verbose)
   result
 }
 
 #' Convert between `tbl_now` and \pkg{baselinenowcast}
 #'
-#' `r lifecycle::badge("experimental")`
 #'
-#' @description
+#' @description `r lifecycle::badge("experimental")`
+#'
 #' `tbl_now_from_baselinenowcast()` accepts either the long `data.frame`
 #' (`reference_date`, `report_date`, `count`) or a `reporting_triangle`
 #' matrix (rownames = reference dates, colnames = delays, incremental counts)
@@ -235,15 +319,17 @@ tbl_now_from_baselinenowcast <- function(data, ...,
     data_type   = "count-incidence"
   )
 
+  # Reporting triangles carry explicit zero cells; keep the tbl_now minimal.
+  result <- .drop_zero_counts(result)
+
   .report_from(result, "baselinenowcast", verbose, extra = extra)
   result
 }
 
 #' Convert between `tbl_now` and \pkg{data.table}
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
-#' @description
 #' `tbl_now_from_data_table()` converts a `data.table` into a `tbl_now`
 #' (requires explicit `event_date` / `report_date` columns).
 #' `tbl_now_to_data_table()` strips the `tbl_now` class and returns a
@@ -285,9 +371,8 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 
 #' Convert between `tbl_now` and \pkg{epidist}
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
-#' @description
 #' \pkg{epidist} models the delay between a *primary* event (e.g. symptom
 #' onset) and a *secondary* event (e.g. report), storing each as an
 #' interval-censored pair of date columns: `pdate_lwr`/`pdate_upr` for the
@@ -384,9 +469,8 @@ tbl_now_from_epidist <- function(data, ..., format = c("linelist", "interval"),
 
 #' Convert between `tbl_now` and \pkg{tsibble}
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
-#' @description
 #' A [tsibble::tsibble()] has a single time `index` and a `key` identifying each
 #' series. Nowcasting needs two time indices, so the conversion keeps both date
 #' columns: the `index` is one of the dates and the other date (plus any strata)

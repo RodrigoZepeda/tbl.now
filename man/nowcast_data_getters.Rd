@@ -47,15 +47,15 @@ get_is_censored(x)
 get_case_count(x)
 }
 \arguments{
-\item{x}{A \code{tbl_now} object.
-
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}}
+\item{x}{A \code{tbl_now} object.}
 }
 \value{
 The requested attribute (character, date, logical, etc.).
 }
 \description{
-These functions extract the attributes from a \code{tbl_now} object.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+Functions that extract the attributes from a \code{tbl_now} object.
 Each function returns a specific attribute (e.g. event date, strata, covariates, etc).
 }
 \examples{

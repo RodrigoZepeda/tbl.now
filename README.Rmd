@@ -84,6 +84,9 @@ df_now %>%
   filter(n > 5)
 ```
 
+
+> **Note** Linelist, count-incidence and count-cumulative data is available for a `tbl_now`. See the [data types](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html#data-types) section of `tbl_now()` for more information. 
+
 ## Adding strata
 
 If strata was given, the [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) can easily tag the corresponding strata. 
@@ -177,6 +180,23 @@ flusight_now <- tbl_now(flusight,
                         verbose     = FALSE)
 
 autoplot(flusight_now, level = 1)
+```
+
+## Extreme delays
+
+Extreme delays can be censored with the `censor_delays_above()` function that
+assigns upper bounds to the delay. In the following data frame for example,
+an extreme delay of 300 is marked as `censored` with that function:
+
+
+```{r extreme}
+df <- data.frame(onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
+                 reported = as.Date("2020-01-01") + c(1, 5, 2, 300))
+tn <- tbl_now(df, event_date = onset, report_date = reported,
+              data_type = "linelist", verbose = FALSE)
+
+# the 300-day report becomes censored (an upper bound on its delay)
+censor_delays_above(tn, max_delay = 60)
 ```
 
 

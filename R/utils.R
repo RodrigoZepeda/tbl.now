@@ -8,27 +8,11 @@
 #' @param name The name of the attribute in `x`
 #' @param default (optional) The default value of attribute `name` in `x`
 #'
-#' @examples
-#' \dontrun{
-#' #Create an object
-#' x <- 42
-#' attr(x, "meaning") <- "meaning of life"
-#'
-#' #See the attributes
-#' attributes(x)
-#'
-#' #Return the meaning attribute
-#' attr_default(x, "meaning")
-#'
-#' #Return null for attribute that doesn't exist
-#' attr_default(x, "DOES_NOT_EXIST")
-#'
-#' #Or return default when it doesn't exist
-#' attr_default(x, "DOES_NOT_EXIST", default = 15)
-#'
-#' }
+#' @return The value of attribute `name` in `x`, or `default` if the attribute
+#' is not present.
 #'
 #' @keywords internal
+#' @noRd
 attr_default <- function(x, name, default = NULL) {
   val <- attr(x, name, exact = TRUE)
   if (is.null(val)) default else val
@@ -36,14 +20,16 @@ attr_default <- function(x, name, default = NULL) {
 
 #' Check whether a date is a weekday vs weekend (international definition)
 #'
-#' Function that checks whether a date object is a weekday or weekend.
+#' @description `r lifecycle::badge('stable')`
 #'
-#' `r lifecycle::badge('stable')`
+#' Function that checks whether a date object is a weekday or weekend.
 #'
 #' @param date A Date (or POSIXt) object.
 #' @param weekend_days A character or numeric vector defining weekend days.
-#'   -Numeric: must be integers in 1-7 corresponding to [lubridate::wday()] when `week_start = 1`.
-#'   -Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
+#'
+#'   * Numeric: must be integers in 1-7 corresponding to [lubridate::wday()] when `week_start = 1`.
+#'
+#'   * Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
 #'   Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).
 #'
 #'
@@ -64,6 +50,7 @@ attr_default <- function(x, name, default = NULL) {
 #' is_weekday(as.Date("2020-04-20"), weekend_days = c(7, 1))
 #'
 #' @export
+#' @md
 is_weekday <- function(date, weekend_days = c("Sat", "Sun")) {
 
   # Convert weekend_days to numeric wday indices
@@ -90,12 +77,15 @@ is_weekday <- function(date, weekend_days = c("Sat", "Sun")) {
 
 #' Show the names of the attributes of a `tbl_now`
 #'
+#' @description `r lifecycle::badge('stable')`
+#'
 #' Shows exclusively the attributes of a `tbl_now` that are not part
 #' of the attributes of a `tibble` (or a grouped tibble).
 #'
-#' `r lifecycle::badge('stable')`
-#'
 #' @inheritParams add
+#'
+#' @return A named list with the attributes that are specific to the `tbl_now`
+#' class (i.e. those not shared with a plain `tibble`).
 #'
 #' @examples
 #' data(denguedat)
@@ -103,10 +93,10 @@ is_weekday <- function(date, weekend_days = c("Sat", "Sun")) {
 #'   report_date = report_week, strata = gender, verbose = FALSE)
 #'
 #' #Attributes gets all attributes
-#' attributes(df_now)
+#' attributes(df_now) %>% names()
 #'
 #' #tbl_now_attributes gets only those associated to the `tbl_now` class
-#' tbl_now_attributes(df_now)
+#' tbl_now_attributes(df_now) %>% names()
 #'
 #' @export
 tbl_now_attributes <- function(x){

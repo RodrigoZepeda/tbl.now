@@ -692,3 +692,26 @@ test_that("tbl_now_to_epidist interval errors when named upper-bound columns are
     "Upper-bound"
   )
 })
+
+# ============================================================
+# from_* converters strip explicit zeros (minimal tbl_now)
+# ============================================================
+
+test_that("tbl_now_from_epinowcast drops zero-confirm rows (minimal tbl_now)", {
+  skip_if_not_installed("epinowcast")
+  obs <- head(epinowcast::germany_covid19_hosp, 300)
+  res <- tbl_now_from_epinowcast(obs, strata = c("location", "age_group"),
+                                 verbose = FALSE)
+  expect_equal(sum(res[["confirm"]] == 0, na.rm = TRUE), 0L)
+})
+
+test_that("tbl_now_from_baselinenowcast drops zero cells but preserves totals", {
+  skip_if_not_installed("baselinenowcast")
+  m <- matrix(c(10, 5, 0,  8, 0, 2,  6, 0, 0), nrow = 3, byrow = TRUE,
+              dimnames = list(c("2020-01-01", "2020-01-02", "2020-01-03"),
+                              c("0", "1", "2")))
+  res <- tbl_now_from_baselinenowcast(m, verbose = FALSE)
+  expect_equal(sum(res[["count"]] == 0), 0L)
+  expect_equal(sum(res[["count"]]), sum(m))   # totals preserved
+  expect_equal(nrow(res), sum(m > 0))          # one row per non-zero cell
+})

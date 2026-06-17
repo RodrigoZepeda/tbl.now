@@ -1,8 +1,7 @@
 #' Add temporal effect coding to a `tbl_now`
 #'
-#' `r lifecycle::badge("stable")`
+#' @description `r lifecycle::badge("stable")`
 #'
-#' @description
 #' Takes a `tbl_now` or a `data.frame` and adds the temporal effects `t_effect` as
 #' columns
 #'
@@ -58,6 +57,9 @@
 #' #Use remove to delete them
 #' disease_data %>% remove_temporal_effects()
 #' @name add_temporal_effects
+#'
+#' @seealso [temporal_effects()] [add] [remove] [change]
+#'
 #' @export
 add_temporal_effects <- function(x, t_effects= NULL, overwrite = FALSE, ...) {
   UseMethod("add_temporal_effects")

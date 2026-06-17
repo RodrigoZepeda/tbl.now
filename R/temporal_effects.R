@@ -1,8 +1,7 @@
 #' Temporal Effects Class
 #'
-#' `r lifecycle::badge('stable')`
+#' @description `r lifecycle::badge('stable')`
 #'
-#' @description
 #' The `temporal_effects` class specifies which temporal covariates or effects
 #' should be included in a nowcasting model (e.g., day of week, month, holidays, etc.).
 #'
@@ -129,14 +128,24 @@ temporal_effects <- S7::new_class(
 
 #' Print temporal effects
 #'
+#' @description `r lifecycle::badge("stable")`
+#'
 #' Print function for printing the a [temporal_effects()].
 #'
 #' @param x A temporal_effects object created with [temporal_effects()]
 #' @param ... Additional arguments to pass to print.
+#'
+#' @return The `temporal_effects` object `x`, invisibly. Called for the
+#' side effect of printing.
+#'
 #' @examples
+#'
 #' print(temporal_effects(day_of_week = TRUE, week_of_year = TRUE))
+#'
 #' print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE))
+#'
 #' print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE, seasons = 52))
+#'
 #' print(temporal_effects(seasons = 52, season_length = 7))
 #' @name print
 NULL

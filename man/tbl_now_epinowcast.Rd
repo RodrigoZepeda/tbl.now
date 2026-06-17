@@ -52,6 +52,8 @@ object; if \code{FALSE} returns the completed observation \code{data.table}.}
 \code{data.table}.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 \code{tbl_now_from_epinowcast()} takes the long observation \code{data.frame} used by
 \pkg{epinowcast} (with \code{reference_date}, \code{report_date} and a cumulative
 \code{confirm} column, plus optional grouping columns) and converts it into a
@@ -60,9 +62,6 @@ object; if \code{FALSE} returns the completed observation \code{data.table}.}
 \code{tbl_now_to_epinowcast()} takes a \code{tbl_now} and builds an
 \code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}} object (or, with \code{preprocess = FALSE},
 the completed observation \code{data.table}).
-}
-\details{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \examples{
 \dontshow{if (requireNamespace("epinowcast", quietly = TRUE)) withAutoprint(\{ # examplesIf}

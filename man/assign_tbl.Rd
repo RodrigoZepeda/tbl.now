@@ -4,7 +4,7 @@
 \alias{assign_tbl}
 \alias{[.tbl_now}
 \alias{[.grouped_tbl_now}
-\title{Subset function for \code{tbl_now} with downgrade-on-subsetting}
+\title{Subset function for \code{tbl_now}}
 \usage{
 \method{[}{tbl_now}(x, ...)
 
@@ -19,6 +19,12 @@
 A \code{tbl_now} object or a \code{data.frame}
 }
 \description{
-IF the subsetting invalidates the class then a \code{data.frame}
-will be returned.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
+Accesors to \code{tbl_now} elements (rows and columns) as if
+it was a data.frame
+}
+\details{
+If the subsetting invalidates the class then a \code{data.frame}
+is returned.
 }

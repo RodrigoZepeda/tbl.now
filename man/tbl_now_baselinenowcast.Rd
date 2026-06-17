@@ -45,6 +45,8 @@ tbl_now_to_baselinenowcast(
 A \code{tbl_now} (\code{from}), or a \code{data.frame}/\code{reporting_triangle} (\code{to}).
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 \code{tbl_now_from_baselinenowcast()} accepts either the long \code{data.frame}
 (\code{reference_date}, \code{report_date}, \code{count}) or a \code{reporting_triangle}
 matrix (rownames = reference dates, colnames = delays, incremental counts)
@@ -54,9 +56,6 @@ and converts it into a \code{tbl_now} of \code{data_type = "count-incidence"}.
 \code{baselinenowcast}-style \code{data.frame} (\code{format = "long"}, default) or a
 \code{reporting_triangle} matrix (\code{format = "matrix"}) via
 \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}}.
-}
-\details{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \examples{
 \dontshow{if (requireNamespace("baselinenowcast", quietly = TRUE)) withAutoprint(\{ # examplesIf}

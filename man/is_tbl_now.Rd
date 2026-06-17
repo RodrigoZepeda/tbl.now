@@ -14,7 +14,9 @@ is_tbl_now(x)
 \code{FALSE} if not.
 }
 \description{
-Check if an object is a tbl_now
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+Checks if object x is a \code{tbl.now}
 }
 \examples{
 is_tbl_now(data.frame(x = 1:3))

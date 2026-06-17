@@ -27,5 +27,7 @@
 A \code{tbl_now} object or a \code{data.frame}
 }
 \description{
-Set accessor for \code{tbl_now} class
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
+Accessor for \code{tbl_now} columns
 }

@@ -109,6 +109,11 @@ df_now %>%
 #> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
+> **Note** Linelist, count-incidence and count-cumulative data is
+> available for a `tbl_now`. See the [data
+> types](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html#data-types)
+> section of `tbl_now()` for more information.
+
 ## Adding strata
 
 If strata was given, the
@@ -300,6 +305,39 @@ autoplot(flusight_now, level = 1)
 ```
 
 <img src="man/figures/README-autoplot-1.png" alt="" width="100%" />
+
+## Extreme delays
+
+Extreme delays can be censored with the `censor_delays_above()` function
+that assigns upper bounds to the delay. In the following data frame for
+example, an extreme delay of 300 is marked as `censored` with that
+function:
+
+``` r
+df <- data.frame(onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
+                 reported = as.Date("2020-01-01") + c(1, 5, 2, 300))
+tn <- tbl_now(df, event_date = onset, report_date = reported,
+              data_type = "linelist", verbose = FALSE)
+
+# the 300-day report becomes censored (an upper bound on its delay)
+censor_delays_above(tn, max_delay = 60)
+#> ℹ Marked 1 report with delay > 60 event units as censored.
+#> • Their delay is now an upper bound; re-fit downstream to use it.
+#> # A tibble:  4 × 6
+#> # Data type: "linelist"
+#> # Frequency: Event: `days` | Report: `days`
+#>   onset        reported      .event_num .report_num .delay .is_censored 
+#>   <date>       <date>             <dbl>       <dbl>  <dbl> <lgl>        
+#>   [event_date] [report_date]      [...]       [...]  [...] [is_censored]
+#> 1 2020-01-01   2020-01-02             0           1      1 FALSE        
+#> 2 2020-01-01   2020-01-06             0           5      5 FALSE        
+#> 3 2020-01-02   2020-01-03             1           2      1 FALSE        
+#> 4 2020-01-03   2020-10-27             2         300    298 TRUE         
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-10-27 | Event date: "onset" | Report date: "reported"
+#> # Right-censored indicator: ".is_censored"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```
 
 ## Learning more
 

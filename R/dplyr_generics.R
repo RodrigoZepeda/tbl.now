@@ -7,7 +7,9 @@
 
 #' Validate a tbl_now object
 #'
-#' @description Checks that an object is a properly constructed `tbl_now`
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' Checks that an object is a properly constructed `tbl_now`
 #' with all required attributes and valid data.
 #'
 #' @param x An object to validate
@@ -16,8 +18,6 @@
 #' @param warn_now Boolean. Whether to warn if now is before last report or too far in the future.
 #'
 #' @return Returns `TRUE` invisibly or throws an error. Called for its side effects.
-#'
-#' `r lifecycle::badge("stable")`
 #'
 #' @examples
 #' data(denguedat)
@@ -440,6 +440,10 @@ tbl_now_reconstruct_internal <- function(data, template){
 
 #' Check if an object is a tbl_now
 #'
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' Checks if object x is a `tbl.now`
+#'
 #' @param x any R object
 #'
 #' @return (boolean) `TRUE` if object is a `tbl_now`
@@ -459,10 +463,16 @@ is_tbl_now <- function(x){
 
 }
 
-#' Subset function for `tbl_now` with downgrade-on-subsetting
+#' Subset function for `tbl_now`
 #'
-#' @description IF the subsetting invalidates the class then a `data.frame`
-#' will be returned.
+#' @description `r lifecycle::badge("stable")`
+#'
+#' Accesors to `tbl_now` elements (rows and columns) as if
+#' it was a data.frame
+#'
+#' @details
+#' If the subsetting invalidates the class then a `data.frame`
+#' is returned.
 #'
 #' @param x A `tbl_now` object
 #' @inheritParams base::subset
@@ -487,7 +497,11 @@ is_tbl_now <- function(x){
 
 #' Set names on `tbl_now` class
 #'
-#' @description If the modifying the names invalidates the `tbl_now` object
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' Function for modifying the names of a `tbl_now`
+#'
+#' @details If the modifying the names invalidates the `tbl_now` object
 #' the subsetting will return a data frame with the other attributes of the
 #' class preserved.
 #'
@@ -513,7 +527,12 @@ is_tbl_now <- function(x){
 
 #' Set accessor for `tbl_now` class
 #'
+#' @description `r lifecycle::badge("stable")`
+#'
+#' Accessor for `tbl_now` columns
+#'
 #' @param x A `tbl_now` object
+#'
 #' @inheritParams base::Extract
 #'
 #' @return A `tbl_now` object or a `data.frame`
@@ -638,11 +657,19 @@ dplyr_reconstruct.grouped_tbl_now <- function(data, template) {
 
 
 # Based on https://www.bio-ai.org/blog/extending-tibbles/
-#' Grouped tbl_now
+#' Construct a grouped `tbl_now`
 #'
-#' @param x A `tbl_now`
-#' @param groups Column grops to group_by
+#' Builds a `grouped_tbl_now` from a `tbl_now` and a grouping data frame,
+#' inserting the `tbl_now` class in the right position so the S3 methods keep
+#' dispatching.
+#'
+#' @param x A `tbl_now`.
+#' @param groups Grouping data frame (as produced by dplyr) to group by.
+#'
+#' @return A `grouped_tbl_now` object.
+#'
 #' @keywords internal
+#' @noRd
 new_grouped_tbl_now <- function(x, groups) {
   x <- dplyr::new_grouped_df(x = x, groups = groups, class = c("grouped_tbl_now"))
 
@@ -858,9 +885,22 @@ rename_with.tbl_now <- function(.data, .fn, .cols = dplyr::everything(), ...) {
   .data
 }
 
-#' Function to rename attributes given a `rename` is applied
+#' Update `tbl_now` attribute references after a rename
+#'
+#' When columns are renamed, the attributes that store column *names*
+#' (`event_date`, `report_date`, `strata`, `covariates`, ...) must be updated to
+#' the new names. Renaming a protected generated column downgrades the object to
+#' a `tibble`.
+#'
+#' @param .data A `tbl_now` object being renamed.
+#' @param loc A named integer vector (as returned by [tidyselect::eval_select()])
+#'   mapping new names to the original column positions.
+#'
+#' @return The `.data` object with its `tbl_now` attributes updated to the new
+#'   column names (or a downgraded `tibble` if a protected column was renamed).
 #'
 #' @keywords internal
+#' @noRd
 rename_attributes <- function(.data, loc){
 
   #Check that .event_num, .report_num, .delay are not renamed
