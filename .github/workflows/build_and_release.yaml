@@ -2,7 +2,7 @@ name: Build and Release Package
 
 on:
   workflow_run:
-    workflows: ["R-CMD-check"]
+    workflows: ["R-CMD-check.yaml"]
     types:
       - completed
 
