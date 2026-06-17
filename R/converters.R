@@ -57,7 +57,7 @@
 .need_pkg <- function(pkg) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
     cli::cli_abort(
-      "Package {.pkg {pkg}} is required for this conversion. Install it with {.run install.packages(\"{pkg}\")}."
+      "Package {.pkg {pkg}} is required for this conversion. Install it with {.run install.packages(\"{pkg}\", repos = c(options('repos'), epinowcast = 'https://epinowcast.r-universe.dev'))}."
     )
   }
 }
