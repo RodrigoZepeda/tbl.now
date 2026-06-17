@@ -138,8 +138,11 @@ temporal_effects <- S7::new_class(
 #' print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE))
 #' print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE, seasons = 52))
 #' print(temporal_effects(seasons = 52, season_length = 7))
-#' @name print_temporal_effects
-#' @keywords internal
+#' @name print
+NULL
+
+#' @name print
+#' @export
 S7::method(print, temporal_effects) <- function(x, ...) {
 
   effects_considered <- names(Filter(isTRUE, S7::props(x)[names(S7::props(x)) != "holidays"]))
