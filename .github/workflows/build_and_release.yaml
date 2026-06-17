@@ -2,8 +2,21 @@ name: Build and Release Package
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+    paths-ignore:
+      - 'pkgdown/**'
+      - '_pkgdown.yml'
+      - '.github/**'
+      - 'README.md'
+      - 'README.Rmd'
+      - 'SKILL.md'
+      - '*.Rproj'
+      - 'Dockerfile'
+      - 'codecov.yml'
+      - '.gitignore'
+      - 'devel/**'
+      - 'pkgdown/**'
+      - 'inst/figures/hex.png'
 
 jobs:
   build-and-release:
