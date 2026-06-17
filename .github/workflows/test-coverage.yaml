@@ -2,8 +2,36 @@
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on:
   push:
-    branches: [main, master]
+    branches: [main]
+    paths-ignore:
+      - 'pkgdown/**'
+      - '_pkgdown.yml'
+      - '.github/**'
+      - 'README.md'
+      - 'README.Rmd'
+      - 'SKILL.md'
+      - '*.Rproj'
+      - 'Dockerfile'
+      - 'codecov.yml'
+      - '.gitignore'
+      - 'devel/**'
+      - 'pkgdown/**'
+      - 'inst/figures/hex.png'
   pull_request:
+    paths-ignore:
+      - 'pkgdown/**'
+      - '_pkgdown.yml'
+      - '.github/**'
+      - 'README.md'
+      - 'README.Rmd'
+      - 'SKILL.md'
+      - '*.Rproj'
+      - 'Dockerfile'
+      - 'codecov.yml'
+      - '.gitignore'
+      - 'devel/**'
+      - 'pkgdown/**'
+      - 'inst/figures/hex.png'
 
 name: test-coverage.yaml
 
