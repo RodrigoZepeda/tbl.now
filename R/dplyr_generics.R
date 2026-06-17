@@ -17,6 +17,8 @@
 #'
 #' @return Returns `TRUE` invisibly or throws an error. Called for its side effects.
 #'
+#' `r lifecycle::badge("stable")`
+#'
 #' @examples
 #' data(denguedat)
 #' ndata <- tbl_now(denguedat, event_date = "onset_week",
