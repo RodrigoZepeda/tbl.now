@@ -1,25 +1,18 @@
 name: Build and Release Package
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - 'pkgdown/**'
-      - '_pkgdown.yml'
-      - '.github/**'
-      - 'README.md'
-      - 'README.Rmd'
-      - 'SKILL.md'
-      - '*.Rproj'
-      - 'Dockerfile'
-      - 'codecov.yml'
-      - '.gitignore'
-      - 'devel/**'
-      - 'pkgdown/**'
-      - 'inst/figures/hex.png'
+  workflow_run:
+    workflows: ["R-CMD-check"]
+    types:
+      - completed
 
 jobs:
   build-and-release:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.event == 'push'
+
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -27,6 +20,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup R
         uses: r-lib/actions/setup-r@v2
