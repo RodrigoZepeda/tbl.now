@@ -31,6 +31,8 @@ validate_tbl_now(x, warn_non_uniqueness = FALSE, warn_now = TRUE)
 Returns `TRUE` invisibly or throws an error. Called for its side
 effects.
 
+**\[stable\]**
+
 ## Examples
 
 ``` r
