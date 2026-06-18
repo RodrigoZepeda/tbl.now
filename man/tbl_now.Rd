@@ -106,6 +106,8 @@ week differences and \code{.delays} are all integer.}
 An object of class \code{tbl_now}.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 A special \code{tibble} class that includes information for the nowcast.
 See the Attributes section for more information.
 }
