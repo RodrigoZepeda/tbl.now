@@ -125,7 +125,7 @@
   Remove/replace attributes from a `tbl_now` object
 
 - [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
-  :
+  **\[experimental\]** :
 
   Create a `tbl_now` object
 

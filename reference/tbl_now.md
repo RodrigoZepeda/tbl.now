@@ -1,5 +1,7 @@
 # Create a `tbl_now` object
 
+**\[experimental\]**
+
 A special `tibble` class that includes information for the nowcast. See
 the Attributes section for more information.
 
