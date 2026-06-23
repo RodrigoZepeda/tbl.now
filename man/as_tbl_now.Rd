@@ -10,40 +10,37 @@
 \alias{as_tbl_now.epidist_aggregate_data}
 \alias{as_tbl_now.tbl_ts}
 \alias{as_tbl_now.data.table}
-\title{Transform into a \code{tbl_now} object}
+\title{Transform an object into a \code{tbl_now}}
 \usage{
-as_tbl_now(object, event_date, report_date, ...)
+as_tbl_now(object, ...)
 
 \method{as_tbl_now}{tbl_now}(object, event_date, report_date, ...)
 
 \method{as_tbl_now}{data.frame}(object, event_date, report_date, ...)
 
-\method{as_tbl_now}{enw_preprocess_data}(object, event_date, report_date, ...)
+\method{as_tbl_now}{enw_preprocess_data}(object, ...)
 
-\method{as_tbl_now}{reporting_triangle}(object, event_date, report_date, ...)
+\method{as_tbl_now}{reporting_triangle}(object, ...)
 
-\method{as_tbl_now}{epidist_linelist_data}(object, event_date, report_date, ...)
+\method{as_tbl_now}{epidist_linelist_data}(object, ...)
 
-\method{as_tbl_now}{epidist_aggregate_data}(object, event_date, report_date, ...)
+\method{as_tbl_now}{epidist_aggregate_data}(object, ...)
 
-\method{as_tbl_now}{tbl_ts}(object, event_date, report_date, ...)
+\method{as_tbl_now}{tbl_ts}(object, report_date, event_date = NULL, ...)
 
 \method{as_tbl_now}{data.table}(object, event_date, report_date, ...)
 }
 \arguments{
-\item{object}{An object to convert to \code{tbl_now}.}
+\item{object}{An object to convert to a \code{tbl_now}.}
 
-\item{event_date}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
-name of the column containing the event date. Optional when \code{delay} is
-provided together with \code{report_date}; the event date will be computed as
-\code{report_date - delay}.}
+\item{...}{Additional arguments forwarded to the relevant \verb{tbl_now_from_*()}
+converter (and therefore to \code{\link[=tbl_now]{tbl_now()}}).}
 
-\item{report_date}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
-name of the column containing the report date. Optional when \code{delay} is
-provided together with \code{event_date}; the report date will be computed as
-\code{event_date + delay}.}
-
-\item{...}{Additional parameters to pass to \code{\link[=tbl_now]{tbl_now()}}}
+\item{event_date, report_date}{For \code{data.frame} / \code{data.table} / \code{tbl_ts}
+(and \code{tbl_now}) inputs, the \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
+event- and report-date columns. They are \strong{not} arguments of the
+package-conversion methods (epinowcast, baselinenowcast, epidist), which
+carry their own date mapping.}
 }
 \value{
 A \code{tbl_now} object.
@@ -51,11 +48,41 @@ A \code{tbl_now} object.
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Takes an object  and transforms it into a \code{tbl_now}.
+Convert a supported object into a \link{tbl_now}. For a plain \code{data.frame} /
+\code{data.table} (or an existing \code{tbl_now}) you supply the \code{event_date} and
+\code{report_date} columns yourself. For objects produced by other packages the
+conversion is delegated to the matching \verb{tbl_now_from_*()} converter, which
+already knows how to map that format -- so those methods do \strong{not} take
+\code{event_date} / \code{report_date}.
+}
+\details{
+Package-specific inputs forward to a dedicated converter. \strong{See that
+converter} for the extra arguments it accepts (e.g. \code{strata}, \code{max_delay},
+\code{format}, \code{delays_unit}, ...), for which columns are carried over, and for
+the transformation notes / round-trip caveats in its \emph{Round-trip} section:
+\itemize{
+\item \code{enw_preprocess_data} (or a fitted \code{epinowcast} object) ->
+\code{\link[=tbl_now_from_epinowcast]{tbl_now_from_epinowcast()}}
+\item \code{reporting_triangle} (\pkg{baselinenowcast}) ->
+\code{\link[=tbl_now_from_baselinenowcast]{tbl_now_from_baselinenowcast()}}
+\item \code{epidist_linelist_data} / \code{epidist_aggregate_data} (\pkg{epidist}) ->
+\code{\link[=tbl_now_from_epidist]{tbl_now_from_epidist()}}
+\item \code{tbl_ts} (\pkg{tsibble}) -> \code{\link[=tbl_now_from_tsibble]{tbl_now_from_tsibble()}}
+\item \code{data.table} -> \code{\link[=tbl_now_from_data_table]{tbl_now_from_data_table()}}
+}
+
+Anything passed through \code{...} is forwarded to the underlying converter (and
+on to \code{\link[=tbl_now]{tbl_now()}}), so options such as \code{event_units}, \code{now} or \code{verbose} can
+be supplied here too.
 }
 \examples{
 # Convert a data.frame to tbl_now
 data(denguedat)
 as_tbl_now(denguedat, event_date = "onset_week", report_date = "report_week")
 
+}
+\seealso{
+\code{\link[=tbl_now_from_epinowcast]{tbl_now_from_epinowcast()}}, \code{\link[=tbl_now_from_baselinenowcast]{tbl_now_from_baselinenowcast()}},
+\code{\link[=tbl_now_from_epidist]{tbl_now_from_epidist()}}, \code{\link[=tbl_now_from_tsibble]{tbl_now_from_tsibble()}},
+\code{\link[=tbl_now_from_data_table]{tbl_now_from_data_table()}}
 }

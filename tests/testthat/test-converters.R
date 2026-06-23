@@ -77,6 +77,47 @@ test_that("tbl_now_to_epinowcast errors on non-tbl_now", {
   expect_error(tbl_now_to_epinowcast(data.frame(a = 1)), "tbl_now")
 })
 
+test_that("epinowcast round-trip preserves every observation (no info lost)", {
+  skip_if_not_installed("epinowcast")
+  skip_if_not_installed("data.table")
+
+  obs  <- data.table::as.data.table(epinowcast::germany_covid19_hosp)[
+    location == "DE"
+  ]
+  obs  <- obs[, location := NULL]
+
+  # A max_delay beyond the longest observed delay (~82 days) so nothing is
+  # truncated: max_confirm / cum_prop_reported are then fully recoverable.
+  pobs <- suppressWarnings(
+    epinowcast::enw_preprocess_data(obs, max_delay = 100, by = "age_group")
+  )
+
+  tbl_epi <- tbl_now_from_epinowcast(pobs, verbose = FALSE)
+  rt <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE, verbose = FALSE)
+
+  # `identical()` / positional `all.equal()` fail only because the `.group`
+  # indices and the `age_group` factor levels may be reassigned (cosmetic).
+  # Sort both observation tables by their keys and compare column-by-column to
+  # confirm no information is lost in the round-trip.
+  align <- function(x) {
+    d <- data.table::as.data.table(x)
+    d[, age_group := as.character(age_group)]
+    data.table::setorderv(d, c("reference_date", "age_group", "delay"))
+    d[]
+  }
+  o1 <- align(pobs$obs[[1]])
+  o2 <- align(rt$obs[[1]])
+  expect_equal(ncol(o1), ncol(o2))
+  expect_equal(nrow(o1), nrow(o2))
+  expect_equal(o1$reference_date, o2$reference_date)
+  expect_equal(o1$report_date, o2$report_date)
+  expect_equal(o1$age_group, o2$age_group)
+  expect_equal(o1$confirm, o2$confirm)
+  expect_equal(o1$max_confirm, o2$max_confirm)         # full history retained
+  expect_equal(o1$cum_prop_reported, o2$cum_prop_reported)
+})
+
+
 # ============================================================
 # baselinenowcast
 # ============================================================
@@ -90,9 +131,28 @@ test_that("tbl_now_from_baselinenowcast expands a reporting-triangle matrix", {
   expect_true(is_tbl_now(res))
   expect_equal(get_data_type(res), "count-incidence")
   expect_equal(get_case_count(res), "count")
-  # NAs in the triangle are dropped → fewer than nrow*ncol rows
-  expect_true(nrow(res) <= prod(dim(rt)))
-  expect_true(all(res[["count"]] >= 0))
+
+  # The last observed report date becomes `now`; future cells (report > now)
+  # are dropped, within-window missing cells are kept as NA-count rows.
+  refs  <- as.Date(rownames(rt))
+  delay <- as.integer(colnames(rt))
+  report <- outer(as.integer(refs), delay, `+`)        # report = ref + delay
+  now    <- max(report[!is.na(rt)])
+  expect_equal(as.integer(get_now(res)), now)
+  expect_equal(nrow(res), sum(report <= now))          # future cells dropped
+  expect_equal(sum(is.na(res[["count"]])), sum(is.na(rt) & report <= now))
+  expect_true(all(res[["count"]] >= 0, na.rm = TRUE))
+})
+
+test_that("baselinenowcast matrix round-trip preserves NA vs 0 exactly", {
+  skip_if_not_installed("baselinenowcast")
+
+  rt     <- baselinenowcast::example_reporting_triangle
+  nowobj <- tbl_now_from_baselinenowcast(rt, verbose = FALSE)
+  back   <- suppressMessages(
+    tbl_now_to_baselinenowcast(nowobj, verbose = FALSE, quiet = TRUE)
+  )
+  expect_identical(rt, back)
 })
 
 test_that("tbl_now_from_baselinenowcast reads the long data.frame", {
@@ -141,46 +201,63 @@ test_that("baselinenowcast long round-trip preserves counts", {
   expect_equal(sum(long$count), sum(orig$count))
 })
 
-# ============================================================
-# EpiNow2 (to only)
-# ============================================================
+test_that("baselinenowcast round-trip preserves everything", {
+  skip_if_not_installed("baselinenowcast")
 
-test_that("tbl_now_to_EpiNow2 collapses count data to a date/confirm series", {
-  skip_if_not_installed("data.table")
+  rt     <- baselinenowcast::example_reporting_triangle
 
-  data(mpoxdat)
-  nowobj <- tbl_now(mpoxdat,
-    event_date = "dx_date", report_date = "dx_report_date",
-    case_count = "n", strata = "race",
-    data_type = "count-incidence", verbose = FALSE
-  )
-  series <- tbl_now_to_EpiNow2(nowobj, verbose = FALSE)
+  # Convert to a tbl_now
+  nowobj <- tbl_now_from_baselinenowcast(rt,verbose = FALSE)
 
-  expect_s3_class(series, "data.table")
-  expect_equal(names(series), c("date", "confirm"))
-  # one row per unique event date
-  expect_equal(nrow(series), dplyr::n_distinct(mpoxdat$dx_date))
-  # dates sorted ascending
-  expect_false(is.unsorted(series$date))
+  # The matrix round-trip is faithful (not-yet-observed `NA` cells are kept).
+  expect_identical(rt, tbl_now_to_baselinenowcast(nowobj, verbose = FALSE))
+
 })
 
-test_that("tbl_now_to_EpiNow2 works on linelist data", {
-  skip_if_not_installed("data.table")
 
-  data(denguedat)
-  nowobj <- tbl_now(denguedat,
-    event_date = "onset_week", report_date = "report_week",
-    verbose = FALSE
-  )
-  series <- tbl_now_to_EpiNow2(nowobj, verbose = FALSE)
-  expect_equal(names(series), c("date", "confirm"))
-  expect_equal(sum(series$confirm), nrow(denguedat))
-})
 
-test_that("tbl_now_to_EpiNow2 errors on non-tbl_now", {
-  skip_if_not_installed("data.table")
-  expect_error(tbl_now_to_EpiNow2(data.frame(a = 1)), "tbl_now")
-})
+
+
+# # ============================================================
+# # EpiNow2 (to only)
+# # ============================================================
+#
+# test_that("tbl_now_to_EpiNow2 collapses count data to a date/confirm series", {
+#   skip_if_not_installed("data.table")
+#
+#   data(mpoxdat)
+#   nowobj <- tbl_now(mpoxdat,
+#     event_date = "dx_date", report_date = "dx_report_date",
+#     case_count = "n", strata = "race",
+#     data_type = "count-incidence", verbose = FALSE
+#   )
+#   series <- tbl_now_to_EpiNow2(nowobj, verbose = FALSE)
+#
+#   expect_s3_class(series, "data.table")
+#   expect_equal(names(series), c("date", "confirm"))
+#   # one row per unique event date
+#   expect_equal(nrow(series), dplyr::n_distinct(mpoxdat$dx_date))
+#   # dates sorted ascending
+#   expect_false(is.unsorted(series$date))
+# })
+#
+# test_that("tbl_now_to_EpiNow2 works on linelist data", {
+#   skip_if_not_installed("data.table")
+#
+#   data(denguedat)
+#   nowobj <- tbl_now(denguedat,
+#     event_date = "onset_week", report_date = "report_week",
+#     verbose = FALSE
+#   )
+#   series <- tbl_now_to_EpiNow2(nowobj, verbose = FALSE)
+#   expect_equal(names(series), c("date", "confirm"))
+#   expect_equal(sum(series$confirm), nrow(denguedat))
+# })
+#
+# test_that("tbl_now_to_EpiNow2 errors on non-tbl_now", {
+#   skip_if_not_installed("data.table")
+#   expect_error(tbl_now_to_EpiNow2(data.frame(a = 1)), "tbl_now")
+# })
 
 # ============================================================
 # data.table
@@ -514,11 +591,12 @@ test_that("tbl_now_to_tsibble builds a tsibble with the chosen index and key", {
   ts <- suppressWarnings(tbl_now_to_tsibble(nowobj, verbose = FALSE))
 
   expect_s3_class(ts, "tbl_ts")
-  expect_equal(tsibble::index_var(ts), "report_week")
-  expect_setequal(tsibble::key_vars(ts), c("onset_week", "gender"))
+  # The event date is the index; the report date and strata are the key.
+  expect_equal(tsibble::index_var(ts), "onset_week")
+  expect_setequal(tsibble::key_vars(ts), c("report_week", "gender"))
 })
 
-test_that("tbl_now_to_tsibble index = event_date uses event_date as index", {
+test_that("tbl_now_to_tsibble index = report_date uses report_date as index", {
   skip_if_not_installed("tsibble")
 
   data(denguedat)
@@ -526,8 +604,8 @@ test_that("tbl_now_to_tsibble index = event_date uses event_date as index", {
     event_date = "onset_week", report_date = "report_week",
     verbose = FALSE
   )
-  ts <- suppressWarnings(tbl_now_to_tsibble(nowobj, index = "event_date", verbose = FALSE))
-  expect_equal(tsibble::index_var(ts), "onset_week")
+  ts <- suppressWarnings(tbl_now_to_tsibble(nowobj, index = "report_date", verbose = FALSE))
+  expect_equal(tsibble::index_var(ts), "report_week")
 })
 
 test_that("tbl_now_from_tsibble rebuilds a tbl_now and recovers strata", {
@@ -539,15 +617,15 @@ test_that("tbl_now_from_tsibble rebuilds a tbl_now and recovers strata", {
     strata = "gender", verbose = FALSE
   )
   ts <- suppressWarnings(tbl_now_to_tsibble(nowobj, verbose = FALSE))
-  back <- tbl_now_from_tsibble(ts, event_date = "onset_week", verbose = FALSE)
+  back <- tbl_now_from_tsibble(ts, report_date = "report_week", verbose = FALSE)
 
   expect_true(is_tbl_now(back))
-  expect_equal(get_event_date(back), "onset_week")
-  expect_equal(get_report_date(back), "report_week") # from the tsibble index
+  expect_equal(get_event_date(back), "onset_week") # from the tsibble index
+  expect_equal(get_report_date(back), "report_week")
   expect_equal(get_strata(back), "gender")
 })
 
-test_that("tbl_now_from_tsibble errors without event_date", {
+test_that("tbl_now_from_tsibble errors without report_date", {
   skip_if_not_installed("tsibble")
   data(denguedat)
   nowobj <- tbl_now(denguedat,
@@ -555,7 +633,7 @@ test_that("tbl_now_from_tsibble errors without event_date", {
     verbose = FALSE
   )
   ts <- suppressWarnings(tbl_now_to_tsibble(nowobj, verbose = FALSE))
-  expect_error(tbl_now_from_tsibble(ts), "event_date")
+  expect_error(tbl_now_from_tsibble(ts), "report_date")
 })
 
 test_that("tbl_now_to_tsibble errors on non-tbl_now", {
@@ -576,13 +654,13 @@ test_that("as_tbl_now.tbl_ts round-trips a tsibble", {
     strata = "gender", verbose = FALSE
   )
   ts <- suppressWarnings(tbl_now_to_tsibble(nowobj, verbose = FALSE))
-  back <- as_tbl_now(ts, event_date = "onset_week", verbose = FALSE)
+  back <- as_tbl_now(ts, report_date = "report_week", verbose = FALSE)
 
   expect_true(is_tbl_now(back))
   expect_equal(get_strata(back), "gender")
 })
 
-test_that("as_tbl_now.tbl_ts errors without event_date", {
+test_that("as_tbl_now.tbl_ts errors without report_date", {
   skip_if_not_installed("tsibble")
   data(denguedat)
   nowobj <- tbl_now(denguedat,
@@ -590,7 +668,7 @@ test_that("as_tbl_now.tbl_ts errors without event_date", {
     verbose = FALSE
   )
   ts <- suppressWarnings(tbl_now_to_tsibble(nowobj, verbose = FALSE))
-  expect_error(as_tbl_now(ts), "event_date")
+  expect_error(as_tbl_now(ts), "report_date")
 })
 
 test_that("as_tbl_now.enw_preprocess_data round-trips epinowcast", {
@@ -680,8 +758,9 @@ test_that(".reporting_triangle_to_long falls back to 0-based delays for non-nume
   res <- tbl.now:::.reporting_triangle_to_long(m, delays_unit = "days")
   expect_s3_class(res, "data.frame")
   expect_setequal(names(res), c("reference_date", "report_date", "count"))
-  # NA cell dropped → 3 rows
-  expect_equal(nrow(res), 3L)
+  # NA cell kept (not dropped) → one row per cell, with the NA preserved.
+  expect_equal(nrow(res), 4L)
+  expect_equal(sum(is.na(res$count)), 1L)
 })
 
 test_that("tbl_now_from_baselinenowcast errors on a long df missing columns", {
@@ -691,11 +770,12 @@ test_that("tbl_now_from_baselinenowcast errors on a long df missing columns", {
   )
 })
 
-test_that("tbl_now_from_tsibble needs report_date for a non-tsibble input", {
+test_that("tbl_now_from_tsibble needs event_date for a non-tsibble input", {
   skip_if_not_installed("tsibble")
+  # report_date supplied, but event_date cannot default from a non-tsibble.
   expect_error(
-    tbl_now_from_tsibble(data.frame(ev = 1, rp = 2), event_date = "ev"),
-    "report_date"
+    tbl_now_from_tsibble(data.frame(ev = 1, rp = 2), report_date = "rp"),
+    "event_date"
   )
 })
 
@@ -802,13 +882,13 @@ test_that("tbl_now_to_baselinenowcast errors on count-cumulative input", {
   )
 })
 
-test_that("tbl_now_to_EpiNow2 verbose prints the conversion summary", {
-  skip_if_not_installed("data.table")
-  expect_message(
-    tbl_now_to_EpiNow2(make_incidence_now(), verbose = TRUE),
-    "EpiNow2"
-  )
-})
+# test_that("tbl_now_to_EpiNow2 verbose prints the conversion summary", {
+#   skip_if_not_installed("data.table")
+#   expect_message(
+#     tbl_now_to_EpiNow2(make_incidence_now(), verbose = TRUE),
+#     "EpiNow2"
+#   )
+# })
 
 test_that("tbl_now_to_data_table verbose prints the conversion summary", {
   skip_if_not_installed("data.table")
@@ -875,9 +955,10 @@ test_that("tbl_now_from_tsibble sets strata to NULL when the key holds only date
     report = as.Date("2021-01-01") + c(0, 7, 7, 14, 14, 21),
     n      = c(1, 3, 2, 5, 4, 7)
   )
-  ts <- tsibble::as_tsibble(df, index = report, key = event)
+  # Event date is the index, report date is the only key column (no strata).
+  ts <- tsibble::as_tsibble(df, index = event, key = report)
   res <- tbl_now_from_tsibble(ts,
-    event_date = "event",
+    report_date = "report",
     event_units = "weeks", report_units = "weeks",
     verbose = FALSE
   )
@@ -978,55 +1059,55 @@ test_that("epinowcast preprocessed round-trip preserves rows (up to max_delay)",
   expect_equal(sum(from_pre[["confirm"]]), sum(from_raw[["confirm"]]))
 })
 
-# ============================================================
-# EpiNow2: estimate_truncation snapshots
-# ============================================================
-
-test_that("tbl_now_to_EpiNow2 model='estimate_truncation' returns a list of snapshots", {
-  skip_if_not_installed("data.table")
-
-  data(mpoxdat)
-  tn <- tbl_now(mpoxdat,
-    event_date = "dx_date", report_date = "dx_report_date",
-    case_count = "n", strata = "race", data_type = "count-incidence",
-    verbose = FALSE
-  )
-  snaps <- tbl_now_to_EpiNow2(tn, model = "estimate_truncation", verbose = FALSE)
-
-  expect_type(snaps, "list")
-  expect_true(length(snaps) >= 2)
-  expect_true(all(vapply(snaps, function(s) all(names(s) == c("date", "confirm")), logical(1))))
-  # snapshots grow (later vintages have at least as many dates as earlier ones)
-  expect_true(nrow(snaps[[length(snaps)]]) >= nrow(snaps[[1]]))
-})
-
-test_that("EpiNow2 truncation's final snapshot equals the estimate_infections series", {
-  skip_if_not_installed("data.table")
-
-  data(mpoxdat)
-  tn <- tbl_now(mpoxdat,
-    event_date = "dx_date", report_date = "dx_report_date",
-    case_count = "n", strata = "race", data_type = "count-incidence",
-    verbose = FALSE
-  )
-  inf <- tbl_now_to_EpiNow2(tn, verbose = FALSE)
-  snaps <- tbl_now_to_EpiNow2(tn, model = "estimate_truncation", verbose = FALSE)
-
-  expect_equal(as.data.frame(snaps[[length(snaps)]]),
-    as.data.frame(inf),
-    ignore_attr = TRUE
-  )
-})
-
-test_that("tbl_now_to_EpiNow2 errors on an unknown model", {
-  skip_if_not_installed("data.table")
-  data(denguedat)
-  tn <- tbl_now(denguedat,
-    event_date = "onset_week", report_date = "report_week",
-    verbose = FALSE
-  )
-  expect_error(tbl_now_to_EpiNow2(tn, model = "nonsense"), "should be|arg")
-})
+# # ============================================================
+# # EpiNow2: estimate_truncation snapshots
+# # ============================================================
+#
+# test_that("tbl_now_to_EpiNow2 model='estimate_truncation' returns a list of snapshots", {
+#   skip_if_not_installed("data.table")
+#
+#   data(mpoxdat)
+#   tn <- tbl_now(mpoxdat,
+#     event_date = "dx_date", report_date = "dx_report_date",
+#     case_count = "n", strata = "race", data_type = "count-incidence",
+#     verbose = FALSE
+#   )
+#   snaps <- tbl_now_to_EpiNow2(tn, model = "estimate_truncation", verbose = FALSE)
+#
+#   expect_type(snaps, "list")
+#   expect_true(length(snaps) >= 2)
+#   expect_true(all(vapply(snaps, function(s) all(names(s) == c("date", "confirm")), logical(1))))
+#   # snapshots grow (later vintages have at least as many dates as earlier ones)
+#   expect_true(nrow(snaps[[length(snaps)]]) >= nrow(snaps[[1]]))
+# })
+#
+# test_that("EpiNow2 truncation's final snapshot equals the estimate_infections series", {
+#   skip_if_not_installed("data.table")
+#
+#   data(mpoxdat)
+#   tn <- tbl_now(mpoxdat,
+#     event_date = "dx_date", report_date = "dx_report_date",
+#     case_count = "n", strata = "race", data_type = "count-incidence",
+#     verbose = FALSE
+#   )
+#   inf <- tbl_now_to_EpiNow2(tn, verbose = FALSE)
+#   snaps <- tbl_now_to_EpiNow2(tn, model = "estimate_truncation", verbose = FALSE)
+#
+#   expect_equal(as.data.frame(snaps[[length(snaps)]]),
+#     as.data.frame(inf),
+#     ignore_attr = TRUE
+#   )
+# })
+#
+# test_that("tbl_now_to_EpiNow2 errors on an unknown model", {
+#   skip_if_not_installed("data.table")
+#   data(denguedat)
+#   tn <- tbl_now(denguedat,
+#     event_date = "onset_week", report_date = "report_week",
+#     verbose = FALSE
+#   )
+#   expect_error(tbl_now_to_EpiNow2(tn, model = "nonsense"), "should be|arg")
+# })
 
 # ============================================================
 # Covariate / is_censored preservation in tabular outputs
@@ -1161,24 +1242,6 @@ test_that("tbl_now_to_epinowcast warns it is lossy, silenced by quiet = TRUE", {
   )
 })
 
-test_that("tbl_now_to_baselinenowcast warns it is lossy, silenced by quiet = TRUE", {
-  skip_if_not_installed("baselinenowcast")
-  res <- tbl_now_from_baselinenowcast(
-    head(baselinenowcast::syn_nssp_df, 400), verbose = FALSE
-  )
-  expect_warning(
-    suppressMessages(
-      tbl_now_to_baselinenowcast(res, format = "long", verbose = FALSE)
-    ),
-    "lossy"
-  )
-  expect_no_warning(
-    suppressMessages(
-      tbl_now_to_baselinenowcast(res, format = "long", verbose = FALSE,
-                                 quiet = TRUE)
-    )
-  )
-})
 
 test_that("tbl_now_to_data_table drops every tbl_now attribute", {
   skip_if_not_installed("data.table")

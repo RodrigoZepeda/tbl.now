@@ -105,10 +105,33 @@ is only known to lie in \verb{[0, report_date]}.
 }
 \examples{
 \dontshow{if (requireNamespace("epidist", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-df <- data.frame(
-  pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
-  sdate_lwr = as.Date(c("2020-03-05", "2020-03-04"))
+# --- Linelist epidist data (one row per case) ---
+ll <- epidist::as_epidist_linelist_data(
+  data.frame(
+    pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-02")),
+    sdate_lwr = as.Date(c("2020-03-05", "2020-03-04", "2020-03-06"))
+  ),
+  pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
 )
-tbl_now_from_epidist(df, event_units = "days", report_units = "days")
+# -> a linelist tbl_now ...
+nowll <- tbl_now_from_epidist(ll)
+get_data_type(nowll)
+# ... and back to an epidist_linelist_data
+tbl_now_to_epidist(nowll)
+
+# --- Aggregate epidist data (counts in an `n` column) ---
+agg <- epidist::as_epidist_aggregate_data(
+  data.frame(
+    pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
+    sdate_lwr = as.Date(c("2020-03-05", "2020-03-04")),
+    n = c(7, 3)
+  ),
+  n = "n", pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
+)
+# -> a count-incidence tbl_now (case_count = "n") ...
+nowagg <- tbl_now_from_epidist(agg)
+get_data_type(nowagg)
+# ... and back to an epidist_aggregate_data (auto-detected from the counts)
+tbl_now_to_epidist(nowagg)
 \dontshow{\}) # examplesIf}
 }
