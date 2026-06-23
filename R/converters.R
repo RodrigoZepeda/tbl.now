@@ -126,6 +126,104 @@
   }
 }
 
+#' Warn that a `tbl_now -> external format` conversion is lossy
+#'
+#' Round-trips through `tbl_now` are not the identity: each external format
+#' carries metadata, padding, grouping indices or covariate columns that
+#' `tbl_now` does not retain. This emits a one-line warning telling the user it
+#' is always preferable to work from the original data than to convert back and
+#' forth between formats.
+#'
+#' @param target Name of the destination package/format (for the message).
+#' @param quiet If `TRUE`, suppress the warning.
+#'
+#' @return `NULL`, invisibly.
+#'
+#' @keywords internal
+#' @noRd
+.warn_lossy_conversion <- function(target, quiet = FALSE) {
+  if (isTRUE(quiet)) {
+    return(invisible(NULL))
+  }
+  cli::cli_warn(c(
+    "!" = "Converting a {.cls tbl_now} to {.pkg {target}} is {.emph lossy}: \\
+           the result is not guaranteed to be identical to a native \\
+           {.pkg {target}} object.",
+    "i" = "Some information is dropped or re-synthesised in the round-trip \\
+           (e.g. covariate columns, grouping indices and padding rows).",
+    "i" = "If you have the data in {.pkg {target}}'s own format, prefer using \\
+           that directly over converting from another format.",
+    "i" = "Silence this warning with {.code quiet = TRUE}."
+  ))
+  invisible(NULL)
+}
+
+#' Strip `tbl_now` metadata, returning a plain `data.frame`
+#'
+#' The `tbl_now` class stores its metadata (`event_date`, `report_date`, `now`,
+#' `event_units`, `data_type`, `temporal_effects`, ... and any extra attributes
+#' the constructor was given) as object attributes, and the package's dplyr
+#' methods deliberately propagate them. When converting **out** to another
+#' format we want none of that to ride along, so this reduces `x` to a base
+#' `data.frame` carrying only `names`/`row.names`/`class` (column attributes
+#' such as `Date` are untouched). It removes every non-standard attribute
+#' generically, so it stays correct even if new `tbl_now` attributes are added.
+#'
+#' @param x A `tbl_now` (or any data frame).
+#'
+#' @return A plain `data.frame` with the same columns and no `tbl_now` metadata.
+#'
+#' @keywords internal
+#' @noRd
+.strip_tbl_now <- function(x) {
+  out <- as.data.frame(x)
+  attributes(out) <- list(
+    names     = names(out),
+    row.names = attr(out, "row.names", exact = TRUE),
+    class     = "data.frame"
+  )
+  out
+}
+
+#' Censoring-window width (in days) for a `tbl_now` time unit
+#'
+#' \pkg{epidist} works in days and represents each event as an interval-censored
+#' window `[date, date + width]`. When a `tbl_now` is measured in coarser units
+#' the window should match the unit's resolution, so a weekly observation is
+#' censored over its whole week. This maps a unit to that width in days.
+#'
+#' @param units One of `"days"`, `"weeks"`, `"months"`, `"years"`, `"numeric"`.
+#'
+#' @return A positive integer width in days (the day count epidist should span).
+#'
+#' @keywords internal
+#' @noRd
+.epidist_window_days <- function(units) {
+  switch(units,
+    days = 1L, weeks = 7L, months = 30L, years = 365L, numeric = 1L,
+    1L
+  )
+}
+
+#' Map a day-width back to the coarsest matching `tbl_now` unit
+#'
+#' Inverse of `.epidist_window_days()` for the units epidist can represent
+#' exactly (days and weeks); anything else falls back to `"days"`.
+#'
+#' @param width_days Numeric primary censoring-window width in days.
+#'
+#' @return `"weeks"` when the width is a non-zero multiple of 7, else `"days"`.
+#'
+#' @keywords internal
+#' @noRd
+.epidist_units_from_window <- function(width_days) {
+  if (length(width_days) == 0 || anyNA(width_days)) {
+    return("days")
+  }
+  w <- stats::median(width_days)
+  if (w > 0 && w %% 7 == 0) "weeks" else "days"
+}
+
 #' Assert that `x` is a `tbl_now` (for the `to_*` converters)
 #'
 #' @param x Object to check.
@@ -190,7 +288,7 @@
     )
 }
 
-#' Extract the long cumulative observations from any epinowcast representation
+#' Extract the long cumulative observations from any `epinowcast` representation
 #'
 #' \pkg{epinowcast} carries the same observations in several shapes: the raw
 #' long input `data.frame` (`reference_date`, `report_date`, cumulative
@@ -202,6 +300,7 @@
 #'
 #' @param data A raw long `data.frame`/`data.table`, an `enw_preprocess_data`
 #'   object, or a fitted `epinowcast` object.
+#'
 #' @param reference_date,report_date,confirm Column names (raw input only).
 #'
 #' @return A list with `observations` (a long `data.frame` of
@@ -214,8 +313,10 @@
 #' @noRd
 .epinowcast_obs <- function(data, reference_date = "reference_date",
                             report_date = "report_date", confirm = "confirm") {
+
   # Preprocessed object (or a fitted epinowcast object, which extends it).
   if (inherits(data, "enw_preprocess_data") || inherits(data, "epinowcast")) {
+
     .need_pkg("epinowcast")
 
     # The cumulative observations live in the nested `obs` element; drop the
@@ -249,7 +350,9 @@
 
   # Raw long input data.frame / data.table.
   observations <- as.data.frame(data)
+
   .assert_columns_present(observations, c(reference_date, report_date, confirm))
+
   list(
     observations   = observations,
     reference_date = reference_date,
@@ -268,6 +371,7 @@
 #'
 #' @param triangle A reporting-triangle matrix (rownames = reference dates,
 #'   colnames = delays).
+#'
 #' @param delays_unit Unit of the delay axis: `"days"`, `"weeks"`, `"months"`
 #'   or `"years"`.
 #'
@@ -276,6 +380,7 @@
 #' @keywords internal
 #' @noRd
 .reporting_triangle_to_long <- function(triangle, delays_unit = "days") {
+
   reference_labels <- rownames(triangle)
   if (is.null(reference_labels)) {
     cli::cli_abort(
@@ -354,9 +459,15 @@
 #'   `confirm`.
 #' @param max_delay Maximum delay (in `timestep`s) to use when preprocessing.
 #'   If `NULL` it is inferred from the data as `max(.delay) + 1`.
+#' @param missing_reference Passed to [epinowcast::enw_complete_dates()].
+#'   Defaults to `FALSE` (unlike epinowcast's own default of `TRUE`): a
+#'   `tbl_now` never carries reports with a missing `reference_date`, so leaving
+#'   this `TRUE` would synthesise NA-reference padding rows the data never had.
 #' @param preprocess If `TRUE` (default) returns an `enw_preprocess_data`
 #'   object; if `FALSE` returns the completed observation `data.table`.
 #' @param verbose Logical. Print the choices that were made.
+#' @param quiet Logical. If `TRUE`, suppress the lossy-conversion warning emitted
+#'   by `tbl_now_to_epinowcast()` (see the Round-trip section).
 #' @param ... Additional arguments forwarded to [as_tbl_now()] (for `from`)
 #'   or to [epinowcast::enw_preprocess_data()] (for `to`).
 #'
@@ -365,20 +476,41 @@
 #'   `data.table`.
 #'
 #' @section Round-trip:
+#' The round-trip is **not** the identity, and `tbl_now_to_epinowcast()` warns
+#' to that effect (silence it with `quiet = TRUE`). If you already have the data
+#' in epinowcast's format, work from it directly rather than converting through
+#' `tbl_now` and back.
+#'
 #' `tbl_now_from_epinowcast(tbl_now_to_epinowcast(x))` recovers `x` up to the
 #' `max_delay` truncation that epinowcast applies during preprocessing: reports
 #' with a delay beyond `max_delay` are dropped by
 #' [epinowcast::enw_preprocess_data()] and so are absent from the result.
 #'
+#' Conversely, `tbl_now_to_epinowcast(tbl_now_from_epinowcast(pobs))` is not
+#' identical to `pobs`, because a `tbl_now` does not retain everything an
+#' `enw_preprocess_data` object carries:
+#' * **Covariate columns** that are neither the core
+#'   `reference_date`/`report_date`/`confirm` nor a grouping (`by`) column are
+#'   dropped (e.g. a constant `location` column).
+#' * **Grouping indices** (`.group`) are reassigned from the factor levels, so
+#'   the row order of the nested tables can differ even though the underlying
+#'   values match.
+#' * **NA-reference padding** is not regenerated by default (see
+#'   `missing_reference`).
+#'
 #' @examplesIf requireNamespace("epinowcast", quietly = TRUE)
-#' obs <- epinowcast::germany_covid19_hosp
+#' obs  <- epinowcast::germany_covid19_hosp[location == "DE"]
+#' pobs <- epinowcast::enw_preprocess_data(obs, max_delay = 40, by = "age_group")
 #'
 #' # From the raw long input format ...
-#' nowobj <- tbl_now_from_epinowcast(obs, strata = c("location", "age_group"))
+#' nowobj <- tbl_now_from_epinowcast(obs, strata = c("age_group"))
 #'
-#' # ... or straight from a preprocessed epinowcast object
-#' pre <- tbl_now_to_epinowcast(nowobj, verbose = FALSE)
-#' tbl_now_from_epinowcast(pre, verbose = FALSE)
+#' # ... or from a preprocessed epinowcast object
+#' tbl_epi <- tbl_now_from_epinowcast(pobs)
+#'
+#' #You can also convert to epinowcast preprocess data format
+#' tbl_now_to_epinowcast(tbl_epi)
+#'
 #' @name tbl_now_epinowcast
 #' @export
 tbl_now_from_epinowcast <- function(data, ...,
@@ -439,16 +571,44 @@ tbl_now_from_epinowcast <- function(data, ...,
 #' @param reference_date,report_date,count Column names (long format only).
 #' @param delays_unit Unit of the delay axis (passed to
 #'   [baselinenowcast::as_reporting_triangle()]). Defaults to `"days"`.
-#' @param format For `to`: `"long"` (default) or `"matrix"`.
+#' @param format For `to`: `"matrix"` (default) or `"long"`.
 #' @param verbose Logical. Print the choices that were made.
+#' @param quiet Logical. If `TRUE`, suppress the lossy-conversion warning emitted
+#'   by `tbl_now_to_baselinenowcast()` (see the Round-trip section).
 #' @param ... Forwarded to [as_tbl_now()] (`from`) or
 #'   [baselinenowcast::as_reporting_triangle()] (`to`, matrix format).
 #'
 #' @return A `tbl_now` (`from`), or a `data.frame`/`reporting_triangle` (`to`).
 #'
+#' @section Round-trip:
+#' The round-trip is **not** the identity, and `tbl_now_to_baselinenowcast()`
+#' warns to that effect (silence it with `quiet = TRUE`). If you already have a
+#' `reporting_triangle`, work from it directly rather than converting through a
+#' `tbl_now` and back.
+#'
+#' `identical(rt, tbl_now_to_baselinenowcast(tbl_now_from_baselinenowcast(rt)))`
+#' is `FALSE` for a fundamental reason: a `reporting_triangle` distinguishes
+#' **not-yet-observed** cells (`NA`) from **observed zeros** (`0`), but a
+#' `tbl_now` stores only the observed counts as rows — both `NA` and `0` cells
+#' become *absent* rows. On the way back,
+#' [baselinenowcast::as_reporting_triangle()] re-rectangularises the data by
+#' inferring the triangle boundary from the span of report dates present, and
+#' fills any gap **inside** that boundary with `0` (only cells **beyond** it stay
+#' `NA`). All counts that were actually present are preserved exactly; what is
+#' lost is the precise `NA`/`0` missingness mask, which a ragged triangle (such
+#' as `baselinenowcast::example_reporting_triangle`) does not encode as a simple
+#' function of the report dates.
+#'
 #' @examplesIf requireNamespace("baselinenowcast", quietly = TRUE)
-#' rt <- baselinenowcast::example_reporting_triangle
+#' # Get a reporting triangle example
+#' rt     <- baselinenowcast::example_reporting_triangle
+#'
+#' # Convert to a tbl_now
 #' nowobj <- tbl_now_from_baselinenowcast(rt)
+#'
+#' # Note: the round-trip is lossy and so this is *not* identical to `rt`
+#' # (not-yet-observed `NA` cells come back as `0`). Prefer using `rt` directly.
+#' identical(rt, tbl_now_to_baselinenowcast(nowobj))
 #' @name tbl_now_baselinenowcast
 #' @export
 tbl_now_from_baselinenowcast <- function(data, ...,
@@ -545,37 +705,62 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' \pkg{epidist} models the delay between a *primary* event (e.g. symptom
 #' onset) and a *secondary* event (e.g. report), storing each as an
 #' interval-censored pair of date columns: `pdate_lwr`/`pdate_upr` for the
-#' primary event and `sdate_lwr`/`sdate_upr` for the secondary event
-#' (see [epidist::as_epidist_linelist_data()]).
+#' primary event and `sdate_lwr`/`sdate_upr` for the secondary event. It comes
+#' in two shapes: a one-row-per-case `epidist_linelist_data`
+#' ([epidist::as_epidist_linelist_data()]) and an `epidist_aggregate_data` that
+#' adds an `n` count column ([epidist::as_epidist_aggregate_data()]). epidist
+#' stores everything in **days** and requires every censoring window to have a
+#' strictly positive width.
 #'
-#' `tbl_now_from_epidist()` converts such data into a `tbl_now`:
+#' `tbl_now_from_epidist()` converts either shape into a `tbl_now`:
 #'
-#' * `"linelist"` (default): use the lower bounds only — `primary`
-#'   (`pdate_lwr`) becomes `event_date` and `secondary` (`sdate_lwr`) becomes
-#'   `report_date`. `data_type = "linelist"`.
-#' * `"interval"`: additionally attach the upper bounds `primary_upper`
+#' * `"auto"` (default): use the lower bounds — `primary` (`pdate_lwr`) becomes
+#'   `event_date`, `secondary` (`sdate_lwr`) becomes `report_date`. An
+#'   `epidist_aggregate_data` (or any input with an `n` column) becomes
+#'   `data_type = "count-incidence"` with `case_count = "n"`; otherwise
+#'   `data_type = "linelist"`. The `event_units`/`report_units` are inferred
+#'   from the primary censoring-window width (a 7-day window ⇒ `"weeks"`), and a
+#'   left-censored secondary window `[origin, report]` is decoded back to
+#'   `is_censored = TRUE` with the report taken from `secondary_upper`.
+#' * `"interval"`: instead attach the upper bounds `primary_upper`
 #'   (`pdate_upr`) and `secondary_upper` (`sdate_upr`) as `covariates`
 #'   (a warning is emitted).
 #'
-#' `tbl_now_to_epidist()` performs the inverse and builds an
-#' `epidist_linelist_data` object via [epidist::as_epidist_linelist_data()].
-#' For `format = "interval"` the upper bounds are taken from covariate columns
-#' named in `primary_upper` / `secondary_upper`.
+#' `tbl_now_to_epidist()` performs the inverse. By default (`format = "auto"`)
+#' it builds an `epidist_aggregate_data` when `x` holds counts and an
+#' `epidist_linelist_data` otherwise, filling all four interval columns:
 #'
-#' @param data A `data.frame` (or `epidist_linelist_data`) of \pkg{epidist}
-#'   delay data.
+#' * the primary event spans `[event_date, event_date + w]`, where the window
+#'   `w` matches the `tbl_now` unit (`"days"` ⇒ 1 day, `"weeks"` ⇒ 7 days, ...,
+#'   or `censoring_window` if supplied);
+#' * the secondary event spans `[report_date, report_date + w]` normally, but
+#'   for rows flagged by `is_censored` it is left-censored to
+#'   `[origin, report_date]` (with `origin` the earliest `event_date`, i.e.
+#'   epidist time 0) — encoding the `tbl_now` convention that a censored report
+#'   is only known to lie in `[0, report_date]`.
+#'
+#' @param data A `data.frame`, `epidist_linelist_data` or
+#'   `epidist_aggregate_data` of \pkg{epidist} delay data.
 #' @param x A `tbl_now` object.
-#' @param format `"linelist"` (default) or `"interval"`.
+#' @param format For `from`: `"auto"` (default) or `"interval"`. For `to`:
+#'   `"auto"` (default), `"linelist"`, `"aggregate"` or `"interval"`.
 #' @param primary,secondary Column names of the primary / secondary event
 #'   lower-bound dates. Default to epidist's `"pdate_lwr"` / `"sdate_lwr"`.
-#' @param primary_upper,secondary_upper Column names of the upper-bound dates
-#'   (`format = "interval"`). Default to epidist's `"pdate_upr"` /
-#'   `"sdate_upr"`.
+#' @param primary_upper,secondary_upper Column names of the upper-bound dates.
+#'   Default to epidist's `"pdate_upr"` / `"sdate_upr"`. Used to infer units and
+#'   decode censoring (`from`) or, with `format = "interval"`, taken from
+#'   covariate columns (`to`).
+#' @param censoring_window (`to` only) Optional positive integer width, in days,
+#'   of the censoring windows. If `NULL` (default) it is derived from the
+#'   `tbl_now` `event_units`.
 #' @param verbose Logical. Print the choices that were made.
-#' @param ... Forwarded to [as_tbl_now()] (`from`) or
-#'   [epidist::as_epidist_linelist_data()] (`to`).
+#' @param quiet Logical. If `TRUE`, suppress the lossy-conversion warning emitted
+#'   by `tbl_now_to_epidist()`.
+#' @param ... Forwarded to [as_tbl_now()] (`from`) or to the relevant epidist
+#'   constructor (`to`).
 #'
-#' @return A `tbl_now` (`from`) or an `epidist_linelist_data` object (`to`).
+#' @return A `tbl_now` (`from`) or an `epidist_linelist_data` /
+#'   `epidist_aggregate_data` object (`to`).
 #'
 #' @examplesIf requireNamespace("epidist", quietly = TRUE)
 #' df <- data.frame(
@@ -585,7 +770,7 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' tbl_now_from_epidist(df, event_units = "days", report_units = "days")
 #' @name tbl_now_epidist
 #' @export
-tbl_now_from_epidist <- function(data, ..., format = c("linelist", "interval"),
+tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
                                  primary = "pdate_lwr",
                                  secondary = "sdate_lwr",
                                  primary_upper = "pdate_upr",
@@ -593,53 +778,82 @@ tbl_now_from_epidist <- function(data, ..., format = c("linelist", "interval"),
                                  verbose = TRUE) {
   format <- match.arg(format)
   observations <- as.data.frame(data)
+  dots <- list(...)
 
-  # Linelist: the lower bounds become the event and report dates.
-  if (format == "linelist") {
-    .assert_columns_present(observations, c(primary, secondary))
-
+  # Interval-censored: lower bounds become the dates, upper bounds become
+  # covariates (legacy behaviour, opt-in).
+  if (format == "interval") {
+    .assert_columns_present(
+      observations, c(primary, secondary, primary_upper, secondary_upper)
+    )
+    upper_bounds <- c(primary_upper, secondary_upper)
+    cli::cli_warn(c(
+      "Interval-censored data:",
+      "*" = "lower bounds {.val {c(primary, secondary)}} -> event/report dates",
+      "*" = "upper bounds {.val {upper_bounds}} -> covariates"
+    ))
     result <- .build_tbl_now(
-      observations,
-      dots = list(...),
-      event_date = primary,
-      report_date = secondary,
-      data_type = "linelist"
+      observations, dots = dots,
+      event_date = primary, report_date = secondary,
+      covariates = upper_bounds, data_type = "linelist"
     )
     .report_from(
       result, "epidist", verbose,
-      extra = paste0(
-        "format: linelist (primary lower bound -> event_date, ",
-        "secondary lower bound -> report_date)"
-      )
+      extra = "format: interval (lower bounds -> dates, upper bounds -> covariates)"
     )
     return(result)
   }
 
-  # Interval-censored: lower bounds become the dates, upper bounds become
-  # covariates.
-  .assert_columns_present(
-    observations, c(primary, secondary, primary_upper, secondary_upper)
-  )
-  upper_bounds <- c(primary_upper, secondary_upper)
-  cli::cli_warn(c(
-    "Interval-censored data:",
-    "*" = "lower bounds {.val {c(primary, secondary)}} -> event/report dates",
-    "*" = "upper bounds {.val {upper_bounds}} -> covariates"
-  ))
+  .assert_columns_present(observations, c(primary, secondary))
+
+  # Aggregate (counts) -> count-incidence with case_count = n; linelist
+  # otherwise.
+  is_aggregate <- inherits(data, "epidist_aggregate_data") ||
+    "n" %in% colnames(observations)
+  count_col <- if (is_aggregate) "n" else NULL
+  data_type <- if (is_aggregate) "count-incidence" else "linelist"
+
+  # Infer the units from the primary censoring window unless the caller set them.
+  inferred_units <- "days"
+  if (primary_upper %in% colnames(observations)) {
+    inferred_units <- .epidist_units_from_window(
+      as.numeric(observations[[primary_upper]] - observations[[primary]])
+    )
+  }
+  if (is.null(dots$event_units)) dots$event_units <- inferred_units
+  if (is.null(dots$report_units)) dots$report_units <- dots$event_units
+
+  # Decode left-censoring: a secondary window of the form [origin, report]
+  # (lower bound at epidist time 0, i.e. the earliest event date) means the
+  # report was only known up to its upper bound. Recover the report date and set
+  # `is_censored` for those rows.
+  is_censored_col <- NULL
+  if (secondary_upper %in% colnames(observations) &&
+      primary_upper %in% colnames(observations)) {
+    origin <- min(observations[[primary]], na.rm = TRUE)
+    window <- as.numeric(observations[[primary_upper]] - observations[[primary]])
+    gap    <- as.numeric(observations[[secondary_upper]] - observations[[secondary]])
+    censored <- (observations[[secondary]] == origin) & (gap > window)
+    censored[is.na(censored)] <- FALSE
+    if (any(censored)) {
+      observations[[secondary]][censored] <- observations[[secondary_upper]][censored]
+      observations[["is_censored"]] <- censored
+      is_censored_col <- "is_censored"
+    }
+  }
 
   result <- .build_tbl_now(
-    observations,
-    dots = list(...),
-    event_date = primary,
-    report_date = secondary,
-    covariates = upper_bounds,
-    data_type = "linelist"
+    observations, dots = dots,
+    event_date = primary, report_date = secondary,
+    case_count = count_col, is_censored = is_censored_col,
+    data_type = data_type
   )
   .report_from(
     result, "epidist", verbose,
     extra = paste0(
-      "format: interval (lower bounds -> dates, ",
-      "upper bounds -> covariates)"
+      "format: ", if (is_aggregate) "aggregate" else "linelist",
+      " (lower bounds -> event/report dates", if (is_aggregate) ", n -> case_count",
+      if (!is.null(is_censored_col)) ", left-censored windows -> is_censored", ")"
     )
   )
   result
@@ -684,7 +898,7 @@ tbl_now_from_epidist <- function(data, ..., format = c("linelist", "interval"),
 #'   event_date = "onset_week",
 #'   report_date = "report_week", verbose = FALSE
 #' )
-#' ts <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
+#' ts   <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
 #' back <- tbl_now_from_tsibble(ts, event_date = "onset_week", verbose = FALSE)
 #' @name tbl_now_tsibble
 #' @export
@@ -734,9 +948,12 @@ tbl_now_from_tsibble <- function(data, event_date, report_date = NULL,
 #' @rdname tbl_now_epinowcast
 #' @export
 tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
-                                  preprocess = TRUE, verbose = TRUE) {
+                                  missing_reference = FALSE,
+                                  preprocess = TRUE, verbose = TRUE,
+                                  quiet = FALSE) {
   .assert_tbl_now(x, "tbl_now_to_epinowcast")
   .need_pkg("epinowcast")
+  .warn_lossy_conversion("epinowcast", quiet)
 
   # epinowcast models the cumulative reporting process, so coerce first.
   if (get_data_type(x) != "count-cumulative") {
@@ -777,12 +994,18 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
     cli::cli_li("confirm <- {.val {count_col}}")
     cli::cli_li("by: {.val {if (is.null(grouping)) 'none' else grouping}}")
     cli::cli_li("max_delay: {.val {max_delay}}")
+    cli::cli_li("missing_reference: {.val {missing_reference}}")
     cli::cli_li("preprocess: {.val {preprocess}}")
     cli::cli_end()
   }
 
+  # `missing_reference = FALSE` by default: a tbl_now never carries NA-reference
+  # reports (they are dropped on the way in), so the epinowcast default of
+  # synthesising padding rows for them would invent observations the data never
+  # had. See the Round-trip section.
   completed <- epinowcast::enw_complete_dates(
-    observations, by = grouping, max_delay = max_delay
+    observations, by = grouping, max_delay = max_delay,
+    missing_reference = missing_reference
   )
   if (!preprocess) {
     return(completed)
@@ -795,10 +1018,12 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
 
 #' @rdname tbl_now_baselinenowcast
 #' @export
-tbl_now_to_baselinenowcast <- function(x, ..., format = c("long", "matrix"),
-                                       delays_unit = "days", verbose = TRUE) {
+tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
+                                       delays_unit = "days", verbose = TRUE,
+                                       quiet = FALSE) {
   .assert_tbl_now(x, "tbl_now_to_baselinenowcast")
   format <- match.arg(format)
+  .warn_lossy_conversion("baselinenowcast", quiet)
   # Note: the long format is a plain data.frame and needs no package; only the
   # matrix format calls into baselinenowcast (guarded below).
 
@@ -1012,44 +1237,36 @@ tbl_now_to_data_table <- function(x, ..., verbose = TRUE) {
   }
 
   # A data.table can hold every column, so keep them all (covariates and the
-  # censoring indicator included).
-  data.table::as.data.table(as.data.frame(x), ...)
+  # censoring indicator included). Strip the tbl_now metadata first so the
+  # resulting data.table carries none of it.
+  data.table::as.data.table(.strip_tbl_now(x), ...)
 }
 
 #' @rdname tbl_now_epidist
 #' @export
-tbl_now_to_epidist <- function(x, ..., format = c("linelist", "interval"),
+tbl_now_to_epidist <- function(x, ...,
+                               format = c("auto", "linelist", "aggregate", "interval"),
                                primary_upper = NULL,
                                secondary_upper = NULL,
-                               verbose = TRUE) {
+                               censoring_window = NULL,
+                               verbose = TRUE, quiet = FALSE) {
   .assert_tbl_now(x, "tbl_now_to_epidist")
   .need_pkg("epidist")
+  .warn_lossy_conversion("epidist", quiet)
   format <- match.arg(format)
 
-  event_col      <- get_event_date(x)
-  report_col     <- get_report_date(x)
   covariate_cols <- get_covariates(x)
   censored_col   <- get_is_censored(x)
-  observations   <- dplyr::as_tibble(x)
 
-  constructor_args <- list(pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr")
-
-  if (format == "linelist") {
-    # Lower bounds only: event date and report date.
-    epidist_data <- observations |>
-      dplyr::transmute(
-        pdate_lwr = .data[[event_col]],
-        sdate_lwr = .data[[report_col]]
-      )
-    carried_cols  <- c(covariate_cols, censored_col)
-    extra_message <- "pdate_lwr <- event_date, sdate_lwr <- report_date"
-  } else {
+  # --- Legacy "interval" branch: upper bounds taken from covariate columns. ---
+  if (format == "interval") {
     if (is.null(primary_upper) || is.null(secondary_upper)) {
       cli::cli_abort(
         "For {.val interval} format, supply {.arg primary_upper} and \\
          {.arg secondary_upper} (covariate columns holding the upper bounds)."
       )
     }
+    observations <- dplyr::as_tibble(x)
     .assert_columns_present(
       observations, c(primary_upper, secondary_upper), arg = "x"
     )
@@ -1061,43 +1278,130 @@ tbl_now_to_epidist <- function(x, ..., format = c("linelist", "interval"),
     ))
     epidist_data <- observations |>
       dplyr::transmute(
-        pdate_lwr = .data[[event_col]],
+        pdate_lwr = .data[[get_event_date(x)]],
         pdate_upr = .data[[primary_upper]],
-        sdate_lwr = .data[[report_col]],
+        sdate_lwr = .data[[get_report_date(x)]],
         sdate_upr = .data[[secondary_upper]]
       )
-    constructor_args$pdate_upr <- "pdate_upr"
-    constructor_args$sdate_upr <- "sdate_upr"
-    # The upper bounds are already in `epidist_data`; do not carry them twice.
-    carried_cols  <- setdiff(c(covariate_cols, censored_col), upper_bounds)
-    extra_message <- paste0(
-      "pdate_lwr/sdate_lwr <- dates, ",
-      "pdate_upr/sdate_upr <- covariates"
+    carried_cols <- setdiff(c(covariate_cols, censored_col), upper_bounds)
+    if (length(carried_cols) > 0) {
+      epidist_data <- dplyr::bind_cols(
+        epidist_data, dplyr::select(observations, dplyr::all_of(carried_cols))
+      )
+    }
+    if (verbose) {
+      cli::cli_h3("Converting {.cls tbl_now} into {.pkg epidist} interval data")
+      cli::cli_ul()
+      cli::cli_li("pdate_lwr/sdate_lwr <- dates, pdate_upr/sdate_upr <- covariates")
+      if (length(carried_cols) > 0) {
+        cli::cli_li("kept columns: {.val {carried_cols}}")
+      }
+      cli::cli_end()
+    }
+    return(do.call(
+      epidist::as_epidist_linelist_data,
+      c(list(epidist_data),
+        list(pdate_lwr = "pdate_lwr", pdate_upr = "pdate_upr",
+             sdate_lwr = "sdate_lwr", sdate_upr = "sdate_upr"),
+        list(...))
+    ))
+  }
+
+  # --- "auto"/"linelist"/"aggregate": build all four censoring windows. ---
+  data_type <- get_data_type(x)
+  is_count  <- data_type %in% c("count-incidence", "count-cumulative")
+
+  if (format == "auto") {
+    format <- if (is_count) "aggregate" else "linelist"
+  } else if (format == "linelist" && is_count) {
+    # A linelist has one row per case; count data belongs in the aggregate form.
+    cli::cli_warn(
+      "{.arg x} holds {.val {data_type}} counts; building an \\
+       {.cls epidist_aggregate_data} (with {.code n = case_count}) instead of a \\
+       linelist."
+    )
+    format <- "aggregate"
+  } else if (format == "aggregate" && !is_count) {
+    cli::cli_abort(
+      "{.val aggregate} format needs count data, but {.arg x} is \\
+       {.val {data_type}}. Use {.val linelist}."
     )
   }
 
-  # Carry the remaining covariates and the censoring indicator alongside.
-  if (length(carried_cols) > 0) {
+  # epidist's `n` must be an incremental count; de-accumulate cumulative input.
+  if (format == "aggregate" && data_type == "count-cumulative") {
+    x <- to_count(x, to = "count-incidence")
+  }
+
+  event_col  <- get_event_date(x)
+  report_col <- get_report_date(x)
+  count_col  <- get_case_count(x)
+  units      <- get_event_units(x)
+  obs        <- dplyr::as_tibble(x)
+
+  win <- if (is.null(censoring_window)) {
+    .epidist_window_days(units)
+  } else {
+    censoring_window
+  }
+  # epidist time 0 is the earliest primary (event) date.
+  origin <- min(obs[[event_col]], na.rm = TRUE)
+
+  censored <- if (!is.null(censored_col)) {
+    as.logical(obs[[censored_col]])
+  } else {
+    rep(FALSE, nrow(obs))
+  }
+  censored[is.na(censored)] <- FALSE
+
+  # Primary event: [event_date, event_date + win]. Secondary event:
+  # [report_date, report_date + win] normally, or the left-censored
+  # [origin, report_date] when the row is flagged censored.
+  epidist_data <- dplyr::tibble(
+    pdate_lwr = obs[[event_col]],
+    pdate_upr = obs[[event_col]] + win,
+    sdate_lwr = dplyr::if_else(censored, origin, obs[[report_col]]),
+    sdate_upr = dplyr::if_else(censored, obs[[report_col]], obs[[report_col]] + win)
+  )
+  # epidist requires strictly positive widths; a censored report sitting on the
+  # origin would collapse to zero width.
+  collapsed <- epidist_data$sdate_upr <= epidist_data$sdate_lwr
+  epidist_data$sdate_lwr[collapsed] <- epidist_data$sdate_upr[collapsed] - win
+
+  if (length(covariate_cols) > 0) {
     epidist_data <- dplyr::bind_cols(
-      epidist_data,
-      dplyr::select(observations, dplyr::all_of(carried_cols))
+      epidist_data, dplyr::select(obs, dplyr::all_of(covariate_cols))
     )
+  }
+
+  constructor_args <- list(
+    pdate_lwr = "pdate_lwr", pdate_upr = "pdate_upr",
+    sdate_lwr = "sdate_lwr", sdate_upr = "sdate_upr"
+  )
+  if (format == "aggregate") {
+    epidist_data[["n"]] <- obs[[count_col]]
+    constructor_args$n <- "n"
   }
 
   if (verbose) {
     cli::cli_h3("Converting {.cls tbl_now} into {.pkg epidist} {format} data")
     cli::cli_ul()
-    cli::cli_li(extra_message)
-    if (length(carried_cols) > 0) {
-      cli::cli_li("kept columns: {.val {carried_cols}}")
+    cli::cli_li("pdate_lwr <- {.val {event_col}}, sdate_lwr <- {.val {report_col}}")
+    cli::cli_li("censoring window: {.val {win}} day{?s} (from {.val {units}})")
+    cli::cli_li("left-censored rows ({.field is_censored}): {.val {sum(censored)}}")
+    if (format == "aggregate") cli::cli_li("n <- {.val {count_col}}")
+    if (length(covariate_cols) > 0) {
+      cli::cli_li("kept covariates: {.val {covariate_cols}}")
     }
     cli::cli_end()
   }
 
-  do.call(
-    epidist::as_epidist_linelist_data,
-    c(list(epidist_data), constructor_args, list(...))
-  )
+  constructor <- if (format == "aggregate") {
+    epidist::as_epidist_aggregate_data
+  } else {
+    epidist::as_epidist_linelist_data
+  }
+  do.call(constructor, c(list(epidist_data), constructor_args, list(...)))
 }
 
 #' @rdname tbl_now_tsibble
@@ -1136,8 +1440,10 @@ tbl_now_to_tsibble <- function(x, ..., index = c("report_date", "event_date"),
   kept_cols <- c(
     index_col, other_col, strata_cols, covariate_cols, censored_col, count_col
   )
+  # Strip the tbl_now metadata before building the tsibble (the package's dplyr
+  # methods would otherwise propagate it onto the result).
   observations <- x |>
-    dplyr::as_tibble() |>
+    .strip_tbl_now() |>
     dplyr::select(dplyr::all_of(kept_cols))
 
   if (verbose) {
@@ -1174,6 +1480,8 @@ tbl_now_to_tsibble <- function(x, ..., index = c("report_date", "event_date"),
 #' converter and are quiet by default.
 #'
 #' * `as_epidist_linelist_data()` (\pkg{epidist}) wraps [tbl_now_to_epidist()].
+#' * `as_epidist_aggregate_data()` (\pkg{epidist}) wraps [tbl_now_to_epidist()]
+#'   with `format = "aggregate"`.
 #' * `as_reporting_triangle()` (\pkg{baselinenowcast}) wraps
 #'   [tbl_now_to_baselinenowcast()] with `format = "matrix"`.
 #' * `as_tsibble()` (\pkg{tsibble}) wraps [tbl_now_to_tsibble()].
@@ -1193,6 +1501,12 @@ NULL
 #' @exportS3Method epidist::as_epidist_linelist_data
 as_epidist_linelist_data.tbl_now <- function(data, ..., verbose = FALSE) {
   tbl_now_to_epidist(data, ..., verbose = verbose)
+}
+
+#' @rdname tbl_now_coercion_methods
+#' @exportS3Method epidist::as_epidist_aggregate_data
+as_epidist_aggregate_data.tbl_now <- function(data, ..., verbose = FALSE) {
+  tbl_now_to_epidist(data, format = "aggregate", ..., verbose = verbose)
 }
 
 #' @rdname tbl_now_coercion_methods

@@ -7,6 +7,7 @@
 \alias{as_tbl_now.enw_preprocess_data}
 \alias{as_tbl_now.reporting_triangle}
 \alias{as_tbl_now.epidist_linelist_data}
+\alias{as_tbl_now.epidist_aggregate_data}
 \alias{as_tbl_now.tbl_ts}
 \alias{as_tbl_now.data.table}
 \title{Transform into a \code{tbl_now} object}
@@ -22,6 +23,8 @@ as_tbl_now(object, event_date, report_date, ...)
 \method{as_tbl_now}{reporting_triangle}(object, event_date, report_date, ...)
 
 \method{as_tbl_now}{epidist_linelist_data}(object, event_date, report_date, ...)
+
+\method{as_tbl_now}{epidist_aggregate_data}(object, event_date, report_date, ...)
 
 \method{as_tbl_now}{tbl_ts}(object, event_date, report_date, ...)
 

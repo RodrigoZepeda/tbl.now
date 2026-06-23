@@ -54,7 +54,7 @@ test_that("tbl_now_to_epinowcast returns an enw_preprocess_data object", {
     strata = c("location", "age_group"),
     verbose = FALSE
   )
-  ep <- tbl_now_to_epinowcast(nowobj, verbose = FALSE)
+  ep <- tbl_now_to_epinowcast(nowobj, verbose = FALSE, quiet = TRUE)
   expect_s3_class(ep, "enw_preprocess_data")
 })
 
@@ -66,7 +66,8 @@ test_that("tbl_now_to_epinowcast preprocess=FALSE returns completed data.table",
     strata = c("location", "age_group"),
     verbose = FALSE
   )
-  comp <- tbl_now_to_epinowcast(nowobj, preprocess = FALSE, verbose = FALSE)
+  comp <- tbl_now_to_epinowcast(nowobj, preprocess = FALSE, verbose = FALSE,
+                                quiet = TRUE)
   expect_s3_class(comp, "data.table")
   expect_true(all(c("reference_date", "report_date", "confirm") %in% names(comp)))
 })
@@ -110,7 +111,8 @@ test_that("tbl_now_to_baselinenowcast long returns the expected columns", {
   res <- tbl_now_from_baselinenowcast(head(baselinenowcast::syn_nssp_df, 400),
     verbose = FALSE
   )
-  long <- tbl_now_to_baselinenowcast(res, format = "long", verbose = FALSE)
+  long <- tbl_now_to_baselinenowcast(res, format = "long", verbose = FALSE,
+                                     quiet = TRUE)
   expect_s3_class(long, "data.frame")
   expect_equal(names(long), c("reference_date", "report_date", "count"))
 })
@@ -122,7 +124,8 @@ test_that("tbl_now_to_baselinenowcast matrix returns a reporting_triangle", {
     verbose = FALSE
   )
   mx <- suppressMessages(
-    tbl_now_to_baselinenowcast(res, format = "matrix", verbose = FALSE)
+    tbl_now_to_baselinenowcast(res, format = "matrix", verbose = FALSE,
+                               quiet = TRUE)
   )
   expect_s3_class(mx, "reporting_triangle")
   expect_true(is.matrix(mx))
@@ -133,7 +136,8 @@ test_that("baselinenowcast long round-trip preserves counts", {
 
   orig <- head(baselinenowcast::syn_nssp_df, 400)
   res <- tbl_now_from_baselinenowcast(orig, verbose = FALSE)
-  long <- tbl_now_to_baselinenowcast(res, format = "long", verbose = FALSE)
+  long <- tbl_now_to_baselinenowcast(res, format = "long", verbose = FALSE,
+                                     quiet = TRUE)
   expect_equal(sum(long$count), sum(orig$count))
 })
 
@@ -221,6 +225,19 @@ test_that("data.table round-trip preserves row count", {
   expect_equal(nrow(back), nrow(denguedat))
 })
 
+test_that("data.table round-trip preserves row count", {
+  skip_if_not_installed("data.table")
+
+  data(denguedat)
+  dt <- data.table::as.data.table(denguedat)
+  nowobj <- tbl_now_from_data_table(dt,
+                                    event_date = "onset_week",
+                                    report_date = "report_week", verbose = FALSE
+  )
+  dt2 <- tbl_now_to_data_table(nowobj, verbose = FALSE)
+  expect_identical(dt, dt2[,1:3])
+})
+
 test_that("tbl_now_from_data_table forwards ... (strata) to tbl_now", {
   skip_if_not_installed("data.table")
   data(denguedat)
@@ -288,7 +305,9 @@ test_that("tbl_now_to_epidist linelist builds an epidist_linelist_data object", 
     event_units = "days", report_units = "days",
     verbose = FALSE
   )
-  out <- suppressMessages(tbl_now_to_epidist(res, format = "linelist", verbose = FALSE))
+  out <- suppressMessages(
+    tbl_now_to_epidist(res, format = "linelist", verbose = FALSE, quiet = TRUE)
+  )
   expect_true(epidist::is_epidist_linelist_data(out))
 })
 
@@ -304,7 +323,7 @@ test_that("tbl_now_to_epidist interval requires upper-bound columns", {
     verbose = FALSE
   )
   expect_error(
-    tbl_now_to_epidist(res, format = "interval", verbose = FALSE),
+    tbl_now_to_epidist(res, format = "interval", verbose = FALSE, quiet = TRUE),
     "primary_upper"
   )
 })
@@ -337,6 +356,129 @@ test_that("tbl_now_to_epidist interval round-trips via covariates", {
 test_that("tbl_now_to_epidist errors on non-tbl_now", {
   skip_if_not_installed("epidist")
   expect_error(tbl_now_to_epidist(data.frame(a = 1)), "tbl_now")
+})
+
+test_that("tbl_now_to_epidist auto builds aggregate data from counts", {
+  skip_if_not_installed("epidist")
+  ct <- tbl_now(
+    dplyr::tibble(
+      ev = as.Date(c("2020-03-01", "2020-03-02", "2020-03-04")),
+      rp = as.Date(c("2020-03-05", "2020-03-04", "2020-03-10")),
+      n  = c(5, 3, 2)
+    ),
+    event_date = ev, report_date = rp, case_count = n,
+    data_type = "count-incidence", event_units = "days", report_units = "days",
+    verbose = FALSE
+  )
+  out <- suppressMessages(tbl_now_to_epidist(ct, verbose = FALSE, quiet = TRUE))
+  expect_true(epidist::is_epidist_aggregate_data(out))
+  expect_true("n" %in% names(out))
+  expect_equal(out$n, c(5, 3, 2))
+})
+
+test_that("tbl_now_from_epidist reads aggregate data as count-incidence", {
+  skip_if_not_installed("epidist")
+  agg <- epidist::as_epidist_aggregate_data(
+    data.frame(
+      pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
+      sdate_lwr = as.Date(c("2020-03-05", "2020-03-04")),
+      n = c(4, 6)
+    ),
+    n = "n", pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
+  )
+  res <- suppressMessages(tbl_now_from_epidist(agg, verbose = FALSE))
+  expect_equal(get_data_type(res), "count-incidence")
+  expect_equal(get_case_count(res), "n")
+})
+
+test_that("epidist aggregate count round-trip preserves counts and alignment", {
+  skip_if_not_installed("epidist")
+  ct <- tbl_now(
+    dplyr::tibble(
+      ev = as.Date(c("2020-03-01", "2020-03-02", "2020-03-04")),
+      rp = as.Date(c("2020-03-05", "2020-03-04", "2020-03-10")),
+      n  = c(5, 3, 2)
+    ),
+    event_date = ev, report_date = rp, case_count = n,
+    data_type = "count-incidence", event_units = "days", report_units = "days",
+    verbose = FALSE
+  )
+  agg  <- suppressMessages(tbl_now_to_epidist(ct, verbose = FALSE, quiet = TRUE))
+  back <- suppressMessages(tbl_now_from_epidist(agg, verbose = FALSE))
+  expect_equal(get_data_type(back), "count-incidence")
+  expect_equal(back[["n"]], c(5, 3, 2))
+  # epidist's numeric time aligns with tbl_now's generated columns.
+  expect_equal(back[[".event_num"]], agg$ptime_lwr)
+  expect_equal(back[[".delay"]], agg$stime_lwr - agg$ptime_lwr)
+})
+
+test_that("tbl_now_to_epidist uses a 7-day window for weekly units", {
+  skip_if_not_installed("epidist")
+  wt <- tbl_now(
+    dplyr::tibble(
+      ev = as.Date(c("2020-03-01", "2020-03-08")),
+      rp = as.Date(c("2020-03-15", "2020-03-22"))
+    ),
+    event_date = ev, report_date = rp, data_type = "linelist",
+    event_units = "weeks", report_units = "weeks", verbose = FALSE
+  )
+  out <- suppressMessages(tbl_now_to_epidist(wt, verbose = FALSE, quiet = TRUE))
+  expect_equal(as.numeric(out$pdate_upr - out$pdate_lwr), c(7, 7))
+  # units are recovered from the window width on the way back.
+  back <- suppressMessages(tbl_now_from_epidist(out, verbose = FALSE))
+  expect_equal(get_event_units(back), "weeks")
+})
+
+test_that("epidist is_censored becomes a [origin, report] window and round-trips", {
+  skip_if_not_installed("epidist")
+  ct <- tbl_now(
+    dplyr::tibble(
+      ev   = as.Date(c("2020-03-01", "2020-03-02", "2020-03-04", "2020-03-05")),
+      rp   = as.Date(c("2020-03-05", "2020-03-04", "2020-03-10", "2020-03-09")),
+      cens = c(FALSE, FALSE, TRUE, TRUE)
+    ),
+    event_date = ev, report_date = rp, is_censored = cens,
+    data_type = "linelist", event_units = "days", report_units = "days",
+    verbose = FALSE
+  )
+  out <- suppressMessages(tbl_now_to_epidist(ct, verbose = FALSE, quiet = TRUE))
+  # censored rows are left-censored to epidist time 0.
+  expect_equal(out$stime_lwr, c(4, 3, 0, 0))
+
+  back <- suppressMessages(tbl_now_from_epidist(out, verbose = FALSE))
+  expect_equal(get_is_censored(back), "is_censored")
+  expect_equal(back[["is_censored"]], c(FALSE, FALSE, TRUE, TRUE))
+  # the true report dates are recovered for the censored rows.
+  expect_equal(back[[get_report_date(back)]], ct[["rp"]])
+})
+
+test_that("tbl_now_to_epidist aggregate errors on linelist input", {
+  skip_if_not_installed("epidist")
+  ll <- tbl_now(
+    dplyr::tibble(ev = as.Date("2020-03-01"), rp = as.Date("2020-03-05")),
+    event_date = ev, report_date = rp, data_type = "linelist",
+    event_units = "days", report_units = "days", verbose = FALSE
+  )
+  expect_error(
+    suppressMessages(
+      tbl_now_to_epidist(ll, format = "aggregate", verbose = FALSE, quiet = TRUE)
+    ),
+    "aggregate"
+  )
+})
+
+test_that("as_epidist_aggregate_data.tbl_now dispatches with counts", {
+  skip_if_not_installed("epidist")
+  ct <- tbl_now(
+    dplyr::tibble(ev = as.Date(c("2020-03-01", "2020-03-02")),
+                  rp = as.Date(c("2020-03-05", "2020-03-04")),
+                  n  = c(2, 3)),
+    event_date = ev, report_date = rp, case_count = n,
+    data_type = "count-incidence", event_units = "days", report_units = "days",
+    verbose = FALSE
+  )
+  out <- suppressMessages(epidist::as_epidist_aggregate_data(ct, quiet = TRUE))
+  expect_true(epidist::is_epidist_aggregate_data(out))
 })
 
 # ============================================================
@@ -459,7 +601,7 @@ test_that("as_tbl_now.enw_preprocess_data round-trips epinowcast", {
     strata = c("location", "age_group"),
     verbose = FALSE
   )
-  enw <- tbl_now_to_epinowcast(nowobj, verbose = FALSE)
+  enw <- tbl_now_to_epinowcast(nowobj, verbose = FALSE, quiet = TRUE)
   back <- as_tbl_now(enw, verbose = FALSE)
 
   expect_true(is_tbl_now(back))
@@ -487,7 +629,7 @@ test_that("as_tbl_now.epidist_linelist_data round-trips epidist", {
     event_date = "pdate_lwr", report_date = "sdate_lwr",
     event_units = "days", report_units = "days", verbose = FALSE
   )
-  epi <- suppressMessages(tbl_now_to_epidist(nowobj, verbose = FALSE))
+  epi <- suppressMessages(tbl_now_to_epidist(nowobj, verbose = FALSE, quiet = TRUE))
   back <- as_tbl_now(epi, verbose = FALSE)
   expect_true(is_tbl_now(back))
 })
@@ -611,7 +753,7 @@ test_that("tbl_now_to_epinowcast verbose prints the conversion summary", {
   skip_if_not_installed("epinowcast")
   cumul <- to_count(make_incidence_now(), to = "count-cumulative")
   expect_message(
-    suppressWarnings(tbl_now_to_epinowcast(cumul, verbose = TRUE)),
+    suppressWarnings(tbl_now_to_epinowcast(cumul, verbose = TRUE, quiet = TRUE)),
     "epinowcast"
   )
 })
@@ -619,7 +761,8 @@ test_that("tbl_now_to_epinowcast verbose prints the conversion summary", {
 test_that("tbl_now_to_epinowcast warns + coerces non-cumulative input", {
   skip_if_not_installed("epinowcast")
   expect_warning(
-    suppressMessages(tbl_now_to_epinowcast(make_incidence_now(), verbose = FALSE)),
+    suppressMessages(tbl_now_to_epinowcast(make_incidence_now(), verbose = FALSE,
+                                           quiet = TRUE)),
     "cumulative"
   )
 })
@@ -627,7 +770,8 @@ test_that("tbl_now_to_epinowcast warns + coerces non-cumulative input", {
 test_that("tbl_now_to_baselinenowcast verbose prints the conversion summary", {
   skip_if_not_installed("baselinenowcast")
   expect_message(
-    tbl_now_to_baselinenowcast(make_incidence_now(), format = "long", verbose = TRUE),
+    tbl_now_to_baselinenowcast(make_incidence_now(), format = "long",
+                               verbose = TRUE, quiet = TRUE),
     "baselinenowcast"
   )
 })
@@ -640,7 +784,8 @@ test_that("tbl_now_to_baselinenowcast warns + coerces linelist input", {
     verbose = FALSE
   )
   expect_warning(
-    suppressMessages(tbl_now_to_baselinenowcast(ll, format = "long", verbose = FALSE)),
+    suppressMessages(tbl_now_to_baselinenowcast(ll, format = "long",
+                                                verbose = FALSE, quiet = TRUE)),
     "incremental"
   )
 })
@@ -651,7 +796,8 @@ test_that("tbl_now_to_baselinenowcast errors on count-cumulative input", {
   # negative incidence; the converter must refuse rather than produce nonsense.
   cumul <- to_count(make_incidence_now(), to = "count-cumulative")
   expect_error(
-    tbl_now_to_baselinenowcast(cumul, format = "long", verbose = FALSE),
+    tbl_now_to_baselinenowcast(cumul, format = "long", verbose = FALSE,
+                               quiet = TRUE),
     "count-cumulative"
   )
 })
@@ -807,7 +953,7 @@ test_that("tbl_now_from_epinowcast accepts a preprocessed enw_preprocess_data ob
     strata = c("location", "age_group"),
     verbose = FALSE
   )
-  pre <- tbl_now_to_epinowcast(from_raw, verbose = FALSE)
+  pre <- tbl_now_to_epinowcast(from_raw, verbose = FALSE, quiet = TRUE)
 
   from_pre <- tbl_now_from_epinowcast(pre, verbose = FALSE)
   expect_true(is_tbl_now(from_pre))
@@ -824,7 +970,7 @@ test_that("epinowcast preprocessed round-trip preserves rows (up to max_delay)",
     strata = c("location", "age_group"),
     verbose = FALSE
   )
-  pre <- tbl_now_to_epinowcast(from_raw, verbose = FALSE)
+  pre <- tbl_now_to_epinowcast(from_raw, verbose = FALSE, quiet = TRUE)
   from_pre <- tbl_now_from_epinowcast(pre, verbose = FALSE)
 
   # the round-trip recovers the same observations
@@ -903,7 +1049,7 @@ make_rich_now <- function() {
 test_that("tbl_now_to_baselinenowcast long keeps covariates and is_censored", {
   skip_if_not_installed("baselinenowcast")
   long <- tbl_now_to_baselinenowcast(make_rich_now(), format = "long",
-                                     verbose = FALSE)
+                                     verbose = FALSE, quiet = TRUE)
   expect_true(all(c("temp", "flag") %in% names(long)))
 })
 
@@ -911,7 +1057,8 @@ test_that("tbl_now_to_baselinenowcast matrix keeps only the core columns", {
   skip_if_not_installed("baselinenowcast")
   mx <- suppressMessages(
     tbl_now_to_baselinenowcast(make_rich_now(), format = "matrix",
-                               delays_unit = "weeks", verbose = FALSE)
+                               delays_unit = "weeks", verbose = FALSE,
+                               quiet = TRUE)
   )
   expect_s3_class(mx, "reporting_triangle")
 })
@@ -943,7 +1090,7 @@ test_that("tbl_now_to_epidist linelist carries covariates and is_censored", {
     verbose = FALSE
   )
   out <- suppressMessages(tbl_now_to_epidist(ll, format = "linelist",
-                                             verbose = FALSE))
+                                             verbose = FALSE, quiet = TRUE))
   expect_true("temp" %in% names(out))
 })
 
@@ -967,7 +1114,8 @@ test_that("as.data.table.tbl_now dispatches to tbl_now_to_data_table", {
 test_that("as_reporting_triangle.tbl_now dispatches (matrix format)", {
   skip_if_not_installed("baselinenowcast")
   rt <- suppressMessages(
-    baselinenowcast::as_reporting_triangle(make_rich_now(), delays_unit = "weeks")
+    baselinenowcast::as_reporting_triangle(make_rich_now(), delays_unit = "weeks",
+                                           quiet = TRUE)
   )
   expect_s3_class(rt, "reporting_triangle")
 })
@@ -980,6 +1128,81 @@ test_that("as_epidist_linelist_data.tbl_now dispatches to tbl_now_to_epidist", {
     event_date = ev, report_date = rp, data_type = "linelist",
     event_units = "days", report_units = "days", verbose = FALSE
   )
-  out <- suppressMessages(epidist::as_epidist_linelist_data(ll))
+  out <- suppressMessages(epidist::as_epidist_linelist_data(ll, quiet = TRUE))
   expect_true(epidist::is_epidist_linelist_data(out))
+})
+
+# ============================================================
+# Lossy-conversion warning + attribute stripping
+# ============================================================
+
+# The custom attributes the tbl_now class attaches; none of them should ride
+# along onto a converted-out object.
+tbl_now_meta_attrs <- c(
+  "event_date", "report_date", "case_count", "strata", "covariates", "now",
+  "event_units", "report_units", "data_type", "is_censored",
+  "temporal_effects", "computed_temporal_effect_cols"
+)
+
+test_that("tbl_now_to_epinowcast warns it is lossy, silenced by quiet = TRUE", {
+  skip_if_not_installed("epinowcast")
+  obs <- head(epinowcast::germany_covid19_hosp, 200)
+  nowobj <- tbl_now_from_epinowcast(obs,
+    strata = c("location", "age_group"), verbose = FALSE
+  )
+  expect_warning(
+    suppressMessages(tbl_now_to_epinowcast(nowobj, verbose = FALSE)),
+    "lossy"
+  )
+  expect_no_warning(
+    suppressMessages(
+      tbl_now_to_epinowcast(nowobj, verbose = FALSE, quiet = TRUE)
+    )
+  )
+})
+
+test_that("tbl_now_to_baselinenowcast warns it is lossy, silenced by quiet = TRUE", {
+  skip_if_not_installed("baselinenowcast")
+  res <- tbl_now_from_baselinenowcast(
+    head(baselinenowcast::syn_nssp_df, 400), verbose = FALSE
+  )
+  expect_warning(
+    suppressMessages(
+      tbl_now_to_baselinenowcast(res, format = "long", verbose = FALSE)
+    ),
+    "lossy"
+  )
+  expect_no_warning(
+    suppressMessages(
+      tbl_now_to_baselinenowcast(res, format = "long", verbose = FALSE,
+                                 quiet = TRUE)
+    )
+  )
+})
+
+test_that("tbl_now_to_data_table drops every tbl_now attribute", {
+  skip_if_not_installed("data.table")
+  data(denguedat)
+  dt <- data.table::as.data.table(denguedat)
+  nowobj <- tbl_now_from_data_table(dt,
+    event_date = "onset_week", report_date = "report_week", verbose = FALSE
+  )
+  dt2 <- tbl_now_to_data_table(nowobj, verbose = FALSE)
+
+  expect_false(is_tbl_now(dt2))
+  expect_length(intersect(names(attributes(dt2)), tbl_now_meta_attrs), 0)
+  # The original three columns are recovered exactly (no leftover attributes).
+  expect_equal(dt, dt2[, 1:3])
+})
+
+test_that("tbl_now_to_tsibble drops every tbl_now attribute", {
+  skip_if_not_installed("tsibble")
+  data(denguedat)
+  nowobj <- tbl_now(denguedat,
+    event_date = "onset_week", report_date = "report_week", verbose = FALSE
+  )
+  ts <- suppressWarnings(tbl_now_to_tsibble(nowobj, verbose = FALSE))
+
+  expect_true(tsibble::is_tsibble(ts))
+  expect_length(intersect(names(attributes(ts)), tbl_now_meta_attrs), 0)
 })

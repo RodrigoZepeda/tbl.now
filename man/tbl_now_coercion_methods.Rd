@@ -3,12 +3,15 @@
 \name{tbl_now_coercion_methods}
 \alias{tbl_now_coercion_methods}
 \alias{as_epidist_linelist_data.tbl_now}
+\alias{as_epidist_aggregate_data.tbl_now}
 \alias{as_reporting_triangle.tbl_now}
 \alias{as_tsibble.tbl_now}
 \alias{as.data.table.tbl_now}
 \title{Coerce a \code{tbl_now} with another package's generic}
 \usage{
 \method{as_epidist_linelist_data}{tbl_now}(data, ..., verbose = FALSE)
+
+\method{as_epidist_aggregate_data}{tbl_now}(data, ..., verbose = FALSE)
 
 \method{as_reporting_triangle}{tbl_now}(data, ..., verbose = FALSE)
 
@@ -35,6 +38,8 @@ These S3 methods make each supported package's own coercion verb accept a
 converter and are quiet by default.
 \itemize{
 \item \code{as_epidist_linelist_data()} (\pkg{epidist}) wraps \code{\link[=tbl_now_to_epidist]{tbl_now_to_epidist()}}.
+\item \code{as_epidist_aggregate_data()} (\pkg{epidist}) wraps \code{\link[=tbl_now_to_epidist]{tbl_now_to_epidist()}}
+with \code{format = "aggregate"}.
 \item \code{as_reporting_triangle()} (\pkg{baselinenowcast}) wraps
 \code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast()}} with \code{format = "matrix"}.
 \item \code{as_tsibble()} (\pkg{tsibble}) wraps \code{\link[=tbl_now_to_tsibble]{tbl_now_to_tsibble()}}.

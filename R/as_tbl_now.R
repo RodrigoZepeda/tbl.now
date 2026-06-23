@@ -56,6 +56,14 @@ as_tbl_now.epidist_linelist_data <- function(object, event_date, report_date, ..
 
 #' @rdname as_tbl_now
 #' @export
+as_tbl_now.epidist_aggregate_data <- function(object, event_date, report_date, ...) {
+  # The aggregate form (counts with an `n` column) is detected inside
+  # tbl_now_from_epidist() and mapped to data_type = "count-incidence".
+  tbl_now_from_epidist(object, ...)
+}
+
+#' @rdname as_tbl_now
+#' @export
 as_tbl_now.tbl_ts <- function(object, event_date, report_date, ...) {
   rp <- if (missing(report_date)) NULL else report_date
   if (missing(event_date)) {

@@ -19,9 +19,10 @@ tbl_now_from_baselinenowcast(
 tbl_now_to_baselinenowcast(
   x,
   ...,
-  format = c("long", "matrix"),
+  format = c("matrix", "long"),
   delays_unit = "days",
-  verbose = TRUE
+  verbose = TRUE,
+  quiet = FALSE
 )
 }
 \arguments{
@@ -39,7 +40,10 @@ tbl_now_to_baselinenowcast(
 
 \item{x}{A \code{tbl_now} object.}
 
-\item{format}{For \code{to}: \code{"long"} (default) or \code{"matrix"}.}
+\item{format}{For \code{to}: \code{"matrix"} (default) or \code{"long"}.}
+
+\item{quiet}{Logical. If \code{TRUE}, suppress the lossy-conversion warning emitted
+by \code{tbl_now_to_baselinenowcast()} (see the Round-trip section).}
 }
 \value{
 A \code{tbl_now} (\code{from}), or a \code{data.frame}/\code{reporting_triangle} (\code{to}).
@@ -57,9 +61,37 @@ and converts it into a \code{tbl_now} of \code{data_type = "count-incidence"}.
 \code{reporting_triangle} matrix (\code{format = "matrix"}) via
 \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}}.
 }
+\section{Round-trip}{
+
+The round-trip is \strong{not} the identity, and \code{tbl_now_to_baselinenowcast()}
+warns to that effect (silence it with \code{quiet = TRUE}). If you already have a
+\code{reporting_triangle}, work from it directly rather than converting through a
+\code{tbl_now} and back.
+
+\code{identical(rt, tbl_now_to_baselinenowcast(tbl_now_from_baselinenowcast(rt)))}
+is \code{FALSE} for a fundamental reason: a \code{reporting_triangle} distinguishes
+\strong{not-yet-observed} cells (\code{NA}) from \strong{observed zeros} (\code{0}), but a
+\code{tbl_now} stores only the observed counts as rows — both \code{NA} and \code{0} cells
+become \emph{absent} rows. On the way back,
+\code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}} re-rectangularises the data by
+inferring the triangle boundary from the span of report dates present, and
+fills any gap \strong{inside} that boundary with \code{0} (only cells \strong{beyond} it stay
+\code{NA}). All counts that were actually present are preserved exactly; what is
+lost is the precise \code{NA}/\code{0} missingness mask, which a ragged triangle (such
+as \code{baselinenowcast::example_reporting_triangle}) does not encode as a simple
+function of the report dates.
+}
+
 \examples{
 \dontshow{if (requireNamespace("baselinenowcast", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-rt <- baselinenowcast::example_reporting_triangle
+# Get a reporting triangle example
+rt     <- baselinenowcast::example_reporting_triangle
+
+# Convert to a tbl_now
 nowobj <- tbl_now_from_baselinenowcast(rt)
+
+# Note: the round-trip is lossy and so this is *not* identical to `rt`
+# (not-yet-observed `NA` cells come back as `0`). Prefer using `rt` directly.
+identical(rt, tbl_now_to_baselinenowcast(nowobj))
 \dontshow{\}) # examplesIf}
 }

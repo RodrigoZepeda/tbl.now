@@ -70,7 +70,7 @@ nowobj <- tbl_now(denguedat,
   event_date = "onset_week",
   report_date = "report_week", verbose = FALSE
 )
-ts <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
+ts   <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
 back <- tbl_now_from_tsibble(ts, event_date = "onset_week", verbose = FALSE)
 \dontshow{\}) # examplesIf}
 }
