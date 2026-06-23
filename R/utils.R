@@ -36,11 +36,11 @@ attr_default <- function(x, name, default = NULL) {
 #' @return A logical vector: TRUE if weekday, FALSE if weekend.
 #'
 #' @examples
-#' is_weekday(as.Date("2020-04-22"))                   # TRUE (Wed)
-#' is_weekday(as.Date("2020-04-19"))                   # FALSE (Sun)
+#' is_weekday(as.Date("2020-04-22")) # TRUE (Wed)
+#' is_weekday(as.Date("2020-04-19")) # FALSE (Sun)
 #'
 #' # Middle East weekend (Fri - Sat)
-#' is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri","Sat"))
+#' is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri", "Sat"))
 #'
 #' # Weekend only on Friday
 #' is_weekday(as.Date("2020-04-17"), weekend_days = "Friday")
@@ -52,19 +52,18 @@ attr_default <- function(x, name, default = NULL) {
 #' @export
 #' @md
 is_weekday <- function(date, weekend_days = c("Sat", "Sun")) {
-
   # Convert weekend_days to numeric wday indices
   weekend_idx <- if (is.numeric(weekend_days)) {
     as.integer(weekend_days)
   } else {
-    all_days           <- lubridate::wday(1:7, label = TRUE, abbr = TRUE, week_start = 1) %>% sort()
+    all_days <- lubridate::wday(1:7, label = TRUE, abbr = TRUE, week_start = 1) |> sort()
     weekend_days_clean <- tolower(substr(weekend_days, 1, 3))
-    day_lookup         <- tolower(substr(as.character(all_days), 1, 3))
+    day_lookup <- tolower(substr(as.character(all_days), 1, 3))
     match(weekend_days_clean, day_lookup)
   }
 
   # Invalid weekend specification
-  if (any(is.na(weekend_idx)) || any(weekend_idx < 1 | weekend_idx > 7)){
+  if (any(is.na(weekend_idx)) || any(weekend_idx < 1 | weekend_idx > 7)) {
     cli::cli_abort("Invalid `weekend_days` provided. Must be integer (1 to 7) or day names: {lubridate::wday(1:7, label = TRUE, abbr = TRUE)}")
   }
 
@@ -89,36 +88,38 @@ is_weekday <- function(date, weekend_days = c("Sat", "Sun")) {
 #'
 #' @examples
 #' data(denguedat)
-#' df_now <- tbl_now(denguedat, event_date = onset_week,
-#'   report_date = report_week, strata = gender, verbose = FALSE)
+#' df_now <- tbl_now(denguedat,
+#'   event_date = onset_week,
+#'   report_date = report_week, strata = gender, verbose = FALSE
+#' )
 #'
-#' #Attributes gets all attributes
-#' attributes(df_now) %>% names()
+#' # Attributes gets all attributes
+#' attributes(df_now) |> names()
 #'
-#' #tbl_now_attributes gets only those associated to the `tbl_now` class
-#' tbl_now_attributes(df_now) %>% names()
+#' # tbl_now_attributes gets only those associated to the `tbl_now` class
+#' tbl_now_attributes(df_now) |> names()
 #'
 #' @export
-tbl_now_attributes <- function(x){
-  if (!is_tbl_now(x)){
+tbl_now_attributes <- function(x) {
+  if (!is_tbl_now(x)) {
     cli::cli_abort("Object is not a `tbl_now`")
   }
 
-  #Get the attributes of a tbl now
+  # Get the attributes of a tbl now
   default_attributes <- tbl_now(
     data.frame(x = as.integer(0), y = as.integer(0)), "x", "y",
     data_type = "linelist",
     verbose = FALSE,
     event_units = "numeric",
-    report_units = "numeric") %>%
+    report_units = "numeric"
+  ) |>
     attributes()
 
-  tibble_attributes <- dplyr::tibble() %>% attributes()
+  tibble_attributes <- dplyr::tibble() |> attributes()
 
   defattr <- names(default_attributes)[
-    which(!(names(default_attributes)  %in% names(tibble_attributes)))
+    which(!(names(default_attributes) %in% names(tibble_attributes)))
   ]
 
   attributes(x)[defattr]
-
 }

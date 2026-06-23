@@ -66,8 +66,10 @@ the other date plus the strata as the key. Linelist data is aggregated to
 \examples{
 \dontshow{if (requireNamespace("tsibble", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
-nowobj <- tbl_now(denguedat, event_date = "onset_week",
-                  report_date = "report_week", verbose = FALSE)
+nowobj <- tbl_now(denguedat,
+  event_date = "onset_week",
+  report_date = "report_week", verbose = FALSE
+)
 ts <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
 back <- tbl_now_from_tsibble(ts, event_date = "onset_week", verbose = FALSE)
 \dontshow{\}) # examplesIf}

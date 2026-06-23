@@ -22,26 +22,25 @@ Function returns whether data is daily or weekly
 }
 \examples{
 \dontrun{
-#Get the maximum report date and infer the data distribution
+# Get the maximum report date and infer the data distribution
 daily_data <- data.frame(
-    event_date   = c(as.Date("2020/07/08"), as.Date("2020/07/09"), as.Date("2020/07/10")),
-    report_date = c(as.Date("2020/07/11"), as.Date("2020/07/12"), as.Date("2020/07/14"))
+  event_date = c(as.Date("2020/07/08"), as.Date("2020/07/09"), as.Date("2020/07/10")),
+  report_date = c(as.Date("2020/07/11"), as.Date("2020/07/12"), as.Date("2020/07/14"))
 )
 infer_units_one_column(daily_data, NULL, "report_date")
 
-#Get the maximum report date and infer the data distribution
+# Get the maximum report date and infer the data distribution
 weekly_data <- data.frame(
-    event_date   = c(as.Date("2020/07/08"), as.Date("2020/07/15"), as.Date("2020/07/22")),
-    report_date = c(as.Date("2020/07/11"), as.Date("2020/07/18"), as.Date("2020/07/25"))
+  event_date = c(as.Date("2020/07/08"), as.Date("2020/07/15"), as.Date("2020/07/22")),
+  report_date = c(as.Date("2020/07/11"), as.Date("2020/07/18"), as.Date("2020/07/25"))
 )
 infer_units_one_column(weekly_data, NULL, "report_date")
 
-#Or just input the type
+# Or just input the type
 infer_units_one_column(weekly_data, "weeks", "report_date")
 
-#Also works with numeric
+# Also works with numeric
 infer_units_one_column(data.frame(report_date = 1:20), date_units = "auto", "report_date")
-
 }
 }
 \keyword{internal}

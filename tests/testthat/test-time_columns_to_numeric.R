@@ -344,7 +344,7 @@ test_that("time_cols_to_numeric fails with invalid units", {
       report_units = "days",
       force = FALSE
     ),
-    'Invalid units specified'
+    "Invalid units specified"
   )
 })
 
@@ -598,10 +598,10 @@ test_that("time_cols_to_numeric produces consistent differences", {
   for (i in 2:nrow(result)) {
     date_diff <- as.numeric(difftime(
       result$event_date[i],
-      result$event_date[i-1],
+      result$event_date[i - 1],
       units = "days"
     ))
-    num_diff <- result$.event_num[i] - result$.event_num[i-1]
+    num_diff <- result$.event_num[i] - result$.event_num[i - 1]
     expect_equal(num_diff, date_diff)
   }
 })

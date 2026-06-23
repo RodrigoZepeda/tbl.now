@@ -27,8 +27,10 @@ setup_test_data <- function() {
         "2020-07-11", "2020-07-12", "2020-07-13", "2020-07-14",
         "2020-07-12", "2020-07-13", "2020-07-14"
       )),
-      n = c(10, 15, 18, 20,  # Revisions for event 2020-07-08
-            5, 8, 10)        # Revisions for event 2020-07-09
+      n = c(
+        10, 15, 18, 20, # Revisions for event 2020-07-08
+        5, 8, 10
+      ) # Revisions for event 2020-07-09
     ),
 
     # Count data with strata
@@ -49,10 +51,12 @@ setup_test_data <- function() {
         "Male", "Male", "Male",
         "Female", "Female", "Female"
       ),
-      n = c(10, 12, 15,  # Male revisions for 2020-07-08
-            8, 10, 12,   # Female revisions for 2020-07-08
-            5, 7, 9,     # Male revisions for 2020-07-09
-            4, 6, 8)     # Female revisions for 2020-07-09
+      n = c(
+        10, 12, 15, # Male revisions for 2020-07-08
+        8, 10, 12, # Female revisions for 2020-07-08
+        5, 7, 9, # Male revisions for 2020-07-09
+        4, 6, 8
+      ) # Female revisions for 2020-07-09
     ),
 
     # Count data with covariates
@@ -65,10 +69,14 @@ setup_test_data <- function() {
         "2020-07-11", "2020-07-12", "2020-07-13", "2020-07-14",
         "2020-07-11", "2020-07-12", "2020-07-13", "2020-07-14"
       )),
-      temperature = c(25.5, 25.5, 25.5, 25.5,
-                      26.0, 26.0, 26.0, 26.0),
-      n = c(10, 12, 14, 16,
-            5, 7, 9, 11)
+      temperature = c(
+        25.5, 25.5, 25.5, 25.5,
+        26.0, 26.0, 26.0, 26.0
+      ),
+      n = c(
+        10, 12, 14, 16,
+        5, 7, 9, 11
+      )
     ),
 
     # Count data with is_censored
@@ -80,10 +88,14 @@ setup_test_data <- function() {
         "2020-07-11", "2020-07-12", "2020-07-13",
         "2020-07-11", "2020-07-12", "2020-07-13"
       )),
-      is_censored = c(FALSE, FALSE, FALSE,
-                      TRUE, TRUE, TRUE),
-      n = c(10, 12, 15,  # Non-censored
-            8, 10, 12)   # Censored
+      is_censored = c(
+        FALSE, FALSE, FALSE,
+        TRUE, TRUE, TRUE
+      ),
+      n = c(
+        10, 12, 15, # Non-censored
+        8, 10, 12
+      ) # Censored
     ),
 
     # Single event date with multiple reports
@@ -106,8 +118,10 @@ setup_test_data <- function() {
         "2020-07-09", "2020-07-10", "2020-07-11",
         "2020-07-16", "2020-07-17", "2020-07-18"
       )),
-      n = c(10, 15, 20,
-            8, 12, 16)
+      n = c(
+        10, 15, 20,
+        8, 12, 16
+      )
     )
   )
 }
@@ -147,12 +161,12 @@ test_that("get_initial_reported_cases returns earliest report for each event", {
   expect_equal(nrow(result), 2)
 
   # Should have the earliest report_date for each event
-  event_2020_07_08 <- result %>%
+  event_2020_07_08 <- result |>
     dplyr::filter(event_date == as.Date("2020-07-08"))
   expect_equal(event_2020_07_08$report_date, as.Date("2020-07-11"))
   expect_equal(event_2020_07_08$n, 10)
 
-  event_2020_07_09 <- result %>%
+  event_2020_07_09 <- result |>
     dplyr::filter(event_date == as.Date("2020-07-09"))
   expect_equal(event_2020_07_09$report_date, as.Date("2020-07-12"))
   expect_equal(event_2020_07_09$n, 5)
@@ -192,20 +206,20 @@ test_that("get_initial_reported_cases preserves strata", {
   result <- get_initial_reported_cases(ndata)
 
   # Should have separate rows for each event_date x gender combination
-  expect_equal(nrow(result), 4)  # 2 events x 2 genders
+  expect_equal(nrow(result), 4) # 2 events x 2 genders
 
   # Check strata is preserved
   expect_equal(get_strata(result), "gender")
   expect_true("gender" %in% names(result))
 
   # Check Male initial report for 2020-07-08
-  male_2020_07_08 <- result %>%
+  male_2020_07_08 <- result |>
     dplyr::filter(event_date == as.Date("2020-07-08"), gender == "Male")
   expect_equal(male_2020_07_08$n, 10)
   expect_equal(male_2020_07_08$report_date, as.Date("2020-07-11"))
 
   # Check Female initial report for 2020-07-08
-  female_2020_07_08 <- result %>%
+  female_2020_07_08 <- result |>
     dplyr::filter(event_date == as.Date("2020-07-08"), gender == "Female")
   expect_equal(female_2020_07_08$n, 8)
   expect_equal(female_2020_07_08$report_date, as.Date("2020-07-11"))
@@ -252,12 +266,12 @@ test_that("get_initial_reported_cases preserves is_censored", {
   expect_true("is_censored" %in% names(result))
 
   # Check non-censored initial report
-  non_censored <- result %>% dplyr::filter(!is_censored)
+  non_censored <- result |> dplyr::filter(!is_censored)
   expect_equal(non_censored$n, 10)
   expect_equal(non_censored$report_date, as.Date("2020-07-11"))
 
   # Check censored initial report
-  censored <- result %>% dplyr::filter(is_censored)
+  censored <- result |> dplyr::filter(is_censored)
   expect_equal(censored$n, 8)
   expect_equal(censored$report_date, as.Date("2020-07-11"))
 })
@@ -274,7 +288,7 @@ test_that("get_initial_reported_cases preserves temporal effects", {
     case_count = n,
     data_type = "count-cumulative",
     verbose = FALSE
-  ) %>%
+  ) |>
     add_temporal_effects(temporal_effects(week_of_year = TRUE))
 
   result <- get_initial_reported_cases(ndata)
@@ -342,7 +356,7 @@ test_that("get_initial_reported_cases handles single event date", {
   result <- get_initial_reported_cases(ndata)
 
   expect_equal(nrow(result), 1)
-  expect_equal(result$n, 5)  # Earliest report
+  expect_equal(result$n, 5) # Earliest report
   expect_equal(result$report_date, as.Date("2020-07-09"))
 })
 
@@ -381,12 +395,12 @@ test_that("get_latest_reported_cases returns latest report for each event", {
   expect_equal(nrow(result), 2)
 
   # Should have the latest report_date for each event
-  event_2020_07_08 <- result %>%
+  event_2020_07_08 <- result |>
     dplyr::filter(event_date == as.Date("2020-07-08"))
   expect_equal(event_2020_07_08$report_date, as.Date("2020-07-14"))
   expect_equal(event_2020_07_08$n, 20)
 
-  event_2020_07_09 <- result %>%
+  event_2020_07_09 <- result |>
     dplyr::filter(event_date == as.Date("2020-07-09"))
   expect_equal(event_2020_07_09$report_date, as.Date("2020-07-14"))
   expect_equal(event_2020_07_09$n, 10)
@@ -426,20 +440,20 @@ test_that("get_latest_reported_cases preserves strata", {
   result <- get_latest_reported_cases(ndata)
 
   # Should have separate rows for each event_date x gender combination
-  expect_equal(nrow(result), 4)  # 2 events x 2 genders
+  expect_equal(nrow(result), 4) # 2 events x 2 genders
 
   # Check strata is preserved
   expect_equal(get_strata(result), "gender")
   expect_true("gender" %in% names(result))
 
   # Check Male latest report for 2020-07-08
-  male_2020_07_08 <- result %>%
+  male_2020_07_08 <- result |>
     dplyr::filter(event_date == as.Date("2020-07-08"), gender == "Male")
   expect_equal(male_2020_07_08$n, 15)
   expect_equal(male_2020_07_08$report_date, as.Date("2020-07-13"))
 
   # Check Female latest report for 2020-07-08
-  female_2020_07_08 <- result %>%
+  female_2020_07_08 <- result |>
     dplyr::filter(event_date == as.Date("2020-07-08"), gender == "Female")
   expect_equal(female_2020_07_08$n, 12)
   expect_equal(female_2020_07_08$report_date, as.Date("2020-07-13"))
@@ -486,12 +500,12 @@ test_that("get_latest_reported_cases preserves is_censored", {
   expect_true("is_censored" %in% names(result))
 
   # Check non-censored latest report
-  non_censored <- result %>% dplyr::filter(!is_censored)
+  non_censored <- result |> dplyr::filter(!is_censored)
   expect_equal(non_censored$n, 15)
   expect_equal(non_censored$report_date, as.Date("2020-07-13"))
 
   # Check censored latest report
-  censored <- result %>% dplyr::filter(is_censored)
+  censored <- result |> dplyr::filter(is_censored)
   expect_equal(censored$n, 12)
   expect_equal(censored$report_date, as.Date("2020-07-13"))
 })
@@ -508,7 +522,7 @@ test_that("get_latest_reported_cases preserves temporal effects", {
     case_count = n,
     data_type = "count-cumulative",
     verbose = FALSE
-  ) %>%
+  ) |>
     add_temporal_effects(temporal_effects(week_of_year = TRUE))
 
   result <- get_latest_reported_cases(ndata)
@@ -576,7 +590,7 @@ test_that("get_latest_reported_cases handles single event date", {
   result <- get_latest_reported_cases(ndata)
 
   expect_equal(nrow(result), 1)
-  expect_equal(result$n, 18)  # Latest report
+  expect_equal(result$n, 18) # Latest report
   expect_equal(result$report_date, as.Date("2020-07-13"))
 })
 
@@ -641,7 +655,7 @@ test_that("initial equals latest when no revisions exist", {
 test_that("report functions work with denguedat", {
   data(denguedat)
 
-  dengue_subset <- denguedat[1:500, ] %>%
+  dengue_subset <- denguedat[1:500, ] |>
     tbl_now(
       event_date = "onset_week",
       report_units = "weeks",
@@ -663,12 +677,12 @@ test_that("report functions work with denguedat", {
 
   # Initial should be <= latest
   suppressWarnings(
-    combined <- initial %>%
-      dplyr::rename(n_initial = n, report_initial = report_week) %>%
-      dplyr::select(event_date = onset_week, gender, n_initial, report_initial) %>%
+    combined <- initial |>
+      dplyr::rename(n_initial = n, report_initial = report_week) |>
+      dplyr::select(event_date = onset_week, gender, n_initial, report_initial) |>
       dplyr::inner_join(
-        latest %>%
-          dplyr::rename(n_latest = n, report_latest = report_week) %>%
+        latest |>
+          dplyr::rename(n_latest = n, report_latest = report_week) |>
           dplyr::select(event_date = onset_week, gender, n_latest, report_latest),
         by = c("event_date", "gender")
       )
@@ -691,8 +705,10 @@ test_that("report functions work with count-incidence data", {
       "2020-07-11", "2020-07-12", "2020-07-13",
       "2020-07-12", "2020-07-13"
     )),
-    n = c(10, 5, 3,  # Increments for event 2020-07-08
-          5, 3)      # Increments for event 2020-07-09
+    n = c(
+      10, 5, 3, # Increments for event 2020-07-08
+      5, 3
+    ) # Increments for event 2020-07-09
   )
 
   ndata <- tbl_now(
@@ -712,22 +728,24 @@ test_that("report functions work with count-incidence data", {
   expect_equal(get_data_type(latest), "count-cumulative")
 
   # Latest should be cumulative sum
-  event_08 <- latest %>% dplyr::filter(event_date == as.Date("2020-07-08"))
-  expect_equal(event_08$n, 18)  # 10 + 5 + 3 = 18
+  event_08 <- latest |> dplyr::filter(event_date == as.Date("2020-07-08"))
+  expect_equal(event_08$n, 18) # 10 + 5 + 3 = 18
 })
 
 test_that("example from vignette works correctly", {
   data(denguedat)
 
-  df_pr <- denguedat %>%
+  df_pr <- denguedat |>
     tbl_now(
       event_date = "onset_week",
       report_date = "report_week",
       strata = "gender",
       verbose = FALSE
-    ) %>%
-    dplyr::filter(onset_week >= as.Date("1990-01-01"),
-                  onset_week <= as.Date("1990-12-31"))
+    ) |>
+    dplyr::filter(
+      onset_week >= as.Date("1990-01-01"),
+      onset_week <= as.Date("1990-12-31")
+    )
 
   initial_reports <- get_initial_reported_cases(df_pr)
   latest_reports <- get_latest_reported_cases(df_pr)
@@ -744,7 +762,6 @@ test_that("example from vignette works correctly", {
 # ============================================================================
 
 test_that("report functions handle empty tbl_now", {
-
   data(denguedat)
 
   ndata <- tbl_now(
@@ -753,7 +770,7 @@ test_that("report functions handle empty tbl_now", {
     report_date = "report_week",
     strata = "gender",
     verbose = FALSE
-  ) %>%
+  ) |>
     dplyr::filter(onset_week < as.Date("1989-01-01"))
 
 
@@ -766,6 +783,4 @@ test_that("report functions handle empty tbl_now", {
     get_latest_reported_cases(ndata),
     "empty"
   )
-
 })
-

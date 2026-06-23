@@ -5,63 +5,87 @@ library(dplyr, quietly = TRUE, warn.conflicts = FALSE)
 make_count_incidence <- function(units = "days") {
   if (units == "days") {
     tibble(
-      event  = as.Date(c("2020-01-01", "2020-01-01",
-                          "2020-01-02",
-                          "2020-01-04", "2020-01-04")),
-      report = as.Date(c("2020-01-01", "2020-01-02",
-                          "2020-01-02",
-                          "2020-01-04", "2020-01-05")),
-      n      = c(3L, 2L, 4L, 1L, 5L)
+      event = as.Date(c(
+        "2020-01-01", "2020-01-01",
+        "2020-01-02",
+        "2020-01-04", "2020-01-04"
+      )),
+      report = as.Date(c(
+        "2020-01-01", "2020-01-02",
+        "2020-01-02",
+        "2020-01-04", "2020-01-05"
+      )),
+      n = c(3L, 2L, 4L, 1L, 5L)
     ) |>
-      tbl_now(event_date = event, report_date = report,
-              case_count = n, data_type = "count-incidence",
-              verbose = FALSE)
+      tbl_now(
+        event_date = event, report_date = report,
+        case_count = n, data_type = "count-incidence",
+        verbose = FALSE
+      )
   } else if (units == "weeks") {
     tibble(
-      event  = as.Date(c("2020-01-05", "2020-01-05",
-                          "2020-01-12",
-                          "2020-01-26", "2020-01-26")),
-      report = as.Date(c("2020-01-05", "2020-01-12",
-                          "2020-01-12",
-                          "2020-01-26", "2020-02-02")),
-      n      = c(3L, 2L, 4L, 1L, 5L)
+      event = as.Date(c(
+        "2020-01-05", "2020-01-05",
+        "2020-01-12",
+        "2020-01-26", "2020-01-26"
+      )),
+      report = as.Date(c(
+        "2020-01-05", "2020-01-12",
+        "2020-01-12",
+        "2020-01-26", "2020-02-02"
+      )),
+      n = c(3L, 2L, 4L, 1L, 5L)
     ) |>
-      tbl_now(event_date = event, report_date = report,
-              case_count = n, data_type = "count-incidence",
-              verbose = FALSE)
+      tbl_now(
+        event_date = event, report_date = report,
+        case_count = n, data_type = "count-incidence",
+        verbose = FALSE
+      )
   }
 }
 
 make_count_incidence_with_strata <- function() {
   tibble(
-    event  = rep(as.Date(c("2020-01-01", "2020-01-01",
-                            "2020-01-02",
-                            "2020-01-04", "2020-01-04")), 2),
-    report = rep(as.Date(c("2020-01-01", "2020-01-02",
-                            "2020-01-02",
-                            "2020-01-04", "2020-01-05")), 2),
-    n      = c(3L, 2L, 4L, 1L, 5L, 1L, 2L, 3L, 4L, 5L),
-    sex    = c(rep("Male", 5), rep("Female", 5))
+    event = rep(as.Date(c(
+      "2020-01-01", "2020-01-01",
+      "2020-01-02",
+      "2020-01-04", "2020-01-04"
+    )), 2),
+    report = rep(as.Date(c(
+      "2020-01-01", "2020-01-02",
+      "2020-01-02",
+      "2020-01-04", "2020-01-05"
+    )), 2),
+    n = c(3L, 2L, 4L, 1L, 5L, 1L, 2L, 3L, 4L, 5L),
+    sex = c(rep("Male", 5), rep("Female", 5))
   ) |>
-    tbl_now(event_date = event, report_date = report,
-            case_count = n, strata = sex,
-            data_type = "count-incidence",
-            verbose = FALSE)
+    tbl_now(
+      event_date = event, report_date = report,
+      case_count = n, strata = sex,
+      data_type = "count-incidence",
+      verbose = FALSE
+    )
 }
 
 make_count_cumulative <- function() {
   tibble(
-    event  = as.Date(c("2020-01-01", "2020-01-01",
-                        "2020-01-02",
-                        "2020-01-04", "2020-01-04")),
-    report = as.Date(c("2020-01-01", "2020-01-02",
-                        "2020-01-02",
-                        "2020-01-04", "2020-01-05")),
-    n      = c(3L, 5L, 4L, 1L, 6L)  # cumulative
+    event = as.Date(c(
+      "2020-01-01", "2020-01-01",
+      "2020-01-02",
+      "2020-01-04", "2020-01-04"
+    )),
+    report = as.Date(c(
+      "2020-01-01", "2020-01-02",
+      "2020-01-02",
+      "2020-01-04", "2020-01-05"
+    )),
+    n = c(3L, 5L, 4L, 1L, 6L) # cumulative
   ) |>
-    tbl_now(event_date = event, report_date = report,
-            case_count = n, data_type = "count-cumulative",
-            verbose = FALSE)
+    tbl_now(
+      event_date = event, report_date = report,
+      case_count = n, data_type = "count-cumulative",
+      verbose = FALSE
+    )
 }
 
 # ---- basic structure ----
@@ -97,7 +121,7 @@ test_that("complete_zeroes: max_delay argument limits delay range", {
 
 test_that("complete_zeroes infers max_delay when not supplied", {
   x <- make_count_incidence()
-  result_auto  <- complete_zeroes(x)
+  result_auto <- complete_zeroes(x)
   result_manual <- complete_zeroes(x, max_delay = max(x[[".delay"]]))
   expect_equal(nrow(result_auto), nrow(result_manual))
 })
@@ -164,16 +188,22 @@ test_that("complete_zeroes emits message when temporal-effect columns exist", {
 
 make_censored_incidence <- function() {
   d <- dplyr::tibble(
-    event  = as.Date(c("2020-01-01", "2020-01-01", "2020-01-02",
-                       "2020-01-04", "2020-01-04")),
-    report = as.Date(c("2020-01-01", "2020-01-02", "2020-01-02",
-                       "2020-01-04", "2020-01-05")),
-    n      = c(3, 1, 2, 4, 1),
-    cens   = c(FALSE, FALSE, TRUE, FALSE, TRUE)
+    event = as.Date(c(
+      "2020-01-01", "2020-01-01", "2020-01-02",
+      "2020-01-04", "2020-01-04"
+    )),
+    report = as.Date(c(
+      "2020-01-01", "2020-01-02", "2020-01-02",
+      "2020-01-04", "2020-01-05"
+    )),
+    n = c(3, 1, 2, 4, 1),
+    cens = c(FALSE, FALSE, TRUE, FALSE, TRUE)
   )
-  tbl_now(d, event_date = event, report_date = report, case_count = n,
-          is_censored = cens, data_type = "count-incidence",
-          event_units = "days", report_units = "days", verbose = FALSE)
+  tbl_now(d,
+    event_date = event, report_date = report, case_count = n,
+    is_censored = cens, data_type = "count-incidence",
+    event_units = "days", report_units = "days", verbose = FALSE
+  )
 }
 
 test_that("complete_zeroes works with an is_censored column (count-incidence)", {

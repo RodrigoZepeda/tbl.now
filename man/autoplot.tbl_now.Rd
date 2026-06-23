@@ -61,12 +61,14 @@ event dates that fall on a holiday are marked with dots in panel 2.
 \examples{
 \dontshow{if (requireNamespace("patchwork", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
-dengue <- tbl_now(denguedat, event_date = "onset_week",
-                  report_date = "report_week", verbose = FALSE)
+dengue <- tbl_now(denguedat,
+  event_date = "onset_week",
+  report_date = "report_week", verbose = FALSE
+)
 autoplot(dengue)
 
 # Zoom the delay panel to delays of 0-10 weeks
-if (FALSE){
+if (FALSE) {
   autoplot(dengue, delay_distribution_xlim = c(0, 10))
 }
 \dontshow{\}) # examplesIf}

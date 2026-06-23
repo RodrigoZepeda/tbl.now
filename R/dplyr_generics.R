@@ -21,26 +21,28 @@
 #'
 #' @examples
 #' data(denguedat)
-#' ndata <- tbl_now(denguedat, event_date = "onset_week",
-#'   report_date = "report_week", verbose = FALSE)
+#' ndata <- tbl_now(denguedat,
+#'   event_date = "onset_week",
+#'   report_date = "report_week", verbose = FALSE
+#' )
 #'
 #' # Validate without errors
 #' validate_tbl_now(ndata)
 #'
 #' # Validate with errors
-#' if (FALSE){
+#' if (FALSE) {
 #'   validate_tbl_now(data.frame(x = 1:3))
 #' }
 #'
 #' @export
 validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
+  # Get required attributes
+  required_attrs <- c(
+    "event_date", "report_date", "now", "event_units", "report_units",
+    "data_type"
+  )
 
-
-  #Get required attributes
-  required_attrs <- c("event_date", "report_date", "now", "event_units", "report_units",
-                      "data_type")
-
-  errors   <- character(0)
+  errors <- character(0)
   warnings <- character(0)
 
   # # === 1. Check class ===
@@ -61,18 +63,20 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
   }
 
   # === 3. Extract attributes for validation ===
-  event_date     <- get_event_date(x)
-  report_date    <- get_report_date(x)
-  strata         <- get_strata(x)
-  covariates     <- get_covariates(x)
-  now            <- get_now(x)
-  report_units   <- get_report_units(x)
-  event_units    <- get_event_units(x)
-  data_type      <- get_data_type(x)
-  is_censored    <- get_is_censored(x)
-  case_count     <- get_case_count(x)
+  event_date <- get_event_date(x)
+  report_date <- get_report_date(x)
+  strata <- get_strata(x)
+  covariates <- get_covariates(x)
+  now <- get_now(x)
+  report_units <- get_report_units(x)
+  event_units <- get_event_units(x)
+  data_type <- get_data_type(x)
+  is_censored <- get_is_censored(x)
+  case_count <- get_case_count(x)
 
-  if (data_type == "linelist"){warn_non_uniqueness <- FALSE}
+  if (data_type == "linelist") {
+    warn_non_uniqueness <- FALSE
+  }
 
   # === 4. Validate attribute types ===
 
@@ -84,8 +88,6 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
   if (!is.character(report_date) || length(report_date) != 1) {
     errors <- c(errors, "Attribute {.val report_date} must be a Date of length 1")
   }
-
-
 
 
   # strata must be NULL or character
@@ -106,14 +108,14 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
   # "event_units" and "report_units" must be valid option
   valid_date_units <- c("auto", "days", "weeks", "numeric", "months", "years")
   if (!is.character(report_units) || length(report_units) != 1 ||
-      !report_units %in% valid_date_units) {
+    !report_units %in% valid_date_units) {
     errors <- c(errors, sprintf(
       "Attribute {.val report_units} must be one of: {.val %s}",
       paste(valid_date_units, collapse = ", ")
     ))
   }
   if (!is.character(event_units) || length(event_units) != 1 ||
-      !event_units %in% valid_date_units) {
+    !event_units %in% valid_date_units) {
     errors <- c(errors, sprintf(
       "Attribute {.val event_units} must be one of: {.val %s}",
       paste(valid_date_units, collapse = ", ")
@@ -121,9 +123,9 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
   }
 
   # data_type must be valid option
-  valid_data_types <- c("auto", "linelist", "count-incidence","count-cumulative")
+  valid_data_types <- c("auto", "linelist", "count-incidence", "count-cumulative")
   if (!is.character(data_type) || length(data_type) != 1 ||
-      !data_type %in% valid_data_types) {
+    !data_type %in% valid_data_types) {
     errors <- c(errors, sprintf(
       "Attribute {.val data_type} must be one of: {.val %s}",
       paste(valid_data_types, collapse = ", ")
@@ -167,37 +169,38 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
   # Check once per category--------------
 
   # Check that no covariate is in strata and viceversa
-  if (any(covariates %in% strata)){
-
-    #Get those that are repeated
+  if (any(covariates %in% strata)) {
+    # Get those that are repeated
     repeated_vars <- covariates[which(covariates %in% strata)]
 
-    errors <- c(errors,
-                sprintf("Strata variable {.val %s} cannot also be a covariate", repeated_vars))
+    errors <- c(
+      errors,
+      sprintf("Strata variable {.val %s} cannot also be a covariate", repeated_vars)
+    )
   }
 
   # Check that no date is in strata
-  if (report_date %in% strata){
+  if (report_date %in% strata) {
     errors <- c(errors, sprintf("Report date {.val %s} cannot be strata", report_date))
   }
-  if (event_date %in% strata){
+  if (event_date %in% strata) {
     errors <- c(errors, sprintf("Event date {.val %s} cannot be strata", event_date))
   }
 
   # Check that no date is in covariate
-  if (report_date %in% covariates){
+  if (report_date %in% covariates) {
     errors <- c(errors, sprintf("Report date {.val %s} cannot be a covariate", report_date))
   }
-  if (event_date %in% covariates){
+  if (event_date %in% covariates) {
     errors <- c(errors, sprintf("Event date {.val %s} cannot be a covariate", event_date))
   }
 
   # Check that is_censored is not a covariate / strata
-  if (!is.null(is_censored) && any(is_censored %in% covariates)){
+  if (!is.null(is_censored) && any(is_censored %in% covariates)) {
     errors <- c(errors, sprintf("Censored indicator {.val %s} cannot be also a covariate", is_censored))
   }
 
-  if (!is.null(is_censored) && any(is_censored %in% strata)){
+  if (!is.null(is_censored) && any(is_censored %in% strata)) {
     errors <- c(errors, sprintf("Censored indicator {.val %s} cannot be also strata", is_censored))
   }
 
@@ -209,7 +212,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
   }
 
   if (!is.null(report_date) && report_date %in% colnames(x)) {
-    if (!lubridate::is.Date(x[[report_date]])  && !is.integer(x[[report_date]])) {
+    if (!lubridate::is.Date(x[[report_date]]) && !is.integer(x[[report_date]])) {
       errors <- c(errors, sprintf("Column '%s' must be of class Date or integer", report_date))
     }
   }
@@ -220,24 +223,25 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
     }
   }
 
-  #Check they don't have the same report and event dates
-  if (get_event_date(x) == get_report_date(x)){
+  # Check they don't have the same report and event dates
+  if (get_event_date(x) == get_report_date(x)) {
     cli::cli_alert_warning(
       "Object has the same event and report dates with value {.val {get_event_date(x)}}"
     )
   }
 
   # Removing the case_count
-  if (data_type != "linelist" && (is.null(case_count) || !(case_count %in% colnames(x)))){
-    errors <- c(errors,
-                paste0("Dropped case column ", case_count, " when data_type was ", data_type, "."))
+  if (data_type != "linelist" && (is.null(case_count) || !(case_count %in% colnames(x)))) {
+    errors <- c(
+      errors,
+      paste0("Dropped case column ", case_count, " when data_type was ", data_type, ".")
+    )
   }
 
   # === 8. Validate data relationships ===
 
   if (!is.null(event_date) && !is.null(report_date) &&
-      event_date %in% colnames(x) && report_date %in% colnames(x)) {
-
+    event_date %in% colnames(x) && report_date %in% colnames(x)) {
     # Check that report_date >= event_date (where both are non-NA)
     valid_rows <- !is.na(x[[event_date]]) & !is.na(x[[report_date]])
     if (any(valid_rows)) {
@@ -251,7 +255,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
     }
 
     # Check that 'now' is >= max(report_date)
-    if (nrow(x) > 0 & warn_now){
+    if (nrow(x) > 0 & warn_now) {
       max_report <- max(x[[report_date]], na.rm = TRUE)
       if (!is.na(max_report) && !is.null(now) && lubridate::is.Date(now) && now < max_report) {
         warnings <- c(warnings, sprintf(
@@ -262,46 +266,48 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
     }
   }
 
-  #FIXME: Throw warning when now is too far in the future or in the past
+  # FIXME: Throw warning when now is too far in the future or in the past
 
-  #Warn ig they have missing values
-  if (event_date %in% colnames(x)){
-    missing_events <- x %>%
-      ungroup() %>%
+  # Warn ig they have missing values
+  if (event_date %in% colnames(x)) {
+    missing_events <- x |>
+      ungroup() |>
       dplyr::filter(is.na(!!as.symbol(event_date)) | is.null(!!as.symbol(event_date)))
 
-    if (nrow(missing_events) > 0){
+    if (nrow(missing_events) > 0) {
       warnings <- c(warnings, "{.val {nrow(missing_events)}} rows have NULL or NA values in column `event_date ={.val event_date}`.")
     }
   }
 
 
-  if (report_date %in% colnames(x)){
-    missing_reports <- x %>%
-      ungroup() %>%
+  if (report_date %in% colnames(x)) {
+    missing_reports <- x |>
+      ungroup() |>
       dplyr::filter(is.na(!!as.symbol(report_date)) | is.null(!!as.symbol(report_date)))
 
-    if (nrow(missing_reports) > 0){
+    if (nrow(missing_reports) > 0) {
       warnings <- c(warnings, "{.val {nrow(missing_reports)}} rows have NULL or NA values in column `report_date = {.val report_date}`.")
     }
   }
 
 
-
-  #Validate that event_date and report_date don't have repeated values for same strata/covariates----
-  if (warn_non_uniqueness){
-    current_rows  <- nrow(x)
-    distinct_rows <- x %>%
-      dplyr::as_tibble() %>%
-      dplyr::distinct(dplyr::across(dplyr::all_of(c(get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x), get_is_censored(x), get_temporal_effect_cols(x))))) %>%
+  # Validate that event_date and report_date don't have repeated values for same strata/covariates----
+  if (warn_non_uniqueness) {
+    current_rows <- nrow(x)
+    distinct_rows <- x |>
+      dplyr::as_tibble() |>
+      dplyr::distinct(dplyr::across(dplyr::all_of(c(get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x), get_is_censored(x), get_temporal_effect_cols(x))))) |>
       nrow()
 
-    if (current_rows > distinct_rows){
-      warnings <- c(warnings,
-                    paste0(
-                      "*Non-unique*: Data has multiple rows for the same event ({event_date}) and report",
-                      "({report_date}) dates. Consider using `to_count()` to aggregate the data or",
-                      "`distinct()` to remove repeated observations."))
+    if (current_rows > distinct_rows) {
+      warnings <- c(
+        warnings,
+        paste0(
+          "*Non-unique*: Data has multiple rows for the same event ({event_date}) and report",
+          "({report_date}) dates. Consider using `to_count()` to aggregate the data or",
+          "`distinct()` to remove repeated observations."
+        )
+      )
     }
   }
 
@@ -318,7 +324,6 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
   }
 
   return(invisible(TRUE))
-
 }
 
 #' Decides whether `tbl_now` object can be reconstructed from input
@@ -332,9 +337,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
 #' @return A `tbl_now` object (if the input is valid) or a `data.frame`
 #' @keywords internal
 tbl_now_reconstruct <- function(data, template) {
-
   tbl_now_reconstruct_internal(data, template)
-
 }
 
 #' Checks whether the `tbl_now` object is valid
@@ -349,10 +352,11 @@ tbl_now_reconstruct <- function(data, template) {
 #' @return A boolean logical (`TRUE` or `FALSE`)
 #' @keywords internal
 tbl_now_can_reconstruct <- function(data) {
-
   # check whether input is valid, ignoring its class
   valid <- tryCatch(
-    { validate_tbl_now(data) },
+    {
+      validate_tbl_now(data)
+    },
     error = function(cnd) FALSE
   )
 
@@ -367,10 +371,9 @@ tbl_now_can_reconstruct <- function(data) {
 #' @return A `tbl_now` object or a `data.frame`
 #'
 #' @keywords internal
-tbl_now_reconstruct_internal <- function(data, template){
-
+tbl_now_reconstruct_internal <- function(data, template) {
   # Copy over *all* attributes except the data.frame essentials
-  attrs      <- attributes(template)
+  attrs <- attributes(template)
 
   keep_attrs <- attrs[setdiff(names(attrs), c("names", "row.names", "class", "groups"))]
 
@@ -391,20 +394,20 @@ tbl_now_reconstruct_internal <- function(data, template){
 
   # Update strata if columns were dropped
   if (!is.null(get_num_strata(template)) && get_num_strata(template) > 0) {
-    #Get the strata still  here
+    # Get the strata still  here
     strata <- intersect(get_strata(template), names(data))
 
-    #Reattach
-    attr(data, "strata")      <- strata
+    # Reattach
+    attr(data, "strata") <- strata
   }
 
   # Update covariates if columns were dropped
   if (!is.null(get_num_covariates(template)) && get_num_covariates(template) > 0) {
-    #Get the covariates still  here
+    # Get the covariates still  here
     covariates <- intersect(get_covariates(template), names(data))
 
-    #Reattach
-    attr(data, "covariates")      <- covariates
+    # Reattach
+    attr(data, "covariates") <- covariates
   }
 
   # Preserve the lazy temporal_effects spec unchanged (it does not reference columns)
@@ -427,7 +430,7 @@ tbl_now_reconstruct_internal <- function(data, template){
     error = function(e) attrs$now
   )
   attr(data, "now") <- now
-  if (!identical(original_now, now)){
+  if (!identical(original_now, now)) {
     cli::cli_warn("Changed `now` from {.val {original_now}} to {.val {now}}")
   }
 
@@ -435,7 +438,6 @@ tbl_now_reconstruct_internal <- function(data, template){
   class(data) <- class(template)
 
   return(data)
-
 }
 
 #' Check if an object is a tbl_now
@@ -457,10 +459,8 @@ tbl_now_reconstruct_internal <- function(data, template){
 #' class(xval) <- c("tbl_now", "data.frame")
 #' is_tbl_now(xval)
 #' @export
-is_tbl_now <- function(x){
-
+is_tbl_now <- function(x) {
   inherits(x, "tbl_now") && tbl_now_can_reconstruct(x)
-
 }
 
 #' Subset function for `tbl_now`
@@ -576,7 +576,6 @@ dplyr_reconstruct.tbl_now <- function(data, template) {
 #' @importFrom dplyr group_by
 #' @exportS3Method dplyr::group_by
 group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_drop_default(.data)) {
-
   grouped_tbl <- NextMethod()
 
   if (dplyr::is.grouped_df(grouped_tbl)) {
@@ -586,21 +585,23 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
     x <- new_grouped_tbl_now(.data, groups = grouping_structure)
   } else {
     # Edge case: no groups were actually provided — reconstruct without losing temporal-effects spec
-    x <- tbl_now(data = .data,
-                 event_date = get_event_date(.data),
-                 report_date = get_report_date(.data),
-                 strata = get_strata(.data),
-                 covariates = get_covariates(.data),
-                 is_censored = get_is_censored(.data),
-                 now = get_now(.data),
-                 event_units = get_event_units(.data),
-                 report_units = get_event_units(.data),
-                 data_type = get_data_type(.data),
-                 case_count = get_case_count(.data),
-                 verbose = FALSE,
-                 force = TRUE,
-                 warn_non_uniqueness = FALSE)
-    attr(x, "temporal_effects")              <- get_temporal_effects(.data)
+    x <- tbl_now(
+      data = .data,
+      event_date = get_event_date(.data),
+      report_date = get_report_date(.data),
+      strata = get_strata(.data),
+      covariates = get_covariates(.data),
+      is_censored = get_is_censored(.data),
+      now = get_now(.data),
+      event_units = get_event_units(.data),
+      report_units = get_event_units(.data),
+      data_type = get_data_type(.data),
+      case_count = get_case_count(.data),
+      verbose = FALSE,
+      force = TRUE,
+      warn_non_uniqueness = FALSE
+    )
+    attr(x, "temporal_effects") <- get_temporal_effects(.data)
     attr(x, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(x))
   }
   x
@@ -609,7 +610,6 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
 #' @importFrom dplyr rowwise
 #' @exportS3Method dplyr::rowwise
 rowwise.tbl_now <- function(data, ...) {
-
   cli::cli_alert_warning(
     "`rowwise` has not yet been implemented for `tbl_now`. Returning a `data.frame`"
   )
@@ -618,17 +618,16 @@ rowwise.tbl_now <- function(data, ...) {
 }
 
 
-
 #' @importFrom dplyr dplyr_row_slice
 #' @exportS3Method dplyr::dplyr_row_slice
-dplyr_row_slice.grouped_tbl_now  <- function(data, i, ...) {
+dplyr_row_slice.grouped_tbl_now <- function(data, i, ...) {
   out <- NextMethod()
   dplyr_reconstruct(out, data)
 }
 
 #' @importFrom dplyr dplyr_col_modify
 #' @exportS3Method dplyr::dplyr_col_modify
-dplyr_col_modify.grouped_tbl_now  <- function(data, cols) {
+dplyr_col_modify.grouped_tbl_now <- function(data, cols) {
   out <- NextMethod()
   dplyr_reconstruct(out, data)
 }
@@ -643,17 +642,17 @@ dplyr_reconstruct.grouped_tbl_now <- function(data, template) {
     # not from the (now stale) template. This is critical after
     # arrange() reorders rows — copying template's group indices
     # would point to wrong rows and break subsequent mutate/lag.
-    group_vars   <- dplyr::group_vars(template)
-    regrouped    <- dplyr::group_by(dplyr::as_tibble(reconstructed),
-                                    dplyr::across(dplyr::all_of(group_vars)))
+    group_vars <- dplyr::group_vars(template)
+    regrouped <- dplyr::group_by(
+      dplyr::as_tibble(reconstructed),
+      dplyr::across(dplyr::all_of(group_vars))
+    )
     fresh_groups <- dplyr::group_data(regrouped)
     reconstructed <- new_grouped_tbl_now(reconstructed, groups = fresh_groups)
   }
 
   return(reconstructed)
-
 }
-
 
 
 # Based on https://www.bio-ai.org/blog/extending-tibbles/
@@ -673,10 +672,10 @@ dplyr_reconstruct.grouped_tbl_now <- function(data, template) {
 new_grouped_tbl_now <- function(x, groups) {
   x <- dplyr::new_grouped_df(x = x, groups = groups, class = c("grouped_tbl_now"))
 
-  #Get name before tbl_df otherwise it gets lost with the methods
-  #see blog (https://www.bio-ai.org/blog/extending-tibbles/)
+  # Get name before tbl_df otherwise it gets lost with the methods
+  # see blog (https://www.bio-ai.org/blog/extending-tibbles/)
   tbl_df_location <- grep("tbl_df", class(x), fixed = TRUE)
-  class(x)        <- append(class(x), "tbl_now", after = tbl_df_location - 1)
+  class(x) <- append(class(x), "tbl_now", after = tbl_df_location - 1)
 
   return(x)
 }
@@ -685,7 +684,6 @@ new_grouped_tbl_now <- function(x, groups) {
 #' @importFrom dplyr ungroup
 #' @exportS3Method dplyr::ungroup
 ungroup.grouped_tbl_now <- function(x, ...) {
-
   # Run default ungrouping.
   tbl <- NextMethod()
 
@@ -697,21 +695,23 @@ ungroup.grouped_tbl_now <- function(x, ...) {
     # This is most simplest done by simply creating a new tibble subclass
     # This is an edge case if no groups are actually provided. Then simply return a regular subclass
     old_x <- x
-    x <- tbl_now(data = tbl,
-                     event_date = get_event_date(old_x),
-                     report_date = get_report_date(old_x),
-                     strata = get_strata(old_x),
-                     covariates = get_covariates(old_x),
-                     is_censored = get_is_censored(old_x),
-                     now = get_now(old_x),
-                     event_units = get_event_units(old_x),
-                     report_units = get_report_units(old_x),
-                     data_type = get_data_type(old_x),
-                     case_count = get_case_count(old_x),
-                     verbose = FALSE,
-                     force = TRUE,
-                     warn_non_uniqueness = FALSE)
-    attr(x, "temporal_effects")              <- get_temporal_effects(old_x)
+    x <- tbl_now(
+      data = tbl,
+      event_date = get_event_date(old_x),
+      report_date = get_report_date(old_x),
+      strata = get_strata(old_x),
+      covariates = get_covariates(old_x),
+      is_censored = get_is_censored(old_x),
+      now = get_now(old_x),
+      event_units = get_event_units(old_x),
+      report_units = get_report_units(old_x),
+      data_type = get_data_type(old_x),
+      case_count = get_case_count(old_x),
+      verbose = FALSE,
+      force = TRUE,
+      warn_non_uniqueness = FALSE
+    )
+    attr(x, "temporal_effects") <- get_temporal_effects(old_x)
     attr(x, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(old_x), names(x))
   }
   return(x)
@@ -721,40 +721,42 @@ ungroup.grouped_tbl_now <- function(x, ...) {
 #' @importFrom dplyr summarise
 #' @exportS3Method dplyr::summarise
 summarise.tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
+  # Remove the tbl_now attribute
+  class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now", "tbl_now")))]
 
- #Remove the tbl_now attribute
-class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_now")))]
+  # Do normal summarise. This is just a hack to avoid error "Can't supply both `.by` and `.groups`."
+  if (is.null(.by) & !is.null(.groups)) {
+    summarised_tbl <- dplyr::summarise(.data, ..., .groups = .groups)
+  } else if (!is.null(.by) & is.null(.groups)) {
+    summarised_tbl <- dplyr::summarise(.data, ..., .by = .by)
+  } else if (is.null(.by) & is.null(.groups)) {
+    summarised_tbl <- dplyr::summarise(.data, ...)
+  } else {
+    summarised_tbl <- dplyr::summarise(.data, ..., .by = .by, .groups = .groups)
+  }
 
- #Do normal summarise. This is just a hack to avoid error "Can't supply both `.by` and `.groups`."
- if (is.null(.by) & !is.null(.groups)){
-   summarised_tbl <- dplyr::summarise(.data, ..., .groups = .groups)
- } else if (!is.null(.by) & is.null(.groups)){
-   summarised_tbl <- dplyr::summarise(.data, ..., .by = .by)
- } else if (is.null(.by) & is.null(.groups)) {
-   summarised_tbl <- dplyr::summarise(.data, ...)
- } else {
-   summarised_tbl <- dplyr::summarise(.data, ..., .by = .by, .groups = .groups)
- }
-
- result <- tryCatch({
-    tmp <- tbl_now(data = ungroup(summarised_tbl),
-                event_date = get_event_date(.data),
-                report_date = get_report_date(.data),
-                strata = get_strata(.data),
-                covariates = get_covariates(.data),
-                is_censored = get_is_censored(.data),
-                now = get_now(.data),
-                event_units = get_event_units(.data),
-                report_units = get_event_units(.data),
-                data_type = get_data_type(.data),
-                case_count = get_case_count(.data),
-                verbose = FALSE,
-                force = TRUE,
-                warn_non_uniqueness = FALSE,
-                align_weeks = FALSE)
-    attr(tmp, "temporal_effects")              <- get_temporal_effects(.data)
-    attr(tmp, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(tmp))
-    tmp
+  result <- tryCatch(
+    {
+      tmp <- tbl_now(
+        data = ungroup(summarised_tbl),
+        event_date = get_event_date(.data),
+        report_date = get_report_date(.data),
+        strata = get_strata(.data),
+        covariates = get_covariates(.data),
+        is_censored = get_is_censored(.data),
+        now = get_now(.data),
+        event_units = get_event_units(.data),
+        report_units = get_event_units(.data),
+        data_type = get_data_type(.data),
+        case_count = get_case_count(.data),
+        verbose = FALSE,
+        force = TRUE,
+        warn_non_uniqueness = FALSE,
+        align_weeks = FALSE
+      )
+      attr(tmp, "temporal_effects") <- get_temporal_effects(.data)
+      attr(tmp, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(tmp))
+      tmp
     },
     error = function(e) {
       cli::cli_warn("Dropping `tbl_now` attributes and converting to `tibble`")
@@ -786,7 +788,6 @@ summarize.grouped_tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
 #' @importFrom dplyr reframe
 #' @exportS3Method dplyr::reframe
 reframe.tbl_now <- function(.data, ..., .by = NULL) {
-
   # Extract the grouping vars BEFORE stripping so we can pass them to dplyr
   # explicitly (via all_of()) rather than relying on the groups attribute,
   # which would cause dplyr's eval_select_by to fire an "external vector" warning.
@@ -797,43 +798,46 @@ reframe.tbl_now <- function(.data, ..., .by = NULL) {
 
   # Strip tbl_now / grouping classes AND the groups attribute so dplyr sees a
   # plain data frame with no residual grouping metadata.
-  class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now","tbl_now","grouped_df")))]
+  class(.data) <- class(.data)[which(!(class(.data) %in% c("grouped_tbl_now", "tbl_now", "grouped_df")))]
   attr(.data, "groups") <- NULL
 
-  #Do normal reframe — pass .by lazily (as a promise inside the call) so that
-  #all_of() is evaluated inside dplyr's selecting context rather than eagerly
-  #outside it, avoiding both the "external vector" and the "all_of() outside
-  #selection" tidyselect deprecation warnings.
+  # Do normal reframe — pass .by lazily (as a promise inside the call) so that
+  # all_of() is evaluated inside dplyr's selecting context rather than eagerly
+  # outside it, avoiding both the "external vector" and the "all_of() outside
+  # selection" tidyselect deprecation warnings.
   if (!is.null(.by) && length(.by) > 0L) {
     reframed_tbl <- dplyr::reframe(.data, ..., .by = dplyr::all_of(.by))
   } else {
     reframed_tbl <- dplyr::reframe(.data, ...)
   }
 
-  result <- tryCatch({
-    tmp <- tbl_now(data = reframed_tbl,
-            event_date = get_event_date(.data),
-            report_date = get_report_date(.data),
-            strata = get_strata(.data),
-            covariates = get_covariates(.data),
-            is_censored = get_is_censored(.data),
-            now = get_now(.data),
-            event_units = get_event_units(.data),
-            report_units = get_event_units(.data),
-            data_type = get_data_type(.data),
-            case_count = get_case_count(.data),
-            verbose = FALSE,
-            force = TRUE,
-            warn_non_uniqueness = FALSE,
-            align_weeks = FALSE)
-    attr(tmp, "temporal_effects")              <- get_temporal_effects(.data)
-    attr(tmp, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(tmp))
-    tmp
-  },
-  error = function(e) {
-    cli::cli_warn("Dropping `tbl_now` attributes and converting to `tibble`")
-    reframed_tbl
-  }
+  result <- tryCatch(
+    {
+      tmp <- tbl_now(
+        data = reframed_tbl,
+        event_date = get_event_date(.data),
+        report_date = get_report_date(.data),
+        strata = get_strata(.data),
+        covariates = get_covariates(.data),
+        is_censored = get_is_censored(.data),
+        now = get_now(.data),
+        event_units = get_event_units(.data),
+        report_units = get_event_units(.data),
+        data_type = get_data_type(.data),
+        case_count = get_case_count(.data),
+        verbose = FALSE,
+        force = TRUE,
+        warn_non_uniqueness = FALSE,
+        align_weeks = FALSE
+      )
+      attr(tmp, "temporal_effects") <- get_temporal_effects(.data)
+      attr(tmp, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(tmp))
+      tmp
+    },
+    error = function(e) {
+      cli::cli_warn("Dropping `tbl_now` attributes and converting to `tibble`")
+      reframed_tbl
+    }
   )
 
   result
@@ -848,29 +852,27 @@ reframe.grouped_tbl_now <- function(.data, ..., .by = NULL) {
 #' @importFrom dplyr rename
 #' @exportS3Method dplyr::rename
 rename.tbl_now <- function(.data, ...) {
-
-  #This is drawn from dplyr rename source code
-  #https://github.com/tidyverse/dplyr/blob/main/R/rename.R
-  loc   <- tidyselect::eval_rename(rlang::expr(c(...)), .data)
+  # This is drawn from dplyr rename source code
+  # https://github.com/tidyverse/dplyr/blob/main/R/rename.R
+  loc <- tidyselect::eval_rename(rlang::expr(c(...)), .data)
   .data <- rename_attributes(.data, loc)
 
-  #Use the normal rename
+  # Use the normal rename
   NextMethod()
 }
 
 #' @importFrom dplyr rename_with
 #' @exportS3Method dplyr::rename_with
 rename_with.tbl_now <- function(.data, .fn, .cols = dplyr::everything(), ...) {
-
   # Resolve the columns to positions with .tbl_now_eval_select so that a plain
   # character .cols (e.g. "sex") does not trigger the tidyselect
   # "external vector" deprecation. We then rename by position directly instead
   # of delegating to NextMethod(): NextMethod() would re-evaluate the original
   # .cols promise inside dplyr's rename_with.data.frame and re-raise that warning.
-  .fn        <- rlang::as_function(.fn)
-  loc        <- .tbl_now_eval_select(rlang::enquo(.cols), .data)
-  old_names  <- names(.data)[loc]
-  new_names  <- vapply(old_names, .fn, character(1), ...)
+  .fn <- rlang::as_function(.fn)
+  loc <- .tbl_now_eval_select(rlang::enquo(.cols), .data)
+  old_names <- names(.data)[loc]
+  new_names <- vapply(old_names, .fn, character(1), ...)
   names(loc) <- new_names
 
   # Update the tbl_now attribute references (uses the *old* column names, so do
@@ -878,9 +880,9 @@ rename_with.tbl_now <- function(.data, .fn, .cols = dplyr::everything(), ...) {
   .data <- rename_attributes(.data, loc)
 
   # Rename the selected columns in place.
-  all_names      <- names(.data)
+  all_names <- names(.data)
   all_names[loc] <- new_names
-  names(.data)   <- all_names
+  names(.data) <- all_names
 
   .data
 }
@@ -901,11 +903,10 @@ rename_with.tbl_now <- function(.data, .fn, .cols = dplyr::everything(), ...) {
 #'
 #' @keywords internal
 #' @noRd
-rename_attributes <- function(.data, loc){
-
-  #Check that .event_num, .report_num, .delay are not renamed
+rename_attributes <- function(.data, loc) {
+  # Check that .event_num, .report_num, .delay are not renamed
   loc_protected <- which(names(.data) %in% get_protected_generated_cols(.data))
-  if (any(loc_protected %in% loc)){
+  if (any(loc_protected %in% loc)) {
     changed_loc <- names(.data)[loc_protected][which(loc_protected %in% loc)]
     cli::cli_alert_warning(
       "Changing the name of protected columns {.val {changed_loc}} will result in a tibble"
@@ -913,33 +914,33 @@ rename_attributes <- function(.data, loc){
     .data <- dplyr::as_tibble(.data)
   }
 
-  #Check the ones that changed and change in attributes (such as report date)
+  # Check the ones that changed and change in attributes (such as report date)
   protected_given_cols <- get_protected_given_cols(.data)
-  loc_changeable       <- which(names(.data) %in% protected_given_cols)
-  if (any(loc_changeable %in% loc)){
-    changed_names      <- names(.data)[loc_changeable[which(loc_changeable %in% loc)]]
+  loc_changeable <- which(names(.data) %in% protected_given_cols)
+  if (any(loc_changeable %in% loc)) {
+    changed_names <- names(.data)[loc_changeable[which(loc_changeable %in% loc)]]
     changed_attributes <- protected_given_cols[which(protected_given_cols %in% changed_names)]
-    for (atrb in 1:length(changed_attributes)){
+    for (atrb in 1:length(changed_attributes)) {
       new_name_pos <- which(names(.data) == changed_attributes[atrb])
       attr(.data, names(changed_attributes)[atrb]) <- names(loc)[which(loc == new_name_pos)]
     }
   }
 
-  #Check the strata
+  # Check the strata
   protected_strata_cols <- get_strata(.data)
-  loc_changeable        <- which(names(.data) %in% protected_strata_cols)
-  if (any(loc_changeable %in% loc)){
+  loc_changeable <- which(names(.data) %in% protected_strata_cols)
+  if (any(loc_changeable %in% loc)) {
     kept_names <- names(.data)[loc_changeable[which(!(loc_changeable %in% loc))]]
-    new_names  <- names(loc)[which(loc %in% loc_changeable)]
+    new_names <- names(loc)[which(loc %in% loc_changeable)]
     attr(.data, "strata") <- c(kept_names, new_names)
   }
 
-  #Check the covariates
+  # Check the covariates
   protected_covariate_cols <- get_covariates(.data)
-  loc_changeable           <- which(names(.data) %in% protected_covariate_cols)
-  if (any(loc_changeable %in% loc)){
+  loc_changeable <- which(names(.data) %in% protected_covariate_cols)
+  if (any(loc_changeable %in% loc)) {
     kept_names <- names(.data)[loc_changeable[which(!(loc_changeable %in% loc))]]
-    new_names  <- names(loc)[which(loc %in% loc_changeable)]
+    new_names <- names(loc)[which(loc %in% loc_changeable)]
     attr(.data, "covariates") <- c(kept_names, new_names)
   }
 

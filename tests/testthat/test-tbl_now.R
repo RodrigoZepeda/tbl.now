@@ -12,8 +12,8 @@ ll_data <- tibble(
 )
 
 # Count data (data_type should be "count" because of the 'n' column)
-count_data <- ll_data %>%
-  group_by(onset_week, report_week, gender, age_group) %>%
+count_data <- ll_data |>
+  group_by(onset_week, report_week, gender, age_group) |>
   summarise(n = n(), .groups = "drop")
 
 # Expected maximum report date for inferring 'now'
@@ -39,12 +39,12 @@ test_that("tbl_now creates object with minimal linelist data", {
   # Check inferred attributes
   expect_equal(attr(result, "event_date"), "onset_week")
   expect_equal(attr(result, "report_date"), "report_week")
-  expect_equal(attr(result, "now"), expected_now)     # Should infer max report date
-  expect_equal(attr(result, "strata"), NULL)          # Should be empty
+  expect_equal(attr(result, "now"), expected_now) # Should infer max report date
+  expect_equal(attr(result, "strata"), NULL) # Should be empty
   expect_equal(attr(result, "covariates"), c("age_group", "gender"))
   expect_equal(attr(result, "data_type"), "linelist") # Should infer linelist
-  expect_equal(attr(result, "report_units"), "days")    # Should infer "day" for Date objects
-  expect_equal(attr(result, "event_units"), "days")    # Should infer "day" for Date objects
+  expect_equal(attr(result, "report_units"), "days") # Should infer "day" for Date objects
+  expect_equal(attr(result, "event_units"), "days") # Should infer "day" for Date objects
 
   expect_equal(attr(result, "event_date"), get_event_date(result))
   expect_equal(attr(result, "report_date"), get_report_date(result))
@@ -56,7 +56,6 @@ test_that("tbl_now creates object with minimal linelist data", {
   expect_equal(attr(result, "data_type"), get_data_type(result))
   expect_equal(attr(result, "report_units"), get_report_units(result))
   expect_equal(attr(result, "event_units"), get_event_units(result))
-
 })
 
 test_that("tbl_now respects user-defined 'now'", {
@@ -156,7 +155,7 @@ test_that("tbl_now errors when date columns are missing or invalid", {
   )
 
   # Error if event_date > report_date is violated (based on check.R logic)
-  invalid_data <- ll_data %>%
+  invalid_data <- ll_data |>
     mutate(
       onset_week = as.Date("2023-01-10"),
       report_week = as.Date("2023-01-01")
@@ -216,149 +215,170 @@ test_that("tbl_now errors if strata or covariates are not characters", {
   )
 })
 
-test_that("tbl_now throws warning when repeated rows",{
-
+test_that("tbl_now throws warning when repeated rows", {
   data("flusight")
 
-  flusight <- flusight %>%
-    dplyr::filter(!is.na(observation)) %>%
-    dplyr::mutate(epiweek_as_of = lubridate::epiweek(as_of)) %>%
-    dplyr::mutate(epiyear_as_of = lubridate::epiyear(as_of)) %>%
+  flusight <- flusight |>
+    dplyr::filter(!is.na(observation)) |>
+    dplyr::mutate(epiweek_as_of = lubridate::epiweek(as_of)) |>
+    dplyr::mutate(epiyear_as_of = lubridate::epiyear(as_of)) |>
     dplyr::left_join(
-      dplyr::tibble(report_date = seq(min(flusight$as_of), max(flusight$as_of) + lubridate::days(7), by = "1 day")) %>%
-        dplyr::mutate(epiweek_as_of = lubridate::epiweek(report_date)) %>%
-        dplyr::mutate(epiyear_as_of = lubridate::epiyear(report_date)) %>%
-        dplyr::mutate(day = lubridate::wday(report_date)) %>%
+      dplyr::tibble(report_date = seq(min(flusight$as_of), max(flusight$as_of) + lubridate::days(7), by = "1 day")) |>
+        dplyr::mutate(epiweek_as_of = lubridate::epiweek(report_date)) |>
+        dplyr::mutate(epiyear_as_of = lubridate::epiyear(report_date)) |>
+        dplyr::mutate(day = lubridate::wday(report_date)) |>
         dplyr::filter(day == 7),
       by = dplyr::join_by(epiweek_as_of, epiyear_as_of)
-    ) %>%
+    ) |>
     dplyr::select(-epiweek_as_of, -epiyear_as_of, -day)
 
   expect_warning(
     tbl_now(flusight,
-            event_date  = "target_end_date",
-            report_date = "report_date",
-            strata      = "location_name",
-            case_count    = "observation",
-            data_type   = "count-cumulative",
-            verbose = FALSE),
+      event_date = "target_end_date",
+      report_date = "report_date",
+      strata = "location_name",
+      case_count = "observation",
+      data_type = "count-cumulative",
+      verbose = FALSE
+    ),
     "Data has multiple rows for the same event"
   )
 
 
   suppressWarnings(
-  expect_warning(
-    tbl_now(flusight,
-            event_date  = "target_end_date",
-            report_date = "report_date",
-            strata      = "location_name",
-            case_count    = "observation",
-            verbose = FALSE),
-    "Cannot accurately infer the data-type"
-  ))
-
+    expect_warning(
+      tbl_now(flusight,
+        event_date = "target_end_date",
+        report_date = "report_date",
+        strata = "location_name",
+        case_count = "observation",
+        verbose = FALSE
+      ),
+      "Cannot accurately infer the data-type"
+    )
+  )
 })
 
-test_that("tbl_now correctly identifies data type",{
-
-  #lINELIST
+test_that("tbl_now correctly identifies data type", {
+  # lINELIST
   df1 <- data.frame(
-   patient     = 1:6,
-   event_date  = c(rep(as.Date("2020/09/12"), 3),
-                   rep(as.Date("2020/09/13"), 3)),
-   report_date = c(as.Date("2020/09/12"),
-                   as.Date("2020/09/13"),
-                   as.Date("2020/09/14"),
-                   as.Date("2020/09/13"),
-                   as.Date("2020/09/14"),
-                   as.Date("2020/09/15")))
+    patient = 1:6,
+    event_date = c(
+      rep(as.Date("2020/09/12"), 3),
+      rep(as.Date("2020/09/13"), 3)
+    ),
+    report_date = c(
+      as.Date("2020/09/12"),
+      as.Date("2020/09/13"),
+      as.Date("2020/09/14"),
+      as.Date("2020/09/13"),
+      as.Date("2020/09/14"),
+      as.Date("2020/09/15")
+    )
+  )
 
   dtbl1 <- tbl_now(df1, event_date = "event_date", report_date = "report_date", verbose = FALSE)
   expect_equal(get_data_type(dtbl1), "linelist")
 
-  #COUNT INCIDENCE
+  # COUNT INCIDENCE
   df2 <- data.frame(
-   n           = c(7, 1, 9, 5, 0, 2),
-   event_date  = c(rep(as.Date("2020/09/12"), 3),
-                   rep(as.Date("2020/09/13"), 3)),
-   report_date = c(as.Date("2020/09/12"),
-                   as.Date("2020/09/13"),
-                   as.Date("2020/09/14"),
-                   as.Date("2020/09/13"),
-                   as.Date("2020/09/14"),
-                   as.Date("2020/09/15")))
+    n = c(7, 1, 9, 5, 0, 2),
+    event_date = c(
+      rep(as.Date("2020/09/12"), 3),
+      rep(as.Date("2020/09/13"), 3)
+    ),
+    report_date = c(
+      as.Date("2020/09/12"),
+      as.Date("2020/09/13"),
+      as.Date("2020/09/14"),
+      as.Date("2020/09/13"),
+      as.Date("2020/09/14"),
+      as.Date("2020/09/15")
+    )
+  )
 
   dtbl2 <- tbl_now(df2, event_date = "event_date", report_date = "report_date", case_count = "n", verbose = FALSE)
   expect_equal(get_data_type(dtbl2), "count-incidence")
 
-  #COUNT CUMULATIVE
+  # COUNT CUMULATIVE
   df3 <- data.frame(
-   n           = c(1,5, 8, 2, 2, 4),
-   event_date  = c(rep(as.Date("2020/09/12"), 3),
-                   rep(as.Date("2020/09/13"), 3)),
-   report_date = c(as.Date("2020/09/12"),
-                   as.Date("2020/09/13"),
-                   as.Date("2020/09/14"),
-                   as.Date("2020/09/13"),
-                   as.Date("2020/09/14"),
-                   as.Date("2020/09/15")))
+    n = c(1, 5, 8, 2, 2, 4),
+    event_date = c(
+      rep(as.Date("2020/09/12"), 3),
+      rep(as.Date("2020/09/13"), 3)
+    ),
+    report_date = c(
+      as.Date("2020/09/12"),
+      as.Date("2020/09/13"),
+      as.Date("2020/09/14"),
+      as.Date("2020/09/13"),
+      as.Date("2020/09/14"),
+      as.Date("2020/09/15")
+    )
+  )
 
-  dtbl3 <- tbl_now(df3, event_date = "event_date", report_date = "report_date",
-                   case_count = "n", verbose = FALSE)
+  dtbl3 <- tbl_now(df3,
+    event_date = "event_date", report_date = "report_date",
+    case_count = "n", verbose = FALSE
+  )
   expect_equal(get_data_type(dtbl3), "count-cumulative")
-
 })
 
-test_that("tbl_now fails when strata/covariate have repeated variables",{
+test_that("tbl_now fails when strata/covariate have repeated variables", {
   data(denguedat)
 
   expect_error(
     tbl_now(denguedat,
-            event_date = onset_week,
-            report_date = report_week,
-            strata = gender,
-            covariates = gender,
-            verbose = FALSE),
+      event_date = onset_week,
+      report_date = report_week,
+      strata = gender,
+      covariates = gender,
+      verbose = FALSE
+    ),
     "Strata .* covariate"
   )
 
   expect_error(
     tbl_now(denguedat,
-            event_date = onset_week,
-            report_date = report_week,
-            strata = gender,
-            covariates = onset_week,
-            verbose = FALSE),
+      event_date = onset_week,
+      report_date = report_week,
+      strata = gender,
+      covariates = onset_week,
+      verbose = FALSE
+    ),
     "Event .* covariate"
   )
 
   expect_error(
     tbl_now(denguedat,
-            event_date = onset_week,
-            report_date = report_week,
-            strata = onset_week,
-            covariates = gender,
-            verbose = FALSE),
+      event_date = onset_week,
+      report_date = report_week,
+      strata = onset_week,
+      covariates = gender,
+      verbose = FALSE
+    ),
     "Event .* strata"
   )
 
   expect_error(
     tbl_now(denguedat,
-            event_date = onset_week,
-            report_date = report_week,
-            strata = gender,
-            covariates = report_week,
-            verbose = FALSE),
+      event_date = onset_week,
+      report_date = report_week,
+      strata = gender,
+      covariates = report_week,
+      verbose = FALSE
+    ),
     "Report .* covariate"
   )
 
   expect_error(
     tbl_now(denguedat,
-            event_date = onset_week,
-            report_date = report_week,
-            strata = report_week,
-            covariates = gender,
-            verbose = FALSE),
+      event_date = onset_week,
+      report_date = report_week,
+      strata = report_week,
+      covariates = gender,
+      verbose = FALSE
+    ),
     "Report .* strata"
   )
 })

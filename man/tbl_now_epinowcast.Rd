@@ -25,16 +25,19 @@ tbl_now_to_epinowcast(
 )
 }
 \arguments{
-\item{data}{A \code{data.frame}/\code{data.table} in \pkg{epinowcast} long format.}
+\item{data}{Source data: a raw long \code{data.frame}/\code{data.table}, an
+\code{enw_preprocess_data} object, or a fitted \code{epinowcast} object.}
 
 \item{...}{Additional arguments forwarded to \code{\link[=as_tbl_now]{as_tbl_now()}} (for \code{from})
 or to \code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}} (for \code{to}).}
 
-\item{reference_date, report_date, confirm}{Column names in \code{data}.}
+\item{reference_date, report_date, confirm}{Column names (raw input only;
+ignored for preprocessed/fitted objects).}
 
 \item{strata}{Optional character vector of grouping columns. If \code{NULL}
-(default) any column other than \code{reference_date}, \code{report_date} and
-\code{confirm} is treated as a stratifying group.}
+(default) the grouping is taken from the preprocessed object's \code{by}, or,
+for raw input, any column other than \code{reference_date}, \code{report_date} and
+\code{confirm}.}
 
 \item{verbose}{Logical. Print the choices that were made.}
 
@@ -54,18 +57,46 @@ object; if \code{FALSE} returns the completed observation \code{data.table}.}
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-\code{tbl_now_from_epinowcast()} takes the long observation \code{data.frame} used by
-\pkg{epinowcast} (with \code{reference_date}, \code{report_date} and a cumulative
-\code{confirm} column, plus optional grouping columns) and converts it into a
-\code{tbl_now} of \code{data_type = "count-cumulative"}.
-
-\code{tbl_now_to_epinowcast()} takes a \code{tbl_now} and builds an
-\code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}} object (or, with \code{preprocess = FALSE},
-the completed observation \code{data.table}).
+\pkg{epinowcast} represents the same observations in several shapes:
+\itemize{
+\item the \strong{raw long input} \code{data.frame} (\code{reference_date}, \code{report_date} and a
+\strong{cumulative} \code{confirm} column, plus optional grouping columns) consumed
+by \code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}};
+\item the \strong{preprocessed object} returned by \code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}}
+(a nested \code{data.table} used downstream for modelling, summaries and
+plotting);
+\item a fitted \code{epinowcast} object (which extends the preprocessed object).
 }
+
+\code{tbl_now_from_epinowcast()} accepts \strong{any} of these and converts the
+cumulative observations into a \code{tbl_now} of \code{data_type = "count-cumulative"}.
+When given a preprocessed or fitted object, the grouping (\code{by}) columns are
+detected automatically and the observations are those retained by
+preprocessing (i.e. truncated at \code{max_delay}).
+
+\code{tbl_now_to_epinowcast()} takes a \code{tbl_now} and, by default, builds the
+preprocessed \code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}} object (the representation
+used for epinowcast's summaries and plots). With \code{preprocess = FALSE} it
+returns the completed long observation \code{data.table} (the model \emph{input}
+format, as produced by \code{\link[epinowcast:enw_complete_dates]{epinowcast::enw_complete_dates()}}).
+}
+\section{Round-trip}{
+
+\code{tbl_now_from_epinowcast(tbl_now_to_epinowcast(x))} recovers \code{x} up to the
+\code{max_delay} truncation that epinowcast applies during preprocessing: reports
+with a delay beyond \code{max_delay} are dropped by
+\code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}} and so are absent from the result.
+}
+
 \examples{
 \dontshow{if (requireNamespace("epinowcast", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 obs <- epinowcast::germany_covid19_hosp
+
+# From the raw long input format ...
 nowobj <- tbl_now_from_epinowcast(obs, strata = c("location", "age_group"))
+
+# ... or straight from a preprocessed epinowcast object
+pre <- tbl_now_to_epinowcast(nowobj, verbose = FALSE)
+tbl_now_from_epinowcast(pre, verbose = FALSE)
 \dontshow{\}) # examplesIf}
 }

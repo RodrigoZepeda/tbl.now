@@ -49,7 +49,7 @@ setup_test_data <- function() {
 
 test_that("as_tbl_now is a function", {
   expect_true(is.function(as_tbl_now))
-  #expect_true(isS3stdGeneric("as_tbl_now"))
+  # expect_true(isS3stdGeneric("as_tbl_now"))
 })
 
 test_that("as_tbl_now has correct methods", {
@@ -510,8 +510,8 @@ test_that("as_tbl_now dispatches to correct method for tbl_now", {
 test_that("as_tbl_now works in pipe workflow with data.frame", {
   test_data <- setup_test_data()
 
-  result <- test_data$simple_df %>%
-    dplyr::mutate(adjusted_onset = onset_week - 7) %>%
+  result <- test_data$simple_df |>
+    dplyr::mutate(adjusted_onset = onset_week - 7) |>
     as_tbl_now(
       event_date = "adjusted_onset",
       report_date = "report_week",
@@ -527,13 +527,13 @@ test_that("as_tbl_now works in pipe workflow with data.frame", {
 test_that("as_tbl_now works in pipe workflow with tbl_now", {
   test_data <- setup_test_data()
 
-  result <- test_data$simple_df %>%
+  result <- test_data$simple_df |>
     tbl_now(
       event_date = "onset_week",
       report_date = "report_week",
       verbose = FALSE
-    ) %>%
-    dplyr::mutate(new_onset = onset_week - 7) %>%
+    ) |>
+    dplyr::mutate(new_onset = onset_week - 7) |>
     as_tbl_now(
       event_date = "new_onset",
       report_date = "report_week",
@@ -553,9 +553,9 @@ test_that("as_tbl_now can be chained multiple times", {
   )
 
   suppressWarnings(
-    result <- df %>%
-      as_tbl_now(event_date = "date1", report_date = "date3", verbose = FALSE) %>%
-      as_tbl_now(event_date = "date2", report_date = "date3", verbose = FALSE) %>%
+    result <- df |>
+      as_tbl_now(event_date = "date1", report_date = "date3", verbose = FALSE) |>
+      as_tbl_now(event_date = "date2", report_date = "date3", verbose = FALSE) |>
       as_tbl_now(event_date = "date2", report_date = "date4", verbose = FALSE)
   )
 
@@ -567,7 +567,7 @@ test_that("as_tbl_now can be chained multiple times", {
 test_that("as_tbl_now works with grouped data", {
   test_data <- setup_test_data()
 
-  grouped <- test_data$simple_df %>%
+  grouped <- test_data$simple_df |>
     dplyr::group_by(gender)
 
 
@@ -582,12 +582,12 @@ test_that("as_tbl_now works with grouped data", {
   )
 
   suppressWarnings(
-  result <- as_tbl_now(
-    grouped,
-    event_date = "onset_week",
-    report_date = "report_week",
-    verbose = FALSE
-  )
+    result <- as_tbl_now(
+      grouped,
+      event_date = "onset_week",
+      report_date = "report_week",
+      verbose = FALSE
+    )
   )
 
   expect_s3_class(result, "tbl_now")
@@ -632,7 +632,7 @@ test_that("converting existing tbl_now works", {
   data(denguedat)
 
   # Create initial tbl_now
-  df_now <- denguedat[1:100, ] %>%
+  df_now <- denguedat[1:100, ] |>
     tbl_now(
       event_date = "onset_week",
       report_date = "report_week",
@@ -694,7 +694,6 @@ test_that("as_tbl_now crashes with empty data.frame", {
     ),
     "empty data.frame"
   )
-
 })
 
 test_that("as_tbl_now preserves column types", {

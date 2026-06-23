@@ -13,7 +13,6 @@ ll_data <- tibble(
 # === TEST SUITE FOR PILLAR EXTENSIONS (Pretty Printing) ===
 
 test_that("tbl_sum.tbl_now shows correct class and frequency", {
-
   result <- tbl_now(
     data = ll_data,
     event_date = "event_date_col",
@@ -36,7 +35,6 @@ test_that("tbl_sum.tbl_now shows correct class and frequency", {
 })
 
 test_that("tbl_format_footer.tbl_now displays mandatory attributes", {
-
   result <- tbl_now(
     data = ll_data,
     event_date = "event_date_col",
@@ -60,11 +58,9 @@ test_that("tbl_format_footer.tbl_now displays mandatory attributes", {
   # Check strata and covariates
   expect_true(any(grepl("Strata: \"strata_col\"", output)))
   expect_true(any(grepl("Covariates: \"cov_col\"", output)))
-
 })
 
 test_that("tbl_format_footer.tbl_now displays Strata and Covariates when present", {
-
   result <- tbl_now(
     data = ll_data,
     event_date = "event_date_col",
@@ -80,7 +76,6 @@ test_that("tbl_format_footer.tbl_now displays Strata and Covariates when present
 })
 
 test_that("ctl_new_pillar.tbl_now annotates event and report date columns", {
-
   result <- tbl_now(
     data = ll_data,
     event_date = "event_date_col",
@@ -129,36 +124,40 @@ test_that("footer shows a LAZY temporal-effects spec with every effect kind", {
     holidays = almanac::rcalendar(almanac::hol_christmas())
   )
 
-  x <- tbl_now(daily_te, event_date = event, report_date = report,
-               event_units = "days", report_units = "days", verbose = FALSE) |>
+  x <- tbl_now(daily_te,
+    event_date = event, report_date = report,
+    event_units = "days", report_units = "days", verbose = FALSE
+  ) |>
     add_temporal_effects(spec_event, date_type = "event_date") |>
     add_temporal_effects(temporal_effects(weekend = TRUE), date_type = "report_date")
 
   out <- capture.output(print(x))
 
-  expect_true(any(grepl("T\\. effects \\(lazy\\)", out)))   # lazy branch
+  expect_true(any(grepl("T\\. effects \\(lazy\\)", out))) # lazy branch
   expect_true(any(grepl("day_of_week", out)))
   expect_true(any(grepl("weekend", out)))
   expect_true(any(grepl("day_of_month", out)))
   expect_true(any(grepl("month_of_year", out)))
   expect_true(any(grepl("week_of_year", out)))
-  expect_true(any(grepl("season\\(7,52\\)", out)))           # seasons branch
-  expect_true(any(grepl("holidays", out)))                    # holidays branch
-  expect_true(any(grepl("\\[event_date\\]", out)))            # event_date label
-  expect_true(any(grepl("\\[report_date\\]", out)))           # report_date label
+  expect_true(any(grepl("season\\(7,52\\)", out))) # seasons branch
+  expect_true(any(grepl("holidays", out))) # holidays branch
+  expect_true(any(grepl("\\[event_date\\]", out))) # event_date label
+  expect_true(any(grepl("\\[report_date\\]", out))) # report_date label
 })
 
 test_that("footer shows COMPUTED temporal effects and pillars get [t_effect]", {
-  x <- tbl_now(daily_te, event_date = event, report_date = report,
-               event_units = "days", report_units = "days", verbose = FALSE) |>
+  x <- tbl_now(daily_te,
+    event_date = event, report_date = report,
+    event_units = "days", report_units = "days", verbose = FALSE
+  ) |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE)) |>
     compute_temporal_effects()
 
   out <- capture.output(print(x))
 
-  expect_true(any(grepl("T\\. effects:", out)))        # computed footer branch
-  expect_true(any(grepl("T\\. effect cols:", out)))    # computed column listing
-  expect_true(any(grepl("\\[t_effect\\]", out)))       # the [t_effect] pillar annotation
+  expect_true(any(grepl("T\\. effects:", out))) # computed footer branch
+  expect_true(any(grepl("T\\. effect cols:", out))) # computed column listing
+  expect_true(any(grepl("\\[t_effect\\]", out))) # the [t_effect] pillar annotation
 })
 
 test_that(".format_temporal_effects_spec returns NULL for an empty spec list", {

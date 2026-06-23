@@ -33,10 +33,14 @@ column is updated (or created) and merged with any existing censoring flags
 (already-censored reports stay censored).
 }
 \examples{
-df <- data.frame(onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
-                 reported = as.Date("2020-01-01") + c(1, 5, 2, 300))
-tn <- tbl_now(df, event_date = onset, report_date = reported,
-              data_type = "linelist", verbose = FALSE)
+df <- data.frame(
+  onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
+  reported = as.Date("2020-01-01") + c(1, 5, 2, 300)
+)
+tn <- tbl_now(df,
+  event_date = onset, report_date = reported,
+  data_type = "linelist", verbose = FALSE
+)
 
 # the 300-day report becomes censored (an upper bound on its delay)
 tn <- censor_delays_above(tn, max_delay = 60)

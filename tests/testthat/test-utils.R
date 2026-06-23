@@ -1,16 +1,18 @@
 test_that("test it returns the attributes correctly", {
   data(denguedat)
 
-  df_now <- tbl_now(denguedat, event_date = onset_week,
-    report_date = report_week, strata = gender, verbose = FALSE)
+  df_now <- tbl_now(denguedat,
+    event_date = onset_week,
+    report_date = report_week, strata = gender, verbose = FALSE
+  )
 
-  #Attributes gets all attributes
-  df_atr  <- attributes(df_now) %>% names()
+  # Attributes gets all attributes
+  df_atr <- attributes(df_now) |> names()
 
-  #Remove optional attributes
-  tbl_atr <- c(attributes(dplyr::tibble(denguedat)) %>% names(), "strata", "covariates")
+  # Remove optional attributes
+  tbl_atr <- c(attributes(dplyr::tibble(denguedat)) |> names(), "strata", "covariates")
 
-  #tbl_now_attributes gets only those associated to the `tbl_now` class
+  # tbl_now_attributes gets only those associated to the `tbl_now` class
   expect_equal(
     names(tbl_now_attributes(df_now)),
     df_atr[which(!(df_atr %in% tbl_atr))]
@@ -19,23 +21,23 @@ test_that("test it returns the attributes correctly", {
 
 test_that("is_weekday works with default weekend (Sat-Sun)", {
   # Weekdays
-  expect_true(is_weekday(as.Date("2020-04-20")))   # Monday
-  expect_true(is_weekday(as.Date("2020-04-21")))   # Tuesday
-  expect_true(is_weekday(as.Date("2020-04-22")))   # Wednesday
-  expect_true(is_weekday(as.Date("2020-04-23")))   # Thursday
-  expect_true(is_weekday(as.Date("2020-04-24")))   # Friday
+  expect_true(is_weekday(as.Date("2020-04-20"))) # Monday
+  expect_true(is_weekday(as.Date("2020-04-21"))) # Tuesday
+  expect_true(is_weekday(as.Date("2020-04-22"))) # Wednesday
+  expect_true(is_weekday(as.Date("2020-04-23"))) # Thursday
+  expect_true(is_weekday(as.Date("2020-04-24"))) # Friday
 
   # Weekends
-  expect_false(is_weekday(as.Date("2020-04-25")))  # Saturday
-  expect_false(is_weekday(as.Date("2020-04-26")))  # Sunday
-  expect_false(is_weekday(as.Date("2020-04-19")))  # Sunday
+  expect_false(is_weekday(as.Date("2020-04-25"))) # Saturday
+  expect_false(is_weekday(as.Date("2020-04-26"))) # Sunday
+  expect_false(is_weekday(as.Date("2020-04-19"))) # Sunday
 })
 
 test_that("is_weekday works with character weekend_days", {
   # Middle East weekend (Fri-Sat)
-  expect_false(is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri", "Sat")))  # Friday
-  expect_false(is_weekday(as.Date("2020-04-18"), weekend_days = c("Fri", "Sat")))  # Saturday
-  expect_true(is_weekday(as.Date("2020-04-19"), weekend_days = c("Fri", "Sat")))   # Sunday
+  expect_false(is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri", "Sat"))) # Friday
+  expect_false(is_weekday(as.Date("2020-04-18"), weekend_days = c("Fri", "Sat"))) # Saturday
+  expect_true(is_weekday(as.Date("2020-04-19"), weekend_days = c("Fri", "Sat"))) # Sunday
 
   # Single day weekend
   expect_false(is_weekday(as.Date("2020-04-17"), weekend_days = "Friday"))
@@ -49,13 +51,13 @@ test_that("is_weekday works with character weekend_days", {
 
 test_that("is_weekday works with numeric weekend_days", {
   # Sunday-Monday weekend (7 = Sun, 1 = Mon)
-  expect_false(is_weekday(as.Date("2020-04-19"), weekend_days = c(7, 1)))  # Sunday
-  expect_false(is_weekday(as.Date("2020-04-20"), weekend_days = c(7, 1)))  # Monday
-  expect_true(is_weekday(as.Date("2020-04-21"), weekend_days = c(7, 1)))   # Tuesday
+  expect_false(is_weekday(as.Date("2020-04-19"), weekend_days = c(7, 1))) # Sunday
+  expect_false(is_weekday(as.Date("2020-04-20"), weekend_days = c(7, 1))) # Monday
+  expect_true(is_weekday(as.Date("2020-04-21"), weekend_days = c(7, 1))) # Tuesday
 
   # Single numeric weekend day
-  expect_false(is_weekday(as.Date("2020-04-22"), weekend_days = 3))  # Wednesday (3)
-  expect_true(is_weekday(as.Date("2020-04-23"), weekend_days = 3))   # Thursday
+  expect_false(is_weekday(as.Date("2020-04-22"), weekend_days = 3)) # Wednesday (3)
+  expect_true(is_weekday(as.Date("2020-04-23"), weekend_days = 3)) # Thursday
 
   # All days are weekend
   expect_false(is_weekday(as.Date("2020-04-20"), weekend_days = 1:7))
@@ -63,10 +65,10 @@ test_that("is_weekday works with numeric weekend_days", {
 
 test_that("is_weekday works with POSIXt objects", {
   posix_date <- as.POSIXct("2020-04-22 14:30:00", tz = "UTC")
-  expect_true(is_weekday(posix_date))  # Wednesday
+  expect_true(is_weekday(posix_date)) # Wednesday
 
   posix_weekend <- as.POSIXlt("2020-04-25 09:00:00", tz = "UTC")
-  expect_false(is_weekday(posix_weekend))  # Saturday
+  expect_false(is_weekday(posix_weekend)) # Saturday
 })
 
 test_that("is_weekday handles vectors", {
@@ -124,6 +126,6 @@ test_that("is_weekday handles edge cases", {
   # Long vector
   many_dates <- seq(as.Date("2020-01-01"), as.Date("2020-12-31"), by = "day")
   result <- is_weekday(many_dates)
-  expect_length(result, 366)  # 2020 is a leap year
+  expect_length(result, 366) # 2020 is a leap year
   expect_type(result, "logical")
 })

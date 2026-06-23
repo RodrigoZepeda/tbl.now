@@ -1,4 +1,3 @@
-
 # --- Setup: Create a function to make a minimal, valid tbl_now for testing ---
 make_test_tbl_now <- function(n = 10) {
   # Mock data to simulate 'denguedat' structure and column types
@@ -95,7 +94,7 @@ test_that("`$<-.tbl_now` preserves class on valid column replacement/addition", 
 test_that("`dplyr_row_dplyr::slice.tbl_now` preserves class and attributes", {
   x <- make_test_tbl_now(n = 20)
   # Row slicing via `dplyr::slice()`
-  sliced <- x %>% dplyr::slice(1:5)
+  sliced <- x |> dplyr::slice(1:5)
 
   expect_s3_class(sliced, "tbl_now")
   expect_equal(nrow(sliced), 5)
@@ -105,7 +104,7 @@ test_that("`dplyr_row_dplyr::slice.tbl_now` preserves class and attributes", {
 test_that("`dplyr_col_modify.tbl_now` preserves class and attributes", {
   x <- make_test_tbl_now()
   # Column modification via `dplyr::mutate()`
-  modified <- x %>% dplyr::mutate(value = value * 2)
+  modified <- x |> dplyr::mutate(value = value * 2)
 
   expect_s3_class(modified, "tbl_now")
   expect_equal(modified$value[1], 2)
@@ -115,7 +114,7 @@ test_that("`dplyr_col_modify.tbl_now` preserves class and attributes", {
 test_that("`dplyr_reconstruct.tbl_now` handles reconstruction logic", {
   template <- make_test_tbl_now()
   # Scenario 1: Valid data reconstruction
-  valid_data <- template %>% dplyr::select(-gender) # Drop 'value'
+  valid_data <- template |> dplyr::select(-gender) # Drop 'value'
 
 
   reconstructed_valid <- dplyr_reconstruct(valid_data, template)
@@ -128,7 +127,7 @@ test_that("`dplyr_reconstruct.tbl_now` handles reconstruction logic", {
 
   # Scenario 2: Downgrade due to missing protected column
   invalid_data <- suppressWarnings(
-    template %>% dplyr::select(report_week, gender)
+    template |> dplyr::select(report_week, gender)
   )
   reconstructed_invalid <- suppressWarnings(
     dplyr_reconstruct(invalid_data, template)
@@ -140,7 +139,7 @@ test_that("`dplyr_reconstruct.tbl_now` handles reconstruction logic", {
 
   # Scenario 3: Downgrade due to missing protected column
   invalid_data <- suppressWarnings(
-    template %>% dplyr::select(-onset_week)
+    template |> dplyr::select(-onset_week)
   )
   reconstructed_invalid <- suppressWarnings(
     dplyr_reconstruct(invalid_data, template)
@@ -156,7 +155,7 @@ test_that("`dplyr_reconstruct.tbl_now` handles reconstruction logic", {
 
 test_that("`group_by.tbl_now` creates a `grouped_tbl_now`", {
   x <- make_test_tbl_now()
-  grouped <- x %>% group_by(gender)
+  grouped <- x |> group_by(gender)
 
   expect_s3_class(grouped, "tbl_now")
   expect_s3_class(grouped, "grouped_df")
@@ -168,8 +167,8 @@ test_that("`group_by.tbl_now` creates a `grouped_tbl_now`", {
 
 test_that("`ungroup.grouped_tbl_now` returns an ungrouped `tbl_now`", {
   x <- make_test_tbl_now()
-  grouped <- x %>% group_by(gender)
-  ungrouped <- grouped %>% ungroup()
+  grouped <- x |> group_by(gender)
+  ungrouped <- grouped |> ungroup()
 
   expect_s3_class(ungrouped, "tbl_now")
   expect_false(inherits(ungrouped, "grouped_df"))
@@ -183,8 +182,8 @@ test_that("`summarise.tbl_now` preserves class when valid", {
   # In this case, since `data_type` is 'linelist', 'n' is not protected.
   # If we summarize without dropping 'onset_week' and 'report_week', it should work.
   summarized_valid <- suppressWarnings({ # Suppress warning from tbl_now about event/report units
-    x %>%
-      group_by(onset_week, report_week, gender, .event_num, .report_num) %>%
+    x |>
+      group_by(onset_week, report_week, gender, .event_num, .report_num) |>
       summarise(max_report = max(report_week), .groups = "drop")
   })
 
@@ -197,8 +196,8 @@ test_that("`summarise.tbl_now` drops class when protected columns are missing", 
   x <- make_test_tbl_now()
   # This summary drops the protected column `onset_week`
   summarized_invalid <- suppressWarnings({ # Suppress 'Dropping `tbl_now` attributes' warning
-    x %>%
-      group_by(onset_week, gender, .event_num, .report_num) %>%
+    x |>
+      group_by(onset_week, gender, .event_num, .report_num) |>
       summarise(max_report = max(report_week), .groups = "drop")
   })
 
@@ -208,12 +207,12 @@ test_that("`summarise.tbl_now` drops class when protected columns are missing", 
 
 test_that("`summarise.grouped_tbl_now` works via delegation", {
   x <- make_test_tbl_now()
-  grouped <- x %>% group_by(gender)
+  grouped <- x |> group_by(gender)
 
   # The resulting object should have the `tbl_now` attributes re-applied
   expect_s3_class(grouped, "grouped_tbl_now")
   expect_s3_class(grouped, "grouped_df")
-  expect_equal(grouped %>% ungroup(), x)
+  expect_equal(grouped |> ungroup(), x)
 })
 
 # Test file for dplyr_generics.R functions
@@ -226,7 +225,7 @@ setup_test_data <- function() {
     gender = c("Male", "Female", "Male", "Female"),
     age_group = c("20-30", "30-40", "20-30", "40-50"),
     temperature = c(25.5, 26.0, 24.8, 25.2),
-    is_censored = c(T,F,F,F),
+    is_censored = c(T, F, F, F),
     value = c(10, 20, 30, 40)
   )
 
@@ -269,7 +268,7 @@ test_that("validate_tbl_now fails when required attributes are missing", {
   attr(ndata, "event_date") <- NULL
 
   expect_error(
-   suppressWarnings(validate_tbl_now(ndata)),
+    suppressWarnings(validate_tbl_now(ndata)),
     "Missing required attribute"
   )
 })
@@ -281,7 +280,7 @@ test_that("validate_tbl_now fails when event_date is not character", {
   attr(ndata, "event_date") <- 123
 
   expect_error(
-   suppressWarnings(validate_tbl_now(ndata)),
+    suppressWarnings(validate_tbl_now(ndata)),
     "event_date.*must be"
   )
 })
@@ -301,10 +300,9 @@ test_that("validate_tbl_now fails when report_date is not character", {
 test_that("validate_tbl_now fails when report or event date is not date", {
   test_data <- setup_test_data()
 
-  for (type in c("report_date", "event_date")){
-
+  for (type in c("report_date", "event_date")) {
     ndata <- test_data$ndata
-    ndata <- ndata %>%
+    ndata <- ndata |>
       dplyr::mutate(!!as.symbol(attr(ndata, type)) := as.character(!!as.symbol(attr(ndata, type))))
 
     expect_error(
@@ -317,14 +315,13 @@ test_that("validate_tbl_now fails when report or event date is not date", {
 test_that("validate_tbl_now fails when is_censored is not logical", {
   test_data <- setup_test_data()
   ndata <- test_data$ndata
-  ndata <- ndata %>%
-      dplyr::mutate(!!as.symbol(attr(ndata, "is_censored")) := as.character(!!as.symbol(attr(ndata, "is_censored"))))
+  ndata <- ndata |>
+    dplyr::mutate(!!as.symbol(attr(ndata, "is_censored")) := as.character(!!as.symbol(attr(ndata, "is_censored"))))
 
   expect_error(
     suppressWarnings(validate_tbl_now(ndata)),
     "must be logical"
   )
-
 })
 
 test_that("validate_tbl_now fails when now is not date", {
@@ -334,7 +331,7 @@ test_that("validate_tbl_now fails when now is not date", {
   attr(ndata, "now") <- "error"
 
   expect_error(
-   suppressWarnings(validate_tbl_now(ndata)),
+    suppressWarnings(validate_tbl_now(ndata)),
     "now.*must be"
   )
 })
@@ -346,7 +343,7 @@ test_that("validate_tbl_now fails when data_type is not count, linelist or offic
   attr(ndata, "data_type") <- "error"
 
   expect_error(
-   suppressWarnings(validate_tbl_now(ndata)),
+    suppressWarnings(validate_tbl_now(ndata)),
     "data_type.*must be"
   )
 })
@@ -358,33 +355,32 @@ test_that("validate_tbl_now fails when is_censored is not specified correctly", 
   attr(ndata, "is_censored") <- 2
 
   expect_error(
-   suppressWarnings(validate_tbl_now(ndata)),
+    suppressWarnings(validate_tbl_now(ndata)),
     "is_censored.*must be"
   )
 
-  attr(ndata, "is_censored") <- c("a","b")
+  attr(ndata, "is_censored") <- c("a", "b")
   expect_error(
-   suppressWarnings(validate_tbl_now(ndata)),
+    suppressWarnings(validate_tbl_now(ndata)),
     "is_censored.*must be"
   )
 
   attr(ndata, "is_censored") <- "not_a_column"
   expect_error(
-   suppressWarnings(validate_tbl_now(ndata)),
+    suppressWarnings(validate_tbl_now(ndata)),
     "Column.*not found in data"
   )
-
 })
 
 test_that("validate_tbl_now fails when units is not valid", {
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
-  for (unit_type in c("event_units", "report_units")){
+  for (unit_type in c("event_units", "report_units")) {
     attr(ndata, unit_type) <- "error"
 
     expect_error(
-     suppressWarnings(validate_tbl_now(ndata)),
+      suppressWarnings(validate_tbl_now(ndata)),
       "Attribute.*must be one of.*days.*weeks"
     )
   }
@@ -393,26 +389,25 @@ test_that("validate_tbl_now fails when units is not valid", {
 test_that("arrange then mutate respects all groups (e.g. gender)", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>%
-    to_count("count-incidence") %>%
-    group_by(onset_week, gender) %>%
-    dplyr::arrange(report_week) %>%
+  result <- test_data$ndata |>
+    to_count("count-incidence") |>
+    group_by(onset_week, gender) |>
+    dplyr::arrange(report_week) |>
     dplyr::mutate(lagged = dplyr::lag(n))
 
   # The first row of each (onset_week, gender) group must have NA lag
-  first_in_group <- result %>%
-    dplyr::filter(dplyr::row_number() == 1L)  # per group after arrange
+  first_in_group <- result |>
+    dplyr::filter(dplyr::row_number() == 1L) # per group after arrange
 
   # No lagged value should bleed across gender groups
   # i.e. for a fixed onset_week, the first Male row should not carry
   # the last Female value as its lag
-  cross_group_bleed <- result %>%
-    dplyr::mutate(prev_gender = dplyr::lag(gender)) %>%
+  cross_group_bleed <- result |>
+    dplyr::mutate(prev_gender = dplyr::lag(gender)) |>
     dplyr::filter(!is.na(prev_gender), prev_gender != gender, !is.na(lagged))
 
   expect_equal(nrow(cross_group_bleed), 0L)
 })
-
 
 
 test_that("validate_tbl_now fails when columns don't exist", {
@@ -423,7 +418,7 @@ test_that("validate_tbl_now fails when columns don't exist", {
   attr(ndata, "event_date") <- "nonexistent"
 
   expect_error(
-   suppressWarnings(validate_tbl_now(ndata)),
+    suppressWarnings(validate_tbl_now(ndata)),
     "not found in data"
   )
 })
@@ -431,7 +426,7 @@ test_that("validate_tbl_now fails when columns don't exist", {
 test_that("validate_tbl_now warns when report_date before event_date", {
   bad_data <- data.frame(
     onset_week = as.Date(c("2020-07-15", "2020-07-22")),
-    report_week = as.Date(c("2020-07-08", "2020-07-18"))  # First is before event
+    report_week = as.Date(c("2020-07-08", "2020-07-18")) # First is before event
   )
 
   ndata <- suppressWarnings(
@@ -445,7 +440,7 @@ test_that("validate_tbl_now warns when report_date before event_date", {
 
   # Should create with warning
   expect_warning(
-   validate_tbl_now(ndata),
+    validate_tbl_now(ndata),
     "report_date.*before.*event_date"
   )
 })
@@ -529,7 +524,7 @@ test_that("[.tbl_now handles column selection", {
   test_data <- setup_test_data()
 
   # Select specific columns including protected ones
-  result <- test_data$ndata[, c("onset_week", "report_week", "gender", ".event_num", ".report_num", "is_censored",".delay")]
+  result <- test_data$ndata[, c("onset_week", "report_week", "gender", ".event_num", ".report_num", "is_censored", ".delay")]
 
   expect_s3_class(result, "tbl_now")
   expect_true("onset_week" %in% colnames(result))
@@ -552,8 +547,7 @@ test_that("names<-.tbl_now maintains tbl_now class with valid names", {
 test_that("names<-.tbl_now drops to data.frame when renaming protected columns", {
   test_data <- setup_test_data()
 
-  for (protected in c("onset_week","report_week",".event_num",".report_num")){
-
+  for (protected in c("onset_week", "report_week", ".event_num", ".report_num")) {
     ndata <- test_data$ndata
     new_names <- colnames(ndata)
     new_names[which(new_names == protected)] <- "renamed"
@@ -601,7 +595,7 @@ test_that("$<-.tbl_now allows modifying non-protected columns", {
 test_that("dplyr_row_slice maintains tbl_now with valid slice", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>% dplyr::slice(1:2)
+  result <- test_data$ndata |> dplyr::slice(1:2)
 
   expect_s3_class(result, "tbl_now")
   expect_equal(nrow(result), 2)
@@ -610,7 +604,7 @@ test_that("dplyr_row_slice maintains tbl_now with valid slice", {
 test_that("dplyr_row_slice preserves attributes", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>% dplyr::slice(1:3)
+  result <- test_data$ndata |> dplyr::slice(1:3)
 
   expect_equal(get_event_date(result), get_event_date(test_data$ndata))
   expect_equal(get_strata(result), get_strata(test_data$ndata))
@@ -620,7 +614,7 @@ test_that("dplyr_row_slice preserves attributes", {
 test_that("dplyr_col_modify maintains tbl_now when adding columns", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>% dplyr::mutate(new_col = value * 2)
+  result <- test_data$ndata |> dplyr::mutate(new_col = value * 2)
 
   expect_s3_class(result, "tbl_now")
   expect_true("new_col" %in% colnames(result))
@@ -629,7 +623,7 @@ test_that("dplyr_col_modify maintains tbl_now when adding columns", {
 test_that("dplyr_col_modify maintains tbl_now when modifying columns", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>% dplyr::mutate(value = value + 10)
+  result <- test_data$ndata |> dplyr::mutate(value = value + 10)
 
   expect_s3_class(result, "tbl_now")
 })
@@ -638,7 +632,7 @@ test_that("dplyr_col_modify drops to tibble when removing protected columns", {
   test_data <- setup_test_data()
 
   expect_warning(
-    result <- test_data$ndata %>% dplyr::select(-onset_week),
+    result <- test_data$ndata |> dplyr::select(-onset_week),
     "Dropped protected column"
   )
 
@@ -649,7 +643,7 @@ test_that("dplyr_col_modify drops to tibble when removing protected columns", {
 test_that("group_by creates grouped_tbl_now", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>% dplyr::group_by(gender)
+  result <- test_data$ndata |> dplyr::group_by(gender)
 
   expect_s3_class(result, "grouped_tbl_now")
   expect_s3_class(result, "tbl_now")
@@ -659,7 +653,7 @@ test_that("group_by creates grouped_tbl_now", {
 test_that("group_by preserves tbl_now attributes", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>% dplyr::group_by(gender)
+  result <- test_data$ndata |> dplyr::group_by(gender)
 
   expect_equal(get_event_date(result), get_event_date(test_data$ndata))
   expect_equal(get_report_date(result), get_report_date(test_data$ndata))
@@ -669,7 +663,7 @@ test_that("group_by preserves tbl_now attributes", {
 test_that("group_by handles multiple grouping variables", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>% dplyr::group_by(gender, age_group)
+  result <- test_data$ndata |> dplyr::group_by(gender, age_group)
 
   expect_s3_class(result, "grouped_tbl_now")
   expect_equal(length(dplyr::group_vars(result)), 2)
@@ -679,7 +673,7 @@ test_that("group_by returns tbl_now when no groups specified", {
   test_data <- setup_test_data()
 
   # Group by nothing
-  result <- test_data$ndata %>% dplyr::group_by()
+  result <- test_data$ndata |> dplyr::group_by()
 
   expect_s3_class(result, "tbl_now")
 })
@@ -688,8 +682,8 @@ test_that("group_by returns tbl_now when no groups specified", {
 test_that("ungroup removes grouping from grouped_tbl_now", {
   test_data <- setup_test_data()
 
-  grouped <- test_data$ndata %>% dplyr::group_by(gender)
-  result <- grouped %>% dplyr::ungroup()
+  grouped <- test_data$ndata |> dplyr::group_by(gender)
+  result <- grouped |> dplyr::ungroup()
 
   expect_s3_class(result, "tbl_now")
   expect_false(dplyr::is_grouped_df(result))
@@ -698,8 +692,8 @@ test_that("ungroup removes grouping from grouped_tbl_now", {
 test_that("ungroup preserves tbl_now attributes", {
   test_data <- setup_test_data()
 
-  grouped <- test_data$ndata %>% dplyr::group_by(gender)
-  result <- grouped %>% dplyr::ungroup()
+  grouped <- test_data$ndata |> dplyr::group_by(gender)
+  result <- grouped |> dplyr::ungroup()
 
   expect_equal(get_event_date(result), get_event_date(test_data$ndata))
   expect_equal(get_report_date(result), get_report_date(test_data$ndata))
@@ -709,8 +703,8 @@ test_that("ungroup preserves tbl_now attributes", {
 test_that("ungroup handles partial ungrouping", {
   test_data <- setup_test_data()
 
-  grouped <- test_data$ndata %>% dplyr::group_by(gender, age_group)
-  result <- grouped %>% dplyr::ungroup(gender)
+  grouped <- test_data$ndata |> dplyr::group_by(gender, age_group)
+  result <- grouped |> dplyr::ungroup(gender)
 
   # Should still be grouped by age_group
   expect_true(dplyr::is_grouped_df(result))
@@ -722,9 +716,9 @@ test_that("summarise maintains tbl_now when valid", {
   test_data <- setup_test_data()
 
   result <- suppressWarnings(
-    test_data$ndata %>%
-    dplyr::group_by(gender) %>%
-    dplyr::summarise(mean_value = mean(value), .groups = "drop")
+    test_data$ndata |>
+      dplyr::group_by(gender) |>
+      dplyr::summarise(mean_value = mean(value), .groups = "drop")
   )
 
   # Should try to maintain tbl_now if possible
@@ -736,7 +730,7 @@ test_that("summarise drops to tibble when losing required columns", {
   test_data <- setup_test_data()
 
   expect_warning(
-    result <- test_data$ndata %>%
+    result <- test_data$ndata |>
       summarise(total = sum(value)),
     "Dropping.*tbl_now"
   )
@@ -748,16 +742,16 @@ test_that("summarise drops to tibble when losing required columns", {
 test_that("summarise with grouped_tbl_now works", {
   test_data <- setup_test_data()
 
-  grouped <- test_data$ndata %>% dplyr::group_by(gender)
+  grouped <- test_data$ndata |> dplyr::group_by(gender)
 
   results <- suppressWarnings(
-    grouped %>%
+    grouped |>
       dplyr::summarise(mean_temp = mean(temperature), .groups = "drop")
   )
 
 
   resultz <- suppressWarnings(
-    grouped %>%
+    grouped |>
       dplyr::summarize(mean_temp = mean(temperature), .groups = "drop")
   )
 
@@ -773,14 +767,14 @@ test_that("summarize (American spelling) works", {
 
   # Test that both spellings work
   result1 <- suppressWarnings(
-    test_data$ndata %>%
-      dplyr::group_by(gender) %>%
+    test_data$ndata |>
+      dplyr::group_by(gender) |>
       dplyr::summarise(mean_value = mean(value), .groups = "drop")
   )
 
   result2 <- suppressWarnings(
-    test_data$ndata %>%
-      dplyr::group_by(gender) %>%
+    test_data$ndata |>
+      dplyr::group_by(gender) |>
       dplyr::summarize(mean_value = mean(value), .groups = "drop")
   )
 
@@ -793,12 +787,12 @@ test_that("summarize (American spelling) works in ungrouped", {
 
   # Test that both spellings work
   result1 <- suppressWarnings(
-    test_data$ndata %>%
+    test_data$ndata |>
       dplyr::summarise(mean_value = mean(value), .groups = "drop")
   )
 
   result2 <- suppressWarnings(
-    test_data$ndata %>%
+    test_data$ndata |>
       dplyr::summarize(mean_value = mean(value), .groups = "drop")
   )
 
@@ -889,7 +883,7 @@ test_that("tbl_now_reconstruct doesn't change now", {
 test_that("filter maintains tbl_now", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>% dplyr::filter(gender == "Male")
+  result <- test_data$ndata |> dplyr::filter(gender == "Male")
 
   expect_s3_class(result, "tbl_now")
   expect_equal(nrow(result), 2)
@@ -898,7 +892,7 @@ test_that("filter maintains tbl_now", {
 test_that("filter preserves attributes", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>% dplyr::filter(value > 15)
+  result <- test_data$ndata |> dplyr::filter(value > 15)
 
   expect_equal(get_event_date(result), get_event_date(test_data$ndata))
   expect_equal(get_strata(result), get_strata(test_data$ndata))
@@ -907,8 +901,8 @@ test_that("filter preserves attributes", {
 test_that("validate works with numeric", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>%
-    dplyr::mutate(report_week = as.numeric(difftime(report_week, min(onset_week), units = "weeks"))) %>%
+  result <- test_data$ndata |>
+    dplyr::mutate(report_week = as.numeric(difftime(report_week, min(onset_week), units = "weeks"))) |>
     dplyr::mutate(onset_week = as.numeric(difftime(onset_week, min(onset_week), units = "weeks")))
 
 
@@ -916,39 +910,34 @@ test_that("validate works with numeric", {
   expect_equal(get_strata(result), get_strata(test_data$ndata))
   expect_equal(result$onset_week, result$.event_num)
   expect_equal(result$report_week, result$.report_num)
-
 })
 
 test_that("test dropping delay column", {
-
   test_data <- setup_test_data()
 
   expect_warning(
-    test_data$ndata %>%
-      dplyr::select(- .delay),
+    test_data$ndata |>
+      dplyr::select(-.delay),
     "Dropped protected column"
   )
-
 })
 
 test_that("test dropping count column", {
-
   test_data <- setup_test_data()
 
   expect_warning(
-    test_data$ndata %>%
-      to_count(to = "count-incidence") %>%
+    test_data$ndata |>
+      to_count(to = "count-incidence") |>
       dplyr::select(-n),
     "Drop"
   )
-
 })
 
 # Tests for select ----
 test_that("select maintains tbl_now with protected columns", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>%
+  result <- test_data$ndata |>
     dplyr::select(onset_week, report_week, gender, .event_num, .report_num, is_censored, .delay)
 
   expect_s3_class(result, "tbl_now")
@@ -958,7 +947,7 @@ test_that("select drops to tibble without protected columns", {
   test_data <- setup_test_data()
 
   expect_warning(
-    result <- test_data$ndata %>% dplyr::select(gender, value),
+    result <- test_data$ndata |> dplyr::select(gender, value),
     "Dropped protected column"
   )
 
@@ -969,7 +958,7 @@ test_that("select drops to tibble without protected columns", {
 test_that("arrange maintains tbl_now", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>% dplyr::arrange(desc(value))
+  result <- test_data$ndata |> dplyr::arrange(desc(value))
 
   expect_s3_class(result, "tbl_now")
   expect_equal(nrow(result), nrow(test_data$ndata))
@@ -978,7 +967,7 @@ test_that("arrange maintains tbl_now", {
 test_that("arrange preserves attributes", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>% dplyr::arrange(onset_week)
+  result <- test_data$ndata |> dplyr::arrange(onset_week)
 
   expect_equal(get_event_date(result), get_event_date(test_data$ndata))
   expect_equal(get_strata(result), get_strata(test_data$ndata))
@@ -988,9 +977,9 @@ test_that("arrange preserves attributes", {
 test_that("chaining dplyr verbs maintains tbl_now", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>%
-    dplyr::filter(value > 15) %>%
-    dplyr::mutate(double_value = value * 2) %>%
+  result <- test_data$ndata |>
+    dplyr::filter(value > 15) |>
+    dplyr::mutate(double_value = value * 2) |>
     dplyr::arrange(desc(double_value))
 
   expect_s3_class(result, "tbl_now")
@@ -1001,8 +990,8 @@ test_that("group_by then summarise works correctly", {
   test_data <- setup_test_data()
 
   result <- suppressWarnings(
-    test_data$ndata %>%
-      dplyr::group_by(gender) %>%
+    test_data$ndata |>
+      dplyr::group_by(gender) |>
       dplyr::summarise(
         n = dplyr::n(),
         mean_value = mean(value),
@@ -1018,15 +1007,15 @@ test_that("complex dplyr operations maintain or drop class appropriately", {
   test_data <- setup_test_data()
 
   # Should maintain
-  result1 <- test_data$ndata %>%
-    dplyr::filter(gender == "Male") %>%
+  result1 <- test_data$ndata |>
+    dplyr::filter(gender == "Male") |>
     dplyr::mutate(new_val = value * 2)
 
   expect_s3_class(result1, "tbl_now")
 
   # Should drop
   expect_warning(
-    result2 <- test_data$ndata %>%
+    result2 <- test_data$ndata |>
       dplyr::select(gender, value),
     "Dropped protected column"
   )
@@ -1038,7 +1027,7 @@ test_that("complex dplyr operations maintain or drop class appropriately", {
 test_that("empty subset maintains structure", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>% dplyr::filter(value > 1000)
+  result <- test_data$ndata |> dplyr::filter(value > 1000)
 
   expect_s3_class(result, "tbl_now")
   expect_equal(nrow(result), 0)
@@ -1047,16 +1036,15 @@ test_that("empty subset maintains structure", {
 test_that("operations on grouped_tbl_now maintain structure", {
   test_data <- setup_test_data()
 
-  result <- test_data$ndata %>%
-    group_by(gender) %>%
-    dplyr::filter(value > 15) %>%
+  result <- test_data$ndata |>
+    group_by(gender) |>
+    dplyr::filter(value > 15) |>
     ungroup()
 
   expect_s3_class(result, "tbl_now")
   expect_false(dplyr::is_grouped_df(result))
 
-  expect_s3_class(test_data$ndata %>%
-                    group_by(gender) %>%
-                    dplyr::filter(value > 15), "grouped_tbl_now")
+  expect_s3_class(test_data$ndata |>
+    group_by(gender) |>
+    dplyr::filter(value > 15), "grouped_tbl_now")
 })
-

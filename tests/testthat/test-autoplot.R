@@ -4,7 +4,7 @@ library(dplyr, quietly = TRUE, warn.conflicts = FALSE)
 make_daily_now <- function() {
   set.seed(42)
   dates <- seq(as.Date("2021-01-01"), as.Date("2021-03-31"), by = "day")
-  rows  <- lapply(dates, function(d) {
+  rows <- lapply(dates, function(d) {
     max_delay <- rpois(1, 3)
     data.frame(
       event_date  = d,
@@ -13,9 +13,11 @@ make_daily_now <- function() {
     )
   })
   df <- do.call(rbind, rows)
-  tbl_now(df, event_date = event_date, report_date = report_date, case_count = n,
-          data_type = "count-incidence", event_units = "days", report_units = "days",
-          verbose = FALSE)
+  tbl_now(df,
+    event_date = event_date, report_date = report_date, case_count = n,
+    data_type = "count-incidence", event_units = "days", report_units = "days",
+    verbose = FALSE
+  )
 }
 
 test_that("autoplot.tbl_now returns a patchwork object (weekly linelist)", {
@@ -23,8 +25,10 @@ test_that("autoplot.tbl_now returns a patchwork object (weekly linelist)", {
   skip_if_not_installed("patchwork")
 
   data(denguedat)
-  dengue <- tbl_now(denguedat, event_date = "onset_week", report_date = "report_week",
-                    verbose = FALSE)
+  dengue <- tbl_now(denguedat,
+    event_date = "onset_week", report_date = "report_week",
+    verbose = FALSE
+  )
   p <- ggplot2::autoplot(dengue)
   expect_s3_class(p, "patchwork")
 })
@@ -36,7 +40,7 @@ test_that("autoplot.tbl_now works on daily count data", {
   p <- ggplot2::autoplot(make_daily_now())
   expect_s3_class(p, "patchwork")
   # daily data => 5 panels (delay, epidemic, day-of-week, week-of-year, periodogram)
-  expect_length(p$patches$plots, 4)  # patchwork stores n-1 in $plots + the last
+  expect_length(p$patches$plots, 4) # patchwork stores n-1 in $plots + the last
 })
 
 test_that("daily autoplot has 5 panels, weekly has 4", {
@@ -44,18 +48,20 @@ test_that("daily autoplot has 5 panels, weekly has 4", {
   skip_if_not_installed("patchwork")
 
   p_daily <- ggplot2::autoplot(make_daily_now())
-  expect_length(p_daily$patches$plots, 4)   # 5 panels
+  expect_length(p_daily$patches$plots, 4) # 5 panels
 
   data(denguedat)
-  dengue <- tbl_now(denguedat, event_date = "onset_week", report_date = "report_week",
-                    verbose = FALSE)
+  dengue <- tbl_now(denguedat,
+    event_date = "onset_week", report_date = "report_week",
+    verbose = FALSE
+  )
   p_weekly <- ggplot2::autoplot(dengue)
-  expect_length(p_weekly$patches$plots, 3)  # 4 panels
+  expect_length(p_weekly$patches$plots, 3) # 4 panels
 })
 
 test_that("calendar groupings depend on event units", {
-  expect_equal(tbl.now:::.tbl_now_calendar_groupings("days"),   c("weekday", "week"))
-  expect_equal(tbl.now:::.tbl_now_calendar_groupings("weeks"),  "week")
+  expect_equal(tbl.now:::.tbl_now_calendar_groupings("days"), c("weekday", "week"))
+  expect_equal(tbl.now:::.tbl_now_calendar_groupings("weeks"), "week")
   expect_equal(tbl.now:::.tbl_now_calendar_groupings("months"), "month")
   expect_length(tbl.now:::.tbl_now_calendar_groupings("numeric"), 0)
 })
@@ -70,8 +76,8 @@ test_that("autoplot.tbl_now validates level", {
   skip_if_not_installed("patchwork")
 
   nowobj <- make_daily_now()
-  expect_error(ggplot2::autoplot(nowobj, level = -1),   "level")
-  expect_error(ggplot2::autoplot(nowobj, level = 1.1),   "level")
+  expect_error(ggplot2::autoplot(nowobj, level = -1), "level")
+  expect_error(ggplot2::autoplot(nowobj, level = 1.1), "level")
   expect_error(ggplot2::autoplot(nowobj, level = 1.5), "level")
   expect_error(ggplot2::autoplot(nowobj, level = "a"), "level")
 })
@@ -86,7 +92,7 @@ test_that("autoplot.tbl_now accepts a custom level without error", {
 # --- internal helpers -------------------------------------------------------
 
 test_that("weighted quantile matches an unweighted quantile when weights equal", {
-  values  <- c(0, 1, 2, 3, 4, 5)
+  values <- c(0, 1, 2, 3, 4, 5)
   weights <- rep(1, length(values))
   q <- tbl.now:::.tbl_now_weighted_quantile(values, weights, 0.5)
   expect_true(q %in% values)
@@ -95,8 +101,8 @@ test_that("weighted quantile matches an unweighted quantile when weights equal",
 })
 
 test_that("weighted quantile respects weights", {
-  values  <- c(0, 10)
-  weights <- c(99, 1)             # nearly all mass at 0
+  values <- c(0, 10)
+  weights <- c(99, 1) # nearly all mass at 0
   expect_equal(tbl.now:::.tbl_now_weighted_quantile(values, weights, 0.95), 0)
   expect_equal(tbl.now:::.tbl_now_weighted_quantile(values, weights, 0.999), 10)
 })
@@ -125,14 +131,14 @@ test_that("calendar panel draws boxplots of a normalized effect centred on ~1", 
   skip_if_not_installed("ggplot2")
 
   nowobj <- make_daily_now()
-  panel  <- tbl.now:::.tbl_now_panel_calendar(
+  panel <- tbl.now:::.tbl_now_panel_calendar(
     tbl.now:::.tbl_now_epidemic_process(nowobj), "weekday", tbl.now:::.tbl_now_palette()
   )
   # geom_boxplot layer
   expect_s3_class(panel$layers[[1]]$geom, "GeomBoxplot")
 
-  built       <- ggplot2::ggplot_build(panel)
-  box_medians <- built$data[[1]]$middle  # boxplot medians per weekday
+  built <- ggplot2::ggplot_build(panel)
+  box_medians <- built$data[[1]]$middle # boxplot medians per weekday
   expect_true(all(box_medians > 0))
   expect_lt(abs(mean(box_medians) - 1), 0.5)
   expect_equal(panel$labels$y, "Normalized effect")
@@ -179,15 +185,15 @@ test_that(".tbl_now_apply_xlim adds a coord and rejects bad input", {
 
 test_that("holiday points are empty when there is no holiday spec", {
   nowobj <- make_daily_now()
-  ep     <- tbl.now:::.tbl_now_epidemic_process(nowobj)
-  hp     <- tbl.now:::.tbl_now_holiday_points(nowobj, ep)
+  ep <- tbl.now:::.tbl_now_epidemic_process(nowobj)
+  hp <- tbl.now:::.tbl_now_holiday_points(nowobj, ep)
   expect_equal(nrow(hp), 0)
 })
 
 test_that("holiday points are detected from a temporal_effects spec", {
   skip_if_not_installed("almanac")
 
-  nowobj <- make_daily_now() %>%
+  nowobj <- make_daily_now() |>
     add_temporal_effects(temporal_effects(holidays = almanac::cal_us_federal()))
   ep <- tbl.now:::.tbl_now_epidemic_process(nowobj)
   hp <- tbl.now:::.tbl_now_holiday_points(nowobj, ep)
@@ -200,7 +206,7 @@ test_that("autoplot renders with holidays marked", {
   skip_if_not_installed("patchwork")
   skip_if_not_installed("almanac")
 
-  nowobj <- make_daily_now() %>%
+  nowobj <- make_daily_now() |>
     add_temporal_effects(temporal_effects(holidays = almanac::cal_us_federal()))
   expect_s3_class(ggplot2::autoplot(nowobj), "patchwork")
 })

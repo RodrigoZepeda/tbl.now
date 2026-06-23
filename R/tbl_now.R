@@ -171,39 +171,41 @@
 #' @examples
 #' # The `tbl_now` is a data.frame with additional attributes
 #' data(denguedat)
-#' ndata <- denguedat %>%
-#'   tbl_now(event_date = onset_week, report_date = report_week,
-#'     strata = gender)
+#' ndata <- denguedat |>
+#'   tbl_now(
+#'     event_date = onset_week, report_date = report_week,
+#'     strata = gender
+#'   )
 #'
 #' # You can see that it documents the `event_date`, `report_date`, `strata`,
 #' # `covariates` as well as the `now`.
 #' ndata
 #'
 #'
-#' #A `tbl_now` is an extension of a `tibble` which means normal
-#' #`data.frame` operations are permitted
+#' # A `tbl_now` is an extension of a `tibble` which means normal
+#' # `data.frame` operations are permitted
 #' ndata$newcolumn <- "something"
 #' ndata
 #'
-#' #Like removing a column
-#' ndata[,-4]
+#' # Like removing a column
+#' ndata[, -4]
 #'
-#' #Like selecting
-#' ndata[1:10,]
+#' # Like selecting
+#' ndata[1:10, ]
 #'
-#' #You can also apply all dplyr functions:
-#' ndata %>%
+#' # You can also apply all dplyr functions:
+#' ndata |>
 #'   dplyr::filter(report_week <= as.Date("1991-01-02", format = "%Y-%m-%d"))
 #'
-#' #Removing an important column automatically transforms to tibble
-#' #losing its property
+#' # Removing an important column automatically transforms to tibble
+#' # losing its property
 #' suppressWarnings(
-#'   ndata %>%
+#'   ndata |>
 #'     dplyr::select(-onset_week)
 #' )
 #'
-#' #Removing strata just changes the overall structure
-#' ndata %>% dplyr::select(-gender)
+#' # Removing strata just changes the overall structure
+#' ndata |> dplyr::select(-gender)
 #'
 #' @return An object of class `tbl_now`.
 #'
@@ -227,54 +229,52 @@ tbl_now <- function(data,
                     warn_non_uniqueness = TRUE,
                     align_weeks = FALSE,
                     ...) {
-
-
-  #Check the data frame data--------
+  # Check the data frame data--------
   if (!is.data.frame(data)) {
     cli::cli_abort("{.arg data} must be a {.code data.frame}")
   }
 
-  if (dplyr::is.grouped_df(data)){
+  if (dplyr::is.grouped_df(data)) {
     cli::cli_warn("{.arg data} is grouped by {colnames(dplyr::group_keys(data))}. Ungrouping.")
-    data <- data %>% dplyr::ungroup()
+    data <- data |> dplyr::ungroup()
   }
 
 
   # Capture quosures first so we can detect NULL vs supplied and avoid the
   # tidyselect "external vector" deprecation in .tbl_now_eval_select().
-  event_date_quo  <- rlang::enquo(event_date)
+  event_date_quo <- rlang::enquo(event_date)
   report_date_quo <- rlang::enquo(report_date)
-  delay_quo       <- rlang::enquo(delay)
-  strata_quo      <- rlang::enquo(strata)
-  covariates_quo  <- rlang::enquo(covariates)
-  case_count_quo  <- rlang::enquo(case_count)
+  delay_quo <- rlang::enquo(delay)
+  strata_quo <- rlang::enquo(strata)
+  covariates_quo <- rlang::enquo(covariates)
+  case_count_quo <- rlang::enquo(case_count)
   is_censored_quo <- rlang::enquo(is_censored)
 
-  #Get event date column
+  # Get event date column
   if (!rlang::quo_is_null(event_date_quo)) {
     event_col_select <- .tbl_now_eval_select(event_date_quo, data)
-    event_date       <- colnames(data)[event_col_select]
+    event_date <- colnames(data)[event_col_select]
   } else {
     event_date <- character(0)
   }
 
   if (!rlang::quo_is_null(report_date_quo)) {
     report_col_select <- .tbl_now_eval_select(report_date_quo, data)
-    report_date       <- colnames(data)[report_col_select]
+    report_date <- colnames(data)[report_col_select]
   } else {
     report_date <- character(0)
   }
 
   if (!rlang::quo_is_null(delay_quo)) {
     delay_col_select <- .tbl_now_eval_select(delay_quo, data)
-    delay_col        <- colnames(data)[delay_col_select]
+    delay_col <- colnames(data)[delay_col_select]
   } else {
     delay_col <- character(0)
   }
 
-  has_event  <- length(event_date)  == 1
+  has_event <- length(event_date) == 1
   has_report <- length(report_date) == 1
-  has_delay  <- length(delay_col)   == 1
+  has_delay <- length(delay_col) == 1
 
   # Validate that we have enough information to determine both dates
   if (!has_event && !has_report) {
@@ -301,10 +301,12 @@ tbl_now <- function(data,
     if (delay_col[1] == ".event_date") {
       cli::cli_abort("Delay column cannot be named {.val .event_date}; that name is reserved for the reconstructed column.")
     }
-    data        <- .reconstruct_date_from_delay(data, known_col = report_date[1],
-                                                delay_col = delay_col[1], units = pre_units,
-                                                new_col_name = ".event_date", direction = "subtract")
-    event_date  <- ".event_date"
+    data <- .reconstruct_date_from_delay(data,
+      known_col = report_date[1],
+      delay_col = delay_col[1], units = pre_units,
+      new_col_name = ".event_date", direction = "subtract"
+    )
+    event_date <- ".event_date"
     event_units <- pre_units
     if (verbose) cli::cli_alert_info("Computed {.val .event_date} from {.val {report_date[1]}} - delay ({pre_units}).")
   } else if (!has_report && has_event && has_delay) {
@@ -316,11 +318,13 @@ tbl_now <- function(data,
     if (delay_col[1] == ".report_date") {
       cli::cli_abort("Delay column cannot be named {.val .report_date}; that name is reserved for the reconstructed column.")
     }
-    data         <- .reconstruct_date_from_delay(data, known_col = event_date[1],
-                                                 delay_col = delay_col[1], units = pre_units,
-                                                 new_col_name = ".report_date", direction = "add")
-    report_date  <- ".report_date"
-    event_units  <- pre_units
+    data <- .reconstruct_date_from_delay(data,
+      known_col = event_date[1],
+      delay_col = delay_col[1], units = pre_units,
+      new_col_name = ".report_date", direction = "add"
+    )
+    report_date <- ".report_date"
+    event_units <- pre_units
     if (report_units == "auto") report_units <- pre_units
     if (verbose) cli::cli_alert_info("Computed {.val .report_date} from {.val {event_date[1]}} + delay ({pre_units}).")
   }
@@ -328,57 +332,57 @@ tbl_now <- function(data,
   # If the user's delay column is named ".delay" it will conflict with time_cols_to_numeric;
   # drop it now since it will be recomputed from the numerics.
   if (has_delay && delay_col[1] == ".delay" && ".delay" %in% colnames(data)) {
-    data <- data %>% dplyr::select(-!!as.symbol(".delay"))
+    data <- data |> dplyr::select(-!!as.symbol(".delay"))
   }
 
-  case_count_select  <- .tbl_now_eval_select(case_count_quo,  data)
-  case_count         <- colnames(data)[case_count_select]
+  case_count_select <- .tbl_now_eval_select(case_count_quo, data)
+  case_count <- colnames(data)[case_count_select]
   if (length(case_count) == 0) case_count <- NULL
 
   is_censored_select <- .tbl_now_eval_select(is_censored_quo, data)
-  is_censored        <- colnames(data)[is_censored_select]
+  is_censored <- colnames(data)[is_censored_select]
   if (length(is_censored) == 0) is_censored <- NULL
 
-  strata_select      <- .tbl_now_eval_select(strata_quo,      data)
-  strata             <- colnames(data)[strata_select]
+  strata_select <- .tbl_now_eval_select(strata_quo, data)
+  strata <- colnames(data)[strata_select]
   if (length(strata) == 0) strata <- NULL
 
-  covariates_select  <- .tbl_now_eval_select(covariates_quo,  data)
-  covariates         <- colnames(data)[covariates_select]
+  covariates_select <- .tbl_now_eval_select(covariates_quo, data)
+  covariates <- colnames(data)[covariates_select]
   if (length(covariates) == 0) covariates <- NULL
 
 
-  if (length(case_count) > 1){
+  if (length(case_count) > 1) {
     cli::cli_abort(
       "{.code case_count} has to be either `NULL` or a character with just one column name."
     )
   }
 
-  #Check the date columns are dates-------
+  # Check the date columns are dates-------
   check_date_columns(data, event_date = event_date, report_date = report_date)
 
-  #Check the strata-----
+  # Check the strata-----
   num_strata <- length(strata)
-  if (!is.null(strata) && num_strata > 1){
+  if (!is.null(strata) && num_strata > 1) {
     if (!is.character(strata)) {
       cli::cli_abort("{.arg strata} must be either `NULL` or a string of column names")
     }
 
-    for (st in strata){
+    for (st in strata) {
       if (!(st %in% colnames(data))) {
         cli::cli_abort("{.arg strata} = {st} not found in data")
       }
     }
   }
 
-  #Check the covariates
+  # Check the covariates
   num_covariates <- length(covariates)
-  if (!is.null(covariates) && num_covariates > 1){
+  if (!is.null(covariates) && num_covariates > 1) {
     if (!is.character(covariates)) {
       cli::cli_abort("{.arg covariates} must be either `NULL` or a string of column names")
     }
 
-    for (cv in covariates){
+    for (cv in covariates) {
       if (!(cv %in% colnames(data))) {
         cli::cli_abort("{.arg covariates} = {cv} not found in data")
       }
@@ -387,37 +391,39 @@ tbl_now <- function(data,
 
   # Infer automatic variables------
 
-  #Infer the now
-  now          <- infer_now(data, now = now, event_date = event_date, report_date = report_date)
+  # Infer the now
+  now <- infer_now(data, now = now, event_date = event_date, report_date = report_date)
 
   # Infer the date_units whether it is daily, weekly, monthly or yearly
-  event_units  <- infer_units(data, date_column = event_date, date_units = event_units)
+  event_units <- infer_units(data, date_column = event_date, date_units = event_units)
   report_units <- infer_units(data, date_column = report_date, date_units = report_units)
 
   # Get whether data is count or line data
-  data_type    <- infer_data_type(data, data_type = data_type,
-                                  event_date = event_date, report_date = report_date,
-                                  strata = strata,
-                                  is_censored = is_censored,
-                                  case_count = case_count, verbose = verbose)
+  data_type <- infer_data_type(data,
+    data_type = data_type,
+    event_date = event_date, report_date = report_date,
+    strata = strata,
+    is_censored = is_censored,
+    case_count = case_count, verbose = verbose
+  )
 
   # Capture all other attributes
-  other_attrs  <- list(...)
+  other_attrs <- list(...)
 
   # === 3. Attribute Assignment ===
   data <- dplyr::as_tibble(data)
 
   # Set the core attributes (if adding new attributes here change in validate_tbl_now too)
-  attr(data, "event_date")     <- event_date
-  attr(data, "report_date")    <- report_date
-  attr(data, "case_count")       <- case_count
-  attr(data, "strata")         <- strata
-  attr(data, "covariates")     <- covariates
-  attr(data, "now")            <- now
-  attr(data, "event_units")    <- event_units
-  attr(data, "report_units")   <- report_units
-  attr(data, "data_type")      <- data_type
-  attr(data, "is_censored")     <- is_censored
+  attr(data, "event_date") <- event_date
+  attr(data, "report_date") <- report_date
+  attr(data, "case_count") <- case_count
+  attr(data, "strata") <- strata
+  attr(data, "covariates") <- covariates
+  attr(data, "now") <- now
+  attr(data, "event_units") <- event_units
+  attr(data, "report_units") <- report_units
+  attr(data, "data_type") <- data_type
+  attr(data, "is_censored") <- is_censored
 
   # Add all other attributes from ...
   for (attr_name in names(other_attrs)) {
@@ -425,21 +431,23 @@ tbl_now <- function(data,
   }
 
   # Add report_num and event_num the numerical columns
-  if (".event_num" %in% colnames(data) && !force){
+  if (".event_num" %in% colnames(data) && !force) {
     cli::cli_abort(
       "Data already has a column named {.val .event_num} which this class uses to save the numeric version of the event_date. Please rename your {.val .event_num} column."
     )
   }
-  if (".report_num" %in% colnames(data) && !force){
+  if (".report_num" %in% colnames(data) && !force) {
     cli::cli_abort(
       "Data already has a column named {.val .report_num} which this class uses to save the numeric version of the report_date. Please rename your {.val .report_num} column."
     )
   }
 
-  #Convert time columns to numeric
-  data <- time_cols_to_numeric(data, event_date = event_date, report_date = report_date,
-                               event_units = event_units, report_units = report_units,
-                               force = force)
+  # Convert time columns to numeric
+  data <- time_cols_to_numeric(data,
+    event_date = event_date, report_date = report_date,
+    event_units = event_units, report_units = report_units,
+    force = force
+  )
 
 
   # === 4. Class Assignment ===
@@ -447,21 +455,21 @@ tbl_now <- function(data,
   class(data) <- c("tbl_now", class(data))
 
   # Temporal effects: stored lazily as a list of specs; columns computed only by compute_temporal_effects()
-  attr(data, "temporal_effects")              <- list()
+  attr(data, "temporal_effects") <- list()
   attr(data, "computed_temporal_effect_cols") <- character(0)
-  if (!is.null(t_effects) && S7::S7_inherits(t_effects, class = temporal_effects)){
+  if (!is.null(t_effects) && S7::S7_inherits(t_effects, class = temporal_effects)) {
     data <- add_temporal_effects(data, t_effects = t_effects)
-  } else if (!is.null(t_effects) && is.character(t_effects)){
+  } else if (!is.null(t_effects) && is.character(t_effects)) {
     # Caller supplies already-computed column names directly  (for example in `to_count`)
     attr(data, "computed_temporal_effect_cols") <- t_effects
   }
 
-  #Validate
+  # Validate
   validate_tbl_now(data, warn_non_uniqueness = warn_non_uniqueness)
 
-  #Align weeks
-  if (align_weeks && get_report_units(data) == "weeks" && get_event_units(data) == "weeks"){
-    data <- data %>% align_weeks()
+  # Align weeks
+  if (align_weeks && get_report_units(data) == "weeks" && get_event_units(data) == "weeks") {
+    data <- data |> align_weeks()
   }
 
 
@@ -488,8 +496,7 @@ tbl_now <- function(data,
 #' @keywords internal
 #' @noRd
 .tbl_now_eval_select <- function(quo, data) {
-
-  .EVAL_FAILED <- new.env(parent = emptyenv())  # sentinel for failed eval_tidy
+  .EVAL_FAILED <- new.env(parent = emptyenv()) # sentinel for failed eval_tidy
 
   expr <- rlang::quo_get_expr(quo)
 
@@ -500,7 +507,7 @@ tbl_now <- function(data,
 
   # Case 2: literal string(s) — fast path, no eval_select needed
   if (is.character(expr)) {
-    idx     <- match(expr, colnames(data))
+    idx <- match(expr, colnames(data))
     missing <- expr[is.na(idx)]
     if (length(missing) > 0) {
       cli::cli_abort("Column{?s} {.val {missing}} not found in data.")
@@ -522,7 +529,9 @@ tbl_now <- function(data,
   } else if (is.character(val)) {
     # Expression evaluates to a character vector of column names — use all_of()
     # to suppress the tidyselect "external vector" deprecation.
-    if (length(val) == 0L) return(stats::setNames(integer(0), character(0)))
+    if (length(val) == 0L) {
+      return(stats::setNames(integer(0), character(0)))
+    }
     tidyselect::eval_select(rlang::expr(dplyr::all_of(!!val)), data)
   } else {
     # Fallback: hand off to eval_select for anything else
@@ -551,7 +560,6 @@ tbl_now <- function(data,
 #' @keywords internal
 #' @noRd
 .reconstruct_date_from_delay <- function(data, known_col, delay_col, units, new_col_name, direction) {
-
   known_vals <- data[[known_col]]
   delay_vals <- data[[delay_col]]
 

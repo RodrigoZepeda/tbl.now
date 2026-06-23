@@ -1,3 +1,21 @@
+# tbl.now 0.8.1
+
+* Removed the `%>%` export and changed all the pipes to `|>`
+* Refactored `converters.R` for readability (dplyr column operations instead of
+base indexing, full variable names, lintr-clean).
+* The `tbl_now_to_*()` converters now keep the `covariates` and `is_censored`
+columns wherever the target format can hold them (`data.table`, `tsibble`,
+`baselinenowcast` long format, `epidist` linelist); the fixed modelling objects
+(`enw_preprocess_data`, the reporting-triangle matrix, the EpiNow2 series) still
+cannot carry them.
+* Added S3 methods on the other packages' coercion generics so they accept a
+`tbl_now` directly: `as_epidist_linelist_data()`, `as_reporting_triangle()`,
+`as_tsibble()` and `as.data.table()`, each wrapping the matching
+`tbl_now_to_*()`.
+* Fixed `tbl_now_to_data_table()` checking for `baselinenowcast` instead of
+`data.table`, and `tbl_now_to_baselinenowcast(format = "long")` no longer
+requiring `baselinenowcast` to be installed.
+
 # tbl.now 0.8.0
 
 * Modified the `update` as the `t_effect` argument was not doing anything. 
@@ -11,6 +29,18 @@ as censored (their delay becomes an upper bound).
 and ensured every exported function has a `@return`.
 * Homogenized `lifecycle` badges. 
 * Brought the `censor_delays_above` function from `diseasenowcasting` to `tbl_now`. 
+* `tbl_now_from_epinowcast()` now accepts not only the raw long input but also a
+preprocessed `enw_preprocess_data` object or a fitted `epinowcast` object
+(grouping auto-detected), matching the format `epinowcast` uses for summaries
+and plots.
+* `tbl_now_to_EpiNow2()` gained a `model` argument: `"estimate_infections"`
+(default, the single `date`/`confirm` series) and `"estimate_truncation"` (a
+list of report-date snapshots, the one EpiNow2 model that uses the report
+dimension). Documentation clarified accordingly.
+* Fixed two converter `requireNamespace()` guards: `tbl_now_to_data_table()`
+checked for `baselinenowcast` instead of `data.table`, and
+`tbl_now_to_baselinenowcast(format = "long")` no longer requires
+`baselinenowcast` to be installed.
 
 # tbl.now 0.7.5
 

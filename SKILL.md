@@ -191,7 +191,7 @@ week of reports all land on the same later day). The `is_censored` attribute
 stores the **name of a logical column** (`TRUE`/`FALSE` per row).
 
 ```r
-df <- df %>% mutate(was_batched = report_date == as.Date("2021-03-15"))
+df <- df |> mutate(was_batched = report_date == as.Date("2021-03-15"))
 tn <- tbl_now(df, event_date = onset, report_date = reported,
               is_censored = was_batched, verbose = FALSE)
 
@@ -266,8 +266,8 @@ calendar from recurring rules with `rholiday(rschedule, name)` and `rcalendar()`
 library(almanac)
 
 # A fixed-date holiday: Mexican Independence Day, every Sep 16
-indep <- yearly() %>%
-  recur_on_month_of_year("Sep") %>%
+indep <- yearly() |>
+  recur_on_month_of_year("Sep") |>
   recur_on_day_of_month(16)
 
 # Combine custom + built-in holidays into one calendar
@@ -282,8 +282,8 @@ almanac::alma_in(as.Date(c("2023-09-16", "2023-12-25", "2023-06-01")), mx_calend
 #> TRUE TRUE FALSE
 
 # Use it as a temporal effect
-tn <- tn %>%
-  add_temporal_effects(temporal_effects(holidays = mx_calendar)) %>%
+tn <- tn |>
+  add_temporal_effects(temporal_effects(holidays = mx_calendar)) |>
   compute_temporal_effects()
 ```
 
@@ -374,9 +374,9 @@ so a converted object round-trips straight back.
 
 | Package | from | to | Mapping |
 |---------|:---:|:---:|---------|
-| epinowcast | ✅ | ✅ | `reference_date`/`report_date`/`confirm` ↔ count-cumulative; `to` builds `enw_preprocess_data` (or completed `data.table` with `preprocess = FALSE`) |
+| epinowcast | ✅ | ✅ | `reference_date`/`report_date`/`confirm` ↔ count-cumulative. `from` accepts the raw long input, a preprocessed `enw_preprocess_data` object, **or** a fitted `epinowcast` object (grouping auto-detected). `to` builds the preprocessed `enw_preprocess_data` object (or the completed-input `data.table` with `preprocess = FALSE`) |
 | baselinenowcast | ✅ | ✅ | long df **or** reporting-triangle matrix ↔ count-incidence; `to` has `format = c("long","matrix")` |
-| EpiNow2 | ❌ | ✅ | `to` only — collapses to a single `date`/`confirm` series (single time index) |
+| EpiNow2 | ❌ | ✅ | `to` only. `model = "estimate_infections"` (default) → a single `date`/`confirm` series for `estimate_infections()`/`epinow()`. `model = "estimate_truncation"` → a list of `date`/`confirm` snapshots (one per report date) for `estimate_truncation()`, which *does* use the report dimension |
 | data.table | ✅ | ✅ | `tbl_now_from_data_table()` / `tbl_now_to_data_table()` (underscores) |
 | epidist | ✅ | ✅ | epidist 0.4.0 interval-censored dates; `format = "linelist"` uses lower bounds as dates, `format = "interval"` attaches upper bounds as covariates |
 | tsibble | ✅ | ✅ | `to` builds a `tbl_ts` (index defaults to `report_date`, key = other date + strata); `from` needs `event_date`, recovers strata from the key |

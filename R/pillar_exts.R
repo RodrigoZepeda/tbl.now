@@ -16,16 +16,18 @@
 #' @keywords internal
 #' @noRd
 .format_temporal_effects_spec <- function(specs) {
-  if (is.null(specs) || length(specs) == 0) return(NULL)
+  if (is.null(specs) || length(specs) == 0) {
+    return(NULL)
+  }
 
   parts <- vapply(specs, function(sp) {
-    t      <- sp$t_effects
-    effs   <- character(0)
-    if (t@day_of_week)   effs <- c(effs, "day_of_week")
-    if (t@weekend)       effs <- c(effs, "weekend")
-    if (t@day_of_month)  effs <- c(effs, "day_of_month")
+    t <- sp$t_effects
+    effs <- character(0)
+    if (t@day_of_week) effs <- c(effs, "day_of_week")
+    if (t@weekend) effs <- c(effs, "weekend")
+    if (t@day_of_month) effs <- c(effs, "day_of_month")
     if (t@month_of_year) effs <- c(effs, "month_of_year")
-    if (t@week_of_year)  effs <- c(effs, "week_of_year")
+    if (t@week_of_year) effs <- c(effs, "week_of_year")
     if (length(t@seasons) > 0) {
       periods <- t@seasons * t@season_length
       effs <- c(effs, paste0("season(", paste(periods, collapse = ","), ")"))
@@ -43,7 +45,9 @@
 tbl_sum.tbl_now <- function(x, ...) {
   default_header <- NextMethod()
   c(default_header,
-    "Data type" = cli::cli_fmt({cli::cli_text("{.val {get_data_type(x)}}")}),
+    "Data type" = cli::cli_fmt({
+      cli::cli_text("{.val {get_data_type(x)}}")
+    }),
     "Frequency" = cli::cli_fmt({
       cli::cli_text("Event: {.code {get_event_units(x)}} | Report: {.code {get_report_units(x)}}")
     })
@@ -58,18 +62,18 @@ tbl_format_footer.tbl_now <- function(x, ...) {
   footer <- cli::cli_fmt({
     cli::cli_rule()
     cli::cli_text("Now: {.val {get_now(x)}} | Event date: {.val {get_event_date(x)}} | Report date: {.val {get_report_date(x)}}")
-    if (length(get_is_censored(x)) > 0){
+    if (length(get_is_censored(x)) > 0) {
       cli::cli_text("Right-censored indicator: {.val {get_is_censored(x)}}")
     }
-    if (get_num_strata(x) > 0){
+    if (get_num_strata(x) > 0) {
       cli::cli_text("Strata: {.val {get_strata(x)}}")
     }
-    if (get_num_covariates(x) > 0){
+    if (get_num_covariates(x) > 0) {
       cli::cli_text("Covariates: {.val {get_covariates(x)}}")
     }
 
     # Show temporal-effects spec and (if computed) the column names
-    specs    <- get_temporal_effects(x)
+    specs <- get_temporal_effects(x)
     computed <- get_temporal_effect_cols(x)
     if (!is.null(specs) && length(specs) > 0) {
       spec_str <- .format_temporal_effects_spec(specs)
@@ -83,7 +87,7 @@ tbl_format_footer.tbl_now <- function(x, ...) {
 
     cli::cli_rule()
   })
-  c(paste("#",footer), default_footer)
+  c(paste("#", footer), default_footer)
 }
 
 #' @importFrom pillar ctl_new_pillar
@@ -93,7 +97,7 @@ ctl_new_pillar.tbl_now <- function(controller, x, width, ...) {
 
   cval <- out$title[[1]][[1]]
 
-  if (!is.null(cval)){
+  if (!is.null(cval)) {
     if (cval == get_event_date(controller)) {
       annotation <- "[event_date]"
     } else if (cval == get_report_date(controller)) {
@@ -107,7 +111,7 @@ ctl_new_pillar.tbl_now <- function(controller, x, width, ...) {
     } else if (identical(cval, get_case_count(controller))) {
       annotation <- "[cases]"
     } else if (length(get_temporal_effect_cols(controller)) > 0 &&
-               (cval %in% get_temporal_effect_cols(controller))) {
+      (cval %in% get_temporal_effect_cols(controller))) {
       annotation <- "[t_effect]"
     } else {
       annotation <- "[...]"

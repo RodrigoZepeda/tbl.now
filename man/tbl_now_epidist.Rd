@@ -39,7 +39,8 @@ delay data.}
 lower-bound dates. Default to epidist's \code{"pdate_lwr"} / \code{"sdate_lwr"}.}
 
 \item{primary_upper, secondary_upper}{Column names of the upper-bound dates
-(\code{format = "interval"}). Default to epidist's \code{"pdate_upr"} / \code{"sdate_upr"}.}
+(\code{format = "interval"}). Default to epidist's \code{"pdate_upr"} /
+\code{"sdate_upr"}.}
 
 \item{verbose}{Logical. Print the choices that were made.}
 

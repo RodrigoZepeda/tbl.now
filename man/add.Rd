@@ -45,18 +45,19 @@ and \code{\link[dplyr:where]{dplyr::where()}}. See \code{\link[dplyr:select]{dpl
 \examples{
 data(denguedat)
 ndata <- tbl_now(denguedat,
-                 event_date = onset_week,
-                 report_date = report_week,
-                 verbose = FALSE)
+  event_date = onset_week,
+  report_date = report_week,
+  verbose = FALSE
+)
 
 # Add strata
-ndata <- ndata \%>\% add_strata(dplyr::starts_with("gender"))
+ndata <- ndata |> add_strata(dplyr::starts_with("gender"))
 ndata
 
 # Add covariates
 ndata$temperature <- rnorm(nrow(ndata), 25, 4)
-ndata$humidity    <- rbeta(nrow(ndata), 0.6, 0.4)
-ndata <- ndata \%>\% add_covariates(temperature, humidity)
+ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
+ndata <- ndata |> add_covariates(temperature, humidity)
 ndata
 
 }

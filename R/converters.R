@@ -5,11 +5,15 @@
 #   tbl_now_from_<pkg>()  package data  -> tbl_now   (wraps as_tbl_now())
 #   tbl_now_to_<pkg>()    tbl_now       -> package object (calls into the pkg)
 #
-# This file is organised in three blocks:
+# This file is organised in four blocks:
 #   1. internal helpers
 #   2. all tbl_now_from_*() converters
 #   3. all tbl_now_to_*() converters
-#   4. as_tbl_now() methods for the classes produced by tbl_now_to_*()
+#   4. S3 methods on the other packages' coercion generics (e.g.
+#      `as_tsibble.tbl_now()`), each wrapping the matching tbl_now_to_*()
+#
+# (The `as_tbl_now()` methods for the classes produced by tbl_now_to_*() live
+# next to the `as_tbl_now()` generic in `R/as_tbl_now.R`.)
 #
 # All `tbl_now_from_*()` accept `...` which is forwarded to `as_tbl_now()`
 # (and therefore to `tbl_now()`).  All functions accept `verbose` which prints
@@ -27,9 +31,9 @@
 #' caller passes it through `dots`, because the converters print their own
 #' summary.
 #'
-#' @param df A data frame to convert.
-#' @param dots A list of extra arguments forwarded by the caller (the converter's
-#'   `...`), passed on to [as_tbl_now()].
+#' @param data A data frame to convert.
+#' @param dots A list of extra arguments forwarded by the caller (the
+#'   converter's `...`), passed on to [as_tbl_now()].
 #' @param ... Fixed arguments set by the converter (e.g. `event_date`,
 #'   `data_type`), passed on to [as_tbl_now()].
 #'
@@ -37,18 +41,23 @@
 #'
 #' @keywords internal
 #' @noRd
-.build_tbl_now <- function(df, dots, ...) {
+.build_tbl_now <- function(data, dots, ...) {
   # Drop the reserved generated columns if they were carried over (e.g. when a
-  # tbl_now was exported via tbl_now_to_*() and is being converted back). They
-  # are recomputed by tbl_now().
-  generated <- c(".event_num", ".report_num", ".delay")
-  if (any(generated %in% names(df))) {
-    df <- df[, setdiff(names(df), generated), drop = FALSE]
+  # tbl_now was exported via tbl_now_to_*() and is converted back); tbl_now()
+  # recomputes them.
+  generated_columns <- c(".event_num", ".report_num", ".delay")
+  data <- data |>
+    dplyr::select(-dplyr::any_of(generated_columns))
+
+  # The converters print their own summary, so keep tbl_now() quiet unless the
+  # caller explicitly asked for verbosity through `dots`.
+  fixed_arguments <- list(...)
+  all_arguments <- c(list(object = data), fixed_arguments, dots)
+  if (is.null(all_arguments$verbose)) {
+    all_arguments$verbose <- FALSE
   }
-  fixed <- list(...)
-  args  <- c(list(object = df), fixed, dots)
-  if (is.null(args$verbose)) args$verbose <- FALSE
-  do.call(as_tbl_now, args)
+
+  do.call(as_tbl_now, all_arguments)
 }
 
 #' Print a conversion summary for a `tbl_now_from_*()` converter
@@ -63,18 +72,33 @@
 #' @keywords internal
 #' @noRd
 .report_from <- function(result, source, verbose, extra = NULL) {
-  if (!isTRUE(verbose)) return(invisible(result))
+  if (!isTRUE(verbose)) {
+    return(invisible(result))
+  }
+
   cli::cli_h3("Converted {.pkg {source}} {.cls data} into a {.cls tbl_now}")
   cli::cli_ul()
   cli::cli_li("event_date: {.val {get_event_date(result)}}")
   cli::cli_li("report_date: {.val {get_report_date(result)}}")
   cli::cli_li("data_type: {.val {get_data_type(result)}}")
   cli::cli_li("now: {.val {as.character(get_now(result))}}")
-  cli::cli_li("units: event = {.val {get_event_units(result)}}, report = {.val {get_report_units(result)}}")
-  if (!is.null(get_strata(result)))     cli::cli_li("strata: {.val {get_strata(result)}}")
-  if (!is.null(get_covariates(result))) cli::cli_li("covariates: {.val {get_covariates(result)}}")
-  if (!is.null(get_case_count(result))) cli::cli_li("case_count: {.val {get_case_count(result)}}")
-  for (e in extra) cli::cli_li(e)
+  cli::cli_li("event_units: {.val {get_event_units(result)}}")
+  cli::cli_li("report_units: {.val {get_report_units(result)}}")
+
+  # Only show the optional attributes that are actually set.
+  if (!is.null(get_strata(result))) {
+    cli::cli_li("strata: {.val {get_strata(result)}}")
+  }
+  if (!is.null(get_covariates(result))) {
+    cli::cli_li("covariates: {.val {get_covariates(result)}}")
+  }
+  if (!is.null(get_case_count(result))) {
+    cli::cli_li("case_count: {.val {get_case_count(result)}}")
+  }
+  for (extra_line in extra) {
+    cli::cli_li(extra_line)
+  }
+
   cli::cli_end()
   invisible(result)
 }
@@ -90,9 +114,15 @@
 #' @noRd
 .need_pkg <- function(pkg) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
-    cli::cli_abort(
-      "Package {.pkg {pkg}} is required for this conversion. Install it with {.run install.packages(\"{pkg}\", repos = c(options('repos'), epinowcast = 'https://epinowcast.r-universe.dev'))}."
+    install_call <- paste0(
+      "install.packages(\"", pkg, "\", ",
+      "repos = c(options('repos'), ",
+      "epinowcast = 'https://epinowcast.r-universe.dev'))"
     )
+    cli::cli_abort(c(
+      "Package {.pkg {pkg}} is required for this conversion.",
+      "i" = paste0("Install it with: ", install_call)
+    ))
   }
 }
 
@@ -109,6 +139,29 @@
   if (!is_tbl_now(x)) {
     cli::cli_abort("{.arg x} must be a {.cls tbl_now} object for {.fn {fn}}.")
   }
+}
+
+#' Abort when required columns are absent from a data frame
+#'
+#' @param data A data frame.
+#' @param required Character vector of required column names.
+#' @param arg Name of the argument to reference in the error message.
+#'
+#' @return `NULL`, invisibly (aborts when a required column is missing).
+#'
+#' @keywords internal
+#' @noRd
+.assert_columns_present <- function(data, required, arg = "data") {
+  missing_columns <- setdiff(required, colnames(data))
+  if (length(missing_columns) > 0L) {
+    # qty() pins the pluralisation to `missing_columns` (otherwise cli cannot
+    # tell which interpolated vector should drive `{?s}`).
+    cli::cli_abort(
+      "Column{cli::qty(missing_columns)}{?s} {.val {missing_columns}} \\
+       not found in {.arg {arg}}."
+    )
+  }
+  invisible(NULL)
 }
 
 #' Drop explicit zero-count rows so the resulting `tbl_now` is minimal
@@ -131,10 +184,80 @@
   if (is.null(case_count_column) || !grepl("count", get_data_type(x))) {
     return(x)
   }
-  x %>%
+  x |>
     dplyr::filter(
       is.na(.data[[case_count_column]]) | .data[[case_count_column]] != 0
     )
+}
+
+#' Extract the long cumulative observations from any epinowcast representation
+#'
+#' \pkg{epinowcast} carries the same observations in several shapes: the raw
+#' long input `data.frame` (`reference_date`, `report_date`, cumulative
+#' `confirm`), the preprocessed object returned by
+#' [epinowcast::enw_preprocess_data()] (a nested `data.table` whose `obs`
+#' element holds those observations), and a fitted `epinowcast` object (which
+#' extends the preprocessed object). This pulls the long cumulative
+#' observations out of whichever it is given.
+#'
+#' @param data A raw long `data.frame`/`data.table`, an `enw_preprocess_data`
+#'   object, or a fitted `epinowcast` object.
+#' @param reference_date,report_date,confirm Column names (raw input only).
+#'
+#' @return A list with `observations` (a long `data.frame` of
+#'   `reference_date`/`report_date`/`confirm` plus any grouping columns),
+#'   the resolved column names, `strata` (the grouping columns when known, else
+#'   `NULL`), and `preprocessed` (`TRUE` when the input was an epinowcast
+#'   object).
+#'
+#' @keywords internal
+#' @noRd
+.epinowcast_obs <- function(data, reference_date = "reference_date",
+                            report_date = "report_date", confirm = "confirm") {
+  # Preprocessed object (or a fitted epinowcast object, which extends it).
+  if (inherits(data, "enw_preprocess_data") || inherits(data, "epinowcast")) {
+    .need_pkg("epinowcast")
+
+    # The cumulative observations live in the nested `obs` element; drop the
+    # padding rows that epinowcast adds for missing reference dates.
+    observations <- data$obs[[1]] |>
+      as.data.frame() |>
+      dplyr::filter(!is.na(.data$reference_date))
+
+    # The grouping columns (`by`) are stored as a list-column; keep the ones
+    # that survived into the observations.
+    strata_columns <- intersect(unlist(data$by), colnames(observations))
+
+    observations <- observations |>
+      dplyr::select(dplyr::all_of(
+        c("reference_date", "report_date", "confirm", strata_columns)
+      )) |>
+      dplyr::mutate(
+        reference_date = as.Date(.data$reference_date),
+        report_date    = as.Date(.data$report_date)
+      )
+
+    return(list(
+      observations   = observations,
+      reference_date = "reference_date",
+      report_date    = "report_date",
+      confirm        = "confirm",
+      strata         = if (length(strata_columns) > 0) strata_columns else NULL,
+      preprocessed   = TRUE
+    ))
+  }
+
+  # Raw long input data.frame / data.table.
+  observations <- as.data.frame(data)
+  .assert_columns_present(observations, c(reference_date, report_date, confirm))
+  list(
+    observations   = observations,
+    reference_date = reference_date,
+    report_date    = report_date,
+    confirm        = confirm,
+    strata         = NULL,
+    preprocessed   = FALSE
+  )
 }
 
 #' Expand a reporting-triangle matrix into a long incremental data frame
@@ -143,7 +266,7 @@
 #' (falling back to 0-based delays when the column names are not numeric); each
 #' non-`NA` cell becomes one row.
 #'
-#' @param m A reporting-triangle matrix (rownames = reference dates,
+#' @param triangle A reporting-triangle matrix (rownames = reference dates,
 #'   colnames = delays).
 #' @param delays_unit Unit of the delay axis: `"days"`, `"weeks"`, `"months"`
 #'   or `"years"`.
@@ -152,31 +275,42 @@
 #'
 #' @keywords internal
 #' @noRd
-.reporting_triangle_to_long <- function(m, delays_unit = "days") {
-  ref_chr <- rownames(m)
-  if (is.null(ref_chr)) {
-    cli::cli_abort("Reporting-triangle matrix must have reference dates as row names.")
+.reporting_triangle_to_long <- function(triangle, delays_unit = "days") {
+  reference_labels <- rownames(triangle)
+  if (is.null(reference_labels)) {
+    cli::cli_abort(
+      "Reporting-triangle matrix must have reference dates as row names."
+    )
   }
-  ref_dates <- as.Date(ref_chr)
-  delays    <- suppressWarnings(as.integer(colnames(m)))
-  if (any(is.na(delays))) delays <- seq_len(ncol(m)) - 1L
+  reference_dates <- as.Date(reference_labels)
 
-  step <- switch(delays_unit,
-    days = 1, weeks = 7, months = 30, years = 365, 1)
+  # Column names hold the delays; fall back to 0-based delays when they are not
+  # numeric.
+  delays <- suppressWarnings(as.integer(colnames(triangle)))
+  if (anyNA(delays)) {
+    delays <- seq_len(ncol(triangle)) - 1L
+  }
 
-  rows <- list()
-  for (i in seq_len(nrow(m))) {
-    for (j in seq_len(ncol(m))) {
-      val <- m[i, j]
-      if (is.na(val)) next
-      rows[[length(rows) + 1L]] <- data.frame(
-        reference_date = ref_dates[i],
-        report_date    = ref_dates[i] + delays[j] * step,
-        count          = as.numeric(val)
+  days_per_unit <- switch(delays_unit,
+    days = 1, weeks = 7, months = 30, years = 365, 1
+  )
+
+  # One row per (reference date, delay) cell, dropping the empty (NA) cells.
+  tidyr::expand_grid(
+    row_index    = seq_len(nrow(triangle)),
+    column_index = seq_len(ncol(triangle))
+  ) |>
+    dplyr::mutate(
+      reference_date = reference_dates[.data$row_index],
+      report_date    = reference_dates[.data$row_index] +
+        delays[.data$column_index] * days_per_unit,
+      count          = as.numeric(
+        triangle[cbind(.data$row_index, .data$column_index)]
       )
-    }
-  }
-  do.call(rbind, rows)
+    ) |>
+    dplyr::filter(!is.na(.data$count)) |>
+    dplyr::select(dplyr::all_of(c("reference_date", "report_date", "count"))) |>
+    as.data.frame()
 }
 
 # ===========================================================================
@@ -187,21 +321,37 @@
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
-#' `tbl_now_from_epinowcast()` takes the long observation `data.frame` used by
-#' \pkg{epinowcast} (with `reference_date`, `report_date` and a cumulative
-#' `confirm` column, plus optional grouping columns) and converts it into a
-#' `tbl_now` of `data_type = "count-cumulative"`.
+#' \pkg{epinowcast} represents the same observations in several shapes:
 #'
-#' `tbl_now_to_epinowcast()` takes a `tbl_now` and builds an
-#' [epinowcast::enw_preprocess_data()] object (or, with `preprocess = FALSE`,
-#' the completed observation `data.table`).
+#' * the **raw long input** `data.frame` (`reference_date`, `report_date` and a
+#'   **cumulative** `confirm` column, plus optional grouping columns) consumed
+#'   by [epinowcast::enw_preprocess_data()];
+#' * the **preprocessed object** returned by [epinowcast::enw_preprocess_data()]
+#'   (a nested `data.table` used downstream for modelling, summaries and
+#'   plotting);
+#' * a fitted `epinowcast` object (which extends the preprocessed object).
 #'
-#' @param data A `data.frame`/`data.table` in \pkg{epinowcast} long format.
+#' `tbl_now_from_epinowcast()` accepts **any** of these and converts the
+#' cumulative observations into a `tbl_now` of `data_type = "count-cumulative"`.
+#' When given a preprocessed or fitted object, the grouping (`by`) columns are
+#' detected automatically and the observations are those retained by
+#' preprocessing (i.e. truncated at `max_delay`).
+#'
+#' `tbl_now_to_epinowcast()` takes a `tbl_now` and, by default, builds the
+#' preprocessed [epinowcast::enw_preprocess_data()] object (the representation
+#' used for epinowcast's summaries and plots). With `preprocess = FALSE` it
+#' returns the completed long observation `data.table` (the model *input*
+#' format, as produced by [epinowcast::enw_complete_dates()]).
+#'
+#' @param data Source data: a raw long `data.frame`/`data.table`, an
+#'   `enw_preprocess_data` object, or a fitted `epinowcast` object.
 #' @param x A `tbl_now` object.
-#' @param reference_date,report_date,confirm Column names in `data`.
+#' @param reference_date,report_date,confirm Column names (raw input only;
+#'   ignored for preprocessed/fitted objects).
 #' @param strata Optional character vector of grouping columns. If `NULL`
-#'   (default) any column other than `reference_date`, `report_date` and
-#'   `confirm` is treated as a stratifying group.
+#'   (default) the grouping is taken from the preprocessed object's `by`, or,
+#'   for raw input, any column other than `reference_date`, `report_date` and
+#'   `confirm`.
 #' @param max_delay Maximum delay (in `timestep`s) to use when preprocessing.
 #'   If `NULL` it is inferred from the data as `max(.delay) + 1`.
 #' @param preprocess If `TRUE` (default) returns an `enw_preprocess_data`
@@ -214,38 +364,52 @@
 #'   `tbl_now_to_epinowcast()` returns an `enw_preprocess_data` object or a
 #'   `data.table`.
 #'
+#' @section Round-trip:
+#' `tbl_now_from_epinowcast(tbl_now_to_epinowcast(x))` recovers `x` up to the
+#' `max_delay` truncation that epinowcast applies during preprocessing: reports
+#' with a delay beyond `max_delay` are dropped by
+#' [epinowcast::enw_preprocess_data()] and so are absent from the result.
+#'
 #' @examplesIf requireNamespace("epinowcast", quietly = TRUE)
 #' obs <- epinowcast::germany_covid19_hosp
+#'
+#' # From the raw long input format ...
 #' nowobj <- tbl_now_from_epinowcast(obs, strata = c("location", "age_group"))
+#'
+#' # ... or straight from a preprocessed epinowcast object
+#' pre <- tbl_now_to_epinowcast(nowobj, verbose = FALSE)
+#' tbl_now_from_epinowcast(pre, verbose = FALSE)
 #' @name tbl_now_epinowcast
 #' @export
 tbl_now_from_epinowcast <- function(data, ...,
                                     reference_date = "reference_date",
-                                    report_date    = "report_date",
-                                    confirm        = "confirm",
-                                    strata         = NULL,
-                                    verbose        = TRUE) {
+                                    report_date = "report_date",
+                                    confirm = "confirm",
+                                    strata = NULL,
+                                    verbose = TRUE) {
+  parsed <- .epinowcast_obs(data, reference_date, report_date, confirm)
 
-  data <- as.data.frame(data)
-  needed <- c(reference_date, report_date, confirm)
-  if (!all(needed %in% colnames(data))) {
-    miss <- needed[!(needed %in% colnames(data))]
-    cli::cli_abort("Column{?s} {.val {miss}} not found in {.arg data}.")
-  }
-
-  # Auto-detect strata as the remaining columns if not provided
+  # Strata precedence: explicit argument > grouping detected on a preprocessed
+  # object > (raw input only) any remaining non-core columns.
   if (is.null(strata)) {
-    strata <- setdiff(colnames(data), needed)
-    if (length(strata) == 0) strata <- NULL
+    strata <- parsed$strata
+    if (is.null(strata) && !parsed$preprocessed) {
+      core_columns <- c(
+        parsed$reference_date, parsed$report_date, parsed$confirm
+      )
+      strata <- setdiff(colnames(parsed$observations), core_columns)
+      if (length(strata) == 0) strata <- NULL
+    }
   }
 
   result <- .build_tbl_now(
-    data, dots = list(...),
-    event_date  = reference_date,
-    report_date = report_date,
-    case_count  = confirm,
-    strata      = strata,
-    data_type   = "count-cumulative"
+    parsed$observations,
+    dots = list(...),
+    event_date = parsed$reference_date,
+    report_date = parsed$report_date,
+    case_count = parsed$confirm,
+    strata = strata,
+    data_type = "count-cumulative"
   )
 
   # epinowcast data is completed (explicit zeros); keep the tbl_now minimal.
@@ -289,40 +453,40 @@ tbl_now_from_epinowcast <- function(data, ...,
 #' @export
 tbl_now_from_baselinenowcast <- function(data, ...,
                                          reference_date = "reference_date",
-                                         report_date    = "report_date",
-                                         count          = "count",
-                                         delays_unit    = "days",
-                                         verbose        = TRUE) {
-
-  # Matrix / reporting_triangle: expand to long incremental form
+                                         report_date = "report_date",
+                                         count = "count",
+                                         delays_unit = "days",
+                                         verbose = TRUE) {
+  # A reporting-triangle matrix is expanded to long incremental form; a long
+  # data frame is selected and renamed to the canonical column names.
   if (is.matrix(data) || inherits(data, "reporting_triangle")) {
-    long  <- .reporting_triangle_to_long(data, delays_unit = delays_unit)
-    df    <- long
-    extra <- "expanded a reporting-triangle matrix to long incremental counts"
+    long_data <- .reporting_triangle_to_long(data, delays_unit = delays_unit)
+    extra_message <- "expanded a reporting-triangle matrix to long counts"
   } else {
-    df <- as.data.frame(data)
-    if (!all(c(reference_date, report_date, count) %in% colnames(df))) {
-      miss <- c(reference_date, report_date, count)
-      miss <- miss[!(miss %in% colnames(df))]
-      cli::cli_abort("Column{?s} {.val {miss}} not found in {.arg data}.")
-    }
-    df <- df[, c(reference_date, report_date, count), drop = FALSE]
-    names(df) <- c("reference_date", "report_date", "count")
-    extra <- NULL
+    long_data <- as.data.frame(data)
+    .assert_columns_present(long_data, c(reference_date, report_date, count))
+    long_data <- long_data |>
+      dplyr::select(
+        reference_date = dplyr::all_of(reference_date),
+        report_date    = dplyr::all_of(report_date),
+        count          = dplyr::all_of(count)
+      )
+    extra_message <- NULL
   }
 
   result <- .build_tbl_now(
-    df, dots = list(...),
-    event_date  = "reference_date",
+    long_data,
+    dots = list(...),
+    event_date = "reference_date",
     report_date = "report_date",
-    case_count  = "count",
-    data_type   = "count-incidence"
+    case_count = "count",
+    data_type = "count-incidence"
   )
 
   # Reporting triangles carry explicit zero cells; keep the tbl_now minimal.
   result <- .drop_zero_counts(result)
 
-  .report_from(result, "baselinenowcast", verbose, extra = extra)
+  .report_from(result, "baselinenowcast", verbose, extra = extra_message)
   result
 }
 
@@ -347,21 +511,26 @@ tbl_now_from_baselinenowcast <- function(data, ...,
 #' @examplesIf requireNamespace("data.table", quietly = TRUE)
 #' data(denguedat)
 #' dt <- data.table::as.data.table(denguedat)
-#' nowobj <- tbl_now_from_data_table(dt, event_date = "onset_week",
-#'                                   report_date = "report_week", verbose = FALSE)
+#' nowobj <- tbl_now_from_data_table(dt,
+#'   event_date = "onset_week",
+#'   report_date = "report_week", verbose = FALSE
+#' )
 #' @name tbl_now_data_table
 #' @export
 tbl_now_from_data_table <- function(data, event_date, report_date, ...,
                                     verbose = TRUE) {
-
   if (!inherits(data, "data.table")) {
-    cli::cli_warn("{.arg data} is not a {.cls data.table}; coercing with {.fn as.data.frame}.")
+    cli::cli_warn(
+      "{.arg data} is not a {.cls data.table}; coercing to a data frame."
+    )
   }
-  df <- as.data.frame(data)
+
+  observations <- as.data.frame(data)
 
   result <- .build_tbl_now(
-    df, dots = list(...),
-    event_date  = event_date,
+    observations,
+    dots = list(...),
+    event_date = event_date,
     report_date = report_date
   )
 
@@ -400,7 +569,8 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' @param primary,secondary Column names of the primary / secondary event
 #'   lower-bound dates. Default to epidist's `"pdate_lwr"` / `"sdate_lwr"`.
 #' @param primary_upper,secondary_upper Column names of the upper-bound dates
-#'   (`format = "interval"`). Default to epidist's `"pdate_upr"` / `"sdate_upr"`.
+#'   (`format = "interval"`). Default to epidist's `"pdate_upr"` /
+#'   `"sdate_upr"`.
 #' @param verbose Logical. Print the choices that were made.
 #' @param ... Forwarded to [as_tbl_now()] (`from`) or
 #'   [epidist::as_epidist_linelist_data()] (`to`).
@@ -416,54 +586,62 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' @name tbl_now_epidist
 #' @export
 tbl_now_from_epidist <- function(data, ..., format = c("linelist", "interval"),
-                                 primary         = "pdate_lwr",
-                                 secondary       = "sdate_lwr",
-                                 primary_upper   = "pdate_upr",
+                                 primary = "pdate_lwr",
+                                 secondary = "sdate_lwr",
+                                 primary_upper = "pdate_upr",
                                  secondary_upper = "sdate_upr",
-                                 verbose         = TRUE) {
-
+                                 verbose = TRUE) {
   format <- match.arg(format)
-  df     <- as.data.frame(data)
+  observations <- as.data.frame(data)
 
+  # Linelist: the lower bounds become the event and report dates.
   if (format == "linelist") {
-    need <- c(primary, secondary)
-    if (!all(need %in% colnames(df))) {
-      miss <- need[!(need %in% colnames(df))]
-      cli::cli_abort("Column{?s} {.val {miss}} not found in {.arg data}.")
-    }
+    .assert_columns_present(observations, c(primary, secondary))
+
     result <- .build_tbl_now(
-      df, dots = list(...),
-      event_date  = primary,
+      observations,
+      dots = list(...),
+      event_date = primary,
       report_date = secondary,
-      data_type   = "linelist"
+      data_type = "linelist"
     )
-    .report_from(result, "epidist", verbose,
-                 extra = "format: linelist (primary lower bound -> event_date, secondary lower bound -> report_date)")
+    .report_from(
+      result, "epidist", verbose,
+      extra = paste0(
+        "format: linelist (primary lower bound -> event_date, ",
+        "secondary lower bound -> report_date)"
+      )
+    )
     return(result)
   }
 
-  # interval-censored: lower bounds -> dates, upper bounds -> covariates
-  need <- c(primary, secondary, primary_upper, secondary_upper)
-  if (!all(need %in% colnames(df))) {
-    miss <- need[!(need %in% colnames(df))]
-    cli::cli_abort("Column{?s} {.val {miss}} not found in {.arg data}.")
-  }
-  cli::cli_warn(
-    paste0(
-      "Interval-censored data: using the lower bounds {.val {c(primary, secondary)}} as ",
-      "event/report dates and attaching the upper bounds {.val {c(primary_upper, secondary_upper)}} ",
-      "as {.field covariates}."
+  # Interval-censored: lower bounds become the dates, upper bounds become
+  # covariates.
+  .assert_columns_present(
+    observations, c(primary, secondary, primary_upper, secondary_upper)
+  )
+  upper_bounds <- c(primary_upper, secondary_upper)
+  cli::cli_warn(c(
+    "Interval-censored data:",
+    "*" = "lower bounds {.val {c(primary, secondary)}} -> event/report dates",
+    "*" = "upper bounds {.val {upper_bounds}} -> covariates"
+  ))
+
+  result <- .build_tbl_now(
+    observations,
+    dots = list(...),
+    event_date = primary,
+    report_date = secondary,
+    covariates = upper_bounds,
+    data_type = "linelist"
+  )
+  .report_from(
+    result, "epidist", verbose,
+    extra = paste0(
+      "format: interval (lower bounds -> dates, ",
+      "upper bounds -> covariates)"
     )
   )
-  result <- .build_tbl_now(
-    df, dots = list(...),
-    event_date  = primary,
-    report_date = secondary,
-    covariates  = c(primary_upper, secondary_upper),
-    data_type   = "linelist"
-  )
-  .report_from(result, "epidist", verbose,
-               extra = "format: interval (lower bounds -> dates, upper bounds -> covariates)")
   result
 }
 
@@ -502,22 +680,27 @@ tbl_now_from_epidist <- function(data, ..., format = c("linelist", "interval"),
 #'
 #' @examplesIf requireNamespace("tsibble", quietly = TRUE)
 #' data(denguedat)
-#' nowobj <- tbl_now(denguedat, event_date = "onset_week",
-#'                   report_date = "report_week", verbose = FALSE)
+#' nowobj <- tbl_now(denguedat,
+#'   event_date = "onset_week",
+#'   report_date = "report_week", verbose = FALSE
+#' )
 #' ts <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
 #' back <- tbl_now_from_tsibble(ts, event_date = "onset_week", verbose = FALSE)
 #' @name tbl_now_tsibble
 #' @export
 tbl_now_from_tsibble <- function(data, event_date, report_date = NULL,
                                  strata = NULL, ..., verbose = TRUE) {
-
   .need_pkg("tsibble")
   if (missing(event_date) || is.null(event_date)) {
     cli::cli_abort("Please supply the {.arg event_date} column name.")
   }
+
+  # `report_date` defaults to the tsibble index.
   if (is.null(report_date)) {
     if (!inherits(data, "tbl_ts")) {
-      cli::cli_abort("{.arg report_date} is required when {.arg data} is not a {.cls tbl_ts}.")
+      cli::cli_abort(
+        "{.arg report_date} is required when {.arg data} is not a tsibble."
+      )
     }
     report_date <- tsibble::index_var(data)
   }
@@ -528,17 +711,19 @@ tbl_now_from_tsibble <- function(data, event_date, report_date = NULL,
     if (length(strata) == 0) strata <- NULL
   }
 
-  df <- as.data.frame(data)
+  observations <- as.data.frame(data)
 
   result <- .build_tbl_now(
-    df, dots = list(...),
-    event_date  = event_date,
+    observations,
+    dots = list(...),
+    event_date = event_date,
     report_date = report_date,
-    strata      = strata
+    strata = strata
   )
 
   .report_from(result, "tsibble", verbose,
-               extra = paste0("report_date taken from the tsibble index: ", report_date))
+    extra = paste0("report_date taken from the tsibble index: ", report_date)
+  )
   result
 }
 
@@ -550,113 +735,137 @@ tbl_now_from_tsibble <- function(data, event_date, report_date = NULL,
 #' @export
 tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
                                   preprocess = TRUE, verbose = TRUE) {
-
   .assert_tbl_now(x, "tbl_now_to_epinowcast")
   .need_pkg("epinowcast")
 
-  if (requireNamespace("epinowcast", quietly = TRUE)) {
-
-    if (get_data_type(x) != "count-cumulative") {
-      cli::cli_warn(
-        "epinowcast expects cumulative counts; {.arg x} has data_type {.val {get_data_type(x)}}. Converting with {.fn to_count}."
-      )
-      x <- to_count(x, to = "count-cumulative")
-    }
-
-    ev <- get_event_date(x)
-    rp <- get_report_date(x)
-    cc <- get_case_count(x)
-    st <- get_strata(x)
-
-    # Build the long obs data.frame epinowcast expects
-    obs <- as.data.frame(x)
-    obs <- obs[, c(ev, rp, cc, st), drop = FALSE]
-    names(obs)[1:3] <- c("reference_date", "report_date", "confirm")
-    obs <- data.table::as.data.table(obs)
-
-    if (is.null(max_delay)) {
-      max_delay <- as.integer(max(x[[".delay"]], na.rm = TRUE)) + 1L
-    }
-    by <- if (length(st) > 0) st else NULL
-
-    if (verbose) {
-      cli::cli_h3("Converting {.cls tbl_now} into an {.pkg epinowcast} object")
-      cli::cli_ul()
-      cli::cli_li("reference_date <- {.val {ev}}")
-      cli::cli_li("report_date <- {.val {rp}}")
-      cli::cli_li("confirm <- {.val {cc}}")
-      cli::cli_li("by: {.val {if (is.null(by)) 'none' else by}}")
-      cli::cli_li("max_delay: {.val {max_delay}}")
-      cli::cli_li("preprocess: {.val {preprocess}}")
-      cli::cli_end()
-    }
-
-    completed <- epinowcast::enw_complete_dates(obs, by = by, max_delay = max_delay)
-    if (!preprocess) return(completed)
-
-    epinowcast::enw_preprocess_data(completed, by = by, max_delay = max_delay, ...)
-  } else {
-    NULL
+  # epinowcast models the cumulative reporting process, so coerce first.
+  if (get_data_type(x) != "count-cumulative") {
+    cli::cli_warn(
+      "epinowcast expects cumulative counts; {.arg x} has data_type \\
+       {.val {get_data_type(x)}}. Converting with {.fn to_count}."
+    )
+    x <- to_count(x, to = "count-cumulative")
   }
+
+  event_col   <- get_event_date(x)
+  report_col  <- get_report_date(x)
+  count_col   <- get_case_count(x)
+  strata_cols <- get_strata(x)
+
+  # epinowcast's schema is reference_date / report_date / confirm (+ grouping);
+  # covariates and is_censored have no place in it and are not carried over.
+  observations <- x |>
+    dplyr::as_tibble() |>
+    dplyr::select(
+      reference_date = dplyr::all_of(event_col),
+      report_date    = dplyr::all_of(report_col),
+      confirm        = dplyr::all_of(count_col),
+      dplyr::all_of(strata_cols)
+    ) |>
+    data.table::as.data.table()
+
+  if (is.null(max_delay)) {
+    max_delay <- as.integer(max(dplyr::pull(x, ".delay"), na.rm = TRUE)) + 1L
+  }
+  grouping <- if (length(strata_cols) > 0) strata_cols else NULL
+
+  if (verbose) {
+    cli::cli_h3("Converting {.cls tbl_now} into an {.pkg epinowcast} object")
+    cli::cli_ul()
+    cli::cli_li("reference_date <- {.val {event_col}}")
+    cli::cli_li("report_date <- {.val {report_col}}")
+    cli::cli_li("confirm <- {.val {count_col}}")
+    cli::cli_li("by: {.val {if (is.null(grouping)) 'none' else grouping}}")
+    cli::cli_li("max_delay: {.val {max_delay}}")
+    cli::cli_li("preprocess: {.val {preprocess}}")
+    cli::cli_end()
+  }
+
+  completed <- epinowcast::enw_complete_dates(
+    observations, by = grouping, max_delay = max_delay
+  )
+  if (!preprocess) {
+    return(completed)
+  }
+
+  epinowcast::enw_preprocess_data(
+    completed, by = grouping, max_delay = max_delay, ...
+  )
 }
 
 #' @rdname tbl_now_baselinenowcast
 #' @export
 tbl_now_to_baselinenowcast <- function(x, ..., format = c("long", "matrix"),
                                        delays_unit = "days", verbose = TRUE) {
-
-
   .assert_tbl_now(x, "tbl_now_to_baselinenowcast")
   format <- match.arg(format)
+  # Note: the long format is a plain data.frame and needs no package; only the
+  # matrix format calls into baselinenowcast (guarded below).
 
-  if (requireNamespace("baselinenowcast", quietly = TRUE)) {
-
-    # baselinenowcast needs incremental (count-incidence) counts.
-    #  - count-incidence: use as-is.
-    #  - linelist: aggregating to incidence is well defined.
-    #  - count-cumulative: NOT convertible — cumulative totals get revised
-    #    downward (cases un-confirmed), so de-accumulating would yield negative
-    #    "incidence". Refuse rather than produce nonsense.
-    dtype <- get_data_type(x)
-    if (dtype == "count-cumulative") {
-      cli::cli_abort(c(
-        "Cannot convert {.val count-cumulative} data to the incremental counts {.pkg baselinenowcast} requires.",
-        "i" = "Cumulative totals can be revised downward, so de-accumulating them may give negative incidence.",
-        "i" = "Supply {.val count-incidence} or {.val linelist} data instead."
-      ))
-    } else if (dtype != "count-incidence") {
-      cli::cli_warn(
-        "baselinenowcast expects incremental counts; converting {.arg x} to {.val count-incidence} with {.fn to_count}."
-      )
-      x <- to_count(x, to = "count-incidence")
-    }
-
-    ev <- get_event_date(x)
-    rp <- get_report_date(x)
-    cc <- get_case_count(x)
-
-    long <- as.data.frame(x)[, c(ev, rp, cc), drop = FALSE]
-    names(long) <- c("reference_date", "report_date", "count")
-
-    if (verbose) {
-      cli::cli_h3("Converting {.cls tbl_now} into a {.pkg baselinenowcast} {format}")
-      cli::cli_ul()
-      cli::cli_li("reference_date <- {.val {ev}}")
-      cli::cli_li("report_date <- {.val {rp}}")
-      cli::cli_li("count <- {.val {cc}}")
-      cli::cli_li("format: {.val {format}}")
-      cli::cli_end()
-    }
-
-    if (format == "long") {
-      return(long)
-    }
-
-    .need_pkg("baselinenowcast")
-    baselinenowcast::as_reporting_triangle(long, delays_unit = delays_unit, ...)
-  } else {
-    NULL
+  # baselinenowcast needs incremental (count-incidence) counts.
+  #  - count-incidence: use as-is.
+  #  - linelist: aggregating to incidence is well defined.
+  #  - count-cumulative: NOT convertible — cumulative totals get revised
+  #    downward (cases un-confirmed), so de-accumulating would yield negative
+  #    "incidence". Refuse rather than produce nonsense.
+  data_type <- get_data_type(x)
+  if (data_type == "count-cumulative") {
+    cli::cli_abort(c(
+      "Cannot convert {.val count-cumulative} data to the incremental counts \\
+       {.pkg baselinenowcast} requires.",
+      "i" = "Cumulative totals can be revised downward, so de-accumulating \\
+             them may give negative incidence.",
+      "i" = "Supply {.val count-incidence} or {.val linelist} data instead."
+    ))
+  } else if (data_type != "count-incidence") {
+    cli::cli_warn(
+      "baselinenowcast expects incremental counts; converting {.arg x} to \\
+       {.val count-incidence} with {.fn to_count}."
+    )
+    x <- to_count(x, to = "count-incidence")
   }
+
+  event_col      <- get_event_date(x)
+  report_col     <- get_report_date(x)
+  count_col      <- get_case_count(x)
+  covariate_cols <- get_covariates(x)
+  censored_col   <- get_is_censored(x)
+
+  # The long format is a tidy data frame, so it can also carry the covariates
+  # and the censoring indicator. The reporting-triangle matrix cannot, so only
+  # the three core columns are kept for it.
+  extra_cols <- if (format == "long") c(covariate_cols, censored_col) else NULL
+
+  long_data <- x |>
+    dplyr::as_tibble() |>
+    dplyr::select(
+      reference_date = dplyr::all_of(event_col),
+      report_date    = dplyr::all_of(report_col),
+      count          = dplyr::all_of(count_col),
+      dplyr::all_of(extra_cols)
+    )
+
+  if (verbose) {
+    cli::cli_h3("Converting {.cls tbl_now} to {.pkg baselinenowcast} {format}")
+    cli::cli_ul()
+    cli::cli_li("reference_date <- {.val {event_col}}")
+    cli::cli_li("report_date <- {.val {report_col}}")
+    cli::cli_li("count <- {.val {count_col}}")
+    if (length(extra_cols) > 0) {
+      cli::cli_li("kept columns: {.val {extra_cols}}")
+    }
+    cli::cli_li("format: {.val {format}}")
+    cli::cli_end()
+  }
+
+  if (format == "long") {
+    return(as.data.frame(long_data))
+  }
+
+  .need_pkg("baselinenowcast")
+  baselinenowcast::as_reporting_triangle(
+    as.data.frame(long_data), delays_unit = delays_unit, ...
+  )
 }
 
 #' Convert a `tbl_now` into \pkg{EpiNow2} input
@@ -664,246 +873,342 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("long", "matrix"),
 #' `r lifecycle::badge("experimental")`
 #'
 #' @description
-#' \pkg{EpiNow2} works with a single incidence time series (`date`, `confirm`)
-#' and therefore has no delay/report dimension. This function collapses a
-#' `tbl_now` to that single time series, keyed on the `event_date`, using the
-#' most recently reported counts (see [get_latest_reported_cases()]).
+#' \pkg{EpiNow2}'s renewal-equation models ([EpiNow2::estimate_infections()],
+#' [EpiNow2::epinow()]) take a **single incidence time series** (`date`,
+#' `confirm`) with no report/delay dimension. For these
+#' (`model = "estimate_infections"`, the default) the `tbl_now` is collapsed to
+#' that single series using the most recently reported counts per `event_date`
+#' (equivalent to [get_latest_reported_cases()]).
 #'
-#' Because \pkg{EpiNow2} has only one time index, there is intentionally **no**
-#' `tbl_now_from_EpiNow2()`.
+#' [EpiNow2::estimate_truncation()] is different: it takes **multiple
+#' snapshots** of the same series observed at successive report dates and *does*
+#' use the report dimension. With `model = "estimate_truncation"` the `tbl_now`
+#' is turned into that list of `date`/`confirm` snapshots (one per report date,
+#' earliest first) — precisely the information the report dimension encodes.
+#'
+#' There is intentionally **no** `tbl_now_from_EpiNow2()`: neither a single time
+#' series nor a set of snapshots can, in general, reconstruct the full
+#' event/report structure of a `tbl_now`.
 #'
 #' @param x A `tbl_now` object.
+#' @param model Which \pkg{EpiNow2} model the output targets:
+#'   `"estimate_infections"` (default; a single `date`/`confirm` series for
+#'   [EpiNow2::estimate_infections()] / [EpiNow2::epinow()]) or
+#'   `"estimate_truncation"` (a list of `date`/`confirm` snapshots for
+#'   [EpiNow2::estimate_truncation()]).
 #' @param verbose Logical. Print the choices that were made.
 #' @param ... Forwarded to [data.table::as.data.table()].
 #'
-#' @return A `data.table` with columns `date` and `confirm`.
+#' @return For `"estimate_infections"`, a `data.table` with columns `date` and
+#'   `confirm`. For `"estimate_truncation"`, a list of such `data.table`s
+#'   ordered from earliest to latest report snapshot.
 #'
 #' @examplesIf requireNamespace("data.table", quietly = TRUE)
 #' data(mpoxdat)
-#' nowobj <- tbl_now(mpoxdat, event_date = "dx_date", report_date = "dx_report_date",
-#'                   case_count = "n", data_type = "count-incidence", verbose = FALSE)
+#' nowobj <- tbl_now(mpoxdat,
+#'   event_date = "dx_date", report_date = "dx_report_date",
+#'   case_count = "n", strata = "race",
+#'   data_type = "count-incidence", verbose = FALSE
+#' )
+#' # single series for estimate_infections()
 #' tbl_now_to_EpiNow2(nowobj, verbose = FALSE)
+#'
+#' # report-date snapshots for estimate_truncation()
+#' tbl_now_to_EpiNow2(nowobj, model = "estimate_truncation", verbose = FALSE)
 #' @export
-tbl_now_to_EpiNow2 <- function(x, ..., verbose = TRUE) {
-
+# `tbl_now_to_EpiNow2` is named after the EpiNow2 package (not snake_case).
+tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
+    x, ...,
+    model = c("estimate_infections", "estimate_truncation"),
+    verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_EpiNow2")
   .need_pkg("data.table")
+  model <- match.arg(model)
 
-  if (requireNamespace("data.table", quietly = TRUE)) {
+  event_col   <- get_event_date(x)
+  strata_cols <- get_strata(x)
 
-    ev <- get_event_date(x)
+  # Cumulative cases for each event date, by report date and strata. Coercing to
+  # cumulative works for any input type (linelist / incidence / cumulative).
+  cumulative <- x |>
+    dplyr::ungroup() |>
+    to_count(to = "count-cumulative")
+  count_col <- get_case_count(cumulative)
 
-    if (grepl("count", get_data_type(x))) {
-      latest <- get_latest_reported_cases(x)
-      cc     <- get_case_count(latest)
-      series <- as.data.frame(latest)[, c(ev, cc), drop = FALSE]
-      names(series) <- c("date", "confirm")
-    } else {
-      # linelist: count rows per event_date
-      series <- as.data.frame(x) %>%
-        dplyr::count(!!as.symbol(ev), name = "confirm")
-      names(series)[1] <- "date"
-    }
+  known <- cumulative |>
+    dplyr::as_tibble() |>
+    dplyr::select(
+      date        = dplyr::all_of(event_col),
+      report_date = dplyr::all_of(get_report_date(cumulative)),
+      confirm     = dplyr::all_of(count_col),
+      dplyr::all_of(strata_cols)
+    )
 
-    series <- series %>%
-      dplyr::group_by(!!as.symbol("date")) %>%
-      dplyr::summarise(!!as.symbol("confirm") := sum(!!as.symbol("confirm"), na.rm = TRUE), .groups = "drop") %>%
-      dplyr::arrange(!!as.symbol("date"))
+  # The incidence series as known at report date `as_of`: per (date, strata)
+  # take the latest report on or before `as_of`, then sum over strata.
+  build_snapshot <- function(as_of) {
+    known |>
+      dplyr::filter(.data$report_date <= as_of) |>
+      dplyr::group_by(dplyr::across(dplyr::all_of(c("date", strata_cols)))) |>
+      dplyr::slice_max(.data$report_date, n = 1, with_ties = FALSE) |>
+      dplyr::group_by(.data$date) |>
+      dplyr::summarise(
+        confirm = sum(.data$confirm, na.rm = TRUE), .groups = "drop"
+      ) |>
+      dplyr::arrange(.data$date)
+  }
 
+  # estimate_infections: a single series at the current `now`.
+  if (model == "estimate_infections") {
+    series <- build_snapshot(get_now(x))
     if (verbose) {
-      cli::cli_h3("Converting {.cls tbl_now} into an {.pkg EpiNow2} time series")
+      cli::cli_h3("Converting {.cls tbl_now} to an {.pkg EpiNow2} series")
       cli::cli_ul()
-      cli::cli_li("date <- {.val {ev}} (event_date)")
+      cli::cli_li("date <- {.val {event_col}} (event_date)")
       cli::cli_li("confirm <- latest reported counts per date")
       cli::cli_li("rows: {.val {nrow(series)}}")
-      cli::cli_alert_info("EpiNow2 has a single time index; the delay/report dimension was collapsed.")
+      cli::cli_alert_info(
+        "For {.fn estimate_infections} the report dimension is collapsed \\
+         to a single series."
+      )
       cli::cli_end()
     }
-
-    data.table::as.data.table(series, ...)
-  } else {
-    NULL
+    return(data.table::as.data.table(series, ...))
   }
+
+  # estimate_truncation: one snapshot per distinct report date (earliest first).
+  report_dates <- sort(unique(known$report_date))
+  snapshots <- lapply(report_dates, function(report_date) {
+    data.table::as.data.table(build_snapshot(report_date), ...)
+  })
+
+  if (verbose) {
+    cli::cli_h3(
+      "Converting {.cls tbl_now} into {.pkg EpiNow2} truncation snapshots"
+    )
+    cli::cli_ul()
+    cli::cli_li("date <- {.val {event_col}} (event_date)")
+    cli::cli_li("snapshots: {.val {length(snapshots)}} (one per report date)")
+    cli::cli_alert_info("Pass the list to {.fn EpiNow2::estimate_truncation}.")
+    cli::cli_end()
+  }
+
+  snapshots
 }
 
 #' @rdname tbl_now_data_table
 #' @export
 tbl_now_to_data_table <- function(x, ..., verbose = TRUE) {
-
   .assert_tbl_now(x, "tbl_now_to_data_table")
   .need_pkg("data.table")
 
-  if (requireNamespace("baselinenowcast", quietly = TRUE)) {
-    if (verbose) {
-      cli::cli_h3("Converting {.cls tbl_now} into a {.cls data.table}")
-      cli::cli_alert_info("tbl_now attributes are dropped; generated columns (.delay, .event_num, .report_num) are kept.")
-    }
-
-    data.table::as.data.table(as.data.frame(x), ...)
-  } else {
-    NULL
+  if (verbose) {
+    cli::cli_h3("Converting {.cls tbl_now} into a {.cls data.table}")
+    cli::cli_alert_info(
+      "tbl_now attributes are dropped; every column is kept (including the \\
+       generated .delay / .event_num / .report_num, the covariates and \\
+       is_censored)."
+    )
   }
+
+  # A data.table can hold every column, so keep them all (covariates and the
+  # censoring indicator included).
+  data.table::as.data.table(as.data.frame(x), ...)
 }
 
 #' @rdname tbl_now_epidist
 #' @export
 tbl_now_to_epidist <- function(x, ..., format = c("linelist", "interval"),
-                               primary_upper   = NULL,
+                               primary_upper = NULL,
                                secondary_upper = NULL,
-                               verbose         = TRUE) {
-
-
-
+                               verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_epidist")
   .need_pkg("epidist")
+  format <- match.arg(format)
 
-  if (requireNamespace("epidist", quietly = TRUE)) {
-    format <- match.arg(format)
+  event_col      <- get_event_date(x)
+  report_col     <- get_report_date(x)
+  covariate_cols <- get_covariates(x)
+  censored_col   <- get_is_censored(x)
+  observations   <- dplyr::as_tibble(x)
 
-    ev <- get_event_date(x)
-    rp <- get_report_date(x)
-    df <- as.data.frame(x)
+  constructor_args <- list(pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr")
 
-    ctor_args <- list(pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr")
-
-    if (format == "linelist") {
-      out <- data.frame(pdate_lwr = df[[ev]], sdate_lwr = df[[rp]])
-      extra_cols <- "pdate_lwr <- event_date, sdate_lwr <- report_date"
-    } else {
-      if (is.null(primary_upper) || is.null(secondary_upper)) {
-        cli::cli_abort(
-          "For {.val interval} format, supply {.arg primary_upper} and {.arg secondary_upper} (covariate columns holding the upper bounds)."
-        )
-      }
-      if (!all(c(primary_upper, secondary_upper) %in% colnames(df))) {
-        miss <- c(primary_upper, secondary_upper)
-        miss <- miss[!(miss %in% colnames(df))]
-        cli::cli_abort("Upper-bound column{?s} {.val {miss}} not found in {.arg x}.")
-      }
-      cli::cli_warn(
-        "Building interval-censored data: lower bounds from event/report dates, upper bounds from covariates {.val {c(primary_upper, secondary_upper)}}."
+  if (format == "linelist") {
+    # Lower bounds only: event date and report date.
+    epidist_data <- observations |>
+      dplyr::transmute(
+        pdate_lwr = .data[[event_col]],
+        sdate_lwr = .data[[report_col]]
       )
-      out <- data.frame(
-        pdate_lwr = df[[ev]], pdate_upr = df[[primary_upper]],
-        sdate_lwr = df[[rp]], sdate_upr = df[[secondary_upper]]
-      )
-      ctor_args$pdate_upr <- "pdate_upr"
-      ctor_args$sdate_upr <- "sdate_upr"
-      extra_cols <- "pdate_lwr/sdate_lwr <- dates, pdate_upr/sdate_upr <- covariates"
-    }
-
-    if (verbose) {
-      cli::cli_h3("Converting {.cls tbl_now} into {.pkg epidist} {format} data")
-      cli::cli_ul()
-      cli::cli_li(extra_cols)
-      cli::cli_end()
-    }
-
-    do.call(epidist::as_epidist_linelist_data, c(list(out), ctor_args, list(...)))
+    carried_cols  <- c(covariate_cols, censored_col)
+    extra_message <- "pdate_lwr <- event_date, sdate_lwr <- report_date"
   } else {
-    NULL
+    if (is.null(primary_upper) || is.null(secondary_upper)) {
+      cli::cli_abort(
+        "For {.val interval} format, supply {.arg primary_upper} and \\
+         {.arg secondary_upper} (covariate columns holding the upper bounds)."
+      )
+    }
+    .assert_columns_present(
+      observations, c(primary_upper, secondary_upper), arg = "x"
+    )
+    upper_bounds <- c(primary_upper, secondary_upper)
+    cli::cli_warn(c(
+      "Building interval-censored data:",
+      "*" = "lower bounds <- event/report dates",
+      "*" = "upper bounds <- covariates {.val {upper_bounds}}"
+    ))
+    epidist_data <- observations |>
+      dplyr::transmute(
+        pdate_lwr = .data[[event_col]],
+        pdate_upr = .data[[primary_upper]],
+        sdate_lwr = .data[[report_col]],
+        sdate_upr = .data[[secondary_upper]]
+      )
+    constructor_args$pdate_upr <- "pdate_upr"
+    constructor_args$sdate_upr <- "sdate_upr"
+    # The upper bounds are already in `epidist_data`; do not carry them twice.
+    carried_cols  <- setdiff(c(covariate_cols, censored_col), upper_bounds)
+    extra_message <- paste0(
+      "pdate_lwr/sdate_lwr <- dates, ",
+      "pdate_upr/sdate_upr <- covariates"
+    )
   }
+
+  # Carry the remaining covariates and the censoring indicator alongside.
+  if (length(carried_cols) > 0) {
+    epidist_data <- dplyr::bind_cols(
+      epidist_data,
+      dplyr::select(observations, dplyr::all_of(carried_cols))
+    )
+  }
+
+  if (verbose) {
+    cli::cli_h3("Converting {.cls tbl_now} into {.pkg epidist} {format} data")
+    cli::cli_ul()
+    cli::cli_li(extra_message)
+    if (length(carried_cols) > 0) {
+      cli::cli_li("kept columns: {.val {carried_cols}}")
+    }
+    cli::cli_end()
+  }
+
+  do.call(
+    epidist::as_epidist_linelist_data,
+    c(list(epidist_data), constructor_args, list(...))
+  )
 }
 
 #' @rdname tbl_now_tsibble
 #' @export
 tbl_now_to_tsibble <- function(x, ..., index = c("report_date", "event_date"),
                                verbose = TRUE) {
-
   .assert_tbl_now(x, "tbl_now_to_tsibble")
   .need_pkg("tsibble")
+  index <- match.arg(index)
 
-  if (requireNamespace("tsibble", quietly = TRUE)) {
-    index <- match.arg(index)
-
-    # A tsibble needs a unique index/key combination. Linelist rows are not
-    # unique per (event, report, strata), so aggregate to count-incidence first.
-    if (get_data_type(x) == "linelist") {
-      cli::cli_warn(
-        "tsibble requires unique index/key rows; aggregating linelist to {.val count-incidence} with {.fn to_count}."
-      )
-      x <- to_count(x, to = "count-incidence")
-    }
-
-    ev <- get_event_date(x)
-    rp <- get_report_date(x)
-    st <- get_strata(x)
-
-    index_col <- if (index == "report_date") rp else ev
-    other_col <- if (index == "report_date") ev else rp
-    key_cols  <- c(other_col, st)
-
-    df <- as.data.frame(x)
-
-    if (verbose) {
-      cli::cli_h3("Converting {.cls tbl_now} into a {.pkg tsibble}")
-      cli::cli_ul()
-      cli::cli_li("index <- {.val {index_col}}")
-      cli::cli_li("key <- {.val {key_cols}}")
-      cli::cli_end()
-    }
-
-    tsibble::as_tsibble(
-      df,
-      index = !!rlang::sym(index_col),
-      key   = tidyselect::all_of(key_cols),
-      ...
+  # A tsibble needs a unique index/key combination. Linelist rows are not
+  # unique per (event, report, strata), so aggregate to count-incidence first.
+  if (get_data_type(x) == "linelist") {
+    cli::cli_warn(
+      "tsibble requires unique index/key rows; aggregating linelist to \\
+       {.val count-incidence} with {.fn to_count}."
     )
-  } else {
-    NULL
+    x <- to_count(x, to = "count-incidence")
   }
+
+  event_col      <- get_event_date(x)
+  report_col     <- get_report_date(x)
+  strata_cols    <- get_strata(x)
+  covariate_cols <- get_covariates(x)
+  censored_col   <- get_is_censored(x)
+  count_col      <- get_case_count(x)
+
+  # The chosen date is the tsibble index; the other date plus the strata form
+  # the key (so the index/key combination is unique).
+  index_col <- if (index == "report_date") report_col else event_col
+  other_col <- if (index == "report_date") event_col else report_col
+  key_cols  <- c(other_col, strata_cols)
+
+  # Covariates, the censoring indicator and the case count ride along as
+  # measurement columns; the tbl_now internals are dropped.
+  kept_cols <- c(
+    index_col, other_col, strata_cols, covariate_cols, censored_col, count_col
+  )
+  observations <- x |>
+    dplyr::as_tibble() |>
+    dplyr::select(dplyr::all_of(kept_cols))
+
+  if (verbose) {
+    cli::cli_h3("Converting {.cls tbl_now} into a {.pkg tsibble}")
+    cli::cli_ul()
+    cli::cli_li("index <- {.val {index_col}}")
+    cli::cli_li("key <- {.val {key_cols}}")
+    cli::cli_end()
+  }
+
+  tsibble::as_tsibble(
+    observations,
+    index = !!rlang::sym(index_col),
+    key   = tidyselect::all_of(key_cols),
+    ...
+  )
 }
 
 # ===========================================================================
-# 4. as_tbl_now() methods for the classes produced by tbl_now_to_*()
+# 4. S3 methods on other packages' coercion generics
 #
-#    These let a round-trip work: an object created by tbl_now_to_<pkg>() can
-#    be converted straight back with as_tbl_now().
+#    These register a `tbl_now` method on each supported package's own coercion
+#    generic, so that package's verb accepts a `tbl_now` directly. Each is a
+#    thin wrapper around the matching tbl_now_to_*() converter and is quiet by
+#    default (verbose = FALSE) because it is a coercion idiom.
 # ===========================================================================
 
-#' @rdname as_tbl_now
-#' @export
-as_tbl_now.enw_preprocess_data <- function(object, event_date, report_date, ...) {
-  obs <- as.data.frame(object$obs[[1]])
-  obs <- obs[!is.na(obs$reference_date), , drop = FALSE]
-  # `by` is stored as a list-column; unwrap it to a plain character vector.
-  by  <- unlist(object$by)
-  by  <- by[by %in% names(obs)]
-  keep <- c("reference_date", "report_date", "confirm", by)
-  obs <- obs[, intersect(keep, names(obs)), drop = FALSE]
-  # reference/report dates come back as IDate; ensure plain Date
-  obs$reference_date <- as.Date(obs$reference_date)
-  obs$report_date    <- as.Date(obs$report_date)
-  tbl_now_from_epinowcast(obs, strata = if (length(by) > 0) by else NULL, ...)
+#' Coerce a `tbl_now` with another package's generic
+#'
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' These S3 methods make each supported package's own coercion verb accept a
+#' `tbl_now`. They are thin wrappers around the matching `tbl_now_to_*()`
+#' converter and are quiet by default.
+#'
+#' * `as_epidist_linelist_data()` (\pkg{epidist}) wraps [tbl_now_to_epidist()].
+#' * `as_reporting_triangle()` (\pkg{baselinenowcast}) wraps
+#'   [tbl_now_to_baselinenowcast()] with `format = "matrix"`.
+#' * `as_tsibble()` (\pkg{tsibble}) wraps [tbl_now_to_tsibble()].
+#' * `as.data.table()` (\pkg{data.table}) wraps [tbl_now_to_data_table()].
+#'
+#' @param data,x A `tbl_now` object.
+#' @param verbose Logical; forwarded to the underlying converter. Defaults to
+#'   `FALSE` so coercion is quiet.
+#' @param ... Additional arguments forwarded to the underlying converter.
+#'
+#' @return The object produced by the corresponding `tbl_now_to_*()` converter.
+#'
+#' @name tbl_now_coercion_methods
+NULL
+
+#' @rdname tbl_now_coercion_methods
+#' @exportS3Method epidist::as_epidist_linelist_data
+as_epidist_linelist_data.tbl_now <- function(data, ..., verbose = FALSE) {
+  tbl_now_to_epidist(data, ..., verbose = verbose)
 }
 
-#' @rdname as_tbl_now
-#' @export
-as_tbl_now.reporting_triangle <- function(object, event_date, report_date, ...) {
-  tbl_now_from_baselinenowcast(object, ...)
+#' @rdname tbl_now_coercion_methods
+#' @exportS3Method baselinenowcast::as_reporting_triangle
+as_reporting_triangle.tbl_now <- function(data, ..., verbose = FALSE) {
+  tbl_now_to_baselinenowcast(data, format = "matrix", ..., verbose = verbose)
 }
 
-#' @rdname as_tbl_now
-#' @export
-as_tbl_now.epidist_linelist_data <- function(object, event_date, report_date, ...) {
-  tbl_now_from_epidist(object, ...)
+#' @rdname tbl_now_coercion_methods
+#' @exportS3Method tsibble::as_tsibble
+as_tsibble.tbl_now <- function(x, ..., verbose = FALSE) {
+  tbl_now_to_tsibble(x, ..., verbose = verbose)
 }
 
-#' @rdname as_tbl_now
-#' @export
-as_tbl_now.tbl_ts <- function(object, event_date, report_date, ...) {
-  rp <- if (missing(report_date)) NULL else report_date
-  if (missing(event_date)) {
-    cli::cli_abort("Please supply the {.arg event_date} column name for a {.cls tbl_ts}.")
-  }
-  tbl_now_from_tsibble(object, event_date = event_date, report_date = rp, ...)
-}
-
-#' @rdname as_tbl_now
-#' @export
-as_tbl_now.data.table <- function(object, event_date, report_date, ...) {
-  if (missing(event_date) || missing(report_date)) {
-    cli::cli_abort("Please supply {.arg event_date} and {.arg report_date} for a {.cls data.table}.")
-  }
-  tbl_now_from_data_table(object, event_date = event_date, report_date = report_date, ...)
+#' @rdname tbl_now_coercion_methods
+#' @exportS3Method data.table::as.data.table
+as.data.table.tbl_now <- function(x, ..., verbose = FALSE) {
+  tbl_now_to_data_table(x, ..., verbose = verbose)
 }

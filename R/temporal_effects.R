@@ -51,7 +51,6 @@
 #' @export
 temporal_effects <- S7::new_class(
   "temporal_effects",
-
   constructor = function(
     day_of_week = FALSE,
     weekend = FALSE,
@@ -62,7 +61,6 @@ temporal_effects <- S7::new_class(
     season_length = 1,
     holidays = NULL
   ) {
-
     # --- Validation checks ---
     check_bool(day_of_week, "day_of_week")
     check_bool(weekend, "weekend")
@@ -85,13 +83,13 @@ temporal_effects <- S7::new_class(
       }
       # Recycle season_length to match seasons, then deduplicate by computed period
       season_length <- rep_len(as.numeric(season_length), length(seasons))
-      seasons       <- as.numeric(seasons)
-      periods       <- seasons * season_length
-      keep          <- !duplicated(periods)
-      seasons       <- seasons[keep]
+      seasons <- as.numeric(seasons)
+      periods <- seasons * season_length
+      keep <- !duplicated(periods)
+      seasons <- seasons[keep]
       season_length <- season_length[keep]
     } else {
-      seasons       <- numeric(0)
+      seasons <- numeric(0)
       season_length <- numeric(0)
     }
 
@@ -113,7 +111,6 @@ temporal_effects <- S7::new_class(
       holidays      = holidays
     )
   },
-
   properties = list(
     day_of_week   = S7::class_logical,
     weekend       = S7::class_logical,
@@ -122,7 +119,7 @@ temporal_effects <- S7::new_class(
     week_of_year  = S7::class_logical,
     seasons       = S7::class_numeric,
     season_length = S7::class_numeric,
-    holidays      = S7::class_any      #to allow NULL or almanac_rcalendar
+    holidays      = S7::class_any # to allow NULL or almanac_rcalendar
   )
 )
 
@@ -153,10 +150,9 @@ NULL
 #' @name print
 #' @export
 S7::method(print, temporal_effects) <- function(x, ...) {
-
   effects_considered <- names(Filter(isTRUE, S7::props(x)[names(S7::props(x)) != "holidays"]))
-  has_holidays       <- !is.null(x@holidays)
-  has_seasons        <- (length(x@seasons) > 0)
+  has_holidays <- !is.null(x@holidays)
+  has_seasons <- (length(x@seasons) > 0)
 
   cli::cli_h1("Temporal Effects")
 
@@ -167,10 +163,10 @@ S7::method(print, temporal_effects) <- function(x, ...) {
       cli::cli_li("{.val {eff}}")
     }
 
-    if (has_seasons){
+    if (has_seasons) {
       # Show periods; include season_length breakdown when it differs from 1
-      periods     <- x@seasons * x@season_length
-      all_unit    <- all(x@season_length == 1)
+      periods <- x@seasons * x@season_length
+      all_unit <- all(x@season_length == 1)
       season_strs <- if (all_unit) {
         as.character(periods)
       } else {
@@ -196,4 +192,3 @@ S7::method(print, temporal_effects) <- function(x, ...) {
 
   invisible(x)
 }
-
