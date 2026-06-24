@@ -32,19 +32,25 @@ observations in the `case_count`.
 
 ``` r
 ndata <- dplyr::tibble(
-  event  = rep(c(as.Date("2020/01/01"), as.Date("2020/01/01"),
-                 as.Date("2020/01/02"), as.Date("2020/01/04"),
-                 as.Date("2020/01/04")), 2),
-  report = rep(c(as.Date("2020/01/01"), as.Date("2020/01/02"),
-                 as.Date("2020/01/02"), as.Date("2020/01/04"),
-                 as.Date("2020/01/05")), 2),
+  event = rep(c(
+    as.Date("2020/01/01"), as.Date("2020/01/01"),
+    as.Date("2020/01/02"), as.Date("2020/01/04"),
+    as.Date("2020/01/04")
+  ), 2),
+  report = rep(c(
+    as.Date("2020/01/01"), as.Date("2020/01/02"),
+    as.Date("2020/01/02"), as.Date("2020/01/04"),
+    as.Date("2020/01/05")
+  ), 2),
   n = rpois(10, lambda = 5),
   sex = c(rep("Male", 5), rep("Female", 5))
 )
-ndata <- tbl_now(ndata, event_date = event, report_date = report,
-     verbose = FALSE, strata = sex, case_count = n, data_type = "count-incidence")
+ndata <- tbl_now(ndata,
+  event_date = event, report_date = report,
+  verbose = FALSE, strata = sex, case_count = n, data_type = "count-incidence"
+)
 
-#Notice that ndata has no 2020-01-03 event date
+# Notice that ndata has no 2020-01-03 event date
 ndata
 #> # A tibble:  10 × 7
 #> # Data type: "count-incidence"
@@ -67,7 +73,7 @@ ndata
 #> # Strata: "sex"
 #> # ────────────────────────────────────────────────────────────────────────────────
 
-#But complete zeroes adds it with a 0
+# But complete zeroes adds it with a 0
 complete_zeroes(ndata)
 #> # A tibble:  14 × 7
 #> # Data type: "count-incidence"
@@ -94,11 +100,11 @@ complete_zeroes(ndata)
 #> # Strata: "sex"
 #> # ────────────────────────────────────────────────────────────────────────────────
 
-#Also works for count-cumulative
-ndata %>%
- to_count("count-cumulative") %>%
- complete_zeroes() %>%
- dplyr::arrange(event, sex, report)
+# Also works for count-cumulative
+ndata |>
+  to_count("count-cumulative") |>
+  complete_zeroes() |>
+  dplyr::arrange(event, sex, report)
 #> # A tibble:  14 × 7
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`

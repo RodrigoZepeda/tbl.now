@@ -117,7 +117,7 @@ tibble. For example:
     #> [1] "2010-12-20"
 
     #We can filter the data
-    ndata_1992 <- ndata %>%
+    ndata_1992 <- ndata |>
      dplyr::filter(onset_week <= as.Date("1992/01/01") &
                    report_week <= as.Date("1992/01/01"))
 
@@ -126,7 +126,7 @@ tibble. For example:
     #> [1] "2010-12-20"
 
     #The update now brings it to the closest date before the cut
-    ndata_1992 <- ndata_1992 %>% update_now()
+    ndata_1992 <- ndata_1992 |> update_now()
 
     #Which is now correct and set to the latest date before the cut
     get_now(ndata_1992)
@@ -143,13 +143,14 @@ tibble. For example:
 ``` r
 data(denguedat)
 ndata <- tbl_now(denguedat,
-                 event_date = onset_week,
-                 report_date = report_week,
-                 verbose = FALSE)
+  event_date = onset_week,
+  report_date = report_week,
+  verbose = FALSE
+)
 
 # Change the event_date column to a different date column
 ndata$new_onset_week <- ndata$onset_week - lubridate::days(1)
-ndata <- ndata %>% change_event_date(new_onset_week)
+ndata <- ndata |> change_event_date(new_onset_week)
 ndata
 #> # A tibble:  52,987 × 7
 #> # Data type: "linelist"
@@ -174,7 +175,7 @@ ndata
 
 # Change the report_date column to a different column
 ndata$new_report_week <- ndata$report_week - lubridate::days(1)
-ndata <- ndata %>% change_report_date(new_report_week)
+ndata <- ndata |> change_report_date(new_report_week)
 ndata
 #> # A tibble:  52,987 × 8
 #> # Data type: "linelist"
@@ -199,8 +200,8 @@ ndata
 #> # ℹ 1 more variable: new_report_week <date>
 
 # Change strata to different strata
-ndata$age_group <- sample(c("< 18","20-60","60+"), nrow(ndata), replace = TRUE)
-ndata <- ndata %>% change_strata(gender, age_group)
+ndata$age_group <- sample(c("< 18", "20-60", "60+"), nrow(ndata), replace = TRUE)
+ndata <- ndata |> change_strata(gender, age_group)
 ndata
 #> # A tibble:  52,987 × 9
 #> # Data type: "linelist"
@@ -227,8 +228,8 @@ ndata
 
 # Change covariates
 ndata$temperature <- rnorm(nrow(ndata), 25, 4)
-ndata$humidity    <- rbeta(nrow(ndata), 0.6, 0.4)
-ndata <- ndata %>% change_covariates(temperature, humidity)
+ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
+ndata <- ndata |> change_covariates(temperature, humidity)
 ndata
 #> # A tibble:  52,987 × 11
 #> # Data type: "linelist"
@@ -283,12 +284,12 @@ ndata
 #> # ℹ 4 more variables: new_report_week <date>, age_group <chr>,
 #> #   temperature <dbl>, humidity <dbl>
 
-#Change case count column
-count_data <- ndata %>%
+# Change case count column
+count_data <- ndata |>
   to_count(to = "count-incidence")
 
-count_data %>%
-  dplyr::mutate(n2 = 1.15*n) %>%
+count_data |>
+  dplyr::mutate(n2 = 1.15 * n) |>
   change_case_count(n2)
 #> # A tibble:  52,987 × 11
 #> # Data type: "count-incidence"
@@ -315,9 +316,9 @@ count_data %>%
 #> # ℹ 5 more variables: temperature <dbl>, humidity <dbl>, n <int>, .delay <dbl>,
 #> #   n2 <dbl>
 
-#Change is_censored
+# Change is_censored
 ndata$is_censored <- FALSE
-ndata <- ndata %>%
+ndata <- ndata |>
   change_is_censored(is_censored)
 ndata
 #> # A tibble:  52,987 × 12
@@ -348,8 +349,8 @@ ndata
 
 # Change covariates
 ndata$temperature <- rnorm(nrow(ndata), 25, 4)
-ndata$humidity    <- rbeta(nrow(ndata), 0.6, 0.4)
-ndata <- ndata %>% change_covariates(temperature, humidity)
+ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
+ndata <- ndata |> change_covariates(temperature, humidity)
 ndata
 #> # A tibble:  52,987 × 12
 #> # Data type: "linelist"
@@ -378,12 +379,13 @@ ndata
 #> #   temperature <dbl>, humidity <dbl>, is_censored <lgl>
 
 # Add temporal effects, remove and replace them
-ndata <- ndata %>%
-    add_temporal_effects(disease_data,
-    t_effects= temporal_effects(week_of_year = TRUE, month_of_year = TRUE))
+ndata <- ndata |>
+  add_temporal_effects(disease_data,
+    t_effects = temporal_effects(week_of_year = TRUE, month_of_year = TRUE)
+  )
 
-#Use the compute to calculate them
-ndata %>% compute_temporal_effects()
+# Use the compute to calculate them
+ndata |> compute_temporal_effects()
 #> # A tibble:  52,987 × 14
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
@@ -413,8 +415,8 @@ ndata %>% compute_temporal_effects()
 #> #   temperature <dbl>, humidity <dbl>, is_censored <lgl>,
 #> #   .event_month_of_year <int>, .event_week_of_year <int>
 
-#Use replace to change them
-ndata %>% replace_temporal_effects(t_effects= temporal_effects(seasons = 52))
+# Use replace to change them
+ndata |> replace_temporal_effects(t_effects = temporal_effects(seasons = 52))
 #> # A tibble:  52,987 × 12
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
@@ -442,8 +444,8 @@ ndata %>% replace_temporal_effects(t_effects= temporal_effects(seasons = 52))
 #> # ℹ 5 more variables: new_report_week <date>, age_group <chr>,
 #> #   temperature <dbl>, humidity <dbl>, is_censored <lgl>
 
-#Use remove to delete them
-ndata %>% remove_temporal_effects()
+# Use remove to delete them
+ndata |> remove_temporal_effects()
 #> # A tibble:  52,987 × 12
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`

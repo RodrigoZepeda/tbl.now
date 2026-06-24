@@ -83,13 +83,15 @@ A patchwork object combining the four panels.
 
 ``` r
 data(denguedat)
-dengue <- tbl_now(denguedat, event_date = "onset_week",
-                  report_date = "report_week", verbose = FALSE)
+dengue <- tbl_now(denguedat,
+  event_date = "onset_week",
+  report_date = "report_week", verbose = FALSE
+)
 autoplot(dengue)
 
 
 # Zoom the delay panel to delays of 0-10 weeks
-if (FALSE){
+if (FALSE) {
   autoplot(dengue, delay_distribution_xlim = c(0, 10))
 }
 ```

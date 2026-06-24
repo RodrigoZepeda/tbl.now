@@ -107,17 +107,18 @@ data(denguedat)
 
 # Get disease
 disease_data <- tbl_now(denguedat,
-    event_date = "onset_week",
-    report_date = "report_week",
-    strata = "gender")
+  event_date = "onset_week",
+  report_date = "report_week",
+  strata = "gender"
+)
 #> ℹ Identified data as <linelist-data> where each observation is a test.
 
 # Add an effect for epidemiological week
-disease_data <- disease_data %>%
-  add_temporal_effects(t_effects= temporal_effects(week_of_year = TRUE))
+disease_data <- disease_data |>
+  add_temporal_effects(t_effects = temporal_effects(week_of_year = TRUE))
 
-#Use the compute to calculate them
-disease_data %>% compute_temporal_effects()
+# Use the compute to calculate them
+disease_data |> compute_temporal_effects()
 #> # A tibble:  52,987 × 7
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
@@ -143,9 +144,9 @@ disease_data %>% compute_temporal_effects()
 #> # ℹ 52,977 more rows
 #> # ℹ 1 more variable: .event_week_of_year <int>
 
-#Use replace to change them
-disease_data %>%
-  replace_temporal_effects(t_effects= temporal_effects(seasons = 52))
+# Use replace to change them
+disease_data |>
+  replace_temporal_effects(t_effects = temporal_effects(seasons = 52))
 #> # A tibble:  52,987 × 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
@@ -169,8 +170,8 @@ disease_data %>%
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 52,977 more rows
 
-#Use remove to delete them
-disease_data %>% remove_temporal_effects()
+# Use remove to delete them
+disease_data |> remove_temporal_effects()
 #> # A tibble:  52,987 × 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`

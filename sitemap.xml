@@ -42,7 +42,6 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/names_tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/pipe.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/print.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/reexports.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/remove.html</loc></url>
@@ -51,12 +50,12 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_can_reconstruct.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_reconstruct.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_reconstruct_internal.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_to_EpiNow2.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/time_cols_to_numeric.html</loc></url>

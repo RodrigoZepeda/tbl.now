@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,6 +53,15 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.1" id="tblnow-081">tbl.now 0.8.1<a class="anchor" aria-label="anchor" href="#tblnow-081"></a></h2>
+<ul><li>Removed the <code>%&gt;%</code> export and changed all the pipes to <code>|&gt;</code>
+</li>
+<li>Refactored <code>converters.R</code> for readability (dplyr column operations instead of base indexing, full variable names, lintr-clean).</li>
+<li>The <code>tbl_now_to_*()</code> converters now keep the <code>covariates</code> and <code>is_censored</code> columns wherever the target format can hold them (<code>data.table</code>, <code>tsibble</code>, <code>baselinenowcast</code> long format, <code>epidist</code> linelist); the fixed modelling objects (<code>enw_preprocess_data</code>, the reporting-triangle matrix, the EpiNow2 series) still cannot carry them.</li>
+<li>Added S3 methods on the other packages’ coercion generics so they accept a <code>tbl_now</code> directly: <code>as_epidist_linelist_data()</code>, <code>as_reporting_triangle()</code>, <code>as_tsibble()</code> and <code><a href="https://rdrr.io/pkg/data.table/man/as.data.table.html" class="external-link">as.data.table()</a></code>, each wrapping the matching <code>tbl_now_to_*()</code>.</li>
+<li>Fixed <code><a href="../reference/tbl_now_data_table.html">tbl_now_to_data_table()</a></code> checking for <code>baselinenowcast</code> instead of <code>data.table</code>, and <code>tbl_now_to_baselinenowcast(format = "long")</code> no longer requiring <code>baselinenowcast</code> to be installed.</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.0" id="tblnow-080">tbl.now 0.8.0<a class="anchor" aria-label="anchor" href="#tblnow-080"></a></h2>
 <ul><li>Modified the <code>update</code> as the <code>t_effect</code> argument was not doing anything.</li>
 <li>Fixed bug that errored <code>complete_zeroes</code> when <code>is_censored</code> was given.</li>
@@ -62,6 +71,11 @@
 <li>Documented all internal functions with roxygen (<code>@keywords internal</code> + <code>@noRd</code>) and ensured every exported function has a <code>@return</code>.</li>
 <li>Homogenized <code>lifecycle</code> badges.</li>
 <li>Brought the <code>censor_delays_above</code> function from <code>diseasenowcasting</code> to <code>tbl_now</code>.</li>
+<li>
+<code><a href="../reference/tbl_now_epinowcast.html">tbl_now_from_epinowcast()</a></code> now accepts not only the raw long input but also a preprocessed <code>enw_preprocess_data</code> object or a fitted <code>epinowcast</code> object (grouping auto-detected), matching the format <code>epinowcast</code> uses for summaries and plots.</li>
+<li>
+<code>tbl_now_to_EpiNow2()</code> gained a <code>model</code> argument: <code>"estimate_infections"</code> (default, the single <code>date</code>/<code>confirm</code> series) and <code>"estimate_truncation"</code> (a list of report-date snapshots, the one EpiNow2 model that uses the report dimension). Documentation clarified accordingly.</li>
+<li>Fixed two converter <code><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace()</a></code> guards: <code><a href="../reference/tbl_now_data_table.html">tbl_now_to_data_table()</a></code> checked for <code>baselinenowcast</code> instead of <code>data.table</code>, and <code>tbl_now_to_baselinenowcast(format = "long")</code> no longer requires <code>baselinenowcast</code> to be installed.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.5" id="tblnow-075">tbl.now 0.7.5<a class="anchor" aria-label="anchor" href="#tblnow-075"></a></h2>

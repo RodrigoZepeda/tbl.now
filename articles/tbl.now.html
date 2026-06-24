@@ -41,7 +41,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -207,7 +207,7 @@ event–report combination.</p></li>
 </ul>
 <p>We can convert this into a <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a>:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">symptom_onset</span>, report_date <span class="op">=</span> <span class="va">medical_visit</span>, case_count <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Identified data as &lt;<span style="font-style: italic;">count-incidence</span>&gt; with counts in column <span style="color: #0000BB;">"n"</span>.</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  4 × 6</span></span></span>
@@ -259,7 +259,7 @@ dates.</p></li>
 <li><p><strong>report_units</strong>: the temporal units for report
 dates.</p></li>
 <li>
-<p><strong>data_type</strong>: one of the following (see <a href="#data-types">the data types section</a>:</p>
+<p><strong>data_type</strong>: one of the following (see <a href="#data-types">the data types section</a>):</p>
 <ul>
 <li>linelist</li>
 <li>count-incidence</li>
@@ -510,7 +510,7 @@ function supports structured transformations:</p>
 event–report date, counting only cases reported on that date.</li>
 </ul>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_linelist</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">df_linelist</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/to_count.html">to_count</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"count-incidence"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  3 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span></span>
@@ -531,7 +531,7 @@ event–report date, producing cumulative counts up to each report
 date.</li>
 </ul>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_linelist</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">df_linelist</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/to_count.html">to_count</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"count-cumulative"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  3 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
@@ -561,7 +561,7 @@ the <strong>count-incidence</strong> that specifies the ones observed
 cumulative sums for each event date across report dates.</li>
 </ul>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_count_inc</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">df_count_inc</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/to_count.html">to_count</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"count-cumulative"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  6 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
@@ -587,22 +587,29 @@ repeated entries such as in this case:</li>
 </ul>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  n           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">11</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">1</span>, <span class="fl">10</span>, <span class="fl">9</span>, <span class="fl">11</span>, <span class="fl">3</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>  sex         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"M"</span>, <span class="fl">3</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"F"</span>, <span class="fl">4</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"M"</span>, <span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"F"</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  event_date  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>,</span>
-<span>                  <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span>,</span>
-<span>                  <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span>,</span>
-<span>                  <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>,</span>
-<span>                  <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>,</span>
-<span>                  <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>,</span>
-<span>                  <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>,</span>
-<span>                  <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/16"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/17"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> </span>
+<span>  n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">11</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">1</span>, <span class="fl">10</span>, <span class="fl">9</span>, <span class="fl">11</span>, <span class="fl">3</span>, <span class="fl">1</span><span class="op">)</span>,</span>
+<span>  sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"M"</span>, <span class="fl">3</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"F"</span>, <span class="fl">4</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"M"</span>, <span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"F"</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fl">5</span><span class="op">)</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/16"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/17"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">tbl_example</span> <span class="op">&lt;-</span> <span class="va">df_example</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
-<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">event_date</span>, report_date <span class="op">=</span> <span class="va">report_date</span>, </span>
-<span>          data_type <span class="op">=</span> <span class="st">"count-incidence"</span>, case_count <span class="op">=</span> <span class="va">n</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>          warn_non_uniqueness <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">tbl_example</span> <span class="op">&lt;-</span> <span class="va">df_example</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
+<span>    event_date <span class="op">=</span> <span class="va">event_date</span>, report_date <span class="op">=</span> <span class="va">report_date</span>,</span>
+<span>    data_type <span class="op">=</span> <span class="st">"count-incidence"</span>, case_count <span class="op">=</span> <span class="va">n</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>    warn_non_uniqueness <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="va">tbl_example</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  14 × 7</span></span></span>
@@ -634,7 +641,7 @@ rows, the <a href="https://rodrigozepeda.github.io/tbl.now/reference/to_count.ht
 function can be used to collapse duplicates by summing the
 <code>case_count</code> column.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tbl_example</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">tbl_example</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/to_count.html">to_count</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"count-incidence"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  9 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span></span>
@@ -679,7 +686,8 @@ compute:</p>
 <span><span class="va">t_eff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span></span>
 <span>  day_of_week  <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  week_of_year <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  holidays     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/cal_us_federal.html" class="external-link">cal_us_federal</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span>  holidays     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/cal_us_federal.html" class="external-link">cal_us_federal</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span><span class="va">t_eff</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Temporal Effects</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span></span>
@@ -712,11 +720,13 @@ when you are ready to use them in a model.</p></li>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"denguedat"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Step 1 — create the tbl_now and attach the spec (no columns added yet)</span></span>
-<span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">onset_week</span>, report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
-<span>          verbose <span class="op">=</span> <span class="cn">FALSE</span>, strata <span class="op">=</span> <span class="va">gender</span><span class="op">)</span></span>
+<span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
+<span>    event_date <span class="op">=</span> <span class="va">onset_week</span>, report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
+<span>    verbose <span class="op">=</span> <span class="cn">FALSE</span>, strata <span class="op">=</span> <span class="va">gender</span></span>
+<span>  <span class="op">)</span></span>
 <span></span>
-<span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="va">t_eff</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># The footer shows "T. effects (lazy): ..." — spec is recorded but not computed</span></span>
@@ -801,7 +811,7 @@ added.</li>
 were requested even after further dplyr operations.</li>
 </ul>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="va">df_computed</span><span class="op">)</span>   <span class="co"># The spec (list of configs)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="va">df_computed</span><span class="op">)</span> <span class="co"># The spec (list of configs)</span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
 <span><span class="co">#&gt; [[1]]$t_effects</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -822,40 +832,6 @@ were requested even after further dplyr operations.</li>
 <span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effect_cols</a></span><span class="op">(</span><span class="va">df_computed</span><span class="op">)</span> <span class="co"># The computed column names</span></span>
 <span><span class="co">#&gt; [1] ".event_day_of_week"  ".event_week_of_year" ".event_holiday"</span></span></code></pre></div>
 </div>
-<div class="section level4">
-<h4 id="dplyr-operations-preserve-the-spec">dplyr operations preserve the spec<a class="anchor" aria-label="anchor" href="#dplyr-operations-preserve-the-spec"></a>
-</h4>
-<p>A key design property: <strong><code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter()</a></code>,
-<code><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select()</a></code>, <code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code>, and all other dplyr verbs
-preserve the <code>temporal_effects</code> spec</strong>. They do not
-trigger re-computation. Only <code><a href="../reference/compute_temporal_effects.html">compute_temporal_effects()</a></code>
-computes the columns.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Filtering changes the rows but keeps the spec intact</span></span>
-<span><span class="va">df_filtered</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">report_week</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"1991-06-01"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="va">df_filtered</span><span class="op">)</span>, <span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
-</div>
-<div class="section level4">
-<h4 id="you-can-also-supply-the-spec-directly-to-tbl_now">You can also supply the spec directly to <code>tbl_now()</code><a class="anchor" aria-label="anchor" href="#you-can-also-supply-the-spec-directly-to-tbl_now"></a>
-</h4>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_with_spec</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">onset_week</span>, report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
-<span>          t_effects <span class="op">=</span> <span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
-<span>          verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># No effect columns yet — spec is stored lazily</span></span>
-<span><span class="st">".event_week_of_year"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">df_with_spec</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span></span>
-<span><span class="co"># Compute on demand</span></span>
-<span><span class="va">df_with_spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_temporal_effects.html">compute_temporal_effects</a></span><span class="op">(</span><span class="va">df_with_spec</span><span class="op">)</span></span>
-<span><span class="st">".event_week_of_year"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">df_with_spec</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
-</div>
 </div>
 <div class="section level3">
 <h3 id="modifying-a-tbl_now-with-dplyr">Modifying a <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a>
@@ -870,12 +846,14 @@ incrementally manipulate strata, covariates, and temporal effects.</p>
 <p>The example below demonstrates how to create a <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a>,
 add strata and temporal effects, later modify the strata, and finally
 remove the temporal effects.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"mpoxdat"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">mpoxdat</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">dx_date</span>, report_date <span class="op">=</span> <span class="va">dx_report_date</span>,</span>
-<span>          case_count <span class="op">=</span> <span class="va">n</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, strata <span class="op">=</span> <span class="va">race</span><span class="op">)</span></span>
+<span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">mpoxdat</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
+<span>    event_date <span class="op">=</span> <span class="va">dx_date</span>, report_date <span class="op">=</span> <span class="va">dx_report_date</span>,</span>
+<span>    case_count <span class="op">=</span> <span class="va">n</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, strata <span class="op">=</span> <span class="va">race</span></span>
+<span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="va">df_now</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1,417 × 7</span></span></span>
@@ -901,24 +879,24 @@ remove the temporal effects.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,407 more rows</span></span></span></code></pre></div>
 <p>You can see that the strata is <code>race</code> with the
 corresponding <a href="https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html">get_*</a>:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_strata</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "race"</span></span></code></pre></div>
 <p>Strata can be modified with the <a href="https://rodrigozepeda.github.io/tbl.now/reference/change.html">change_*</a>
 family of functions. The following example adds a new column containing
 an uppercase version of the existing race variable and sets it as the
 new strata:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>RACE_UPPER <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">toupper</a></span><span class="op">(</span><span class="va">race</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>RACE_UPPER <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">toupper</a></span><span class="op">(</span><span class="va">race</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/change.html">change_strata</a></span><span class="op">(</span><span class="va">RACE_UPPER</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_strata</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "RACE_UPPER"</span></span></code></pre></div>
 <p>To attach a lazy temporal-effects spec, use <a href="https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html">add_temporal_effects()</a>,
 then materialise with <a href="https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html">compute_temporal_effects()</a>:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Spec is stored (lazy):</span></span>
@@ -943,9 +921,9 @@ then materialise with <a href="https://rodrigozepeda.github.io/tbl.now/reference
 <p>Attributes can be removed using the corresponding <a href="https://rodrigozepeda.github.io/tbl.now/reference/remove.html">remove_*</a>
 functions. <code><a href="../reference/remove.html">remove_temporal_effects()</a></code> drops both the spec
 and any computed columns:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="../reference/remove.html">remove_temporal_effects</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/remove.html">remove_temporal_effects</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/remove.html">remove_all_strata</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: *Non-unique*: Data has multiple rows for the same event (dx_date) and</span></span>
 <span><span class="co">#&gt; report(dx_report_date) dates. Consider using `to_count()` to aggregate the data</span></span>
@@ -985,10 +963,10 @@ and any computed columns:</p>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2023-05-19</span> | Event date: <span style="color: #0000BB;">"dx_date"</span> | Report date: <span style="color: #0000BB;">"dx_report_date"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,407 more rows</span></span></span></code></pre></div>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span>  <span class="co"># Empty list — no spec</span></span>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span> <span class="co"># Empty list — no spec</span></span>
 <span><span class="co">#&gt; list()</span></span>
-<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effect_cols</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span>  <span class="co"># character(0) — no computed cols</span></span>
+<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effect_cols</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span> <span class="co"># character(0) — no computed cols</span></span>
 <span><span class="co">#&gt; character(0)</span></span>
 <span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_strata</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; NULL</span></span></code></pre></div>
@@ -1003,21 +981,23 @@ therefore support standard <a href="https://dplyr.tidyverse.org/" class="externa
 to preserve and adapt its internal attributes when operations are
 performed. For example, renaming a strata column will automatically
 update the stored strata attribute.</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>, event_date <span class="op">=</span> <span class="va">onset_week</span>, </span>
-<span>                  report_date <span class="op">=</span> <span class="va">report_week</span>, strata <span class="op">=</span> <span class="va">gender</span>,</span>
-<span>                  verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>,</span>
+<span>  event_date <span class="op">=</span> <span class="va">onset_week</span>,</span>
+<span>  report_date <span class="op">=</span> <span class="va">report_week</span>, strata <span class="op">=</span> <span class="va">gender</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="co">#Current strata</span></span>
+<span><span class="co"># Current strata</span></span>
 <span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_strata</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "gender"</span></span></code></pre></div>
 <p>After renaming the column, the strata attribute updates
 accordingly:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>male_or_female <span class="op">=</span> <span class="va">gender</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_strata</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span></span>
@@ -1026,8 +1006,8 @@ accordingly:</p>
 object to drop back to a standard tibble. This occurs when the operation
 removes necessary structure—for example, collapsing all data into a
 single row with <a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise()</a>:</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>number_males <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">male_or_female</span> <span class="op">==</span> <span class="st">"Male"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: Dropping `tbl_now` attributes and converting to `tibble`</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 1</span></span></span>
@@ -1045,27 +1025,37 @@ retains the strata, covariate, and temporal-effect attributes from the
 original object, and recalculates “now” estimates using the combined
 data.</p>
 <p>Below is an example using an initial dataset:</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  patient <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span>,</span>
 <span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>,</span>
-<span>                  <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>  report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>, event_date <span class="op">=</span> <span class="va">event_date</span>,</span>
-<span>                  report_date <span class="op">=</span> <span class="va">report_date</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>,</span>
+<span>  event_date <span class="op">=</span> <span class="va">event_date</span>,</span>
+<span>  report_date <span class="op">=</span> <span class="va">report_date</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p>And a follow-up dataset containing newly reported cases:</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  patient <span class="op">=</span> <span class="fl">7</span><span class="op">:</span><span class="fl">13</span>,</span>
-<span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, </span>
-<span>                 <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>, </span>
-<span>                 <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span>, </span>
-<span>                  <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/16"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/16"</span><span class="op">)</span>, </span>
-<span>                  <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/17"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/16"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/16"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/17"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p>We can update the original object by incorporating the new data:</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_updated</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">df_now</span>, new_data <span class="op">=</span> <span class="va">df_new</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">df_updated</span></span>
@@ -1115,14 +1105,15 @@ overall mean, so 1 is average), built directly from the data.</li>
 <strong>Seasonality</strong> — a periodogram of the incidence series
 whose dominant peak suggests a Fourier season length to pass to <a href="https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html">temporal_effects()</a>.</li>
 </ol>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>,</span>
-<span>                      event_date  <span class="op">=</span> <span class="st">"onset_week"</span>,</span>
-<span>                      report_date <span class="op">=</span> <span class="st">"report_week"</span>,</span>
-<span>                      verbose     <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span>  event_date  <span class="op">=</span> <span class="st">"onset_week"</span>,</span>
+<span>  report_date <span class="op">=</span> <span class="st">"report_week"</span>,</span>
+<span>  verbose     <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tbl.now_files/figure-html/autoplot-1.png" class="r-plt" alt="" width="864"></p>
@@ -1139,17 +1130,17 @@ suggesting an annual cycle. We could capture this with a Fourier term of
 <p>The function <a href="https://rodrigozepeda.github.io/tbl.now/reference/week_2_date.html">week_2_date()</a>
 converts epidemiological week/year combinations into an aligned calendar
 date.</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  epidemiological_week <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,</span>
 <span>  epidemiological_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">2024</span>, <span class="fl">5</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">df</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span><span class="va">df</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/week_2_date.html">week_2_date</a></span><span class="op">(</span></span>
 <span>    week_col <span class="op">=</span> <span class="va">epidemiological_week</span>,</span>
 <span>    year_col <span class="op">=</span> <span class="va">epidemiological_year</span></span>
-<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
 <span><span class="co">#&gt;   epidemiological_week epidemiological_year       date</span></span>
 <span><span class="co">#&gt; 1                    1                 2024 2023-12-31</span></span>
 <span><span class="co">#&gt; 2                    2                 2024 2024-01-07</span></span>
@@ -1165,17 +1156,22 @@ and get_latest_reported_cases()</a> extract the number of cases first
 reported for each event date and the most recently reported totals,
 respectively. These utilities allow users to quantify revisions between
 initial and final reports.</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_reports</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>    n           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">3</span><span class="op">)</span>,</span>
-<span>    event_date  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fl">6</span><span class="op">)</span>,</span>
-<span>    report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>,</span>
-<span>                    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/16"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/17"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>  n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">3</span><span class="op">)</span>,</span>
+<span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fl">6</span><span class="op">)</span>,</span>
+<span>  report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/14"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/15"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/16"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/17"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">tbl_reports</span> <span class="op">&lt;-</span> <span class="va">df_reports</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">event_date</span>, report_date <span class="op">=</span> <span class="va">report_date</span>, </span>
-<span>          verbose <span class="op">=</span> <span class="cn">FALSE</span>, case_count <span class="op">=</span> <span class="va">n</span>, report_units <span class="op">=</span> <span class="st">"days"</span>,</span>
-<span>          event_units <span class="op">=</span> <span class="st">"days"</span><span class="op">)</span></span>
+<span><span class="va">tbl_reports</span> <span class="op">&lt;-</span> <span class="va">df_reports</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
+<span>    event_date <span class="op">=</span> <span class="va">event_date</span>, report_date <span class="op">=</span> <span class="va">report_date</span>,</span>
+<span>    verbose <span class="op">=</span> <span class="cn">FALSE</span>, case_count <span class="op">=</span> <span class="va">n</span>, report_units <span class="op">=</span> <span class="st">"days"</span>,</span>
+<span>    event_units <span class="op">=</span> <span class="st">"days"</span></span>
+<span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="va">tbl_reports</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  6 × 6</span></span></span>
@@ -1194,7 +1190,7 @@ initial and final reports.</p>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-09-17</span> | Event date: <span style="color: #0000BB;">"event_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 <p>The initial reported cases:</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_latest_first.html">get_initial_reported_cases</a></span><span class="op">(</span><span class="va">tbl_reports</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
@@ -1207,7 +1203,7 @@ initial and final reports.</p>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-09-17</span> | Event date: <span style="color: #0000BB;">"event_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 <p>and the latest totals:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="va">tbl_reports</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
@@ -1228,7 +1224,7 @@ function standardizes dates within the same epidemiological week to a
 single reference day (for example, the start of the week). This is
 helpful when computing differences across weekly reporting periods,
 avoiding fractional time intervals.</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-10-31"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-11-07"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-11-13"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  epiweek <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">44</span>, <span class="fl">45</span>, <span class="fl">46</span><span class="op">)</span></span>
@@ -1243,8 +1239,8 @@ avoiding fractional time intervals.</p>
 <span><span class="co">#&gt; 3 2022-11-13      46   2022-11-13</span></span></code></pre></div>
 <p>You can verify the resulting weekday using the <a href="https://lubridate.tidyverse.org/reference/day.html" class="external-link">wday()
 function from the lubridate package</a>:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_aligned</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df_aligned</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>day_label <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/day.html" class="external-link">wday</a></span><span class="op">(</span><span class="va">date_aligned</span>, label <span class="op">=</span> <span class="cn">TRUE</span>, abbr <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;         date epiweek date_aligned day_label</span></span>
 <span><span class="co">#&gt; 1 2022-10-31      44   2022-10-30    Sunday</span></span>
@@ -1259,15 +1255,16 @@ function fills with zeroes those cases where the <code>event</code> or
 <code>report</code> weeks have not been observed.</p>
 <p>Consider for example the following data with just two observations
 per date:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
-<span>  event_date  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/12"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/14"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/14"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/12"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/14"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/14"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/13"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/15"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/18"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  case_count <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">5</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">ndata</span>, <span class="va">event_date</span>, <span class="va">report_date</span>,</span>
-<span>     verbose <span class="op">=</span> <span class="cn">FALSE</span>, case_count <span class="op">=</span> <span class="va">case_count</span>, data_type <span class="op">=</span> <span class="st">"count-incidence"</span><span class="op">)</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>, case_count <span class="op">=</span> <span class="va">case_count</span>, data_type <span class="op">=</span> <span class="st">"count-incidence"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">ndata</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  3 × 6</span></span></span>
@@ -1283,10 +1280,10 @@ per date:</p>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2021-01-18</span> | Event date: <span style="color: #0000BB;">"event_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 <p>Notice that there are no observations for <code>2021/01/13</code>.
-Furthermore, if we assume that the maximum possible observed We can fill
-the unobserved cases with:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/complete_zeroes.html">complete_zeroes</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span>
+Furthermore, if we assume that the maximum possible observed delay is of
+<code>4</code>, we can fill the unobserved cases with:</p>
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/complete_zeroes.html">complete_zeroes</a></span><span class="op">(</span><span class="va">ndata</span>, max_delay <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  14 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
@@ -1319,11 +1316,15 @@ the counts to zero if they have not been observed.</p>
 <p>The function <code><a href="../reference/censor_delays_above.html">censor_delays_above()</a></code> marks all delays
 above a threshold value (<code>max_delay</code>) as censored. This is
 useful to indicate extreme delays in some nowcast models:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>onset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-01-01"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
-<span>                 reported <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-01-01"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">2</span>, <span class="fl">300</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>, event_date <span class="op">=</span> <span class="va">onset</span>, report_date <span class="op">=</span> <span class="va">reported</span>,</span>
-<span>              data_type <span class="op">=</span> <span class="st">"linelist"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  onset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-01-01"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>  reported <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-01-01"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">2</span>, <span class="fl">300</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>,</span>
+<span>  event_date <span class="op">=</span> <span class="va">onset</span>, report_date <span class="op">=</span> <span class="va">reported</span>,</span>
+<span>  data_type <span class="op">=</span> <span class="st">"linelist"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># the 300-day report becomes censored (an upper bound on its delay)</span></span>
 <span><span class="fu"><a href="../reference/censor_delays_above.html">censor_delays_above</a></span><span class="op">(</span><span class="va">tn</span>, max_delay <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span>
@@ -1385,7 +1386,9 @@ units, the column mapping, and so on). The supported packages — <a href="https
 <td>yes</td>
 <td>
 <code>count-cumulative</code> (<code>reference_date</code>,
-<code>report_date</code>, <code>confirm</code>)</td>
+<code>report_date</code>, <code>confirm</code>); <code>from</code> also
+accepts a preprocessed <code>enw_preprocess_data</code> or fitted
+object</td>
 </tr>
 <tr class="even">
 <td><code>baselinenowcast</code></td>
@@ -1399,8 +1402,11 @@ matrix)</td>
 <td><code>EpiNow2</code></td>
 <td>—</td>
 <td>yes</td>
-<td>a single <code>date</code>/<code>confirm</code> incidence
-series</td>
+<td>a single <code>date</code>/<code>confirm</code> series for
+<code>estimate_infections()</code>, or (with
+<code>model = "estimate_truncation"</code>) a list of report-date
+snapshots for <code>estimate_truncation()</code>
+</td>
 </tr>
 <tr class="even">
 <td><code>data.table</code></td>
@@ -1427,16 +1433,18 @@ key)</td>
 <p>The object produced by any <code>tbl_now_to_*()</code> can be
 converted straight back with <a href="https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.html">as_tbl_now()</a>,
 which has methods for each of these classes:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>, event_date <span class="op">=</span> <span class="st">"onset_week"</span>,</span>
-<span>                      report_date <span class="op">=</span> <span class="st">"report_week"</span>, strata <span class="op">=</span> <span class="st">"gender"</span>,</span>
-<span>                      verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>,</span>
+<span>  event_date <span class="op">=</span> <span class="st">"onset_week"</span>,</span>
+<span>  report_date <span class="op">=</span> <span class="st">"report_week"</span>, strata <span class="op">=</span> <span class="st">"gender"</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># tbl_now -&gt; tsibble -&gt; tbl_now</span></span>
 <span><span class="va">dengue_ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_tsibble.html">tbl_now_to_tsibble</a></span><span class="op">(</span><span class="va">dengue_now</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: tsibble requires unique index/key rows; aggregating linelist to</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">"count-incidence"</span> with `to_count()`.</span></span>
-<span><span class="fu"><a href="../reference/as_tbl_now.html">as_tbl_now</a></span><span class="op">(</span><span class="va">dengue_ts</span>, event_date <span class="op">=</span> <span class="st">"onset_week"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/as_tbl_now.html">as_tbl_now</a></span><span class="op">(</span><span class="va">dengue_ts</span>, report_date <span class="op">=</span> <span class="st">"report_week"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  8,265 × 7</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span></span>
@@ -1444,15 +1452,15 @@ which has methods for each of these classes:</p>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt;    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[...]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 1990-01-01   1990-01-01    Female       2          0           0      0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 1990-01-01   1990-01-08    Female      13          0           1      1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 1990-01-01   1990-01-15    Female      16          0           2      2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 1990-01-01   1990-01-22    Female       7          0           3      3</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 1990-01-01   1990-03-05    Female       1          0           9      9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1990-01-01   1990-01-01    Male         1          0           0      0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1990-01-01   1990-01-08    Male        11          0           1      1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1990-01-01   1990-01-15    Male         7          0           2      2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1990-01-01   1990-01-22    Male         1          0           3      3</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1990-01-01   1990-01-29    Male         1          0           4      4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 1990-01-01   1990-01-01    Male         1          0           0      0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 1990-01-01   1990-01-08    Female      13          0           1      1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 1990-01-08   1990-01-08    Female       1          1           1      0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 1990-01-01   1990-01-08    Male        11          0           1      1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1990-01-08   1990-01-08    Male         1          1           1      0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1990-01-01   1990-01-15    Female      16          0           2      2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1990-01-08   1990-01-15    Female      17          1           2      1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1990-01-15   1990-01-15    Female       2          2           2      0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1990-01-01   1990-01-15    Male         7          0           2      2</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2010-12-20</span> | Event date: <span style="color: #0000BB;">"onset_week"</span> | Report date: <span style="color: #0000BB;">"report_week"</span></span></span>
 <span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"gender"</span></span></span>
@@ -1461,46 +1469,72 @@ which has methods for each of these classes:</p>
 <p>For example, the <a href="https://package.epinowcast.org/" class="external-link">epinowcast</a> hospitalization
 data ships in long cumulative format and converts straight into a
 <code>count-cumulative</code> <code>tbl_now</code>:</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">germany_hospitalizations</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">epinowcast</span><span class="fu">::</span><span class="va"><a href="https://package.epinowcast.org/reference/germany_covid19_hosp.html" class="external-link">germany_covid19_hosp</a></span>, <span class="fl">1000</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://package.epinowcast.org" class="external-link">epinowcast</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">germany_covid19_hosp</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">hospitalizations_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_from_epinowcast</a></span><span class="op">(</span></span>
-<span>  <span class="va">germany_hospitalizations</span>,</span>
-<span>  strata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"location"</span>, <span class="st">"age_group"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
 <span></span>
+<span><span class="co">#Read data from epinowcast</span></span>
+<span><span class="va">obs</span>  <span class="op">&lt;-</span> <span class="va">germany_covid19_hosp</span><span class="op">[</span><span class="va">location</span> <span class="op">==</span> <span class="st">"DE"</span><span class="op">]</span></span>
+<span></span>
+<span><span class="co">#Remove unused column</span></span>
+<span><span class="va">obs</span>  <span class="op">&lt;-</span> <span class="va">obs</span><span class="op">[</span>, <span class="va">location</span> <span class="op">:=</span> <span class="cn">NULL</span><span class="op">]</span></span>
+<span></span>
+<span><span class="co">#Pre-process data</span></span>
+<span><span class="va">pobs</span> <span class="op">&lt;-</span> <span class="fu">epinowcast</span><span class="fu">::</span><span class="fu"><a href="https://package.epinowcast.org/reference/enw_preprocess_data.html" class="external-link">enw_preprocess_data</a></span><span class="op">(</span><span class="va">obs</span>, max_delay <span class="op">=</span> <span class="fl">40</span>, by <span class="op">=</span> <span class="st">"age_group"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">hospitalizations_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_from_epinowcast</a></span><span class="op">(</span><span class="va">pobs</span><span class="op">)</span></span>
+<span>  </span>
 <span><span class="va">hospitalizations_now</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  893 × 8</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  48,279 × 7</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
-<span><span class="co">#&gt;    reference_date location age_group confirm report_date  .event_num .report_num</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;IDate&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt;    <span style="color: #949494;">[event_date]</span>   <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[strata]</span>  <span style="color: #949494;">[cases]</span> <span style="color: #949494;">[report_dat</span>…      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2021-04-06     DE       00+           149 2021-04-06            0           0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2021-04-07     DE       00+           312 2021-04-07            1           1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2021-04-08     DE       00+           424 2021-04-08            2           2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2021-04-09     DE       00+           288 2021-04-09            3           3</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2021-04-10     DE       00+           273 2021-04-10            4           4</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2021-04-11     DE       00+           107 2021-04-11            5           5</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2021-04-12     DE       00+           130 2021-04-12            6           6</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2021-04-13     DE       00+           291 2021-04-13            7           7</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2021-04-14     DE       00+           305 2021-04-14            8           8</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2021-04-15     DE       00+           329 2021-04-15            9           9</span></span>
+<span><span class="co">#&gt;    reference_date report_date   confirm age_group .event_num .report_num .delay</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt;    <span style="color: #949494;">[event_date]</span>   <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[cases]</span> <span style="color: #949494;">[strata]</span>       <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2021-04-06     2021-04-06        149 00+                0           0      0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2021-04-06     2021-04-07        289 00+                0           1      1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2021-04-06     2021-04-08        350 00+                0           2      2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2021-04-06     2021-04-09        402 00+                0           3      3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2021-04-06     2021-04-10        438 00+                0           4      4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2021-04-06     2021-04-11        446 00+                0           5      5</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2021-04-06     2021-04-12        456 00+                0           6      6</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2021-04-06     2021-04-13        468 00+                0           7      7</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2021-04-06     2021-04-14        493 00+                0           8      8</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2021-04-06     2021-04-15        508 00+                0           9      9</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2021-10-20</span> | Event date: <span style="color: #0000BB;">"reference_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
-<span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"location"</span> and <span style="color: #0000BB;">"age_group"</span></span></span>
+<span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"age_group"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 883 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: .delay &lt;dbl&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 48,269 more rows</span></span></span></code></pre></div>
 <p>Going the other way, <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> returns an
 <code>enw_preprocess_data</code> object ready for <a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast::epinowcast()</a>:</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">epinowcast_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">hospitalizations_now</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">epinowcast_object</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "enw_preprocess_data" "data.table"          "data.frame"</span></span></code></pre></div>
-<p>The same pattern works for the other packages, for example
-<code><a href="../reference/tbl_now_to_EpiNow2.html">tbl_now_to_EpiNow2()</a></code> collapses the object into the single
-<code>date</code>/<code>confirm</code> time series that <a href="https://epiforecasts.io/EpiNow2/" class="external-link">EpiNow2</a> expects.</p>
+<span><span class="co">#&gt; Warning: <span style="color: #BBBB00;">!</span> Converting a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> to <span style="color: #0000BB;">epinowcast</span> is <span style="font-style: italic;">lossy</span>: the result is not guaranteed</span></span>
+<span><span class="co">#&gt;   to be identical to a native <span style="color: #0000BB;">epinowcast</span> object.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Some information might be dropped (e.g. covariate columns, maximum delays,</span></span>
+<span><span class="co">#&gt;   grouping indices and padding rows).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> If you have the original data as a `tibble`, `data.frame` or `data.table`,</span></span>
+<span><span class="co">#&gt;   prefer using that directly over converting from another format.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Silence this warning with `quiet = TRUE`.</span></span>
+<span><span class="va">epinowcast_object</span></span>
+<span><span class="co">#&gt; ── Preprocessed nowcast data ─────────────────────────────────────────────────── </span></span>
+<span><span class="co">#&gt; Groups: 7 (age_group) | Timestep: day | Max delay: 40 </span></span>
+<span><span class="co">#&gt; Observations: 198 timepoints x 1386 snapshots </span></span>
+<span><span class="co">#&gt; Max date: 2021-10-20 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Datasets (access with `enw_get_data(x, "&lt;name&gt;")`): </span></span>
+<span><span class="co">#&gt;   obs                :  49,980 x 8 </span></span>
+<span><span class="co">#&gt;   new_confirm        :  49,980 x 10 </span></span>
+<span><span class="co">#&gt;   latest             :   1,386 x 9 </span></span>
+<span><span class="co">#&gt;   missing_reference  :       0 x 5 </span></span>
+<span><span class="co">#&gt;   reporting_triangle :   1,386 x 42 </span></span>
+<span><span class="co">#&gt;   metareference      :   1,386 x 8 </span></span>
+<span><span class="co">#&gt;   metareport         :   1,659 x 11 </span></span>
+<span><span class="co">#&gt;   metadelay          :      40 x 5</span></span></code></pre></div>
+<p>The same pattern works for the other packages.
+<!---For example `tbl_now_to_EpiNow2()` collapses the object into the single `date`/`confirm` time series that [EpiNow2](https://epiforecasts.io/EpiNow2/)'s `estimate_infections()`/`epinow()` expect; passing `model = "estimate_truncation"` instead returns the list of report-date snapshots that `estimate_truncation()` consumes (the one EpiNow2 model that uses the report dimension).--></p>
 </div>
 </div>
 <div class="section level2 unnumbered">

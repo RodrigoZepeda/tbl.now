@@ -47,7 +47,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,7 +117,7 @@
 <span><span class="op">)</span></span></code></pre></div>
 <p>Convert it to a <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a>:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">event_date</span>, report_date <span class="op">=</span> <span class="va">report_date</span>, case_count <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ℹ Identified data as &lt;count-incidence&gt; with counts in column "n".</span></span>
 <span></span>
@@ -144,7 +144,7 @@
 </ul>
 <p>Use it like any tibble:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">n</span> <span class="op">&gt;</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble:  2 × 6</span></span>
 <span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
@@ -167,7 +167,7 @@
 <p>If strata was given, the <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a> can easily tag the corresponding strata.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#Add the column using dplyr:</span></span>
-<span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
+<span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"M"</span>,<span class="st">"M"</span>,<span class="st">"F"</span>,<span class="st">"M"</span><span class="op">)</span><span class="op">)</span> </span>
 <span></span>
 <span><span class="va">df_now</span></span>
@@ -186,7 +186,7 @@
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 <p>Use the <code>add_strata</code> to specify the new column is a stratum:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/add.html">add_strata</a></span><span class="op">(</span><span class="st">"sex"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble:  4 × 7</span></span>
 <span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
@@ -226,7 +226,7 @@
 <span><span class="co">#&gt;   Peoples' Day, US Veterans Day, US Thanksgiving, and Christmas</span></span></code></pre></div>
 <p>Attach them to the dataset:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="va">t_eff</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">df_now</span></span>
@@ -246,7 +246,7 @@
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 <p>This lazily adds to the table <code>day_of_week</code>, <code>week_of_year</code>, and <code>holiday</code> related to <code>event_date</code>. However it does not compute. Use <code><a href="reference/compute_temporal_effects.html">compute_temporal_effects()</a></code> to add them as columns:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/compute_temporal_effects.html">compute_temporal_effects</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble:  4 × 10</span></span>
 <span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
@@ -275,7 +275,7 @@
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">r_eff</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>day_of_week <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> </span>
+<span><span class="va">df_now</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="va">r_eff</span>, date_type <span class="op">=</span> <span class="st">"report_date"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble:  4 × 7</span></span>
 <span><span class="co">#&gt; # Data type: "count-incidence"</span></span>
@@ -298,8 +298,8 @@
 </h2>
 <p>You may override the default now to perform historical evaluation:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_pruned</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">report_date</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023-12-26"</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
+<code class="sourceCode R"><span><span class="va">df_pruned</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">report_date</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023-12-26"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/change.html">change_now</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2023-12-26"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Retrieve the current active nowcast horizon:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">

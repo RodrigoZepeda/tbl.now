@@ -29,7 +29,7 @@ tbl_now_from_baselinenowcast(
 tbl_now_to_baselinenowcast(
   x,
   ...,
-  format = c("long", "matrix"),
+  format = c("matrix", "long"),
   delays_unit = "days",
   verbose = TRUE
 )
@@ -69,16 +69,40 @@ tbl_now_to_baselinenowcast(
 
 - format:
 
-  For `to`: `"long"` (default) or `"matrix"`.
+  For `to`: `"matrix"` (default) or `"long"`.
 
 ## Value
 
 A `tbl_now` (`from`), or a `data.frame`/`reporting_triangle` (`to`).
 
+## Round-trip
+
+A `reporting_triangle` distinguishes **not-yet-observed** cells (`NA`)
+from **observed zeros** (`0`). The `NA` cells split at the **last
+observed report date** (the latest report with a non-`NA` count, taken
+as the nowcast's `now`):
+
+- cells with `report_date > now` are \* not-yet-observable\* future
+  cells. They are **dropped** from the
+  [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md).
+
+- cells with `report_date <= now` *could* have been reported but were
+  not. They are genuinely **missing** and kept as `count = NA` rows in
+  the
+  [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md).
+
+On the way back,
+[`baselinenowcast::as_reporting_triangle()`](https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html)
+fills the in-triangle cells with `0` unless they are marked in the
+tibble as `NA`.
+
 ## Examples
 
 ``` r
-rt <- baselinenowcast::example_reporting_triangle
+# Get a reporting triangle example
+rt     <- baselinenowcast::example_reporting_triangle
+
+# Convert to a tbl_now
 nowobj <- tbl_now_from_baselinenowcast(rt)
 #> 
 #> ── Converted baselinenowcast <data> into a <tbl_now> 
@@ -86,7 +110,19 @@ nowobj <- tbl_now_from_baselinenowcast(rt)
 #> • report_date: "report_date"
 #> • data_type: "count-incidence"
 #> • now: "2024-01-07"
-#> • units: event = "days", report = "days"
+#> • event_units: "days"
+#> • report_units: "days"
 #> • case_count: "count"
-#> • expanded a reporting-triangle matrix to long incremental counts
+#> • expanded a reporting-triangle matrix to long counts
+
+# The matrix round-trip is faithful (not-yet-observed `NA` cells are kept).
+identical(rt, tbl_now_to_baselinenowcast(nowobj))
+#> 
+#> ── Converting <tbl_now> to baselinenowcast matrix 
+#> • reference_date <- "reference_date"
+#> • report_date <- "report_date"
+#> • count <- "count"
+#> • format: "matrix"
+#> ℹ Using max_delay = 3 from data
+#> [1] TRUE
 ```

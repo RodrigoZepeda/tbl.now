@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -200,7 +200,7 @@
 <h2 id="skill-mark-whether-data-is-right-censored">Skill: mark whether data is right-censored<a class="anchor" aria-label="anchor" href="#skill-mark-whether-data-is-right-censored"></a></h2>
 <p><code>is_censored</code> flags reports that arrive in artificial <strong>batches</strong> representing right-censoring rather than true reporting dynamics (e.g. a lab outage where a week of reports all land on the same later day). The <code>is_censored</code> attribute stores the <strong>name of a logical column</strong> (<code>TRUE</code>/<code>FALSE</code> per row).</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>was_batched <span class="op">=</span> <span class="va">report_date</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021-03-15"</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>was_batched <span class="op">=</span> <span class="va">report_date</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021-03-15"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>, event_date <span class="op">=</span> <span class="va">onset</span>, report_date <span class="op">=</span> <span class="va">reported</span>,</span>
 <span>              is_censored <span class="op">=</span> <span class="va">was_batched</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
@@ -255,8 +255,8 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavisVaughan/almanac" class="external-link">almanac</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># A fixed-date holiday: Mexican Independence Day, every Sep 16</span></span>
-<span><span class="va">indep</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rrule.html" class="external-link">yearly</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/recur_on_month_of_year.html" class="external-link">recur_on_month_of_year</a></span><span class="op">(</span><span class="st">"Sep"</span><span class="op">)</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
+<span><span class="va">indep</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rrule.html" class="external-link">yearly</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/recur_on_month_of_year.html" class="external-link">recur_on_month_of_year</a></span><span class="op">(</span><span class="st">"Sep"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/recur_on_day_of_month.html" class="external-link">recur_on_day_of_month</a></span><span class="op">(</span><span class="fl">16</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Combine custom + built-in holidays into one calendar</span></span>
@@ -271,8 +271,8 @@
 <span><span class="co">#&gt; TRUE TRUE FALSE</span></span>
 <span></span>
 <span><span class="co"># Use it as a temporal effect</span></span>
-<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="va">tn</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="fu"><a href="reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>holidays <span class="op">=</span> <span class="va">mx_calendar</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="va">tn</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="fu"><a href="reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>holidays <span class="op">=</span> <span class="va">mx_calendar</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/compute_temporal_effects.html">compute_temporal_effects</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Building blocks: <code><a href="https://rdrr.io/pkg/almanac/man/rrule.html" class="external-link">yearly()</a></code>, <code><a href="https://rdrr.io/pkg/almanac/man/rrule.html" class="external-link">monthly()</a></code>, <code><a href="https://rdrr.io/pkg/almanac/man/rrule.html" class="external-link">weekly()</a></code> recurrence rules refined with <code><a href="https://rdrr.io/pkg/almanac/man/recur_on_day_of_month.html" class="external-link">recur_on_day_of_month()</a></code>, <code><a href="https://rdrr.io/pkg/almanac/man/recur_on_month_of_year.html" class="external-link">recur_on_month_of_year()</a></code>, <code><a href="https://rdrr.io/pkg/almanac/man/recur_on_day_of_week.html" class="external-link">recur_on_day_of_week()</a></code>, etc.; wrap each rule in <code><a href="https://rdrr.io/pkg/almanac/man/rholiday.html" class="external-link">rholiday()</a></code>; combine with <code><a href="https://rdrr.io/pkg/almanac/man/rcalendar.html" class="external-link">rcalendar()</a></code>. <code>almanac</code> is a <strong>Suggests</strong> — install it if missing.</p>
 <hr></div>
@@ -347,7 +347,7 @@
 <td align="center">✅</td>
 <td align="center">✅</td>
 <td>
-<code>reference_date</code>/<code>report_date</code>/<code>confirm</code> ↔︎ count-cumulative; <code>to</code> builds <code>enw_preprocess_data</code> (or completed <code>data.table</code> with <code>preprocess = FALSE</code>)</td>
+<code>reference_date</code>/<code>report_date</code>/<code>confirm</code> ↔︎ count-cumulative. <code>from</code> accepts the raw long input, a preprocessed <code>enw_preprocess_data</code> object, <strong>or</strong> a fitted <code>epinowcast</code> object (grouping auto-detected). <code>to</code> builds the preprocessed <code>enw_preprocess_data</code> object (or the completed-input <code>data.table</code> with <code>preprocess = FALSE</code>)</td>
 </tr><tr><td>baselinenowcast</td>
 <td align="center">✅</td>
 <td align="center">✅</td>
@@ -357,7 +357,7 @@
 <td align="center">❌</td>
 <td align="center">✅</td>
 <td>
-<code>to</code> only — collapses to a single <code>date</code>/<code>confirm</code> series (single time index)</td>
+<code>to</code> only. <code>model = "estimate_infections"</code> (default) → a single <code>date</code>/<code>confirm</code> series for <code>estimate_infections()</code>/<code>epinow()</code>. <code>model = "estimate_truncation"</code> → a list of <code>date</code>/<code>confirm</code> snapshots (one per report date) for <code>estimate_truncation()</code>, which <em>does</em> use the report dimension</td>
 </tr><tr><td>data.table</td>
 <td align="center">✅</td>
 <td align="center">✅</td>

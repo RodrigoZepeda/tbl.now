@@ -41,12 +41,13 @@ A `tbl.now` containing the following columns:
 ``` r
 data(denguedat)
 dengue <- tbl_now(denguedat,
-                  report_date = "report_week",
-                  event_date = "onset_week",
-                  strata = "gender",
-                  verbose = FALSE)
+  report_date = "report_week",
+  event_date = "onset_week",
+  strata = "gender",
+  verbose = FALSE
+)
 
-#Gets the first reported cases (what as initially thought of to be the incidence)
+# Gets the first reported cases (what as initially thought of to be the incidence)
 get_initial_reported_cases(dengue)
 #> # A tibble:  2,164 × 7
 #> # Data type: "count-cumulative"
@@ -70,7 +71,7 @@ get_initial_reported_cases(dengue)
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 2,154 more rows
 
-#Gets the latest reported cases (what is now thought of to be the incidence)
+# Gets the latest reported cases (what is now thought of to be the incidence)
 get_latest_reported_cases(dengue)
 #> # A tibble:  2,164 × 7
 #> # Data type: "count-cumulative"
@@ -93,5 +94,4 @@ get_latest_reported_cases(dengue)
 #> # Strata: "gender"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 2,154 more rows
-
 ```

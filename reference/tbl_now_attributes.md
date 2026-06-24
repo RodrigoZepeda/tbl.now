@@ -26,11 +26,13 @@ class (i.e. those not shared with a plain `tibble`).
 
 ``` r
 data(denguedat)
-df_now <- tbl_now(denguedat, event_date = onset_week,
-  report_date = report_week, strata = gender, verbose = FALSE)
+df_now <- tbl_now(denguedat,
+  event_date = onset_week,
+  report_date = report_week, strata = gender, verbose = FALSE
+)
 
-#Attributes gets all attributes
-attributes(df_now) %>% names()
+# Attributes gets all attributes
+attributes(df_now) |> names()
 #>  [1] "names"                         "row.names"                    
 #>  [3] "class"                         "event_date"                   
 #>  [5] "report_date"                   "strata"                       
@@ -38,8 +40,8 @@ attributes(df_now) %>% names()
 #>  [9] "report_units"                  "data_type"                    
 #> [11] "temporal_effects"              "computed_temporal_effect_cols"
 
-#tbl_now_attributes gets only those associated to the `tbl_now` class
-tbl_now_attributes(df_now) %>% names()
+# tbl_now_attributes gets only those associated to the `tbl_now` class
+tbl_now_attributes(df_now) |> names()
 #> [1] "event_date"                    "report_date"                  
 #> [3] "now"                           "event_units"                  
 #> [5] "report_units"                  "data_type"                    

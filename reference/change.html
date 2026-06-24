@@ -23,7 +23,7 @@ Functions to change the attributes of a tbl_now object."><meta property="og:imag
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -163,7 +163,7 @@ a tibble. For example:</p>
 <span><span class="co">#&gt; [1] "2010-12-20"</span></span>
 <span></span>
 <span><span class="co">#We can filter the data</span></span>
-<span><span class="va">ndata_1992</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span><span class="va">ndata_1992</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span></span>
 <span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">onset_week</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"1992/01/01"</span><span class="op">)</span> <span class="op">&amp;</span></span>
 <span>               <span class="va">report_week</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"1992/01/01"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -172,7 +172,7 @@ a tibble. For example:</p>
 <span><span class="co">#&gt; [1] "2010-12-20"</span></span>
 <span></span>
 <span><span class="co">#The update now brings it to the closest date before the cut</span></span>
-<span><span class="va">ndata_1992</span> <span class="op">&lt;-</span> <span class="va">ndata_1992</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="../reference/change.html">update_now</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">ndata_1992</span> <span class="op">&lt;-</span> <span class="va">ndata_1992</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/change.html">update_now</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co">#Which is now correct and set to the latest date before the cut</span></span>
 <span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">ndata_1992</span><span class="op">)</span></span>
@@ -187,13 +187,14 @@ a tibble. For example:</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>,</span></span>
-<span class="r-in"><span>                 event_date <span class="op">=</span> <span class="va">onset_week</span>,</span></span>
-<span class="r-in"><span>                 report_date <span class="op">=</span> <span class="va">report_week</span>,</span></span>
-<span class="r-in"><span>                 verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  event_date <span class="op">=</span> <span class="va">onset_week</span>,</span></span>
+<span class="r-in"><span>  report_date <span class="op">=</span> <span class="va">report_week</span>,</span></span>
+<span class="r-in"><span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Change the event_date column to a different date column</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">new_onset_week</span> <span class="op">&lt;-</span> <span class="va">ndata</span><span class="op">$</span><span class="va">onset_week</span> <span class="op">-</span> <span class="fu">lubridate</span><span class="fu">::</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/period.html" class="external-link">days</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu">change_event_date</span><span class="op">(</span><span class="va">new_onset_week</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">change_event_date</span><span class="op">(</span><span class="va">new_onset_week</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
@@ -218,7 +219,7 @@ a tibble. For example:</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Change the report_date column to a different column</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">new_report_week</span> <span class="op">&lt;-</span> <span class="va">ndata</span><span class="op">$</span><span class="va">report_week</span> <span class="op">-</span> <span class="fu">lubridate</span><span class="fu">::</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/period.html" class="external-link">days</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu">change_report_date</span><span class="op">(</span><span class="va">new_report_week</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">change_report_date</span><span class="op">(</span><span class="va">new_report_week</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 8</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
@@ -243,8 +244,8 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 1 more variable: new_report_week &lt;date&gt;</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Change strata to different strata</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">age_group</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"&lt; 18"</span>,<span class="st">"20-60"</span>,<span class="st">"60+"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu">change_strata</span><span class="op">(</span><span class="va">gender</span>, <span class="va">age_group</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">age_group</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"&lt; 18"</span>, <span class="st">"20-60"</span>, <span class="st">"60+"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">change_strata</span><span class="op">(</span><span class="va">gender</span>, <span class="va">age_group</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 9</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
@@ -271,8 +272,8 @@ a tibble. For example:</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Change covariates</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">temperature</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span>, <span class="fl">25</span>, <span class="fl">4</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">humidity</span>    <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Beta.html" class="external-link">rbeta</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span>, <span class="fl">0.6</span>, <span class="fl">0.4</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu">change_covariates</span><span class="op">(</span><span class="va">temperature</span>, <span class="va">humidity</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">humidity</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Beta.html" class="external-link">rbeta</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span>, <span class="fl">0.6</span>, <span class="fl">0.4</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">change_covariates</span><span class="op">(</span><span class="va">temperature</span>, <span class="va">humidity</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 11</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
@@ -327,12 +328,12 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 4 more variables: new_report_week &lt;date&gt;, age_group &lt;chr&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   temperature &lt;dbl&gt;, humidity &lt;dbl&gt;</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Change case count column</span></span></span>
-<span class="r-in"><span><span class="va">count_data</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span><span class="co"># Change case count column</span></span></span>
+<span class="r-in"><span><span class="va">count_data</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="to_count.html">to_count</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"count-incidence"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">count_data</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
-<span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>n2 <span class="op">=</span> <span class="fl">1.15</span><span class="op">*</span><span class="va">n</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span><span class="va">count_data</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>n2 <span class="op">=</span> <span class="fl">1.15</span> <span class="op">*</span> <span class="va">n</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">change_case_count</span><span class="op">(</span><span class="va">n2</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 11</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span>
@@ -359,9 +360,9 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 5 more variables: temperature &lt;dbl&gt;, humidity &lt;dbl&gt;, n &lt;int&gt;, .delay &lt;dbl&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   n2 &lt;dbl&gt;</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Change is_censored</span></span></span>
+<span class="r-in"><span><span class="co"># Change is_censored</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">is_censored</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">change_is_censored</span><span class="op">(</span><span class="va">is_censored</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 12</span></span>
@@ -392,8 +393,8 @@ a tibble. For example:</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Change covariates</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">temperature</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span>, <span class="fl">25</span>, <span class="fl">4</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">humidity</span>    <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Beta.html" class="external-link">rbeta</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span>, <span class="fl">0.6</span>, <span class="fl">0.4</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu">change_covariates</span><span class="op">(</span><span class="va">temperature</span>, <span class="va">humidity</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">humidity</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Beta.html" class="external-link">rbeta</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span>, <span class="fl">0.6</span>, <span class="fl">0.4</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">change_covariates</span><span class="op">(</span><span class="va">temperature</span>, <span class="va">humidity</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 12</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
@@ -422,12 +423,13 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   temperature &lt;dbl&gt;, humidity &lt;dbl&gt;, is_censored &lt;lgl&gt;</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Add temporal effects, remove and replace them</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="va">disease_data</span>,</span></span>
-<span class="r-in"><span>    t_effects<span class="op">=</span> <span class="fu"><a href="temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span>, month_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="va">disease_data</span>,</span></span>
+<span class="r-in"><span>    t_effects <span class="op">=</span> <span class="fu"><a href="temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span>, month_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Use the compute to calculate them</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu"><a href="compute_temporal_effects.html">compute_temporal_effects</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Use the compute to calculate them</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu"><a href="compute_temporal_effects.html">compute_temporal_effects</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 14</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>
@@ -457,8 +459,8 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   temperature &lt;dbl&gt;, humidity &lt;dbl&gt;, is_censored &lt;lgl&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   .event_month_of_year &lt;int&gt;, .event_week_of_year &lt;int&gt;</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Use replace to change them</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu"><a href="remove.html">replace_temporal_effects</a></span><span class="op">(</span>t_effects<span class="op">=</span> <span class="fu"><a href="temporal_effects.html">temporal_effects</a></span><span class="op">(</span>seasons <span class="op">=</span> <span class="fl">52</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Use replace to change them</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu"><a href="remove.html">replace_temporal_effects</a></span><span class="op">(</span>t_effects <span class="op">=</span> <span class="fu"><a href="temporal_effects.html">temporal_effects</a></span><span class="op">(</span>seasons <span class="op">=</span> <span class="fl">52</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 12</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>
@@ -486,8 +488,8 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 5 more variables: new_report_week &lt;date&gt;, age_group &lt;chr&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   temperature &lt;dbl&gt;, humidity &lt;dbl&gt;, is_censored &lt;lgl&gt;</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Use remove to delete them</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu"><a href="remove.html">remove_temporal_effects</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Use remove to delete them</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu"><a href="remove.html">remove_temporal_effects</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 12</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>

@@ -1,13 +1,19 @@
-# Transform into a `tbl_now` object
+# Transform an object into a `tbl_now`
 
 **\[experimental\]**
 
-Takes an object and transforms it into a `tbl_now`.
+Convert a supported object into a
+[tbl_now](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md).
+For a plain `data.frame` / `data.table` (or an existing `tbl_now`) you
+supply the `event_date` and `report_date` columns yourself. For objects
+produced by other packages the conversion is delegated to the matching
+`tbl_now_from_*()` converter, which already knows how to map that format
+– so those methods do **not** take `event_date` / `report_date`.
 
 ## Usage
 
 ``` r
-as_tbl_now(object, event_date, report_date, ...)
+as_tbl_now(object, ...)
 
 # S3 method for class 'tbl_now'
 as_tbl_now(object, event_date, report_date, ...)
@@ -16,16 +22,19 @@ as_tbl_now(object, event_date, report_date, ...)
 as_tbl_now(object, event_date, report_date, ...)
 
 # S3 method for class 'enw_preprocess_data'
-as_tbl_now(object, event_date, report_date, ...)
+as_tbl_now(object, ...)
 
 # S3 method for class 'reporting_triangle'
-as_tbl_now(object, event_date, report_date, ...)
+as_tbl_now(object, ...)
 
 # S3 method for class 'epidist_linelist_data'
-as_tbl_now(object, event_date, report_date, ...)
+as_tbl_now(object, ...)
+
+# S3 method for class 'epidist_aggregate_data'
+as_tbl_now(object, ...)
 
 # S3 method for class 'tbl_ts'
-as_tbl_now(object, event_date, report_date, ...)
+as_tbl_now(object, report_date, event_date = NULL, ...)
 
 # S3 method for class 'data.table'
 as_tbl_now(object, event_date, report_date, ...)
@@ -35,35 +44,67 @@ as_tbl_now(object, event_date, report_date, ...)
 
 - object:
 
-  An object to convert to `tbl_now`.
-
-- event_date:
-
-  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
-  name of the column containing the event date. Optional when `delay` is
-  provided together with `report_date`; the event date will be computed
-  as `report_date - delay`.
-
-- report_date:
-
-  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
-  name of the column containing the report date. Optional when `delay`
-  is provided together with `event_date`; the report date will be
-  computed as `event_date + delay`.
+  An object to convert to a `tbl_now`.
 
 - ...:
 
-  Additional parameters to pass to
-  [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+  Additional arguments forwarded to the relevant `tbl_now_from_*()`
+  converter (and therefore to
+  [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)).
+
+- event_date, report_date:
+
+  For `data.frame` / `data.table` / `tbl_ts` (and `tbl_now`) inputs, the
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  event- and report-date columns. They are **not** arguments of the
+  package-conversion methods (epinowcast, baselinenowcast, epidist),
+  which carry their own date mapping.
 
 ## Value
 
 A `tbl_now` object.
 
+## Details
+
+Package-specific inputs forward to a dedicated converter. **See that
+converter** for the extra arguments it accepts (e.g. `strata`,
+`max_delay`, `format`, `delays_unit`, ...), for which columns are
+carried over, and for the transformation notes / round-trip caveats in
+its *Round-trip* section:
+
+- `enw_preprocess_data` (or a fitted `epinowcast` object) -\>
+  [`tbl_now_from_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+
+- `reporting_triangle` (baselinenowcast) -\>
+  [`tbl_now_from_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
+
+- `epidist_linelist_data` / `epidist_aggregate_data` (epidist) -\>
+  [`tbl_now_from_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+
+- `tbl_ts` (tsibble) -\>
+  [`tbl_now_from_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md)
+
+- `data.table` -\>
+  [`tbl_now_from_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md)
+
+Anything passed through `...` is forwarded to the underlying converter
+(and on to
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)),
+so options such as `event_units`, `now` or `verbose` can be supplied
+here too.
+
+## See also
+
+[`tbl_now_from_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md),
+[`tbl_now_from_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md),
+[`tbl_now_from_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md),
+[`tbl_now_from_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md),
+[`tbl_now_from_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md)
+
 ## Examples
 
 ``` r
-#Convert a data.frame to tbl_now
+# Convert a data.frame to tbl_now
 data(denguedat)
 as_tbl_now(denguedat, event_date = "onset_week", report_date = "report_week")
 #> ℹ Identified data as <linelist-data> where each observation is a test.

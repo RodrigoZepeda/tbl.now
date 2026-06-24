@@ -25,7 +25,7 @@ of the attributes of a tibble (or a grouped tibble)."><meta property="og:image" 
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,11 +85,13 @@ class (i.e. those not shared with a plain <code>tibble</code>).</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>, event_date <span class="op">=</span> <span class="va">onset_week</span>,</span></span>
-<span class="r-in"><span>  report_date <span class="op">=</span> <span class="va">report_week</span>, strata <span class="op">=</span> <span class="va">gender</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>,</span></span>
+<span class="r-in"><span>  event_date <span class="op">=</span> <span class="va">onset_week</span>,</span></span>
+<span class="r-in"><span>  report_date <span class="op">=</span> <span class="va">report_week</span>, strata <span class="op">=</span> <span class="va">gender</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Attributes gets all attributes</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/attributes.html" class="external-link">attributes</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Attributes gets all attributes</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/attributes.html" class="external-link">attributes</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "names"                         "row.names"                    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [3] "class"                         "event_date"                   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [5] "report_date"                   "strata"                       </span>
@@ -97,8 +99,8 @@ class (i.e. those not shared with a plain <code>tibble</code>).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [9] "report_units"                  "data_type"                    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [11] "temporal_effects"              "computed_temporal_effect_cols"</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#tbl_now_attributes gets only those associated to the `tbl_now` class</span></span></span>
-<span class="r-in"><span><span class="fu">tbl_now_attributes</span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># tbl_now_attributes gets only those associated to the `tbl_now` class</span></span></span>
+<span class="r-in"><span><span class="fu">tbl_now_attributes</span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "event_date"                    "report_date"                  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [3] "now"                           "event_units"                  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [5] "report_units"                  "data_type"                    </span>

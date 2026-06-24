@@ -27,7 +27,7 @@ aligning epiweek or isoweek data to a consistent weekday."><meta property="og:im
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -128,7 +128,7 @@ a date (either <code><a href="https://lubridate.tidyverse.org/reference/year.htm
 <span class="r-in"><span>  epidemiological_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">2024</span>, <span class="fl">5</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">df</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span><span class="va">df</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">week_2_date</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    week_col <span class="op">=</span> <span class="va">epidemiological_week</span>,</span></span>
 <span class="r-in"><span>    year_col <span class="op">=</span> <span class="va">epidemiological_year</span></span></span>

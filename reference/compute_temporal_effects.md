@@ -54,14 +54,15 @@ df_now <- tbl_now(denguedat,
   event_date  = onset_week,
   report_date = report_week,
   t_effects   = temporal_effects(week_of_year = TRUE, month_of_year = TRUE),
-  verbose     = FALSE)
+  verbose     = FALSE
+)
 
 # No temporal-effect columns yet:
-".event_week_of_year" %in% names(df_now)   # FALSE
+".event_week_of_year" %in% names(df_now) # FALSE
 #> [1] FALSE
 
 # 2. Materialise the columns
 df_computed <- compute_temporal_effects(df_now)
-".event_week_of_year" %in% names(df_computed)  # TRUE
+".event_week_of_year" %in% names(df_computed) # TRUE
 #> [1] TRUE
 ```

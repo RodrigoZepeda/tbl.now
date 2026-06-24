@@ -20,7 +20,7 @@
 - [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
   **\[experimental\]** :
 
-  Transform into a `tbl_now` object
+  Transform an object into a `tbl_now`
 
 - [`` `[`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
   [`` `[`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
@@ -140,6 +140,15 @@
 
   Convert between `tbl_now` and baselinenowcast
 
+- [`as_epidist_linelist_data(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)
+  [`as_epidist_aggregate_data(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)
+  [`as_reporting_triangle(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)
+  [`as_tsibble(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)
+  [`as.data.table(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)
+  **\[experimental\]** :
+
+  Coerce a `tbl_now` with another package's generic
+
 - [`tbl_now_from_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md)
   [`tbl_now_to_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md)
   **\[experimental\]** :
@@ -157,11 +166,6 @@
   **\[experimental\]** :
 
   Convert between `tbl_now` and epinowcast
-
-- [`tbl_now_to_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_to_EpiNow2.md)
-  :
-
-  Convert a `tbl_now` into EpiNow2 input
 
 - [`tbl_now_from_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md)
   [`tbl_now_to_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md)

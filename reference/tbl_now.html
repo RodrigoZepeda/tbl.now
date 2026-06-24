@@ -25,7 +25,7 @@ See the Attributes section for more information."><meta property="og:image" cont
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -333,9 +333,11 @@ data-types.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># The `tbl_now` is a data.frame with additional attributes</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
-<span class="r-in"><span>  <span class="fu">tbl_now</span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">onset_week</span>, report_date <span class="op">=</span> <span class="va">report_week</span>,</span></span>
-<span class="r-in"><span>    strata <span class="op">=</span> <span class="va">gender</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">tbl_now</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    event_date <span class="op">=</span> <span class="va">onset_week</span>, report_date <span class="op">=</span> <span class="va">report_week</span>,</span></span>
+<span class="r-in"><span>    strata <span class="op">=</span> <span class="va">gender</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Identified data as &lt;<span style="font-style: italic;">linelist-data</span>&gt; where each observation is a test.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># You can see that it documents the `event_date`, `report_date`, `strata`,</span></span></span>
@@ -364,8 +366,8 @@ data-types.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 52,977 more rows</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#A `tbl_now` is an extension of a `tibble` which means normal</span></span></span>
-<span class="r-in"><span><span class="co">#`data.frame` operations are permitted</span></span></span>
+<span class="r-in"><span><span class="co"># A `tbl_now` is an extension of a `tibble` which means normal</span></span></span>
+<span class="r-in"><span><span class="co"># `data.frame` operations are permitted</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">newcolumn</span> <span class="op">&lt;-</span> <span class="st">"something"</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 7</span></span>
@@ -390,8 +392,8 @@ data-types.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 52,977 more rows</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Like removing a column</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span><span class="op">[</span>,<span class="op">-</span><span class="fl">4</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="co"># Like removing a column</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span><span class="op">[</span>, <span class="op">-</span><span class="fl">4</span><span class="op">]</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Dropped protected column(?s): <span style="color: #0000BB;">".event_num"</span>. Returning a `tibble`</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 52,987 × 6</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    onset_week report_week gender .report_num .delay newcolumn</span>
@@ -408,8 +410,8 @@ data-types.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01 1990-01-08  Female           1      1 something</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 52,977 more rows</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Like selecting</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>,<span class="op">]</span></span></span>
+<span class="r-in"><span><span class="co"># Like selecting</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="op">]</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  10 × 7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>
@@ -431,8 +433,8 @@ data-types.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#You can also apply all dplyr functions:</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span><span class="co"># You can also apply all dplyr functions:</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">report_week</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"1991-01-02"</span>, format <span class="op">=</span> <span class="st">"%Y-%m-%d"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  1,981 × 7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
@@ -456,10 +458,10 @@ data-types.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 1,971 more rows</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Removing an important column automatically transforms to tibble</span></span></span>
-<span class="r-in"><span><span class="co">#losing its property</span></span></span>
+<span class="r-in"><span><span class="co"># Removing an important column automatically transforms to tibble</span></span></span>
+<span class="r-in"><span><span class="co"># losing its property</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  <span class="va">ndata</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">onset_week</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 52,987 × 6</span></span>
@@ -477,8 +479,8 @@ data-types.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-08  Female          0           1      1 something</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 52,977 more rows</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Removing strata just changes the overall structure</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">gender</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Removing strata just changes the overall structure</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">gender</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 6</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>

@@ -51,6 +51,8 @@ A `tbl_now` (`from`) or a `data.table` (`to`).
 ``` r
 data(denguedat)
 dt <- data.table::as.data.table(denguedat)
-nowobj <- tbl_now_from_data_table(dt, event_date = "onset_week",
-                                  report_date = "report_week", verbose = FALSE)
+nowobj <- tbl_now_from_data_table(dt,
+  event_date = "onset_week",
+  report_date = "report_week", verbose = FALSE
+)
 ```

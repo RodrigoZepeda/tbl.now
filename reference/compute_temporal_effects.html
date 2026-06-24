@@ -31,7 +31,7 @@ returned unchanged.
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -113,15 +113,16 @@ just created.</p>
 <span class="r-in"><span>  event_date  <span class="op">=</span> <span class="va">onset_week</span>,</span></span>
 <span class="r-in"><span>  report_date <span class="op">=</span> <span class="va">report_week</span>,</span></span>
 <span class="r-in"><span>  t_effects   <span class="op">=</span> <span class="fu"><a href="temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span>, month_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  verbose     <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  verbose     <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># No temporal-effect columns yet:</span></span></span>
-<span class="r-in"><span><span class="st">".event_week_of_year"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span>   <span class="co"># FALSE</span></span></span>
+<span class="r-in"><span><span class="st">".event_week_of_year"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span> <span class="co"># FALSE</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># 2. Materialise the columns</span></span></span>
 <span class="r-in"><span><span class="va">df_computed</span> <span class="op">&lt;-</span> <span class="fu">compute_temporal_effects</span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="st">".event_week_of_year"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">df_computed</span><span class="op">)</span>  <span class="co"># TRUE</span></span></span>
+<span class="r-in"><span><span class="st">".event_week_of_year"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">df_computed</span><span class="op">)</span> <span class="co"># TRUE</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

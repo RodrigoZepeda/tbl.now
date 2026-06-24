@@ -31,7 +31,7 @@ count-incidence: to  count-cumulative
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,9 +115,10 @@ this will throw an error as you cannot un-count aggregated data.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>,</span></span>
-<span class="r-in"><span>    event_date <span class="op">=</span> <span class="st">"onset_week"</span>,</span></span>
-<span class="r-in"><span>    report_date <span class="op">=</span> <span class="st">"report_week"</span>,</span></span>
-<span class="r-in"><span>    strata <span class="op">=</span> <span class="st">"gender"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  event_date <span class="op">=</span> <span class="st">"onset_week"</span>,</span></span>
+<span class="r-in"><span>  report_date <span class="op">=</span> <span class="st">"report_week"</span>,</span></span>
+<span class="r-in"><span>  strata <span class="op">=</span> <span class="st">"gender"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Identified data as &lt;<span style="font-style: italic;">linelist-data</span>&gt; where each observation is a test.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">to_count</span><span class="op">(</span><span class="va">ndata</span>, to <span class="op">=</span> <span class="st">"count-incidence"</span><span class="op">)</span></span></span>
@@ -145,11 +146,12 @@ this will throw an error as you cannot un-count aggregated data.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"covidat"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="op">{</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">covidat</span>,</span></span>
-<span class="r-in"><span>event_date <span class="op">=</span> <span class="st">"date_of_symptom_onset"</span>,</span></span>
-<span class="r-in"><span>              report_date <span class="op">=</span> <span class="st">"date_of_registry"</span>,</span></span>
-<span class="r-in"><span>              strata <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">to_count</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">covidat</span>,</span></span>
+<span class="r-in"><span>    event_date <span class="op">=</span> <span class="st">"date_of_symptom_onset"</span>,</span></span>
+<span class="r-in"><span>    report_date <span class="op">=</span> <span class="st">"date_of_registry"</span>,</span></span>
+<span class="r-in"><span>    strata <span class="op">=</span> <span class="st">"sex"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">to_count</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Identified data as &lt;<span style="font-style: italic;">linelist-data</span>&gt; where each observation is a test.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  40,822 × 7</span></span>
@@ -175,7 +177,6 @@ this will throw an error as you cannot un-count aggregated data.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 40,812 more rows</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 1 more variable: .delay &lt;dbl&gt;</span></span>
-<span class="r-in"><span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

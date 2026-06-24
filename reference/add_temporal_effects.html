@@ -25,7 +25,7 @@ columns"><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -156,17 +156,18 @@ to add temporal effects to those columns.</p></dd>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Get disease</span></span></span>
 <span class="r-in"><span><span class="va">disease_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>,</span></span>
-<span class="r-in"><span>    event_date <span class="op">=</span> <span class="st">"onset_week"</span>,</span></span>
-<span class="r-in"><span>    report_date <span class="op">=</span> <span class="st">"report_week"</span>,</span></span>
-<span class="r-in"><span>    strata <span class="op">=</span> <span class="st">"gender"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  event_date <span class="op">=</span> <span class="st">"onset_week"</span>,</span></span>
+<span class="r-in"><span>  report_date <span class="op">=</span> <span class="st">"report_week"</span>,</span></span>
+<span class="r-in"><span>  strata <span class="op">=</span> <span class="st">"gender"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Identified data as &lt;<span style="font-style: italic;">linelist-data</span>&gt; where each observation is a test.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Add an effect for epidemiological week</span></span></span>
-<span class="r-in"><span><span class="va">disease_data</span> <span class="op">&lt;-</span> <span class="va">disease_data</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
-<span class="r-in"><span>  <span class="fu">add_temporal_effects</span><span class="op">(</span>t_effects<span class="op">=</span> <span class="fu"><a href="temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">disease_data</span> <span class="op">&lt;-</span> <span class="va">disease_data</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">add_temporal_effects</span><span class="op">(</span>t_effects <span class="op">=</span> <span class="fu"><a href="temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Use the compute to calculate them</span></span></span>
-<span class="r-in"><span><span class="va">disease_data</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu"><a href="compute_temporal_effects.html">compute_temporal_effects</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Use the compute to calculate them</span></span></span>
+<span class="r-in"><span><span class="va">disease_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="compute_temporal_effects.html">compute_temporal_effects</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>
@@ -192,9 +193,9 @@ to add temporal effects to those columns.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 52,977 more rows</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 1 more variable: .event_week_of_year &lt;int&gt;</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Use replace to change them</span></span></span>
-<span class="r-in"><span><span class="va">disease_data</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="remove.html">replace_temporal_effects</a></span><span class="op">(</span>t_effects<span class="op">=</span> <span class="fu"><a href="temporal_effects.html">temporal_effects</a></span><span class="op">(</span>seasons <span class="op">=</span> <span class="fl">52</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Use replace to change them</span></span></span>
+<span class="r-in"><span><span class="va">disease_data</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="remove.html">replace_temporal_effects</a></span><span class="op">(</span>t_effects <span class="op">=</span> <span class="fu"><a href="temporal_effects.html">temporal_effects</a></span><span class="op">(</span>seasons <span class="op">=</span> <span class="fl">52</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 6</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>
@@ -218,8 +219,8 @@ to add temporal effects to those columns.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 52,977 more rows</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#Use remove to delete them</span></span></span>
-<span class="r-in"><span><span class="va">disease_data</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu"><a href="remove.html">remove_temporal_effects</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Use remove to delete them</span></span></span>
+<span class="r-in"><span><span class="va">disease_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="remove.html">remove_temporal_effects</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 6</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>

@@ -6,16 +6,16 @@ A
 [`tsibble::tsibble()`](https://tsibble.tidyverts.org/reference/tsibble.html)
 has a single time `index` and a `key` identifying each series.
 Nowcasting needs two time indices, so the conversion keeps both date
-columns: the `index` is one of the dates and the other date (plus any
+columns: the `index` is the **event date** and the report date (plus any
 strata) becomes part of the `key`.
 
 `tbl_now_from_tsibble()` converts a `tbl_ts` into a `tbl_now`. You must
-say which column is the `event_date`; `report_date` defaults to the
+say which column is the `report_date`; `event_date` defaults to the
 tsibble's index
 ([`tsibble::index_var()`](https://tsibble.tidyverts.org/reference/index-rd.html)).
 
 `tbl_now_to_tsibble()` converts a `tbl_now` into a `tbl_ts`, using
-`index` (`"report_date"`, the default, or `"event_date"`) as the tsibble
+`index` (`"event_date"`, the default, or `"report_date"`) as the tsibble
 index and the other date plus the strata as the key. Linelist data is
 aggregated to `count-incidence` first (a tsibble requires unique
 index/key combinations).
@@ -25,8 +25,8 @@ index/key combinations).
 ``` r
 tbl_now_from_tsibble(
   data,
-  event_date,
-  report_date = NULL,
+  report_date,
+  event_date = NULL,
   strata = NULL,
   ...,
   verbose = TRUE
@@ -35,7 +35,7 @@ tbl_now_from_tsibble(
 tbl_now_to_tsibble(
   x,
   ...,
-  index = c("report_date", "event_date"),
+  index = c("event_date", "report_date"),
   verbose = TRUE
 )
 ```
@@ -46,13 +46,13 @@ tbl_now_to_tsibble(
 
   A `tbl_ts` (tsibble).
 
-- event_date:
-
-  Column name of the event date (required for `from`).
-
 - report_date:
 
-  Column name of the report date (for `from`); defaults to the tsibble
+  Column name of the report date (required for `from`).
+
+- event_date:
+
+  Column name of the event date (for `from`); defaults to the tsibble
   index.
 
 - strata:
@@ -79,8 +79,8 @@ tbl_now_to_tsibble(
 
 - index:
 
-  For `to`: which date becomes the tsibble index, `"report_date"`
-  (default) or `"event_date"`.
+  For `to`: which date becomes the tsibble index, `"event_date"`
+  (default) or `"report_date"`.
 
 ## Value
 
@@ -90,10 +90,13 @@ A `tbl_now` (`from`) or a `tbl_ts` (`to`).
 
 ``` r
 data(denguedat)
-nowobj <- tbl_now(denguedat, event_date = "onset_week",
-                  report_date = "report_week", verbose = FALSE)
-ts <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
+nowobj <- tbl_now(denguedat,
+  event_date = "onset_week",
+  report_date = "report_week", verbose = FALSE
+)
+# The tsibble is indexed by the event date; the report date is in the key.
+ts   <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
 #> Warning: tsibble requires unique index/key rows; aggregating linelist to
 #> "count-incidence" with `to_count()`.
-back <- tbl_now_from_tsibble(ts, event_date = "onset_week", verbose = FALSE)
+back <- tbl_now_from_tsibble(ts, report_date = "report_week", verbose = FALSE)
 ```

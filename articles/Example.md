@@ -63,8 +63,8 @@ that reporting date. The following example illustrates the structure:
 
 ``` r
 
-flusight %>% 
-  filter(location_name == "Puerto Rico" & target_end_date == ymd("2025/04/12")) 
+flusight |>
+  filter(location_name == "Puerto Rico" & target_end_date == ymd("2025/04/12"))
 #> # A tibble: 19 × 4
 #>    as_of      target_end_date location_name observation
 #>    <date>     <date>          <chr>               <dbl>
@@ -111,11 +111,13 @@ A first attempt produces several warnings:
 
 ``` r
 
-df_wrong <- flusight %>% 
-  tbl_now(event_date = target_end_date, 
-          report_date = as_of, 
-          case_count = observation, 
-          strata = location_name)
+df_wrong <- flusight |>
+  tbl_now(
+    event_date = target_end_date,
+    report_date = as_of,
+    case_count = observation,
+    strata = location_name
+  )
 #> Warning: Cannot accurately infer the data-type when rows are repeated across event and
 #> report dates
 #> Warning: Some observations in the count column "observation"
@@ -156,14 +158,14 @@ remove the duplicates:
 
 ``` r
 
-flusight <- flusight %>% distinct()
+flusight <- flusight |> distinct()
 ```
 
 Next, we remove observations with missing case counts:
 
 ``` r
 
-flusight <- flusight %>% filter(!is.na(observation))
+flusight <- flusight |> filter(!is.na(observation))
 ```
 
 However, reconstructing the object still yields a misclassified data
@@ -171,8 +173,10 @@ type:
 
 ``` r
 
-df_still_wrong <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
-        case_count = "observation", strata = c("location_name"))
+df_still_wrong <- tbl_now(flusight,
+  event_date = "target_end_date", report_date = "as_of",
+  case_count = "observation", strata = c("location_name")
+)
 #> ℹ Identified data as <count-incidence> with counts in column "observation".
 ```
 
@@ -183,8 +187,10 @@ explicitly declare the data type:
 
 ``` r
 
-df_flu <- tbl_now(flusight, event_date = "target_end_date", report_date = "as_of", 
-        case_count = "observation", strata = c("location_name"), data_type = "count-cumulative")
+df_flu <- tbl_now(flusight,
+  event_date = "target_end_date", report_date = "as_of",
+  case_count = "observation", strata = c("location_name"), data_type = "count-cumulative"
+)
 ```
 
 This yields a correctly structured `tbl_now` object:
@@ -224,7 +230,7 @@ some `.delay`s that include decimal components:
 
 ``` r
 
-df_flu$.delay %>% unique()
+df_flu$.delay |> unique()
 #>   [1]  84.0000000  83.0000000  82.0000000  81.0000000  80.0000000  79.0000000
 #>   [7]  78.0000000  77.0000000  76.0000000  75.0000000  74.0000000  73.0000000
 #>  [13]  72.0000000  71.0000000  70.0000000  69.0000000  68.0000000  67.0000000
@@ -298,7 +304,7 @@ function:
 
 ``` r
 
-df_flu <- df_flu %>% 
+df_flu <- df_flu |>
   align_weeks()
 ```
 
@@ -306,7 +312,7 @@ And results in integer delays:
 
 ``` r
 
-df_flu$.delay %>% unique()
+df_flu$.delay |> unique()
 #>   [1]  84  83  82  81  80  79  78  77  76  75  74  73  72  71  70  69  68  67
 #>  [19]  66  65  64  63  62  61  60  59  58  57  56  55  54  53  52  51  50  49
 #>  [37]  48  47  46  45  44  43  42  41  40  39  38  37  36  35  34  33  32  31
@@ -327,9 +333,9 @@ we may focus on Puerto Rico and observations after mid–2024:
 
 ``` r
 
-df_pr <- df_flu %>% 
-  rename(latest_report = as_of) %>% 
-  filter(location_name == "Puerto Rico") %>% 
+df_pr <- df_flu |>
+  rename(latest_report = as_of) |>
+  filter(location_name == "Puerto Rico") |>
   filter(target_end_date >= ymd("2024/07/01"))
 
 df_pr
@@ -363,7 +369,7 @@ it from the strata definition (without removing the column itself):
 
 ``` r
 
-df_pr <- df_pr %>% 
+df_pr <- df_pr |>
   remove_strata("location_name")
 #> ! Removing strata from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`
 
@@ -406,8 +412,8 @@ dataset and explicitly set a historical reporting cutoff:
 
 ``` r
 
-df_pr_new_now <- df_pr %>% 
-  filter(latest_report < ymd("2023/12/01")) %>% 
+df_pr_new_now <- df_pr |>
+  filter(latest_report < ymd("2023/12/01")) |>
   change_now(ymd("2023/12/01"))
 
 df_pr_new_now
@@ -447,7 +453,7 @@ estimates:
 ``` r
 
 initial_reports <- get_initial_reported_cases(df_pr)
-latest_reports  <- get_latest_reported_cases(df_pr)
+latest_reports <- get_latest_reported_cases(df_pr)
 ```
 
 A simple plot highlights the differences between initial and final
@@ -455,16 +461,20 @@ estimates:
 
 ``` r
 
-plot(initial_reports$target_end_date, initial_reports$observation, 
-     type = "p", col = "deepskyblue4",
-     xlab = "Date of event", ylab = "Cases",
-     main = "Cases in Puerto Rico")
+plot(initial_reports$target_end_date, initial_reports$observation,
+  type = "p", col = "deepskyblue4",
+  xlab = "Date of event", ylab = "Cases",
+  main = "Cases in Puerto Rico"
+)
 
 lines(latest_reports$target_end_date, latest_reports$observation,
-      col = "tomato4")
+  col = "tomato4"
+)
 
-legend("right", legend = c("Initial report", "Final report"),
-       fill = c("deepskyblue4", "tomato4"))
+legend("right",
+  legend = c("Initial report", "Final report"),
+  fill = c("deepskyblue4", "tomato4")
+)
 ```
 
 ![](Example_files/figure-html/unnamed-chunk-22-1.png)

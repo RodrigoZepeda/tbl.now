@@ -37,7 +37,7 @@ baselinenowcast::as_reporting_triangle().'><meta property="og:image" content="ht
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -96,7 +96,7 @@ and converts it into a <code>tbl_now</code> of <code>data_type = "count-incidenc
 <span><span class="fu">tbl_now_to_baselinenowcast</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">...</span>,</span>
-<span>  format <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"long"</span>, <span class="st">"matrix"</span><span class="op">)</span>,</span>
+<span>  format <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"matrix"</span>, <span class="st">"long"</span><span class="op">)</span>,</span>
 <span>  delays_unit <span class="op">=</span> <span class="st">"days"</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -133,17 +133,35 @@ and converts it into a <code>tbl_now</code> of <code>data_type = "count-incidenc
 
 
 <dt id="arg-format">format<a class="anchor" aria-label="anchor" href="#arg-format"></a></dt>
-<dd><p>For <code>to</code>: <code>"long"</code> (default) or <code>"matrix"</code>.</p></dd>
+<dd><p>For <code>to</code>: <code>"matrix"</code> (default) or <code>"long"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>tbl_now</code> (<code>from</code>), or a <code>data.frame</code>/<code>reporting_triangle</code> (<code>to</code>).</p>
     </div>
+    <div class="section level2">
+    <h2 id="round-trip">Round-trip<a class="anchor" aria-label="anchor" href="#round-trip"></a></h2>
+
+
+
+<p>A <code>reporting_triangle</code> distinguishes <strong>not-yet-observed</strong> cells (<code>NA</code>) from
+<strong>observed zeros</strong> (<code>0</code>). The <code>NA</code> cells split at the <strong>last observed report
+date</strong> (the latest report with a non-<code>NA</code> count, taken as the nowcast's <code>now</code>):</p><ul><li><p>cells with <code>report_date &gt; now</code> are * not-yet-observable* future cells. They
+are <strong>dropped</strong> from the <code><a href="tbl_now.html">tbl_now()</a></code>.</p></li>
+<li><p>cells with <code>report_date &lt;= now</code> <em>could</em> have been reported but were not.
+They are genuinely <strong>missing</strong> and kept as <code>count = NA</code> rows in
+the <code><a href="tbl_now.html">tbl_now()</a></code>.</p></li>
+</ul><p>On the way back, <code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code> fills the
+in-triangle cells with <code>0</code> unless they are marked in the tibble as <code>NA</code>.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">rt</span> <span class="op">&lt;-</span> <span class="fu">baselinenowcast</span><span class="fu">::</span><span class="va"><a href="https://baselinenowcast.epinowcast.org/reference/example_reporting_triangle.html" class="external-link">example_reporting_triangle</a></span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Get a reporting triangle example</span></span></span>
+<span class="r-in"><span><span class="va">rt</span>     <span class="op">&lt;-</span> <span class="fu">baselinenowcast</span><span class="fu">::</span><span class="va"><a href="https://baselinenowcast.epinowcast.org/reference/example_reporting_triangle.html" class="external-link">example_reporting_triangle</a></span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Convert to a tbl_now</span></span></span>
 <span class="r-in"><span><span class="va">nowobj</span> <span class="op">&lt;-</span> <span class="fu">tbl_now_from_baselinenowcast</span><span class="op">(</span><span class="va">rt</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── Converted <span style="color: #0000BB;">baselinenowcast</span> <span style="color: #0000BB;">&lt;data&gt;</span> into a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> </span>
@@ -151,9 +169,21 @@ and converts it into a <code>tbl_now</code> of <code>data_type = "count-incidenc
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • report_date: <span style="color: #0000BB;">"report_date"</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • data_type: <span style="color: #0000BB;">"count-incidence"</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • now: <span style="color: #0000BB;">"2024-01-07"</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • units: event = <span style="color: #0000BB;">"days"</span>, report = <span style="color: #0000BB;">"days"</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • event_units: <span style="color: #0000BB;">"days"</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • report_units: <span style="color: #0000BB;">"days"</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • case_count: <span style="color: #0000BB;">"count"</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • expanded a reporting-triangle matrix to long incremental counts</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • expanded a reporting-triangle matrix to long counts</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The matrix round-trip is faithful (not-yet-observed `NA` cells are kept).</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">rt</span>, <span class="fu">tbl_now_to_baselinenowcast</span><span class="op">(</span><span class="va">nowobj</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── Converting <span style="color: #0000BB;">&lt;tbl_now&gt;</span> to <span style="color: #0000BB;">baselinenowcast</span> matrix </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • reference_date &lt;- <span style="color: #0000BB;">"reference_date"</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • report_date &lt;- <span style="color: #0000BB;">"report_date"</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • count &lt;- <span style="color: #0000BB;">"count"</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • format: <span style="color: #0000BB;">"matrix"</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Using max_delay = 3 from data</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

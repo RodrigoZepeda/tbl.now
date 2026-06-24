@@ -50,7 +50,7 @@ Convert it to a
 
 ``` r
 
-df_now <- df %>% 
+df_now <- df |> 
   tbl_now(event_date = event_date, report_date = report_date, case_count = n)
 #> ℹ Identified data as <count-incidence> with counts in column "n".
 
@@ -86,7 +86,7 @@ Use it like any tibble:
 
 ``` r
 
-df_now %>% 
+df_now |> 
   filter(n > 5)
 #> # A tibble:  2 × 6
 #> # Data type: "count-incidence"
@@ -117,7 +117,7 @@ can easily tag the corresponding strata.
 ``` r
 
 #Add the column using dplyr:
-df_now <- df_now %>% 
+df_now <- df_now |> 
   mutate(sex = c("M","M","F","M")) 
 
 df_now
@@ -140,7 +140,7 @@ Use the `add_strata` to specify the new column is a stratum:
 
 ``` r
 
-df_now %>% 
+df_now |> 
   add_strata("sex")
 #> # A tibble:  4 × 7
 #> # Data type: "count-incidence"
@@ -189,7 +189,7 @@ Attach them to the dataset:
 
 ``` r
 
-df_now <- df_now %>% 
+df_now <- df_now |> 
   add_temporal_effects(t_eff)
 
 df_now
@@ -216,7 +216,7 @@ to add them as columns:
 
 ``` r
 
-df_now %>% 
+df_now |> 
   compute_temporal_effects()
 #> # A tibble:  4 × 10
 #> # Data type: "count-incidence"
@@ -249,7 +249,7 @@ You can also attach effects related to the `report_date`:
 
 r_eff <- temporal_effects(day_of_week = TRUE)
 
-df_now %>% 
+df_now |> 
   add_temporal_effects(r_eff, date_type = "report_date")
 #> # A tibble:  4 × 7
 #> # Data type: "count-incidence"
@@ -274,8 +274,8 @@ You may override the default now to perform historical evaluation:
 
 ``` r
 
-df_pruned <- df_now %>%
-  filter(report_date <= ymd("2023-12-26")) %>%
+df_pruned <- df_now |>
+  filter(report_date <= ymd("2023-12-26")) |>
   change_now(ymd("2023-12-26"))
 ```
 
@@ -376,7 +376,7 @@ censor_delays_above(tn, max_delay = 60)
 - [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
   **\[experimental\]** :
 
-  Transform into a `tbl_now` object
+  Transform an object into a `tbl_now`
 
 - [`` `[`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
   [`` `[`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
@@ -496,6 +496,15 @@ censor_delays_above(tn, max_delay = 60)
 
   Convert between `tbl_now` and baselinenowcast
 
+- [`as_epidist_linelist_data(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)
+  [`as_epidist_aggregate_data(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)
+  [`as_reporting_triangle(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)
+  [`as_tsibble(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)
+  [`as.data.table(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)
+  **\[experimental\]** :
+
+  Coerce a `tbl_now` with another package's generic
+
 - [`tbl_now_from_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md)
   [`tbl_now_to_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md)
   **\[experimental\]** :
@@ -513,11 +522,6 @@ censor_delays_above(tn, max_delay = 60)
   **\[experimental\]** :
 
   Convert between `tbl_now` and epinowcast
-
-- [`tbl_now_to_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_to_EpiNow2.md)
-  :
-
-  Convert a `tbl_now` into EpiNow2 input
 
 - [`tbl_now_from_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md)
   [`tbl_now_to_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md)

@@ -313,9 +313,11 @@ function allows you to easily convert from between different data-types.
 ``` r
 # The `tbl_now` is a data.frame with additional attributes
 data(denguedat)
-ndata <- denguedat %>%
-  tbl_now(event_date = onset_week, report_date = report_week,
-    strata = gender)
+ndata <- denguedat |>
+  tbl_now(
+    event_date = onset_week, report_date = report_week,
+    strata = gender
+  )
 #> ℹ Identified data as <linelist-data> where each observation is a test.
 
 # You can see that it documents the `event_date`, `report_date`, `strata`,
@@ -344,8 +346,8 @@ ndata
 #> # ℹ 52,977 more rows
 
 
-#A `tbl_now` is an extension of a `tibble` which means normal
-#`data.frame` operations are permitted
+# A `tbl_now` is an extension of a `tibble` which means normal
+# `data.frame` operations are permitted
 ndata$newcolumn <- "something"
 ndata
 #> # A tibble:  52,987 × 7
@@ -370,8 +372,8 @@ ndata
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 52,977 more rows
 
-#Like removing a column
-ndata[,-4]
+# Like removing a column
+ndata[, -4]
 #> Warning: Dropped protected column(?s): ".event_num". Returning a `tibble`
 #> # A tibble: 52,987 × 6
 #>    onset_week report_week gender .report_num .delay newcolumn
@@ -388,8 +390,8 @@ ndata[,-4]
 #> 10 1990-01-01 1990-01-08  Female           1      1 something
 #> # ℹ 52,977 more rows
 
-#Like selecting
-ndata[1:10,]
+# Like selecting
+ndata[1:10, ]
 #> # A tibble:  10 × 7
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
@@ -411,8 +413,8 @@ ndata[1:10,]
 #> # Strata: "gender"
 #> # ────────────────────────────────────────────────────────────────────────────────
 
-#You can also apply all dplyr functions:
-ndata %>%
+# You can also apply all dplyr functions:
+ndata |>
   dplyr::filter(report_week <= as.Date("1991-01-02", format = "%Y-%m-%d"))
 #> # A tibble:  1,981 × 7
 #> # Data type: "linelist"
@@ -436,10 +438,10 @@ ndata %>%
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 1,971 more rows
 
-#Removing an important column automatically transforms to tibble
-#losing its property
+# Removing an important column automatically transforms to tibble
+# losing its property
 suppressWarnings(
-  ndata %>%
+  ndata |>
     dplyr::select(-onset_week)
 )
 #> # A tibble: 52,987 × 6
@@ -457,8 +459,8 @@ suppressWarnings(
 #> 10 1990-01-08  Female          0           1      1 something
 #> # ℹ 52,977 more rows
 
-#Removing strata just changes the overall structure
-ndata %>% dplyr::select(-gender)
+# Removing strata just changes the overall structure
+ndata |> dplyr::select(-gender)
 #> # A tibble:  52,987 × 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`

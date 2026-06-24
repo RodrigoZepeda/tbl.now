@@ -34,13 +34,13 @@ A logical vector: TRUE if weekday, FALSE if weekend.
 ## Examples
 
 ``` r
-is_weekday(as.Date("2020-04-22"))                   # TRUE (Wed)
+is_weekday(as.Date("2020-04-22")) # TRUE (Wed)
 #> [1] TRUE
-is_weekday(as.Date("2020-04-19"))                   # FALSE (Sun)
+is_weekday(as.Date("2020-04-19")) # FALSE (Sun)
 #> [1] FALSE
 
 # Middle East weekend (Fri - Sat)
-is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri","Sat"))
+is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri", "Sat"))
 #> [1] FALSE
 
 # Weekend only on Friday
