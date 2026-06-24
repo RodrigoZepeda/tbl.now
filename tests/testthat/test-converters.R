@@ -83,7 +83,7 @@ test_that("epinowcast round-trip preserves every observation (no info lost)", {
   library(data.table)
 
   obs  <- as.data.table(subset(epinowcast::germany_covid19_hosp, location == "DE"))
-  obs  <- obs[, location := NULL]
+  obs$location <- NULL
 
   # A max_delay beyond the longest observed delay (~82 days) so nothing is
   # truncated: max_confirm / cum_prop_reported are then fully recoverable.
