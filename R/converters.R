@@ -1364,7 +1364,7 @@ tbl_now_to_epidist <- function(x, ...,
                                verbose = TRUE, quiet = FALSE) {
   .assert_tbl_now(x, "tbl_now_to_epidist")
   .need_pkg("epidist")
-  .warn_lossy_conversion("epidist", quiet)
+  #.warn_lossy_conversion("epidist", quiet)
   format <- match.arg(format)
 
   covariate_cols <- get_covariates(x)

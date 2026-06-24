@@ -557,6 +557,44 @@ test_that("as_epidist_aggregate_data.tbl_now dispatches with counts", {
   expect_true(epidist::is_epidist_aggregate_data(out))
 })
 
+test_that("epidist long round-trip preserves linelist", {
+  skip_if_not_installed("epidist")
+
+  # --- Linelist epidist data (one row per case) ---
+  ll <- epidist::as_epidist_linelist_data(
+    data.frame(
+      pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-02")),
+      sdate_lwr = as.Date(c("2020-03-05", "2020-03-04", "2020-03-06"))
+    ),
+    pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
+  )
+  # -> a linelist tbl_now ...
+  nowll <- tbl_now_from_epidist(ll, verbose = FALSE)
+
+  ll  <- ll[,sort(colnames(ll))]
+  ll2 <- tbl_now_to_epidist(nowll, quiet = TRUE, verbose = FALSE)
+  expect_equal(ll, ll2[,sort(colnames(ll2))])
+
+
+  # --- Aggregate epidist data (counts in an `n` column) ---
+  agg <- epidist::as_epidist_aggregate_data(
+    data.frame(
+      pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
+      sdate_lwr = as.Date(c("2020-03-05", "2020-03-04")),
+      n = c(7, 3)
+    ),
+    n = "n", pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
+  )
+  # -> a count-incidence tbl_now (case_count = "n") ...
+  nowagg <- tbl_now_from_epidist(agg, verbose = FALSE)
+
+  agg  <- agg[,sort(colnames(agg))]
+  ll2  <- tbl_now_to_epidist(nowagg, quiet = TRUE, verbose = FALSE)
+  expect_equal(agg, ll2[,sort(colnames(ll2))])
+})
+
+
+
 # ============================================================
 # verbose messaging
 # ============================================================
