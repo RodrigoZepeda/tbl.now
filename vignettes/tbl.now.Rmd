@@ -722,7 +722,7 @@ dengue_now <- tbl_now(denguedat,
 
 # tbl_now -> tsibble -> tbl_now
 dengue_ts <- tbl_now_to_tsibble(dengue_now, verbose = FALSE)
-as_tbl_now(dengue_ts, event_date = "onset_week", verbose = FALSE)
+as_tbl_now(dengue_ts, report_date = "report_week", verbose = FALSE)
 ```
 
 For example, the [epinowcast](https://package.epinowcast.org/) hospitalization data ships in long cumulative format and converts straight into a `count-cumulative` `tbl_now`:
@@ -732,13 +732,21 @@ epinowcast_available <- requireNamespace("epinowcast", quietly = TRUE)
 ```
 
 ```{r converters-from, eval=epinowcast_available, message=FALSE}
-germany_hospitalizations <- head(epinowcast::germany_covid19_hosp, 1000)
+library(epinowcast)
+data(germany_covid19_hosp)
 
-hospitalizations_now <- tbl_now_from_epinowcast(
-  germany_hospitalizations,
-  strata = c("location", "age_group")
-)
 
+#Read data from epinowcast
+obs  <- germany_covid19_hosp[location == "DE"]
+
+#Remove unused column
+obs  <- obs[, location := NULL]
+
+#Pre-process data
+pobs <- epinowcast::enw_preprocess_data(obs, max_delay = 40, by = "age_group")
+
+hospitalizations_now <- tbl_now_from_epinowcast(pobs)
+  
 hospitalizations_now
 ```
 
@@ -746,10 +754,10 @@ Going the other way, `tbl_now_to_epinowcast()` returns an `enw_preprocess_data` 
 
 ```{r converters-to, eval=epinowcast_available, message=FALSE}
 epinowcast_object <- tbl_now_to_epinowcast(hospitalizations_now, verbose = FALSE)
-class(epinowcast_object)
+epinowcast_object
 ```
 
-The same pattern works for the other packages. For example `tbl_now_to_EpiNow2()` collapses the object into the single `date`/`confirm` time series that [EpiNow2](https://epiforecasts.io/EpiNow2/)'s `estimate_infections()`/`epinow()` expect; passing `model = "estimate_truncation"` instead returns the list of report-date snapshots that `estimate_truncation()` consumes (the one EpiNow2 model that uses the report dimension).
+The same pattern works for the other packages. <!---For example `tbl_now_to_EpiNow2()` collapses the object into the single `date`/`confirm` time series that [EpiNow2](https://epiforecasts.io/EpiNow2/)'s `estimate_infections()`/`epinow()` expect; passing `model = "estimate_truncation"` instead returns the list of report-date snapshots that `estimate_truncation()` consumes (the one EpiNow2 model that uses the report dimension).-->
 
 ## References
 
