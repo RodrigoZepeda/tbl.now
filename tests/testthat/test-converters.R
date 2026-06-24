@@ -81,9 +81,7 @@ test_that("epinowcast round-trip preserves every observation (no info lost)", {
   skip_if_not_installed("epinowcast")
   skip_if_not_installed("data.table")
 
-  obs  <- data.table::as.data.table(epinowcast::germany_covid19_hosp)[
-    location == "DE"
-  ]
+  obs  <- epinowcast::germany_covid19_hosp[location == "DE"]
   obs  <- obs[, location := NULL]
 
   # A max_delay beyond the longest observed delay (~82 days) so nothing is
