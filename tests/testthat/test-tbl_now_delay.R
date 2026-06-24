@@ -7,48 +7,64 @@ library(dplyr, quietly = TRUE, warn.conflicts = FALSE)
 # Daily data: event_date + report_date explicitly known
 make_daily_data <- function() {
   tibble(
-    event_date  = as.Date(c("2023-01-01", "2023-01-02", "2023-01-03",
-                             "2023-01-01", "2023-01-02")),
-    report_date = as.Date(c("2023-01-03", "2023-01-03", "2023-01-05",
-                             "2023-01-04", "2023-01-04")),
-    gender      = c("M", "F", "M", "F", "M")
-  ) %>%
+    event_date = as.Date(c(
+      "2023-01-01", "2023-01-02", "2023-01-03",
+      "2023-01-01", "2023-01-02"
+    )),
+    report_date = as.Date(c(
+      "2023-01-03", "2023-01-03", "2023-01-05",
+      "2023-01-04", "2023-01-04"
+    )),
+    gender = c("M", "F", "M", "F", "M")
+  ) |>
     mutate(delay_days = as.numeric(report_date - event_date))
 }
 
 # Weekly data (7-day spacing)
 make_weekly_data <- function() {
   tibble(
-    event_date  = as.Date(c("2023-01-01", "2023-01-08", "2023-01-15",
-                             "2023-01-01", "2023-01-08")),
-    report_date = as.Date(c("2023-01-15", "2023-01-15", "2023-01-22",
-                             "2023-01-08", "2023-01-22"))
-  ) %>%
+    event_date = as.Date(c(
+      "2023-01-01", "2023-01-08", "2023-01-15",
+      "2023-01-01", "2023-01-08"
+    )),
+    report_date = as.Date(c(
+      "2023-01-15", "2023-01-15", "2023-01-22",
+      "2023-01-08", "2023-01-22"
+    ))
+  ) |>
     mutate(delay_weeks = as.numeric(difftime(report_date, event_date, units = "weeks")))
 }
 
 # Monthly data (1-month spacing)
 make_monthly_data <- function() {
   tibble(
-    event_date  = as.Date(c("2023-01-01", "2023-02-01", "2023-03-01",
-                             "2023-01-01", "2023-02-01")),
-    report_date = as.Date(c("2023-03-01", "2023-03-01", "2023-04-01",
-                             "2023-02-01", "2023-04-01"))
-  ) %>%
+    event_date = as.Date(c(
+      "2023-01-01", "2023-02-01", "2023-03-01",
+      "2023-01-01", "2023-02-01"
+    )),
+    report_date = as.Date(c(
+      "2023-03-01", "2023-03-01", "2023-04-01",
+      "2023-02-01", "2023-04-01"
+    ))
+  ) |>
     mutate(
       delay_months = (lubridate::year(report_date) - lubridate::year(event_date)) * 12L +
-                     (lubridate::month(report_date) - lubridate::month(event_date))
+        (lubridate::month(report_date) - lubridate::month(event_date))
     )
 }
 
 # Yearly data
 make_yearly_data <- function() {
   tibble(
-    event_date  = as.Date(c("2018-01-01", "2019-01-01", "2020-01-01",
-                             "2018-01-01", "2019-01-01")),
-    report_date = as.Date(c("2020-01-01", "2020-01-01", "2021-01-01",
-                             "2019-01-01", "2021-01-01"))
-  ) %>%
+    event_date = as.Date(c(
+      "2018-01-01", "2019-01-01", "2020-01-01",
+      "2018-01-01", "2019-01-01"
+    )),
+    report_date = as.Date(c(
+      "2020-01-01", "2020-01-01", "2021-01-01",
+      "2019-01-01", "2021-01-01"
+    ))
+  ) |>
     mutate(delay_years = lubridate::year(report_date) - lubridate::year(event_date))
 }
 
@@ -57,7 +73,7 @@ make_numeric_data <- function() {
   tibble(
     event_num  = c(1L, 2L, 3L, 1L, 2L),
     report_num = c(3L, 3L, 5L, 4L, 4L)
-  ) %>%
+  ) |>
     mutate(delay_num = report_num - event_num)
 }
 
@@ -68,9 +84,10 @@ make_numeric_data <- function() {
 test_that("event_date + delay (days) reconstructs report_date correctly", {
   d <- make_daily_data()
   result <- tbl_now(d,
-                    event_date = event_date, delay = delay_days,
-                    event_units = "days", report_units = "days",
-                    verbose = FALSE)
+    event_date = event_date, delay = delay_days,
+    event_units = "days", report_units = "days",
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   expect_equal(get_event_date(result), "event_date")
@@ -85,9 +102,10 @@ test_that("event_date + delay (days) reconstructs report_date correctly", {
 test_that("event_date + delay (weeks) reconstructs report_date correctly", {
   d <- make_weekly_data()
   result <- tbl_now(d,
-                    event_date = event_date, delay = delay_weeks,
-                    event_units = "weeks",
-                    verbose = FALSE)
+    event_date = event_date, delay = delay_weeks,
+    event_units = "weeks",
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   expect_equal(result[[".report_date"]], d$report_date)
@@ -97,9 +115,10 @@ test_that("event_date + delay (weeks) reconstructs report_date correctly", {
 test_that("event_date + delay (months) reconstructs report_date correctly", {
   d <- make_monthly_data()
   result <- tbl_now(d,
-                    event_date = event_date, delay = delay_months,
-                    event_units = "months",
-                    verbose = FALSE)
+    event_date = event_date, delay = delay_months,
+    event_units = "months",
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   expect_equal(result[[".report_date"]], d$report_date)
@@ -109,9 +128,10 @@ test_that("event_date + delay (months) reconstructs report_date correctly", {
 test_that("event_date + delay (years) reconstructs report_date correctly", {
   d <- make_yearly_data()
   result <- tbl_now(d,
-                    event_date = event_date, delay = delay_years,
-                    event_units = "years",
-                    verbose = FALSE)
+    event_date = event_date, delay = delay_years,
+    event_units = "years",
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   expect_equal(result[[".report_date"]], d$report_date)
@@ -121,9 +141,10 @@ test_that("event_date + delay (years) reconstructs report_date correctly", {
 test_that("event_date + delay (numeric) reconstructs report_num correctly", {
   d <- make_numeric_data()
   result <- tbl_now(d,
-                    event_date = event_num, delay = delay_num,
-                    event_units = "numeric", report_units = "numeric",
-                    verbose = FALSE)
+    event_date = event_num, delay = delay_num,
+    event_units = "numeric", report_units = "numeric",
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   expect_equal(result[[".report_date"]], d$report_num)
@@ -137,9 +158,10 @@ test_that("event_date + delay (numeric) reconstructs report_num correctly", {
 test_that("report_date + delay (days) reconstructs event_date correctly", {
   d <- make_daily_data()
   result <- tbl_now(d,
-                    report_date = report_date, delay = delay_days,
-                    event_units = "days",
-                    verbose = FALSE)
+    report_date = report_date, delay = delay_days,
+    event_units = "days",
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   expect_equal(get_event_date(result), ".event_date")
@@ -152,9 +174,10 @@ test_that("report_date + delay (days) reconstructs event_date correctly", {
 test_that("report_date + delay (weeks) reconstructs event_date correctly", {
   d <- make_weekly_data()
   result <- tbl_now(d,
-                    report_date = report_date, delay = delay_weeks,
-                    event_units = "weeks",
-                    verbose = FALSE)
+    report_date = report_date, delay = delay_weeks,
+    event_units = "weeks",
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   expect_equal(result[[".event_date"]], d$event_date)
@@ -164,9 +187,10 @@ test_that("report_date + delay (weeks) reconstructs event_date correctly", {
 test_that("report_date + delay (months) reconstructs event_date correctly", {
   d <- make_monthly_data()
   result <- tbl_now(d,
-                    report_date = report_date, delay = delay_months,
-                    event_units = "months",
-                    verbose = FALSE)
+    report_date = report_date, delay = delay_months,
+    event_units = "months",
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   expect_equal(result[[".event_date"]], d$event_date)
@@ -176,9 +200,10 @@ test_that("report_date + delay (months) reconstructs event_date correctly", {
 test_that("report_date + delay (years) reconstructs event_date correctly", {
   d <- make_yearly_data()
   result <- tbl_now(d,
-                    report_date = report_date, delay = delay_years,
-                    event_units = "years",
-                    verbose = FALSE)
+    report_date = report_date, delay = delay_years,
+    event_units = "years",
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   expect_equal(result[[".event_date"]], d$event_date)
@@ -188,9 +213,10 @@ test_that("report_date + delay (years) reconstructs event_date correctly", {
 test_that("report_date + delay (numeric) reconstructs event_num correctly", {
   d <- make_numeric_data()
   result <- tbl_now(d,
-                    report_date = report_num, delay = delay_num,
-                    event_units = "numeric",
-                    verbose = FALSE)
+    report_date = report_num, delay = delay_num,
+    event_units = "numeric",
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   expect_equal(result[[".event_date"]], d$event_num)
@@ -205,43 +231,47 @@ test_that("event_date + delay produces same tbl_now as both dates explicit (days
   d <- make_daily_data()
 
   # Build via both dates (select only the needed columns to avoid delay col)
-  explicit <- tbl_now(d %>% select(event_date, report_date),
-                      event_date = event_date, report_date = report_date,
-                      event_units = "days",
-                      verbose = FALSE)
+  explicit <- tbl_now(d |> select(event_date, report_date),
+    event_date = event_date, report_date = report_date,
+    event_units = "days",
+    verbose = FALSE
+  )
 
   # Build via event_date + delay
-  via_delay <- tbl_now(d %>% select(event_date, delay_days),
-                       event_date = event_date, delay = delay_days,
-                       event_units = "days",
-                       verbose = FALSE)
+  via_delay <- tbl_now(d |> select(event_date, delay_days),
+    event_date = event_date, delay = delay_days,
+    event_units = "days",
+    verbose = FALSE
+  )
 
   # Core numeric columns must match
   expect_equal(via_delay[[".event_num"]], explicit[[".event_num"]])
   expect_equal(via_delay[[".report_num"]], explicit[[".report_num"]])
-  expect_equal(via_delay[[".delay"]],      explicit[[".delay"]])
+  expect_equal(via_delay[[".delay"]], explicit[[".delay"]])
   # Attributes must match
-  expect_equal(get_event_units(via_delay),  get_event_units(explicit))
+  expect_equal(get_event_units(via_delay), get_event_units(explicit))
   expect_equal(get_report_units(via_delay), get_report_units(explicit))
-  expect_equal(get_now(via_delay),          get_now(explicit))
+  expect_equal(get_now(via_delay), get_now(explicit))
 })
 
 test_that("report_date + delay produces same numerics as both dates explicit (weeks)", {
   d <- make_weekly_data()
 
-  explicit <- tbl_now(d %>% select(event_date, report_date),
-                      event_date = event_date, report_date = report_date,
-                      event_units = "weeks",
-                      verbose = FALSE)
+  explicit <- tbl_now(d |> select(event_date, report_date),
+    event_date = event_date, report_date = report_date,
+    event_units = "weeks",
+    verbose = FALSE
+  )
 
-  via_delay <- tbl_now(d %>% select(report_date, delay_weeks),
-                       report_date = report_date, delay = delay_weeks,
-                       event_units = "weeks",
-                       verbose = FALSE)
+  via_delay <- tbl_now(d |> select(report_date, delay_weeks),
+    report_date = report_date, delay = delay_weeks,
+    event_units = "weeks",
+    verbose = FALSE
+  )
 
   expect_equal(via_delay[[".event_num"]], explicit[[".event_num"]])
   expect_equal(via_delay[[".report_num"]], explicit[[".report_num"]])
-  expect_equal(via_delay[[".delay"]],      explicit[[".delay"]])
+  expect_equal(via_delay[[".delay"]], explicit[[".delay"]])
 })
 
 # ============================================================
@@ -251,10 +281,11 @@ test_that("report_date + delay produces same numerics as both dates explicit (we
 test_that("delay-based construction preserves strata and covariates", {
   d <- make_daily_data()
   result <- tbl_now(d,
-                    event_date = event_date, delay = delay_days,
-                    strata = gender,
-                    event_units = "days",
-                    verbose = FALSE)
+    event_date = event_date, delay = delay_days,
+    strata = gender,
+    event_units = "days",
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   expect_equal(get_strata(result), "gender")
@@ -268,9 +299,10 @@ test_that("delay-based construction preserves strata and covariates", {
 test_that("units auto-inferred from event_date when delay provided (days)", {
   d <- make_daily_data()
   result <- tbl_now(d,
-                    event_date = event_date, delay = delay_days,
-                    # event_units deliberately left as "auto"
-                    verbose = FALSE)
+    event_date = event_date, delay = delay_days,
+    # event_units deliberately left as "auto"
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   expect_equal(get_event_units(result), "days")
@@ -280,9 +312,10 @@ test_that("units auto-inferred from event_date when delay provided (days)", {
 test_that("units auto-inferred from report_date when delay provided (weeks)", {
   d <- make_weekly_data()
   result <- tbl_now(d,
-                    report_date = report_date, delay = delay_weeks,
-                    # event_units deliberately left as "auto"
-                    verbose = FALSE)
+    report_date = report_date, delay = delay_weeks,
+    # event_units deliberately left as "auto"
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   expect_equal(get_event_units(result), "weeks")
@@ -294,11 +327,12 @@ test_that("units auto-inferred from report_date when delay provided (weeks)", {
 # ============================================================
 
 test_that("delay column named '.delay' is dropped and recomputed", {
-  d <- make_daily_data() %>% rename(.delay = delay_days)
+  d <- make_daily_data() |> rename(.delay = delay_days)
   result <- tbl_now(d,
-                    event_date = event_date, delay = .delay,
-                    event_units = "days",
-                    verbose = FALSE)
+    event_date = event_date, delay = .delay,
+    event_units = "days",
+    verbose = FALSE
+  )
 
   expect_s3_class(result, "tbl_now")
   # .delay should exist as the internal recomputed column, not duplicated
@@ -336,11 +370,13 @@ test_that("error when report_date missing and no delay provided", {
 })
 
 test_that("error when delay column is not numeric", {
-  d <- make_daily_data() %>%
+  d <- make_daily_data() |>
     mutate(str_delay = as.character(delay_days))
   expect_error(
-    tbl_now(d, event_date = event_date, delay = str_delay,
-            event_units = "days", verbose = FALSE),
+    tbl_now(d,
+      event_date = event_date, delay = str_delay,
+      event_units = "days", verbose = FALSE
+    ),
     "numeric"
   )
 })
@@ -352,8 +388,10 @@ test_that("error when delay column is not numeric", {
 test_that("verbose=TRUE emits message when report_date is reconstructed", {
   d <- make_daily_data()
   expect_message(
-    tbl_now(d, event_date = event_date, delay = delay_days,
-            event_units = "days", verbose = TRUE),
+    tbl_now(d,
+      event_date = event_date, delay = delay_days,
+      event_units = "days", verbose = TRUE
+    ),
     "\\.report_date"
   )
 })
@@ -361,8 +399,10 @@ test_that("verbose=TRUE emits message when report_date is reconstructed", {
 test_that("verbose=TRUE emits message when event_date is reconstructed", {
   d <- make_daily_data()
   expect_message(
-    tbl_now(d, report_date = report_date, delay = delay_days,
-            event_units = "days", verbose = TRUE),
+    tbl_now(d,
+      report_date = report_date, delay = delay_days,
+      event_units = "days", verbose = TRUE
+    ),
     "\\.event_date"
   )
 })
@@ -370,7 +410,9 @@ test_that("verbose=TRUE emits message when event_date is reconstructed", {
 test_that("verbose=FALSE suppresses reconstruction message", {
   d <- make_daily_data()
   expect_no_message(
-    tbl_now(d, event_date = event_date, delay = delay_days,
-            event_units = "days", verbose = FALSE)
+    tbl_now(d,
+      event_date = event_date, delay = delay_days,
+      event_units = "days", verbose = FALSE
+    )
   )
 })

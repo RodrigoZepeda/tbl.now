@@ -9,7 +9,7 @@
 tbl_now_from_epidist(
   data,
   ...,
-  format = c("linelist", "interval"),
+  format = c("auto", "interval"),
   primary = "pdate_lwr",
   secondary = "sdate_lwr",
   primary_upper = "pdate_upr",
@@ -20,33 +20,46 @@ tbl_now_from_epidist(
 tbl_now_to_epidist(
   x,
   ...,
-  format = c("linelist", "interval"),
+  format = c("auto", "linelist", "aggregate", "interval"),
   primary_upper = NULL,
   secondary_upper = NULL,
-  verbose = TRUE
+  censoring_window = NULL,
+  verbose = TRUE,
+  quiet = FALSE
 )
 }
 \arguments{
-\item{data}{A \code{data.frame} (or \code{epidist_linelist_data}) of \pkg{epidist}
-delay data.}
+\item{data}{A \code{data.frame}, \code{epidist_linelist_data} or
+\code{epidist_aggregate_data} of \pkg{epidist} delay data.}
 
-\item{...}{Forwarded to \code{\link[=as_tbl_now]{as_tbl_now()}} (\code{from}) or
-\code{\link[epidist:as_epidist_linelist_data]{epidist::as_epidist_linelist_data()}} (\code{to}).}
+\item{...}{Forwarded to \code{\link[=as_tbl_now]{as_tbl_now()}} (\code{from}) or to the relevant epidist
+constructor (\code{to}).}
 
-\item{format}{\code{"linelist"} (default) or \code{"interval"}.}
+\item{format}{For \code{from}: \code{"auto"} (default) or \code{"interval"}. For \code{to}:
+\code{"auto"} (default), \code{"linelist"}, \code{"aggregate"} or \code{"interval"}.}
 
 \item{primary, secondary}{Column names of the primary / secondary event
 lower-bound dates. Default to epidist's \code{"pdate_lwr"} / \code{"sdate_lwr"}.}
 
-\item{primary_upper, secondary_upper}{Column names of the upper-bound dates
-(\code{format = "interval"}). Default to epidist's \code{"pdate_upr"} / \code{"sdate_upr"}.}
+\item{primary_upper, secondary_upper}{Column names of the upper-bound dates.
+Default to epidist's \code{"pdate_upr"} / \code{"sdate_upr"}. Used to infer units and
+decode censoring (\code{from}) or, with \code{format = "interval"}, taken from
+covariate columns (\code{to}).}
 
 \item{verbose}{Logical. Print the choices that were made.}
 
 \item{x}{A \code{tbl_now} object.}
+
+\item{censoring_window}{(\code{to} only) Optional positive integer width, in days,
+of the censoring windows. If \code{NULL} (default) it is derived from the
+\code{tbl_now} \code{event_units}.}
+
+\item{quiet}{Logical. If \code{TRUE}, suppress the lossy-conversion warning emitted
+by \code{tbl_now_to_epidist()}.}
 }
 \value{
-A \code{tbl_now} (\code{from}) or an \code{epidist_linelist_data} object (\code{to}).
+A \code{tbl_now} (\code{from}) or an \code{epidist_linelist_data} /
+\code{epidist_aggregate_data} object (\code{to}).
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -54,30 +67,71 @@ A \code{tbl_now} (\code{from}) or an \code{epidist_linelist_data} object (\code{
 \pkg{epidist} models the delay between a \emph{primary} event (e.g. symptom
 onset) and a \emph{secondary} event (e.g. report), storing each as an
 interval-censored pair of date columns: \code{pdate_lwr}/\code{pdate_upr} for the
-primary event and \code{sdate_lwr}/\code{sdate_upr} for the secondary event
-(see \code{\link[epidist:as_epidist_linelist_data]{epidist::as_epidist_linelist_data()}}).
+primary event and \code{sdate_lwr}/\code{sdate_upr} for the secondary event. It comes
+in two shapes: a one-row-per-case \code{epidist_linelist_data}
+(\code{\link[epidist:as_epidist_linelist_data]{epidist::as_epidist_linelist_data()}}) and an \code{epidist_aggregate_data} that
+adds an \code{n} count column (\code{\link[epidist:as_epidist_aggregate_data]{epidist::as_epidist_aggregate_data()}}). epidist
+stores everything in \strong{days} and requires every censoring window to have a
+strictly positive width.
 
-\code{tbl_now_from_epidist()} converts such data into a \code{tbl_now}:
+\code{tbl_now_from_epidist()} converts either shape into a \code{tbl_now}:
 \itemize{
-\item \code{"linelist"} (default): use the lower bounds only — \code{primary}
-(\code{pdate_lwr}) becomes \code{event_date} and \code{secondary} (\code{sdate_lwr}) becomes
-\code{report_date}. \code{data_type = "linelist"}.
-\item \code{"interval"}: additionally attach the upper bounds \code{primary_upper}
+\item \code{"auto"} (default): use the lower bounds — \code{primary} (\code{pdate_lwr}) becomes
+\code{event_date}, \code{secondary} (\code{sdate_lwr}) becomes \code{report_date}. An
+\code{epidist_aggregate_data} (or any input with an \code{n} column) becomes
+\code{data_type = "count-incidence"} with \code{case_count = "n"}; otherwise
+\code{data_type = "linelist"}. The \code{event_units}/\code{report_units} are inferred
+from the primary censoring-window width (a 7-day window ⇒ \code{"weeks"}), and a
+left-censored secondary window \verb{[origin, report]} is decoded back to
+\code{is_censored = TRUE} with the report taken from \code{secondary_upper}.
+\item \code{"interval"}: instead attach the upper bounds \code{primary_upper}
 (\code{pdate_upr}) and \code{secondary_upper} (\code{sdate_upr}) as \code{covariates}
 (a warning is emitted).
 }
 
-\code{tbl_now_to_epidist()} performs the inverse and builds an
-\code{epidist_linelist_data} object via \code{\link[epidist:as_epidist_linelist_data]{epidist::as_epidist_linelist_data()}}.
-For \code{format = "interval"} the upper bounds are taken from covariate columns
-named in \code{primary_upper} / \code{secondary_upper}.
+\code{tbl_now_to_epidist()} performs the inverse. By default (\code{format = "auto"})
+it builds an \code{epidist_aggregate_data} when \code{x} holds counts and an
+\code{epidist_linelist_data} otherwise, filling all four interval columns:
+\itemize{
+\item the primary event spans \verb{[event_date, event_date + w]}, where the window
+\code{w} matches the \code{tbl_now} unit (\code{"days"} ⇒ 1 day, \code{"weeks"} ⇒ 7 days, ...,
+or \code{censoring_window} if supplied);
+\item the secondary event spans \verb{[report_date, report_date + w]} normally, but
+for rows flagged by \code{is_censored} it is left-censored to
+\verb{[origin, report_date]} (with \code{origin} the earliest \code{event_date}, i.e.
+epidist time 0) — encoding the \code{tbl_now} convention that a censored report
+is only known to lie in \verb{[0, report_date]}.
+}
 }
 \examples{
 \dontshow{if (requireNamespace("epidist", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-df <- data.frame(
-  pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
-  sdate_lwr = as.Date(c("2020-03-05", "2020-03-04"))
+# --- Linelist epidist data (one row per case) ---
+ll <- epidist::as_epidist_linelist_data(
+  data.frame(
+    pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-02")),
+    sdate_lwr = as.Date(c("2020-03-05", "2020-03-04", "2020-03-06"))
+  ),
+  pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
 )
-tbl_now_from_epidist(df, event_units = "days", report_units = "days")
+# -> a linelist tbl_now ...
+nowll <- tbl_now_from_epidist(ll)
+get_data_type(nowll)
+# ... and back to an epidist_linelist_data
+tbl_now_to_epidist(nowll)
+
+# --- Aggregate epidist data (counts in an `n` column) ---
+agg <- epidist::as_epidist_aggregate_data(
+  data.frame(
+    pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
+    sdate_lwr = as.Date(c("2020-03-05", "2020-03-04")),
+    n = c(7, 3)
+  ),
+  n = "n", pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
+)
+# -> a count-incidence tbl_now (case_count = "n") ...
+nowagg <- tbl_now_from_epidist(agg)
+get_data_type(nowagg)
+# ... and back to an epidist_aggregate_data (auto-detected from the counts)
+tbl_now_to_epidist(nowagg)
 \dontshow{\}) # examplesIf}
 }

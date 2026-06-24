@@ -440,8 +440,8 @@ test_that("temporal_effects rejects negative seasons", {
 test_that("get_temporal_effects returns list of specs before computation", {
   data(denguedat)
 
-  df_now <- denguedat %>%
-    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+  df_now <- denguedat |>
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE, week_of_year = TRUE))
 
   specs <- get_temporal_effects(df_now)
@@ -454,8 +454,8 @@ test_that("get_temporal_effects returns list of specs before computation", {
 test_that("get_temporal_effect_cols returns character(0) before computation", {
   data(denguedat)
 
-  df_now <- denguedat %>%
-    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
+  df_now <- denguedat |>
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE))
 
   expect_equal(get_temporal_effect_cols(df_now), character(0))
@@ -464,13 +464,13 @@ test_that("get_temporal_effect_cols returns character(0) before computation", {
 test_that("get_temporal_effect_cols returns column names after computation", {
   data(denguedat)
 
-  df_computed <- denguedat %>%
-    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
-    add_temporal_effects(temporal_effects(day_of_week = TRUE, week_of_year = TRUE)) %>%
+  df_computed <- denguedat |>
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) |>
+    add_temporal_effects(temporal_effects(day_of_week = TRUE, week_of_year = TRUE)) |>
     compute_temporal_effects()
 
   cols <- get_temporal_effect_cols(df_computed)
-  expect_true(".event_day_of_week"  %in% cols)
+  expect_true(".event_day_of_week" %in% cols)
   expect_true(".event_week_of_year" %in% cols)
 })
 
@@ -481,9 +481,9 @@ test_that("get_temporal_effect_cols returns column names after computation", {
 test_that("remove_temporal_effects clears spec and computed cols", {
   data(denguedat)
 
-  df_computed <- denguedat %>%
-    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
-    add_temporal_effects(temporal_effects(day_of_week = TRUE)) %>%
+  df_computed <- denguedat |>
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) |>
+    add_temporal_effects(temporal_effects(day_of_week = TRUE)) |>
     compute_temporal_effects()
 
   cleared <- remove_temporal_effects(df_computed)
@@ -496,9 +496,9 @@ test_that("remove_temporal_effects clears spec and computed cols", {
 test_that("replace_temporal_effects replaces spec with new one", {
   data(denguedat)
 
-  df_now <- denguedat %>%
-    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) %>%
-    add_temporal_effects(temporal_effects(day_of_week = TRUE)) %>%
+  df_now <- denguedat |>
+    tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE) |>
+    add_temporal_effects(temporal_effects(day_of_week = TRUE)) |>
     compute_temporal_effects()
 
   replaced <- replace_temporal_effects(df_now, temporal_effects(week_of_year = TRUE))
@@ -531,8 +531,8 @@ test_that("season_length defaults to 1 for a single season", {
 
 test_that("season_length = 1 gives period equal to seasons (backward compatible)", {
   t_eff <- temporal_effects(seasons = c(7, 52, 365), season_length = 1)
-  expect_equal(t_eff@seasons,       c(7, 52, 365))
-  expect_equal(t_eff@season_length, c(1,  1,   1))
+  expect_equal(t_eff@seasons, c(7, 52, 365))
+  expect_equal(t_eff@season_length, c(1, 1, 1))
   # periods == seasons when season_length == 1
   expect_equal(t_eff@seasons * t_eff@season_length, c(7, 52, 365))
 })
@@ -545,7 +545,7 @@ test_that("scalar season_length is recycled to match seasons length", {
 
 test_that("vector season_length of same length as seasons is stored correctly", {
   t_eff <- temporal_effects(seasons = c(52, 4), season_length = c(7, 13))
-  expect_equal(t_eff@seasons,       c(52, 4))
+  expect_equal(t_eff@seasons, c(52, 4))
   expect_equal(t_eff@season_length, c(7, 13))
   expect_equal(t_eff@seasons * t_eff@season_length, c(364, 52))
 })
@@ -565,14 +565,14 @@ test_that("season_length wrong length errors", {
 })
 
 test_that("season_length zero or negative errors", {
-  expect_error(temporal_effects(seasons = 52, season_length = 0),  "season_length")
+  expect_error(temporal_effects(seasons = 52, season_length = 0), "season_length")
   expect_error(temporal_effects(seasons = 52, season_length = -7), "season_length")
 })
 
 test_that("seasons zero or negative errors", {
-  expect_error(temporal_effects(seasons = 0),           "seasons")
-  expect_error(temporal_effects(seasons = -52),         "seasons")
-  expect_error(temporal_effects(seasons = c(52, -1)),   "seasons")
+  expect_error(temporal_effects(seasons = 0), "seasons")
+  expect_error(temporal_effects(seasons = -52), "seasons")
+  expect_error(temporal_effects(seasons = c(52, -1)), "seasons")
 })
 
 test_that("add_temporal_effects uses period (seasons * season_length) for column names", {
@@ -581,9 +581,10 @@ test_that("add_temporal_effects uses period (seasons * season_length) for column
     numeric_col = c(0, 26)
   )
   # seasons = 52, season_length = 7 → period = 364
-  t_eff  <- temporal_effects(seasons = 52, season_length = 7)
+  t_eff <- temporal_effects(seasons = 52, season_length = 7)
   result <- add_temporal_effects.data.frame(
-    df, t_effects = t_eff,
+    df,
+    t_effects = t_eff,
     date_col = "date", numeric_col = "numeric_col", name_prefix = ".date"
   )
   expect_true(".date_season_364_cos" %in% names(result))
@@ -597,9 +598,10 @@ test_that("add_temporal_effects season_length=1 gives same column names as befor
     date        = as.Date(c("2020-01-01", "2020-07-01")),
     numeric_col = c(0, 26)
   )
-  t_eff  <- temporal_effects(seasons = 52, season_length = 1)
+  t_eff <- temporal_effects(seasons = 52, season_length = 1)
   result <- add_temporal_effects.data.frame(
-    df, t_effects = t_eff,
+    df,
+    t_effects = t_eff,
     date_col = "date", numeric_col = "numeric_col", name_prefix = ".date"
   )
   # period = 52 × 1 = 52 → backward-compatible column name
@@ -613,9 +615,10 @@ test_that("Fourier values are computed with the correct period", {
     numeric_col = 0
   )
   # seasons=52, season_length=7 → period=364; at t=0: cos(0)=1, sin(0)=0
-  t_eff  <- temporal_effects(seasons = 52, season_length = 7)
+  t_eff <- temporal_effects(seasons = 52, season_length = 7)
   result <- add_temporal_effects.data.frame(
-    df, t_effects = t_eff,
+    df,
+    t_effects = t_eff,
     date_col = "date", numeric_col = "numeric_col", name_prefix = ".date"
   )
   expect_equal(result$.date_season_364_cos, 1)

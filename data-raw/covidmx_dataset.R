@@ -27,5 +27,5 @@ covid_summary <- covid |>
 
 covidat <- covid_summary
 save(covidat, file = "data/covidat.rda")
-#load("data/covidat.rda")
-#covidat# <- covidat |> filter(year(date_of_symptom_onset) > 2020)
+# load("data/covidat.rda")
+# covidat# <- covidat |> filter(year(date_of_symptom_onset) > 2020)

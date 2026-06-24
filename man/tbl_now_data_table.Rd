@@ -37,7 +37,9 @@ A \code{tbl_now} (\code{from}) or a \code{data.table} (\code{to}).
 \dontshow{if (requireNamespace("data.table", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
 dt <- data.table::as.data.table(denguedat)
-nowobj <- tbl_now_from_data_table(dt, event_date = "onset_week",
-                                  report_date = "report_week", verbose = FALSE)
+nowobj <- tbl_now_from_data_table(dt,
+  event_date = "onset_week",
+  report_date = "report_week", verbose = FALSE
+)
 \dontshow{\}) # examplesIf}
 }

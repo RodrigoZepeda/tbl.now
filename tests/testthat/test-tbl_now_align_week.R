@@ -10,8 +10,10 @@ setup_test_data <- function() {
 
     # Data with different weekdays
     mixed_weekdays = data.frame(
-      date = as.Date(c("2022-11-07", "2022-11-08", "2022-11-09",
-                       "2022-11-10", "2022-11-11", "2022-11-12", "2022-11-13"))
+      date = as.Date(c(
+        "2022-11-07", "2022-11-08", "2022-11-09",
+        "2022-11-10", "2022-11-11", "2022-11-12", "2022-11-13"
+      ))
     ),
 
     # Year boundary data
@@ -54,7 +56,7 @@ test_that("align_weeks returns a data.frame with new aligned date column", {
 
   expect_s3_class(out, "data.frame")
   expect_true("date_aligned" %in% names(out))
-  expect_equal(ncol(out), 2)  # Original + aligned
+  expect_equal(ncol(out), 2) # Original + aligned
 })
 
 test_that("align_weeks works with and without quotes", {
@@ -130,8 +132,10 @@ test_that("align_weeks does not modify original columns", {
 test_that("align_weeks works with custom new_date_col name", {
   test_data <- setup_test_data()
 
-  out <- align_weeks(test_data$basic_dates, date_col = date,
-                     new_date_col = "custom_name")
+  out <- align_weeks(test_data$basic_dates,
+    date_col = date,
+    new_date_col = "custom_name"
+  )
 
   expect_true("custom_name" %in% names(out))
   expect_false("date_aligned" %in% names(out))
@@ -144,7 +148,7 @@ test_that("align_weeks handles single observation", {
 
   expect_equal(nrow(out), 1)
   expect_true(!is.na(out$date_aligned))
-  expect_equal(lubridate::wday(out$date_aligned), 1)  # Sunday
+  expect_equal(lubridate::wday(out$date_aligned), 1) # Sunday
 })
 
 test_that("align_weeks handles leap years correctly", {
@@ -185,14 +189,15 @@ test_that("align_weeks.tbl_now preserves tbl_now class", {
   data(flusight)
 
   flu_tbl <- tbl_now(flusight[1:100, ],
-                     event_date = "target_end_date",
-                     report_date = "as_of",
-                     case_count = "observation",
-                     strata = "location_name",
-                     data_type = "count-cumulative",
-                     report_units = "weeks",
-                     event_units = "weeks",
-                     verbose = FALSE)
+    event_date = "target_end_date",
+    report_date = "as_of",
+    case_count = "observation",
+    strata = "location_name",
+    data_type = "count-cumulative",
+    report_units = "weeks",
+    event_units = "weeks",
+    verbose = FALSE
+  )
 
   result <- align_weeks(flu_tbl)
 
@@ -204,14 +209,15 @@ test_that("align_weeks.tbl_now aligns both event and report dates", {
   data(flusight)
 
   flu_tbl <- tbl_now(flusight[1:100, ],
-                     event_date = "target_end_date",
-                     report_date = "as_of",
-                     case_count = "observation",
-                     strata = "location_name",
-                     data_type = "count-cumulative",
-                     report_units = "weeks",
-                     event_units = "weeks",
-                     verbose = FALSE)
+    event_date = "target_end_date",
+    report_date = "as_of",
+    case_count = "observation",
+    strata = "location_name",
+    data_type = "count-cumulative",
+    report_units = "weeks",
+    event_units = "weeks",
+    verbose = FALSE
+  )
 
   result <- align_weeks(flu_tbl, align_on_day = 1)
 
@@ -224,14 +230,15 @@ test_that("align_weeks.tbl_now produces integer delays", {
   data(flusight)
 
   flu_tbl <- tbl_now(flusight[1:100, ],
-                     event_date = "target_end_date",
-                     report_date = "as_of",
-                     case_count = "observation",
-                     strata = "location_name",
-                     data_type = "count-cumulative",
-                     report_units = "weeks",
-                     event_units = "weeks",
-                     verbose = FALSE)
+    event_date = "target_end_date",
+    report_date = "as_of",
+    case_count = "observation",
+    strata = "location_name",
+    data_type = "count-cumulative",
+    report_units = "weeks",
+    event_units = "weeks",
+    verbose = FALSE
+  )
 
   # Before alignment, there might be decimal delays
   # After alignment, all delays should be integers (in weeks)
@@ -245,12 +252,13 @@ test_that("align_weeks.tbl_now preserves all attributes", {
   data(denguedat)
 
   dengue_tbl <- tbl_now(denguedat[1:100, ],
-                        event_date = "onset_week",
-                        report_date = "report_week",
-                        report_units = "weeks",
-                        event_units = "weeks",
-                        strata = "gender",
-                        verbose = FALSE)
+    event_date = "onset_week",
+    report_date = "report_week",
+    report_units = "weeks",
+    event_units = "weeks",
+    strata = "gender",
+    verbose = FALSE
+  )
 
   result <- align_weeks(dengue_tbl)
 
@@ -264,11 +272,12 @@ test_that("align_weeks.tbl_now works with different align_on_day values", {
   data(denguedat)
 
   dengue_tbl <- tbl_now(denguedat[1:1000, ],
-                        event_date = "onset_week",
-                        report_date = "report_week",
-                        report_units = "weeks",
-                        event_units = "weeks",
-                        verbose = FALSE)
+    event_date = "onset_week",
+    report_date = "report_week",
+    report_units = "weeks",
+    event_units = "weeks",
+    verbose = FALSE
+  )
 
   # Test multiple alignment days
   for (day in 1:7) {
@@ -282,12 +291,13 @@ test_that("align_weeks.tbl_now maintains data integrity", {
   data(denguedat)
 
   dengue_tbl <- tbl_now(denguedat[1:100, ],
-                        event_date = "onset_week",
-                        report_date = "report_week",
-                        report_units = "weeks",
-                        event_units = "weeks",
-                        strata = "gender",
-                        verbose = FALSE)
+    event_date = "onset_week",
+    report_date = "report_week",
+    report_units = "weeks",
+    event_units = "weeks",
+    strata = "gender",
+    verbose = FALSE
+  )
 
   original_rows <- nrow(dengue_tbl)
   result <- align_weeks(dengue_tbl)
@@ -300,11 +310,12 @@ test_that("align_weeks.tbl_now works with both epi and iso types", {
   data(denguedat)
 
   dengue_tbl <- tbl_now(denguedat[1:50, ],
-                        event_date = "onset_week",
-                        report_date = "report_week",
-                        report_units = "weeks",
-                        event_units = "weeks",
-                        verbose = FALSE)
+    event_date = "onset_week",
+    report_date = "report_week",
+    report_units = "weeks",
+    event_units = "weeks",
+    verbose = FALSE
+  )
 
   result_epi <- align_weeks(dengue_tbl, type = "epi")
   result_iso <- align_weeks(dengue_tbl, type = "iso")
@@ -325,8 +336,9 @@ test_that("week_2_date creates a date column", {
   test_data <- setup_test_data()
 
   out <- week_2_date(test_data$week_year_data,
-                     week_col = "epidemiological_week",
-                     year_col = "epidemiological_year")
+    week_col = "epidemiological_week",
+    year_col = "epidemiological_year"
+  )
 
   expect_s3_class(out, "data.frame")
   expect_true("date" %in% names(out))
@@ -339,9 +351,10 @@ test_that("week_2_date aligns to the correct weekday", {
   # Test different alignment days
   for (day in 1:7) {
     out <- week_2_date(test_data$week_year_data,
-                       week_col = "epidemiological_week",
-                       year_col = "epidemiological_year",
-                       align_on_day = day)
+      week_col = "epidemiological_week",
+      year_col = "epidemiological_year",
+      align_on_day = day
+    )
 
     expect_true(all(lubridate::wday(out$date) == day))
   }
@@ -354,16 +367,18 @@ test_that("week_2_date works for epiweek vs isoweek", {
   )
 
   out_epi <- week_2_date(df,
-                         week_col = "week_col",
-                         year_col = "year_col",
-                         week_fun = lubridate::epiweek,
-                         year_fun = lubridate::epiyear)
+    week_col = "week_col",
+    year_col = "year_col",
+    week_fun = lubridate::epiweek,
+    year_fun = lubridate::epiyear
+  )
 
   out_iso <- week_2_date(df,
-                         week_col = "week_col",
-                         year_col = "year_col",
-                         week_fun = lubridate::isoweek,
-                         year_fun = lubridate::isoyear)
+    week_col = "week_col",
+    year_col = "year_col",
+    week_fun = lubridate::isoweek,
+    year_fun = lubridate::isoyear
+  )
 
   # They often differ in early January
   expect_false(identical(out_epi$date, out_iso$date))
@@ -373,8 +388,9 @@ test_that("week_2_date merges correctly with duplicated rows", {
   test_data <- setup_test_data()
 
   out <- week_2_date(test_data$week_year_duplicates,
-                     week_col = "week_col",
-                     year_col = "year_col")
+    week_col = "week_col",
+    year_col = "year_col"
+  )
 
   expect_equal(nrow(out), 3)
   expect_false(any(is.na(out$date)))
@@ -387,9 +403,10 @@ test_that("week_2_date fails when date_col_name already exists", {
 
   expect_error(
     week_2_date(df_with_date,
-                week_col = "epidemiological_week",
-                year_col = "epidemiological_year",
-                date_col_name = "date"),
+      week_col = "epidemiological_week",
+      year_col = "epidemiological_year",
+      date_col_name = "date"
+    ),
     "already in"
   )
 })
@@ -428,8 +445,9 @@ test_that("week_2_date handles year boundaries correctly", {
   )
 
   out <- week_2_date(year_boundary_weeks,
-                     week_col = "week_col",
-                     year_col = "year_col")
+    week_col = "week_col",
+    year_col = "year_col"
+  )
 
   expect_equal(nrow(out), 4)
   expect_false(any(is.na(out$date)))
@@ -442,9 +460,10 @@ test_that("week_2_date custom date_col_name works", {
   test_data <- setup_test_data()
 
   out <- week_2_date(test_data$week_year_data,
-                     week_col = "epidemiological_week",
-                     year_col = "epidemiological_year",
-                     date_col_name = "my_date")
+    week_col = "epidemiological_week",
+    year_col = "epidemiological_year",
+    date_col_name = "my_date"
+  )
 
   expect_true("my_date" %in% names(out))
   expect_false("date" %in% names(out))
@@ -458,12 +477,14 @@ test_that("align_weeks integrates correctly with tbl_now workflow", {
   data(denguedat)
 
   # Create tbl_now, align weeks, then convert to count
-  result <- denguedat[1:100, ] %>%
-    tbl_now(event_date = "onset_week",
-            report_date = "report_week",
-            strata = "gender",
-            verbose = FALSE) %>%
-    align_weeks() %>%
+  result <- denguedat[1:100, ] |>
+    tbl_now(
+      event_date = "onset_week",
+      report_date = "report_week",
+      strata = "gender",
+      verbose = FALSE
+    ) |>
+    align_weeks() |>
     to_count(to = "count-incidence")
 
   expect_s3_class(result, "tbl_now")
@@ -476,13 +497,15 @@ test_that("align_weeks integrates correctly with tbl_now workflow", {
 test_that("align_weeks preserves covariates and temporal effects", {
   data(denguedat)
 
-  dengue_tbl <- denguedat[1:100, ] %>%
-    tbl_now(event_date = "onset_week",
-            report_date = "report_week",
-            strata = "gender",
-            verbose = FALSE) %>%
-    dplyr::mutate(temperature = rnorm(dplyr::n(), 25, 3)) %>%
-    add_covariates(temperature) %>%
+  dengue_tbl <- denguedat[1:100, ] |>
+    tbl_now(
+      event_date = "onset_week",
+      report_date = "report_week",
+      strata = "gender",
+      verbose = FALSE
+    ) |>
+    dplyr::mutate(temperature = rnorm(dplyr::n(), 25, 3)) |>
+    add_covariates(temperature) |>
     add_temporal_effects(temporal_effects(week_of_year = TRUE))
 
   result <- align_weeks(dengue_tbl)
@@ -496,20 +519,21 @@ test_that("Example from vignette works correctly", {
 
   # This is the example from Example.Rmd
   flutbl <- tbl_now(flusight[1:1000, ],
-                    event_date = "target_end_date",
-                    report_date = "as_of",
-                    report_units = "weeks",
-                    event_units = "weeks",
-                    case_count = "observation",
-                    strata = c("location_name"),
-                    data_type = "count-cumulative",
-                    verbose = FALSE)
+    event_date = "target_end_date",
+    report_date = "as_of",
+    report_units = "weeks",
+    event_units = "weeks",
+    case_count = "observation",
+    strata = c("location_name"),
+    data_type = "count-cumulative",
+    verbose = FALSE
+  )
 
   # Before alignment, some delays might have decimals
   has_decimals_before <- any(abs(flutbl$.delay - round(flutbl$.delay)) > 1e-10)
 
   # Align the weeks
-  flutbl_aligned <- flutbl %>% align_weeks()
+  flutbl_aligned <- flutbl |> align_weeks()
 
   # After alignment, all delays should be integers
   has_decimals_after <- any(abs(flutbl_aligned$.delay - round(flutbl_aligned$.delay)) > 1e-10)

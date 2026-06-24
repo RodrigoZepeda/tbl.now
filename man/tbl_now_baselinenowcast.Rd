@@ -19,7 +19,7 @@ tbl_now_from_baselinenowcast(
 tbl_now_to_baselinenowcast(
   x,
   ...,
-  format = c("long", "matrix"),
+  format = c("matrix", "long"),
   delays_unit = "days",
   verbose = TRUE
 )
@@ -39,7 +39,7 @@ tbl_now_to_baselinenowcast(
 
 \item{x}{A \code{tbl_now} object.}
 
-\item{format}{For \code{to}: \code{"long"} (default) or \code{"matrix"}.}
+\item{format}{For \code{to}: \code{"matrix"} (default) or \code{"long"}.}
 }
 \value{
 A \code{tbl_now} (\code{from}), or a \code{data.frame}/\code{reporting_triangle} (\code{to}).
@@ -57,9 +57,33 @@ and converts it into a \code{tbl_now} of \code{data_type = "count-incidence"}.
 \code{reporting_triangle} matrix (\code{format = "matrix"}) via
 \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}}.
 }
+\section{Round-trip}{
+
+
+A \code{reporting_triangle} distinguishes \strong{not-yet-observed} cells (\code{NA}) from
+\strong{observed zeros} (\code{0}). The \code{NA} cells split at the \strong{last observed report
+date} (the latest report with a non-\code{NA} count, taken as the nowcast's \code{now}):
+\itemize{
+\item cells with \code{report_date > now} are * not-yet-observable* future cells. They
+are \strong{dropped} from the \code{tbl_now()}.
+\item cells with \code{report_date <= now} \emph{could} have been reported but were not.
+They are genuinely \strong{missing} and kept as \code{count = NA} rows in
+the \code{tbl_now()}.
+}
+
+On the way back, \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}} fills the
+in-triangle cells with \code{0} unless they are marked in the tibble as \code{NA}.
+}
+
 \examples{
 \dontshow{if (requireNamespace("baselinenowcast", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-rt <- baselinenowcast::example_reporting_triangle
+# Get a reporting triangle example
+rt     <- baselinenowcast::example_reporting_triangle
+
+# Convert to a tbl_now
 nowobj <- tbl_now_from_baselinenowcast(rt)
+
+# The matrix round-trip is faithful (not-yet-observed `NA` cells are kept).
+identical(rt, tbl_now_to_baselinenowcast(nowobj))
 \dontshow{\}) # examplesIf}
 }

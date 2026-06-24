@@ -8,8 +8,8 @@
 \usage{
 tbl_now_from_tsibble(
   data,
-  event_date,
-  report_date = NULL,
+  report_date,
+  event_date = NULL,
   strata = NULL,
   ...,
   verbose = TRUE
@@ -18,17 +18,17 @@ tbl_now_from_tsibble(
 tbl_now_to_tsibble(
   x,
   ...,
-  index = c("report_date", "event_date"),
+  index = c("event_date", "report_date"),
   verbose = TRUE
 )
 }
 \arguments{
 \item{data}{A \code{tbl_ts} (tsibble).}
 
-\item{event_date}{Column name of the event date (required for \code{from}).}
+\item{report_date}{Column name of the report date (required for \code{from}).}
 
-\item{report_date}{Column name of the report date (for \code{from}); defaults to
-the tsibble index.}
+\item{event_date}{Column name of the event date (for \code{from}); defaults to the
+tsibble index.}
 
 \item{strata}{Optional character vector of strata columns (\code{from}). If \code{NULL}
 (default) the tsibble key columns other than the date columns are used.}
@@ -40,8 +40,8 @@ the tsibble index.}
 
 \item{x}{A \code{tbl_now} object.}
 
-\item{index}{For \code{to}: which date becomes the tsibble index, \code{"report_date"}
-(default) or \code{"event_date"}.}
+\item{index}{For \code{to}: which date becomes the tsibble index, \code{"event_date"}
+(default) or \code{"report_date"}.}
 }
 \value{
 A \code{tbl_now} (\code{from}) or a \code{tbl_ts} (\code{to}).
@@ -51,24 +51,27 @@ A \code{tbl_now} (\code{from}) or a \code{tbl_ts} (\code{to}).
 
 A \code{\link[tsibble:tsibble]{tsibble::tsibble()}} has a single time \code{index} and a \code{key} identifying each
 series. Nowcasting needs two time indices, so the conversion keeps both date
-columns: the \code{index} is one of the dates and the other date (plus any strata)
-becomes part of the \code{key}.
+columns: the \code{index} is the \strong{event date} and the report date (plus any
+strata) becomes part of the \code{key}.
 
 \code{tbl_now_from_tsibble()} converts a \code{tbl_ts} into a \code{tbl_now}. You must say
-which column is the \code{event_date}; \code{report_date} defaults to the tsibble's
+which column is the \code{report_date}; \code{event_date} defaults to the tsibble's
 index (\code{\link[tsibble:index_var]{tsibble::index_var()}}).
 
 \code{tbl_now_to_tsibble()} converts a \code{tbl_now} into a \code{tbl_ts}, using \code{index}
-(\code{"report_date"}, the default, or \code{"event_date"}) as the tsibble index and
+(\code{"event_date"}, the default, or \code{"report_date"}) as the tsibble index and
 the other date plus the strata as the key. Linelist data is aggregated to
 \code{count-incidence} first (a tsibble requires unique index/key combinations).
 }
 \examples{
 \dontshow{if (requireNamespace("tsibble", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
-nowobj <- tbl_now(denguedat, event_date = "onset_week",
-                  report_date = "report_week", verbose = FALSE)
-ts <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
-back <- tbl_now_from_tsibble(ts, event_date = "onset_week", verbose = FALSE)
+nowobj <- tbl_now(denguedat,
+  event_date = "onset_week",
+  report_date = "report_week", verbose = FALSE
+)
+# The tsibble is indexed by the event date; the report date is in the key.
+ts   <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
+back <- tbl_now_from_tsibble(ts, report_date = "report_week", verbose = FALSE)
 \dontshow{\}) # examplesIf}
 }

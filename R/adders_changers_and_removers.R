@@ -23,7 +23,7 @@
 #' get_now(ndata)
 #'
 #' #We can filter the data
-#' ndata_1992 <- ndata %>%
+#' ndata_1992 <- ndata |>
 #'  dplyr::filter(onset_week <= as.Date("1992/01/01") &
 #'                report_week <= as.Date("1992/01/01"))
 #'
@@ -31,7 +31,7 @@
 #' get_now(ndata_1992)
 #'
 #' #The update now brings it to the closest date before the cut
-#' ndata_1992 <- ndata_1992 %>% update_now()
+#' ndata_1992 <- ndata_1992 |> update_now()
 #'
 #' #Which is now correct and set to the latest date before the cut
 #' get_now(ndata_1992)
@@ -48,68 +48,70 @@
 #' @examples
 #' data(denguedat)
 #' ndata <- tbl_now(denguedat,
-#'                  event_date = onset_week,
-#'                  report_date = report_week,
-#'                  verbose = FALSE)
+#'   event_date = onset_week,
+#'   report_date = report_week,
+#'   verbose = FALSE
+#' )
 #'
 #' # Change the event_date column to a different date column
 #' ndata$new_onset_week <- ndata$onset_week - lubridate::days(1)
-#' ndata <- ndata %>% change_event_date(new_onset_week)
+#' ndata <- ndata |> change_event_date(new_onset_week)
 #' ndata
 #'
 #' # Change the report_date column to a different column
 #' ndata$new_report_week <- ndata$report_week - lubridate::days(1)
-#' ndata <- ndata %>% change_report_date(new_report_week)
+#' ndata <- ndata |> change_report_date(new_report_week)
 #' ndata
 #'
 #' # Change strata to different strata
-#' ndata$age_group <- sample(c("< 18","20-60","60+"), nrow(ndata), replace = TRUE)
-#' ndata <- ndata %>% change_strata(gender, age_group)
+#' ndata$age_group <- sample(c("< 18", "20-60", "60+"), nrow(ndata), replace = TRUE)
+#' ndata <- ndata |> change_strata(gender, age_group)
 #' ndata
 #'
 #' # Change covariates
 #' ndata$temperature <- rnorm(nrow(ndata), 25, 4)
-#' ndata$humidity    <- rbeta(nrow(ndata), 0.6, 0.4)
-#' ndata <- ndata %>% change_covariates(temperature, humidity)
+#' ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
+#' ndata <- ndata |> change_covariates(temperature, humidity)
 #' ndata
 #'
 #' # Change now
 #' ndata <- change_now(ndata, now = as.Date("2025-01-01"))
 #' ndata
 #'
-#' #Change case count column
-#' count_data <- ndata %>%
+#' # Change case count column
+#' count_data <- ndata |>
 #'   to_count(to = "count-incidence")
 #'
-#' count_data %>%
-#'   dplyr::mutate(n2 = 1.15*n) %>%
+#' count_data |>
+#'   dplyr::mutate(n2 = 1.15 * n) |>
 #'   change_case_count(n2)
 #'
-#' #Change is_censored
+#' # Change is_censored
 #' ndata$is_censored <- FALSE
-#' ndata <- ndata %>%
+#' ndata <- ndata |>
 #'   change_is_censored(is_censored)
 #' ndata
 #'
 #' # Change covariates
 #' ndata$temperature <- rnorm(nrow(ndata), 25, 4)
-#' ndata$humidity    <- rbeta(nrow(ndata), 0.6, 0.4)
-#' ndata <- ndata %>% change_covariates(temperature, humidity)
+#' ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
+#' ndata <- ndata |> change_covariates(temperature, humidity)
 #' ndata
 #'
 #' # Add temporal effects, remove and replace them
-#' ndata <- ndata %>%
-#'     add_temporal_effects(disease_data,
-#'     t_effects= temporal_effects(week_of_year = TRUE, month_of_year = TRUE))
+#' ndata <- ndata |>
+#'   add_temporal_effects(disease_data,
+#'     t_effects = temporal_effects(week_of_year = TRUE, month_of_year = TRUE)
+#'   )
 #'
-#' #Use the compute to calculate them
-#' ndata %>% compute_temporal_effects()
+#' # Use the compute to calculate them
+#' ndata |> compute_temporal_effects()
 #'
-#' #Use replace to change them
-#' ndata %>% replace_temporal_effects(t_effects= temporal_effects(seasons = 52))
+#' # Use replace to change them
+#' ndata |> replace_temporal_effects(t_effects = temporal_effects(seasons = 52))
 #'
-#' #Use remove to delete them
-#' ndata %>% remove_temporal_effects()
+#' # Use remove to delete them
+#' ndata |> remove_temporal_effects()
 #'
 #' @md
 #' @name change
@@ -133,18 +135,19 @@ NULL
 #' @examples
 #' data(denguedat)
 #' ndata <- tbl_now(denguedat,
-#'                  event_date = onset_week,
-#'                  report_date = report_week,
-#'                  verbose = FALSE)
+#'   event_date = onset_week,
+#'   report_date = report_week,
+#'   verbose = FALSE
+#' )
 #'
 #' # Add strata
-#' ndata <- ndata %>% add_strata(dplyr::starts_with("gender"))
+#' ndata <- ndata |> add_strata(dplyr::starts_with("gender"))
 #' ndata
 #'
 #' # Add covariates
 #' ndata$temperature <- rnorm(nrow(ndata), 25, 4)
-#' ndata$humidity    <- rbeta(nrow(ndata), 0.6, 0.4)
-#' ndata <- ndata %>% add_covariates(temperature, humidity)
+#' ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
+#' ndata <- ndata |> add_covariates(temperature, humidity)
 #' ndata
 #'
 #' @md
@@ -175,10 +178,11 @@ NULL
 #' @examples
 #' data(denguedat)
 #' ndata <- tbl_now(denguedat,
-#'                  event_date = onset_week,
-#'                  report_date = report_week,
-#'                  strata = gender,
-#'                  verbose = FALSE)
+#'   event_date = onset_week,
+#'   report_date = report_week,
+#'   strata = gender,
+#'   verbose = FALSE
+#' )
 #'
 #' # Add strata
 #' ndata <- remove_strata(ndata, gender)
@@ -186,11 +190,11 @@ NULL
 #'
 #' # Change covariates
 #' ndata$temperature <- rnorm(nrow(ndata), 25, 4)
-#' ndata$humidity    <- rbeta(nrow(ndata), 0.6, 0.4)
-#' ndata <- ndata %>% add_covariates(temperature, humidity)
+#' ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
+#' ndata <- ndata |> add_covariates(temperature, humidity)
 #' ndata
 #'
-#' ndata %>% remove_covariates(temperature, humidity)
+#' ndata |> remove_covariates(temperature, humidity)
 #'
 #' @name remove
 #' @seealso [add_temporal_effects()] [add] [change]
@@ -200,21 +204,20 @@ NULL
 #' @rdname change
 #' @export
 change_now <- function(x, now = NULL) {
-
   if (!inherits(x, "tbl_now")) {
     cli::cli_abort("{.arg x} must be a {.code tbl_now} object")
   }
 
-  if (!is.null(now) && (!lubridate::is.Date(now) || length(now) != 1)){
+  if (!is.null(now) && (!lubridate::is.Date(now) || length(now) != 1)) {
     cli::cli_abort("{.arg now} must be a Date of length 1")
   }
 
   # Re-infer now
   now <- tryCatch(
-    infer_now(x, now = now, event_date = get_event_date(x), report_date =  get_report_date(x)),
+    infer_now(x, now = now, event_date = get_event_date(x), report_date = get_report_date(x)),
     error = function(e) get_now(x)
   )
-  attr(x, "now") <-  now
+  attr(x, "now") <- now
 
 
   validate_tbl_now(x)
@@ -231,12 +234,11 @@ update_now <- function(x) {
 
 #' @rdname change
 #' @export
-#Change the `event_date` to a different column name
+# Change the `event_date` to a different column name
 change_event_date <- function(x, event_date) {
-
-  #Get the event date
+  # Get the event date
   value_pos <- tidyselect::eval_select(rlang::expr({{ event_date }}), x)
-  value     <- colnames(x)[value_pos]
+  value <- colnames(x)[value_pos]
 
   if (!inherits(x, "tbl_now")) {
     cli::cli_abort("{.arg x} must be a {.code tbl_now} object")
@@ -250,21 +252,23 @@ change_event_date <- function(x, event_date) {
     cli::cli_abort("Column {.val {value}} must be of class Date")
   }
 
-  attr(x, "event_date") <-  value
+  attr(x, "event_date") <- value
 
-  #Recalculate the delay when changing event date
-  x <- time_cols_to_numeric(x, event_date = value,
-                            report_date = get_report_date(x),
-                            report_units = get_report_units(x),
-                            event_units = get_event_units(x),
-                            force = TRUE)
+  # Recalculate the delay when changing event date
+  x <- time_cols_to_numeric(x,
+    event_date = value,
+    report_date = get_report_date(x),
+    report_units = get_report_units(x),
+    event_units = get_event_units(x),
+    force = TRUE
+  )
 
   # Re-infer now if needed
   now <- tryCatch(
     infer_now(x, now = get_now(x), event_date = value, report_date = get_report_date(x)),
     error = function(e) get_now(x)
   )
-  attr(x, "now") <-  now
+  attr(x, "now") <- now
 
 
   validate_tbl_now(x)
@@ -274,12 +278,11 @@ change_event_date <- function(x, event_date) {
 
 #' @rdname change
 #' @export
-#Change the `report_date` to a different column name
+# Change the `report_date` to a different column name
 change_report_date <- function(x, report_date) {
-
-  #Get the report date
+  # Get the report date
   value_pos <- tidyselect::eval_select(rlang::expr({{ report_date }}), x)
-  value     <- colnames(x)[value_pos]
+  value <- colnames(x)[value_pos]
 
 
   if (!inherits(x, "tbl_now")) {
@@ -298,14 +301,16 @@ change_report_date <- function(x, report_date) {
     cli::cli_abort("Column {.val {value}} must be of class Date")
   }
 
-  attr(x, "report_date") <-  value
+  attr(x, "report_date") <- value
 
-  #Recalculate the delay when changing report date
-  x <- time_cols_to_numeric(x, event_date = get_event_date(x),
-                            report_date = value,
-                            report_units = get_report_units(x),
-                            event_units = get_event_units(x),
-                            force = TRUE)
+  # Recalculate the delay when changing report date
+  x <- time_cols_to_numeric(x,
+    event_date = get_event_date(x),
+    report_date = value,
+    report_units = get_report_units(x),
+    event_units = get_event_units(x),
+    force = TRUE
+  )
 
 
   # Re-infer now if needed
@@ -313,7 +318,7 @@ change_report_date <- function(x, report_date) {
     infer_now(x, now = get_now(x), event_date = get_event_date(x), report_date = value),
     error = function(e) get_now(x)
   )
-  attr(x, "now") <-  now
+  attr(x, "now") <- now
 
   validate_tbl_now(x)
 
@@ -322,13 +327,12 @@ change_report_date <- function(x, report_date) {
 
 #' @rdname change
 #' @export
-#Change the `case_count` to a different column name
+# Change the `case_count` to a different column name
 change_case_count <- function(x, case_count) {
-
-  #Get the event date
+  # Get the event date
   value_pos <- tidyselect::eval_select(rlang::expr({{ case_count }}), x)
 
-  if (length(value_pos) == 0){
+  if (length(value_pos) == 0) {
     value <- NULL
   } else {
     value <- colnames(x)[value_pos]
@@ -346,7 +350,7 @@ change_case_count <- function(x, case_count) {
     cli::cli_abort("Column {.val {value}} must be numeric")
   }
 
-  attr(x, "case_count") <-  value
+  attr(x, "case_count") <- value
 
   validate_tbl_now(x)
 
@@ -355,13 +359,12 @@ change_case_count <- function(x, case_count) {
 
 #' @rdname change
 #' @export
-#Change the `is_censored` to a different column name
+# Change the `is_censored` to a different column name
 change_is_censored <- function(x, is_censored) {
-
-  #Get the event date
+  # Get the event date
   value_pos <- tidyselect::eval_select(rlang::expr({{ is_censored }}), x)
 
-  if (length(value_pos) == 0){
+  if (length(value_pos) == 0) {
     value <- NULL
   } else {
     value <- colnames(x)[value_pos]
@@ -379,7 +382,7 @@ change_is_censored <- function(x, is_censored) {
     cli::cli_abort("Column {.val {value}} must be logical")
   }
 
-  attr(x, "is_censored") <-  value
+  attr(x, "is_censored") <- value
 
   validate_tbl_now(x)
 
@@ -389,8 +392,8 @@ change_is_censored <- function(x, is_censored) {
 #' @rdname remove
 #' @export
 # Remove `value`  from is_censored
-remove_is_censored <- function(x){
-  if (get_data_type(x) == "count-cumulative"){
+remove_is_censored <- function(x) {
+  if (get_data_type(x) == "count-cumulative") {
     cli::cli_alert_warning(
       "Removing is_censored column from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
     )
@@ -402,8 +405,7 @@ remove_is_censored <- function(x){
 #' @export
 # Adds `value`  to existing strata
 add_is_censored <- function(x, is_censored) {
-
-  if (length(get_is_censored(x)) > 0){
+  if (length(get_is_censored(x)) > 0) {
     cli::cli_abort(
       paste0(
         "Already has value {.val {get_is_censored(x)}} as censored indicator.",
@@ -413,53 +415,50 @@ add_is_censored <- function(x, is_censored) {
     )
   }
 
-  #Add to censored
+  # Add to censored
   change_is_censored(x, {{ is_censored }})
-
 }
 
 #' @rdname change
 #' @export
 # Change all of the strata to whatever is added in ...
 change_strata <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE) {
-
   if (!inherits(x, "tbl_now")) {
     cli::cli_abort("{.arg x} must be a {.code tbl_now} object")
   }
 
-  #Get the values
+  # Get the values
   value_pos <- tidyselect::eval_select(rlang::expr(c(...)), x)
 
-  if (length(value_pos) == 0){
+  if (length(value_pos) == 0) {
     value <- NULL
   } else {
     value <- colnames(x)[value_pos]
   }
 
-  #Assign the values
-  attr(x, "strata") <-  value
+  # Assign the values
+  attr(x, "strata") <- value
 
-  #Verify it works
+  # Verify it works
   validate_tbl_now(x, warn_now = warn_now, warn_non_uniqueness = warn_non_uniqueness)
 
   return(x)
-
 }
 
 #' @rdname remove
 #' @export
 # Remove `value`  from strata
-remove_strata <- function(x, ...){
-  if (get_data_type(x) == "count-cumulative"){
+remove_strata <- function(x, ...) {
+  if (get_data_type(x) == "count-cumulative") {
     cli::cli_alert_warning(
       "Removing strata from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
     )
   }
-  #Get the values
+  # Get the values
   value_pos <- tidyselect::eval_select(rlang::expr(c(...)), x)
-  value     <- colnames(x)[value_pos]
+  value <- colnames(x)[value_pos]
 
-  #Get the strata that is not value
+  # Get the strata that is not value
   strata_to_keep <- get_strata(x)
   strata_to_keep <- strata_to_keep[which(!(strata_to_keep %in% c(value)))]
 
@@ -470,12 +469,10 @@ remove_strata <- function(x, ...){
 #' @export
 # Adds `value`  to existing strata
 add_strata <- function(x, ...) {
-
   value_names <- colnames(x)[tidyselect::eval_select(rlang::expr(c(...)), x)]
 
-  #Add to strata — pass as all_of() to avoid external-vector deprecation
+  # Add to strata — pass as all_of() to avoid external-vector deprecation
   change_strata(x, dplyr::all_of(c(value_names, get_strata(x))))
-
 }
 
 
@@ -483,7 +480,7 @@ add_strata <- function(x, ...) {
 #' @export
 # Remove all `values`  from strata
 remove_all_strata <- function(x) {
-  if (get_data_type(x) == "count-cumulative"){
+  if (get_data_type(x) == "count-cumulative") {
     cli::cli_alert_warning(
       "Removing strata from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
     )
@@ -496,22 +493,21 @@ remove_all_strata <- function(x) {
 #' @export
 # Change the existing covariates to the ones in value
 change_covariates <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE) {
-
   if (!inherits(x, "tbl_now")) {
     cli::cli_abort("{.arg x} must be a {.code tbl_now} object")
   }
 
-  #Get the values
+  # Get the values
   value_pos <- tidyselect::eval_select(rlang::expr(c(...)), x)
 
-  if (length(value_pos) == 0){
+  if (length(value_pos) == 0) {
     value <- NULL
   } else {
     value <- colnames(x)[value_pos]
   }
 
-  #Assign the values
-  attr(x, "covariates") <-  value
+  # Assign the values
+  attr(x, "covariates") <- value
 
   validate_tbl_now(x, warn_now = warn_now, warn_non_uniqueness = warn_non_uniqueness)
 
@@ -522,16 +518,16 @@ change_covariates <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRU
 #' @export
 # Removes the specific covariate `value`
 remove_covariates <- function(x, ...) {
-  if (get_data_type(x) == "count-cumulative"){
+  if (get_data_type(x) == "count-cumulative") {
     cli::cli_alert_warning(
       "Removing covariates from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
     )
   }
-  #Get the values
+  # Get the values
   value_pos <- tidyselect::eval_select(rlang::expr(c(...)), x)
-  value     <- colnames(x)[value_pos]
+  value <- colnames(x)[value_pos]
 
-  #Get the strata that is not value
+  # Get the strata that is not value
   covariates_to_keep <- get_covariates(x)
   covariates_to_keep <- covariates_to_keep[which(!(covariates_to_keep %in% c(value)))]
 
@@ -542,13 +538,11 @@ remove_covariates <- function(x, ...) {
 #' @export
 # Adds `value`  to existing covariates
 add_covariates <- function(x, ...) {
-
-  #Pass value to covariate
+  # Pass value to covariate
   value_names <- colnames(x)[tidyselect::eval_select(rlang::expr(c(...)), x)]
 
-  #Add to covariates — pass as all_of() to avoid external-vector deprecation
+  # Add to covariates — pass as all_of() to avoid external-vector deprecation
   change_covariates(x, dplyr::all_of(c(value_names, get_covariates(x))))
-
 }
 
 
@@ -556,7 +550,7 @@ add_covariates <- function(x, ...) {
 #' @export
 # Removes all covariates
 remove_all_covariates <- function(x) {
-  if (get_data_type(x) == "count-cumulative"){
+  if (get_data_type(x) == "count-cumulative") {
     cli::cli_alert_warning(
       "Removing covariates from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
     )
@@ -565,11 +559,10 @@ remove_all_covariates <- function(x) {
 }
 
 
-
 #' @rdname remove
 #' @export
 replace_temporal_effects <- function(x, t_effects) {
-  if (get_data_type(x) == "count-cumulative"){
+  if (get_data_type(x) == "count-cumulative") {
     cli::cli_alert_warning(
       "Removing temporal effects from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
     )
@@ -586,14 +579,14 @@ replace_temporal_effects <- function(x, t_effects) {
   # Drop already-computed columns
   cols_to_remove <- get_temporal_effect_cols(x)
   if (length(cols_to_remove) > 0) {
-    x <- x %>% dplyr::select(-dplyr::one_of(cols_to_remove))
+    x <- x |> dplyr::select(-dplyr::one_of(cols_to_remove))
   }
 
   # Reset both spec and computed-cols attributes
-  attr(x, "temporal_effects")              <- list()
+  attr(x, "temporal_effects") <- list()
   attr(x, "computed_temporal_effect_cols") <- character(0)
 
-  if (!is.null(t_effects)){
+  if (!is.null(t_effects)) {
     x <- add_temporal_effects(x, t_effects = t_effects)
   }
 
@@ -605,4 +598,3 @@ replace_temporal_effects <- function(x, t_effects) {
 remove_temporal_effects <- function(x) {
   replace_temporal_effects(x, t_effects = NULL)
 }
-

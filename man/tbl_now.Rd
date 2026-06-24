@@ -223,38 +223,40 @@ data-types.
 \examples{
 # The `tbl_now` is a data.frame with additional attributes
 data(denguedat)
-ndata <- denguedat \%>\%
-  tbl_now(event_date = onset_week, report_date = report_week,
-    strata = gender)
+ndata <- denguedat |>
+  tbl_now(
+    event_date = onset_week, report_date = report_week,
+    strata = gender
+  )
 
 # You can see that it documents the `event_date`, `report_date`, `strata`,
 # `covariates` as well as the `now`.
 ndata
 
 
-#A `tbl_now` is an extension of a `tibble` which means normal
-#`data.frame` operations are permitted
+# A `tbl_now` is an extension of a `tibble` which means normal
+# `data.frame` operations are permitted
 ndata$newcolumn <- "something"
 ndata
 
-#Like removing a column
-ndata[,-4]
+# Like removing a column
+ndata[, -4]
 
-#Like selecting
-ndata[1:10,]
+# Like selecting
+ndata[1:10, ]
 
-#You can also apply all dplyr functions:
-ndata \%>\%
+# You can also apply all dplyr functions:
+ndata |>
   dplyr::filter(report_week <= as.Date("1991-01-02", format = "\%Y-\%m-\%d"))
 
-#Removing an important column automatically transforms to tibble
-#losing its property
+# Removing an important column automatically transforms to tibble
+# losing its property
 suppressWarnings(
-  ndata \%>\%
+  ndata |>
     dplyr::select(-onset_week)
 )
 
-#Removing strata just changes the overall structure
-ndata \%>\% dplyr::select(-gender)
+# Removing strata just changes the overall structure
+ndata |> dplyr::select(-gender)
 
 }

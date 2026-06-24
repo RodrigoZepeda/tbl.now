@@ -60,7 +60,7 @@ Convert it to a
 [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html):
 
 ``` r
-df_now <- df %>% 
+df_now <- df |> 
   tbl_now(event_date = event_date, report_date = report_date, case_count = n)
 #> ℹ Identified data as <count-incidence> with counts in column "n".
 
@@ -94,7 +94,7 @@ df_now
 Use it like any tibble:
 
 ``` r
-df_now %>% 
+df_now |> 
   filter(n > 5)
 #> # A tibble:  2 × 6
 #> # Data type: "count-incidence"
@@ -122,7 +122,7 @@ can easily tag the corresponding strata.
 
 ``` r
 #Add the column using dplyr:
-df_now <- df_now %>% 
+df_now <- df_now |> 
   mutate(sex = c("M","M","F","M")) 
 
 df_now
@@ -144,7 +144,7 @@ df_now
 Use the `add_strata` to specify the new column is a stratum:
 
 ``` r
-df_now %>% 
+df_now |> 
   add_strata("sex")
 #> # A tibble:  4 × 7
 #> # Data type: "count-incidence"
@@ -191,7 +191,7 @@ t_eff
 Attach them to the dataset:
 
 ``` r
-df_now <- df_now %>% 
+df_now <- df_now |> 
   add_temporal_effects(t_eff)
 
 df_now
@@ -216,7 +216,7 @@ This lazily adds to the table `day_of_week`, `week_of_year`, and
 `compute_temporal_effects()` to add them as columns:
 
 ``` r
-df_now %>% 
+df_now |> 
   compute_temporal_effects()
 #> # A tibble:  4 × 10
 #> # Data type: "count-incidence"
@@ -248,7 +248,7 @@ You can also attach effects related to the `report_date`:
 ``` r
 r_eff <- temporal_effects(day_of_week = TRUE)
 
-df_now %>% 
+df_now |> 
   add_temporal_effects(r_eff, date_type = "report_date")
 #> # A tibble:  4 × 7
 #> # Data type: "count-incidence"
@@ -272,8 +272,8 @@ df_now %>%
 You may override the default now to perform historical evaluation:
 
 ``` r
-df_pruned <- df_now %>%
-  filter(report_date <= ymd("2023-12-26")) %>%
+df_pruned <- df_now |>
+  filter(report_date <= ymd("2023-12-26")) |>
   change_now(ymd("2023-12-26"))
 ```
 

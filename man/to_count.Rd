@@ -44,20 +44,21 @@ this will throw an error as you cannot un-count aggregated data.
 \examples{
 data(denguedat)
 ndata <- tbl_now(denguedat,
-    event_date = "onset_week",
-    report_date = "report_week",
-    strata = "gender")
+  event_date = "onset_week",
+  report_date = "report_week",
+  strata = "gender"
+)
 
 to_count(ndata, to = "count-incidence")
 
 data("covidat")
 suppressWarnings({
-ndata <- tbl_now(covidat,
-event_date = "date_of_symptom_onset",
-              report_date = "date_of_registry",
-              strata = "sex")
-to_count(ndata)
+  ndata <- tbl_now(covidat,
+    event_date = "date_of_symptom_onset",
+    report_date = "date_of_registry",
+    strata = "sex"
+  )
+  to_count(ndata)
 })
-
 
 }

@@ -42,7 +42,7 @@ Load the package:
 library(dplyr, quietly = TRUE)
 library(lubridate)
 library(tbl.now)
-library(almanac)    #Suggested for holiday effects
+library(almanac) # Suggested for holiday effects
 ```
 
 ## A minimal example
@@ -51,17 +51,21 @@ Suppose you have a dataset where n cases reported on report_date belong to event
 
 ```{r}
 df <- tibble(
-  event_date  = c(ymd("2023-12-25"), ymd("2023-12-26"),
-                  ymd("2023-12-25"), ymd("2023-12-26")),
-  report_date = c(ymd("2023-12-26"), ymd("2023-12-26"),
-                  ymd("2023-12-27"), ymd("2023-12-27")),
+  event_date = c(
+    ymd("2023-12-25"), ymd("2023-12-26"),
+    ymd("2023-12-25"), ymd("2023-12-26")
+  ),
+  report_date = c(
+    ymd("2023-12-26"), ymd("2023-12-26"),
+    ymd("2023-12-27"), ymd("2023-12-27")
+  ),
   n = c(10, 2, 5, 11)
 )
 ```
 Convert it to a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html): 
 
 ```{r}
-df_now <- df %>% 
+df_now <- df |>
   tbl_now(event_date = event_date, report_date = report_date, case_count = n)
 
 df_now
@@ -80,7 +84,7 @@ df_now
 Use it like any tibble:
 
 ```{r}
-df_now %>% 
+df_now |>
   filter(n > 5)
 ```
 
@@ -92,9 +96,9 @@ df_now %>%
 If strata was given, the [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) can easily tag the corresponding strata. 
 
 ```{r}
-#Add the column using dplyr:
-df_now <- df_now %>% 
-  mutate(sex = c("M","M","F","M")) 
+# Add the column using dplyr:
+df_now <- df_now |>
+  mutate(sex = c("M", "M", "F", "M"))
 
 df_now
 ```
@@ -102,7 +106,7 @@ df_now
 Use the `add_strata` to specify the new column is a stratum:
 
 ```{r}
-df_now %>% 
+df_now |>
   add_strata("sex")
 ```
 
@@ -115,8 +119,9 @@ Temporal covariates help nowcasting models incorporate weekly seasonality, holid
 ```{r}
 t_eff <- temporal_effects(
   day_of_week  = TRUE,
-  week_of_year = TRUE, 
-  holidays     = cal_us_federal())
+  week_of_year = TRUE,
+  holidays     = cal_us_federal()
+)
 
 t_eff
 ```
@@ -124,7 +129,7 @@ t_eff
 Attach them to the dataset:
 
 ```{r}
-df_now <- df_now %>% 
+df_now <- df_now |>
   add_temporal_effects(t_eff)
 
 df_now
@@ -133,7 +138,7 @@ df_now
 This lazily adds to the table  `day_of_week`, `week_of_year`, and `holiday` related to `event_date`. However it does not compute. Use `compute_temporal_effects()` to add them as columns:
 
 ```{r}
-df_now %>% 
+df_now |>
   compute_temporal_effects()
 ```
 
@@ -142,7 +147,7 @@ You can also attach effects related to the `report_date`:
 ```{r}
 r_eff <- temporal_effects(day_of_week = TRUE)
 
-df_now %>% 
+df_now |>
   add_temporal_effects(r_eff, date_type = "report_date")
 ```
 
@@ -151,8 +156,8 @@ df_now %>%
 You may override the default now to perform historical evaluation:
 
 ```{r}
-df_pruned <- df_now %>%
-  filter(report_date <= ymd("2023-12-26")) %>%
+df_pruned <- df_now |>
+  filter(report_date <= ymd("2023-12-26")) |>
   change_now(ymd("2023-12-26"))
 ```
 
@@ -174,10 +179,11 @@ library(patchwork)
 data("flusight")
 
 flusight_now <- tbl_now(flusight,
-                        event_date  = target_end_date,
-                        report_date = as_of,
-                        case_count  = observation,
-                        verbose     = FALSE)
+  event_date  = target_end_date,
+  report_date = as_of,
+  case_count  = observation,
+  verbose     = FALSE
+)
 
 autoplot(flusight_now, level = 1)
 ```
@@ -190,10 +196,14 @@ an extreme delay of 300 is marked as `censored` with that function:
 
 
 ```{r extreme}
-df <- data.frame(onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
-                 reported = as.Date("2020-01-01") + c(1, 5, 2, 300))
-tn <- tbl_now(df, event_date = onset, report_date = reported,
-              data_type = "linelist", verbose = FALSE)
+df <- data.frame(
+  onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
+  reported = as.Date("2020-01-01") + c(1, 5, 2, 300)
+)
+tn <- tbl_now(df,
+  event_date = onset, report_date = reported,
+  data_type = "linelist", verbose = FALSE
+)
 
 # the 300-day report becomes censored (an upper bound on its delay)
 censor_delays_above(tn, max_delay = 60)

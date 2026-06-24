@@ -10,42 +10,43 @@
 #'
 #' @examples
 #' \dontrun{
-#' #Get the maximum report date
+#' # Get the maximum report date
 #' ddata <- data.frame(
-#'     event_date   = c(as.Date("2020/07/08"), as.Date("2020/07/09")),
-#'     report_date = c(as.Date("2020/07/11"), as.Date("2020/07/12"))
+#'   event_date = c(as.Date("2020/07/08"), as.Date("2020/07/09")),
+#'   report_date = c(as.Date("2020/07/11"), as.Date("2020/07/12"))
 #' )
 #' infer_now(ddata, NULL, event_date = "event_date", report_date = "report_date")
 #'
-#' #Otherwise get the date given
-#' infer_now(ddata, as.Date("2020/07/11"), event_date = "event_date",
-#'   report_date = "report_date")
+#' # Otherwise get the date given
+#' infer_now(ddata, as.Date("2020/07/11"),
+#'   event_date = "event_date",
+#'   report_date = "report_date"
+#' )
 #' }
 #'
 #' @keywords internal
 infer_now <- function(data, now, event_date, report_date) {
-
-  #Force conversion of data to avoid loops with dplyr_reconstruct
+  # Force conversion of data to avoid loops with dplyr_reconstruct
   data <- dplyr::as_tibble(data)
 
-  #Check that the data frame is not empty
-  if (nrow(data) < 1){
+  # Check that the data frame is not empty
+  if (nrow(data) < 1) {
     cli::cli_abort(
       "{.arg data} is an empty data.frame with {nrow(data)} rows."
     )
   }
 
-  #Check that the columns are in the data.frame
+  # Check that the columns are in the data.frame
   check_date_columns(data, event_date, report_date)
 
   # Now should be the last observed moment in time
   if (is.null(now)) {
-    max_report_date <- data %>%
-      dplyr::summarise(!!as.symbol("max") := max(!!as.symbol(report_date), na.rm = TRUE)) %>%
+    max_report_date <- data |>
+      dplyr::summarise(!!as.symbol("max") := max(!!as.symbol(report_date), na.rm = TRUE)) |>
       dplyr::pull()
 
-    max_true_date <- data %>%
-      dplyr::summarise(!!as.symbol("max") := max(!!as.symbol(event_date), na.rm = TRUE)) %>%
+    max_true_date <- data |>
+      dplyr::summarise(!!as.symbol("max") := max(!!as.symbol(event_date), na.rm = TRUE)) |>
       dplyr::pull()
 
     now <- max(max_report_date, max_true_date)
@@ -67,38 +68,35 @@ infer_now <- function(data, now, event_date, report_date) {
 #' @return Whether the data's date_units are `days`, `weeks`, `months`, `years` or `numeric`.
 #' @examples
 #' \dontrun{
-#' #Get the maximum report date and infer the data distribution
+#' # Get the maximum report date and infer the data distribution
 #' daily_data <- data.frame(
-#'     event_date   = c(as.Date("2020/07/08"), as.Date("2020/07/09"), as.Date("2020/07/10")),
-#'     report_date = c(as.Date("2020/07/11"), as.Date("2020/07/12"), as.Date("2020/07/14"))
+#'   event_date = c(as.Date("2020/07/08"), as.Date("2020/07/09"), as.Date("2020/07/10")),
+#'   report_date = c(as.Date("2020/07/11"), as.Date("2020/07/12"), as.Date("2020/07/14"))
 #' )
 #' infer_units_one_column(daily_data, NULL, "report_date")
 #'
-#' #Get the maximum report date and infer the data distribution
+#' # Get the maximum report date and infer the data distribution
 #' weekly_data <- data.frame(
-#'     event_date   = c(as.Date("2020/07/08"), as.Date("2020/07/15"), as.Date("2020/07/22")),
-#'     report_date = c(as.Date("2020/07/11"), as.Date("2020/07/18"), as.Date("2020/07/25"))
+#'   event_date = c(as.Date("2020/07/08"), as.Date("2020/07/15"), as.Date("2020/07/22")),
+#'   report_date = c(as.Date("2020/07/11"), as.Date("2020/07/18"), as.Date("2020/07/25"))
 #' )
 #' infer_units_one_column(weekly_data, NULL, "report_date")
 #'
-#' #Or just input the type
+#' # Or just input the type
 #' infer_units_one_column(weekly_data, "weeks", "report_date")
 #'
-#' #Also works with numeric
+#' # Also works with numeric
 #' infer_units_one_column(data.frame(report_date = 1:20), date_units = "auto", "report_date")
-#'
 #' }
 #' @keywords internal
 infer_units_one_column <- function(data, date_column, date_units) {
-
-  #Force conversion of data to avoid loops with dplyr_reconstruct
+  # Force conversion of data to avoid loops with dplyr_reconstruct
   data <- dplyr::as_tibble(data)
 
   valid_units <- c("days", "weeks", "months", "years", "numeric")
 
   if (is.null(date_units) || date_units == "auto") {
-
-    if (nrow(data) < 2){
+    if (nrow(data) < 2) {
       cli::cli_abort(
         "Cannot infer time units due to {.arg data}
         having {nrow(data)} < 2 observations"
@@ -106,20 +104,19 @@ infer_units_one_column <- function(data, date_column, date_units) {
     }
 
     # Calculate the differences between consecutive dates
-    date_vals <- data %>%
-      dplyr::distinct(!!as.symbol(date_column)) %>%
-      dplyr::arrange(!!as.symbol(date_column)) %>%
+    date_vals <- data |>
+      dplyr::distinct(!!as.symbol(date_column)) |>
+      dplyr::arrange(!!as.symbol(date_column)) |>
       dplyr::pull(!!as.symbol(date_column))
 
     # Check if they are date or numeric
-    if (lubridate::is.Date(date_vals)){
-
-      date_diffs <- date_vals %>%
+    if (lubridate::is.Date(date_vals)) {
+      date_diffs <- date_vals |>
         diff()
 
       # Convert the differences to a period (days)
-      min_difference <- date_diffs %>%
-        min(na.rm = TRUE) %>%
+      min_difference <- date_diffs |>
+        min(na.rm = TRUE) |>
         as.numeric()
 
       # Categorize based on the median difference
@@ -143,7 +140,7 @@ infer_units_one_column <- function(data, date_column, date_units) {
         "Date column {.val {date_column}} has to be either `numeric` or a `Date`"
       )
     }
-  } else if (!(date_units %in% valid_units)){
+  } else if (!(date_units %in% valid_units)) {
     cli::cli_abort(
       "Date units {date_units} not supported yet. Try transforming them to `numeric` and using the `numeric` format."
     )
@@ -177,41 +174,39 @@ infer_units <- function(data, date_column, date_units) {
 #' @keywords internal
 infer_data_type <- function(data, data_type, event_date, report_date, strata = NULL,
                             is_censored = NULL, case_count = NULL, verbose = FALSE) {
-
-  if (!is.null(case_count) && length(case_count) != 1){
+  if (!is.null(case_count) && length(case_count) != 1) {
     cli::cli_abort("Invalid length = {length(case_count)} for `case_count`. It must be a vector of length 1.")
   }
-  #Force conversion of data to avoid loops with dplyr_reconstruct
+  # Force conversion of data to avoid loops with dplyr_reconstruct
   data <- dplyr::as_tibble(data)
 
-  #If data_type is vector keep the first entry
+  # If data_type is vector keep the first entry
   data_type <- data_type[1]
 
   # Check that there is no column `n` if linedata and that there is if counts
-  if (data_type == "auto" && !is.null(case_count) &&  (case_count %in% colnames(data))) {
-
-    #Check that the data is different
-    distinct_data <- data %>%
-      dplyr::distinct(dplyr::across(dplyr::all_of(c(event_date, report_date, strata, is_censored)))) %>%
+  if (data_type == "auto" && !is.null(case_count) && (case_count %in% colnames(data))) {
+    # Check that the data is different
+    distinct_data <- data |>
+      dplyr::distinct(dplyr::across(dplyr::all_of(c(event_date, report_date, strata, is_censored)))) |>
       nrow()
 
-    if (distinct_data != nrow(data)){
+    if (distinct_data != nrow(data)) {
       cli::cli_warn(
         "Cannot accurately infer the data-type when rows are repeated across event and report dates"
       )
     }
 
-    #Check that data should be always increasing by strata, event date, report date
-    #for that purpose get the differences
-    summarized_difs <- data %>%
-      dplyr::group_by(dplyr::across(dplyr::all_of(c(event_date, strata, is_censored)))) %>%
-      dplyr::arrange(!!as.symbol(report_date)) %>%
-      dplyr::mutate(!!as.symbol("difference") := !!as.symbol(case_count) - dplyr::lag(!!as.symbol(case_count))) %>%
-      dplyr::filter(!is.na(!!as.symbol("difference"))) %>%
-      dplyr::filter(!!as.symbol("difference") < 0) %>%
+    # Check that data should be always increasing by strata, event date, report date
+    # for that purpose get the differences
+    summarized_difs <- data |>
+      dplyr::group_by(dplyr::across(dplyr::all_of(c(event_date, strata, is_censored)))) |>
+      dplyr::arrange(!!as.symbol(report_date)) |>
+      dplyr::mutate(!!as.symbol("difference") := !!as.symbol(case_count) - dplyr::lag(!!as.symbol(case_count))) |>
+      dplyr::filter(!is.na(!!as.symbol("difference"))) |>
+      dplyr::filter(!!as.symbol("difference") < 0) |>
       nrow()
 
-    if (summarized_difs > 0){
+    if (summarized_difs > 0) {
       data_type <- "count-incidence"
     } else {
       data_type <- "count-cumulative"
@@ -230,9 +225,11 @@ infer_data_type <- function(data, data_type, event_date, report_date, strata = N
     #   )
     # }
 
-    #Look for missing values
-    n_col <- data %>% dplyr::filter(is.na(!!as.symbol(case_count))) %>% nrow()
-    if (n_col > 0){
+    # Look for missing values
+    n_col <- data |>
+      dplyr::filter(is.na(!!as.symbol(case_count))) |>
+      nrow()
+    if (n_col > 0) {
       cli::cli_warn(
         "Some observations in the count column {.val {case_count}} contain missing values."
       )
@@ -245,9 +242,7 @@ infer_data_type <- function(data, data_type, event_date, report_date, strata = N
         )
       )
     }
-
   } else if (data_type == "auto" && (is.null(case_count) || !(case_count %in% colnames(data)))) {
-
     data_type <- "linelist"
     if (verbose) {
       cli::cli_alert_info(

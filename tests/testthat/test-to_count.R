@@ -88,8 +88,8 @@ test_that("to_count converts linelist data to count incidence data", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -111,8 +111,8 @@ test_that("to_count creates correct counts for linelist data", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -126,15 +126,13 @@ test_that("to_count creates correct counts for linelist data", {
 
   expect_equal(nrow(result), 4)
   expect_true(all(result$n > 0))
-  expect_equal(result$n, c(2,1,2,1))
+  expect_equal(result$n, c(2, 1, 2, 1))
   expect_equal(sum(result$n), nrow(test_data$linelist_data))
 
   result2 <- to_count(ndata, to = "count-cumulative")
   expect_equal(nrow(result2), 4)
   expect_true(all(result2$n > 0))
-  expect_equal(result2$n, c(2,3,2,1))
-
-
+  expect_equal(result2$n, c(2, 3, 2, 1))
 })
 
 test_that("to_count groups by event_date and report_date", {
@@ -145,8 +143,8 @@ test_that("to_count groups by event_date and report_date", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -154,8 +152,8 @@ test_that("to_count groups by event_date and report_date", {
 
   # Check that each combination of event_date and report_date is unique
   unique_combos <- suppressWarnings(
-    result %>%
-      dplyr::select(onset_week, report_week) %>%
+    result |>
+      dplyr::select(onset_week, report_week) |>
       dplyr::distinct()
   )
 
@@ -170,8 +168,8 @@ test_that("to_count preserves .event_num and .report_num columns", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -191,12 +189,12 @@ test_that("to_count groups by strata when present", {
     report_date = "report_week",
     strata = c("gender", "age_group"),
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
-  result <- to_count(ndata,to = "count-incidence")
+  result <- to_count(ndata, to = "count-incidence")
 
   expect_s3_class(result, "tbl_now")
   expect_true("n" %in% colnames(result))
@@ -216,16 +214,16 @@ test_that("to_count creates separate counts for each stratum", {
     report_date = "report_week",
     strata = "gender",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
   result <- to_count(ndata, to = "count-incidence")
 
   # Should have separate rows for Male and Female for same dates
-  male_rows <- result %>% dplyr::filter(gender == "Male")
-  female_rows <- result %>% dplyr::filter(gender == "Female")
+  male_rows <- result |> dplyr::filter(gender == "Male")
+  female_rows <- result |> dplyr::filter(gender == "Female")
 
   expect_gt(nrow(male_rows), 0)
   expect_gt(nrow(female_rows), 0)
@@ -240,8 +238,8 @@ test_that("to_count preserves strata attributes", {
     report_date = "report_week",
     strata = c("gender", "age_group"),
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -260,8 +258,8 @@ test_that("to_count groups by covariates when present", {
     report_date = "report_week",
     covariates = "temperature",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -269,7 +267,6 @@ test_that("to_count groups by covariates when present", {
 
   expect_s3_class(result, "tbl_now")
   expect_true("n" %in% colnames(result))
-
 })
 
 test_that("to_count preserves covariate attributes", {
@@ -281,8 +278,8 @@ test_that("to_count preserves covariate attributes", {
     report_date = "report_week",
     covariates = "temperature",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -302,12 +299,12 @@ test_that("to_count groups by is_censored when present", {
     report_date = "report_week",
     is_censored = "is_censored",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
-  result <- to_count(ndata,  to = "count-incidence")
+  result <- to_count(ndata, to = "count-incidence")
 
   expect_s3_class(result, "tbl_now")
   expect_true("n" %in% colnames(result))
@@ -323,12 +320,12 @@ test_that("to_count creates separate counts for censored vs non-censored", {
     report_date = "report_week",
     is_censored = "is_censored",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
-  result <- to_count(ndata,  to = "count-incidence")
+  result <- to_count(ndata, to = "count-incidence")
 
   # Should have rows with TRUE and FALSE
   censored_vals <- unique(result$is_censored)
@@ -347,12 +344,12 @@ test_that("to_count handles count data by summing", {
     case_count = n,
     strata = "gender",
     data_type = "count-incidence",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
-  result <- to_count(ndata,  to = "count-incidence")
+  result <- to_count(ndata, to = "count-incidence")
 
   expect_s3_class(result, "tbl_now")
   expect_true("n" %in% colnames(result))
@@ -375,15 +372,15 @@ test_that("to_count sums counts correctly for count data", {
     strata = "gender",
     case_count = n,
     data_type = "count-incidence",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
   result <- to_count(ndata, to = "count-incidence")
 
   # Should sum the two Male entries on 2020-07-08/2020-07-11
-  male_row <- result %>%
+  male_row <- result |>
     dplyr::filter(
       onset_week == as.Date("2020-07-08"),
       report_week == as.Date("2020-07-11"),
@@ -403,8 +400,8 @@ test_that("to_count maintains count data_type", {
     report_date = "report_week",
     data_type = "count-incidence",
     case_count = n,
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -417,13 +414,13 @@ test_that("to_count works even when column is not n", {
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
-    test_data$count_data %>% rename(obs = n),
+    test_data$count_data |> rename(obs = n),
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "count-incidence",
     case_count = obs,
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -433,12 +430,12 @@ test_that("to_count works even when column is not n", {
     report_date = "report_week",
     data_type = "count-incidence",
     case_count = n,
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
-  result_obs <- to_count(ndata) %>% rename(n = obs)
+  result_obs <- to_count(ndata) |> rename(n = obs)
   result_n <- to_count(ndata2)
 
   expect_equal(result_obs, result_n)
@@ -454,13 +451,13 @@ test_that("to_count ungroups data before processing", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
   # Manually group the data
-  grouped_ndata <- ndata %>% dplyr::group_by(onset_week)
+  grouped_ndata <- ndata |> dplyr::group_by(onset_week)
 
   result <- to_count(grouped_ndata, to = "count-incidence")
 
@@ -477,8 +474,8 @@ test_that("to_count returns ungrouped data", {
     report_date = "report_week",
     strata = "gender",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -495,8 +492,8 @@ test_that("to_count preserves tbl_now attributes", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -521,8 +518,8 @@ test_that("to_count handles single row data", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -543,8 +540,8 @@ test_that("to_count handles all identical rows", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -565,8 +562,8 @@ test_that("to_count handles data with no strata or covariates", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -585,8 +582,8 @@ test_that("to_count maintains data integrity", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -605,8 +602,8 @@ test_that("to_count produces positive counts", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -623,8 +620,8 @@ test_that("to_count produces integer counts", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -656,8 +653,8 @@ test_that("to_count handles multiple strata and covariates together", {
     strata = c("gender", "age_group"),
     covariates = "temperature",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -677,8 +674,8 @@ test_that("to_count handles all combinations correctly", {
     report_date = "report_week",
     strata = c("gender", "age_group"),
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -686,8 +683,8 @@ test_that("to_count handles all combinations correctly", {
 
   # Each unique combination should appear once
   unique_combos <- suppressWarnings(
-    result %>%
-      dplyr::select(onset_week, report_week, gender, age_group) %>%
+    result |>
+      dplyr::select(onset_week, report_week, gender, age_group) |>
       dplyr::distinct()
   )
 
@@ -703,8 +700,8 @@ test_that("to_count fails gracefully with invalid data_type", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -725,8 +722,8 @@ test_that("to_count validates output", {
     event_date = "onset_week",
     report_date = "report_week",
     data_type = "linelist",
-    report_units= "days",
-    event_units= "days",
+    report_units = "days",
+    event_units = "days",
     warn_non_uniqueness = FALSE
   )
 
@@ -735,5 +732,3 @@ test_that("to_count validates output", {
   # Result should be a valid tbl_now
   expect_true(validate_tbl_now(result))
 })
-
-

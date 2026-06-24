@@ -17,17 +17,17 @@
 #' @examples
 #' data(denguedat)
 #' dengue <- tbl_now(denguedat,
-#'                   report_date = "report_week",
-#'                   event_date = "onset_week",
-#'                   strata = "gender",
-#'                   verbose = FALSE)
+#'   report_date = "report_week",
+#'   event_date = "onset_week",
+#'   strata = "gender",
+#'   verbose = FALSE
+#' )
 #'
-#' #Gets the first reported cases (what as initially thought of to be the incidence)
+#' # Gets the first reported cases (what as initially thought of to be the incidence)
 #' get_initial_reported_cases(dengue)
 #'
-#' #Gets the latest reported cases (what is now thought of to be the incidence)
+#' # Gets the latest reported cases (what is now thought of to be the incidence)
 #' get_latest_reported_cases(dengue)
-#'
 #'
 #' @name get_latest_first
 #' @export
@@ -35,42 +35,36 @@
 
 #' @rdname get_latest_first
 #' @export
-get_latest_reported_cases <- function(x){
-
-  if (!inherits(x, "tbl_now")){
+get_latest_reported_cases <- function(x) {
+  if (!inherits(x, "tbl_now")) {
     cli::cli_abort(
       "Object x is not a `tbl_now`"
     )
   }
 
-  x %>%
-    ungroup() %>%
-    to_count(to = "count-cumulative") %>%
-    dplyr::group_by(dplyr::across(dplyr::all_of(c(get_event_date(x), get_is_censored(x), get_covariates(x), get_strata(x), get_temporal_effect_cols(x))))) %>%
-    dplyr::filter(!!as.symbol(get_report_date(x)) == max(!!as.symbol(get_report_date(x)), na.rm = TRUE)) %>%
-    ungroup() %>%
+  x |>
+    ungroup() |>
+    to_count(to = "count-cumulative") |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(c(get_event_date(x), get_is_censored(x), get_covariates(x), get_strata(x), get_temporal_effect_cols(x))))) |>
+    dplyr::filter(!!as.symbol(get_report_date(x)) == max(!!as.symbol(get_report_date(x)), na.rm = TRUE)) |>
+    ungroup() |>
     dplyr::arrange(dplyr::across(dplyr::all_of(c(get_event_date(x), get_strata(x), get_is_censored(x), get_covariates(x)))))
-
 }
 
 #' @rdname get_latest_first
 #' @export
-get_initial_reported_cases <- function(x){
-
-  if (!inherits(x, "tbl_now")){
+get_initial_reported_cases <- function(x) {
+  if (!inherits(x, "tbl_now")) {
     cli::cli_abort(
       "Object x is not a `tbl_now`"
     )
   }
 
-  x %>%
-    ungroup() %>%
-    to_count(to = "count-cumulative") %>%
-    dplyr::group_by(dplyr::across(dplyr::all_of(c(get_event_date(x), get_is_censored(x), get_covariates(x), get_strata(x), get_temporal_effect_cols(x))))) %>%
-    dplyr::filter(!!as.symbol(get_report_date(x)) == min(!!as.symbol(get_report_date(x)), na.rm = TRUE)) %>%
-    ungroup() %>%
+  x |>
+    ungroup() |>
+    to_count(to = "count-cumulative") |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(c(get_event_date(x), get_is_censored(x), get_covariates(x), get_strata(x), get_temporal_effect_cols(x))))) |>
+    dplyr::filter(!!as.symbol(get_report_date(x)) == min(!!as.symbol(get_report_date(x)), na.rm = TRUE)) |>
+    ungroup() |>
     dplyr::arrange(dplyr::across(dplyr::all_of(c(get_event_date(x), get_strata(x), get_is_censored(x), get_covariates(x)))))
-
 }
-
-

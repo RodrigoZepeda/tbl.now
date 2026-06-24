@@ -14,47 +14,63 @@ base_weekly <- function(strata = FALSE, count = FALSE) {
   )
   strata_val <- if (strata) "sex" else NULL
   if (count) {
-    tbl_now(d, event_date = "onset", report_date = "report",
-            strata     = strata_val,
-            case_count = "n", data_type = "count-incidence",
-            verbose = FALSE)
+    tbl_now(d,
+      event_date = "onset", report_date = "report",
+      strata = strata_val,
+      case_count = "n", data_type = "count-incidence",
+      verbose = FALSE
+    )
   } else {
-    tbl_now(d, event_date = "onset", report_date = "report",
-            strata  = strata_val,
-            verbose = FALSE)
+    tbl_now(d,
+      event_date = "onset", report_date = "report",
+      strata = strata_val,
+      verbose = FALSE
+    )
   }
 }
 
 # Daily tbl_now with extra columns
 base_daily <- function() {
   tibble(
-    event   = as.Date(c("2023-01-01", "2023-01-02", "2023-01-03",
-                         "2023-01-01", "2023-01-02")),
-    report  = as.Date(c("2023-01-03", "2023-01-03", "2023-01-05",
-                         "2023-01-04", "2023-01-04")),
-    sex     = c("M", "F", "M", "F", "M"),
+    event = as.Date(c(
+      "2023-01-01", "2023-01-02", "2023-01-03",
+      "2023-01-01", "2023-01-02"
+    )),
+    report = as.Date(c(
+      "2023-01-03", "2023-01-03", "2023-01-05",
+      "2023-01-04", "2023-01-04"
+    )),
+    sex = c("M", "F", "M", "F", "M"),
     weather = c(25.1, 24.0, 23.5, 26.0, 22.0),
-    n       = c(2L, 3L, 1L, 4L, 2L)
+    n = c(2L, 3L, 1L, 4L, 2L)
   ) |>
-    tbl_now(event_date = event, report_date = report,
-            strata = sex, covariates = weather,
-            verbose = FALSE)
+    tbl_now(
+      event_date = event, report_date = report,
+      strata = sex, covariates = weather,
+      verbose = FALSE
+    )
 }
 
 # Count-cumulative tbl_now
 base_cumulative <- function() {
   tibble(
-    event  = as.Date(c("2020-01-01", "2020-01-01",
-                        "2020-01-08", "2020-01-08")),
-    report = as.Date(c("2020-01-01", "2020-01-08",
-                        "2020-01-08", "2020-01-15")),
-    sex    = c("M", "M", "F", "F"),
-    n      = c(1L, 3L, 2L, 5L)
+    event = as.Date(c(
+      "2020-01-01", "2020-01-01",
+      "2020-01-08", "2020-01-08"
+    )),
+    report = as.Date(c(
+      "2020-01-01", "2020-01-08",
+      "2020-01-08", "2020-01-15"
+    )),
+    sex = c("M", "M", "F", "F"),
+    n = c(1L, 3L, 2L, 5L)
   ) |>
-    tbl_now(event_date = event, report_date = report,
-            strata = sex, case_count = n,
-            data_type = "count-cumulative",
-            verbose = FALSE)
+    tbl_now(
+      event_date = event, report_date = report,
+      strata = sex, case_count = n,
+      data_type = "count-cumulative",
+      verbose = FALSE
+    )
 }
 
 # ============================================================
@@ -88,9 +104,9 @@ test_that("change_case_count updates case_count attribute", {
 
 test_that("change_case_count accepts NULL (clears case_count on linelist data)", {
   # Clearing case_count on linelist data is fine; count-incidence would fail validate
-  x <- base_daily()  # linelist, no case_count
+  x <- base_daily() # linelist, no case_count
   x$n2 <- as.numeric(seq_len(nrow(x)))
-  x2 <- change_case_count(x, n2)   # add it first
+  x2 <- change_case_count(x, n2) # add it first
   # Now x2 is still linelist type so clearing is fine
   result <- change_case_count(x2, NULL)
   expect_null(get_case_count(result))
@@ -217,8 +233,10 @@ test_that("add_temporal_effects.data.frame adds day_of_month column", {
     report = as.Date(c("2023-01-02", "2023-01-09", "2023-01-16", "2023-01-23"))
   )
   te <- temporal_effects(day_of_month = TRUE)
-  result <- add_temporal_effects(as.data.frame(d), t_effects = te, date_col = "event",
-                                 name_prefix = ".event")
+  result <- add_temporal_effects(as.data.frame(d),
+    t_effects = te, date_col = "event",
+    name_prefix = ".event"
+  )
   expect_true(".event_day_of_month" %in% colnames(result))
   expect_equal(result[[".event_day_of_month"]], lubridate::day(d$event))
 })
@@ -229,8 +247,10 @@ test_that("add_temporal_effects.data.frame adds weekend column", {
     report = as.Date(c("2023-01-03", "2023-01-08", "2023-01-09", "2023-01-10"))
   )
   te <- temporal_effects(weekend = TRUE)
-  result <- add_temporal_effects(as.data.frame(d), t_effects = te, date_col = "event",
-                                 name_prefix = ".event")
+  result <- add_temporal_effects(as.data.frame(d),
+    t_effects = te, date_col = "event",
+    name_prefix = ".event"
+  )
   expect_true(".event_weekend" %in% colnames(result))
   # 2023-01-07 (Sat) and 2023-01-08 (Sun) are weekend
   expect_equal(result[[".event_weekend"]][2], 1L)
@@ -243,8 +263,10 @@ test_that("add_temporal_effects.data.frame adds month_of_year column", {
     report = as.Date(c("2023-01-02", "2023-02-02", "2023-03-02", "2023-04-02"))
   )
   te <- temporal_effects(month_of_year = TRUE)
-  result <- add_temporal_effects(as.data.frame(d), t_effects = te, date_col = "event",
-                                 name_prefix = ".event")
+  result <- add_temporal_effects(as.data.frame(d),
+    t_effects = te, date_col = "event",
+    name_prefix = ".event"
+  )
   expect_true(".event_month_of_year" %in% colnames(result))
 })
 
@@ -252,12 +274,14 @@ test_that("add_temporal_effects.data.frame errors when overwrite=FALSE and col e
   d <- tibble(
     event           = as.Date(c("2023-01-02", "2023-01-09")),
     report          = as.Date(c("2023-01-03", "2023-01-10")),
-    .event_weekend  = c(0L, 0L)   # pre-existing column
+    .event_weekend  = c(0L, 0L) # pre-existing column
   )
   te <- temporal_effects(weekend = TRUE)
   expect_error(
-    add_temporal_effects(as.data.frame(d), t_effects = te, date_col = "event",
-                         name_prefix = ".event", overwrite = FALSE),
+    add_temporal_effects(as.data.frame(d),
+      t_effects = te, date_col = "event",
+      name_prefix = ".event", overwrite = FALSE
+    ),
     "overwrite"
   )
 })
@@ -379,13 +403,15 @@ test_that("tbl_now warns and ungroups grouped input", {
 
 test_that("tbl_now force=TRUE overwrites .event_num and .report_num if present", {
   d <- tibble(
-    event      = as.Date(c("2023-01-01", "2023-01-02", "2023-01-03")),
-    report     = as.Date(c("2023-01-02", "2023-01-03", "2023-01-04")),
-    .event_num  = c(99, 99, 99),
+    event = as.Date(c("2023-01-01", "2023-01-02", "2023-01-03")),
+    report = as.Date(c("2023-01-02", "2023-01-03", "2023-01-04")),
+    .event_num = c(99, 99, 99),
     .report_num = c(99, 99, 99)
   )
-  result <- tbl_now(d, event_date = event, report_date = report,
-                    verbose = FALSE, force = TRUE)
+  result <- tbl_now(d,
+    event_date = event, report_date = report,
+    verbose = FALSE, force = TRUE
+  )
   expect_s3_class(result, "tbl_now")
   expect_false(all(result[[".event_num"]] == 99))
 })
@@ -396,24 +422,28 @@ test_that("tbl_now force=TRUE overwrites .event_num and .report_num if present",
 
 test_that("tbl_now delay: error if delay column named .event_date when report+delay used", {
   d <- tibble(
-    report     = as.Date(c("2023-01-02", "2023-01-03")),
+    report = as.Date(c("2023-01-02", "2023-01-03")),
     .event_date = c(1, 1)
   )
   expect_error(
-    tbl_now(d, report_date = report, delay = .event_date,
-            event_units = "days", verbose = FALSE),
+    tbl_now(d,
+      report_date = report, delay = .event_date,
+      event_units = "days", verbose = FALSE
+    ),
     "\\.event_date"
   )
 })
 
 test_that("tbl_now delay: error if delay column named .report_date when event+delay used", {
   d <- tibble(
-    event       = as.Date(c("2023-01-01", "2023-01-02")),
+    event = as.Date(c("2023-01-01", "2023-01-02")),
     .report_date = c(1, 1)
   )
   expect_error(
-    tbl_now(d, event_date = event, delay = .report_date,
-            event_units = "days", verbose = FALSE),
+    tbl_now(d,
+      event_date = event, delay = .report_date,
+      event_units = "days", verbose = FALSE
+    ),
     "\\.report_date"
   )
 })
@@ -424,8 +454,10 @@ test_that("tbl_now delay: non-numeric delay column errors in .reconstruct_date_f
     delay = c("a", "b")
   )
   expect_error(
-    tbl_now(d, event_date = event, delay = delay,
-            event_units = "days", verbose = FALSE),
+    tbl_now(d,
+      event_date = event, delay = delay,
+      event_units = "days", verbose = FALSE
+    ),
     "numeric"
   )
 })
@@ -470,8 +502,10 @@ test_that("infer_data_type warns when linelist data has a case_count column", {
   )
   # This path: data_type="linelist" explicitly but case_count column exists
   expect_warning(
-    tbl_now(d, event_date = event, report_date = report,
-            case_count = n, data_type = "linelist", verbose = FALSE),
+    tbl_now(d,
+      event_date = event, report_date = report,
+      case_count = n, data_type = "linelist", verbose = FALSE
+    ),
     "overwritten"
   )
 })
@@ -486,8 +520,10 @@ test_that("time_cols_to_numeric with force=TRUE overwrites existing .delay", {
     report = as.Date(c("2023-01-02", "2023-01-03", "2023-01-04")),
     .delay = c(999L, 999L, 999L)
   )
-  result <- tbl_now(d, event_date = event, report_date = report,
-                    verbose = FALSE, force = TRUE)
+  result <- tbl_now(d,
+    event_date = event, report_date = report,
+    verbose = FALSE, force = TRUE
+  )
   expect_false(all(result[[".delay"]] == 999L))
 })
 
@@ -583,7 +619,7 @@ test_that("reframe.grouped_tbl_now dispatches correctly and returns data", {
 
 test_that("validate_tbl_now catches NA report_date values with a warning", {
   x <- base_daily()
-  x$report[1] <- NA  # inject NA
+  x$report[1] <- NA # inject NA
   # validate_tbl_now should warn about NA report dates
   expect_warning(validate_tbl_now(x))
 })
@@ -608,17 +644,19 @@ test_that("tbl_now errors when case_count has length > 1 (via string vector)", {
   )
   # Passing two case_count columns should error
   expect_error(
-    tbl_now(d, event_date = event, report_date = report,
-            case_count = c(n1, n2), verbose = FALSE),
+    tbl_now(d,
+      event_date = event, report_date = report,
+      case_count = c(n1, n2), verbose = FALSE
+    ),
     "case_count"
   )
 })
 
 test_that("tbl_now errors when .event_num already exists without force", {
   d <- tibble(
-    event      = as.Date(c("2023-01-01", "2023-01-02")),
-    report     = as.Date(c("2023-01-02", "2023-01-03")),
-    .event_num  = c(0, 1)
+    event = as.Date(c("2023-01-01", "2023-01-02")),
+    report = as.Date(c("2023-01-02", "2023-01-03")),
+    .event_num = c(0, 1)
   )
   expect_error(
     tbl_now(d, event_date = event, report_date = report, verbose = FALSE),
@@ -674,24 +712,28 @@ test_that("add_temporal_effects.data.frame adds season (Fourier) columns", {
     .event_num = 0:3
   )
   te <- temporal_effects(seasons = 4L)
-  result <- add_temporal_effects(as.data.frame(d), t_effects = te,
-                                 date_col = "event", numeric_col = ".event_num",
-                                 name_prefix = ".event")
+  result <- add_temporal_effects(as.data.frame(d),
+    t_effects = te,
+    date_col = "event", numeric_col = ".event_num",
+    name_prefix = ".event"
+  )
   expect_true(".event_season_4_cos" %in% colnames(result))
   expect_true(".event_season_4_sin" %in% colnames(result))
 })
 
 test_that("add_temporal_effects.data.frame errors when season col already exists", {
   d <- tibble(
-    event              = as.Date(c("2023-01-01", "2023-01-08")),
-    .event_num         = 0:1,
+    event = as.Date(c("2023-01-01", "2023-01-08")),
+    .event_num = 0:1,
     .event_season_4_cos = c(1.0, 0.5)
   )
   te <- temporal_effects(seasons = 4L)
   expect_error(
-    add_temporal_effects(as.data.frame(d), t_effects = te,
-                         date_col = "event", numeric_col = ".event_num",
-                         name_prefix = ".event", overwrite = FALSE),
+    add_temporal_effects(as.data.frame(d),
+      t_effects = te,
+      date_col = "event", numeric_col = ".event_num",
+      name_prefix = ".event", overwrite = FALSE
+    ),
     "overwrite"
   )
 })
@@ -703,9 +745,11 @@ test_that("add_temporal_effects.data.frame errors when week_of_year col already 
   )
   te <- temporal_effects(week_of_year = TRUE)
   expect_error(
-    add_temporal_effects(as.data.frame(d), t_effects = te,
-                         date_col = "event", name_prefix = ".event",
-                         overwrite = FALSE),
+    add_temporal_effects(as.data.frame(d),
+      t_effects = te,
+      date_col = "event", name_prefix = ".event",
+      overwrite = FALSE
+    ),
     "overwrite"
   )
 })
@@ -717,9 +761,11 @@ test_that("add_temporal_effects.data.frame errors when month_of_year col already
   )
   te <- temporal_effects(month_of_year = TRUE)
   expect_error(
-    add_temporal_effects(as.data.frame(d), t_effects = te,
-                         date_col = "event", name_prefix = ".event",
-                         overwrite = FALSE),
+    add_temporal_effects(as.data.frame(d),
+      t_effects = te,
+      date_col = "event", name_prefix = ".event",
+      overwrite = FALSE
+    ),
     "overwrite"
   )
 })
@@ -734,9 +780,11 @@ test_that("complete_zeroes works with numeric data", {
     report = c(1L, 2L, 2L, 4L, 5L),
     n      = c(3L, 2L, 4L, 1L, 5L)
   ) |>
-    tbl_now(event_date = event, report_date = report,
-            case_count = n, data_type = "count-incidence",
-            verbose = FALSE)
+    tbl_now(
+      event_date = event, report_date = report,
+      case_count = n, data_type = "count-incidence",
+      verbose = FALSE
+    )
   result <- complete_zeroes(d)
   expect_s3_class(result, "tbl_now")
   # Event 3 should be filled in
@@ -750,12 +798,13 @@ test_that("complete_zeroes errors when event and report units differ", {
     report = as.Date(c("2020-01-01", "2020-01-08", "2020-01-15")),
     n      = c(1L, 2L, 3L)
   ) |>
-    tbl_now(event_date = event, report_date = report,
-            case_count = n, data_type = "count-incidence",
-            event_units = "weeks", report_units = "weeks",
-            verbose = FALSE)
+    tbl_now(
+      event_date = event, report_date = report,
+      case_count = n, data_type = "count-incidence",
+      event_units = "weeks", report_units = "weeks",
+      verbose = FALSE
+    )
   # Force mismatched units in attributes
   attr(x, "report_units") <- "days"
   expect_error(complete_zeroes(x), "different")
 })
-

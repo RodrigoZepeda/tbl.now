@@ -94,7 +94,7 @@ Here:
 We can convert this into a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html):
 
 ```{r}
-df %>% 
+df |>
   tbl_now(event_date = symptom_onset, report_date = medical_visit, case_count = n)
 ```
 
@@ -128,7 +128,7 @@ A [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) st
 
 + **report_units**: the temporal units for report dates.
 
-+ **data_type**: one of the following (see [the data types section](#data-types):
++ **data_type**: one of the following (see [the data types section](#data-types)):
     + linelist
     + count-incidence
     + count-cumulative.
@@ -163,19 +163,26 @@ A [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)  c
 
 ```{r, echo=FALSE, cache=FALSE}
 df_linelist <- data.frame(
-    patient     = 1:6,
-   event_date  = c(rep(ymd("2020/09/12"), 3),
-                   rep(ymd("2020/09/13"), 3)),
-   report_date = c(ymd("2020/09/12"),
-                  ymd("2020/09/12"),
-                  ymd("2020/09/13"),
-                  ymd("2020/09/13"),
-                  ymd("2020/09/13"),
-                  ymd("2020/09/13")))
+  patient = 1:6,
+  event_date = c(
+    rep(ymd("2020/09/12"), 3),
+    rep(ymd("2020/09/13"), 3)
+  ),
+  report_date = c(
+    ymd("2020/09/12"),
+    ymd("2020/09/12"),
+    ymd("2020/09/13"),
+    ymd("2020/09/13"),
+    ymd("2020/09/13"),
+    ymd("2020/09/13")
+  )
+)
 
-df_linelist <- df_linelist %>% 
-    tbl_now(event_date = event_date, report_date = report_date, 
-            case_col = n, verbose = FALSE)
+df_linelist <- df_linelist |>
+  tbl_now(
+    event_date = event_date, report_date = report_date,
+    case_col = n, verbose = FALSE
+  )
 
 knitr::kable(df_linelist, caption = "Linelist data")
 ```
@@ -184,19 +191,26 @@ knitr::kable(df_linelist, caption = "Linelist data")
 
 ```{r, echo=FALSE, cache=FALSE}
 df_count_inc <- data.frame(
-  n           = c(7, 1, 9, 5, 0, 2),
-  event_date  = c(rep(ymd("2020/09/12"), 3),
-                  rep(ymd("2020/09/13"), 3)),
-  report_date = c(ymd("2020/09/12"),
-                  ymd("2020/09/13"),
-                  ymd("2020/09/14"),
-                  ymd("2020/09/13"),
-                  ymd("2020/09/14"),
-                  ymd("2020/09/15"))) 
+  n = c(7, 1, 9, 5, 0, 2),
+  event_date = c(
+    rep(ymd("2020/09/12"), 3),
+    rep(ymd("2020/09/13"), 3)
+  ),
+  report_date = c(
+    ymd("2020/09/12"),
+    ymd("2020/09/13"),
+    ymd("2020/09/14"),
+    ymd("2020/09/13"),
+    ymd("2020/09/14"),
+    ymd("2020/09/15")
+  )
+)
 
-df_count_inc <- df_count_inc %>% 
-  tbl_now(event_date = event_date, report_date = report_date, 
-          case_count = n, verbose = FALSE)
+df_count_inc <- df_count_inc |>
+  tbl_now(
+    event_date = event_date, report_date = report_date,
+    case_count = n, verbose = FALSE
+  )
 
 knitr::kable(df_count_inc, caption = "Count-incidence data")
 ```
@@ -205,19 +219,26 @@ knitr::kable(df_count_inc, caption = "Count-incidence data")
 
 ```{r, echo=FALSE, cache=FALSE}
 df_count_cum <- data.frame(
-  n           = c(1,5, 8, 2, 2, 4),
-  event_date  = c(rep(ymd("2020/09/12"), 3),
-                  rep(ymd("2020/09/13"), 3)),
-  report_date = c(ymd("2020/09/12"),
-                  ymd("2020/09/13"),
-                  ymd("2020/09/14"),
-                  ymd("2020/09/13"),
-                  ymd("2020/09/14"),
-                  ymd("2020/09/15"))) 
+  n = c(1, 5, 8, 2, 2, 4),
+  event_date = c(
+    rep(ymd("2020/09/12"), 3),
+    rep(ymd("2020/09/13"), 3)
+  ),
+  report_date = c(
+    ymd("2020/09/12"),
+    ymd("2020/09/13"),
+    ymd("2020/09/14"),
+    ymd("2020/09/13"),
+    ymd("2020/09/14"),
+    ymd("2020/09/15")
+  )
+)
 
-df_count_cum <- df_count_cum %>% 
-    tbl_now(event_date = event_date, report_date = report_date, 
-            case_count = n, verbose = FALSE)
+df_count_cum <- df_count_cum |>
+  tbl_now(
+    event_date = event_date, report_date = report_date,
+    case_count = n, verbose = FALSE
+  )
 
 knitr::kable(df_count_cum, caption = "Count-cumulative data")
 ```
@@ -232,14 +253,14 @@ The [to_count()](https://rodrigozepeda.github.io/tbl.now/reference/to_count.html
 + **Linelist → Count-Incidence**: Aggregates by event–report date, counting only cases reported on that date.
 
 ```{r}
-df_linelist %>% 
+df_linelist |>
   to_count(to = "count-incidence")
 ```
 
 + **Linelist → Count-Cumulative**: Aggregates by event–report date, producing cumulative counts up to each report date.
 
 ```{r}
-df_linelist %>% 
+df_linelist |>
   to_count(to = "count-cumulative")
 ```
 
@@ -248,7 +269,7 @@ df_linelist %>%
 + **Count-Incidence → Count-Cumulative**: Computes cumulative sums for each event date across report dates.
 
 ```{r}
-df_count_inc %>% 
+df_count_inc |>
   to_count(to = "count-cumulative")
 ```
 
@@ -256,22 +277,29 @@ df_count_inc %>%
 
 ```{r}
 df_example <- data.frame(
-  n           = c(8, 11, 0, 1, 1, 5, 2, 4, 1, 10, 9, 11, 3, 1),
-  sex         = c(rep("M", 3), rep("F", 4), rep("M", 2), rep("F", 5)),
-  event_date  = c(rep(ymd("2020/09/12"), 3),
-                  rep(ymd("2020/09/12"), 4),
-                  rep(ymd("2020/09/13"), 2),
-                  rep(ymd("2020/09/13"), 5)),
-  report_date = c(ymd("2020/09/12"), ymd("2020/09/13"), ymd("2020/09/14"),
-                  ymd("2020/09/12"), ymd("2020/09/13"), ymd("2020/09/14"),
-                  ymd("2020/09/15"), ymd("2020/09/13"), ymd("2020/09/14"),
-                  ymd("2020/09/13"), ymd("2020/09/14"),
-                  ymd("2020/09/15"), ymd("2020/09/16"), ymd("2020/09/17"))) 
+  n = c(8, 11, 0, 1, 1, 5, 2, 4, 1, 10, 9, 11, 3, 1),
+  sex = c(rep("M", 3), rep("F", 4), rep("M", 2), rep("F", 5)),
+  event_date = c(
+    rep(ymd("2020/09/12"), 3),
+    rep(ymd("2020/09/12"), 4),
+    rep(ymd("2020/09/13"), 2),
+    rep(ymd("2020/09/13"), 5)
+  ),
+  report_date = c(
+    ymd("2020/09/12"), ymd("2020/09/13"), ymd("2020/09/14"),
+    ymd("2020/09/12"), ymd("2020/09/13"), ymd("2020/09/14"),
+    ymd("2020/09/15"), ymd("2020/09/13"), ymd("2020/09/14"),
+    ymd("2020/09/13"), ymd("2020/09/14"),
+    ymd("2020/09/15"), ymd("2020/09/16"), ymd("2020/09/17")
+  )
+)
 
-tbl_example <- df_example %>% 
-  tbl_now(event_date = event_date, report_date = report_date, 
-          data_type = "count-incidence", case_count = n, verbose = FALSE,
-          warn_non_uniqueness = FALSE)
+tbl_example <- df_example |>
+  tbl_now(
+    event_date = event_date, report_date = report_date,
+    data_type = "count-incidence", case_count = n, verbose = FALSE,
+    warn_non_uniqueness = FALSE
+  )
 
 tbl_example
 ```
@@ -280,7 +308,7 @@ This dataset intentionally contains repeated event_date–report_date pairs with
 
 
 ```{r}
-tbl_example %>% 
+tbl_example |>
   to_count(to = "count-incidence")
 ```
 
@@ -303,7 +331,8 @@ library(almanac)
 t_eff <- temporal_effects(
   day_of_week  = TRUE,
   week_of_year = TRUE,
-  holidays     = cal_us_federal())
+  holidays     = cal_us_federal()
+)
 t_eff
 ```
 
@@ -321,11 +350,13 @@ Temporal effects in `tbl.now` follow a **lazy evaluation** pattern:
 data("denguedat")
 
 # Step 1 — create the tbl_now and attach the spec (no columns added yet)
-df_now <- denguedat %>%
-  tbl_now(event_date = onset_week, report_date = report_week,
-          verbose = FALSE, strata = gender)
+df_now <- denguedat |>
+  tbl_now(
+    event_date = onset_week, report_date = report_week,
+    verbose = FALSE, strata = gender
+  )
 
-df_now <- df_now %>%
+df_now <- df_now |>
   add_temporal_effects(t_eff)
 
 # The footer shows "T. effects (lazy): ..." — spec is recorded but not computed
@@ -349,37 +380,10 @@ After `compute_temporal_effects()`:
 + The original spec remains accessible via `get_temporal_effects()`, so you always know which effects were requested even after further dplyr operations.
 
 ```{r}
-get_temporal_effects(df_computed)   # The spec (list of configs)
+get_temporal_effects(df_computed) # The spec (list of configs)
 get_temporal_effect_cols(df_computed) # The computed column names
 ```
 
-#### dplyr operations preserve the spec
-
-A key design property: **`filter()`, `select()`, `mutate()`, and all other dplyr verbs preserve the `temporal_effects` spec**. They do not trigger re-computation. Only `compute_temporal_effects()` computes the columns.
-
-```{r}
-# Filtering changes the rows but keeps the spec intact
-df_filtered <- df_now %>%
-  dplyr::filter(report_week <= as.Date("1991-06-01"))
-
-identical(get_temporal_effects(df_filtered), get_temporal_effects(df_now))
-```
-
-#### You can also supply the spec directly to `tbl_now()`
-
-```{r}
-df_with_spec <- denguedat %>%
-  tbl_now(event_date = onset_week, report_date = report_week,
-          t_effects = temporal_effects(week_of_year = TRUE),
-          verbose = FALSE)
-
-# No effect columns yet — spec is stored lazily
-".event_week_of_year" %in% names(df_with_spec)
-
-# Compute on demand
-df_with_spec <- compute_temporal_effects(df_with_spec)
-".event_week_of_year" %in% names(df_with_spec)
-```
 
 ### Modifying a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) with `dplyr`
 
@@ -390,9 +394,11 @@ The example below demonstrates how to create a  [tbl_now()](https://rodrigozeped
 ```{r, message=FALSE}
 data("mpoxdat")
 
-df_now <- mpoxdat %>%
-  tbl_now(event_date = dx_date, report_date = dx_report_date,
-          case_count = n, verbose = FALSE, strata = race)
+df_now <- mpoxdat |>
+  tbl_now(
+    event_date = dx_date, report_date = dx_report_date,
+    case_count = n, verbose = FALSE, strata = race
+  )
 
 df_now
 ```
@@ -406,8 +412,8 @@ get_strata(df_now)
 Strata can be modified with the [change_*](https://rodrigozepeda.github.io/tbl.now/reference/change.html) family of functions. The following example adds a new column containing an uppercase version of the existing race variable and sets it as the new strata:
 
 ```{r}
-df_now <- df_now %>%
-  mutate(RACE_UPPER = toupper(race)) %>%
+df_now <- df_now |>
+  mutate(RACE_UPPER = toupper(race)) |>
   change_strata(RACE_UPPER)
 
 get_strata(df_now)
@@ -416,7 +422,7 @@ get_strata(df_now)
 To attach a lazy temporal-effects spec, use [add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html), then materialise with [compute_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html):
 
 ```{r, R.options=list(pillar.width = 250)}
-df_now <- df_now %>%
+df_now <- df_now |>
   add_temporal_effects(temporal_effects(week_of_year = TRUE))
 
 # Spec is stored (lazy):
@@ -430,16 +436,16 @@ get_temporal_effect_cols(df_now)
 Attributes can be removed using the corresponding [remove_*](https://rodrigozepeda.github.io/tbl.now/reference/remove.html) functions. `remove_temporal_effects()` drops both the spec and any computed columns:
 
 ```{r, R.options=list(pillar.width = 250)}
-df_now <- df_now %>%
-  remove_temporal_effects() %>%
+df_now <- df_now |>
+  remove_temporal_effects() |>
   remove_all_strata()
 
 df_now
 ```
 
 ```{r}
-get_temporal_effects(df_now)  # Empty list — no spec
-get_temporal_effect_cols(df_now)  # character(0) — no computed cols
+get_temporal_effects(df_now) # Empty list — no spec
+get_temporal_effect_cols(df_now) # character(0) — no computed cols
 get_strata(df_now)
 ```
 
@@ -452,11 +458,13 @@ verbs. The class attempts to preserve and adapt its internal attributes when ope
 library(dplyr, quietly = TRUE)
 data(denguedat)
 
-df_now <- tbl_now(denguedat, event_date = onset_week, 
-                  report_date = report_week, strata = gender,
-                  verbose = FALSE)
+df_now <- tbl_now(denguedat,
+  event_date = onset_week,
+  report_date = report_week, strata = gender,
+  verbose = FALSE
+)
 
-#Current strata
+# Current strata
 get_strata(df_now)
 ```
 
@@ -464,7 +472,7 @@ get_strata(df_now)
 After renaming the column, the strata attribute updates accordingly:
 
 ```{r}
-df_now <- df_now %>% 
+df_now <- df_now |>
   rename(male_or_female = gender)
 
 get_strata(df_now)
@@ -473,7 +481,7 @@ get_strata(df_now)
 Certain operations may cause a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) object to drop back to a standard tibble. This occurs when the operation removes necessary structure—for example, collapsing all data into a single row with [summarise()](https://dplyr.tidyverse.org/reference/summarise.html):
 
 ```{r}
-df_now %>%
+df_now |>
   summarise(number_males = sum(male_or_female == "Male"))
 ```
  
@@ -488,11 +496,16 @@ Below is an example using an initial dataset:
 df <- data.frame(
   patient = 1:6,
   event_date = c(rep(ymd("2020/09/12"), 3), rep(ymd("2020/09/13"), 3)),
-  report_date = c(ymd("2020/09/12"), ymd("2020/09/13"), ymd("2020/09/14"),
-                  ymd("2020/09/13"), ymd("2020/09/14"), ymd("2020/09/15")))
+  report_date = c(
+    ymd("2020/09/12"), ymd("2020/09/13"), ymd("2020/09/14"),
+    ymd("2020/09/13"), ymd("2020/09/14"), ymd("2020/09/15")
+  )
+)
 
-df_now <- tbl_now(df, event_date = event_date,
-                  report_date = report_date, verbose = FALSE)
+df_now <- tbl_now(df,
+  event_date = event_date,
+  report_date = report_date, verbose = FALSE
+)
 ```
 
 And a follow-up dataset containing newly reported cases:
@@ -500,12 +513,17 @@ And a follow-up dataset containing newly reported cases:
 ```{r}
 df_new <- data.frame(
   patient = 7:13,
-  event_date = c(ymd("2020/09/13"), 
-                 rep(ymd("2020/09/14"), 3), 
-                 rep(ymd("2020/09/15"), 3)),
-  report_date = c(ymd("2020/09/14"), ymd("2020/09/14"), ymd("2020/09/15"), 
-                  ymd("2020/09/16"), ymd("2020/09/15"), ymd("2020/09/16"), 
-                  ymd("2020/09/17")))
+  event_date = c(
+    ymd("2020/09/13"),
+    rep(ymd("2020/09/14"), 3),
+    rep(ymd("2020/09/15"), 3)
+  ),
+  report_date = c(
+    ymd("2020/09/14"), ymd("2020/09/14"), ymd("2020/09/15"),
+    ymd("2020/09/16"), ymd("2020/09/15"), ymd("2020/09/16"),
+    ymd("2020/09/17")
+  )
+)
 ```
 
 We can update the original object by incorporating the new data:
@@ -535,9 +553,10 @@ library(ggplot2)
 library(patchwork)
 
 dengue_now <- tbl_now(denguedat,
-                      event_date  = "onset_week",
-                      report_date = "report_week",
-                      verbose     = FALSE)
+  event_date  = "onset_week",
+  report_date = "report_week",
+  verbose     = FALSE
+)
 
 autoplot(dengue_now)
 ```
@@ -554,13 +573,13 @@ The function [week_2_date()](https://rodrigozepeda.github.io/tbl.now/reference/w
 df <- data.frame(
   epidemiological_week = 1:5,
   epidemiological_year = rep(2024, 5)
-  )
+)
 
-df %>%
+df |>
   week_2_date(
     week_col = epidemiological_week,
     year_col = epidemiological_year
-    )
+  )
 ```
  
 ### Reports
@@ -570,15 +589,20 @@ The functions [get_initial_reported_cases() and get_latest_reported_cases()](htt
  
 ```{r}
 df_reports <- data.frame(
-    n           = c(10, 1, 1, 0, 0, 3),
-    event_date  = rep(ymd("2020/09/12"), 6),
-    report_date = c(ymd("2020/09/12"), ymd("2020/09/13"), ymd("2020/09/14"),
-                    ymd("2020/09/15"), ymd("2020/09/16"), ymd("2020/09/17")))
+  n = c(10, 1, 1, 0, 0, 3),
+  event_date = rep(ymd("2020/09/12"), 6),
+  report_date = c(
+    ymd("2020/09/12"), ymd("2020/09/13"), ymd("2020/09/14"),
+    ymd("2020/09/15"), ymd("2020/09/16"), ymd("2020/09/17")
+  )
+)
 
-tbl_reports <- df_reports %>%
-  tbl_now(event_date = event_date, report_date = report_date, 
-          verbose = FALSE, case_count = n, report_units = "days",
-          event_units = "days")
+tbl_reports <- df_reports |>
+  tbl_now(
+    event_date = event_date, report_date = report_date,
+    verbose = FALSE, case_count = n, report_units = "days",
+    event_units = "days"
+  )
 
 tbl_reports
 ```
@@ -616,7 +640,7 @@ df_aligned
 You can verify the resulting weekday using the [wday() function from the lubridate package](https://lubridate.tidyverse.org/reference/day.html):
 
 ```{r}
-df_aligned %>%
+df_aligned |>
   mutate(day_label = wday(date_aligned, label = TRUE, abbr = FALSE))
 ```
 
@@ -628,21 +652,22 @@ Consider for example the following data with just two observations per date:
 
 ```{r}
 ndata <- tibble(
-  event_date  = c(as.Date("2021/01/12"), as.Date("2021/01/14"), as.Date("2021/01/14")),
+  event_date = c(as.Date("2021/01/12"), as.Date("2021/01/14"), as.Date("2021/01/14")),
   report_date = c(as.Date("2021/01/13"), as.Date("2021/01/15"), as.Date("2021/01/18")),
   case_count = c(10, 5, 1)
 )
 
 ndata <- tbl_now(ndata, event_date, report_date,
-     verbose = FALSE, case_count = case_count, data_type = "count-incidence")
+  verbose = FALSE, case_count = case_count, data_type = "count-incidence"
+)
 
 ndata
 ```
 
-Notice that there are no observations for `2021/01/13`. Furthermore, if we assume that the maximum possible observed  We can fill the unobserved cases with:
+Notice that there are no observations for `2021/01/13`. Furthermore, if we assume that the maximum possible observed delay is of `4`,  we can fill the unobserved cases with:
 
 ```{r}
-complete_zeroes(ndata)
+complete_zeroes(ndata, max_delay = 4)
 ```
 
 Which looks at all the possible report dates and event dates and sets the counts to zero if they have not been observed.
@@ -652,10 +677,14 @@ Which looks at all the possible report dates and event dates and sets the counts
 The function `censor_delays_above()` marks all delays above a threshold value (`max_delay`) as censored. This is useful to indicate extreme delays in some nowcast models:
 
 ```{r}
-df <- data.frame(onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
-                 reported = as.Date("2020-01-01") + c(1, 5, 2, 300))
-tn <- tbl_now(df, event_date = onset, report_date = reported,
-              data_type = "linelist", verbose = FALSE)
+df <- data.frame(
+  onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
+  reported = as.Date("2020-01-01") + c(1, 5, 2, 300)
+)
+tn <- tbl_now(df,
+  event_date = onset, report_date = reported,
+  data_type = "linelist", verbose = FALSE
+)
 
 # the 300-day report becomes censored (an upper bound on its delay)
 censor_delays_above(tn, max_delay = 60)
@@ -663,7 +692,7 @@ censor_delays_above(tn, max_delay = 60)
 
 ### Converting to data formats from other packages
 
-> **NOTE** This is still work in progress  `r lifecycle::badge("experimental")`
+> **NOTE** This is still work in progress `r lifecycle::badge("experimental")`
 
 `tbl.now` ships converters that move data between a `tbl_now` and the data structures used by other nowcasting and delay-estimation packages. They all follow the same naming convention:
 
@@ -675,9 +704,9 @@ Each function accepts a `verbose` argument that reports the choices it made (the
 
 | Package | `from` | `to` | Maps to |
 |---|---|---|---|
-| `epinowcast` | yes | yes | `count-cumulative` (`reference_date`, `report_date`, `confirm`) |
+| `epinowcast` | yes | yes | `count-cumulative` (`reference_date`, `report_date`, `confirm`); `from` also accepts a preprocessed `enw_preprocess_data` or fitted object |
 | `baselinenowcast` | yes | yes | `count-incidence` (long data frame or reporting-triangle matrix) |
-| `EpiNow2` | — | yes | a single `date`/`confirm` incidence series |
+| `EpiNow2` | — | yes | a single `date`/`confirm` series for `estimate_infections()`, or (with `model = "estimate_truncation"`) a list of report-date snapshots for `estimate_truncation()` |
 | `data.table` | yes | yes | any data type |
 | `epidist` | yes | yes | `linelist` (primary/secondary event dates) |
 | `tsibble` | yes | yes | a `tbl_ts` (one date as index, the other date + strata as key) |
@@ -685,13 +714,15 @@ Each function accepts a `verbose` argument that reports the choices it made (the
 The object produced by any `tbl_now_to_*()` can be converted straight back with [as_tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.html), which has methods for each of these classes:
 
 ```{r converters-roundtrip, eval=requireNamespace("tsibble", quietly = TRUE), message=FALSE}
-dengue_now <- tbl_now(denguedat, event_date = "onset_week",
-                      report_date = "report_week", strata = "gender",
-                      verbose = FALSE)
+dengue_now <- tbl_now(denguedat,
+  event_date = "onset_week",
+  report_date = "report_week", strata = "gender",
+  verbose = FALSE
+)
 
 # tbl_now -> tsibble -> tbl_now
 dengue_ts <- tbl_now_to_tsibble(dengue_now, verbose = FALSE)
-as_tbl_now(dengue_ts, event_date = "onset_week", verbose = FALSE)
+as_tbl_now(dengue_ts, report_date = "report_week", verbose = FALSE)
 ```
 
 For example, the [epinowcast](https://package.epinowcast.org/) hospitalization data ships in long cumulative format and converts straight into a `count-cumulative` `tbl_now`:
@@ -701,13 +732,21 @@ epinowcast_available <- requireNamespace("epinowcast", quietly = TRUE)
 ```
 
 ```{r converters-from, eval=epinowcast_available, message=FALSE}
-germany_hospitalizations <- head(epinowcast::germany_covid19_hosp, 1000)
+library(epinowcast)
+data(germany_covid19_hosp)
 
-hospitalizations_now <- tbl_now_from_epinowcast(
-  germany_hospitalizations,
-  strata = c("location", "age_group")
-)
 
+#Read data from epinowcast
+obs  <- germany_covid19_hosp[location == "DE"]
+
+#Remove unused column
+obs  <- obs[, location := NULL]
+
+#Pre-process data
+pobs <- epinowcast::enw_preprocess_data(obs, max_delay = 40, by = "age_group")
+
+hospitalizations_now <- tbl_now_from_epinowcast(pobs)
+  
 hospitalizations_now
 ```
 
@@ -715,10 +754,10 @@ Going the other way, `tbl_now_to_epinowcast()` returns an `enw_preprocess_data` 
 
 ```{r converters-to, eval=epinowcast_available, message=FALSE}
 epinowcast_object <- tbl_now_to_epinowcast(hospitalizations_now, verbose = FALSE)
-class(epinowcast_object)
+epinowcast_object
 ```
 
-The same pattern works for the other packages, for example `tbl_now_to_EpiNow2()` collapses the object into the single `date`/`confirm` time series that [EpiNow2](https://epiforecasts.io/EpiNow2/) expects.
+The same pattern works for the other packages. <!---For example `tbl_now_to_EpiNow2()` collapses the object into the single `date`/`confirm` time series that [EpiNow2](https://epiforecasts.io/EpiNow2/)'s `estimate_infections()`/`epinow()` expect; passing `model = "estimate_truncation"` instead returns the list of report-date snapshots that `estimate_truncation()` consumes (the one EpiNow2 model that uses the report dimension).-->
 
 ## References
 

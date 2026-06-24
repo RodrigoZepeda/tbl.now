@@ -25,11 +25,11 @@ A logical vector: TRUE if weekday, FALSE if weekend.
 Function that checks whether a date object is a weekday or weekend.
 }
 \examples{
-is_weekday(as.Date("2020-04-22"))                   # TRUE (Wed)
-is_weekday(as.Date("2020-04-19"))                   # FALSE (Sun)
+is_weekday(as.Date("2020-04-22")) # TRUE (Wed)
+is_weekday(as.Date("2020-04-19")) # FALSE (Sun)
 
 # Middle East weekend (Fri - Sat)
-is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri","Sat"))
+is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri", "Sat"))
 
 # Weekend only on Friday
 is_weekday(as.Date("2020-04-17"), weekend_days = "Friday")

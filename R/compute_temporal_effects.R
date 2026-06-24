@@ -30,18 +30,18 @@
 #'   event_date  = onset_week,
 #'   report_date = report_week,
 #'   t_effects   = temporal_effects(week_of_year = TRUE, month_of_year = TRUE),
-#'   verbose     = FALSE)
+#'   verbose     = FALSE
+#' )
 #'
 #' # No temporal-effect columns yet:
-#' ".event_week_of_year" %in% names(df_now)   # FALSE
+#' ".event_week_of_year" %in% names(df_now) # FALSE
 #'
 #' # 2. Materialise the columns
 #' df_computed <- compute_temporal_effects(df_now)
-#' ".event_week_of_year" %in% names(df_computed)  # TRUE
+#' ".event_week_of_year" %in% names(df_computed) # TRUE
 #'
 #' @export
 compute_temporal_effects <- function(x, overwrite = FALSE) {
-
   if (!inherits(x, "tbl_now")) {
     cli::cli_abort("{.arg x} must be a {.code tbl_now} object.")
   }
@@ -55,17 +55,16 @@ compute_temporal_effects <- function(x, overwrite = FALSE) {
   old_cols <- colnames(x)
 
   for (spec in specs) {
-
-    t_eff        <- spec$t_effects
-    date_type    <- spec$date_type
+    t_eff <- spec$t_effects
+    date_type <- spec$date_type
     weekend_days <- spec$weekend_days
 
     if (date_type == "event_date") {
-      date_col    <- get_event_date(x)
+      date_col <- get_event_date(x)
       numeric_col <- ".event_num"
       name_prefix <- ".event"
     } else {
-      date_col    <- get_report_date(x)
+      date_col <- get_report_date(x)
       numeric_col <- ".report_num"
       name_prefix <- ".report"
     }
@@ -81,7 +80,7 @@ compute_temporal_effects <- function(x, overwrite = FALSE) {
     )
   }
 
-  new_cols      <- colnames(x)
+  new_cols <- colnames(x)
   computed_cols <- setdiff(new_cols, old_cols)
 
   existing_computed <- attr(x, "computed_temporal_effect_cols", exact = TRUE)

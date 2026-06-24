@@ -96,7 +96,7 @@ get_now(ndata)
 #> [1] "2010-12-20"
 
 #We can filter the data
-ndata_1992 <- ndata \%>\%
+ndata_1992 <- ndata |>
  dplyr::filter(onset_week <= as.Date("1992/01/01") &
                report_week <= as.Date("1992/01/01"))
 
@@ -105,7 +105,7 @@ get_now(ndata_1992)
 #> [1] "2010-12-20"
 
 #The update now brings it to the closest date before the cut
-ndata_1992 <- ndata_1992 \%>\% update_now()
+ndata_1992 <- ndata_1992 |> update_now()
 
 #Which is now correct and set to the latest date before the cut
 get_now(ndata_1992)
@@ -115,68 +115,70 @@ get_now(ndata_1992)
 \examples{
 data(denguedat)
 ndata <- tbl_now(denguedat,
-                 event_date = onset_week,
-                 report_date = report_week,
-                 verbose = FALSE)
+  event_date = onset_week,
+  report_date = report_week,
+  verbose = FALSE
+)
 
 # Change the event_date column to a different date column
 ndata$new_onset_week <- ndata$onset_week - lubridate::days(1)
-ndata <- ndata \%>\% change_event_date(new_onset_week)
+ndata <- ndata |> change_event_date(new_onset_week)
 ndata
 
 # Change the report_date column to a different column
 ndata$new_report_week <- ndata$report_week - lubridate::days(1)
-ndata <- ndata \%>\% change_report_date(new_report_week)
+ndata <- ndata |> change_report_date(new_report_week)
 ndata
 
 # Change strata to different strata
-ndata$age_group <- sample(c("< 18","20-60","60+"), nrow(ndata), replace = TRUE)
-ndata <- ndata \%>\% change_strata(gender, age_group)
+ndata$age_group <- sample(c("< 18", "20-60", "60+"), nrow(ndata), replace = TRUE)
+ndata <- ndata |> change_strata(gender, age_group)
 ndata
 
 # Change covariates
 ndata$temperature <- rnorm(nrow(ndata), 25, 4)
-ndata$humidity    <- rbeta(nrow(ndata), 0.6, 0.4)
-ndata <- ndata \%>\% change_covariates(temperature, humidity)
+ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
+ndata <- ndata |> change_covariates(temperature, humidity)
 ndata
 
 # Change now
 ndata <- change_now(ndata, now = as.Date("2025-01-01"))
 ndata
 
-#Change case count column
-count_data <- ndata \%>\%
+# Change case count column
+count_data <- ndata |>
   to_count(to = "count-incidence")
 
-count_data \%>\%
-  dplyr::mutate(n2 = 1.15*n) \%>\%
+count_data |>
+  dplyr::mutate(n2 = 1.15 * n) |>
   change_case_count(n2)
 
-#Change is_censored
+# Change is_censored
 ndata$is_censored <- FALSE
-ndata <- ndata \%>\%
+ndata <- ndata |>
   change_is_censored(is_censored)
 ndata
 
 # Change covariates
 ndata$temperature <- rnorm(nrow(ndata), 25, 4)
-ndata$humidity    <- rbeta(nrow(ndata), 0.6, 0.4)
-ndata <- ndata \%>\% change_covariates(temperature, humidity)
+ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
+ndata <- ndata |> change_covariates(temperature, humidity)
 ndata
 
 # Add temporal effects, remove and replace them
-ndata <- ndata \%>\%
-    add_temporal_effects(disease_data,
-    t_effects= temporal_effects(week_of_year = TRUE, month_of_year = TRUE))
+ndata <- ndata |>
+  add_temporal_effects(disease_data,
+    t_effects = temporal_effects(week_of_year = TRUE, month_of_year = TRUE)
+  )
 
-#Use the compute to calculate them
-ndata \%>\% compute_temporal_effects()
+# Use the compute to calculate them
+ndata |> compute_temporal_effects()
 
-#Use replace to change them
-ndata \%>\% replace_temporal_effects(t_effects= temporal_effects(seasons = 52))
+# Use replace to change them
+ndata |> replace_temporal_effects(t_effects = temporal_effects(seasons = 52))
 
-#Use remove to delete them
-ndata \%>\% remove_temporal_effects()
+# Use remove to delete them
+ndata |> remove_temporal_effects()
 
 }
 \seealso{

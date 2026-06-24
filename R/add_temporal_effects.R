@@ -39,182 +39,171 @@
 #'
 #' # Get disease
 #' disease_data <- tbl_now(denguedat,
-#'     event_date = "onset_week",
-#'     report_date = "report_week",
-#'     strata = "gender")
+#'   event_date = "onset_week",
+#'   report_date = "report_week",
+#'   strata = "gender"
+#' )
 #'
 #' # Add an effect for epidemiological week
-#' disease_data <- disease_data %>%
-#'   add_temporal_effects(t_effects= temporal_effects(week_of_year = TRUE))
+#' disease_data <- disease_data |>
+#'   add_temporal_effects(t_effects = temporal_effects(week_of_year = TRUE))
 #'
-#' #Use the compute to calculate them
-#' disease_data %>% compute_temporal_effects()
+#' # Use the compute to calculate them
+#' disease_data |> compute_temporal_effects()
 #'
-#' #Use replace to change them
-#' disease_data %>%
-#'   replace_temporal_effects(t_effects= temporal_effects(seasons = 52))
+#' # Use replace to change them
+#' disease_data |>
+#'   replace_temporal_effects(t_effects = temporal_effects(seasons = 52))
 #'
-#' #Use remove to delete them
-#' disease_data %>% remove_temporal_effects()
+#' # Use remove to delete them
+#' disease_data |> remove_temporal_effects()
 #' @name add_temporal_effects
 #'
 #' @seealso [temporal_effects()] [add] [remove] [change]
 #'
 #' @export
-add_temporal_effects <- function(x, t_effects= NULL, overwrite = FALSE, ...) {
+add_temporal_effects <- function(x, t_effects = NULL, overwrite = FALSE, ...) {
   UseMethod("add_temporal_effects")
 }
 
 #' @export
 #' @rdname add_temporal_effects
-add_temporal_effects.data.frame <- function(x, t_effects= NULL, overwrite = FALSE,
+add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FALSE,
                                             ...,
                                             date_col = NULL,
                                             numeric_col = NULL,
                                             name_prefix = paste0(".", date_col),
-                                            weekend_days = c("Sat","Sun")) {
-
-  #Do nothing if no effect
-  if (is.null(t_effects)){
+                                            weekend_days = c("Sat", "Sun")) {
+  # Do nothing if no effect
+  if (is.null(t_effects)) {
     return(x)
   }
 
-  #Check the class
-  if (!S7::S7_inherits(t_effects, class = temporal_effects)){
+  # Check the class
+  if (!S7::S7_inherits(t_effects, class = temporal_effects)) {
     cli::cli_abort(
       "`t_effects` should be a {.code temporal_effects} object. Use `temporal_effects` to create it."
     )
   }
 
-  #Check the column belongs to x.frame
-  if (!is.null(date_col) && !(date_col %in% colnames(x))){
+  # Check the column belongs to x.frame
+  if (!is.null(date_col) && !(date_col %in% colnames(x))) {
     cli::cli_abort(
       "Column {.value {date_col}} is not a column in `x`"
     )
   }
 
-  if (!is.null(numeric_col) && !(numeric_col %in% colnames(x))){
+  if (!is.null(numeric_col) && !(numeric_col %in% colnames(x))) {
     cli::cli_abort(
       "Column {.value {numeric_col}} is not a column in `x`"
     )
   }
 
-  if (is.null(date_col)){
+  if (is.null(date_col)) {
     cli::cli_abort(
       "Please specify a `date_col`"
     )
   }
 
-  if (!is.null(t_effects@seasons) && length(t_effects@seasons) > 0 && is.null(numeric_col)){
+  if (!is.null(t_effects@seasons) && length(t_effects@seasons) > 0 && is.null(numeric_col)) {
     cli::cli_abort("Please specify a `numeric_col` to calculate the seasons")
   }
 
 
   # Get the initial date (this is for codifying the month and epiweek effects so that they start in 1)
-  init_date <- x %>%
-    dplyr::slice_head(n = 1) %>%
+  init_date <- x |>
+    dplyr::slice_head(n = 1) |>
     dplyr::pull(!!as.symbol(date_col))
 
   # Add day of the week effect-----
   if (!is.null(t_effects)) {
-
     if (t_effects@"day_of_week" & !is.null(date_col)) {
-
-      if (paste0(name_prefix,"_day_of_week") %in% colnames(x) && !overwrite){
+      if (paste0(name_prefix, "_day_of_week") %in% colnames(x) && !overwrite) {
         cli::cli_abort(
           "Column {.val {name_prefix}_day_of_week} already exists in data. Set `overwrite = TRUE` to overwrite it."
         )
       }
 
-      x <- x %>%
-        dplyr::mutate(!!as.symbol(paste0(name_prefix,"_day_of_week")) :=
-                        as.integer(lubridate::wday(!!as.symbol(date_col))))
+      x <- x |>
+        dplyr::mutate(!!as.symbol(paste0(name_prefix, "_day_of_week")) :=
+          as.integer(lubridate::wday(!!as.symbol(date_col))))
     }
 
     # Add weekend effect-----
     if (t_effects@weekend & !is.null(date_col)) {
-
-      if (paste0(name_prefix,"_weekend") %in% colnames(x) && !overwrite){
+      if (paste0(name_prefix, "_weekend") %in% colnames(x) && !overwrite) {
         cli::cli_abort(
           "Column {.val {name_prefix}_weekend} already exists in data. Set `overwrite = TRUE` to overwrite it."
         )
       }
 
-      x <- x %>%
-        dplyr::mutate(!!as.symbol(paste0(name_prefix,"_weekend")) :=
-                        as.integer(!is_weekday(!!as.symbol(date_col), weekend_days = weekend_days)))
+      x <- x |>
+        dplyr::mutate(!!as.symbol(paste0(name_prefix, "_weekend")) :=
+          as.integer(!is_weekday(!!as.symbol(date_col), weekend_days = weekend_days)))
     }
 
     # Add day of the month effect-----
     if (t_effects@day_of_month & !is.null(date_col)) {
-
-      if (paste0(name_prefix,"_day_of_month") %in% colnames(x) && !overwrite){
+      if (paste0(name_prefix, "_day_of_month") %in% colnames(x) && !overwrite) {
         cli::cli_abort(
           "Column {.val {name_prefix}_day_of_month} already exists in data. Set `overwrite = TRUE` to overwrite it."
         )
       }
 
-      x <- x %>%
-        dplyr::mutate(!!as.symbol(paste0(name_prefix,"_day_of_month")) :=
-                        as.integer(lubridate::day(!!as.symbol(date_col))))
+      x <- x |>
+        dplyr::mutate(!!as.symbol(paste0(name_prefix, "_day_of_month")) :=
+          as.integer(lubridate::day(!!as.symbol(date_col))))
     }
 
     # Add month effect (centered at current month = 1)-----
     if (t_effects@month_of_year & !is.null(date_col)) {
-
-      if (paste0(name_prefix,"_month_of_year") %in% colnames(x) && !overwrite){
+      if (paste0(name_prefix, "_month_of_year") %in% colnames(x) && !overwrite) {
         cli::cli_abort(
           "Column {.val {name_prefix}_month_of_year} already exists in data. Set `overwrite = TRUE` to overwrite it."
         )
       }
 
-      x <- x %>%
-        dplyr::mutate(!!as.symbol(paste0(name_prefix,"_month_of_year")) :=
-                        as.integer(1 +
-                                     ((lubridate::month(!!as.symbol(date_col)) - lubridate::month(init_date)) %% 12)
-                        )
-        )
+      x <- x |>
+        dplyr::mutate(!!as.symbol(paste0(name_prefix, "_month_of_year")) :=
+          as.integer(1 +
+            ((lubridate::month(!!as.symbol(date_col)) - lubridate::month(init_date)) %% 12)))
     }
 
     # Add epiweek effect (centered at current week = 1 | week 53 that almost never happens is collapsed to January)-----
     if (t_effects@week_of_year & !is.null(date_col)) {
-
-      if (paste0(name_prefix,"_week_of_year") %in% colnames(x) && !overwrite){
+      if (paste0(name_prefix, "_week_of_year") %in% colnames(x) && !overwrite) {
         cli::cli_abort(
           "Column {.val {name_prefix}_week_of_year} already exists in data. Set `overwrite = TRUE` to overwrite it."
         )
       }
 
-      x <- x %>%
-        dplyr::mutate(!!as.symbol(paste0(name_prefix,"_week_of_year")) :=
-                        as.integer(1 +
-                                     ((lubridate::epiweek(!!as.symbol(date_col)) - lubridate::epiweek(init_date)) %% 52)
-                        )
-        )
+      x <- x |>
+        dplyr::mutate(!!as.symbol(paste0(name_prefix, "_week_of_year")) :=
+          as.integer(1 +
+            ((lubridate::epiweek(!!as.symbol(date_col)) - lubridate::epiweek(init_date)) %% 52)))
     }
 
     # Add seasons-----
     if (!is.null(t_effects@seasons) & length(t_effects@seasons) > 0 & !is.null(numeric_col)) {
-      #For each season add a pair of Fourier (sin/cos) columns
-      for (i in seq_along(t_effects@seasons)){
-
+      # For each season add a pair of Fourier (sin/cos) columns
+      for (i in seq_along(t_effects@seasons)) {
         # Period = seasons * season_length (season_length defaults to 1 → period = seasons)
         period <- t_effects@seasons[i] * t_effects@season_length[i]
 
-        #Create column name from the actual period
+        # Create column name from the actual period
         season_name <- paste0(name_prefix, "_season_", period)
 
-        if ((paste0(season_name, "_cos") %in% colnames(x)) || (paste0(season_name, "_sin") %in% colnames(x)) && !overwrite){
+        if ((paste0(season_name, "_cos") %in% colnames(x)) || (paste0(season_name, "_sin") %in% colnames(x)) && !overwrite) {
           cli::cli_abort(
             "At least one of the columns: {.val {season_name}_cos} or {.val {season_name}_sin} already exist in data. Set `overwrite = TRUE` to overwrite them."
           )
         }
 
-        #Add the sine and cosine components of the Fourier term
-        x <- x %>%
+        # Add the sine and cosine components of the Fourier term
+        x <- x |>
           dplyr::mutate(
-            !!as.symbol(paste0(season_name, "_cos")) := cos(2*base::pi*as.numeric(!!as.symbol(numeric_col)) / period),
-            !!as.symbol(paste0(season_name, "_sin")) := sin(2*base::pi*as.numeric(!!as.symbol(numeric_col)) / period)
+            !!as.symbol(paste0(season_name, "_cos")) := cos(2 * base::pi * as.numeric(!!as.symbol(numeric_col)) / period),
+            !!as.symbol(paste0(season_name, "_sin")) := sin(2 * base::pi * as.numeric(!!as.symbol(numeric_col)) / period)
           )
       }
     }
@@ -228,18 +217,17 @@ add_temporal_effects.data.frame <- function(x, t_effects= NULL, overwrite = FALS
           "Please install the `almanac` package to be able to integrate `holiday` effects"
         )
       } else {
-
-        if (paste0(name_prefix,"_holiday") %in% colnames(x) && !overwrite){
+        if (paste0(name_prefix, "_holiday") %in% colnames(x) && !overwrite) {
           cli::cli_abort(
             "Column {.val {name_prefix}_holiday} already exists in data. Set `overwrite = TRUE` to overwrite it."
           )
         }
 
-        x <- x %>%
-          dplyr::mutate(!!as.symbol(paste0(name_prefix,"_holiday")) :=
-                          as.integer(
-                            almanac::alma_in(!!as.symbol(date_col), t_effects@holidays))
-          )
+        x <- x |>
+          dplyr::mutate(!!as.symbol(paste0(name_prefix, "_holiday")) :=
+            as.integer(
+              almanac::alma_in(!!as.symbol(date_col), t_effects@holidays)
+            ))
       }
     }
   }
@@ -249,13 +237,14 @@ add_temporal_effects.data.frame <- function(x, t_effects= NULL, overwrite = FALS
 
 #' @export
 #' @rdname add_temporal_effects
-add_temporal_effects.tbl_now <- function(x, t_effects= NULL, overwrite = FALSE,  ...,
+add_temporal_effects.tbl_now <- function(x, t_effects = NULL, overwrite = FALSE, ...,
                                          date_type = "event_date",
-                                         weekend_days = c("Sat","Sun")){
+                                         weekend_days = c("Sat", "Sun")) {
+  if (is.null(t_effects)) {
+    return(x)
+  }
 
-  if (is.null(t_effects)) return(x)
-
-  if (!S7::S7_inherits(t_effects, class = temporal_effects)){
+  if (!S7::S7_inherits(t_effects, class = temporal_effects)) {
     cli::cli_abort(
       "`t_effects` should be a {.code temporal_effects} object. Use `temporal_effects` to create it."
     )
@@ -266,12 +255,10 @@ add_temporal_effects.tbl_now <- function(x, t_effects= NULL, overwrite = FALSE, 
   }
 
   # Store the spec lazily — columns are computed only when compute_temporal_effects() is called
-  new_spec      <- list(t_effects = t_effects, date_type = date_type, weekend_days = weekend_days)
+  new_spec <- list(t_effects = t_effects, date_type = date_type, weekend_days = weekend_days)
   existing_spec <- attr(x, "temporal_effects")
   if (is.null(existing_spec)) existing_spec <- list()
   attr(x, "temporal_effects") <- c(existing_spec, list(new_spec))
 
   return(x)
-
 }
-

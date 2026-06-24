@@ -142,7 +142,6 @@ test_that("change_report_date changes report_date to new column", {
   expect_true(
     suppressWarnings(validate_tbl_now(result))
   )
-
 })
 
 test_that("change_report_date fails with non-tbl_now object", {
@@ -265,7 +264,7 @@ test_that("remove_strata removes all if only one strata", {
 
 test_that("remove_strata can remove multiple strata", {
   test_data <- setup_test_data()
-  test_data$ndata$temperature2 <- test_data$ndata$temperature*2
+  test_data$ndata$temperature2 <- test_data$ndata$temperature * 2
   ndata <- test_data$ndata
 
   # Add three strata
@@ -562,11 +561,11 @@ test_that("multiple changer functions work together", {
   ndata$new_report <- ndata$report_week - 1
 
   suppressWarnings(
-    result <- ndata %>%
-      change_event_date("new_onset") %>%
-      change_report_date("new_report") %>%
-      add_strata("age_group") %>%
-      add_covariates("humidity") %>%
+    result <- ndata |>
+      change_event_date("new_onset") |>
+      change_report_date("new_report") |>
+      add_strata("age_group") |>
+      add_covariates("humidity") |>
       change_now(as.Date("2020-08-10"))
   )
 
@@ -609,8 +608,8 @@ test_that("removing and adding same strata works correctly", {
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
-  result <- ndata %>%
-    remove_strata("gender") %>%
+  result <- ndata |>
+    remove_strata("gender") |>
     add_strata("gender")
 
   expect_equal(get_strata(result), "gender")
@@ -621,8 +620,8 @@ test_that("removing and adding same covariate works correctly", {
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
-  result <- ndata %>%
-    remove_covariates("temperature") %>%
+  result <- ndata |>
+    remove_covariates("temperature") |>
     add_covariates("temperature")
 
   expect_equal(get_covariates(result), "temperature")
@@ -822,7 +821,7 @@ test_that("change_report_date warns when report is before event", {
 
 test_that("change_case_count works with count data", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     to_count(to = "count-incidence")
 
   ndata$n_adjusted <- ndata$n * 1.1
@@ -835,16 +834,15 @@ test_that("change_case_count works with count data", {
 
 test_that("change_case_count cannot remove case_count", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     to_count(to = "count-incidence")
 
   expect_error(change_case_count(ndata, NULL), "Dropped")
-
 })
 
 test_that("change_case_count fails with non-numeric column", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     to_count(to = "count-incidence")
 
   ndata$char_col <- "not_numeric"
@@ -857,7 +855,7 @@ test_that("change_case_count fails with non-numeric column", {
 
 test_that("change_case_count works with tidy select", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     to_count(to = "count-incidence")
 
   ndata$n_new <- ndata$n * 2
@@ -920,7 +918,7 @@ test_that("remove_is_censored sets is_censored to NULL", {
 
 test_that("remove_is_censored works when is_censored is already NULL", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     change_is_censored(NULL)
 
   expect_null(get_is_censored(ndata))
@@ -937,7 +935,7 @@ test_that("remove_is_censored works when is_censored is already NULL", {
 
 test_that("add_is_censored adds is_censored when none exists", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     remove_is_censored()
 
   expect_null(get_is_censored(ndata))
@@ -1047,7 +1045,7 @@ test_that("remove_strata ignores non-existent strata", {
 
 test_that("remove_strata can remove multiple strata at once", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     change_strata(gender, age_group, region)
 
   result <- remove_strata(ndata, gender, age_group)
@@ -1057,7 +1055,7 @@ test_that("remove_strata can remove multiple strata at once", {
 
 test_that("remove_strata with tidy select", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     change_strata(gender, age_group)
 
   result <- remove_strata(ndata, dplyr::starts_with("age"))
@@ -1149,7 +1147,7 @@ test_that("remove_covariates ignores non-existent covariates", {
 
 test_that("remove_covariates can remove multiple at once", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     change_covariates(temperature, humidity, age_group)
 
   result <- remove_covariates(ndata, temperature, humidity)
@@ -1159,7 +1157,7 @@ test_that("remove_covariates can remove multiple at once", {
 
 test_that("remove_covariates with tidy select", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     change_covariates(temperature, humidity)
 
   result <- remove_covariates(ndata, dplyr::starts_with("temp"))
@@ -1173,7 +1171,7 @@ test_that("remove_covariates with tidy select", {
 
 test_that("replace_temporal_effects removes old effects", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE))
 
   old_cols <- get_temporal_effects(ndata)
@@ -1191,7 +1189,7 @@ test_that("replace_temporal_effects removes old effects", {
 
 test_that("replace_temporal_effects with NULL removes all", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE))
 
   result <- replace_temporal_effects(ndata, NULL)
@@ -1211,7 +1209,7 @@ test_that("replace_temporal_effects fails with non-temporal_effects object", {
 
 test_that("remove_temporal_effects removes all temporal effect columns", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     add_temporal_effects(temporal_effects(
       day_of_week = TRUE,
       week_of_year = TRUE
@@ -1240,11 +1238,11 @@ test_that("chaining multiple changers preserves tbl_now", {
   ndata$new_onset <- ndata$onset_week - 7
   ndata$new_report <- ndata$report_week - 7
 
-  result <- ndata %>%
-    change_event_date(new_onset) %>%
-    change_report_date(new_report) %>%
-    add_strata(age_group) %>%
-    add_covariates(humidity) %>%
+  result <- ndata |>
+    change_event_date(new_onset) |>
+    change_report_date(new_report) |>
+    add_strata(age_group) |>
+    add_covariates(humidity) |>
     change_now(as.Date("2020-08-15"))
 
   expect_s3_class(result, "tbl_now")
@@ -1258,10 +1256,10 @@ test_that("add and remove operations can be chained", {
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
-  result <- ndata %>%
-    add_strata(age_group, region) %>%
-    remove_strata(gender) %>%
-    add_covariates(humidity) %>%
+  result <- ndata |>
+    add_strata(age_group, region) |>
+    remove_strata(gender) |>
+    add_covariates(humidity) |>
     remove_covariates(temperature)
 
   expect_equal(sort(get_strata(result)), c("age_group", "region"))
@@ -1270,11 +1268,11 @@ test_that("add and remove operations can be chained", {
 
 test_that("changers work with grouped tbl_now", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
+  ndata <- test_data$ndata |>
     dplyr::group_by(gender)
 
-  result <- ndata %>%
-    add_strata(age_group) %>%
+  result <- ndata |>
+    add_strata(age_group) |>
     dplyr::ungroup()
 
   expect_s3_class(result, "tbl_now")
@@ -1283,15 +1281,15 @@ test_that("changers work with grouped tbl_now", {
 
 test_that("changers preserve count data type", {
   test_data <- setup_additional_test_data()
-  ndata <- test_data$ndata %>%
-    add_strata(age_group) %>%
-    add_covariates(humidity) %>%
-    to_count(to = "count-incidence") %>%
-    remove_strata(age_group) %>%
+  ndata <- test_data$ndata |>
+    add_strata(age_group) |>
+    add_covariates(humidity) |>
+    to_count(to = "count-incidence") |>
+    remove_strata(age_group) |>
     remove_covariates(humidity)
 
-  result <- ndata %>%
-    add_strata(age_group) %>%
+  result <- ndata |>
+    add_strata(age_group) |>
     add_covariates(humidity)
 
   expect_equal(get_data_type(result), "count-incidence")
@@ -1319,8 +1317,8 @@ test_that("changers maintain .delay column", {
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
-  result <- ndata %>%
-    add_strata(age_group) %>%
+  result <- ndata |>
+    add_strata(age_group) |>
     add_covariates(humidity)
 
   expect_true(".delay" %in% names(result))
@@ -1331,8 +1329,8 @@ test_that("changers maintain protected columns", {
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
-  result <- ndata %>%
-    add_strata(age_group) %>%
+  result <- ndata |>
+    add_strata(age_group) |>
     change_covariates(humidity)
 
   # Check all protected columns exist
@@ -1379,9 +1377,9 @@ test_that("remove functions handle already-removed attributes", {
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
-  result <- ndata %>%
-    remove_all_strata() %>%
-    remove_all_strata()  # Second removal should work
+  result <- ndata |>
+    remove_all_strata() |>
+    remove_all_strata() # Second removal should work
 
   expect_null(get_strata(result))
   expect_s3_class(result, "tbl_now")

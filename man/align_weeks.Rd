@@ -78,18 +78,20 @@ align_weeks(df, date_col = date, align_on_day = 3)
 # reports (`as_of`) are sometimes on Saturday and sometimes Wednesday
 data(flusight)
 
-#Get the table
-flutbl <- tbl_now(flusight, event_date = "target_end_date",
+# Get the table
+flutbl <- tbl_now(flusight,
+  event_date = "target_end_date",
   report_date = "as_of", case_col = "observation",
-  strata = c("location_name"))
+  strata = c("location_name")
+)
 
-#See that some delays have decimals
+# See that some delays have decimals
 suppressWarnings(as.numeric(flutbl[413484, ".delay"]))
 
-#Align the weeks so that they all start on Sunday
-flutbl <- flutbl \%>\% align_weeks()
+# Align the weeks so that they all start on Sunday
+flutbl <- flutbl |> align_weeks()
 
-#Delayed decimals are now integer as all weeks start in Sunday!
+# Delayed decimals are now integer as all weeks start in Sunday!
 suppressWarnings(as.numeric(flutbl[413484, ".delay"]))
 
 }

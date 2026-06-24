@@ -20,21 +20,26 @@ tbl_now_to_epinowcast(
   x,
   ...,
   max_delay = NULL,
+  missing_reference = FALSE,
   preprocess = TRUE,
-  verbose = TRUE
+  verbose = TRUE,
+  quiet = FALSE
 )
 }
 \arguments{
-\item{data}{A \code{data.frame}/\code{data.table} in \pkg{epinowcast} long format.}
+\item{data}{Source data: a raw long \code{data.frame}/\code{data.table}, an
+\code{enw_preprocess_data} object, or a fitted \code{epinowcast} object.}
 
 \item{...}{Additional arguments forwarded to \code{\link[=as_tbl_now]{as_tbl_now()}} (for \code{from})
 or to \code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}} (for \code{to}).}
 
-\item{reference_date, report_date, confirm}{Column names in \code{data}.}
+\item{reference_date, report_date, confirm}{Column names (raw input only;
+ignored for preprocessed/fitted objects).}
 
 \item{strata}{Optional character vector of grouping columns. If \code{NULL}
-(default) any column other than \code{reference_date}, \code{report_date} and
-\code{confirm} is treated as a stratifying group.}
+(default) the grouping is taken from the preprocessed object's \code{by}, or,
+for raw input, any column other than \code{reference_date}, \code{report_date} and
+\code{confirm}.}
 
 \item{verbose}{Logical. Print the choices that were made.}
 
@@ -43,8 +48,16 @@ or to \code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_dat
 \item{max_delay}{Maximum delay (in \code{timestep}s) to use when preprocessing.
 If \code{NULL} it is inferred from the data as \code{max(.delay) + 1}.}
 
+\item{missing_reference}{Passed to \code{\link[epinowcast:enw_complete_dates]{epinowcast::enw_complete_dates()}}.
+Defaults to \code{FALSE} (unlike epinowcast's own default of \code{TRUE}): a
+\code{tbl_now} never carries reports with a missing \code{reference_date}, so leaving
+this \code{TRUE} would synthesise NA-reference padding rows the data never had.}
+
 \item{preprocess}{If \code{TRUE} (default) returns an \code{enw_preprocess_data}
 object; if \code{FALSE} returns the completed observation \code{data.table}.}
+
+\item{quiet}{Logical. If \code{TRUE}, suppress the lossy-conversion warning emitted
+by \code{tbl_now_to_epinowcast()} (see the Round-trip section).}
 }
 \value{
 \code{tbl_now_from_epinowcast()} returns a \code{tbl_now}.
@@ -54,18 +67,90 @@ object; if \code{FALSE} returns the completed observation \code{data.table}.}
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-\code{tbl_now_from_epinowcast()} takes the long observation \code{data.frame} used by
-\pkg{epinowcast} (with \code{reference_date}, \code{report_date} and a cumulative
-\code{confirm} column, plus optional grouping columns) and converts it into a
-\code{tbl_now} of \code{data_type = "count-cumulative"}.
-
-\code{tbl_now_to_epinowcast()} takes a \code{tbl_now} and builds an
-\code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}} object (or, with \code{preprocess = FALSE},
-the completed observation \code{data.table}).
+\pkg{epinowcast} represents the same observations in several shapes:
+\itemize{
+\item the \strong{raw long input} \code{data.frame} (\code{reference_date}, \code{report_date} and a
+\strong{cumulative} \code{confirm} column, plus optional grouping columns) consumed
+by \code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}};
+\item the \strong{preprocessed object} returned by \code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}}
+(a nested \code{data.table} used downstream for modelling, summaries and
+plotting);
+\item a fitted \code{epinowcast} object (which extends the preprocessed object).
 }
+
+\code{tbl_now_from_epinowcast()} accepts \strong{any} of these and converts the
+cumulative observations into a \code{tbl_now} of \code{data_type = "count-cumulative"}.
+When given a preprocessed or fitted object, the grouping (\code{by}) columns are
+detected automatically and the observations are those retained by
+preprocessing (i.e. truncated at \code{max_delay}).
+
+\code{tbl_now_to_epinowcast()} takes a \code{tbl_now} and, by default, builds the
+preprocessed \code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}} object (the representation
+used for epinowcast's summaries and plots). With \code{preprocess = FALSE} it
+returns the completed long observation \code{data.table} (the model \emph{input}
+format, as produced by \code{\link[epinowcast:enw_complete_dates]{epinowcast::enw_complete_dates()}}).
+}
+\section{Round-trip}{
+
+The round-trip is \strong{not} the identity, and \code{tbl_now_to_epinowcast()} warns
+to that effect (silence it with \code{quiet = TRUE}). If you already have the data
+in epinowcast's format, work from it directly rather than converting through
+\code{tbl_now} and back.
+
+\code{tbl_now_from_epinowcast(tbl_now_to_epinowcast(x))} recovers \code{x} up to the
+\code{max_delay} truncation that epinowcast applies during preprocessing: reports
+with a delay beyond \code{max_delay} are dropped by
+\code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}} and so are absent from the result.
+
+Conversely, \code{tbl_now_to_epinowcast(tbl_now_from_epinowcast(pobs))} is not
+identical to \code{pobs}, because a \code{tbl_now} does not retain everything an
+\code{enw_preprocess_data} object carries:
+\itemize{
+\item \strong{Covariate columns} that are neither the core
+\code{reference_date}/\code{report_date}/\code{confirm} nor a grouping (\code{by}) column are
+dropped.
+\item \strong{Grouping indices} (\code{.group}) are reassigned from the factor levels, so
+the row order of the nested tables can differ even though the underlying
+values match.
+\item \strong{NA-reference padding} is not regenerated by default (see
+\code{missing_reference}).
+\item \strong{\code{max_confirm}} (and the derived \code{cum_prop_reported}) will not match for
+reference dates whose reporting completes \emph{after} \code{max_delay}. The modelled
+\code{confirm} (the reporting triangle) is truncated at \code{max_delay}, but
+epinowcast computes \code{max_confirm} as the eventual final total from the
+\emph{untruncated} history. A \code{tbl_now} only stores the truncated triangle, so
+reports arriving beyond \code{max_delay} are gone: on the way back
+\code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}} recomputes \code{max_confirm} from the
+within-window data and obtains a smaller value. The \code{confirm} counts
+themselves still round-trip exactly; only these truncation-derived summary
+columns differ. (For example, in \code{germany_covid19_hosp} the
+2021-04-06 / 00-04 cell reaches 7 by delay 40 but a final 11 only at
+delay 74, so its \code{max_confirm} is 11 in \code{pobs} and 7 after the round-trip.)
+}
+}
+
 \examples{
-\dontshow{if (requireNamespace("epinowcast", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-obs <- epinowcast::germany_covid19_hosp
-nowobj <- tbl_now_from_epinowcast(obs, strata = c("location", "age_group"))
+\dontshow{if (requireNamespace("epinowcast", quietly = TRUE) & requireNamespace("data.table", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+library(data.table)
+library(epinowcast)
+
+#Read data from epinowcast
+obs  <- germany_covid19_hosp[location == "DE"]
+
+#Remove unused column
+obs  <- obs[, location := NULL]
+
+#Pre-process data
+pobs <- epinowcast::enw_preprocess_data(obs, max_delay = 40, by = "age_group")
+
+# From the data.table input format ...
+nowobj <- tbl_now_from_epinowcast(obs, strata = c("age_group"))
+
+# ... or from a preprocessed epinowcast object
+tbl_epi <- tbl_now_from_epinowcast(pobs)
+
+#You can also convert to epinowcast preprocess data format
+preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
+
 \dontshow{\}) # examplesIf}
 }

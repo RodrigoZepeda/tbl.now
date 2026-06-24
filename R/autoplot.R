@@ -71,14 +71,16 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_weighted_quantile <- function(values, weights, probability) {
-  keep    <- !is.na(values) & !is.na(weights) & weights > 0
-  values  <- values[keep]
+  keep <- !is.na(values) & !is.na(weights) & weights > 0
+  values <- values[keep]
   weights <- weights[keep]
-  if (length(values) == 0) return(NA_real_)
-  ordering           <- order(values)
-  values             <- values[ordering]
-  weights            <- weights[ordering]
-  cumulative_weight  <- cumsum(weights) / sum(weights)
+  if (length(values) == 0) {
+    return(NA_real_)
+  }
+  ordering <- order(values)
+  values <- values[ordering]
+  weights <- weights[ordering]
+  cumulative_weight <- cumsum(weights) / sum(weights)
   values[which(cumulative_weight >= probability)[1]]
 }
 
@@ -93,12 +95,14 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_delay_distribution <- function(object) {
-  incidence          <- object %>% ungroup() %>% to_count(to = "count-incidence")
-  case_count_column  <- get_case_count(incidence)
+  incidence <- object |>
+    ungroup() |>
+    to_count(to = "count-incidence")
+  case_count_column <- get_case_count(incidence)
   dplyr::tibble(
     delay  = incidence[[".delay"]],
     weight = incidence[[case_count_column]]
-  ) %>%
+  ) |>
     dplyr::filter(!is.na(.data$delay), !is.na(.data$weight), .data$weight > 0)
 }
 
@@ -113,16 +117,16 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_epidemic_process <- function(object) {
-  latest             <- get_latest_reported_cases(object)
-  case_count_column  <- get_case_count(latest)
-  event_date_column  <- get_event_date(object)
-  latest %>%
-    as.data.frame() %>%
-    dplyr::group_by(event_date = .data[[event_date_column]]) %>%
+  latest <- get_latest_reported_cases(object)
+  case_count_column <- get_case_count(latest)
+  event_date_column <- get_event_date(object)
+  latest |>
+    as.data.frame() |>
+    dplyr::group_by(event_date = .data[[event_date_column]]) |>
     dplyr::summarise(
       case_count = sum(.data[[case_count_column]], na.rm = TRUE),
       .groups    = "drop"
-    ) %>%
+    ) |>
     dplyr::arrange(.data$event_date)
 }
 
@@ -139,7 +143,7 @@
 #' @noRd
 .tbl_now_panel_delay <- function(delay_distribution, palette) {
   normalised_weight <- delay_distribution$weight / sum(delay_distribution$weight)
-  plot_data         <- dplyr::mutate(delay_distribution, normalised_weight = normalised_weight)
+  plot_data <- dplyr::mutate(delay_distribution, normalised_weight = normalised_weight)
 
   ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$delay)) +
     ggplot2::geom_histogram(
@@ -149,7 +153,7 @@
     ) +
     ggplot2::labs(
       title = "Empirical delay distribution",
-      x     = "Reporting delay", y = "Density"
+      x = "Reporting delay", y = "Density"
     )
 }
 
@@ -198,7 +202,8 @@
         colour = palette[["medium_green"]], linetype = "dashed", linewidth = 0.7
       ) +
       ggplot2::annotate(
-        "label", x = incomplete_threshold, y = Inf,
+        "label",
+        x = incomplete_threshold, y = Inf,
         label = paste0("Incomplete (<", round(100 * level), "% reported)"),
         vjust = 1.1, hjust = 1.02, size = 3,
         colour = palette[["medium_green"]], fill = "white"
@@ -213,9 +218,9 @@
 
   base_plot +
     ggplot2::labs(
-      title    = "Observed epidemic process",
+      title = "Observed epidemic process",
       subtitle = subtitle,
-      x        = "Event date", y = "Reported cases"
+      x = "Event date", y = "Reported cases"
     )
 }
 
@@ -235,10 +240,14 @@
 #' @noRd
 .tbl_now_holiday_points <- function(object, epidemic_process) {
   specs <- get_temporal_effects(object)
-  if (length(specs) == 0) return(epidemic_process[0, , drop = FALSE])
+  if (length(specs) == 0) {
+    return(epidemic_process[0, , drop = FALSE])
+  }
 
   calendars <- Filter(Negate(is.null), lapply(specs, function(s) s$t_effects@holidays))
-  if (length(calendars) == 0) return(epidemic_process[0, , drop = FALSE])
+  if (length(calendars) == 0) {
+    return(epidemic_process[0, , drop = FALSE])
+  }
 
   if (!requireNamespace("almanac", quietly = TRUE)) {
     cli::cli_warn("Package {.pkg almanac} is needed to mark holidays; skipping holiday dots.")
@@ -269,7 +278,6 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_panel_calendar <- function(epidemic_process, grouping, palette) {
-
   overall_mean <- mean(epidemic_process$case_count, na.rm = TRUE)
   if (is.na(overall_mean) || overall_mean == 0) {
     return(.tbl_now_empty_panel("No cases to compute a calendar effect", palette))
@@ -277,21 +285,24 @@
 
   if (grouping == "weekday") {
     grouped <- dplyr::mutate(epidemic_process, calendar_group = lubridate::wday(
-      .data$event_date, label = TRUE, abbr = FALSE, week_start = 1
+      .data$event_date,
+      label = TRUE, abbr = FALSE, week_start = 1
     ))
     panel_title <- "Day-of-week effect"
-    x_label     <- "Day of week"
+    x_label <- "Day of week"
   } else if (grouping == "week") {
     grouped <- dplyr::mutate(epidemic_process,
-                             calendar_group = factor(lubridate::epiweek(.data$event_date)))
+      calendar_group = factor(lubridate::epiweek(.data$event_date))
+    )
     panel_title <- "Week-of-year effect"
-    x_label     <- "Epidemiological week"
+    x_label <- "Epidemiological week"
   } else if (grouping == "month") {
     grouped <- dplyr::mutate(epidemic_process, calendar_group = lubridate::month(
-      .data$event_date, label = TRUE, abbr = TRUE
+      .data$event_date,
+      label = TRUE, abbr = TRUE
     ))
     panel_title <- "Month-of-year effect"
-    x_label     <- "Month"
+    x_label <- "Month"
   } else {
     return(.tbl_now_empty_panel(
       paste0("Calendar effect unavailable for ", grouping), palette
@@ -299,17 +310,20 @@
   }
 
   plot_data <- dplyr::mutate(grouped,
-                             normalized_effect = .data$case_count / overall_mean)
+    normalized_effect = .data$case_count / overall_mean
+  )
 
   ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$calendar_group, y = .data$normalized_effect)) +
     ggplot2::geom_boxplot(
       fill = palette[["light_red"]], colour = palette[["accent_red"]],
       outlier.colour = palette[["near_black"]], outlier.size = 0.6, linewidth = 0.4
     ) +
-    ggplot2::geom_hline(yintercept = 1, linetype = "dashed",
-                        colour = palette[["near_black"]], linewidth = 0.4) +
+    ggplot2::geom_hline(
+      yintercept = 1, linetype = "dashed",
+      colour = palette[["near_black"]], linewidth = 0.4
+    ) +
     ggplot2::labs(
-      title    = panel_title,
+      title = panel_title,
       subtitle = "Normalized distribution of cases (1 = average)",
       x = x_label, y = "Normalized effect"
     ) +
@@ -350,15 +364,16 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_panel_periodogram <- function(epidemic_process, event_units, palette) {
-
   case_count_series <- epidemic_process$case_count
   if (length(case_count_series) < 8 || stats::var(case_count_series) == 0) {
     return(.tbl_now_empty_panel("Too few points to estimate seasonality", palette))
   }
 
   spectrum <- tryCatch(
-    stats::spec.pgram(stats::ts(case_count_series), detrend = TRUE,
-                      taper = 0.1, plot = FALSE),
+    stats::spec.pgram(stats::ts(case_count_series),
+      detrend = TRUE,
+      taper = 0.1, plot = FALSE
+    ),
     error = function(e) NULL
   )
   if (is.null(spectrum)) {
@@ -368,13 +383,17 @@
   periodogram <- dplyr::tibble(
     period = 1 / spectrum$freq,
     power  = spectrum$spec
-  ) %>%
+  ) |>
     dplyr::filter(.data$period <= length(case_count_series) / 2)
 
   dominant_period <- periodogram$period[which.max(periodogram$power)]
-  unit_label      <- switch(event_units,
-    days = "days", weeks = "weeks", months = "months",
-    years = "years", "units")
+  unit_label <- switch(event_units,
+    days = "days",
+    weeks = "weeks",
+    months = "months",
+    years = "years",
+    "units"
+  )
 
   ggplot2::ggplot(periodogram, ggplot2::aes(x = .data$period, y = .data$power)) +
     ggplot2::geom_line(colour = palette[["light_red"]], linewidth = 0.7) +
@@ -383,15 +402,16 @@
       colour = palette[["medium_green"]], linetype = "dashed", linewidth = 0.7
     ) +
     ggplot2::annotate(
-      "label", x = dominant_period, y = Inf,
+      "label",
+      x = dominant_period, y = Inf,
       label = paste0("~", round(dominant_period, 1), " ", unit_label),
       vjust = 1.1, hjust = -0.05, size = 3,
       colour = palette[["medium_green"]], fill = "white"
     ) +
     ggplot2::labs(
-      title    = "Seasonality (periodogram)",
+      title = "Seasonality (periodogram)",
       subtitle = "Peak period suggests a Fourier season length",
-      x        = paste0("Period (", unit_label, ")"), y = "Spectral power"
+      x = paste0("Period (", unit_label, ")"), y = "Spectral power"
     )
 }
 
@@ -406,8 +426,10 @@
 #' @noRd
 .tbl_now_empty_panel <- function(message, palette) {
   ggplot2::ggplot() +
-    ggplot2::annotate("text", x = 0, y = 0, label = message,
-                      colour = palette[["accent_red"]], size = 3.5) +
+    ggplot2::annotate("text",
+      x = 0, y = 0, label = message,
+      colour = palette[["accent_red"]], size = 3.5
+    ) +
     ggplot2::theme_void()
 }
 
@@ -423,7 +445,9 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_apply_xlim <- function(plot, xlim) {
-  if (is.null(xlim)) return(plot)
+  if (is.null(xlim)) {
+    return(plot)
+  }
   if (length(xlim) != 2) {
     cli::cli_abort("x-axis limits must be a length-2 vector.")
   }
@@ -479,12 +503,14 @@ ggplot2::autoplot
 #'
 #' @examplesIf requireNamespace("patchwork", quietly = TRUE)
 #' data(denguedat)
-#' dengue <- tbl_now(denguedat, event_date = "onset_week",
-#'                   report_date = "report_week", verbose = FALSE)
+#' dengue <- tbl_now(denguedat,
+#'   event_date = "onset_week",
+#'   report_date = "report_week", verbose = FALSE
+#' )
 #' autoplot(dengue)
 #'
 #' # Zoom the delay panel to delays of 0-10 weeks
-#' if (FALSE){
+#' if (FALSE) {
 #'   autoplot(dengue, delay_distribution_xlim = c(0, 10))
 #' }
 #' @importFrom rlang .data
@@ -496,7 +522,6 @@ autoplot.tbl_now <- function(object, ..., level = 0.95,
                              event_date_xlim = NULL,
                              calendar_effect_xlim = NULL,
                              seasonality_xlim = NULL) {
-
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg ggplot2} is required for {.fn autoplot}.")
   }
@@ -510,10 +535,10 @@ autoplot.tbl_now <- function(object, ..., level = 0.95,
     cli::cli_abort("{.arg level} must be a single number between 0 and 1.")
   }
 
-  object             <- ungroup(object)
-  event_units        <- get_event_units(object)
+  object <- ungroup(object)
+  event_units <- get_event_units(object)
   delay_distribution <- .tbl_now_delay_distribution(object)
-  epidemic_process   <- .tbl_now_epidemic_process(object)
+  epidemic_process <- .tbl_now_epidemic_process(object)
 
   # Date beyond which less than `level` of the delay has arrived
   delay_quantile <- .tbl_now_weighted_quantile(
@@ -528,12 +553,14 @@ autoplot.tbl_now <- function(object, ..., level = 0.95,
     now_value - delay_quantile
   }
 
-  shared_theme      <- .tbl_now_theme(palette)
-  holiday_points    <- .tbl_now_holiday_points(object, epidemic_process)
+  shared_theme <- .tbl_now_theme(palette)
+  holiday_points <- .tbl_now_holiday_points(object, epidemic_process)
 
-  panel_delay       <- .tbl_now_panel_delay(delay_distribution, palette) + shared_theme
-  panel_epidemic    <- .tbl_now_panel_epidemic(epidemic_process, incomplete_threshold,
-                                               level, palette, holiday_points) + shared_theme
+  panel_delay <- .tbl_now_panel_delay(delay_distribution, palette) + shared_theme
+  panel_epidemic <- .tbl_now_panel_epidemic(
+    epidemic_process, incomplete_threshold,
+    level, palette, holiday_points
+  ) + shared_theme
   panel_periodogram <- .tbl_now_panel_periodogram(epidemic_process, event_units, palette) + shared_theme
 
   # One calendar panel per grouping. Daily data yields both a day-of-week and a
@@ -555,8 +582,8 @@ autoplot.tbl_now <- function(object, ..., level = 0.95,
   }
 
   # Apply optional per-panel x-axis limits
-  panel_delay       <- .tbl_now_apply_xlim(panel_delay,       delay_distribution_xlim)
-  panel_epidemic    <- .tbl_now_apply_xlim(panel_epidemic,    event_date_xlim)
+  panel_delay <- .tbl_now_apply_xlim(panel_delay, delay_distribution_xlim)
+  panel_epidemic <- .tbl_now_apply_xlim(panel_epidemic, event_date_xlim)
   panel_periodogram <- .tbl_now_apply_xlim(panel_periodogram, seasonality_xlim)
 
   panels <- c(

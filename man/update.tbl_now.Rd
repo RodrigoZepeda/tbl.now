@@ -55,14 +55,16 @@ the \code{strata}, \code{covariates} and \code{t_effects} arguments to change it
 }
 \examples{
 data(denguedat)
-initial_data <- denguedat[1:500,]
-update_data  <- denguedat[501:1000,]
+initial_data <- denguedat[1:500, ]
+update_data <- denguedat[501:1000, ]
 
-initial_tbl <- tbl_now(denguedat, event_date = "onset_week",
-                       report_date = "report_week", strata = "gender",
-                       verbose = FALSE)
+initial_tbl <- tbl_now(denguedat,
+  event_date = "onset_week",
+  report_date = "report_week", strata = "gender",
+  verbose = FALSE
+)
 
-#Update collapses everything into a single data.frame
+# Update collapses everything into a single data.frame
 update(initial_tbl, new_data = update_data)
 
 }

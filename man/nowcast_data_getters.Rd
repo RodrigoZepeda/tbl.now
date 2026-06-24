@@ -60,45 +60,47 @@ Each function returns a specific attribute (e.g. event date, strata, covariates,
 }
 \examples{
 data(denguedat)
-ndata <- denguedat \%>\%
- tbl_now(event_date = onset_week,
-         report_date = report_week,
-         strata = gender,
-         t_effects = temporal_effects(month_of_year = TRUE),
-         verbose = FALSE) \%>\%
- compute_temporal_effects()
+ndata <- denguedat |>
+  tbl_now(
+    event_date = onset_week,
+    report_date = report_week,
+    strata = gender,
+    t_effects = temporal_effects(month_of_year = TRUE),
+    verbose = FALSE
+  ) |>
+  compute_temporal_effects()
 
-#Get the event date
+# Get the event date
 get_event_date(ndata)
 
-#Get the report date
+# Get the report date
 get_report_date(ndata)
 
-#Get strata
+# Get strata
 get_strata(ndata)
 
-#Get covariates
+# Get covariates
 get_covariates(ndata)
 
-#Get is censored
+# Get is censored
 get_is_censored(ndata)
 
-#Get the now
+# Get the now
 get_now(ndata)
 
-#Get the report units
+# Get the report units
 get_report_units(ndata)
 
-#Get the event units
+# Get the event units
 get_event_units(ndata)
 
-#Get the data type
+# Get the data type
 get_data_type(ndata)
 
-#Get the column with cases
+# Get the column with cases
 get_case_count(ndata)
 
-#Get temporal effects
+# Get temporal effects
 get_temporal_effects(ndata)
 
 }
