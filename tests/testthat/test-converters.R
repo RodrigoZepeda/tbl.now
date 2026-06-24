@@ -100,7 +100,7 @@ test_that("epinowcast round-trip preserves every observation (no info lost)", {
   # confirm no information is lost in the round-trip.
   align <- function(x) {
     d <- data.table::as.data.table(x)
-    d[, age_group := as.character(age_group)]
+    d$age_group <- as.character(d$age_group)
     data.table::setorderv(d, c("reference_date", "age_group", "delay"))
     d[]
   }
