@@ -107,8 +107,12 @@ identical to \code{pobs}, because a \code{tbl_now} does not retain everything an
 \code{enw_preprocess_data} object carries:
 \itemize{
 \item \strong{Covariate columns} that are neither the core
-\code{reference_date}/\code{report_date}/\code{confirm} nor a grouping (\code{by}) column are
-dropped.
+\code{reference_date}/\code{report_date}/\code{confirm}, a grouping (\code{by}) column, nor a
+materialised temporal-effect column are dropped. The temporal-effect
+columns (holidays, Fourier terms, calendar effects) \emph{are} carried over: the
+lazy \code{\link[=temporal_effects]{temporal_effects()}} spec is materialised with
+\code{\link[=compute_temporal_effects]{compute_temporal_effects()}} and the resulting columns are passed through to
+the observations and \code{metareference}/\code{metareport} tables.
 \item \strong{Grouping indices} (\code{.group}) are reassigned from the factor levels, so
 the row order of the nested tables can differ even though the underlying
 values match.

@@ -10,6 +10,8 @@ temporal_effects(
   day_of_month = FALSE,
   month_of_year = FALSE,
   week_of_year = FALSE,
+  holiday_lags = 0,
+  weekend_lags = 0,
   seasons = integer(0),
   season_length = 1,
   holidays = NULL
@@ -25,6 +27,21 @@ temporal_effects(
 \item{month_of_year}{Logical. Whether to include an effect for the month of the year.}
 
 \item{week_of_year}{Logical. Whether to include an effect for the epidemiological week.}
+
+\item{holiday_lags}{Non-negative integer (default \code{0}). Depth \code{N} of the
+\emph{after-holiday} effect. When \code{N > 0} (and \code{holidays} is supplied) a set of
+indicator columns \code{..._holiday_lag_1}, ..., \code{..._holiday_lag_N} is created,
+where \code{..._holiday_lag_k} flags dates that fall exactly \code{k} \strong{working days}
+after a holiday. Working days skip weekends (see \code{weekend_days} in
+\code{\link[=add_temporal_effects]{add_temporal_effects()}}) and other holidays, so the effect lands on the first
+day back at work. Use it to capture a rise in cases just after a holiday.}
+
+\item{weekend_lags}{Non-negative integer (default \code{0}). Depth \code{N} of the
+\emph{after-weekend} effect. When \code{N > 0} a set of indicator columns
+\code{..._weekend_lag_1}, ..., \code{..._weekend_lag_N} is created, where
+\code{..._weekend_lag_k} flags dates that fall exactly \code{k} \strong{working days} after a
+weekend (again skipping weekends and holidays). Use it to capture a rise in
+cases on the first working day(s) after a weekend.}
 
 \item{seasons}{Vector. Either \code{integer(0)} (no seasonal effects) or a positive-numeric
 vector where each entry is the number of seasons (cycles) to model. The actual Fourier
@@ -66,8 +83,14 @@ temporal_effects(seasons = 52)
 # Annual seasonality in daily data (52 weeks x 7 days = 364-day period)
 temporal_effects(seasons = 52, season_length = 7)
 
+# After-weekend effect: flag the first two working days after a weekend
+temporal_effects(weekend = TRUE, weekend_lags = 2)
+
 if (rlang::is_installed("almanac")) {
   cal <- almanac::rcalendar(almanac::hol_christmas())
   temporal_effects(holidays = cal, day_of_month = TRUE, seasons = c(7, 365))
+
+  # After-holiday effect: flag the first 3 working days back after a holiday
+  temporal_effects(holidays = cal, holiday_lags = 3)
 }
 }

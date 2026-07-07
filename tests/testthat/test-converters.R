@@ -1306,3 +1306,116 @@ test_that("tbl_now_to_tsibble drops every tbl_now attribute", {
   expect_true(tsibble::is_tsibble(ts))
   expect_length(intersect(names(attributes(ts)), tbl_now_meta_attrs), 0)
 })
+
+# ============================================================
+# Temporal effects carried into converters as covariates
+# ============================================================
+
+# A daily count-incidence tbl_now carrying a *lazy* temporal-effects spec
+# (day_of_week + a Fourier season). No columns are materialised on it.
+make_temporal_now <- function() {
+  d <- dplyr::tibble(
+    ev  = as.Date("2020-01-01") + rep(0:6, each = 2),
+    rp  = as.Date("2020-01-01") + rep(0:6, each = 2) + c(0L, 1L),
+    grp = rep(c("A", "B"), 7),
+    n   = c(3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7)
+  )
+  tbl_now(d,
+    event_date = ev, report_date = rp, case_count = n, strata = grp,
+    data_type = "count-incidence", event_units = "days", report_units = "days",
+    t_effects = temporal_effects(day_of_week = TRUE, seasons = 7),
+    verbose = FALSE
+  )
+}
+
+# The column names compute_temporal_effects() would create for that spec.
+temporal_now_cols <- c(
+  ".event_day_of_week", ".event_season_7_cos", ".event_season_7_sin"
+)
+
+test_that("converting a lazy spec does not mutate the input tbl_now", {
+  skip_if_not_installed("data.table")
+  x <- make_temporal_now()
+  invisible(tbl_now_to_data_table(x, verbose = FALSE))
+  # The spec is still there but no columns have been materialised on `x`.
+  expect_length(get_temporal_effect_cols(x), 0)
+  expect_false(any(temporal_now_cols %in% names(x)))
+})
+
+test_that("tbl_now_to_data_table materialises temporal effects as columns", {
+  skip_if_not_installed("data.table")
+  dt <- tbl_now_to_data_table(make_temporal_now(), verbose = FALSE)
+  expect_true(all(temporal_now_cols %in% names(dt)))
+})
+
+test_that("tbl_now_to_tsibble carries temporal effects as measurements", {
+  skip_if_not_installed("tsibble")
+  ts <- tbl_now_to_tsibble(make_temporal_now(), verbose = FALSE)
+  expect_true(all(temporal_now_cols %in% names(ts)))
+  # they are measurement columns, NOT part of the key
+  expect_false(any(temporal_now_cols %in% tsibble::key_vars(ts)))
+})
+
+test_that("tbl_now_to_baselinenowcast long carries temporal effects", {
+  skip_if_not_installed("baselinenowcast")
+  long <- tbl_now_to_baselinenowcast(make_temporal_now(), format = "long",
+                                     verbose = FALSE)
+  expect_true(all(temporal_now_cols %in% names(long)))
+})
+
+test_that("tbl_now_to_baselinenowcast matrix cannot carry temporal effects", {
+  skip_if_not_installed("baselinenowcast")
+  mx <- suppressMessages(
+    tbl_now_to_baselinenowcast(make_temporal_now(), format = "matrix",
+                               verbose = FALSE)
+  )
+  expect_s3_class(mx, "reporting_triangle")
+})
+
+test_that("tbl_now_to_epidist carries temporal effects as covariates", {
+  skip_if_not_installed("epidist")
+  out <- suppressMessages(
+    tbl_now_to_epidist(make_temporal_now(), verbose = FALSE, quiet = TRUE)
+  )
+  expect_true(all(temporal_now_cols %in% names(out)))
+})
+
+test_that("tbl_now_to_epinowcast carries temporal effects into obs + metareference", {
+  skip_if_not_installed("epinowcast")
+  pre <- suppressMessages(suppressWarnings(
+    tbl_now_to_epinowcast(make_temporal_now(), verbose = FALSE, quiet = TRUE)
+  ))
+  expect_true(all(temporal_now_cols %in% names(pre$obs[[1]])))
+  # event-based effects land in the per-reference-date metareference table,
+  # which is what epinowcast's reference module reads covariates from.
+  expect_true(all(temporal_now_cols %in% names(pre$metareference[[1]])))
+})
+
+test_that("holiday effects are carried as a covariate column", {
+  skip_if_not_installed("data.table")
+  skip_if_not_installed("almanac")
+  cal <- almanac::rcalendar(almanac::hol_new_years_day())
+  x <- tbl_now(
+    dplyr::tibble(
+      ev = as.Date("2020-01-01") + 0:3,
+      rp = as.Date("2020-01-01") + 0:3 + 1L,
+      n  = c(1, 2, 3, 4)
+    ),
+    event_date = ev, report_date = rp, case_count = n,
+    data_type = "count-incidence", event_units = "days", report_units = "days",
+    t_effects = temporal_effects(holidays = cal), verbose = FALSE
+  )
+  dt <- tbl_now_to_data_table(x, verbose = FALSE)
+  expect_true(".event_holiday" %in% names(dt))
+  # 2020-01-01 is New Year's Day -> flagged 1, the rest 0.
+  expect_equal(dt[[".event_holiday"]], c(1L, 0L, 0L, 0L))
+})
+
+test_that("already-computed temporal effects are not recomputed or duplicated", {
+  skip_if_not_installed("data.table")
+  x  <- compute_temporal_effects(make_temporal_now())
+  dt <- tbl_now_to_data_table(x, verbose = FALSE)
+  expect_true(all(temporal_now_cols %in% names(dt)))
+  # no duplicated column names introduced by a second computation
+  expect_false(any(duplicated(names(dt))))
+})

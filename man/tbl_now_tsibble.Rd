@@ -62,6 +62,8 @@ index (\code{\link[tsibble:index_var]{tsibble::index_var()}}).
 (\code{"event_date"}, the default, or \code{"report_date"}) as the tsibble index and
 the other date plus the strata as the key. Linelist data is aggregated to
 \code{count-incidence} first (a tsibble requires unique index/key combinations).
+The covariates, the censoring indicator and any materialised temporal-effect
+columns (see \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}) ride along as measurement columns.
 }
 \examples{
 \dontshow{if (requireNamespace("tsibble", quietly = TRUE)) withAutoprint(\{ # examplesIf}

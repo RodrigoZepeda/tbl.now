@@ -52,10 +52,14 @@ A \code{tbl_now} (\code{from}), or a \code{data.frame}/\code{reporting_triangle}
 matrix (rownames = reference dates, colnames = delays, incremental counts)
 and converts it into a \code{tbl_now} of \code{data_type = "count-incidence"}.
 
-\code{tbl_now_to_baselinenowcast()} returns either the long
-\code{baselinenowcast}-style \code{data.frame} (\code{format = "long"}, default) or a
-\code{reporting_triangle} matrix (\code{format = "matrix"}) via
-\code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}}.
+\code{tbl_now_to_baselinenowcast()} returns either a \code{reporting_triangle} matrix
+(\code{format = "matrix"}, the default) via
+\code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}}, or the long
+\code{baselinenowcast}-style \code{data.frame} (\code{format = "long"}). The long format also
+carries the
+covariates, the censoring indicator and any materialised temporal-effect
+columns (see \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}); the matrix holds only the three
+core columns.
 }
 \section{Round-trip}{
 
