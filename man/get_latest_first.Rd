@@ -4,30 +4,49 @@
 \alias{get_latest_first}
 \alias{get_latest_reported_cases}
 \alias{get_initial_reported_cases}
-\title{Get the latest/first reported cases for each event date}
+\alias{get_nth_reported_cases}
+\title{Get the latest / first / nth-delay reported cases for each event date}
 \usage{
 get_latest_reported_cases(x)
 
 get_initial_reported_cases(x)
+
+get_nth_reported_cases(x, delay)
 }
 \arguments{
 \item{x}{A \code{tbl.now} object}
+
+\item{delay}{A single non-negative number (or \code{Inf}) giving the maximum
+reporting delay, in report units, to include (only for
+\code{get_nth_reported_cases()}).}
 }
 \value{
 A \code{tbl.now} containing the following columns:
 \itemize{
 \item \code{event_date} The date the event happened. Its numerical version is \code{.event_num}.
-\item \code{report_date} The date of the latest report for events happening on \code{event_date}. Its numerical version is \code{.report_num}.
-\item \code{n} The total number of events happening at \code{event_date}
-\item \code{.delay} The maximum delay observed for that \code{event_date}
+\item \code{report_date} The date of the selected report for events happening on \code{event_date}. Its numerical version is \code{.report_num}.
+\item \code{n} The number of events reported for \code{event_date} at the selected point.
+\item \code{.delay} The delay of the selected report for that \code{event_date}.
 \item Other columns that include the strata or the censoring indicators and the temporal effects for that event.
 }
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
-
-Function that gets the latest (respectively initially observed) number of cases that has
-been reported for each \code{event_date}
+}
+\details{
+Functions that extract, for each \code{event_date} (and stratum), the number of
+cases reported at a particular point in the reporting process:
+\itemize{
+\item \code{get_initial_reported_cases()} — the count as \strong{first} observed (the
+earliest report for that event date).
+\item \code{get_latest_reported_cases()} — the count as \strong{latest} observed (the most
+recent report; the current best estimate of the incidence).
+\item \code{get_nth_reported_cases()} — the cumulative count observed \strong{within a given
+delay}. \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} With \code{delay = 0} you get the
+cases reported at delay 0 (the initial snapshot when reporting starts at
+delay 0); \code{delay = 1} adds those reported at delay 1, and so on. \code{delay = Inf}
+(or the maximum delay) is identical to \code{get_latest_reported_cases()}.
+}
 }
 \examples{
 data(denguedat)
@@ -43,5 +62,8 @@ get_initial_reported_cases(dengue)
 
 # Gets the latest reported cases (what is now thought of to be the incidence)
 get_latest_reported_cases(dengue)
+
+# Gets the cases reported within a delay of at most 2 weeks
+get_nth_reported_cases(dengue, delay = 2)
 
 }

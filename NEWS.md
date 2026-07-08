@@ -1,4 +1,56 @@
-# tbl.now 0.12.0
+# tbl.now 0.10.0
+
+* New `get_nth_reported_cases()`: the cumulative cases reported for each event
+date **within a given delay**. `delay = 0` gives the initial snapshot, `delay = 1`
+adds the delay-1 reports, and so on; `delay = Inf` (or the maximum delay) matches
+`get_latest_reported_cases()`. Documented alongside `get_initial_reported_cases()`
+and `get_latest_reported_cases()`.
+* **Performance**: `get_latest_reported_cases()`, `get_initial_reported_cases()`
+and `get_nth_reported_cases()` are substantially faster (~3-4x on the bundled
+data) — the aggregation now runs on a declassed data frame and the `tbl_now` is
+reconstructed once, with identical output.
+* The experimental diagnostic functions (`plot_delay_drift()`,
+`test_delay_drift()`, `test_delay_changepoint()`, `detect_report_batches()`,
+`plot_report_batches()`) now carry a lifecycle **experimental** badge.
+`test_delay_drift()` and `test_delay_changepoint()` additionally emit a `cli`
+warning that they are experimental, their results are not guaranteed and their
+interface may change. Flagged batches, change points and trend changes are
+surfaced as **potential** (e.g. "potential batches", "potential change point").
+* New `detect_report_batches()` and `plot_report_batches()` to detect **batch
+reporting** — report dates on which a laboratory releases a backlog of many old
+cases at once. Working on the report-date axis, it flags a report date using up
+to four selectable robust-anomaly signals (`volume`, `delay`, `span`, `gap`),
+AND-ed together. Requiring the `delay` (long/dispersed delays) signal alongside
+`volume` is what **distinguishes a batch from an epidemic peak**: a peak also
+spikes the report volume, but its cases keep the normal short delay distribution,
+so its delay score stays low. `detect_report_batches()` returns a per-report-date
+table with the features, robust scores and a `batch` flag; `plot_report_batches()`
+shows the report-volume and mean-delay timelines with the flagged dates marked.
+
+* New `test_delay_changepoint()` complements `test_delay_drift()`: where the
+latter tests for a *gradual* monotonic trend, this tests for a **single abrupt
+change point** in the per-period delay summaries using **Pettitt's**
+nonparametric test (implemented directly, no extra dependency). It reports the
+estimated change date, the before/after level of the statistic, the shift and a
+`changepoint_detected` verdict, per stat (median / mean / IQR / 10-90 spread) and
+per stratum, on mature data only.
+* `plot_delay_drift()` gained a `changepoint` argument: set it to `TRUE` to mark
+the estimated change point of the median delay on the fan chart with a vertical
+line.
+
+* New `plot_delay_drift()` and `test_delay_drift()` to answer *"do reporting
+delay distributions drift over time?"*.
+  * `plot_delay_drift()` draws a rolling **fan chart** of the count-weighted
+  delay distribution indexed by event date: a solid rolling median, a dashed
+  rolling mean, and 25-75% / 10-90% quantile bands. The recent, not-yet-fully
+  reported region (after the `level` incompleteness cutoff) is shaded grey so the
+  truncation-induced dip is not mistaken for drift. Supports `by_strata`.
+  * `test_delay_drift()` runs an **autocorrelation-robust monotonic-trend test**
+  (Hamed-Rao modified Mann-Kendall by default, with Yue-Pilon and block-bootstrap
+  options via the new `modifiedmk` *Suggests*) on the per-period delay summaries,
+  testing both a location statistic (median/mean) and a dispersion statistic
+  (IQR / 10-90 spread), on mature data only. Returns a tidy tibble with the
+  Kendall tau, Sen's slope, p-value and a `drift` verdict, per stat and stratum.
 
 * `autoplot()` gained a `by_strata` argument (default `FALSE`). When `TRUE`,
 every panel is split by stratum: the calendar and delay boxplots become dodged
@@ -9,8 +61,6 @@ that stratum's own average) so the calendar pattern is comparable across strata,
 and strata are coloured with a `viridis` scale. A companion `strata` argument
 chooses which columns to group on (defaults to the object's `strata`; pass a
 subset such as `strata = "gender"` to override).
-
-# tbl.now 0.11.0
 
 * `autoplot()` now draws **reporting-delay** diagnostic panels alongside the
 case-count ones, so you can see *delay effects*: the mean reporting delay by day
@@ -29,8 +79,6 @@ temporal (delay) effect columns are carried into `epinowcast`
 (`metareference`/`metareport`), `baselinenowcast` (long) and `epidist`, with a
 table clarifying which target formats can hold covariates and how each model can
 use them.
-
-# tbl.now 0.10.0
 
 * `temporal_effects()` gained an **after-holiday** and **after-weekend** effect
 via the new `holiday_lags` and `weekend_lags` arguments. Each takes a

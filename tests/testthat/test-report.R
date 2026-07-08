@@ -758,6 +758,79 @@ test_that("example from vignette works correctly", {
 })
 
 # ============================================================================
+# Tests for get_nth_reported_cases()
+# ============================================================================
+
+test_that("get_nth_reported_cases validates its inputs", {
+  test_data <- setup_test_data()
+  ndata <- tbl_now(test_data$single_event,
+    event_date = "event_date", report_date = "report_date", case_count = n,
+    report_units = "days", event_units = "days",
+    data_type = "count-cumulative", verbose = FALSE
+  )
+  expect_error(get_nth_reported_cases(data.frame(a = 1), 1), "tbl_now")
+  expect_error(get_nth_reported_cases(ndata), "delay")          # missing delay
+  expect_error(get_nth_reported_cases(ndata, -1), "delay")
+  expect_error(get_nth_reported_cases(ndata, c(1, 2)), "delay")
+})
+
+test_that("get_nth_reported_cases returns the cumulative count within a delay", {
+  test_data <- setup_test_data()
+  # single event, daily reports at delays 1..5 with cumulative n = 5,8,12,15,18
+  ndata <- tbl_now(test_data$single_event,
+    event_date = "event_date", report_date = "report_date", case_count = n,
+    report_units = "days", event_units = "days",
+    data_type = "count-cumulative", verbose = FALSE
+  )
+
+  # delay 1 -> first report (07-09), n = 5
+  d1 <- get_nth_reported_cases(ndata, 1)
+  expect_equal(nrow(d1), 1)
+  expect_equal(d1$n, 5)
+  expect_equal(d1$report_date, as.Date("2020-07-09"))
+
+  # delay 3 -> cumulative up to 07-11, n = 12
+  d3 <- get_nth_reported_cases(ndata, 3)
+  expect_equal(d3$n, 12)
+  expect_equal(d3$report_date, as.Date("2020-07-11"))
+})
+
+test_that("get_nth_reported_cases(delay = Inf) equals get_latest_reported_cases", {
+  data(denguedat)
+  dengue <- tbl_now(denguedat[1:2000, ],
+    event_date = "onset_week", report_date = "report_week", strata = "gender",
+    verbose = FALSE
+  )
+  canon <- function(x) {
+    x <- as.data.frame(x)
+    x[do.call(order, x[, sort(names(x)), drop = FALSE]), sort(names(x))] |>
+      `rownames<-`(NULL)
+  }
+  expect_equal(
+    canon(get_nth_reported_cases(dengue, Inf)),
+    canon(get_latest_reported_cases(dengue))
+  )
+  # a delay at/above the maximum also equals latest
+  max_delay <- max(dengue[[".delay"]], na.rm = TRUE)
+  expect_equal(
+    canon(get_nth_reported_cases(dengue, max_delay)),
+    canon(get_latest_reported_cases(dengue))
+  )
+})
+
+test_that("get_nth_reported_cases is monotone increasing in delay", {
+  data(denguedat)
+  dengue <- tbl_now(denguedat[1:2000, ],
+    event_date = "onset_week", report_date = "report_week",
+    verbose = FALSE
+  )
+  totals <- vapply(0:5, function(d) sum(get_nth_reported_cases(dengue, d)$n), numeric(1))
+  expect_true(all(diff(totals) >= 0))
+  # the full (delay = Inf) total is at least the delay-5 total
+  expect_gte(sum(get_nth_reported_cases(dengue, Inf)$n), totals[6])
+})
+
+# ============================================================================
 # Edge cases
 # ============================================================================
 

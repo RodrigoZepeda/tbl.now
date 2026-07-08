@@ -29,6 +29,8 @@ More concretely, tbl.now was designed to:
 
 + Preserve  [tidyverse](https://tidyverse.org/)  compatibility so users can continue to apply familiar [dplyr](https://dplyr.tidyverse.org/) operations.
 
++ Diagnose reporting artefacts directly from the data — reporting-delay drift and change points ([test_delay_drift()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.html), [test_delay_changepoint()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.html)) and batch (backlog) reporting ([detect_report_batches()](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.html)).
+
 + Facilitate seamless integration into iterative modeling workflows [@gelman2020bayesian; @wickham2023r]:
 
 ```
@@ -603,6 +605,43 @@ autoplot(dengue_now)
 ```
 
 For the weekly dengue data the periodogram peaks near 52 weeks, suggesting an annual cycle. We could capture this with a Fourier term of `temporal_effects(seasons = 52)`.
+
+### Do delay distributions drift over time?
+
+Reporting delays are not always stable: a surveillance system may speed up or slow down over a season or across years. [plot_delay_drift()](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.html) draws a rolling *fan chart* of the delay distribution indexed by event date — a solid rolling median, a dashed rolling mean, and 25–75% / 10–90% quantile bands. A rising or falling centre line signals *location* drift; widening or narrowing bands signal *spread* drift.
+
+```{r delay-drift, eval=plotting_available, fig.width=9, fig.height=4.5, message=FALSE, warning=FALSE}
+plot_delay_drift(dengue_now)
+```
+
+Because the most recent event dates have not had time to be fully reported, their delays look artificially short; that immature region (after the completeness cutoff) is **shaded grey** and should not be read as drift.
+
+For a formal answer, [test_delay_drift()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.html) runs an autocorrelation-robust monotonic-trend test (a modified Mann–Kendall test, via the `modifiedmk` package) on the per-period delay summaries — a delay series is correlated with itself, so an ordinary trend test would over-state significance. It tests both a location statistic (the median) and a dispersion statistic (the 10–90 spread), on mature data only:
+
+```{r delay-drift-test, eval=requireNamespace("modifiedmk", quietly = TRUE)}
+test_delay_drift(dengue_now, stat = c("median", "spread"))
+```
+
+A significant `drift` for `spread` with a non-significant one for `median`, say, would mean the *typical* delay held steady while its *variability* changed.
+
+The trend test looks for *gradual* change. If instead you suspect an **abrupt** shift — a reporting-system change on some date — use [test_delay_changepoint()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.html), which applies Pettitt's nonparametric change-point test and returns the estimated change date together with the before/after delay level:
+
+```{r delay-changepoint}
+test_delay_changepoint(dengue_now, stat = c("median", "spread"))
+```
+
+You can mark the detected change point on the fan chart with `plot_delay_drift(dengue_now, changepoint = TRUE)`.
+
+### Detecting batch reporting
+
+Laboratories sometimes withhold results and then release a whole backlog at once — a **batch**. Operationally a batch is a *report date* that is anomalous on the report axis: an unusually large number of cases, spanning an unusually wide range of (old) event dates. [detect_report_batches()](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.html) scans each report date and flags batches using up to four robust signals — `"volume"`, `"delay"`, `"span"` and `"gap"` — of which you choose the combination to require:
+
+```{r batches}
+batches <- detect_report_batches(dengue_now, signals = c("volume", "delay"))
+batches[batches$batch, c("report_date", "n_reports", "mean_delay", "score_volume", "score_delay")]
+```
+
+The important design point is that a **volume spike alone is ambiguous** — an epidemic peak also inflates the number of reports. What makes a batch a batch is that the volume spike comes *together with* anomalously long, dispersed delays (a backlog of old cases cleared at once). An epidemic peak's cases are still reported with the normal, short delay, so requiring the `"delay"` signal alongside `"volume"` keeps peaks from being flagged. [plot_report_batches()](https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.html) shows both the reporting-volume and mean-delay timelines with the flagged dates marked, so you can see why each was flagged.
 
 ## Other functions (utilities)
 
