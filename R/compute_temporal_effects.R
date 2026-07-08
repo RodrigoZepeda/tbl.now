@@ -179,6 +179,13 @@ compute_temporal_effects <- function(x, overwrite = FALSE) {
 #' @name tbl_now_coerce
 NULL
 
+# Re-export tibble's `as_tibble()` generic so `as_tibble(<tbl_now>)` works after
+# `library(tbl.now)` without attaching tibble (mirrors the ggplot2 `autoplot`
+# re-export).
+#' @importFrom tibble as_tibble
+#' @export
+tibble::as_tibble
+
 #' @rdname tbl_now_coerce
 #' @exportS3Method tibble::as_tibble
 as_tibble.tbl_now <- function(x, ..., compute_temporal_effects = FALSE) {

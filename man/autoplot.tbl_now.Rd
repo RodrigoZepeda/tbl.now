@@ -103,12 +103,15 @@ reporting truncation does not bias them.
 \examples{
 \dontshow{if (requireNamespace("patchwork", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
-dengue <- tbl_now(denguedat,
+# A recent window keeps the example fast.
+recent <- denguedat[denguedat$onset_week >= as.Date("2010-01-01"), ]
+dengue <- tbl_now(recent,
   event_date = "onset_week",
-  report_date = "report_week", verbose = FALSE
+  report_date = "report_week", strata = "gender", verbose = FALSE
 )
 autoplot(dengue)
 
+\donttest{
 # Only the reporting-delay calendar effect
 autoplot(dengue, panels = "delay_calendar")
 
@@ -116,15 +119,10 @@ autoplot(dengue, panels = "delay_calendar")
 autoplot(dengue, panels = "delay_week")
 
 # Split every panel by stratum
-dengue_sex <- tbl_now(denguedat,
-  event_date = "onset_week", report_date = "report_week",
-  strata = "gender", verbose = FALSE
-)
-autoplot(dengue_sex, by_strata = TRUE)
+autoplot(dengue, by_strata = TRUE)
 
 # Zoom the delay panel to delays of 0-10 weeks
-if (FALSE) {
-  autoplot(dengue, delay_distribution_xlim = c(0, 10))
+autoplot(dengue, delay_distribution_xlim = c(0, 10))
 }
 \dontshow{\}) # examplesIf}
 }

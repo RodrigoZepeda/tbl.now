@@ -607,6 +607,8 @@
 #'   delay 74, so its `max_confirm` is 11 in `pobs` and 7 after the round-trip.)
 #'
 #' @examplesIf requireNamespace("epinowcast", quietly = TRUE) & requireNamespace("data.table", quietly = TRUE)
+#' # Preprocessing epinowcast data is slow, so this is wrapped in \donttest{}.
+#' \donttest{
 #' library(data.table)
 #' library(epinowcast)
 #'
@@ -627,7 +629,7 @@
 #'
 #' #You can also convert to epinowcast preprocess data format
 #' preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
-#'
+#' }
 #'
 #' @name tbl_now_epinowcast
 #' @export

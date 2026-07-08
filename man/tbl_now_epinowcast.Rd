@@ -135,6 +135,8 @@ delay 74, so its \code{max_confirm} is 11 in \code{pobs} and 7 after the round-t
 
 \examples{
 \dontshow{if (requireNamespace("epinowcast", quietly = TRUE) & requireNamespace("data.table", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+# Preprocessing epinowcast data is slow, so this is wrapped in \donttest{}.
+\donttest{
 library(data.table)
 library(epinowcast)
 
@@ -155,6 +157,6 @@ tbl_epi <- tbl_now_from_epinowcast(pobs)
 
 #You can also convert to epinowcast preprocess data format
 preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
-
+}
 \dontshow{\}) # examplesIf}
 }
