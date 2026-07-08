@@ -10,7 +10,9 @@ index (tsibble::index_var()).
 tbl_now_to_tsibble() converts a tbl_now into a tbl_ts, using index
 (&quot;event_date&quot;, the default, or &quot;report_date&quot;) as the tsibble index and
 the other date plus the strata as the key. Linelist data is aggregated to
-count-incidence first (a tsibble requires unique index/key combinations)."><meta property="og:description" content="
+count-incidence first (a tsibble requires unique index/key combinations).
+The covariates, the censoring indicator and any materialised temporal-effect
+columns (see compute_temporal_effects()) ride along as measurement columns."><meta property="og:description" content="
 A tsibble::tsibble() has a single time index and a key identifying each
 series. Nowcasting needs two time indices, so the conversion keeps both date
 columns: the index is the event date and the report date (plus any
@@ -21,7 +23,9 @@ index (tsibble::index_var()).
 tbl_now_to_tsibble() converts a tbl_now into a tbl_ts, using index
 (&quot;event_date&quot;, the default, or &quot;report_date&quot;) as the tsibble index and
 the other date plus the strata as the key. Linelist data is aggregated to
-count-incidence first (a tsibble requires unique index/key combinations)."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
+count-incidence first (a tsibble requires unique index/key combinations).
+The covariates, the censoring indicator and any materialised temporal-effect
+columns (see compute_temporal_effects()) ride along as measurement columns."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
 
 
 
@@ -43,7 +47,7 @@ count-incidence first (a tsibble requires unique index/key combinations)."><meta
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +60,7 @@ count-incidence first (a tsibble requires unique index/key combinations)."><meta
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -87,7 +92,9 @@ index (<code><a href="https://tsibble.tidyverts.org/reference/index-rd.html" cla
 <p><code>tbl_now_to_tsibble()</code> converts a <code>tbl_now</code> into a <code>tbl_ts</code>, using <code>index</code>
 (<code>"event_date"</code>, the default, or <code>"report_date"</code>) as the tsibble index and
 the other date plus the strata as the key. Linelist data is aggregated to
-<code>count-incidence</code> first (a tsibble requires unique index/key combinations).</p>
+<code>count-incidence</code> first (a tsibble requires unique index/key combinations).
+The covariates, the censoring indicator and any materialised temporal-effect
+columns (see <code><a href="compute_temporal_effects.html">compute_temporal_effects()</a></code>) ride along as measurement columns.</p>
     </div>
 
     <div class="section level2">

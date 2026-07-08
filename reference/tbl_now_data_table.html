@@ -3,11 +3,13 @@
 tbl_now_from_data_table() converts a data.table into a tbl_now
 (requires explicit event_date / report_date columns).
 tbl_now_to_data_table() strips the tbl_now class and returns a
-data.table."><meta property="og:description" content="
+data.table keeping every column; any lazy temporal effects are materialised
+first (see compute_temporal_effects()) so their columns are present."><meta property="og:description" content="
 tbl_now_from_data_table() converts a data.table into a tbl_now
 (requires explicit event_date / report_date columns).
 tbl_now_to_data_table() strips the tbl_now class and returns a
-data.table."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
+data.table keeping every column; any lazy temporal effects are materialised
+first (see compute_temporal_effects()) so their columns are present."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
 
 
 
@@ -29,7 +31,7 @@ data.table."><meta property="og:image" content="https://rodrigozepeda.github.io/
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +44,7 @@ data.table."><meta property="og:image" content="https://rodrigozepeda.github.io/
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -66,7 +69,8 @@ data.table."><meta property="og:image" content="https://rodrigozepeda.github.io/
 <p><code>tbl_now_from_data_table()</code> converts a <code>data.table</code> into a <code>tbl_now</code>
 (requires explicit <code>event_date</code> / <code>report_date</code> columns).
 <code>tbl_now_to_data_table()</code> strips the <code>tbl_now</code> class and returns a
-<code>data.table</code>.</p>
+<code>data.table</code> keeping every column; any lazy temporal effects are materialised
+first (see <code><a href="compute_temporal_effects.html">compute_temporal_effects()</a></code>) so their columns are present.</p>
     </div>
 
     <div class="section level2">

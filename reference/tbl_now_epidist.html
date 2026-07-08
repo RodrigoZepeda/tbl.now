@@ -35,7 +35,10 @@ for rows flagged by is_censored it is left-censored to
 epidist time 0) — encoding the tbl_now convention that a censored report
 is only known to lie in [0, report_date].
 
-'><meta property="og:description" content='
+
+Covariate columns and any materialised temporal-effect columns (holidays,
+Fourier terms, calendar effects; see compute_temporal_effects()) are
+carried onto the epidist data unchanged.'><meta property="og:description" content='
 epidist models the delay between a primary event (e.g. symptom
 onset) and a secondary event (e.g. report), storing each as an
 interval-censored pair of date columns: pdate_lwr/pdate_upr for the
@@ -71,7 +74,10 @@ for rows flagged by is_censored it is left-censored to
 epidist time 0) — encoding the tbl_now convention that a censored report
 is only known to lie in [0, report_date].
 
-'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
+
+Covariate columns and any materialised temporal-effect columns (holidays,
+Fourier terms, calendar effects; see compute_temporal_effects()) are
+carried onto the epidist data unchanged.'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
 
 
 
@@ -93,7 +99,7 @@ is only known to lie in [0, report_date].
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -106,6 +112,7 @@ is only known to lie in [0, report_date].
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -157,7 +164,10 @@ for rows flagged by <code>is_censored</code> it is left-censored to
 <code>[origin, report_date]</code> (with <code>origin</code> the earliest <code>event_date</code>, i.e.
 epidist time 0) — encoding the <code>tbl_now</code> convention that a censored report
 is only known to lie in <code>[0, report_date]</code>.</p></li>
-</ul></div>
+</ul><p>Covariate columns and any materialised temporal-effect columns (holidays,
+Fourier terms, calendar effects; see <code><a href="compute_temporal_effects.html">compute_temporal_effects()</a></code>) are
+carried onto the epidist data unchanged.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>

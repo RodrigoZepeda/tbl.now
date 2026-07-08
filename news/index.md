@@ -1,7 +1,183 @@
 # Changelog
 
-## tbl.now 0.8.1
+## tbl.now 0.10.0
 
+- New
+  [`get_nth_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md):
+  the cumulative cases reported for each event date **within a given
+  delay**. `delay = 0` gives the initial snapshot, `delay = 1` adds the
+  delay-1 reports, and so on; `delay = Inf` (or the maximum delay)
+  matches
+  [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md).
+  Documented alongside
+  [`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+  and
+  [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md).
+
+- **Performance**:
+  [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md),
+  [`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+  and
+  [`get_nth_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+  are substantially faster (~3-4x on the bundled data) — the aggregation
+  now runs on a declassed data frame and the `tbl_now` is reconstructed
+  once, with identical output.
+
+- The experimental diagnostic functions
+  ([`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md),
+  [`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md),
+  [`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md),
+  [`detect_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.md),
+  [`plot_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.md))
+  now carry a lifecycle **experimental** badge.
+  [`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
+  and
+  [`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md)
+  additionally emit a `cli` warning that they are experimental, their
+  results are not guaranteed and their interface may change. Flagged
+  batches, change points and trend changes are surfaced as **potential**
+  (e.g. “potential batches”, “potential change point”).
+
+- New
+  [`detect_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.md)
+  and
+  [`plot_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.md)
+  to detect **batch reporting** — report dates on which a laboratory
+  releases a backlog of many old cases at once. Working on the
+  report-date axis, it flags a report date using up to four selectable
+  robust-anomaly signals (`volume`, `delay`, `span`, `gap`), AND-ed
+  together. Requiring the `delay` (long/dispersed delays) signal
+  alongside `volume` is what **distinguishes a batch from an epidemic
+  peak**: a peak also spikes the report volume, but its cases keep the
+  normal short delay distribution, so its delay score stays low.
+  [`detect_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.md)
+  returns a per-report-date table with the features, robust scores and a
+  `batch` flag;
+  [`plot_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.md)
+  shows the report-volume and mean-delay timelines with the flagged
+  dates marked.
+
+- New
+  [`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md)
+  complements
+  [`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md):
+  where the latter tests for a *gradual* monotonic trend, this tests for
+  a **single abrupt change point** in the per-period delay summaries
+  using **Pettitt’s** nonparametric test (implemented directly, no extra
+  dependency). It reports the estimated change date, the before/after
+  level of the statistic, the shift and a `changepoint_detected`
+  verdict, per stat (median / mean / IQR / 10-90 spread) and per
+  stratum, on mature data only.
+
+- [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)
+  gained a `changepoint` argument: set it to `TRUE` to mark the
+  estimated change point of the median delay on the fan chart with a
+  vertical line.
+
+- New
+  [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)
+  and
+  [`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
+  to answer *“do reporting delay distributions drift over time?”*.
+
+  - [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)
+    draws a rolling **fan chart** of the count-weighted delay
+    distribution indexed by event date: a solid rolling median, a dashed
+    rolling mean, and 25-75% / 10-90% quantile bands. The recent,
+    not-yet-fully reported region (after the `level` incompleteness
+    cutoff) is shaded grey so the truncation-induced dip is not mistaken
+    for drift. Supports `by_strata`.
+  - [`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
+    runs an **autocorrelation-robust monotonic-trend test** (Hamed-Rao
+    modified Mann-Kendall by default, with Yue-Pilon and block-bootstrap
+    options via the new `modifiedmk` *Suggests*) on the per-period delay
+    summaries, testing both a location statistic (median/mean) and a
+    dispersion statistic (IQR / 10-90 spread), on mature data only.
+    Returns a tidy tibble with the Kendall tau, Sen’s slope, p-value and
+    a `drift` verdict, per stat and stratum.
+
+- [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  gained a `by_strata` argument (default `FALSE`). When `TRUE`, every
+  panel is split by stratum: the calendar and delay boxplots become
+  dodged boxes (one per stratum, side by side), the epidemic process and
+  both periodograms become one coloured line per stratum (no area fill),
+  and the delay distribution becomes dodged bars. Boxplots are
+  normalized **per stratum** (1 = that stratum’s own average) so the
+  calendar pattern is comparable across strata, and strata are coloured
+  with a `viridis` scale. A companion `strata` argument chooses which
+  columns to group on (defaults to the object’s `strata`; pass a subset
+  such as `strata = "gender"` to override).
+
+- [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  now draws **reporting-delay** diagnostic panels alongside the
+  case-count ones, so you can see *delay effects*: the mean reporting
+  delay by day of week / week of year / month (`delay_weekday`,
+  `delay_week`, `delay_month`), and a periodogram of the mean-delay
+  series (`delay_seasonality`) that reveals periodicity in the delay
+  itself. The delay panels are computed on the complete part of the
+  series (before the incompleteness line) so recent truncation does not
+  bias them.
+
+- [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  gained a `panels` argument to choose which panels to draw. It accepts
+  the concrete panel keys, or the aliases `"all"` (default),
+  `"calendar"` and `"delay_calendar"`. Selecting a single panel returns
+  it as a plain `ggplot2` object instead of a `patchwork`. Unknown
+  panels error; panels that do not apply to the data’s time unit are
+  skipped with a warning.
+
+- New pkgdown article *“One dataset, many nowcasts”* now also
+  demonstrates that temporal (delay) effect columns are carried into
+  `epinowcast` (`metareference`/`metareport`), `baselinenowcast` (long)
+  and `epidist`, with a table clarifying which target formats can hold
+  covariates and how each model can use them.
+
+- [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
+  gained an **after-holiday** and **after-weekend** effect via the new
+  `holiday_lags` and `weekend_lags` arguments. Each takes a non-negative
+  integer depth `N`; materialising the spec then adds indicator columns
+  `..._holiday_lag_1 … ..._holiday_lag_N` (and likewise
+  `..._weekend_lag_k`) that flag dates falling exactly `k` **working
+  days** after a holiday / weekend. Working days skip weekends and
+  holidays, so the effect lands on the first day(s) back at work —
+  designed to capture the rise in cases just after a holiday or weekend.
+  `holiday_lags` requires a `holidays` calendar. The columns are picked
+  up automatically by every `tbl_now_to_*()` converter (as covariate
+  columns) and by `diseasenowcasting::nowcast()`.
+
+- Documented and tested attaching temporal effects to the **report
+  date** (in addition to the default event date) via
+  `add_temporal_effects(x, spec, date_type = "report_date")`. Event- and
+  report-date effects can coexist on the same `tbl_now`; both sets of
+  columns (`.event_*` and `.report_*`) are carried through all
+  converters.
+
+## tbl.now 0.9.0
+
+- Added
+  [`as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
+  and [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html)
+  methods for `tbl_now` with an opt-in `compute_temporal_effects`
+  argument (default `FALSE`). Passing `compute_temporal_effects = TRUE`
+  materialises the lazy
+  [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
+  spec (holidays, Fourier terms, calendar effects) into columns before
+  returning a plain `tibble` / `data.frame`; the input `tbl_now` is left
+  unchanged. The default stays lazy on purpose, because `dplyr` relies
+  on these coercions being cheap, non-materialising declassers
+  internally
+  (e.g. [`group_by()`](https://dplyr.tidyverse.org/reference/group_by.html)).
+- The `tbl_now_to_*()` converters now carry the (lazy) temporal-effect
+  columns (holidays, Fourier seasonal terms, day-of-week / calendar
+  effects) into the target format as covariate columns. The spec is
+  materialised on demand via
+  [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
+  at conversion time (the input `tbl_now` is left unchanged), and the
+  columns are passed to `data.table`, `tsibble`, `baselinenowcast` long
+  format, `epidist`, and `epinowcast` (where they appear in the
+  observations and `metareference` tables for use in the reference
+  module). The `baselinenowcast` reporting-triangle matrix still cannot
+  hold them.
 - Removed the `%>%` export and changed all the pipes to `|>`
 - Refactored `converters.R` for readability (dplyr column operations
   instead of base indexing, full variable names, lintr-clean).
@@ -12,8 +188,10 @@
   reporting-triangle matrix, the EpiNow2 series) still cannot carry
   them.
 - Added S3 methods on the other packages’ coercion generics so they
-  accept a `tbl_now` directly: `as_epidist_linelist_data()`,
-  `as_reporting_triangle()`, `as_tsibble()` and
+  accept a `tbl_now` directly:
+  [`as_epidist_linelist_data()`](https://epidist.epinowcast.org/reference/as_epidist_linelist_data.html),
+  [`as_reporting_triangle()`](https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html),
+  `as_tsibble()` and
   [`as.data.table()`](https://rdrr.io/pkg/data.table/man/as.data.table.html),
   each wrapping the matching `tbl_now_to_*()`.
 - Fixed

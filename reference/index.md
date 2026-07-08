@@ -64,13 +64,18 @@
   : denguedat: Dengue fever individual-level reporting data from Puerto
   Rico
 
+- [`detect_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.md)
+  **\[experimental\]** : Detect batch reporting (backlog dumps) on the
+  report-date axis
+
 - [`flusight`](https://rodrigozepeda.github.io/tbl.now/reference/flusight.md)
   : flusight: NHSN Weekly Hospital Respiratory Data from FluSight
 
 - [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
   [`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
-  **\[stable\]** : Get the latest/first reported cases for each event
-  date
+  [`get_nth_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+  **\[stable\]** : Get the latest / first / nth-delay reported cases for
+  each event date
 
 - [`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/is_tbl_now.md)
   **\[experimental\]** : Check if an object is a tbl_now
@@ -110,6 +115,14 @@
   [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   **\[experimental\]** : Getters for tbl_now attributes
 
+- [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)
+  **\[experimental\]** : Visualise whether the reporting-delay
+  distribution drifts over time
+
+- [`plot_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.md)
+  **\[experimental\]** : Visualise batch reporting over the report-date
+  axis
+
 - [`print()`](https://rodrigozepeda.github.io/tbl.now/reference/print.md)
   **\[stable\]** : Print temporal effects
 
@@ -139,6 +152,14 @@
   **\[experimental\]** :
 
   Convert between `tbl_now` and baselinenowcast
+
+- [`as_tibble(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coerce.md)
+  [`as_tibble(`*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coerce.md)
+  [`as.data.frame(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coerce.md)
+  [`as.data.frame(`*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coerce.md)
+  **\[experimental\]** :
+
+  Coerce a `tbl_now` to a tibble or a data frame
 
 - [`as_epidist_linelist_data(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)
   [`as_epidist_aggregate_data(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)
@@ -175,6 +196,14 @@
 
 - [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
   **\[stable\]** : Temporal Effects Class
+
+- [`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md)
+  **\[experimental\]** : Detect an abrupt change point in the
+  reporting-delay distribution
+
+- [`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
+  **\[experimental\]** : Test whether the reporting-delay distribution
+  drifts over time
 
 - [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
   **\[stable\]** : Transform an object to count data

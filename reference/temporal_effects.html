@@ -25,7 +25,7 @@ should be included in a nowcasting model (e.g., day of week, month, holidays, et
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,7 @@ should be included in a nowcasting model (e.g., day of week, month, holidays, et
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -71,6 +72,8 @@ should be included in a nowcasting model (e.g., day of week, month, holidays, et
 <span>  day_of_month <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  month_of_year <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  week_of_year <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  holiday_lags <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  weekend_lags <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  seasons <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">integer</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>,</span>
 <span>  season_length <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  holidays <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -99,6 +102,25 @@ should be included in a nowcasting model (e.g., day of week, month, holidays, et
 
 <dt id="arg-week-of-year">week_of_year<a class="anchor" aria-label="anchor" href="#arg-week-of-year"></a></dt>
 <dd><p>Logical. Whether to include an effect for the epidemiological week.</p></dd>
+
+
+<dt id="arg-holiday-lags">holiday_lags<a class="anchor" aria-label="anchor" href="#arg-holiday-lags"></a></dt>
+<dd><p>Non-negative integer (default <code>0</code>). Depth <code>N</code> of the
+<em>after-holiday</em> effect. When <code>N &gt; 0</code> (and <code>holidays</code> is supplied) a set of
+indicator columns <code>..._holiday_lag_1</code>, ..., <code>..._holiday_lag_N</code> is created,
+where <code>..._holiday_lag_k</code> flags dates that fall exactly <code>k</code> <strong>working days</strong>
+after a holiday. Working days skip weekends (see <code>weekend_days</code> in
+<code><a href="add_temporal_effects.html">add_temporal_effects()</a></code>) and other holidays, so the effect lands on the first
+day back at work. Use it to capture a rise in cases just after a holiday.</p></dd>
+
+
+<dt id="arg-weekend-lags">weekend_lags<a class="anchor" aria-label="anchor" href="#arg-weekend-lags"></a></dt>
+<dd><p>Non-negative integer (default <code>0</code>). Depth <code>N</code> of the
+<em>after-weekend</em> effect. When <code>N &gt; 0</code> a set of indicator columns
+<code>..._weekend_lag_1</code>, ..., <code>..._weekend_lag_N</code> is created, where
+<code>..._weekend_lag_k</code> flags dates that fall exactly <code>k</code> <strong>working days</strong> after a
+weekend (again skipping weekends and holidays). Use it to capture a rise in
+cases on the first working day(s) after a weekend.</p></dd>
 
 
 <dt id="arg-seasons">seasons<a class="anchor" aria-label="anchor" href="#arg-seasons"></a></dt>
@@ -155,15 +177,25 @@ For example, to model 52-week annual seasonality in <strong>daily</strong> data 
 <span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"season"</span> periods: 52*7=364</span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># After-weekend effect: flag the first two working days after a weekend</span></span></span>
+<span class="r-in"><span><span class="fu">temporal_effects</span><span class="op">(</span>weekend <span class="op">=</span> <span class="cn">TRUE</span>, weekend_lags <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Temporal Effects</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"weekend"</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"after-weekend"</span> effect: <span style="font-style: italic;">first 2 working days</span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu">rlang</span><span class="fu">::</span><span class="fu"><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">is_installed</a></span><span class="op">(</span><span class="st">"almanac"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="va">cal</span> <span class="op">&lt;-</span> <span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rcalendar.html" class="external-link">rcalendar</a></span><span class="op">(</span><span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_christmas</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu">temporal_effects</span><span class="op">(</span>holidays <span class="op">=</span> <span class="va">cal</span>, day_of_month <span class="op">=</span> <span class="cn">TRUE</span>, seasons <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">7</span>, <span class="fl">365</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="co"># After-holiday effect: flag the first 3 working days back after a holiday</span></span></span>
+<span class="r-in"><span>  <span class="fu">temporal_effects</span><span class="op">(</span>holidays <span class="op">=</span> <span class="va">cal</span>, holiday_lags <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Temporal Effects</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"day_of_month"</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"season"</span> periods: 7, 365</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"after-holiday"</span> effect: <span style="font-style: italic;">first 3 working days</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"holidays"</span>:</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   1. <span style="font-style: italic;">Christmas</span></span>
 </code></pre></div>

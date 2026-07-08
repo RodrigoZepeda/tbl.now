@@ -18,7 +18,10 @@ tsibble's index
 `index` (`"event_date"`, the default, or `"report_date"`) as the tsibble
 index and the other date plus the strata as the key. Linelist data is
 aggregated to `count-incidence` first (a tsibble requires unique
-index/key combinations).
+index/key combinations). The covariates, the censoring indicator and any
+materialised temporal-effect columns (see
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md))
+ride along as measurement columns.
 
 ## Usage
 

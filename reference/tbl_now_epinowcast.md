@@ -138,8 +138,15 @@ not identical to `pobs`, because a `tbl_now` does not retain everything
 an `enw_preprocess_data` object carries:
 
 - **Covariate columns** that are neither the core
-  `reference_date`/`report_date`/`confirm` nor a grouping (`by`) column
-  are dropped.
+  `reference_date`/`report_date`/`confirm`, a grouping (`by`) column,
+  nor a materialised temporal-effect column are dropped. The
+  temporal-effect columns (holidays, Fourier terms, calendar effects)
+  *are* carried over: the lazy
+  [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
+  spec is materialised with
+  [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
+  and the resulting columns are passed through to the observations and
+  `metareference`/`metareport` tables.
 
 - **Grouping indices** (`.group`) are reassigned from the factor levels,
   so the row order of the nested tables can differ even though the
@@ -166,6 +173,8 @@ an `enw_preprocess_data` object carries:
 ## Examples
 
 ``` r
+# Preprocessing epinowcast data is slow, so this is wrapped in \donttest{}.
+# \donttest{
 library(data.table)
 #> 
 #> Attaching package: ‘data.table’
@@ -174,7 +183,7 @@ library(data.table)
 #>     %notin%
 library(epinowcast)
 #> ! `enw_cache_location` is not set.
-#> ℹ Using `tempdir()` at /tmp/RtmpzkMFQ5 for the epinowcast model cache location.
+#> ℹ Using `tempdir()` at /tmp/RtmpMx7AKW for the epinowcast model cache location.
 #> ℹ Set a specific cache location using `enw_set_cache` to control Stan
 #>   recompilation in this R session or across R sessions.
 #> ℹ For example: `enw_set_cache(tools::R_user_dir(package = "epinowcast",
@@ -228,4 +237,5 @@ preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
 #> • max_delay: 40
 #> • missing_reference: FALSE
 #> • preprocess: TRUE
+# }
 ```

@@ -8,10 +8,14 @@ matrix (rownames = reference dates, colnames = delays, incremental
 counts) and converts it into a `tbl_now` of
 `data_type = "count-incidence"`.
 
-`tbl_now_to_baselinenowcast()` returns either the long
-`baselinenowcast`-style `data.frame` (`format = "long"`, default) or a
-`reporting_triangle` matrix (`format = "matrix"`) via
-[`baselinenowcast::as_reporting_triangle()`](https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html).
+`tbl_now_to_baselinenowcast()` returns either a `reporting_triangle`
+matrix (`format = "matrix"`, the default) via
+[`baselinenowcast::as_reporting_triangle()`](https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html),
+or the long `baselinenowcast`-style `data.frame` (`format = "long"`).
+The long format also carries the covariates, the censoring indicator and
+any materialised temporal-effect columns (see
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md));
+the matrix holds only the three core columns.
 
 ## Usage
 

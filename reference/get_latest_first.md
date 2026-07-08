@@ -1,9 +1,6 @@
-# Get the latest/first reported cases for each event date
+# Get the latest / first / nth-delay reported cases for each event date
 
 **\[stable\]**
-
-Function that gets the latest (respectively initially observed) number
-of cases that has been reported for each `event_date`
 
 ## Usage
 
@@ -11,6 +8,8 @@ of cases that has been reported for each `event_date`
 get_latest_reported_cases(x)
 
 get_initial_reported_cases(x)
+
+get_nth_reported_cases(x, delay)
 ```
 
 ## Arguments
@@ -19,6 +18,12 @@ get_initial_reported_cases(x)
 
   A `tbl.now` object
 
+- delay:
+
+  A single non-negative number (or `Inf`) giving the maximum reporting
+  delay, in report units, to include (only for
+  `get_nth_reported_cases()`).
+
 ## Value
 
 A `tbl.now` containing the following columns:
@@ -26,15 +31,34 @@ A `tbl.now` containing the following columns:
 - `event_date` The date the event happened. Its numerical version is
   `.event_num`.
 
-- `report_date` The date of the latest report for events happening on
+- `report_date` The date of the selected report for events happening on
   `event_date`. Its numerical version is `.report_num`.
 
-- `n` The total number of events happening at `event_date`
+- `n` The number of events reported for `event_date` at the selected
+  point.
 
-- `.delay` The maximum delay observed for that `event_date`
+- `.delay` The delay of the selected report for that `event_date`.
 
 - Other columns that include the strata or the censoring indicators and
   the temporal effects for that event.
+
+## Details
+
+Functions that extract, for each `event_date` (and stratum), the number
+of cases reported at a particular point in the reporting process:
+
+- `get_initial_reported_cases()` — the count as **first** observed (the
+  earliest report for that event date).
+
+- `get_latest_reported_cases()` — the count as **latest** observed (the
+  most recent report; the current best estimate of the incidence).
+
+- `get_nth_reported_cases()` — the cumulative count observed **within a
+  given delay**. **\[experimental\]** With `delay = 0` you get the cases
+  reported at delay 0 (the initial snapshot when reporting starts at
+  delay 0); `delay = 1` adds those reported at delay 1, and so on.
+  `delay = Inf` (or the maximum delay) is identical to
+  `get_latest_reported_cases()`.
 
 ## Examples
 
@@ -94,4 +118,28 @@ get_latest_reported_cases(dengue)
 #> # Strata: "gender"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 2,154 more rows
+
+# Gets the cases reported within a delay of at most 2 weeks
+get_nth_reported_cases(dengue, delay = 2)
+#> # A tibble:  2,151 × 7
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>    onset_week   report_week   .event_num .report_num gender         n .delay
+#>    <date>       <date>             <dbl>       <dbl> <chr>      <int>  <dbl>
+#>    [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
+#>  1 1990-01-01   1990-01-15             0           2 Female        31      2
+#>  2 1990-01-01   1990-01-15             0           2 Male          19      2
+#>  3 1990-01-08   1990-01-22             1           3 Female        21      2
+#>  4 1990-01-08   1990-01-22             1           3 Male          20      2
+#>  5 1990-01-15   1990-01-29             2           4 Female        14      2
+#>  6 1990-01-15   1990-01-29             2           4 Male          22      2
+#>  7 1990-01-22   1990-02-05             3           5 Female        18      2
+#>  8 1990-01-22   1990-02-05             3           5 Male          20      2
+#>  9 1990-01-29   1990-02-12             4           6 Female        19      2
+#> 10 1990-01-29   1990-02-12             4           6 Male          12      2
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
+#> # Strata: "gender"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 2,141 more rows
 ```

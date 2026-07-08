@@ -44,6 +44,11 @@ interval columns:
   epidist time 0) — encoding the `tbl_now` convention that a censored
   report is only known to lie in `[0, report_date]`.
 
+Covariate columns and any materialised temporal-effect columns
+(holidays, Fourier terms, calendar effects; see
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md))
+are carried onto the epidist data unchanged.
+
 ## Usage
 
 ``` r

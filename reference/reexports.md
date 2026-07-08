@@ -6,3 +6,7 @@ to see their documentation.
 - ggplot2:
 
   [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+
+- tibble:
+
+  [`as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)

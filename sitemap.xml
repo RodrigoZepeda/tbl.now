@@ -5,6 +5,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/SKILL.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/Example.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/index.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/authors.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/index.html</loc></url>
@@ -29,6 +30,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/covidat.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/denguedat.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/flusight.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/index.html</loc></url>
@@ -42,6 +44,8 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/names_tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/print.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/reexports.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/remove.html</loc></url>
@@ -50,6 +54,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_can_reconstruct.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coerce.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.html</loc></url>
@@ -58,6 +63,8 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_reconstruct_internal.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/time_cols_to_numeric.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/to_count.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.html</loc></url>

@@ -61,7 +61,7 @@ format, as produced by epinowcast::enw_complete_dates())."><meta property="og:im
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,6 +74,7 @@ format, as produced by epinowcast::enw_complete_dates())."><meta property="og:im
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -214,8 +215,12 @@ with a delay beyond <code>max_delay</code> are dropped by
 <p>Conversely, <code>tbl_now_to_epinowcast(tbl_now_from_epinowcast(pobs))</code> is not
 identical to <code>pobs</code>, because a <code>tbl_now</code> does not retain everything an
 <code>enw_preprocess_data</code> object carries:</p><ul><li><p><strong>Covariate columns</strong> that are neither the core
-<code>reference_date</code>/<code>report_date</code>/<code>confirm</code> nor a grouping (<code>by</code>) column are
-dropped.</p></li>
+<code>reference_date</code>/<code>report_date</code>/<code>confirm</code>, a grouping (<code>by</code>) column, nor a
+materialised temporal-effect column are dropped. The temporal-effect
+columns (holidays, Fourier terms, calendar effects) <em>are</em> carried over: the
+lazy <code><a href="temporal_effects.html">temporal_effects()</a></code> spec is materialised with
+<code><a href="compute_temporal_effects.html">compute_temporal_effects()</a></code> and the resulting columns are passed through to
+the observations and <code>metareference</code>/<code>metareport</code> tables.</p></li>
 <li><p><strong>Grouping indices</strong> (<code>.group</code>) are reassigned from the factor levels, so
 the row order of the nested tables can differ even though the underlying
 values match.</p></li>
@@ -237,7 +242,9 @@ delay 74, so its <code>max_confirm</code> is 11 in <code>pobs</code> and 7 after
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Preprocessing epinowcast data is slow, so this is wrapped in \donttest{}.</span></span></span>
+<span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Attaching package: ‘data.table’</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> The following object is masked from ‘package:base’:</span>
@@ -245,7 +252,7 @@ delay 74, so its <code>max_confirm</code> is 11 in <code>pobs</code> and 7 after
 <span class="r-msg co"><span class="r-pr">#&gt;</span>     %notin%</span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://package.epinowcast.org" class="external-link">epinowcast</a></span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> `enw_cache_location` is not set.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Using `tempdir()` at /tmp/RtmpzkMFQ5 for the epinowcast model cache location.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Using `tempdir()` at /tmp/RtmpMx7AKW for the epinowcast model cache location.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Set a specific cache location using `enw_set_cache` to control Stan</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   recompilation in this R session or across R sessions.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> For example: `enw_set_cache(tools::R_user_dir(package = "epinowcast",</span>
@@ -299,7 +306,7 @@ delay 74, so its <code>max_confirm</code> is 11 in <code>pobs</code> and 7 after
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • max_delay: <span style="color: #0000BB;">40</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • missing_reference: <span style="color: #0000BB;">FALSE</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • preprocess: <span style="color: #0000BB;">TRUE</span></span>
-<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

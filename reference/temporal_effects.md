@@ -15,6 +15,8 @@ temporal_effects(
   day_of_month = FALSE,
   month_of_year = FALSE,
   week_of_year = FALSE,
+  holiday_lags = 0,
+  weekend_lags = 0,
   seasons = integer(0),
   season_length = 1,
   holidays = NULL
@@ -44,6 +46,27 @@ temporal_effects(
 - week_of_year:
 
   Logical. Whether to include an effect for the epidemiological week.
+
+- holiday_lags:
+
+  Non-negative integer (default `0`). Depth `N` of the *after-holiday*
+  effect. When `N > 0` (and `holidays` is supplied) a set of indicator
+  columns `..._holiday_lag_1`, ..., `..._holiday_lag_N` is created,
+  where `..._holiday_lag_k` flags dates that fall exactly `k` **working
+  days** after a holiday. Working days skip weekends (see `weekend_days`
+  in
+  [`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md))
+  and other holidays, so the effect lands on the first day back at work.
+  Use it to capture a rise in cases just after a holiday.
+
+- weekend_lags:
+
+  Non-negative integer (default `0`). Depth `N` of the *after-weekend*
+  effect. When `N > 0` a set of indicator columns `..._weekend_lag_1`,
+  ..., `..._weekend_lag_N` is created, where `..._weekend_lag_k` flags
+  dates that fall exactly `k` **working days** after a weekend (again
+  skipping weekends and holidays). Use it to capture a rise in cases on
+  the first working day(s) after a weekend.
 
 - seasons:
 
@@ -106,15 +129,25 @@ temporal_effects(seasons = 52, season_length = 7)
 #> The following effects are in place:
 #> • "season" periods: 52*7=364
 
+# After-weekend effect: flag the first two working days after a weekend
+temporal_effects(weekend = TRUE, weekend_lags = 2)
+#> 
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "weekend"
+#> • "after-weekend" effect: first 2 working days
+
 if (rlang::is_installed("almanac")) {
   cal <- almanac::rcalendar(almanac::hol_christmas())
   temporal_effects(holidays = cal, day_of_month = TRUE, seasons = c(7, 365))
+
+  # After-holiday effect: flag the first 3 working days back after a holiday
+  temporal_effects(holidays = cal, holiday_lags = 3)
 }
 #> 
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
 #> The following effects are in place:
-#> • "day_of_month"
-#> • "season" periods: 7, 365
+#> • "after-holiday" effect: first 3 working days
 #> • "holidays":
 #>   1. Christmas
 ```

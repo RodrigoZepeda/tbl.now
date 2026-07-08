@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,6 +34,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -147,6 +148,13 @@
 
         <dt>
 
+          <code><a href="detect_report_batches.html">detect_report_batches()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Detect batch reporting (backlog dumps) on the report-date axis</dd>
+
+        <dt>
+
           <code><a href="flusight.html">flusight</a></code>
 
         </dt>
@@ -154,10 +162,10 @@
 
         <dt>
 
-          <code><a href="get_latest_first.html">get_latest_reported_cases()</a></code> <code><a href="get_latest_first.html">get_initial_reported_cases()</a></code>
+          <code><a href="get_latest_first.html">get_latest_reported_cases()</a></code> <code><a href="get_latest_first.html">get_initial_reported_cases()</a></code> <code><a href="get_latest_first.html">get_nth_reported_cases()</a></code>
           <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
-        <dd>Get the latest/first reported cases for each event date</dd>
+        <dd>Get the latest / first / nth-delay reported cases for each event date</dd>
 
         <dt>
 
@@ -203,6 +211,20 @@
 
         <dt>
 
+          <code><a href="plot_delay_drift.html">plot_delay_drift()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Visualise whether the reporting-delay distribution drifts over time</dd>
+
+        <dt>
+
+          <code><a href="plot_report_batches.html">plot_report_batches()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Visualise batch reporting over the report-date axis</dd>
+
+        <dt>
+
           <code><a href="print.html">print()</a></code>
           <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
@@ -235,6 +257,13 @@
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Convert between <code>tbl_now</code> and <span class="pkg">baselinenowcast</span></dd>
+
+        <dt>
+
+          <code><a href="tbl_now_coerce.html">as_tibble(<i>&lt;tbl_now&gt;</i>)</a></code> <code><a href="tbl_now_coerce.html">as_tibble(<i>&lt;grouped_tbl_now&gt;</i>)</a></code> <code><a href="tbl_now_coerce.html">as.data.frame(<i>&lt;tbl_now&gt;</i>)</a></code> <code><a href="tbl_now_coerce.html">as.data.frame(<i>&lt;grouped_tbl_now&gt;</i>)</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Coerce a <code>tbl_now</code> to a tibble or a data frame</dd>
 
         <dt>
 
@@ -277,6 +306,20 @@
           <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Temporal Effects Class</dd>
+
+        <dt>
+
+          <code><a href="test_delay_changepoint.html">test_delay_changepoint()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Detect an abrupt change point in the reporting-delay distribution</dd>
+
+        <dt>
+
+          <code><a href="test_delay_drift.html">test_delay_drift()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Test whether the reporting-delay distribution drifts over time</dd>
 
         <dt>
 

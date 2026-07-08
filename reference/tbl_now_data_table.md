@@ -5,7 +5,10 @@
 `tbl_now_from_data_table()` converts a `data.table` into a `tbl_now`
 (requires explicit `event_date` / `report_date` columns).
 `tbl_now_to_data_table()` strips the `tbl_now` class and returns a
-`data.table`.
+`data.table` keeping every column; any lazy temporal effects are
+materialised first (see
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md))
+so their columns are present.
 
 ## Usage
 

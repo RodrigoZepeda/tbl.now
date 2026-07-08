@@ -4,18 +4,26 @@ tbl_now_from_baselinenowcast() accepts either the long data.frame
 (reference_date, report_date, count) or a reporting_triangle
 matrix (rownames = reference dates, colnames = delays, incremental counts)
 and converts it into a tbl_now of data_type = "count-incidence".
-tbl_now_to_baselinenowcast() returns either the long
-baselinenowcast-style data.frame (format = "long", default) or a
-reporting_triangle matrix (format = "matrix") via
-baselinenowcast::as_reporting_triangle().'><meta property="og:description" content='
+tbl_now_to_baselinenowcast() returns either a reporting_triangle matrix
+(format = "matrix", the default) via
+baselinenowcast::as_reporting_triangle(), or the long
+baselinenowcast-style data.frame (format = "long"). The long format also
+carries the
+covariates, the censoring indicator and any materialised temporal-effect
+columns (see compute_temporal_effects()); the matrix holds only the three
+core columns.'><meta property="og:description" content='
 tbl_now_from_baselinenowcast() accepts either the long data.frame
 (reference_date, report_date, count) or a reporting_triangle
 matrix (rownames = reference dates, colnames = delays, incremental counts)
 and converts it into a tbl_now of data_type = "count-incidence".
-tbl_now_to_baselinenowcast() returns either the long
-baselinenowcast-style data.frame (format = "long", default) or a
-reporting_triangle matrix (format = "matrix") via
-baselinenowcast::as_reporting_triangle().'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
+tbl_now_to_baselinenowcast() returns either a reporting_triangle matrix
+(format = "matrix", the default) via
+baselinenowcast::as_reporting_triangle(), or the long
+baselinenowcast-style data.frame (format = "long"). The long format also
+carries the
+covariates, the censoring indicator and any materialised temporal-effect
+columns (see compute_temporal_effects()); the matrix holds only the three
+core columns.'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
 
 
 
@@ -37,7 +45,7 @@ baselinenowcast::as_reporting_triangle().'><meta property="og:image" content="ht
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,6 +58,7 @@ baselinenowcast::as_reporting_triangle().'><meta property="og:image" content="ht
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -75,10 +84,14 @@ baselinenowcast::as_reporting_triangle().'><meta property="og:image" content="ht
 (<code>reference_date</code>, <code>report_date</code>, <code>count</code>) or a <code>reporting_triangle</code>
 matrix (rownames = reference dates, colnames = delays, incremental counts)
 and converts it into a <code>tbl_now</code> of <code>data_type = "count-incidence"</code>.</p>
-<p><code>tbl_now_to_baselinenowcast()</code> returns either the long
-<code>baselinenowcast</code>-style <code>data.frame</code> (<code>format = "long"</code>, default) or a
-<code>reporting_triangle</code> matrix (<code>format = "matrix"</code>) via
-<code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code>.</p>
+<p><code>tbl_now_to_baselinenowcast()</code> returns either a <code>reporting_triangle</code> matrix
+(<code>format = "matrix"</code>, the default) via
+<code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code>, or the long
+<code>baselinenowcast</code>-style <code>data.frame</code> (<code>format = "long"</code>). The long format also
+carries the
+covariates, the censoring indicator and any materialised temporal-effect
+columns (see <code><a href="compute_temporal_effects.html">compute_temporal_effects()</a></code>); the matrix holds only the three
+core columns.</p>
     </div>
 
     <div class="section level2">
