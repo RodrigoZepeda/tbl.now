@@ -655,6 +655,27 @@ dplyr_reconstruct.grouped_tbl_now <- function(data, template) {
 }
 
 
+#' Drop the `tbl_now` classes without touching anything else
+#'
+#' Removes the `tbl_now` / `grouped_tbl_now` classes from `x` (leaving any
+#' underlying `grouped_df` / `tbl_df` / `data.frame` classes and all attributes
+#' in place). Internal lazy-sensitive code uses this to call
+#' [tibble::as_tibble()] / [as.data.frame()] *without* triggering the
+#' `tbl_now` methods (which materialise the temporal-effect spec): coercion has
+#' to stay lazy inside validation, reconstruction, `complete_zeroes()`, etc.
+#' On a plain data frame it is a no-op.
+#'
+#' @param x Any object (typically a `tbl_now`).
+#'
+#' @return `x` with the `tbl_now` classes removed.
+#'
+#' @keywords internal
+#' @noRd
+.declass_tbl_now <- function(x) {
+  class(x) <- setdiff(class(x), c("grouped_tbl_now", "tbl_now"))
+  x
+}
+
 # Based on https://www.bio-ai.org/blog/extending-tibbles/
 #' Construct a grouped `tbl_now`
 #'

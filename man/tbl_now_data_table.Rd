@@ -31,7 +31,8 @@ A \code{tbl_now} (\code{from}) or a \code{data.table} (\code{to}).
 \code{tbl_now_from_data_table()} converts a \code{data.table} into a \code{tbl_now}
 (requires explicit \code{event_date} / \code{report_date} columns).
 \code{tbl_now_to_data_table()} strips the \code{tbl_now} class and returns a
-\code{data.table}.
+\code{data.table} keeping every column; any lazy temporal effects are materialised
+first (see \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}) so their columns are present.
 }
 \examples{
 \dontshow{if (requireNamespace("data.table", quietly = TRUE)) withAutoprint(\{ # examplesIf}

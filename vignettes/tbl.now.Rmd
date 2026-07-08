@@ -29,6 +29,8 @@ More concretely, tbl.now was designed to:
 
 + Preserve  [tidyverse](https://tidyverse.org/)  compatibility so users can continue to apply familiar [dplyr](https://dplyr.tidyverse.org/) operations.
 
++ Diagnose reporting artefacts directly from the data — reporting-delay drift and change points ([test_delay_drift()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.html), [test_delay_changepoint()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.html)) and batch (backlog) reporting ([detect_report_batches()](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.html)).
+
 + Facilitate seamless integration into iterative modeling workflows [@gelman2020bayesian; @wickham2023r]:
 
 ```
@@ -384,6 +386,38 @@ get_temporal_effects(df_computed) # The spec (list of configs)
 get_temporal_effect_cols(df_computed) # The computed column names
 ```
 
+#### After-holiday and after-weekend effects
+
+Reporting often *rebounds* on the first working day(s) after a holiday or a
+weekend. To capture that, `temporal_effects()` has `holiday_lags` and
+`weekend_lags`: each takes a depth `N` and creates indicator columns
+`..._holiday_lag_1 … ..._holiday_lag_N` (and `..._weekend_lag_k`) that flag dates
+falling exactly `k` **working days** after a holiday / weekend. Working days skip
+weekends and other holidays, so the effect lands on the first day back at work.
+
+```{r}
+# Flag the two working days after a holiday, and the working day after a weekend
+after_eff <- temporal_effects(
+  holidays     = cal_us_federal(),
+  holiday_lags = 2,
+  weekend_lags = 1
+)
+after_eff
+```
+
+#### Event- vs report-date effects
+
+By default effects are derived from the **event date** and named `.event_*`. Pass
+`date_type = "report_date"` to `add_temporal_effects()` to derive them from the
+**report date** instead (columns named `.report_*`). Both can coexist on the same
+`tbl_now`, and every converter carries both sets of columns.
+
+```{r, eval=FALSE}
+df_now |>
+  add_temporal_effects(temporal_effects(week_of_year = TRUE), date_type = "event_date") |>
+  add_temporal_effects(temporal_effects(day_of_week = TRUE),  date_type = "report_date")
+```
+
 
 ### Modifying a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) with `dplyr`
 
@@ -536,12 +570,21 @@ df_updated
 
 ## Visualizing a `tbl_now`
 
-The [autoplot()](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html) method gives a quick four-panel diagnostic overview of a `tbl_now`. Using [ggplot2](https://ggplot2.tidyverse.org/) and [patchwork](https://patchwork.data-imaginist.com/), it shows:
+The [autoplot()](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html) method gives a quick diagnostic overview of a `tbl_now`. Using [ggplot2](https://ggplot2.tidyverse.org/) and [patchwork](https://patchwork.data-imaginist.com/), it draws two families of panels. The **case-count** panels:
 
 1. **Empirical delay distribution**: a case-count weighted histogram of the reporting delay.
 2. **Observed epidemic process**: the latest reported counts per `event_date`.
-3. **Calendar effect**: boxplots of the *normalized* effect (each event date's cases divided by the overall mean, so 1 is average), built directly from the data.
+3. **Calendar effect**: boxplots of the *normalized* effect (each event date's cases divided by the overall mean, so 1 is average) by day of week / week of year / month.
 4. **Seasonality** — a periodogram of the incidence series whose dominant peak suggests a Fourier season length to pass to [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html).
+
+…and the **reporting-delay** panels, which reveal *delay effects* (whether the delay itself has a calendar or periodic pattern):
+
+5. **Delay calendar effect**: boxplots of the mean reporting delay by day of week / week of year / month.
+6. **Delay periodicity**: a periodogram of the mean-delay series (e.g. a weekly reporting rhythm).
+
+Which calendar/delay panels appear depends on the event unit (daily data gets day-of-week *and* week-of-year; weekly data week-of-year; monthly data month-of-year). Use the `panels` argument to pick a subset — for example `panels = "delay_calendar"` for just the delay boxplots, or a single key like `panels = "delay_week"` (a single panel is returned as a plain `ggplot`). The aliases are `"all"` (default), `"calendar"` and `"delay_calendar"`.
+
+Set `by_strata = TRUE` to split every panel by stratum: the boxplots become dodged boxes (one per stratum, side by side), the epidemic process and periodograms become one coloured line per stratum, and the delay distribution becomes dodged bars. The boxplots are then normalized *per stratum* (1 = that stratum's own average) so the calendar pattern is comparable across strata. By default the object's `strata` are used; pass `strata = "gender"` to group on a subset of the strata columns.
 
 ```{r autoplot-available, include=FALSE}
 plotting_available <- requireNamespace("ggplot2", quietly = TRUE) &&
@@ -562,6 +605,43 @@ autoplot(dengue_now)
 ```
 
 For the weekly dengue data the periodogram peaks near 52 weeks, suggesting an annual cycle. We could capture this with a Fourier term of `temporal_effects(seasons = 52)`.
+
+### Do delay distributions drift over time?
+
+Reporting delays are not always stable: a surveillance system may speed up or slow down over a season or across years. [plot_delay_drift()](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.html) draws a rolling *fan chart* of the delay distribution indexed by event date — a solid rolling median, a dashed rolling mean, and 25–75% / 10–90% quantile bands. A rising or falling centre line signals *location* drift; widening or narrowing bands signal *spread* drift.
+
+```{r delay-drift, eval=plotting_available, fig.width=9, fig.height=4.5, message=FALSE, warning=FALSE}
+plot_delay_drift(dengue_now)
+```
+
+Because the most recent event dates have not had time to be fully reported, their delays look artificially short; that immature region (after the completeness cutoff) is **shaded grey** and should not be read as drift.
+
+For a formal answer, [test_delay_drift()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.html) runs an autocorrelation-robust monotonic-trend test (a modified Mann–Kendall test, via the `modifiedmk` package) on the per-period delay summaries — a delay series is correlated with itself, so an ordinary trend test would over-state significance. It tests both a location statistic (the median) and a dispersion statistic (the 10–90 spread), on mature data only:
+
+```{r delay-drift-test, eval=requireNamespace("modifiedmk", quietly = TRUE)}
+test_delay_drift(dengue_now, stat = c("median", "spread"))
+```
+
+A significant `drift` for `spread` with a non-significant one for `median`, say, would mean the *typical* delay held steady while its *variability* changed.
+
+The trend test looks for *gradual* change. If instead you suspect an **abrupt** shift — a reporting-system change on some date — use [test_delay_changepoint()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.html), which applies Pettitt's nonparametric change-point test and returns the estimated change date together with the before/after delay level:
+
+```{r delay-changepoint}
+test_delay_changepoint(dengue_now, stat = c("median", "spread"))
+```
+
+You can mark the detected change point on the fan chart with `plot_delay_drift(dengue_now, changepoint = TRUE)`.
+
+### Detecting batch reporting
+
+Laboratories sometimes withhold results and then release a whole backlog at once — a **batch**. Operationally a batch is a *report date* that is anomalous on the report axis: an unusually large number of cases, spanning an unusually wide range of (old) event dates. [detect_report_batches()](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.html) scans each report date and flags batches using up to four robust signals — `"volume"`, `"delay"`, `"span"` and `"gap"` — of which you choose the combination to require:
+
+```{r batches}
+batches <- detect_report_batches(dengue_now, signals = c("volume", "delay"))
+batches[batches$batch, c("report_date", "n_reports", "mean_delay", "score_volume", "score_delay")]
+```
+
+The important design point is that a **volume spike alone is ambiguous** — an epidemic peak also inflates the number of reports. What makes a batch a batch is that the volume spike comes *together with* anomalously long, dispersed delays (a backlog of old cases cleared at once). An epidemic peak's cases are still reported with the normal, short delay, so requiring the `"delay"` signal alongside `"volume"` keeps peaks from being flagged. [plot_report_batches()](https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.html) shows both the reporting-volume and mean-delay timelines with the flagged dates marked, so you can see why each was flagged.
 
 ## Other functions (utilities)
 

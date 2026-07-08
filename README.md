@@ -38,7 +38,7 @@ Load the package:
 library(dplyr, quietly = TRUE)
 library(lubridate)
 library(tbl.now)
-library(almanac)    #Suggested for holiday effects
+library(almanac) # Suggested for holiday effects
 ```
 
 ## A minimal example
@@ -48,10 +48,14 @@ to events occurring on event_date:
 
 ``` r
 df <- tibble(
-  event_date  = c(ymd("2023-12-25"), ymd("2023-12-26"),
-                  ymd("2023-12-25"), ymd("2023-12-26")),
-  report_date = c(ymd("2023-12-26"), ymd("2023-12-26"),
-                  ymd("2023-12-27"), ymd("2023-12-27")),
+  event_date = c(
+    ymd("2023-12-25"), ymd("2023-12-26"),
+    ymd("2023-12-25"), ymd("2023-12-26")
+  ),
+  report_date = c(
+    ymd("2023-12-26"), ymd("2023-12-26"),
+    ymd("2023-12-27"), ymd("2023-12-27")
+  ),
   n = c(10, 2, 5, 11)
 )
 ```
@@ -60,12 +64,12 @@ Convert it to a
 [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html):
 
 ``` r
-df_now <- df |> 
+df_now <- df |>
   tbl_now(event_date = event_date, report_date = report_date, case_count = n)
-#> ℹ Identified data as <count-incidence> with counts in column "n".
+#> i Identified data as <count-incidence> with counts in column "n".
 
 df_now
-#> # A tibble:  4 × 6
+#> # A tibble:  4 x 6
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay
@@ -75,9 +79,9 @@ df_now
 #> 2 2023-12-26   2023-12-26          2          1           1      0
 #> 3 2023-12-25   2023-12-27          5          0           2      2
 #> 4 2023-12-26   2023-12-27         11          1           2      1
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 ```
 
 `tbl_now()` automatically:
@@ -94,9 +98,9 @@ df_now
 Use it like any tibble:
 
 ``` r
-df_now |> 
+df_now |>
   filter(n > 5)
-#> # A tibble:  2 × 6
+#> # A tibble:  2 x 6
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay
@@ -104,9 +108,9 @@ df_now |>
 #>   [event_date] [report_date] [cases]      [...]       [...]  [...]
 #> 1 2023-12-25   2023-12-26         10          0           1      1
 #> 2 2023-12-26   2023-12-27         11          1           2      1
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 ```
 
 > **Note** Linelist, count-incidence and count-cumulative data is
@@ -121,12 +125,12 @@ If strata was given, the
 can easily tag the corresponding strata.
 
 ``` r
-#Add the column using dplyr:
-df_now <- df_now |> 
-  mutate(sex = c("M","M","F","M")) 
+# Add the column using dplyr:
+df_now <- df_now |>
+  mutate(sex = c("M", "M", "F", "M"))
 
 df_now
-#> # A tibble:  4 × 7
+#> # A tibble:  4 x 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex  
@@ -136,17 +140,17 @@ df_now
 #> 2 2023-12-26   2023-12-26          2          1           1      0 M    
 #> 3 2023-12-25   2023-12-27          5          0           2      2 F    
 #> 4 2023-12-26   2023-12-27         11          1           2      1 M    
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 ```
 
 Use the `add_strata` to specify the new column is a stratum:
 
 ``` r
-df_now |> 
+df_now |>
   add_strata("sex")
-#> # A tibble:  4 × 7
+#> # A tibble:  4 x 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex     
@@ -156,10 +160,10 @@ df_now |>
 #> 2 2023-12-26   2023-12-26          2          1           1      0 M       
 #> 3 2023-12-25   2023-12-27          5          0           2      2 F       
 #> 4 2023-12-26   2023-12-27         11          1           2      1 M       
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # Strata: "sex"
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 ```
 
 The object now records `"sex"` as a stratification variable, preserved
@@ -173,16 +177,17 @@ seasonality, holiday effects, etc. Define the effects:
 ``` r
 t_eff <- temporal_effects(
   day_of_week  = TRUE,
-  week_of_year = TRUE, 
-  holidays     = cal_us_federal())
+  week_of_year = TRUE,
+  holidays     = cal_us_federal()
+)
 
 t_eff
 #> 
-#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> -- Temporal Effects ------------------------------------------------------------
 #> The following effects are in place:
-#> • "day_of_week"
-#> • "week_of_year"
-#> • "holidays":
+#> * "day_of_week"
+#> * "week_of_year"
+#> * "holidays":
 #>   1. New Year's Day, US Martin Luther King Jr. Day, US Presidents' Day, US
 #>   Memorial Day, US Juneteenth, US Independence Day, US Labor Day, US Indigenous
 #>   Peoples' Day, US Veterans Day, US Thanksgiving, and Christmas
@@ -191,11 +196,11 @@ t_eff
 Attach them to the dataset:
 
 ``` r
-df_now <- df_now |> 
+df_now <- df_now |>
   add_temporal_effects(t_eff)
 
 df_now
-#> # A tibble:  4 × 7
+#> # A tibble:  4 x 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex  
@@ -205,10 +210,10 @@ df_now
 #> 2 2023-12-26   2023-12-26          2          1           1      0 M    
 #> 3 2023-12-25   2023-12-27          5          0           2      2 F    
 #> 4 2023-12-26   2023-12-27         11          1           2      1 M    
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # T. effects (lazy): [event_date] day_of_week, week_of_year, holidays
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 ```
 
 This lazily adds to the table `day_of_week`, `week_of_year`, and
@@ -216,9 +221,9 @@ This lazily adds to the table `day_of_week`, `week_of_year`, and
 `compute_temporal_effects()` to add them as columns:
 
 ``` r
-df_now |> 
+df_now |>
   compute_temporal_effects()
-#> # A tibble:  4 × 10
+#> # A tibble:  4 x 10
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex  
@@ -235,12 +240,12 @@ df_now |>
 #> 2                  3                   1              0
 #> 3                  2                   1              1
 #> 4                  3                   1              0
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # T. effects: [event_date] day_of_week, week_of_year, holidays
 #> # T. effect cols: ".event_day_of_week", ".event_week_of_year", and
 #> # ".event_holiday"
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 ```
 
 You can also attach effects related to the `report_date`:
@@ -248,9 +253,9 @@ You can also attach effects related to the `report_date`:
 ``` r
 r_eff <- temporal_effects(day_of_week = TRUE)
 
-df_now |> 
+df_now |>
   add_temporal_effects(r_eff, date_type = "report_date")
-#> # A tibble:  4 × 7
+#> # A tibble:  4 x 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex  
@@ -260,11 +265,11 @@ df_now |>
 #> 2 2023-12-26   2023-12-26          2          1           1      0 M    
 #> 3 2023-12-25   2023-12-27          5          0           2      2 F    
 #> 4 2023-12-26   2023-12-27         11          1           2      1 M    
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # T. effects (lazy): [event_date] day_of_week, week_of_year, holidays |
 #> # [report_date] day_of_week
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 ```
 
 ## Working with the “now”
@@ -296,15 +301,60 @@ library(patchwork)
 data("flusight")
 
 flusight_now <- tbl_now(flusight,
-                        event_date  = target_end_date,
-                        report_date = as_of,
-                        case_count  = observation,
-                        verbose     = FALSE)
+  event_date  = target_end_date,
+  report_date = as_of,
+  case_count  = observation,
+  verbose     = FALSE
+)
 
 autoplot(flusight_now, level = 1)
 ```
 
 <img src="man/figures/README-autoplot-1.png" alt="" width="100%" />
+
+## Diagnosing reporting problems
+
+`tbl.now` also helps diagnose two common reporting artefacts directly
+from the data.
+
+**Does the reporting delay drift over time?** `plot_delay_drift()` draws
+a rolling fan chart of the delay distribution, while
+`test_delay_drift()` and `test_delay_changepoint()` test for a gradual
+trend or an abrupt change (with an autocorrelation-robust test, since a
+delay series is correlated with itself).
+
+**Batch reporting.** Laboratories sometimes withhold results and then
+release a whole backlog at once. Operationally such a *batch* is a
+report date carrying an unusually large number of cases spanning many
+old event dates. `detect_report_batches()` flags them — and, crucially,
+tells them apart from epidemic peaks (which also spike the volume but
+keep the normal *short* delays) by additionally requiring an anomalous
+*delay* signal:
+
+``` r
+data(denguedat)
+dengue <- tbl_now(denguedat,
+  event_date = onset_week, report_date = report_week, verbose = FALSE
+)
+
+batches <- detect_report_batches(dengue, signals = c("volume", "delay"))
+batches[batches$batch, c("report_date", "n_reports", "mean_delay", "score_volume", "score_delay")]
+#> # A tibble: 2 x 5
+#>   report_date n_reports mean_delay score_volume score_delay
+#>   <date>          <dbl>      <dbl>        <dbl>       <dbl>
+#> 1 1993-09-27         65       2.38         3.51        3.50
+#> 2 1996-02-12         46       2.98         4.05        5.35
+```
+
+`plot_report_batches()` shows the reporting-volume and mean-delay
+timelines with the flagged dates marked, so you can see *why* each was
+flagged:
+
+``` r
+plot_report_batches(dengue, signals = c("volume", "delay"))
+```
+
+<img src="man/figures/README-batches-plot-1.png" alt="" width="100%" />
 
 ## Extreme delays
 
@@ -314,16 +364,20 @@ example, an extreme delay of 300 is marked as `censored` with that
 function:
 
 ``` r
-df <- data.frame(onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
-                 reported = as.Date("2020-01-01") + c(1, 5, 2, 300))
-tn <- tbl_now(df, event_date = onset, report_date = reported,
-              data_type = "linelist", verbose = FALSE)
+df <- data.frame(
+  onset = as.Date("2020-01-01") + c(0, 0, 1, 2),
+  reported = as.Date("2020-01-01") + c(1, 5, 2, 300)
+)
+tn <- tbl_now(df,
+  event_date = onset, report_date = reported,
+  data_type = "linelist", verbose = FALSE
+)
 
 # the 300-day report becomes censored (an upper bound on its delay)
 censor_delays_above(tn, max_delay = 60)
-#> ℹ Marked 1 report with delay > 60 event units as censored.
-#> • Their delay is now an upper bound; re-fit downstream to use it.
-#> # A tibble:  4 × 6
+#> i Marked 1 report with delay > 60 days as censored.
+#> * This delay is now an upper bound (is_censored).
+#> # A tibble:  4 x 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
 #>   onset        reported      .event_num .report_num .delay .is_censored 
@@ -333,10 +387,10 @@ censor_delays_above(tn, max_delay = 60)
 #> 2 2020-01-01   2020-01-06             0           5      5 FALSE        
 #> 3 2020-01-02   2020-01-03             1           2      1 FALSE        
 #> 4 2020-01-03   2020-10-27             2         300    298 TRUE         
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 #> # Now: 2020-10-27 | Event date: "onset" | Report date: "reported"
 #> # Right-censored indicator: ".is_censored"
-#> # ────────────────────────────────────────────────────────────────────────────────
+#> # --------------------------------------------------------------------------------
 ```
 
 ## Learning more

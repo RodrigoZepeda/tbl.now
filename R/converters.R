@@ -329,6 +329,35 @@
     )
 }
 
+#' Materialise the lazy temporal-effect columns for an outgoing conversion
+#'
+#' Temporal effects are stored as a *lazy specification* (see
+#' [compute_temporal_effects()]): the holiday / Fourier / calendar columns only
+#' exist once that spec is materialised. When converting **out** to a format that
+#' can carry extra columns we want those effects to ride along as covariates, so
+#' this computes them on demand. If a spec is set but no columns have been
+#' materialised yet it calls [compute_temporal_effects()] (with
+#' `overwrite = TRUE`, since this is an export path and any pre-existing
+#' columns of the same name are stale). It is a no-op when there is no spec, or
+#' when the columns are already present.
+#'
+#' @param x A `tbl_now` object.
+#'
+#' @return A list with `x` (the `tbl_now`, possibly with the effect columns
+#'   appended) and `cols` (a character vector of the temporal-effect column
+#'   names, `character(0)` when there are none).
+#'
+#' @keywords internal
+#' @noRd
+.materialize_temporal_effects <- function(x) {
+  cols <- get_temporal_effect_cols(x)
+  if (length(cols) == 0 && length(get_temporal_effects(x)) > 0) {
+    x <- compute_temporal_effects(x, overwrite = TRUE)
+    cols <- get_temporal_effect_cols(x)
+  }
+  list(x = x, cols = cols)
+}
+
 #' Extract the long cumulative observations from any `epinowcast` representation
 #'
 #' \pkg{epinowcast} carries the same observations in several shapes: the raw
@@ -550,8 +579,12 @@
 #' `enw_preprocess_data` object carries:
 #'
 #' * **Covariate columns** that are neither the core
-#'   `reference_date`/`report_date`/`confirm` nor a grouping (`by`) column are
-#'   dropped.
+#'   `reference_date`/`report_date`/`confirm`, a grouping (`by`) column, nor a
+#'   materialised temporal-effect column are dropped. The temporal-effect
+#'   columns (holidays, Fourier terms, calendar effects) *are* carried over: the
+#'   lazy [temporal_effects()] spec is materialised with
+#'   [compute_temporal_effects()] and the resulting columns are passed through to
+#'   the observations and `metareference`/`metareport` tables.
 #'
 #' * **Grouping indices** (`.group`) are reassigned from the factor levels, so
 #'   the row order of the nested tables can differ even though the underlying
@@ -574,6 +607,8 @@
 #'   delay 74, so its `max_confirm` is 11 in `pobs` and 7 after the round-trip.)
 #'
 #' @examplesIf requireNamespace("epinowcast", quietly = TRUE) & requireNamespace("data.table", quietly = TRUE)
+#' # Preprocessing epinowcast data is slow, so this is wrapped in \donttest{}.
+#' \donttest{
 #' library(data.table)
 #' library(epinowcast)
 #'
@@ -594,7 +629,7 @@
 #'
 #' #You can also convert to epinowcast preprocess data format
 #' preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
-#'
+#' }
 #'
 #' @name tbl_now_epinowcast
 #' @export
@@ -646,10 +681,14 @@ tbl_now_from_epinowcast <- function(data, ...,
 #' matrix (rownames = reference dates, colnames = delays, incremental counts)
 #' and converts it into a `tbl_now` of `data_type = "count-incidence"`.
 #'
-#' `tbl_now_to_baselinenowcast()` returns either the long
-#' `baselinenowcast`-style `data.frame` (`format = "long"`, default) or a
-#' `reporting_triangle` matrix (`format = "matrix"`) via
-#' [baselinenowcast::as_reporting_triangle()].
+#' `tbl_now_to_baselinenowcast()` returns either a `reporting_triangle` matrix
+#' (`format = "matrix"`, the default) via
+#' [baselinenowcast::as_reporting_triangle()], or the long
+#' `baselinenowcast`-style `data.frame` (`format = "long"`). The long format also
+#' carries the
+#' covariates, the censoring indicator and any materialised temporal-effect
+#' columns (see [compute_temporal_effects()]); the matrix holds only the three
+#' core columns.
 #'
 #' @param data A long `data.frame` or a `reporting_triangle` matrix.
 #' @param x A `tbl_now` object.
@@ -742,7 +781,8 @@ tbl_now_from_baselinenowcast <- function(data, ...,
 #' `tbl_now_from_data_table()` converts a `data.table` into a `tbl_now`
 #' (requires explicit `event_date` / `report_date` columns).
 #' `tbl_now_to_data_table()` strips the `tbl_now` class and returns a
-#' `data.table`.
+#' `data.table` keeping every column; any lazy temporal effects are materialised
+#' first (see [compute_temporal_effects()]) so their columns are present.
 #'
 #' @param data A `data.table`.
 #' @param x A `tbl_now` object.
@@ -823,6 +863,10 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'   `[origin, report_date]` (with `origin` the earliest `event_date`, i.e.
 #'   epidist time 0) — encoding the `tbl_now` convention that a censored report
 #'   is only known to lie in `[0, report_date]`.
+#'
+#' Covariate columns and any materialised temporal-effect columns (holidays,
+#' Fourier terms, calendar effects; see [compute_temporal_effects()]) are
+#' carried onto the epidist data unchanged.
 #'
 #' @param data A `data.frame`, `epidist_linelist_data` or
 #'   `epidist_aggregate_data` of \pkg{epidist} delay data.
@@ -984,6 +1028,8 @@ tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
 #' (`"event_date"`, the default, or `"report_date"`) as the tsibble index and
 #' the other date plus the strata as the key. Linelist data is aggregated to
 #' `count-incidence` first (a tsibble requires unique index/key combinations).
+#' The covariates, the censoring indicator and any materialised temporal-effect
+#' columns (see [compute_temporal_effects()]) ride along as measurement columns.
 #'
 #' @param data A `tbl_ts` (tsibble).
 #' @param x A `tbl_now` object.
@@ -1071,20 +1117,28 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
     x <- to_count(x, to = "count-cumulative")
   }
 
+  # Materialise the lazy temporal-effect columns (holidays, Fourier terms,
+  # calendar effects) so they can be carried into epinowcast as covariates.
+  materialised  <- .materialize_temporal_effects(x)
+  x             <- materialised$x
+  temporal_cols <- materialised$cols
+
   event_col   <- get_event_date(x)
   report_col  <- get_report_date(x)
   count_col   <- get_case_count(x)
   strata_cols <- get_strata(x)
 
-  # epinowcast's schema is reference_date / report_date / confirm (+ grouping);
-  # covariates and is_censored have no place in it and are not carried over.
+  # epinowcast's schema is reference_date / report_date / confirm (+ grouping).
+  # is_censored has no place in it, but the temporal-effect columns are carried
+  # along so they are available to epinowcast's reference/report modules.
   observations <- x |>
     dplyr::as_tibble() |>
     dplyr::select(
       reference_date = dplyr::all_of(event_col),
       report_date    = dplyr::all_of(report_col),
       confirm        = dplyr::all_of(count_col),
-      dplyr::all_of(strata_cols)
+      dplyr::all_of(strata_cols),
+      dplyr::all_of(temporal_cols)
     ) |>
     data.table::as.data.table()
 
@@ -1100,6 +1154,9 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
     cli::cli_li("report_date <- {.val {report_col}}")
     cli::cli_li("confirm <- {.val {count_col}}")
     cli::cli_li("by: {.val {if (is.null(grouping)) 'none' else grouping}}")
+    if (length(temporal_cols) > 0) {
+      cli::cli_li("temporal effects: {.val {temporal_cols}}")
+    }
     cli::cli_li("max_delay: {.val {max_delay}}")
     cli::cli_li("missing_reference: {.val {missing_reference}}")
     cli::cli_li("preprocess: {.val {preprocess}}")
@@ -1153,16 +1210,27 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
     x <- to_count(x, to = "count-incidence")
   }
 
+  # Materialise the lazy temporal-effect columns so the long format can carry
+  # them as covariates (holidays, Fourier terms, calendar effects).
+  materialised   <- .materialize_temporal_effects(x)
+  x              <- materialised$x
+  temporal_cols  <- materialised$cols
+
   event_col      <- get_event_date(x)
   report_col     <- get_report_date(x)
   count_col      <- get_case_count(x)
   covariate_cols <- get_covariates(x)
   censored_col   <- get_is_censored(x)
 
-  # The long format is a tidy data frame, so it can also carry the covariates
-  # and the censoring indicator. The reporting-triangle matrix cannot, so only
-  # the three core columns are kept for it.
-  extra_cols <- if (format == "long") c(covariate_cols, censored_col) else NULL
+  # The long format is a tidy data frame, so it can also carry the covariates,
+  # the temporal-effect columns and the censoring indicator. The
+  # reporting-triangle matrix cannot, so only the three core columns are kept
+  # for it.
+  extra_cols <- if (format == "long") {
+    c(covariate_cols, temporal_cols, censored_col)
+  } else {
+    NULL
+  }
 
   long_data <- x |>
     dplyr::as_tibble() |>
@@ -1339,18 +1407,23 @@ tbl_now_to_data_table <- function(x, ..., verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_data_table")
   .need_pkg("data.table")
 
+  # Materialise the lazy temporal-effect columns so they are present as ordinary
+  # columns (a data.table keeps every column, but the lazy spec produces none
+  # until it is computed).
+  x <- .materialize_temporal_effects(x)$x
+
   if (verbose) {
     cli::cli_h3("Converting {.cls tbl_now} into a {.cls data.table}")
     cli::cli_alert_info(
       "tbl_now attributes are dropped; every column is kept (including the \\
-       generated .delay / .event_num / .report_num, the covariates and \\
-       is_censored)."
+       generated .delay / .event_num / .report_num, the covariates, the \\
+       temporal-effect columns and is_censored)."
     )
   }
 
-  # A data.table can hold every column, so keep them all (covariates and the
-  # censoring indicator included). Strip the tbl_now metadata first so the
-  # resulting data.table carries none of it.
+  # A data.table can hold every column, so keep them all (covariates, the
+  # temporal-effect columns and the censoring indicator included). Strip the
+  # tbl_now metadata first so the resulting data.table carries none of it.
   data.table::as.data.table(.strip_tbl_now(x), ...)
 }
 
@@ -1366,6 +1439,12 @@ tbl_now_to_epidist <- function(x, ...,
   .need_pkg("epidist")
   #.warn_lossy_conversion("epidist", quiet)
   format <- match.arg(format)
+
+  # Materialise the lazy temporal-effect columns so they are carried as extra
+  # covariate columns on the epidist data.
+  materialised   <- .materialize_temporal_effects(x)
+  x              <- materialised$x
+  temporal_cols  <- materialised$cols
 
   covariate_cols <- get_covariates(x)
   censored_col   <- get_is_censored(x)
@@ -1395,7 +1474,9 @@ tbl_now_to_epidist <- function(x, ...,
         sdate_lwr = .data[[get_report_date(x)]],
         sdate_upr = .data[[secondary_upper]]
       )
-    carried_cols <- setdiff(c(covariate_cols, censored_col), upper_bounds)
+    carried_cols <- setdiff(
+      c(covariate_cols, temporal_cols, censored_col), upper_bounds
+    )
     if (length(carried_cols) > 0) {
       epidist_data <- dplyr::bind_cols(
         epidist_data, dplyr::select(observations, dplyr::all_of(carried_cols))
@@ -1480,9 +1561,10 @@ tbl_now_to_epidist <- function(x, ...,
   collapsed <- epidist_data$sdate_upr <= epidist_data$sdate_lwr
   epidist_data$sdate_lwr[collapsed] <- epidist_data$sdate_upr[collapsed] - win
 
-  if (length(covariate_cols) > 0) {
+  carry_cols <- c(covariate_cols, temporal_cols)
+  if (length(carry_cols) > 0) {
     epidist_data <- dplyr::bind_cols(
-      epidist_data, dplyr::select(obs, dplyr::all_of(covariate_cols))
+      epidist_data, dplyr::select(obs, dplyr::all_of(carry_cols))
     )
   }
 
@@ -1502,8 +1584,8 @@ tbl_now_to_epidist <- function(x, ...,
     cli::cli_li("censoring window: {.val {win}} day{?s} (from {.val {units}})")
     cli::cli_li("left-censored rows ({.field is_censored}): {.val {sum(censored)}}")
     if (format == "aggregate") cli::cli_li("n <- {.val {count_col}}")
-    if (length(covariate_cols) > 0) {
-      cli::cli_li("kept covariates: {.val {covariate_cols}}")
+    if (length(carry_cols) > 0) {
+      cli::cli_li("kept covariates: {.val {carry_cols}}")
     }
     cli::cli_end()
   }
@@ -1534,6 +1616,12 @@ tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
     x <- to_count(x, to = "count-incidence")
   }
 
+  # Materialise the lazy temporal-effect columns so they ride along as
+  # measurement columns (holidays, Fourier terms, calendar effects).
+  materialised   <- .materialize_temporal_effects(x)
+  x              <- materialised$x
+  temporal_cols  <- materialised$cols
+
   event_col      <- get_event_date(x)
   report_col     <- get_report_date(x)
   strata_cols    <- get_strata(x)
@@ -1547,10 +1635,12 @@ tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
   other_col <- if (index == "report_date") event_col else report_col
   key_cols  <- c(other_col, strata_cols)
 
-  # Covariates, the censoring indicator and the case count ride along as
-  # measurement columns; the tbl_now internals are dropped.
+  # Covariates, the temporal-effect columns, the censoring indicator and the
+  # case count ride along as measurement columns; the tbl_now internals are
+  # dropped.
   kept_cols <- c(
-    index_col, other_col, strata_cols, covariate_cols, censored_col, count_col
+    index_col, other_col, strata_cols, covariate_cols, temporal_cols,
+    censored_col, count_col
   )
   # Strip the tbl_now metadata before building the tsibble (the package's dplyr
   # methods would otherwise propagate it onto the result).

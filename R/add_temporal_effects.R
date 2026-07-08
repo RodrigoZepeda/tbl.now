@@ -66,6 +66,61 @@ add_temporal_effects <- function(x, t_effects = NULL, overwrite = FALSE, ...) {
   UseMethod("add_temporal_effects")
 }
 
+#' Working days elapsed since the most recent "reset" event
+#'
+#' Powers the *after-holiday* / *after-weekend* lag effects. For each date it
+#' counts how many **working days** have passed since the last reset event
+#' (a holiday or a weekend day), skipping weekends and holidays so the count
+#' lands on the first day back at work. The reset day itself, and any
+#' non-working day, get `NA` (they carry no after-effect indicator).
+#'
+#' @param dates A vector of `<Date>` values (may contain duplicates or gaps).
+#' @param reset_event Which day resets the counter: `"holiday"` or `"weekend"`.
+#' @param weekend_days Passed to [is_weekday()].
+#' @param holidays An [almanac::rcalendar()] or `NULL`.
+#'
+#' @return An integer vector, the same length as `dates`, giving the number of
+#'   working days since the last reset event (`NA` where undefined or where the
+#'   date itself is not a working day).
+#'
+#' @keywords internal
+#' @noRd
+.working_days_since <- function(dates, reset_event, weekend_days, holidays) {
+  valid <- dates[!is.na(dates)]
+  if (length(valid) == 0) {
+    return(rep(NA_integer_, length(dates)))
+  }
+
+  # Build a continuous daily grid so working days can be counted even when the
+  # data itself has gaps (weekly data, missing days, ...).
+  grid <- seq(min(valid), max(valid), by = "day")
+
+  is_weekend <- !is_weekday(grid, weekend_days = weekend_days)
+  is_holiday <- if (!is.null(holidays)) {
+    almanac::alma_in(grid, holidays)
+  } else {
+    rep(FALSE, length(grid))
+  }
+  is_working <- !is_weekend & !is_holiday
+  is_reset   <- if (reset_event == "holiday") is_holiday else is_weekend
+
+  counter <- rep(NA_integer_, length(grid))
+  running <- NA_integer_
+  for (i in seq_along(grid)) {
+    if (is_reset[i]) {
+      # The reset day starts a new count; it is not itself "after" the event.
+      running <- 0L
+    } else if (is_working[i]) {
+      if (!is.na(running)) running <- running + 1L
+      counter[i] <- running
+    }
+    # Non-working, non-reset days (e.g. a holiday while counting after a
+    # weekend) carry `running` forward without incrementing and keep `NA`.
+  }
+
+  counter[match(dates, grid)]
+}
+
 #' @export
 #' @rdname add_temporal_effects
 add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FALSE,
@@ -230,9 +285,87 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
             ))
       }
     }
+
+    # Add after-holiday lag effects-----
+    # Indicator per lag: `_holiday_lag_k` == 1 on the k-th working day after a
+    # holiday (weekends and holidays are skipped when counting).
+    if (isTRUE(t_effects@holiday_lags > 0) && !is.null(date_col)) {
+      if (!rlang::is_installed("almanac")) {
+        cli::cli_abort(
+          "Please install the `almanac` package to be able to integrate after-holiday effects"
+        )
+      }
+      x <- .add_after_lag_columns(
+        x,
+        date_col     = date_col,
+        depth        = t_effects@holiday_lags,
+        base_name    = paste0(name_prefix, "_holiday_lag"),
+        reset_event  = "holiday",
+        weekend_days = weekend_days,
+        holidays     = t_effects@holidays,
+        overwrite    = overwrite
+      )
+    }
+
+    # Add after-weekend lag effects-----
+    # Indicator per lag: `_weekend_lag_k` == 1 on the k-th working day after a
+    # weekend (weekends and holidays are skipped when counting).
+    if (isTRUE(t_effects@weekend_lags > 0) && !is.null(date_col)) {
+      x <- .add_after_lag_columns(
+        x,
+        date_col     = date_col,
+        depth        = t_effects@weekend_lags,
+        base_name    = paste0(name_prefix, "_weekend_lag"),
+        reset_event  = "weekend",
+        weekend_days = weekend_days,
+        holidays     = t_effects@holidays,
+        overwrite    = overwrite
+      )
+    }
   }
 
   return(x)
+}
+
+#' Append the per-lag indicator columns for an after-holiday / after-weekend effect
+#'
+#' @param x A data frame.
+#' @param date_col Name of the `<Date>` column to derive the effect from.
+#' @param depth Number of lags `N`; columns `<base_name>_1` ... `<base_name>_N`
+#'   are created.
+#' @param base_name Column-name stem, e.g. `".event_holiday_lag"`.
+#' @param reset_event `"holiday"` or `"weekend"`, passed to
+#'   [.working_days_since()].
+#' @param weekend_days Passed to [is_weekday()].
+#' @param holidays An [almanac::rcalendar()] or `NULL`.
+#' @param overwrite Whether to overwrite pre-existing columns.
+#'
+#' @return `x` with the `depth` indicator columns appended.
+#'
+#' @keywords internal
+#' @noRd
+.add_after_lag_columns <- function(x, date_col, depth, base_name, reset_event,
+                                   weekend_days, holidays, overwrite) {
+  new_cols <- paste0(base_name, "_", seq_len(depth))
+  clash <- new_cols[new_cols %in% colnames(x)]
+  if (length(clash) > 0 && !overwrite) {
+    cli::cli_abort(
+      "Column{cli::qty(clash)}{?s} {.val {clash}} already exist{?s/} in data. \\
+       Set `overwrite = TRUE` to overwrite {cli::qty(clash)}{?it/them}."
+    )
+  }
+
+  since <- .working_days_since(
+    x[[date_col]],
+    reset_event  = reset_event,
+    weekend_days = weekend_days,
+    holidays     = holidays
+  )
+
+  for (k in seq_len(depth)) {
+    x[[paste0(base_name, "_", k)]] <- as.integer(!is.na(since) & since == k)
+  }
+  x
 }
 
 #' @export

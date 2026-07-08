@@ -107,8 +107,12 @@ identical to \code{pobs}, because a \code{tbl_now} does not retain everything an
 \code{enw_preprocess_data} object carries:
 \itemize{
 \item \strong{Covariate columns} that are neither the core
-\code{reference_date}/\code{report_date}/\code{confirm} nor a grouping (\code{by}) column are
-dropped.
+\code{reference_date}/\code{report_date}/\code{confirm}, a grouping (\code{by}) column, nor a
+materialised temporal-effect column are dropped. The temporal-effect
+columns (holidays, Fourier terms, calendar effects) \emph{are} carried over: the
+lazy \code{\link[=temporal_effects]{temporal_effects()}} spec is materialised with
+\code{\link[=compute_temporal_effects]{compute_temporal_effects()}} and the resulting columns are passed through to
+the observations and \code{metareference}/\code{metareport} tables.
 \item \strong{Grouping indices} (\code{.group}) are reassigned from the factor levels, so
 the row order of the nested tables can differ even though the underlying
 values match.
@@ -131,6 +135,8 @@ delay 74, so its \code{max_confirm} is 11 in \code{pobs} and 7 after the round-t
 
 \examples{
 \dontshow{if (requireNamespace("epinowcast", quietly = TRUE) & requireNamespace("data.table", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+# Preprocessing epinowcast data is slow, so this is wrapped in \donttest{}.
+\donttest{
 library(data.table)
 library(epinowcast)
 
@@ -151,6 +157,6 @@ tbl_epi <- tbl_now_from_epinowcast(pobs)
 
 #You can also convert to epinowcast preprocess data format
 preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
-
+}
 \dontshow{\}) # examplesIf}
 }

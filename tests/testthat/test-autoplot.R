@@ -39,16 +39,18 @@ test_that("autoplot.tbl_now works on daily count data", {
 
   p <- ggplot2::autoplot(make_daily_now())
   expect_s3_class(p, "patchwork")
-  # daily data => 5 panels (delay, epidemic, day-of-week, week-of-year, periodogram)
-  expect_length(p$patches$plots, 4) # patchwork stores n-1 in $plots + the last
+  # daily data => 8 panels: delay distribution, epidemic, day-of-week &
+  # week-of-year (case), seasonality, day-of-week & week-of-year (delay), delay
+  # periodogram. patchwork stores n-1 in $plots + the last.
+  expect_length(p$patches$plots, 7)
 })
 
-test_that("daily autoplot has 5 panels, weekly has 4", {
+test_that("daily autoplot has 8 panels, weekly has 6", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
   p_daily <- ggplot2::autoplot(make_daily_now())
-  expect_length(p_daily$patches$plots, 4) # 5 panels
+  expect_length(p_daily$patches$plots, 7) # 8 panels
 
   data(denguedat)
   dengue <- tbl_now(denguedat,
@@ -56,7 +58,63 @@ test_that("daily autoplot has 5 panels, weekly has 4", {
     verbose = FALSE
   )
   p_weekly <- ggplot2::autoplot(dengue)
-  expect_length(p_weekly$patches$plots, 3) # 4 panels
+  expect_length(p_weekly$patches$plots, 5) # 6 panels
+})
+
+test_that("autoplot panel selection returns the requested subset", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  nowobj <- make_daily_now()
+
+  # A single panel comes back as a plain ggplot (not a patchwork)
+  single <- ggplot2::autoplot(nowobj, panels = "delay_week")
+  expect_s3_class(single, "ggplot")
+  expect_false(inherits(single, "patchwork"))
+
+  # Two panels come back as a patchwork
+  two <- ggplot2::autoplot(nowobj, panels = c("epidemic", "delay_seasonality"))
+  expect_s3_class(two, "patchwork")
+  expect_length(two$patches$plots, 1) # 2 panels
+
+  # The "delay_calendar" alias expands to both delay calendar panels (daily)
+  delay_cal <- ggplot2::autoplot(nowobj, panels = "delay_calendar")
+  expect_length(delay_cal$patches$plots, 1) # 2 panels (weekday + week)
+})
+
+test_that("autoplot rejects unknown panels and warns on inapplicable ones", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  expect_error(ggplot2::autoplot(make_daily_now(), panels = "not_a_panel"), "Unknown panel")
+
+  data(denguedat)
+  dengue <- tbl_now(denguedat,
+    event_date = "onset_week", report_date = "report_week", verbose = FALSE
+  )
+  # weekly data has no day-of-week panel
+  expect_warning(
+    ggplot2::autoplot(dengue, panels = c("delay_week", "delay_weekday")),
+    "does not apply"
+  )
+})
+
+test_that("panel key vocabulary depends on the event unit", {
+  expect_equal(
+    tbl.now:::.tbl_now_all_panel_keys("days"),
+    c("delay_distribution", "epidemic", "calendar_weekday", "calendar_week",
+      "seasonality", "delay_weekday", "delay_week", "delay_seasonality")
+  )
+  expect_equal(
+    tbl.now:::.tbl_now_all_panel_keys("weeks"),
+    c("delay_distribution", "epidemic", "calendar_week", "seasonality",
+      "delay_week", "delay_seasonality")
+  )
+  # "all" resolves to every applicable key, in canonical order
+  expect_equal(
+    tbl.now:::.tbl_now_resolve_panels("all", "weeks"),
+    tbl.now:::.tbl_now_all_panel_keys("weeks")
+  )
 })
 
 test_that("calendar groupings depend on event units", {
@@ -123,6 +181,150 @@ test_that("epidemic process helper aggregates to one row per event date", {
 test_that("units_to_days multiplier is correct", {
   expect_equal(tbl.now:::.tbl_now_units_to_days("days"), 1)
   expect_equal(tbl.now:::.tbl_now_units_to_days("weeks"), 7)
+})
+
+test_that("delay-per-date helper returns one weighted mean delay per event date", {
+  nowobj <- make_daily_now()
+  dpd <- tbl.now:::.tbl_now_delay_per_date(nowobj)
+  expect_named(dpd, c("event_date", "mean_delay", "cases"))
+  expect_equal(nrow(dpd), dplyr::n_distinct(nowobj[[get_event_date(nowobj)]]))
+  expect_true(all(dpd$mean_delay >= 0))
+  expect_true(all(dpd$cases > 0))
+})
+
+# --- reporting-delay effect panels -----------------------------------------
+
+test_that("delay calendar panel plots mean delay by calendar group", {
+  skip_if_not_installed("ggplot2")
+
+  dpd <- tbl.now:::.tbl_now_delay_per_date(make_daily_now())
+  panel <- tbl.now:::.tbl_now_panel_delay_calendar(
+    dpd, "weekday", "days", tbl.now:::.tbl_now_palette()
+  )
+  expect_s3_class(panel$layers[[1]]$geom, "GeomBoxplot")
+  expect_equal(panel$labels$y, "Mean delay (days)")
+  expect_s3_class(ggplot2::ggplot_build(panel), "ggplot_built")
+})
+
+test_that("delay calendar panel supports weekday, week and month groupings", {
+  skip_if_not_installed("ggplot2")
+
+  dpd <- tbl.now:::.tbl_now_delay_per_date(make_daily_now())
+  for (grouping in c("weekday", "week", "month")) {
+    panel <- tbl.now:::.tbl_now_panel_delay_calendar(
+      dpd, grouping, "days", tbl.now:::.tbl_now_palette()
+    )
+    expect_s3_class(panel, "ggplot")
+  }
+})
+
+test_that("delay periodogram panel is a periodogram of the mean-delay series", {
+  skip_if_not_installed("ggplot2")
+
+  dpd <- tbl.now:::.tbl_now_delay_per_date(make_daily_now())
+  panel <- tbl.now:::.tbl_now_panel_delay_periodogram(
+    dpd, "days", tbl.now:::.tbl_now_palette()
+  )
+  expect_s3_class(panel, "ggplot")
+  expect_equal(panel$labels$y, "Spectral power")
+})
+
+# --- by-strata mode ---------------------------------------------------------
+
+make_daily_strata_now <- function() {
+  set.seed(11)
+  dates <- seq(as.Date("2021-01-01"), as.Date("2021-04-30"), by = "day")
+  rows <- do.call(rbind, lapply(dates, function(d) {
+    do.call(rbind, lapply(c("a", "b"), function(g) {
+      md <- rpois(1, 3)
+      data.frame(event_date = d, report_date = d + 0:md, n = rpois(md + 1, 4), grp = g)
+    }))
+  }))
+  tbl_now(rows,
+    event_date = event_date, report_date = report_date, case_count = n,
+    strata = "grp", data_type = "count-incidence",
+    event_units = "days", report_units = "days", verbose = FALSE
+  )
+}
+
+test_that("by_strata splits every panel and keeps the panel count", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  nowobj <- make_daily_strata_now()
+  p <- ggplot2::autoplot(nowobj, by_strata = TRUE)
+  expect_s3_class(p, "patchwork")
+  expect_length(p$patches$plots, 7) # 8 panels, same as non-strata daily
+
+  # A single by-strata panel still comes back as a plain ggplot
+  single <- ggplot2::autoplot(nowobj, panels = "delay_week", by_strata = TRUE)
+  expect_s3_class(single, "ggplot")
+  expect_false(inherits(single, "patchwork"))
+})
+
+test_that("by_strata errors without strata and honours the strata override", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  # No strata attached -> informative error
+  expect_error(ggplot2::autoplot(make_daily_now(), by_strata = TRUE), "strata")
+
+  # Unknown override column -> error
+  expect_error(
+    ggplot2::autoplot(make_daily_strata_now(), by_strata = TRUE, strata = "nope"),
+    "not in the data"
+  )
+
+  # by_strata must be a single logical
+  expect_error(ggplot2::autoplot(make_daily_strata_now(), by_strata = "yes"), "by_strata")
+})
+
+test_that("by-strata data helpers carry a combined strata label", {
+  nowobj <- make_daily_strata_now()
+
+  ep <- tbl.now:::.tbl_now_epidemic_process_by(nowobj, "grp")
+  expect_true(all(c("event_date", "case_count", "strata") %in% names(ep)))
+  expect_setequal(unique(ep$strata), c("a", "b"))
+
+  dd <- tbl.now:::.tbl_now_delay_distribution_by(nowobj, "grp")
+  expect_true(all(c("strata", "delay", "density") %in% names(dd)))
+  # densities sum to 1 within each stratum
+  sums <- tapply(dd$density, dd$strata, sum)
+  expect_true(all(abs(sums - 1) < 1e-8))
+
+  dpd <- tbl.now:::.tbl_now_delay_per_date_by(nowobj, "grp")
+  expect_true(all(c("strata", "event_date", "mean_delay", "cases") %in% names(dpd)))
+})
+
+test_that("multiple strata columns are combined into one label", {
+  set.seed(3)
+  dates <- seq(as.Date("2021-01-01"), as.Date("2021-02-28"), by = "day")
+  rows <- do.call(rbind, lapply(dates, function(d) {
+    data.frame(event_date = d, report_date = d + 0:1, n = 2, sex = "F", age = "adult")
+  }))
+  nowobj <- tbl_now(rows,
+    event_date = event_date, report_date = report_date, case_count = n,
+    strata = c("sex", "age"), data_type = "count-incidence",
+    event_units = "days", report_units = "days", verbose = FALSE
+  )
+  ep <- tbl.now:::.tbl_now_epidemic_process_by(nowobj, c("sex", "age"))
+  expect_equal(unique(ep$strata), "F / adult")
+})
+
+test_that("delay panels degrade gracefully on an empty / tiny series", {
+  skip_if_not_installed("ggplot2")
+
+  empty <- dplyr::tibble(
+    event_date = as.Date(character(0)), mean_delay = numeric(0), cases = numeric(0)
+  )
+  cal <- tbl.now:::.tbl_now_panel_delay_calendar(
+    empty, "weekday", "days", tbl.now:::.tbl_now_palette()
+  )
+  expect_s3_class(cal, "ggplot")
+  peri <- tbl.now:::.tbl_now_panel_delay_periodogram(
+    empty, "days", tbl.now:::.tbl_now_palette()
+  )
+  expect_s3_class(peri, "ggplot")
 })
 
 # --- normalized calendar effect --------------------------------------------

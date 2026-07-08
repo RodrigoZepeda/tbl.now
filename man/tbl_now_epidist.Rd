@@ -102,6 +102,10 @@ for rows flagged by \code{is_censored} it is left-censored to
 epidist time 0) — encoding the \code{tbl_now} convention that a censored report
 is only known to lie in \verb{[0, report_date]}.
 }
+
+Covariate columns and any materialised temporal-effect columns (holidays,
+Fourier terms, calendar effects; see \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}) are
+carried onto the epidist data unchanged.
 }
 \examples{
 \dontshow{if (requireNamespace("epidist", quietly = TRUE)) withAutoprint(\{ # examplesIf}
