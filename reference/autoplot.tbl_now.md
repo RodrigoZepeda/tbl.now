@@ -32,8 +32,12 @@ choose which to draw with the `panels` argument.
 **Reporting-delay panels** (to inspect *delay effects*)
 
 - `"delay_weekday"`, `"delay_week"`, `"delay_month"` — boxplots of the
-  mean reporting delay by day of week, epidemiological week, or month;
-  these reveal whether the delay itself has a calendar pattern.
+  *normalized* mean reporting delay (each event date's mean delay
+  divided by the overall mean delay, so 1 is average) by day of week,
+  epidemiological week, or month; these reveal whether the delay itself
+  has a calendar pattern. Normalizing keeps them on the same scale as
+  the case-count calendar panels and makes them comparable across
+  strata.
 
 - `"delay_seasonality"` — a periodogram of the mean-delay series, whose
   peak marks a cycle in the reporting delay (e.g. a weekly reporting

@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,7 +33,8 @@
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Batch_detection.html">Batch detection</a></li>
+    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -106,6 +107,20 @@
 
         <dt>
 
+          <code><a href="batch_screen.html">batch_screen()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Screen the report axis for batched reporting</dd>
+
+        <dt>
+
+          <code><a href="batch_shape_test.html">batch_shape_test()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Test whether one report date drew from unusually old event dates</dd>
+
+        <dt>
+
           <code><a href="censor_delays_above.html">censor_delays_above()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
@@ -145,13 +160,6 @@
 
         </dt>
         <dd>denguedat: Dengue fever individual-level reporting data from Puerto Rico</dd>
-
-        <dt>
-
-          <code><a href="detect_report_batches.html">detect_report_batches()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
-        </dt>
-        <dd>Detect batch reporting (backlog dumps) on the report-date axis</dd>
 
         <dt>
 
@@ -218,13 +226,6 @@
 
         <dt>
 
-          <code><a href="plot_report_batches.html">plot_report_batches()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
-        </dt>
-        <dd>Visualise batch reporting over the report-date axis</dd>
-
-        <dt>
-
           <code><a href="print.html">print()</a></code>
           <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
@@ -236,6 +237,13 @@
           <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Remove/replace attributes from a <code>tbl_now</code> object</dd>
+
+        <dt>
+
+          <code><a href="simulate_batch.html">simulate_batch()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Inject a batch into a <code>tbl_now</code> by withholding and then releasing reports</dd>
 
         <dt>
 
@@ -357,7 +365,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

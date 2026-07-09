@@ -3,6 +3,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE-text.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/SKILL.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/articles/Batch_detection.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/Example.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/index.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</loc></url>
@@ -16,6 +17,8 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/batch_screen.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/change.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/check_bool.html</loc></url>
@@ -30,7 +33,6 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/covidat.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/denguedat.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/flusight.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/index.html</loc></url>
@@ -45,10 +47,10 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/names_tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/print.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/reexports.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/remove.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/simulate_batch.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl.now-package.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.html</loc></url>

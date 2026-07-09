@@ -41,7 +41,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,7 +55,8 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
+<li><a class="dropdown-item" href="../articles/Batch_detection.html">Batch detection</a></li>
+    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul>
@@ -1264,31 +1265,40 @@ estimated change date together with the before/after delay level:</p>
 <h3 id="detecting-batch-reporting">Detecting batch reporting<a class="anchor" aria-label="anchor" href="#detecting-batch-reporting"></a>
 </h3>
 <p>Laboratories sometimes withhold results and then release a whole
-backlog at once — a <strong>batch</strong>. Operationally a batch is a
-<em>report date</em> that is anomalous on the report axis: an unusually
-large number of cases, spanning an unusually wide range of (old) event
-dates. <a href="https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.html">detect_report_batches()</a>
-scans each report date and flags batches using up to four robust signals
-— <code>"volume"</code>, <code>"delay"</code>, <code>"span"</code> and
-<code>"gap"</code> — of which you choose the combination to require:</p>
+backlog at once — a <strong>batch</strong>. The key idea is that a batch
+<em>moves</em> reports along the report axis without <em>creating</em>
+them, so a window of report dates spanning both the lull and the spike
+has an unchanged total — whereas a genuine epidemic surge adds cases and
+inflates it. <a href="https://rodrigozepeda.github.io/tbl.now/reference/batch_screen.html">batch_screen()</a>
+turns this into a per-report-date diagnostic that separates the two:</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">batches</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/detect_report_batches.html">detect_report_batches</a></span><span class="op">(</span><span class="va">dengue_now</span>, signals <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"volume"</span>, <span class="st">"delay"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">batches</span><span class="op">[</span><span class="va">batches</span><span class="op">$</span><span class="va">batch</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report_date"</span>, <span class="st">"n_reports"</span>, <span class="st">"mean_delay"</span>, <span class="st">"score_volume"</span>, <span class="st">"score_delay"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 5</span></span></span>
-<span><span class="co">#&gt;   report_date n_reports mean_delay score_volume score_delay</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 1993-09-27         65       2.38         3.51        3.50</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 1996-02-12         46       2.98         4.05        5.35</span></span></code></pre></div>
-<p>The important design point is that a <strong>volume spike alone is
-ambiguous</strong> — an epidemic peak also inflates the number of
-reports. What makes a batch a batch is that the volume spike comes
-<em>together with</em> anomalously long, dispersed delays (a backlog of
-old cases cleared at once). An epidemic peak’s cases are still reported
-with the normal, short delay, so requiring the <code>"delay"</code>
-signal alongside <code>"volume"</code> keeps peaks from being flagged.
-<a href="https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.html">plot_report_batches()</a>
-shows both the reporting-volume and mean-delay timelines with the
-flagged dates marked, so you can see why each was flagged.</p>
+<code class="sourceCode R"><span><span class="va">batches</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/batch_screen.html">batch_screen</a></span><span class="op">(</span><span class="va">dengue_now</span>, lookback <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">batches</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">batch</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">report_date</span>, <span class="va">reported</span>, <span class="va">baseline</span>, <span class="va">deficit</span>, <span class="va">delta</span>, <span class="va">classification</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 69 × 6</span></span></span>
+<span><span class="co">#&gt;    report_date reported baseline deficit    delta classification </span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 1990-12-03       124     67    -<span style="color: #BB0000;">44</span>    101      batch_and_surge</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 1991-02-04        53     38.4   14.5    0.062<span style="text-decoration: underline;">5</span> batch          </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 1991-08-12        61     50.2   37.3  -<span style="color: #BB0000;">26.6</span>    batch          </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 1991-12-02       241    154     12     75      batch_and_surge</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 1992-01-20       126     99.2   50.0  -<span style="color: #BB0000;">23.2</span>    batch          </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1992-06-22        54     41.1   18.8   -<span style="color: #BB0000;">5.83</span>   batch          </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1993-01-18       150     62.2   -<span style="color: #BB0000;">2.80</span>  90.6    batch_and_surge</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1993-03-22        46     31.4   20.4   -<span style="color: #BB0000;">5.73</span>   batch          </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1993-09-27        65     40.7   21.5    2.85   batch          </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1993-10-25        83     53.4   24.7    4.88   batch          </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 59 more rows</span></span></span></code></pre></div>
+<p>The <code>deficit</code> (reports missing beforehand) is what flags a
+<strong>batch</strong>; <code>delta</code> (the window total minus its
+expected value) is what would flag a genuine <strong>surge</strong>. A
+volume spike alone is ambiguous — but a spike paid for by a preceding
+deficit, with <code>delta</code> near zero, is a batch. <a href="https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.html">batch_shape_test()</a>
+complements it by testing whether a flagged date drew on unusually
+<em>old</em> event dates. These functions are experimental; they are
+covered in depth, with the mathematics, in the <a href="Batch_detection.html">Batch detection</a> article.</p>
 </div>
 </div>
 <div class="section level2">
@@ -1758,7 +1768,7 @@ Data</em>. O’Reilly Media, Inc.
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

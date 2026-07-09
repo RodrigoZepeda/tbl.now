@@ -27,7 +27,7 @@ for event_dates or report_dates that have not been registered
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,7 +39,8 @@ for event_dates or report_dates that have not been registered
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Batch_detection.html">Batch detection</a></li>
+    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -120,16 +121,16 @@ the <code>0</code> observations in the <code>case_count</code>.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    event        report              n sex      .event_num .report_num .delay</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[cases]</span> <span style="color: #949494;">[strata]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 2020-01-01   2020-01-01          4 Male              0           0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 2020-01-01   2020-01-01          9 Male              0           0      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 2020-01-01   2020-01-02          6 Male              0           1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 2020-01-02   2020-01-02          4 Male              1           1      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 2020-01-04   2020-01-04          7 Male              3           3      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 2020-01-04   2020-01-05          6 Male              3           4      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 2020-01-01   2020-01-01          4 Female            0           0      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 2020-01-01   2020-01-02          3 Female            0           1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 2020-01-02   2020-01-02          5 Female            1           1      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 2020-01-04   2020-01-04          2 Female            3           3      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 2020-01-04   2020-01-05          5 Female            3           4      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 2020-01-04   2020-01-04          8 Male              3           3      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 2020-01-04   2020-01-05          2 Male              3           4      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 2020-01-01   2020-01-01          6 Female            0           0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 2020-01-01   2020-01-02          4 Female            0           1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 2020-01-02   2020-01-02          9 Female            1           1      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 2020-01-04   2020-01-04          1 Female            3           3      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 2020-01-04   2020-01-05          4 Female            3           4      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2020-01-05</span> | Event date: <span style="color: #0000BB;">"event"</span> | Report date: <span style="color: #0000BB;">"report"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"sex"</span></span>
@@ -143,14 +144,14 @@ the <code>0</code> observations in the <code>case_count</code>.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    event        report              n sex      .event_num .report_num .delay</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[cases]</span> <span style="color: #949494;">[strata]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 2020-01-01   2020-01-01          4 Male              0           0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 2020-01-01   2020-01-01          9 Male              0           0      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 2020-01-01   2020-01-02          6 Male              0           1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 2020-01-02   2020-01-02          4 Male              1           1      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 2020-01-04   2020-01-04          7 Male              3           3      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 2020-01-01   2020-01-01          4 Female            0           0      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 2020-01-01   2020-01-02          3 Female            0           1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 2020-01-02   2020-01-02          5 Female            1           1      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 2020-01-04   2020-01-04          2 Female            3           3      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 2020-01-04   2020-01-04          8 Male              3           3      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 2020-01-01   2020-01-01          6 Female            0           0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 2020-01-01   2020-01-02          4 Female            0           1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 2020-01-02   2020-01-02          9 Female            1           1      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 2020-01-04   2020-01-04          1 Female            3           3      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 2020-01-02   2020-01-03          0 Male              1           2      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 2020-01-02   2020-01-03          0 Female            1           2      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> 2020-01-03   2020-01-03          0 Male              2           2      0</span>
@@ -173,20 +174,20 @@ the <code>0</code> observations in the <code>case_count</code>.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    event        report        .event_num .report_num sex            n .delay</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[cases]</span>  <span style="color: #949494;">[...]</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 2020-01-01   2020-01-01             0           0 Female         4      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 2020-01-01   2020-01-02             0           1 Female         7      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 2020-01-01   2020-01-01             0           0 Male           4      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 2020-01-01   2020-01-02             0           1 Male          10      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 2020-01-02   2020-01-02             1           1 Female         5      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 2020-01-02   2020-01-03             1           2 Female         5      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 2020-01-01   2020-01-01             0           0 Female         6      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 2020-01-01   2020-01-02             0           1 Female        10      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 2020-01-01   2020-01-01             0           0 Male           9      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 2020-01-01   2020-01-02             0           1 Male          15      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 2020-01-02   2020-01-02             1           1 Female         9      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 2020-01-02   2020-01-03             1           2 Female         9      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 2020-01-02   2020-01-02             1           1 Male           4      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 2020-01-02   2020-01-03             1           2 Male           4      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 2020-01-03   2020-01-03             2           2 Female         0      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 2020-01-03   2020-01-04             2           3 Female         0      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> 2020-01-03   2020-01-03             2           2 Male           0      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> 2020-01-03   2020-01-04             2           3 Male           0      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">13</span> 2020-01-04   2020-01-04             3           3 Female         2      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">14</span> 2020-01-04   2020-01-04             3           3 Male           7      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">13</span> 2020-01-04   2020-01-04             3           3 Female         1      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">14</span> 2020-01-04   2020-01-04             3           3 Male           8      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2020-01-05</span> | Event date: <span style="color: #0000BB;">"event"</span> | Report date: <span style="color: #0000BB;">"report"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"sex"</span></span>
@@ -203,7 +204,7 @@ the <code>0</code> observations in the <code>case_count</code>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

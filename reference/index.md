@@ -33,6 +33,13 @@
 
   Diagnostic `autoplot` for a `tbl_now`
 
+- [`batch_screen()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_screen.md)
+  **\[experimental\]** : Screen the report axis for batched reporting
+
+- [`batch_shape_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.md)
+  **\[experimental\]** : Test whether one report date drew from
+  unusually old event dates
+
 - [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
   **\[experimental\]** : Flag reports with an implausibly long delay as
   censored
@@ -63,10 +70,6 @@
 - [`denguedat`](https://rodrigozepeda.github.io/tbl.now/reference/denguedat.md)
   : denguedat: Dengue fever individual-level reporting data from Puerto
   Rico
-
-- [`detect_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.md)
-  **\[experimental\]** : Detect batch reporting (backlog dumps) on the
-  report-date axis
 
 - [`flusight`](https://rodrigozepeda.github.io/tbl.now/reference/flusight.md)
   : flusight: NHSN Weekly Hospital Respiratory Data from FluSight
@@ -119,10 +122,6 @@
   **\[experimental\]** : Visualise whether the reporting-delay
   distribution drifts over time
 
-- [`plot_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.md)
-  **\[experimental\]** : Visualise batch reporting over the report-date
-  axis
-
 - [`print()`](https://rodrigozepeda.github.io/tbl.now/reference/print.md)
   **\[stable\]** : Print temporal effects
 
@@ -136,6 +135,12 @@
   **\[stable\]** :
 
   Remove/replace attributes from a `tbl_now` object
+
+- [`simulate_batch()`](https://rodrigozepeda.github.io/tbl.now/reference/simulate_batch.md)
+  **\[experimental\]** :
+
+  Inject a batch into a `tbl_now` by withholding and then releasing
+  reports
 
 - [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
   **\[experimental\]** :

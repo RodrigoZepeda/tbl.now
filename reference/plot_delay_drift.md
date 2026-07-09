@@ -31,8 +31,9 @@ plot_delay_drift(
 
 - window:
 
-  Rolling-window width, in event-time **periods** (e.g. weeks for weekly
-  data). `NULL` (default) picks `max(5, n_periods / 20)`.
+  Rolling-window width, in event-time **periods**. `NULL` (default) uses
+  `7` periods regardless of the time unit — that is, 7 days for daily
+  data and 7 weeks for weekly data.
 
 - step:
 

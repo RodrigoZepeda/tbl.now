@@ -23,7 +23,7 @@ Functions to change the attributes of a tbl_now object."><meta property="og:imag
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,7 +35,8 @@ Functions to change the attributes of a tbl_now object."><meta property="og:imag
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Batch_detection.html">Batch detection</a></li>
+    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -342,16 +343,16 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    new_onset_week new_report_week .event_num .report_num gender   age_group</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span>   <span style="color: #949494;">[report_date]</span>        <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[strata]</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1989-12-31     1990-01-21               0           3 Female   20-60    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1989-12-31     1990-01-07               0           1 Female   20-60    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1989-12-31     1990-01-07               0           1 Female   20-60    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1989-12-31     1990-01-14               0           2 Female   20-60    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 1989-12-31     1990-01-14               0           2 Female   20-60    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1989-12-31     1990-01-21               0           3 Female   20-60    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1989-12-31     1990-01-07               0           1 Female   20-60    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1989-12-31     1990-01-14               0           2 Female   20-60    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1989-12-31     1989-12-31               0           0 Female   20-60    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 1989-12-31     1989-12-31               0           0 Female   20-60    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1989-12-31     1990-01-14               0           2 Female   20-60    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1989-12-31     1990-01-14               0           2 Female   20-60    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1989-12-31     1990-01-07               0           1 Female   20-60    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1989-12-31     1990-01-21               0           3 Female   20-60    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1989-12-31     1990-01-07               0           1 Female   20-60    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1989-12-31     1990-01-14               0           2 Female   20-60    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1989-12-31     1990-01-07               0           1 Female   20-60    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2025-01-01</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span> and <span style="color: #0000BB;">"age_group"</span></span>
@@ -528,7 +529,7 @@ a tibble. For example:</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

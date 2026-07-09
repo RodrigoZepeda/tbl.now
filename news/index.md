@@ -1,5 +1,75 @@
 # Changelog
 
+## tbl.now 0.12.0
+
+### Batch detection, rebuilt around a conservation law
+
+The report-batch detectors were rebuilt on a single, exact principle:
+**a batch moves reports along the report axis without creating them**,
+so a window of report dates spanning both the lull and the release has
+an unchanged total, whereas a genuine epidemic surge inflates it. The
+previous heuristic `detect_report_batches()` / `plot_report_batches()`
+(multi-signal robust-z, and the model-based conditional scan) are
+**removed** and replaced by three model-free,
+`r lifecycle::badge("experimental")` functions. Each derives its
+mathematics in a **“The mathematics”** section of its help page.
+
+- New
+  [`batch_screen()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_screen.md)
+  returns, per (report date, stratum), the `deficit` (reports missing
+  beforehand — sensitive to a batch) and `delta` (the window total minus
+  its expected value — sensitive to a real surge), and classifies each
+  date as `"batch"`, `"surge"`, `"batch_and_surge"`,
+  `"hold_or_deletion"` or `"none"`. The transport (batch) test
+  conditions on the window total, so its size does not depend on the
+  unknown incidence nor on the quality of the baseline; the baseline
+  itself is refit from report dates *outside* each candidate window,
+  which makes `delta` invariant to a within-window batch pathwise. It
+  handles all data types, including `"count-cumulative"` (signed
+  increments), and takes a `period` argument that absorbs a fixed
+  reporting schedule (weekends, holidays).
+- New
+  [`batch_shape_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.md)
+  tests whether a flagged report date drew on unusually *old* event
+  dates, by a permutation rank-sum on the reporting delays. It is
+  exactly distribution-free whenever incidence is locally log-linear.
+- New
+  [`simulate_batch()`](https://rodrigozepeda.github.io/tbl.now/reference/simulate_batch.md)
+  plants a known batch (a deterministic close-and-release) in a
+  `tbl_now`, for validation and teaching.
+- New **Batch detection** article, with worked examples on dengue (a
+  planted batch), FluSight (count-cumulative), and a weekend reporting
+  schedule.
+
+## tbl.now 0.10.1
+
+- [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)’s
+  reporting-delay calendar panels (`delay_weekday`, `delay_week`,
+  `delay_month`) are now **normalized**: each event date’s mean delay is
+  divided by the overall mean delay, so `1` marks an average delay and a
+  dashed reference line is drawn there. Previously the ungrouped panels
+  plotted the raw mean delay while the `by_strata = TRUE` panels were
+  already normalized. They now share one scale, matching the case-count
+  calendar panels and making the calendar *pattern* comparable across
+  strata (y-axis: `"Normalized delay"`).
+- [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)’s
+  `window` now defaults to **`7` periods regardless of the time unit** —
+  7 days for daily data, 7 weeks for weekly data. Previously the default
+  was data-dependent (`max(5, n_periods / 20)`), which produced a very
+  wide window on long series. Pass `window =` to smooth a specific
+  series.
+- Internal: replaced the remaining base-R data-frame subsetting and
+  column assignment (`df[cond, ]`, `df$col <- ...`) outside the
+  converters with the equivalent `dplyr` verbs
+  ([`filter()`](https://dplyr.tidyverse.org/reference/filter.html),
+  [`select()`](https://dplyr.tidyverse.org/reference/select.html),
+  [`slice()`](https://dplyr.tidyverse.org/reference/slice.html),
+  [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html)). No
+  user-facing behaviour change. The examples and vignettes now likewise
+  use
+  [`dplyr::filter()`](https://dplyr.tidyverse.org/reference/filter.html)
+  rather than `[` (e.g. `dplyr::filter(batches, batch)`).
+
 ## tbl.now 0.10.0
 
 - New
@@ -27,9 +97,8 @@
   ([`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md),
   [`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md),
   [`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md),
-  [`detect_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.md),
-  [`plot_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.md))
-  now carry a lifecycle **experimental** badge.
+  `detect_report_batches()`, `plot_report_batches()`) now carry a
+  lifecycle **experimental** badge.
   [`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
   and
   [`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md)
@@ -38,24 +107,18 @@
   batches, change points and trend changes are surfaced as **potential**
   (e.g. “potential batches”, “potential change point”).
 
-- New
-  [`detect_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.md)
-  and
-  [`plot_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.md)
-  to detect **batch reporting** — report dates on which a laboratory
-  releases a backlog of many old cases at once. Working on the
-  report-date axis, it flags a report date using up to four selectable
-  robust-anomaly signals (`volume`, `delay`, `span`, `gap`), AND-ed
-  together. Requiring the `delay` (long/dispersed delays) signal
-  alongside `volume` is what **distinguishes a batch from an epidemic
-  peak**: a peak also spikes the report volume, but its cases keep the
-  normal short delay distribution, so its delay score stays low.
-  [`detect_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.md)
+- New `detect_report_batches()` and `plot_report_batches()` to detect
+  **batch reporting** — report dates on which a laboratory releases a
+  backlog of many old cases at once. Working on the report-date axis, it
+  flags a report date using up to four selectable robust-anomaly signals
+  (`volume`, `delay`, `span`, `gap`), AND-ed together. Requiring the
+  `delay` (long/dispersed delays) signal alongside `volume` is what
+  **distinguishes a batch from an epidemic peak**: a peak also spikes
+  the report volume, but its cases keep the normal short delay
+  distribution, so its delay score stays low. `detect_report_batches()`
   returns a per-report-date table with the features, robust scores and a
-  `batch` flag;
-  [`plot_report_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.md)
-  shows the report-volume and mean-delay timelines with the flagged
-  dates marked.
+  `batch` flag; `plot_report_batches()` shows the report-volume and
+  mean-delay timelines with the flagged dates marked.
 
 - New
   [`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md)

@@ -19,9 +19,12 @@ suggests a Fourier season length for temporal_effects().
 
 
 Reporting-delay panels (to inspect delay effects)
-&quot;delay_weekday&quot;, &quot;delay_week&quot;, &quot;delay_month&quot; — boxplots of the mean
-reporting delay by day of week, epidemiological week, or month; these reveal
-whether the delay itself has a calendar pattern.
+&quot;delay_weekday&quot;, &quot;delay_week&quot;, &quot;delay_month&quot; — boxplots of the
+normalized mean reporting delay (each event date's mean delay divided by
+the overall mean delay, so 1 is average) by day of week, epidemiological
+week, or month; these reveal whether the delay itself has a calendar
+pattern. Normalizing keeps them on the same scale as the case-count
+calendar panels and makes them comparable across strata.
 &quot;delay_seasonality&quot; — a periodogram of the mean-delay series, whose peak
 marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).
 
@@ -50,9 +53,12 @@ suggests a Fourier season length for temporal_effects().
 
 
 Reporting-delay panels (to inspect delay effects)
-&quot;delay_weekday&quot;, &quot;delay_week&quot;, &quot;delay_month&quot; — boxplots of the mean
-reporting delay by day of week, epidemiological week, or month; these reveal
-whether the delay itself has a calendar pattern.
+&quot;delay_weekday&quot;, &quot;delay_week&quot;, &quot;delay_month&quot; — boxplots of the
+normalized mean reporting delay (each event date's mean delay divided by
+the overall mean delay, so 1 is average) by day of week, epidemiological
+week, or month; these reveal whether the delay itself has a calendar
+pattern. Normalizing keeps them on the same scale as the case-count
+calendar panels and makes them comparable across strata.
 &quot;delay_seasonality&quot; — a periodogram of the mean-delay series, whose peak
 marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).
 
@@ -83,7 +89,7 @@ reporting truncation does not bias them."><meta property="og:image" content="htt
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -95,7 +101,8 @@ reporting truncation does not bias them."><meta property="og:image" content="htt
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Batch_detection.html">Batch detection</a></li>
+    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -133,9 +140,12 @@ the <em>normalized</em> case effect (each event date's cases divided by the over
 mean, so 1 is average) by day of week, epidemiological week, or month.</p></li>
 <li><p><code>"seasonality"</code> — a periodogram of the incidence series whose dominant peak
 suggests a Fourier season length for <code><a href="temporal_effects.html">temporal_effects()</a></code>.</p></li>
-</ul><p><strong>Reporting-delay panels</strong> (to inspect <em>delay effects</em>)</p><ul><li><p><code>"delay_weekday"</code>, <code>"delay_week"</code>, <code>"delay_month"</code> — boxplots of the mean
-reporting delay by day of week, epidemiological week, or month; these reveal
-whether the delay itself has a calendar pattern.</p></li>
+</ul><p><strong>Reporting-delay panels</strong> (to inspect <em>delay effects</em>)</p><ul><li><p><code>"delay_weekday"</code>, <code>"delay_week"</code>, <code>"delay_month"</code> — boxplots of the
+<em>normalized</em> mean reporting delay (each event date's mean delay divided by
+the overall mean delay, so 1 is average) by day of week, epidemiological
+week, or month; these reveal whether the delay itself has a calendar
+pattern. Normalizing keeps them on the same scale as the case-count
+calendar panels and makes them comparable across strata.</p></li>
 <li><p><code>"delay_seasonality"</code> — a periodogram of the mean-delay series, whose peak
 marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).</p></li>
 </ul><p>The calendar/delay panels shown depend on the event unit: daily data offers
@@ -268,7 +278,7 @@ single panel is selected — that panel as a <span class="pkg">ggplot2</span> ob
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

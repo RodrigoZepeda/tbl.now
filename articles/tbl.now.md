@@ -1118,35 +1118,46 @@ You can mark the detected change point on the fan chart with
 ### Detecting batch reporting
 
 Laboratories sometimes withhold results and then release a whole backlog
-at once — a **batch**. Operationally a batch is a *report date* that is
-anomalous on the report axis: an unusually large number of cases,
-spanning an unusually wide range of (old) event dates.
-[detect_report_batches()](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.html)
-scans each report date and flags batches using up to four robust signals
-— `"volume"`, `"delay"`, `"span"` and `"gap"` — of which you choose the
-combination to require:
+at once — a **batch**. The key idea is that a batch *moves* reports
+along the report axis without *creating* them, so a window of report
+dates spanning both the lull and the spike has an unchanged total —
+whereas a genuine epidemic surge adds cases and inflates it.
+[batch_screen()](https://rodrigozepeda.github.io/tbl.now/reference/batch_screen.html)
+turns this into a per-report-date diagnostic that separates the two:
 
 ``` r
 
-batches <- detect_report_batches(dengue_now, signals = c("volume", "delay"))
-batches[batches$batch, c("report_date", "n_reports", "mean_delay", "score_volume", "score_delay")]
-#> # A tibble: 2 × 5
-#>   report_date n_reports mean_delay score_volume score_delay
-#>   <date>          <dbl>      <dbl>        <dbl>       <dbl>
-#> 1 1993-09-27         65       2.38         3.51        3.50
-#> 2 1996-02-12         46       2.98         4.05        5.35
+batches <- batch_screen(dengue_now, lookback = 2)
+
+batches |>
+  filter(batch) |>
+  select(report_date, reported, baseline, deficit, delta, classification)
+#> # A tibble: 69 × 6
+#>    report_date reported baseline deficit    delta classification 
+#>    <date>         <dbl>    <dbl>   <dbl>    <dbl> <chr>          
+#>  1 1990-12-03       124     67    -44    101      batch_and_surge
+#>  2 1991-02-04        53     38.4   14.5    0.0625 batch          
+#>  3 1991-08-12        61     50.2   37.3  -26.6    batch          
+#>  4 1991-12-02       241    154     12     75      batch_and_surge
+#>  5 1992-01-20       126     99.2   50.0  -23.2    batch          
+#>  6 1992-06-22        54     41.1   18.8   -5.83   batch          
+#>  7 1993-01-18       150     62.2   -2.80  90.6    batch_and_surge
+#>  8 1993-03-22        46     31.4   20.4   -5.73   batch          
+#>  9 1993-09-27        65     40.7   21.5    2.85   batch          
+#> 10 1993-10-25        83     53.4   24.7    4.88   batch          
+#> # ℹ 59 more rows
 ```
 
-The important design point is that a **volume spike alone is ambiguous**
-— an epidemic peak also inflates the number of reports. What makes a
-batch a batch is that the volume spike comes *together with* anomalously
-long, dispersed delays (a backlog of old cases cleared at once). An
-epidemic peak’s cases are still reported with the normal, short delay,
-so requiring the `"delay"` signal alongside `"volume"` keeps peaks from
-being flagged.
-[plot_report_batches()](https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.html)
-shows both the reporting-volume and mean-delay timelines with the
-flagged dates marked, so you can see why each was flagged.
+The `deficit` (reports missing beforehand) is what flags a **batch**;
+`delta` (the window total minus its expected value) is what would flag a
+genuine **surge**. A volume spike alone is ambiguous — but a spike paid
+for by a preceding deficit, with `delta` near zero, is a batch.
+[batch_shape_test()](https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.html)
+complements it by testing whether a flagged date drew on unusually *old*
+event dates. These functions are experimental; they are covered in
+depth, with the mathematics, in the [Batch
+detection](https://rodrigozepeda.github.io/tbl.now/articles/Batch_detection.md)
+article.
 
 ## Other functions (utilities)
 

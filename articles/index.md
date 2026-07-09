@@ -2,6 +2,8 @@
 
 ### All vignettes
 
+- [Batch
+  detection](https://rodrigozepeda.github.io/tbl.now/articles/Batch_detection.md):
 - [Example analysis with
   Flusight](https://rodrigozepeda.github.io/tbl.now/articles/Example.md):
 - [One dataset, many nowcasts: using tbl.now with five modelling
