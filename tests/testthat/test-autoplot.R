@@ -194,16 +194,21 @@ test_that("delay-per-date helper returns one weighted mean delay per event date"
 
 # --- reporting-delay effect panels -----------------------------------------
 
-test_that("delay calendar panel plots mean delay by calendar group", {
+test_that("delay calendar panel plots a normalized delay effect centred on ~1", {
   skip_if_not_installed("ggplot2")
 
   dpd <- tbl.now:::.tbl_now_delay_per_date(make_daily_now())
   panel <- tbl.now:::.tbl_now_panel_delay_calendar(
-    dpd, "weekday", "days", tbl.now:::.tbl_now_palette()
+    dpd, "weekday", tbl.now:::.tbl_now_palette()
   )
   expect_s3_class(panel$layers[[1]]$geom, "GeomBoxplot")
-  expect_equal(panel$labels$y, "Mean delay (days)")
-  expect_s3_class(ggplot2::ggplot_build(panel), "ggplot_built")
+  expect_equal(panel$labels$y, "Normalized delay")
+
+  built <- ggplot2::ggplot_build(panel)
+  box_medians <- built$data[[1]]$middle # boxplot medians per weekday
+  expect_true(all(box_medians > 0))
+  # normalized by the overall mean delay, so the boxes straddle 1
+  expect_lt(abs(mean(box_medians) - 1), 0.5)
 })
 
 test_that("delay calendar panel supports weekday, week and month groupings", {
@@ -212,7 +217,7 @@ test_that("delay calendar panel supports weekday, week and month groupings", {
   dpd <- tbl.now:::.tbl_now_delay_per_date(make_daily_now())
   for (grouping in c("weekday", "week", "month")) {
     panel <- tbl.now:::.tbl_now_panel_delay_calendar(
-      dpd, grouping, "days", tbl.now:::.tbl_now_palette()
+      dpd, grouping, tbl.now:::.tbl_now_palette()
     )
     expect_s3_class(panel, "ggplot")
   }
@@ -318,7 +323,7 @@ test_that("delay panels degrade gracefully on an empty / tiny series", {
     event_date = as.Date(character(0)), mean_delay = numeric(0), cases = numeric(0)
   )
   cal <- tbl.now:::.tbl_now_panel_delay_calendar(
-    empty, "weekday", "days", tbl.now:::.tbl_now_palette()
+    empty, "weekday", tbl.now:::.tbl_now_palette()
   )
   expect_s3_class(cal, "ggplot")
   peri <- tbl.now:::.tbl_now_panel_delay_periodogram(

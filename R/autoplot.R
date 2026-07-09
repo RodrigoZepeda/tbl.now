@@ -276,29 +276,31 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_holiday_points <- function(object, epidemic_process) {
+  no_holidays <- dplyr::slice(epidemic_process, 0)
+
   specs <- get_temporal_effects(object)
   if (length(specs) == 0) {
-    return(epidemic_process[0, , drop = FALSE])
+    return(no_holidays)
   }
 
   calendars <- Filter(Negate(is.null), lapply(specs, function(s) s$t_effects@holidays))
   if (length(calendars) == 0) {
-    return(epidemic_process[0, , drop = FALSE])
+    return(no_holidays)
   }
 
   if (!requireNamespace("almanac", quietly = TRUE)) {
     cli::cli_warn("Package {.pkg almanac} is needed to mark holidays; skipping holiday dots.")
-    return(epidemic_process[0, , drop = FALSE])
+    return(no_holidays)
   }
   if (!lubridate::is.Date(epidemic_process$event_date)) {
-    return(epidemic_process[0, , drop = FALSE])
+    return(no_holidays)
   }
 
   is_holiday <- rep(FALSE, nrow(epidemic_process))
   for (calendar in calendars) {
     is_holiday <- is_holiday | almanac::alma_in(epidemic_process$event_date, calendar)
   }
-  epidemic_process[is_holiday, , drop = FALSE]
+  dplyr::slice(epidemic_process, which(is_holiday))
 }
 
 #' Titles for a calendar grouping
@@ -404,9 +406,14 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_panel_delay_calendar <- function(delay_per_date, grouping, event_units, palette) {
+.tbl_now_panel_delay_calendar <- function(delay_per_date, grouping, palette) {
   if (nrow(delay_per_date) == 0) {
     return(.tbl_now_empty_panel("No delays to summarise", palette))
+  }
+
+  overall_mean_delay <- mean(delay_per_date$mean_delay, na.rm = TRUE)
+  if (is.na(overall_mean_delay) || overall_mean_delay == 0) {
+    return(.tbl_now_empty_panel("No delays to compute a delay effect", palette))
   }
 
   labels <- .tbl_now_calendar_group_spec(grouping)
@@ -417,24 +424,25 @@
     ))
   }
 
-  unit_label <- switch(event_units,
-    days = "days", weeks = "weeks", months = "months", years = "years", "units"
+  plot_data <- dplyr::mutate(grouped,
+    normalized_delay = .data$mean_delay / overall_mean_delay
   )
-  overall_mean_delay <- mean(delay_per_date$mean_delay, na.rm = TRUE)
 
-  ggplot2::ggplot(grouped, ggplot2::aes(x = .data$calendar_group, y = .data$mean_delay)) +
+  ggplot2::ggplot(plot_data, ggplot2::aes(
+    x = .data$calendar_group, y = .data$normalized_delay
+  )) +
     ggplot2::geom_boxplot(
       fill = palette[["light_green"]], colour = palette[["dark_green"]],
       outlier.colour = palette[["near_black"]], outlier.size = 0.6, linewidth = 0.4
     ) +
     ggplot2::geom_hline(
-      yintercept = overall_mean_delay, linetype = "dashed",
+      yintercept = 1, linetype = "dashed",
       colour = palette[["near_black"]], linewidth = 0.4
     ) +
     ggplot2::labs(
       title = paste0(labels$title, " delay effect"),
-      subtitle = "Mean reporting delay by calendar group",
-      x = labels$x, y = paste0("Mean delay (", unit_label, ")")
+      subtitle = "Normalized mean reporting delay (1 = average)",
+      x = labels$x, y = "Normalized delay"
     ) +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
 }
@@ -649,17 +657,17 @@
   latest <- get_latest_reported_cases(object)
   case_count_column <- get_case_count(latest)
   event_date_column <- get_event_date(object)
-  out <- latest |>
-    as.data.frame() |>
-    dplyr::group_by(dplyr::across(dplyr::all_of(c(event_date_column, strata_cols)))) |>
+  latest |>
+    dplyr::as_tibble() |>
     dplyr::summarise(
       case_count = sum(.data[[case_count_column]], na.rm = TRUE),
-      .groups    = "drop"
+      .by = dplyr::all_of(c(event_date_column, strata_cols))
     ) |>
-    as.data.frame()
-  out$event_date <- out[[event_date_column]]
-  out$strata <- .tbl_now_strata_label(out, strata_cols)
-  dplyr::arrange(out, .data$strata, .data$event_date)
+    dplyr::mutate(
+      event_date = .data[[event_date_column]],
+      strata     = .tbl_now_strata_label(dplyr::pick(dplyr::all_of(strata_cols)), strata_cols)
+    ) |>
+    dplyr::arrange(.data$strata, .data$event_date)
 }
 
 #' Reporting delays weighted by case counts, split by stratum
@@ -1112,9 +1120,9 @@
     calendar_weekday = .tbl_now_panel_calendar(ctx$epidemic_process, "weekday", palette),
     calendar_week    = .tbl_now_panel_calendar(ctx$epidemic_process, "week", palette),
     calendar_month   = .tbl_now_panel_calendar(ctx$epidemic_process, "month", palette),
-    delay_weekday = .tbl_now_panel_delay_calendar(ctx$delay_per_date, "weekday", ctx$event_units, palette),
-    delay_week    = .tbl_now_panel_delay_calendar(ctx$delay_per_date, "week", ctx$event_units, palette),
-    delay_month   = .tbl_now_panel_delay_calendar(ctx$delay_per_date, "month", ctx$event_units, palette),
+    delay_weekday = .tbl_now_panel_delay_calendar(ctx$delay_per_date, "weekday", palette),
+    delay_week    = .tbl_now_panel_delay_calendar(ctx$delay_per_date, "week", palette),
+    delay_month   = .tbl_now_panel_delay_calendar(ctx$delay_per_date, "month", palette),
     .tbl_now_empty_panel(paste0("Unknown panel: ", key), palette)
   )
 }
@@ -1226,9 +1234,12 @@ ggplot2::autoplot
 #'
 #' **Reporting-delay panels** (to inspect *delay effects*)
 #'
-#' * `"delay_weekday"`, `"delay_week"`, `"delay_month"` — boxplots of the mean
-#'   reporting delay by day of week, epidemiological week, or month; these reveal
-#'   whether the delay itself has a calendar pattern.
+#' * `"delay_weekday"`, `"delay_week"`, `"delay_month"` — boxplots of the
+#'   *normalized* mean reporting delay (each event date's mean delay divided by
+#'   the overall mean delay, so 1 is average) by day of week, epidemiological
+#'   week, or month; these reveal whether the delay itself has a calendar
+#'   pattern. Normalizing keeps them on the same scale as the case-count
+#'   calendar panels and makes them comparable across strata.
 #' * `"delay_seasonality"` — a periodogram of the mean-delay series, whose peak
 #'   marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).
 #'
@@ -1355,7 +1366,9 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
     if (!is.na(incomplete_threshold)) {
       complete_rows <- delay_by_date$event_date <= incomplete_threshold
       if (any(complete_rows)) {
-        delay_by_date <- delay_by_date[complete_rows, , drop = FALSE]
+        delay_by_date <- dplyr::filter(
+          delay_by_date, .data$event_date <= incomplete_threshold
+        )
       }
     }
     delay_by_date

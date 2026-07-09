@@ -22,8 +22,9 @@ plot_delay_drift(
 
 \item{...}{Unused.}
 
-\item{window}{Rolling-window width, in event-time \strong{periods} (e.g. weeks for
-weekly data). \code{NULL} (default) picks \code{max(5, n_periods / 20)}.}
+\item{window}{Rolling-window width, in event-time \strong{periods}. \code{NULL}
+(default) uses \code{7} periods regardless of the time unit — that is, 7 days for
+daily data and 7 weeks for weekly data.}
 
 \item{step}{Step between window centres, in periods. \code{NULL} (default) uses
 \code{max(1, window / 4)}.}
