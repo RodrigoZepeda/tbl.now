@@ -199,28 +199,28 @@ rolling fan chart of the delay distribution, while `test_delay_drift()` and
 autocorrelation-robust test, since a delay series is correlated with itself).
 
 **Batch reporting.** Laboratories sometimes withhold results and then release a
-whole backlog at once. Operationally such a *batch* is a report date carrying an
-unusually large number of cases spanning many old event dates.
-`detect_report_batches()` flags them — and, crucially, tells them apart from
-epidemic peaks (which also spike the volume but keep the normal *short* delays)
-by additionally requiring an anomalous *delay* signal:
+whole backlog at once. Such a *batch* moves reports along the report axis without
+creating them, so a window spanning the lull and the spike has an unchanged total
+— unlike a genuine epidemic surge, which adds cases. `batch_screen()` uses this to
+tell the two apart, per report date:
 
-```{r batches}
+```{r batches, warning=FALSE}
 data(denguedat)
 dengue <- tbl_now(denguedat,
   event_date = onset_week, report_date = report_week, verbose = FALSE
 )
 
-batches <- detect_report_batches(dengue, signals = c("volume", "delay"))
-batches[batches$batch, c("report_date", "n_reports", "mean_delay", "score_volume", "score_delay")]
+batches <- batch_screen(dengue, lookback = 2)
+
+batches |>
+  filter(batch) |>
+  select(report_date, reported, baseline, deficit, delta, classification)
 ```
 
-`plot_report_batches()` shows the reporting-volume and mean-delay timelines with
-the flagged dates marked, so you can see *why* each was flagged:
-
-```{r batches-plot, fig.width=9, fig.height=6, message=FALSE, warning=FALSE}
-plot_report_batches(dengue, signals = c("volume", "delay"))
-```
+A spike paid for by a preceding `deficit`, with `delta` near zero, is a batch;
+a large `delta` would instead signal a real surge. `batch_shape_test()` adds a
+complementary check on whether a flagged date drew on unusually *old* event
+dates. These functions are experimental — see the *Batch detection* article.
 
 ## Extreme delays
 

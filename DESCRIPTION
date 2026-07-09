@@ -1,7 +1,7 @@
 Package: tbl.now
 Type: Package
 Title: Tidy Extension for Nowcasting
-Version: 0.10.0
+Version: 0.12.0
 Authors@R: 
     c(person("Rodrigo", "Zepeda-Tello", , "rzepeda17@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-4471-5270")),
@@ -36,12 +36,13 @@ Additional_repositories:
     https://epinowcast.r-universe.dev
 Config/testthat/edition: 3
 Config/testthat/parallel: true
-Imports: 
+Imports:
     cli,
     dplyr,
     ggplot2,
     lifecycle,
     lubridate,
+    methods,
     pillar,
     rlang,
     S7,

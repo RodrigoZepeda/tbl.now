@@ -634,14 +634,17 @@ You can mark the detected change point on the fan chart with `plot_delay_drift(d
 
 ### Detecting batch reporting
 
-Laboratories sometimes withhold results and then release a whole backlog at once — a **batch**. Operationally a batch is a *report date* that is anomalous on the report axis: an unusually large number of cases, spanning an unusually wide range of (old) event dates. [detect_report_batches()](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.html) scans each report date and flags batches using up to four robust signals — `"volume"`, `"delay"`, `"span"` and `"gap"` — of which you choose the combination to require:
+Laboratories sometimes withhold results and then release a whole backlog at once — a **batch**. The key idea is that a batch *moves* reports along the report axis without *creating* them, so a window of report dates spanning both the lull and the spike has an unchanged total — whereas a genuine epidemic surge adds cases and inflates it. [batch_screen()](https://rodrigozepeda.github.io/tbl.now/reference/batch_screen.html) turns this into a per-report-date diagnostic that separates the two:
 
-```{r batches}
-batches <- detect_report_batches(dengue_now, signals = c("volume", "delay"))
-batches[batches$batch, c("report_date", "n_reports", "mean_delay", "score_volume", "score_delay")]
+```{r batches, warning=FALSE}
+batches <- batch_screen(dengue_now, lookback = 2)
+
+batches |>
+  filter(batch) |>
+  select(report_date, reported, baseline, deficit, delta, classification)
 ```
 
-The important design point is that a **volume spike alone is ambiguous** — an epidemic peak also inflates the number of reports. What makes a batch a batch is that the volume spike comes *together with* anomalously long, dispersed delays (a backlog of old cases cleared at once). An epidemic peak's cases are still reported with the normal, short delay, so requiring the `"delay"` signal alongside `"volume"` keeps peaks from being flagged. [plot_report_batches()](https://rodrigozepeda.github.io/tbl.now/reference/plot_report_batches.html) shows both the reporting-volume and mean-delay timelines with the flagged dates marked, so you can see why each was flagged.
+The `deficit` (reports missing beforehand) is what flags a **batch**; `delta` (the window total minus its expected value) is what would flag a genuine **surge**. A volume spike alone is ambiguous — but a spike paid for by a preceding deficit, with `delta` near zero, is a batch. [batch_shape_test()](https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.html) complements it by testing whether a flagged date drew on unusually *old* event dates. These functions are experimental; they are covered in depth, with the mathematics, in the [Batch detection](Batch_detection.html) article.
 
 ## Other functions (utilities)
 
