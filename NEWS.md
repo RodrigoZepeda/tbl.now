@@ -1,3 +1,53 @@
+# tbl.now 0.12.0
+
+## Batch detection, rebuilt around a conservation law
+
+The report-batch detectors were rebuilt on a single, exact principle: **a batch
+moves reports along the report axis without creating them**, so a window of report
+dates spanning both the lull and the release has an unchanged total, whereas a
+genuine epidemic surge inflates it. The previous heuristic
+`detect_report_batches()` / `plot_report_batches()` (multi-signal robust-z, and
+the model-based conditional scan) are **removed** and replaced by three
+model-free, `r lifecycle::badge("experimental")` functions. Each derives its
+mathematics in a **"The mathematics"** section of its help page.
+
+* New `batch_screen()` returns, per (report date, stratum), the `deficit` (reports
+  missing beforehand — sensitive to a batch) and `delta` (the window total minus
+  its expected value — sensitive to a real surge), and classifies each date as
+  `"batch"`, `"surge"`, `"batch_and_surge"`, `"hold_or_deletion"` or `"none"`. The
+  transport (batch) test conditions on the window total, so its size does not
+  depend on the unknown incidence nor on the quality of the baseline; the baseline
+  itself is refit from report dates *outside* each candidate window, which makes
+  `delta` invariant to a within-window batch pathwise. It handles all data types,
+  including `"count-cumulative"` (signed increments), and takes a `period` argument
+  that absorbs a fixed reporting schedule (weekends, holidays).
+* New `batch_shape_test()` tests whether a flagged report date drew on unusually
+  *old* event dates, by a permutation rank-sum on the reporting delays. It is
+  exactly distribution-free whenever incidence is locally log-linear.
+* New `simulate_batch()` plants a known batch (a deterministic close-and-release)
+  in a `tbl_now`, for validation and teaching.
+* New **Batch detection** article, with worked examples on dengue (a planted
+  batch), FluSight (count-cumulative), and a weekend reporting schedule.
+
+# tbl.now 0.10.1
+
+* `autoplot()`'s reporting-delay calendar panels (`delay_weekday`, `delay_week`,
+`delay_month`) are now **normalized**: each event date's mean delay is divided by
+the overall mean delay, so `1` marks an average delay and a dashed reference line
+is drawn there. Previously the ungrouped panels plotted the raw mean delay while
+the `by_strata = TRUE` panels were already normalized. They now share one scale,
+matching the case-count calendar panels and making the calendar *pattern*
+comparable across strata (y-axis: `"Normalized delay"`).
+* `plot_delay_drift()`'s `window` now defaults to **`7` periods regardless of the
+time unit** — 7 days for daily data, 7 weeks for weekly data. Previously the
+default was data-dependent (`max(5, n_periods / 20)`), which produced a very wide
+window on long series. Pass `window =` to smooth a specific series.
+* Internal: replaced the remaining base-R data-frame subsetting and column
+assignment (`df[cond, ]`, `df$col <- ...`) outside the converters with the
+equivalent `dplyr` verbs (`filter()`, `select()`, `slice()`, `mutate()`). No
+user-facing behaviour change. The examples and vignettes now likewise use
+`dplyr::filter()` rather than `[` (e.g. `dplyr::filter(batches, batch)`).
+
 # tbl.now 0.10.0
 
 * New `get_nth_reported_cases()`: the cumulative cases reported for each event

@@ -102,7 +102,7 @@ NULL
   # Cumulative count at each report within a group. Cumulative input already
   # holds the running total, so it is used as-is.
   if (data_type == "count-cumulative") {
-    cells$.cumulative <- cells$.increment
+    cells <- dplyr::mutate(cells, .cumulative = .data$.increment)
   } else {
     cells <- cells |>
       dplyr::arrange(dplyr::across(dplyr::all_of(c(group_cols, report_col)))) |>
@@ -124,8 +124,8 @@ NULL
     )
   }
 
-  picked[[count_out]] <- picked$.cumulative
   result <- picked |>
+    dplyr::mutate("{count_out}" := .data$.cumulative) |>
     dplyr::select(dplyr::all_of(
       c(event_col, report_col, censored, strata, effects, covariates, count_out)
     )) |>

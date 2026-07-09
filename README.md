@@ -324,12 +324,11 @@ trend or an abrupt change (with an autocorrelation-robust test, since a
 delay series is correlated with itself).
 
 **Batch reporting.** Laboratories sometimes withhold results and then
-release a whole backlog at once. Operationally such a *batch* is a
-report date carrying an unusually large number of cases spanning many
-old event dates. `detect_report_batches()` flags them — and, crucially,
-tells them apart from epidemic peaks (which also spike the volume but
-keep the normal *short* delays) by additionally requiring an anomalous
-*delay* signal:
+release a whole backlog at once. Such a *batch* moves reports along the
+report axis without creating them, so a window spanning the lull and the
+spike has an unchanged total — unlike a genuine epidemic surge, which
+adds cases. `batch_screen()` uses this to tell the two apart, per report
+date:
 
 ``` r
 data(denguedat)
@@ -337,24 +336,32 @@ dengue <- tbl_now(denguedat,
   event_date = onset_week, report_date = report_week, verbose = FALSE
 )
 
-batches <- detect_report_batches(dengue, signals = c("volume", "delay"))
-batches[batches$batch, c("report_date", "n_reports", "mean_delay", "score_volume", "score_delay")]
-#> # A tibble: 2 x 5
-#>   report_date n_reports mean_delay score_volume score_delay
-#>   <date>          <dbl>      <dbl>        <dbl>       <dbl>
-#> 1 1993-09-27         65       2.38         3.51        3.50
-#> 2 1996-02-12         46       2.98         4.05        5.35
+batches <- batch_screen(dengue, lookback = 2)
+
+batches |>
+  filter(batch) |>
+  select(report_date, reported, baseline, deficit, delta, classification)
+#> # A tibble: 69 x 6
+#>    report_date reported baseline deficit    delta classification 
+#>    <date>         <dbl>    <dbl>   <dbl>    <dbl> <chr>          
+#>  1 1990-12-03       124     67    -44    101      batch_and_surge
+#>  2 1991-02-04        53     38.4   14.5    0.0625 batch          
+#>  3 1991-08-12        61     50.2   37.3  -26.6    batch          
+#>  4 1991-12-02       241    154     12     75      batch_and_surge
+#>  5 1992-01-20       126     99.2   50.0  -23.2    batch          
+#>  6 1992-06-22        54     41.1   18.8   -5.83   batch          
+#>  7 1993-01-18       150     62.2   -2.80  90.6    batch_and_surge
+#>  8 1993-03-22        46     31.4   20.4   -5.73   batch          
+#>  9 1993-09-27        65     40.7   21.5    2.85   batch          
+#> 10 1993-10-25        83     53.4   24.7    4.88   batch          
+#> # i 59 more rows
 ```
 
-`plot_report_batches()` shows the reporting-volume and mean-delay
-timelines with the flagged dates marked, so you can see *why* each was
-flagged:
-
-``` r
-plot_report_batches(dengue, signals = c("volume", "delay"))
-```
-
-<img src="man/figures/README-batches-plot-1.png" alt="" width="100%" />
+A spike paid for by a preceding `deficit`, with `delta` near zero, is a
+batch; a large `delta` would instead signal a real surge.
+`batch_shape_test()` adds a complementary check on whether a flagged
+date drew on unusually *old* event dates. These functions are
+experimental — see the *Batch detection* article.
 
 ## Extreme delays
 

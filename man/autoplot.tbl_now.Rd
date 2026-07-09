@@ -87,9 +87,12 @@ suggests a Fourier season length for \code{\link[=temporal_effects]{temporal_eff
 
 \strong{Reporting-delay panels} (to inspect \emph{delay effects})
 \itemize{
-\item \code{"delay_weekday"}, \code{"delay_week"}, \code{"delay_month"} — boxplots of the mean
-reporting delay by day of week, epidemiological week, or month; these reveal
-whether the delay itself has a calendar pattern.
+\item \code{"delay_weekday"}, \code{"delay_week"}, \code{"delay_month"} — boxplots of the
+\emph{normalized} mean reporting delay (each event date's mean delay divided by
+the overall mean delay, so 1 is average) by day of week, epidemiological
+week, or month; these reveal whether the delay itself has a calendar
+pattern. Normalizing keeps them on the same scale as the case-count
+calendar panels and makes them comparable across strata.
 \item \code{"delay_seasonality"} — a periodogram of the mean-delay series, whose peak
 marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).
 }

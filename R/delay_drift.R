@@ -40,7 +40,7 @@
     weight     = observations[[case_count_column]]
   )
   if (!is.null(strata_cols)) {
-    out$strata <- .tbl_now_strata_label(observations, strata_cols)
+    out <- dplyr::mutate(out, strata = .tbl_now_strata_label(observations, strata_cols))
   }
   dplyr::filter(
     out,
@@ -138,7 +138,7 @@
   groups <- split(delay_long, delay_long$strata)
   rolled <- lapply(names(groups), function(stratum) {
     out <- .tbl_now_rolling_delay_one(groups[[stratum]], centers, halfwidth, min_n)
-    if (nrow(out) > 0) out$strata <- stratum
+    if (nrow(out) > 0) out <- dplyr::mutate(out, strata = stratum)
     out
   })
   dplyr::bind_rows(rolled)
@@ -161,7 +161,7 @@
 #' @noRd
 .tbl_now_delay_period_series <- function(delay_long) {
   if (!"strata" %in% names(delay_long)) {
-    delay_long$strata <- "all"
+    delay_long <- dplyr::mutate(delay_long, strata = "all")
   }
   delay_long |>
     dplyr::group_by(.data$strata, .data$event_date) |>
@@ -200,8 +200,9 @@
 #' [test_delay_drift()] for a formal test.
 #'
 #' @param x A `tbl_now` object.
-#' @param window Rolling-window width, in event-time **periods** (e.g. weeks for
-#'   weekly data). `NULL` (default) picks `max(5, n_periods / 20)`.
+#' @param window Rolling-window width, in event-time **periods**. `NULL`
+#'   (default) uses `7` periods regardless of the time unit — that is, 7 days for
+#'   daily data and 7 weeks for weekly data.
 #' @param step Step between window centres, in periods. `NULL` (default) uses
 #'   `max(1, window / 4)`.
 #' @param min_n Minimum total case count for a window to be drawn (default `1`).
@@ -261,9 +262,10 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
   event_units <- get_event_units(x)
   period_days <- .tbl_now_units_to_days(event_units)
   event_dates <- sort(unique(delay_long$event_date))
-  n_periods <- length(event_dates)
 
-  if (is.null(window)) window <- max(5, round(n_periods / 20))
+  # A 7-period window regardless of the time unit: 7 days for daily data,
+  # 7 weeks for weekly data.
+  if (is.null(window)) window <- 7
   if (is.null(step)) step <- max(1, round(window / 4))
   window <- as.integer(window)
   step <- as.integer(step)
@@ -292,7 +294,7 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
     }
     cp_series <- .tbl_now_delay_period_series(cp_long)
     cp_rows <- lapply(unique(cp_series$strata), function(stratum) {
-      one <- cp_series[cp_series$strata == stratum, , drop = FALSE]
+      one <- dplyr::filter(cp_series, .data$strata == stratum)
       found <- .tbl_now_pettitt(one$median)
       if (!is.na(found$p_value) && found$p_value < 0.05) {
         dplyr::tibble(strata = stratum, xintercept = one$event_date[found$index])
@@ -528,7 +530,7 @@ test_delay_drift <- function(x, ...,
 
   strata_levels <- unique(period_series$strata)
   rows <- lapply(strata_levels, function(stratum) {
-    series <- period_series[period_series$strata == stratum, , drop = FALSE]
+    series <- dplyr::filter(period_series, .data$strata == stratum)
     per_stat <- lapply(stat, function(one_stat) {
       outcome <- run_test(series[[one_stat]])
       dplyr::tibble(
@@ -656,7 +658,7 @@ test_delay_changepoint <- function(x, ...,
 
   strata_levels <- unique(period_series$strata)
   rows <- lapply(strata_levels, function(stratum) {
-    series <- period_series[period_series$strata == stratum, , drop = FALSE]
+    series <- dplyr::filter(period_series, .data$strata == stratum)
     per_stat <- lapply(stat, function(one_stat) {
       values <- series[[one_stat]]
       outcome <- .tbl_now_pettitt(values)
