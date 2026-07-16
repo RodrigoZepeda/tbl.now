@@ -6,7 +6,12 @@ ggplot2::ggplot() and patchwork. Two families of panels are available
 delay — and you choose which to draw with the panels argument.
 Case-count panels
 &quot;delay_distribution&quot; — a (case-count weighted) histogram of the reporting
-delay (.delay).
+delay (.delay). For count-cumulative data this panel instead shows the
+cumulative growth by delay: boxplots (on a log scale, with a dashed
+reference at 1) of the ratio of each event date's cumulative count at a
+delay to its cumulative count at the previous delay. A ratio above 1 is an
+upward revision, below 1 a downward one, and the boxes converge to 1 as
+reporting completes.
 &quot;epidemic&quot; — the latest reported case counts per event_date, with a
 dashed vertical line marking where the data become incomplete (less than
 level of the delay distribution has arrived). Holidays from the attached
@@ -40,7 +45,12 @@ ggplot2::ggplot() and patchwork. Two families of panels are available
 delay — and you choose which to draw with the panels argument.
 Case-count panels
 &quot;delay_distribution&quot; — a (case-count weighted) histogram of the reporting
-delay (.delay).
+delay (.delay). For count-cumulative data this panel instead shows the
+cumulative growth by delay: boxplots (on a log scale, with a dashed
+reference at 1) of the ratio of each event date's cumulative count at a
+delay to its cumulative count at the previous delay. A ratio above 1 is an
+upward revision, below 1 a downward one, and the boxes converge to 1 as
+reporting completes.
 &quot;epidemic&quot; — the latest reported case counts per event_date, with a
 dashed vertical line marking where the data become incomplete (less than
 level of the delay distribution has arrived). Holidays from the attached
@@ -89,7 +99,7 @@ reporting truncation does not bias them."><meta property="og:image" content="htt
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -101,7 +111,7 @@ reporting truncation does not bias them."><meta property="og:image" content="htt
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Batch_detection.html">Batch detection</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
     <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
@@ -130,7 +140,12 @@ reporting truncation does not bias them."><meta property="og:image" content="htt
 — one describing the <strong>case counts</strong> and one describing the <strong>reporting
 delay</strong> — and you choose which to draw with the <code>panels</code> argument.</p>
 <p><strong>Case-count panels</strong></p><ul><li><p><code>"delay_distribution"</code> — a (case-count weighted) histogram of the reporting
-delay (<code>.delay</code>).</p></li>
+delay (<code>.delay</code>). For <strong><code>count-cumulative</code></strong> data this panel instead shows the
+<em>cumulative growth by delay</em>: boxplots (on a log scale, with a dashed
+reference at <code>1</code>) of the ratio of each event date's cumulative count at a
+delay to its cumulative count at the previous delay. A ratio above <code>1</code> is an
+upward revision, below <code>1</code> a downward one, and the boxes converge to <code>1</code> as
+reporting completes.</p></li>
 <li><p><code>"epidemic"</code> — the latest reported case counts per <code>event_date</code>, with a
 dashed vertical line marking where the data become incomplete (less than
 <code>level</code> of the delay distribution has arrived). Holidays from the attached
@@ -165,6 +180,7 @@ reporting truncation does not bias them.</p>
 <span>  by_strata <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  level <span class="op">=</span> <span class="fl">0.95</span>,</span>
+<span>  plotly <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  palette <span class="op">=</span> <span class="fu">.tbl_now_palette</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  delay_distribution_xlim <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  event_date_xlim <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -217,6 +233,11 @@ some of them. Ignored when <code>by_strata = FALSE</code>.</p></dd>
 <code>now - q</code>, where <code>q</code> is the <code>level</code> quantile of the delay distribution. With
 the default <code>0.95</code>, the line marks where at least 5 percent of delays are
 yet to arrive.</p></dd>
+
+
+<dt id="arg-plotly">plotly<a class="anchor" aria-label="anchor" href="#arg-plotly"></a></dt>
+<dd><p>If <code>TRUE</code>, return an interactive <span class="pkg">plotly</span> widget (the panels
+stacked) instead of a static <span class="pkg">patchwork</span>. Default <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-palette">palette<a class="anchor" aria-label="anchor" href="#arg-palette"></a></dt>

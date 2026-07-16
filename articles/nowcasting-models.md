@@ -152,12 +152,9 @@ incidence on the way):
 
 library(baselinenowcast)
 
-dengue_triangle <- tbl_now_to_baselinenowcast(
-  dengue_now,
-  format      = "matrix",
-  delays_unit = "weeks",
-  verbose     = FALSE
-)
+# `delays_unit` defaults to NULL and is inferred from the object's weekly units;
+# pass it explicitly (e.g. delays_unit = "weeks") if the units are ambiguous.
+dengue_triangle <- tbl_now_to_baselinenowcast(dengue_now, verbose = FALSE)
 
 # rows = onset weeks, columns = delay in weeks
 dengue_triangle[1:5, 1:6]
@@ -176,7 +173,7 @@ idiomatic `baselinenowcast` call and pass the `tbl_now` straight in:
 
 ``` r
 
-dengue_triangle2 <- as_reporting_triangle(dengue_now, delays_unit = "weeks")
+dengue_triangle2 <- as_reporting_triangle(dengue_now)
 identical(dim(dengue_triangle), dim(dengue_triangle2))
 #> [1] TRUE
 ```
@@ -398,11 +395,11 @@ to each package in the shape it needed:
 dengue_now <- tbl_now(dengue, event_date = onset_week, report_date = report_week,
                       data_type = "linelist")
 
-nowcast(dengue_now)                                        # diseasenowcasting
-tbl_now_to_baselinenowcast(dengue_now, format = "matrix")  # baselinenowcast
-tbl_now_to_epinowcast(dengue_now)                          # epinowcast
-tbl_now_to_epidist(dengue_now)                             # epidist
-as.data.frame(dengue_now)                                  # NobBS
+dengue_now                              # diseasenowcasting
+tbl_now_to_baselinenowcast(dengue_now)  # baselinenowcast
+tbl_now_to_epinowcast(dengue_now)       # epinowcast
+tbl_now_to_epidist(dengue_now)          # epidist
+as.data.frame(dengue_now)               # NobBS or others
 ```
 
 For a public-health team this means you can **benchmark several

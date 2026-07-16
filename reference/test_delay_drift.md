@@ -8,7 +8,7 @@
 test_delay_drift(
   x,
   ...,
-  stat = c("median", "spread", "mean", "iqr"),
+  stat = c("median", "spread"),
   method = c("hamed-rao", "yue-pilon", "block-bootstrap"),
   by_strata = FALSE,
   strata = NULL,
@@ -110,11 +110,9 @@ test_delay_drift(dengue)
 #> ℹ Interpret a significant result as a potential trend change, not a confirmed
 #>   one.
 #> This warning is displayed once every 8 hours.
-#> # A tibble: 4 × 9
+#> # A tibble: 2 × 9
 #>   strata stat       n      tau sens_slope statistic p_value method    drift
 #>   <chr>  <chr>  <int>    <dbl>      <dbl>     <dbl>   <dbl> <chr>     <lgl>
-#> 1 all    median  1090 -0.00918   0           -0.243 0.808   hamed-rao FALSE
-#> 2 all    spread  1090 -0.178     0           -2.32  0.0203  hamed-rao TRUE 
-#> 3 all    mean    1090 -0.0974   -0.000163    -2.05  0.0399  hamed-rao TRUE 
-#> 4 all    iqr     1090 -0.0880    0           -3.22  0.00127 hamed-rao TRUE 
+#> 1 all    median  1090 -0.00918          0    -0.243  0.808  hamed-rao FALSE
+#> 2 all    spread  1090 -0.178            0    -2.32   0.0203 hamed-rao TRUE 
 ```

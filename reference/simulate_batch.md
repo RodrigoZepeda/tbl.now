@@ -7,7 +7,7 @@ dates and releases its accumulated backlog on the next open date.
 Reports keep their event dates and merely move *later* on the report
 axis, so no cases are created or destroyed – the defining property of a
 batch. Useful for checking that
-[`batch_screen()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_screen.md)
+[`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md)
 and
 [`batch_shape_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.md)
 recover a batch you planted.
@@ -15,7 +15,13 @@ recover a batch you planted.
 ## Usage
 
 ``` r
-simulate_batch(data, closed_dates, drop_unreleased = TRUE, verbose = TRUE)
+simulate_batch(
+  data,
+  closed_dates,
+  held_fraction = 1,
+  drop_unreleased = TRUE,
+  verbose = TRUE
+)
 ```
 
 ## Arguments
@@ -31,6 +37,18 @@ simulate_batch(data, closed_dates, drop_unreleased = TRUE, verbose = TRUE)
   A vector of report dates on which the reporting system is closed. Must
   be coercible to the class of the report-date column.
 
+- held_fraction:
+
+  Fraction of the reports due on each closed date that are actually
+  **held back** (and released later); the rest report on time, so the
+  closure is only partial. Default `1` (the whole desk is closed). With,
+  say, `held_fraction = 0.5`, roughly half of each closed day's reports
+  are held and half report normally. This uses the random number
+  generator (Binomial / Bernoulli sampling), so set a seed for
+  reproducibility. Only supported for `"linelist"` and
+  `"count-incidence"` data (a `"count-cumulative"` total cannot be
+  split).
+
 - drop_unreleased:
 
   Logical; drop reports whose closed run never reopens before the end of
@@ -45,31 +63,13 @@ simulate_batch(data, closed_dates, drop_unreleased = TRUE, verbose = TRUE)
 A new `tbl_now` with the same event dates, strata and data type, and
 modified report dates.
 
-## The mathematics
+## Details
 
-A batch is a **transport**: a rule that moves an item's report date
-later while leaving its event date untouched, creating and destroying
-nothing. This function implements the deterministic case exactly. Let
-\\H\\ be the set of closed report dates and define the *next-open-date*
-map
-
-\$\$\varrho(u) = \min\\\\ v \ge u : v \notin H \\\\.\$\$
-
-Every item with ideal report date \\r^\star\\ is observed at \\r =
-\varrho(r^\star) \ge r^\star\\, so its delay can only grow. A maximal
-closed run \\\\b-L,\dots,b-1\\\\ followed by an open date \\b\\
-therefore produces the four textbook symptoms at \\b\\ – a volume spike,
-inflated delays, many contributing event dates, and \\L\\ preceding
-empty dates – from this single mechanism. Because mass is conserved, the
-window total spanning the run and the release is unchanged, which is
-exactly the invariant
-[`batch_screen()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_screen.md)
-tests (see its **Details**).
-
-## What the mechanism does
-
-Every report whose report date lies in `closed_dates` is re-stamped with
-the first report date at or after it that is *not* closed. Consequently:
+A batch is a **transport**: it moves an item's report date later while
+leaving its event date untouched, creating and destroying nothing. Every
+report whose report date lies in `closed_dates` (or, with
+`held_fraction < 1`, a random share of them) is re-stamped with the
+first report date at or after it that is *not* closed. Consequently:
 
 - the closed dates report nothing (the **deficit**);
 
@@ -101,7 +101,7 @@ on the total.
 
 ## See also
 
-[`batch_screen()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_screen.md),
+[`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md),
 [`batch_shape_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.md)
 
 ## Examples

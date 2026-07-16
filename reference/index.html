@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,7 +33,7 @@
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Batch_detection.html">Batch detection</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
     <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
@@ -107,17 +107,17 @@
 
         <dt>
 
-          <code><a href="batch_screen.html">batch_screen()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
-        </dt>
-        <dd>Screen the report axis for batched reporting</dd>
-
-        <dt>
-
           <code><a href="batch_shape_test.html">batch_shape_test()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Test whether one report date drew from unusually old event dates</dd>
+
+        <dt>
+
+          <code><a href="batch_test.html">batch_test()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Screen the report axis for batched reporting</dd>
 
         <dt>
 
@@ -149,6 +149,20 @@
 
         <dt>
 
+          <code><a href="covid_colombia.html">covid_colombia</a></code>
+
+        </dt>
+        <dd>COVID-19 Notifications – Colombia 2020-2023</dd>
+
+        <dt>
+
+          <code><a href="covid_us.html">covid_us</a></code>
+
+        </dt>
+        <dd>covid_us: CDC COVID-19 Case Surveillance Public Use Data (2020-2021)</dd>
+
+        <dt>
+
           <code><a href="covidat.html">covidat</a></code>
 
         </dt>
@@ -160,6 +174,13 @@
 
         </dt>
         <dd>denguedat: Dengue fever individual-level reporting data from Puerto Rico</dd>
+
+        <dt>
+
+          <code><a href="diagnostic_plot.html">diagnostic_plot()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Diagnostic plots of the reporting process</dd>
 
         <dt>
 
@@ -223,6 +244,55 @@
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Visualise whether the reporting-delay distribution drifts over time</dd>
+
+        <dt>
+
+          <code><a href="plot_delay_profiles.html">plot_delay_profiles()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Plot the per-date delay profiles</dd>
+
+        <dt>
+
+          <code><a href="plot_epidemic_process.html">plot_epidemic_process()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Plot the epidemic process</dd>
+
+        <dt>
+
+          <code><a href="plot_reporting_process.html">plot_reporting_process()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Plot the reporting process</dd>
+
+        <dt>
+
+          <code><a href="plot_reporting_triangle.html">plot_reporting_triangle()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Plot the reporting triangle</dd>
+
+        <dt>
+
+          <code><a href="plot_reporting_v.html">plot_reporting_v()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Plot the reporting "V"</dd>
+
+        <dt>
+
+          <code><a href="plot_scalogram.html">plot_scalogram()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Plot the reporting or epidemic scalogram</dd>
+
+        <dt>
+
+          <code><a href="plot_transport_discriminant.html">plot_transport_discriminant()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Plot the transport-discriminant plane</dd>
 
         <dt>
 
@@ -335,6 +405,13 @@
           <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Transform an object to count data</dd>
+
+        <dt>
+
+          <code><a href="transport_discriminant.html">transport_discriminant()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>The transport discriminant of a reporting series</dd>
 
         <dt>
 

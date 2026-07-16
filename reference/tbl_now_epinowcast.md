@@ -183,13 +183,18 @@ library(data.table)
 #>     %notin%
 library(epinowcast)
 #> ! `enw_cache_location` is not set.
-#> ℹ Using `tempdir()` at /tmp/RtmpWlmMbZ for the epinowcast model cache location.
+#> ℹ Using `tempdir()` at /tmp/RtmpFYgSaD for the epinowcast model cache location.
 #> ℹ Set a specific cache location using `enw_set_cache` to control Stan
 #>   recompilation in this R session or across R sessions.
 #> ℹ For example: `enw_set_cache(tools::R_user_dir(package = "epinowcast",
 #>   "cache"), type = c('session', 'persistent'))`.
 #> ℹ See `?enw_set_cache` for details.
 #> This message is displayed once per session.
+#> 
+#> Attaching package: ‘epinowcast’
+#> The following objects are masked from ‘package:stats’:
+#> 
+#>     ar, arima
 
 #Read data from epinowcast
 obs  <- germany_covid19_hosp[location == "DE"]

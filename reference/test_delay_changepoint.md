@@ -8,7 +8,7 @@
 test_delay_changepoint(
   x,
   ...,
-  stat = c("median", "spread", "mean", "iqr"),
+  stat = c("median", "spread"),
   by_strata = FALSE,
   strata = NULL,
   mature_only = TRUE,
@@ -97,12 +97,10 @@ test_delay_changepoint(dengue)
 #>   the interface may change.
 #> ℹ Treat a detected change as a potential change point, not a confirmed one.
 #> This warning is displayed once every 8 hours.
-#> # A tibble: 4 × 10
+#> # A tibble: 2 × 10
 #>   strata stat       n changepoint statistic  p_value before after  shift
 #>   <chr>  <chr>  <int> <date>          <dbl>    <dbl>  <dbl> <dbl>  <dbl>
 #> 1 all    median  1090 1998-01-19      38402 2.17e- 3   1.53  1.39 -0.136
 #> 2 all    spread  1090 1997-09-01      93409 5.77e-18   2.55  1.91 -0.639
-#> 3 all    mean    1090 1998-01-19      75959 5.04e-12   1.86  1.72 -0.145
-#> 4 all    iqr     1090 1998-11-16      45245 1.53e- 4   1.19  1    -0.194
 #> # ℹ 1 more variable: changepoint_detected <lgl>
 ```

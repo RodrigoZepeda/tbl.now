@@ -45,7 +45,7 @@ core columns.'><meta property="og:image" content="https://rodrigozepeda.github.i
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,7 +57,7 @@ core columns.'><meta property="og:image" content="https://rodrigozepeda.github.i
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Batch_detection.html">Batch detection</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
     <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
@@ -111,7 +111,7 @@ core columns.</p>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">...</span>,</span>
 <span>  format <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"matrix"</span>, <span class="st">"long"</span><span class="op">)</span>,</span>
-<span>  delays_unit <span class="op">=</span> <span class="st">"days"</span>,</span>
+<span>  delays_unit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -134,8 +134,13 @@ core columns.</p>
 
 
 <dt id="arg-delays-unit">delays_unit<a class="anchor" aria-label="anchor" href="#arg-delays-unit"></a></dt>
-<dd><p>Unit of the delay axis (passed to
-<code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code>). Defaults to <code>"days"</code>.</p></dd>
+<dd><p>Unit of the delay axis of the reporting triangle, one of
+<code>"days"</code> or <code>"weeks"</code>. For <code>tbl_now_from_baselinenowcast()</code> this says how to
+read an input matrix's delay columns and defaults to <code>"days"</code>. For
+<code>tbl_now_to_baselinenowcast()</code> (matrix format only) it defaults to <code>NULL</code>,
+meaning it is <strong>inferred</strong> from the object's time units when the event and
+report units agree and are <code>"days"</code> or <code>"weeks"</code>; otherwise you must supply
+it explicitly.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -196,6 +201,7 @@ in-triangle cells with <code>0</code> unless they are marked in the tibble as <c
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • report_date &lt;- <span style="color: #0000BB;">"report_date"</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • count &lt;- <span style="color: #0000BB;">"count"</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • format: <span style="color: #0000BB;">"matrix"</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • delays_unit: <span style="color: #0000BB;">"days"</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Using max_delay = 3 from data</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 </code></pre></div>

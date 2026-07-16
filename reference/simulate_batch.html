@@ -4,12 +4,12 @@ Simulates a reporting system that is closed on a given set of report dates
 and releases its accumulated backlog on the next open date.  Reports keep
 their event dates and merely move later on the report axis, so no cases are
 created or destroyed – the defining property of a batch.  Useful for checking
-that batch_screen() and batch_shape_test() recover a batch you planted."><meta property="og:description" content="
+that batch_test() and batch_shape_test() recover a batch you planted."><meta property="og:description" content="
 Simulates a reporting system that is closed on a given set of report dates
 and releases its accumulated backlog on the next open date.  Reports keep
 their event dates and merely move later on the report axis, so no cases are
 created or destroyed – the defining property of a batch.  Useful for checking
-that batch_screen() and batch_shape_test() recover a batch you planted."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
+that batch_test() and batch_shape_test() recover a batch you planted."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
 
 
 
@@ -31,7 +31,7 @@ that batch_screen() and batch_shape_test() recover a batch you planted."><meta p
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,7 +43,7 @@ that batch_screen() and batch_shape_test() recover a batch you planted."><meta p
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Batch_detection.html">Batch detection</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
     <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
@@ -71,12 +71,18 @@ that batch_screen() and batch_shape_test() recover a batch you planted."><meta p
 and releases its accumulated backlog on the next open date.  Reports keep
 their event dates and merely move <em>later</em> on the report axis, so no cases are
 created or destroyed – the defining property of a batch.  Useful for checking
-that <code><a href="batch_screen.html">batch_screen()</a></code> and <code><a href="batch_shape_test.html">batch_shape_test()</a></code> recover a batch you planted.</p>
+that <code><a href="batch_test.html">batch_test()</a></code> and <code><a href="batch_shape_test.html">batch_shape_test()</a></code> recover a batch you planted.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">simulate_batch</span><span class="op">(</span><span class="va">data</span>, <span class="va">closed_dates</span>, drop_unreleased <span class="op">=</span> <span class="cn">TRUE</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">simulate_batch</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  <span class="va">closed_dates</span>,</span>
+<span>  held_fraction <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  drop_unreleased <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -90,6 +96,17 @@ that <code><a href="batch_screen.html">batch_screen()</a></code> and <code><a hr
 <dt id="arg-closed-dates">closed_dates<a class="anchor" aria-label="anchor" href="#arg-closed-dates"></a></dt>
 <dd><p>A vector of report dates on which the reporting system is
 closed. Must be coercible to the class of the report-date column.</p></dd>
+
+
+<dt id="arg-held-fraction">held_fraction<a class="anchor" aria-label="anchor" href="#arg-held-fraction"></a></dt>
+<dd><p>Fraction of the reports due on each closed date that are
+actually <strong>held back</strong> (and released later); the rest report on time, so the
+closure is only partial. Default <code>1</code> (the whole desk is closed). With, say,
+<code>held_fraction = 0.5</code>, roughly half of each closed day's reports are held and
+half report normally. This uses the random number generator (Binomial /
+Bernoulli sampling), so set a seed for reproducibility. Only supported for
+<code>"linelist"</code> and <code>"count-incidence"</code> data (a <code>"count-cumulative"</code> total cannot
+be split).</p></dd>
 
 
 <dt id="arg-drop-unreleased">drop_unreleased<a class="anchor" aria-label="anchor" href="#arg-drop-unreleased"></a></dt>
@@ -107,25 +124,12 @@ before the end of the report axis. Default <code>TRUE</code>.</p></dd>
 modified report dates.</p>
     </div>
     <div class="section level2">
-    <h2 id="the-mathematics">The mathematics<a class="anchor" aria-label="anchor" href="#the-mathematics"></a></h2>
-    <p>A batch is a <strong>transport</strong>: a rule that moves an item's report date later while
-leaving its event date untouched, creating and destroying nothing.  This
-function implements the deterministic case exactly.  Let \(H\) be the set of
-closed report dates and define the <em>next-open-date</em> map</p>
-<p>$$\varrho(u) = \min\{\, v \ge u : v \notin H \,\}.$$</p>
-<p>Every item with ideal report date \(r^\star\) is observed at
-\(r = \varrho(r^\star) \ge r^\star\), so its delay can only grow.  A maximal
-closed run \(\{b-L,\dots,b-1\}\) followed by an open date \(b\) therefore
-produces the four textbook symptoms at \(b\) – a volume spike, inflated
-delays, many contributing event dates, and \(L\) preceding empty dates –
-from this single mechanism.  Because mass is conserved, the window total
-spanning the run and the release is unchanged, which is exactly the invariant
-<code><a href="batch_screen.html">batch_screen()</a></code> tests (see its <strong>Details</strong>).</p>
-    </div>
-    <div class="section level2">
-    <h2 id="what-the-mechanism-does">What the mechanism does<a class="anchor" aria-label="anchor" href="#what-the-mechanism-does"></a></h2>
-    <p>Every report whose report date lies in <code>closed_dates</code> is re-stamped with the
-first report date at or after it that is <em>not</em> closed.  Consequently:</p><ul><li><p>the closed dates report nothing (the <strong>deficit</strong>);</p></li>
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>A batch is a <strong>transport</strong>: it moves an item's report date later while leaving
+its event date untouched, creating and destroying nothing. Every report whose
+report date lies in <code>closed_dates</code> (or, with <code>held_fraction &lt; 1</code>, a random share
+of them) is re-stamped with the first report date at or after it that is <em>not</em>
+closed. Consequently:</p><ul><li><p>the closed dates report nothing (the <strong>deficit</strong>);</p></li>
 <li><p>the release date reports its own items <em>plus</em> the whole backlog (the <strong>spike</strong>);</p></li>
 <li><p>items released late have inflated <strong>delays</strong>;</p></li>
 <li><p>the release date draws on an unusually large number of distinct <strong>event dates</strong>.</p></li>
@@ -148,7 +152,7 @@ the later one survives: it is that report date's final word on the total.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="batch_screen.html">batch_screen()</a></code>, <code><a href="batch_shape_test.html">batch_shape_test()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="batch_test.html">batch_test()</a></code>, <code><a href="batch_shape_test.html">batch_shape_test()</a></code></p></div>
     </div>
 
     <div class="section level2">

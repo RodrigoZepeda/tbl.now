@@ -15,6 +15,7 @@ plot_delay_drift(
   strata = NULL,
   changepoint = FALSE,
   level = 0.95,
+  plotly = FALSE,
   palette = .tbl_now_palette()
 )
 ```
@@ -66,6 +67,11 @@ plot_delay_drift(
   Completeness level for the immature-region shading (default `0.95`;
   see
   [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)).
+
+- plotly:
+
+  If `TRUE`, return an interactive plotly widget instead of a static
+  plot. Default `FALSE`.
 
 - palette:
 

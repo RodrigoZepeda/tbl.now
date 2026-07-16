@@ -34,7 +34,7 @@ tbl_now_to_baselinenowcast(
   x,
   ...,
   format = c("matrix", "long"),
-  delays_unit = "days",
+  delays_unit = NULL,
   verbose = TRUE
 )
 ```
@@ -59,9 +59,13 @@ tbl_now_to_baselinenowcast(
 
 - delays_unit:
 
-  Unit of the delay axis (passed to
-  [`baselinenowcast::as_reporting_triangle()`](https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html)).
-  Defaults to `"days"`.
+  Unit of the delay axis of the reporting triangle, one of `"days"` or
+  `"weeks"`. For `tbl_now_from_baselinenowcast()` this says how to read
+  an input matrix's delay columns and defaults to `"days"`. For
+  `tbl_now_to_baselinenowcast()` (matrix format only) it defaults to
+  `NULL`, meaning it is **inferred** from the object's time units when
+  the event and report units agree and are `"days"` or `"weeks"`;
+  otherwise you must supply it explicitly.
 
 - verbose:
 
@@ -127,6 +131,7 @@ identical(rt, tbl_now_to_baselinenowcast(nowobj))
 #> • report_date <- "report_date"
 #> • count <- "count"
 #> • format: "matrix"
+#> • delays_unit: "days"
 #> ℹ Using max_delay = 3 from data
 #> [1] TRUE
 ```

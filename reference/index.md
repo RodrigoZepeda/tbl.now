@@ -33,12 +33,12 @@
 
   Diagnostic `autoplot` for a `tbl_now`
 
-- [`batch_screen()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_screen.md)
-  **\[experimental\]** : Screen the report axis for batched reporting
-
 - [`batch_shape_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.md)
   **\[experimental\]** : Test whether one report date drew from
   unusually old event dates
+
+- [`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md)
+  **\[experimental\]** : Screen the report axis for batched reporting
 
 - [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
   **\[experimental\]** : Flag reports with an implausibly long delay as
@@ -64,12 +64,21 @@
 
   Compute temporal effects for a `tbl_now`
 
+- [`covid_colombia`](https://rodrigozepeda.github.io/tbl.now/reference/covid_colombia.md)
+  : COVID-19 Notifications – Colombia 2020-2023
+
+- [`covid_us`](https://rodrigozepeda.github.io/tbl.now/reference/covid_us.md)
+  : covid_us: CDC COVID-19 Case Surveillance Public Use Data (2020-2021)
+
 - [`covidat`](https://rodrigozepeda.github.io/tbl.now/reference/covidat.md)
   : covidat: COVID-19 reporting data from Mexico City (2020-2022)
 
 - [`denguedat`](https://rodrigozepeda.github.io/tbl.now/reference/denguedat.md)
   : denguedat: Dengue fever individual-level reporting data from Puerto
   Rico
+
+- [`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md)
+  **\[experimental\]** : Diagnostic plots of the reporting process
 
 - [`flusight`](https://rodrigozepeda.github.io/tbl.now/reference/flusight.md)
   : flusight: NHSN Weekly Hospital Respiratory Data from FluSight
@@ -121,6 +130,27 @@
 - [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)
   **\[experimental\]** : Visualise whether the reporting-delay
   distribution drifts over time
+
+- [`plot_delay_profiles()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_profiles.md)
+  **\[experimental\]** : Plot the per-date delay profiles
+
+- [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md)
+  **\[experimental\]** : Plot the epidemic process
+
+- [`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_process.md)
+  **\[experimental\]** : Plot the reporting process
+
+- [`plot_reporting_triangle()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.md)
+  **\[experimental\]** : Plot the reporting triangle
+
+- [`plot_reporting_v()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_v.md)
+  **\[experimental\]** : Plot the reporting "V"
+
+- [`plot_scalogram()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.md)
+  **\[experimental\]** : Plot the reporting or epidemic scalogram
+
+- [`plot_transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_transport_discriminant.md)
+  **\[experimental\]** : Plot the transport-discriminant plane
 
 - [`print()`](https://rodrigozepeda.github.io/tbl.now/reference/print.md)
   **\[stable\]** : Print temporal effects
@@ -212,6 +242,10 @@
 
 - [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
   **\[stable\]** : Transform an object to count data
+
+- [`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md)
+  **\[experimental\]** : The transport discriminant of a reporting
+  series
 
 - [`update(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.md)
   **\[experimental\]** :

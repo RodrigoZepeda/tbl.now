@@ -1,10 +1,12 @@
 # Transform an object to count data
 
-**\[stable\]** Transforms a `tbl.now` from:
+**\[stable\]** Transforms a `tbl.now` between count data types:
 
 - `linelist`: to `count-incidence` or `count-cumulative`
 
 - `count-incidence`: to `count-cumulative`
+
+- `count-cumulative`: to `count-incidence`
 
 ## Usage
 
@@ -42,6 +44,15 @@ classes:
 
 - `tbl_now`: takes a `tbl_now` object and creates a new column with name
   `n` of counts of observations if `data_type = "linelist"`.
+
+Converting `count-cumulative` to `count-incidence` **de-accumulates**
+the series: within each event date (and grouping), ordered by report
+date, the incremental count is the cumulative total minus the previous
+one. Because cumulative totals can be revised *downward*, an increment
+can be **negative**; callers that need non-negative increments (for
+example
+[`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md))
+must handle or refuse that case.
 
 ## Note
 

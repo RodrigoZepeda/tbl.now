@@ -11,7 +11,12 @@ choose which to draw with the `panels` argument.
 **Case-count panels**
 
 - `"delay_distribution"` — a (case-count weighted) histogram of the
-  reporting delay (`.delay`).
+  reporting delay (`.delay`). For **`count-cumulative`** data this panel
+  instead shows the *cumulative growth by delay*: boxplots (on a log
+  scale, with a dashed reference at `1`) of the ratio of each event
+  date's cumulative count at a delay to its cumulative count at the
+  previous delay. A ratio above `1` is an upward revision, below `1` a
+  downward one, and the boxes converge to `1` as reporting completes.
 
 - `"epidemic"` — the latest reported case counts per `event_date`, with
   a dashed vertical line marking where the data become incomplete (less
@@ -61,6 +66,7 @@ autoplot(
   by_strata = FALSE,
   strata = NULL,
   level = 0.95,
+  plotly = FALSE,
   palette = .tbl_now_palette(),
   delay_distribution_xlim = NULL,
   event_date_xlim = NULL,
@@ -116,6 +122,11 @@ autoplot(
   at `now - q`, where `q` is the `level` quantile of the delay
   distribution. With the default `0.95`, the line marks where at least 5
   percent of delays are yet to arrive.
+
+- plotly:
+
+  If `TRUE`, return an interactive plotly widget (the panels stacked)
+  instead of a static patchwork. Default `FALSE`.
 
 - palette:
 

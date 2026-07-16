@@ -1122,42 +1122,29 @@ at once — a **batch**. The key idea is that a batch *moves* reports
 along the report axis without *creating* them, so a window of report
 dates spanning both the lull and the spike has an unchanged total —
 whereas a genuine epidemic surge adds cases and inflates it.
-[batch_screen()](https://rodrigozepeda.github.io/tbl.now/reference/batch_screen.html)
+[batch_test()](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.html)
 turns this into a per-report-date diagnostic that separates the two:
 
 ``` r
 
-batches <- batch_screen(dengue_now, lookback = 2)
+batches <- batch_test(dengue_now, lookback = 2)
 
 batches |>
   filter(batch) |>
-  select(report_date, reported, baseline, deficit, delta, classification)
-#> # A tibble: 69 × 6
-#>    report_date reported baseline deficit    delta classification 
-#>    <date>         <dbl>    <dbl>   <dbl>    <dbl> <chr>          
-#>  1 1990-12-03       124     67    -44    101      batch_and_surge
-#>  2 1991-02-04        53     38.4   14.5    0.0625 batch          
-#>  3 1991-08-12        61     50.2   37.3  -26.6    batch          
-#>  4 1991-12-02       241    154     12     75      batch_and_surge
-#>  5 1992-01-20       126     99.2   50.0  -23.2    batch          
-#>  6 1992-06-22        54     41.1   18.8   -5.83   batch          
-#>  7 1993-01-18       150     62.2   -2.80  90.6    batch_and_surge
-#>  8 1993-03-22        46     31.4   20.4   -5.73   batch          
-#>  9 1993-09-27        65     40.7   21.5    2.85   batch          
-#> 10 1993-10-25        83     53.4   24.7    4.88   batch          
-#> # ℹ 59 more rows
+  select(report_date, reported, baseline, everything())
+#> # A tibble: 4 × 9
+#>   report_date reported baseline stratum deficit  delta p_transport
+#>   <date>         <dbl>    <dbl> <chr>     <dbl>  <dbl>       <dbl>
+#> 1 1991-08-12        61     50.2 all        37.3 -26.6    0.00200  
+#> 2 2007-11-26       152     86.5 all        68.0  -2.50   0.000526 
+#> 3 2009-11-16       127     83.5 all        60.5 -17      0.000347 
+#> 4 2010-09-13       383    272.  all       132.  -21.0    0.0000639
+#> # ℹ 2 more variables: p_transport_bh <dbl>, batch <lgl>
 ```
 
-The `deficit` (reports missing beforehand) is what flags a **batch**;
-`delta` (the window total minus its expected value) is what would flag a
-genuine **surge**. A volume spike alone is ambiguous — but a spike paid
-for by a preceding deficit, with `delta` near zero, is a batch.
-[batch_shape_test()](https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.html)
-complements it by testing whether a flagged date drew on unusually *old*
-event dates. These functions are experimental; they are covered in
-depth, with the mathematics, in the [Batch
-detection](https://rodrigozepeda.github.io/tbl.now/articles/Batch_detection.md)
-article.
+Additional information on dealing with batches and other reporting delay
+artifacts can be found in the [corresponding
+vignette](https://rodrigozepeda.github.io/tbl.now/reference/week_2_date.html).
 
 ## Other functions (utilities)
 

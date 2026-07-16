@@ -41,7 +41,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,7 +55,7 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/Batch_detection.html">Batch detection</a></li>
+<li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
     <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
@@ -260,12 +260,9 @@ you (aggregating the line list to weekly incidence on the way):</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/epinowcast/baselinenowcast" class="external-link">baselinenowcast</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dengue_triangle</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span></span>
-<span>  <span class="va">dengue_now</span>,</span>
-<span>  format      <span class="op">=</span> <span class="st">"matrix"</span>,</span>
-<span>  delays_unit <span class="op">=</span> <span class="st">"weeks"</span>,</span>
-<span>  verbose     <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span>
+<span><span class="co"># `delays_unit` defaults to NULL and is inferred from the object's weekly units;</span></span>
+<span><span class="co"># pass it explicitly (e.g. delays_unit = "weeks") if the units are ambiguous.</span></span>
+<span><span class="va">dengue_triangle</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="va">dengue_now</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># rows = onset weeks, columns = delay in weeks</span></span>
 <span><span class="va">dengue_triangle</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span></span>
@@ -280,7 +277,7 @@ method for <code>tbl_now</code>, you can also write the idiomatic
 <code>baselinenowcast</code> call and pass the <code>tbl_now</code>
 straight in:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dengue_triangle2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">as_reporting_triangle</a></span><span class="op">(</span><span class="va">dengue_now</span>, delays_unit <span class="op">=</span> <span class="st">"weeks"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">dengue_triangle2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">as_reporting_triangle</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">dengue_triangle</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">dengue_triangle2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <p>From here you follow <code>baselinenowcast</code>’s own workflow —
@@ -527,11 +524,11 @@ package in the shape it needed:</p>
 <code class="sourceCode R"><span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">dengue</span>, event_date <span class="op">=</span> <span class="va">onset_week</span>, report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
 <span>                      data_type <span class="op">=</span> <span class="st">"linelist"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">nowcast</span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>                                        <span class="co"># diseasenowcasting</span></span>
-<span><span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="va">dengue_now</span>, format <span class="op">=</span> <span class="st">"matrix"</span><span class="op">)</span>  <span class="co"># baselinenowcast</span></span>
-<span><span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>                          <span class="co"># epinowcast</span></span>
-<span><span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>                             <span class="co"># epidist</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>                                  <span class="co"># NobBS</span></span></code></pre></div>
+<span><span class="va">dengue_now</span>                              <span class="co"># diseasenowcasting</span></span>
+<span><span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>  <span class="co"># baselinenowcast</span></span>
+<span><span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>       <span class="co"># epinowcast</span></span>
+<span><span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>          <span class="co"># epidist</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>               <span class="co"># NobBS or others</span></span></code></pre></div>
 <p>For a public-health team this means you can <strong>benchmark several
 nowcasting methods on your own surveillance data without re-plumbing it
 each time</strong> — making it practical to compare models, cross-check

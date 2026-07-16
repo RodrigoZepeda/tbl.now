@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.12.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,7 +33,7 @@
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/Batch_detection.html">Batch detection</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
     <li><a class="dropdown-item" href="articles/Example.html">Example analysis with Flusight</a></li>
     <li><a class="dropdown-item" href="articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
     <li><a class="dropdown-item" href="articles/tbl.now.html">tbl.now</a></li>
@@ -60,7 +60,7 @@
 <hr><div class="section level2">
 <h2 id="what-tblnow-is-mental-model">What <code>tbl.now</code> is (mental model)<a class="anchor" aria-label="anchor" href="#what-tblnow-is-mental-model"></a></h2>
 <p><code>tbl.now</code> provides the <strong><code>tbl_now</code></strong> S3 class: a <code>tibble</code> extension for epidemiological <strong>nowcasting</strong> that carries <strong>two time indices at once</strong> — <code>event_date</code> (when something happened) and <code>report_date</code> (when it was recorded) — plus modelling metadata (strata, covariates, temporal effects, <code>now</code>, units, data type). It is fully <strong>dplyr-compatible</strong>.</p>
-<p><code>tbl.now</code> is a <strong>data-structure + specification layer</strong>, <em>not</em> a modelling engine. It standardises/validates data and stores lazy specs; the actual nowcasting is done downstream by <strong><code>diseasenowcasting</code></strong>.</p>
+<p><code>tbl.now</code> is a <strong>data-structure + specification layer</strong>, <em>not</em> a modelling engine. It standardises/validates data and stores lazy specs; the actual nowcasting is done downstream by <strong><code>diseasenowcasting</code></strong>. It also ships <strong>model-free diagnostics</strong> — <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code>, reporting-delay drift / change-point tests, and batch (backlog-dump) detection — for exploring data before a model is chosen (all experimental).</p>
 <p>Every <code>tbl_now</code> auto-computes three <strong>protected</strong> numeric columns:</p>
 <table class="table"><colgroup><col width="47%"><col width="52%"></colgroup><thead><tr><th>Column</th>
 <th>Meaning</th>
@@ -153,26 +153,29 @@
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/to_count.html">to_count</a></span><span class="op">(</span><span class="va">x</span>, to <span class="op">=</span> <span class="st">"count-incidence"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/to_count.html">to_count</a></span><span class="op">(</span><span class="va">x</span>, to <span class="op">=</span> <span class="st">"count-cumulative"</span><span class="op">)</span></span></code></pre></div>
-<p><strong>Conversion is one-directional — toward more aggregation only:</strong></p>
-<pre><code>linelist  ──►  count-incidence  ──►  count-cumulative</code></pre>
-<p>Supported: <code>linelist→incidence</code>, <code>linelist→cumulative</code>, <code>incidence→cumulative</code>, and re-aggregation within the same type. <strong>Not supported</strong> (errors):</p>
-<ul><li>
-<code>count-cumulative → count-incidence</code> (cannot de-accumulate here)</li>
-<li>
-<code>count-* → linelist</code> (cannot un-count aggregated data)</li>
-</ul><p>So decide the granularity early. Keep a linelist if you might need incidence later.</p>
+<p><strong>Conversions between the two count types go both ways; you can never rebuild a linelist:</strong></p>
+<pre><code>linelist  ──►  count-incidence  ◄──►  count-cumulative</code></pre>
+<p>Supported: <code>linelist→incidence</code>, <code>linelist→cumulative</code>, <code>incidence→cumulative</code>, <strong><code>cumulative→incidence</code></strong>, and re-aggregation within the same type.</p>
+<p><code>cumulative → incidence</code> <strong>de-accumulates</strong>: within each event date (× grouping), ordered by report date, the increment is the cumulative total minus the previous one. Because cumulative totals can be revised <em>downward</em>, an increment can be <strong>negative</strong> — that is a legitimate net down-revision, and delay diagnostics drop non-positive weights. (This is why <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> etc. now work on <code>count-cumulative</code> data such as FluSight.) A downstream model needing non-negative increments — e.g. <code><a href="reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code> — still refuses cumulative input.</p>
+<p><strong>Not supported</strong> (errors): <code>count-* → linelist</code> (cannot un-count aggregated data). So if you might need individual records, keep the linelist.</p>
+<blockquote>
+<p><strong>Pre-aggregation is automatic.</strong> Every function that needs incidence calls <code><a href="reference/to_count.html">to_count()</a></code> first, which groups by <code>(event_date, report_date, .event_num, .report_num, strata, is_censored, covariates, temporal-effect cols)</code> and sums the counts — so any <strong>extra column you did <em>not</em> declare as a stratum is summed away</strong>, not plotted. (If a column like <code>race</code> is present but not a stratum, its rows are correctly collapsed.) A <code>tbl_now</code> with such extra columns prints a non-uniqueness warning at construction to flag this.</p>
+</blockquote>
 <hr></div>
 <div class="section level2">
 <h2 id="skill-initial-vs-latest-reported-cases">Skill: initial vs latest reported cases<a class="anchor" aria-label="anchor" href="#skill-initial-vs-latest-reported-cases"></a></h2>
 <p>Two views of “how many cases occurred on each <code>event_date</code>”:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/get_latest_first.html">get_initial_reported_cases</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>   <span class="co"># the FIRST reported count per event_date</span></span>
-<span><span class="fu"><a href="reference/get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>    <span class="co"># the MOST-RECENT reported count per event_date</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>    <span class="co"># the MOST-RECENT reported count per event_date</span></span>
+<span><span class="fu"><a href="reference/get_latest_first.html">get_nth_reported_cases</a></span><span class="op">(</span><span class="va">tn</span>, delay <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>   <span class="co"># cumulative count observed within delay &lt;= 2</span></span></code></pre></div>
 <ul><li>
 <strong><code>get_initial_reported_cases</code></strong> = what was <em>first</em> observed for each event date (the naive, most-incomplete incidence).</li>
 <li>
 <strong><code>get_latest_reported_cases</code></strong> = the best current estimate given everything reported up to <code>now</code>. This is the de-facto <strong>“truth so far”</strong> used for plotting the observed epidemic curve and for scoring nowcasts.</li>
-</ul><p>Both return a <code>count-cumulative</code>-style <code>tbl_now</code> collapsed to one row per <code>event_date</code> (× strata). The gap between them is exactly what a nowcast predicts.</p>
+<li>
+<strong><code>get_nth_reported_cases(tn, delay)</code></strong> = the cumulative count for each event date using only reports with <strong>delay ≤ <code>delay</code></strong> (in report units). <code>delay = 0</code> is the initial snapshot (cases reported at delay 0); <code>delay = 1</code> adds delay-1 reports; <code>delay = Inf</code> (or the maximum delay) equals <code><a href="reference/get_latest_first.html">get_latest_reported_cases()</a></code>. Use it to reconstruct the reporting triangle “as observed <code>delay</code> periods after the event”.</li>
+</ul><p>All three return a <code>count-cumulative</code>-style <code>tbl_now</code> collapsed to one row per <code>event_date</code> (× strata). The gap between initial and latest is exactly what a nowcast predicts.</p>
 <hr></div>
 <div class="section level2">
 <h2 id="skill-add--change--remove-strata-and-covariates">Skill: add / change / remove strata and covariates<a class="anchor" aria-label="anchor" href="#skill-add--change--remove-strata-and-covariates"></a></h2>
@@ -225,6 +228,8 @@
 <span>  day_of_month  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  month_of_year <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  week_of_year  <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  holiday_lags  <span class="op">=</span> <span class="fl">0</span>,            <span class="co"># after-HOLIDAY effect (see below); needs `holidays`</span></span>
+<span>  weekend_lags  <span class="op">=</span> <span class="fl">0</span>,            <span class="co"># after-WEEKEND effect (see below)</span></span>
 <span>  seasons       <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">integer</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>,   <span class="co"># Fourier periods, e.g. c(7, 52, 365)</span></span>
 <span>  season_length <span class="op">=</span> <span class="fl">1</span>,            <span class="co"># multiply each season; period = seasons * season_length</span></span>
 <span>  holidays      <span class="op">=</span> <span class="cn">NULL</span>          <span class="co"># an almanac::rcalendar(), see next skill</span></span>
@@ -242,6 +247,8 @@
 <code><a href="reference/add_temporal_effects.html">add_temporal_effects()</a></code> can be called repeatedly (appends specs); you can mix <code>date_type = "event_date"</code> and <code>"report_date"</code>.</li>
 <li>
 <strong>Seasonality / Fourier</strong>: <code>seasons</code> are the cycle periods. For <em>daily</em> data with weekly seasonality use <code>seasons = 52, season_length = 7</code> (period = 364 days); <code>season_length</code> defaults to <code>1</code> (period = <code>seasons</code>).</li>
+<li>
+<strong>After-holiday / after-weekend lags</strong> (capture the rebound <em>after</em> a break): <code>holiday_lags = N</code> / <code>weekend_lags = N</code> are non-negative integer depths that materialise indicator columns <code>..._holiday_lag_1 … _N</code> and <code>..._weekend_lag_1 … _N</code>, flagging dates exactly <code>k</code> <strong>working days</strong> after a holiday / weekend (weekends <em>and</em> holidays are skipped when counting, so the effect lands on the first day back at work). <code>holiday_lags</code> requires a <code>holidays</code> calendar. Best for daily data.</li>
 <li>Replace or clear:</li>
 </ul><div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/remove.html">replace_temporal_effects</a></span><span class="op">(</span><span class="va">tn</span>, <span class="fu"><a href="reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>  <span class="co"># drops old computed cols</span></span>
@@ -316,27 +323,114 @@
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>                       <span class="co"># bare call works after library(tbl.now)</span></span></code></pre></div>
-<p>Panels:</p>
+<p>Two panel <strong>families</strong>. <em>Case-count</em> panels:</p>
 <ol style="list-style-type: decimal"><li>
-<strong>Empirical delay distribution</strong> — case-count-weighted kernel density of <code>.delay</code>.</li>
+<strong>Empirical delay distribution</strong> (<code>"delay_distribution"</code>) — case-count-weighted histogram of <code>.delay</code>.</li>
 <li>
-<strong>Observed epidemic process</strong> — <code><a href="reference/get_latest_first.html">get_latest_reported_cases()</a></code> by <code>event_date</code>, with a dashed vertical <strong>incompleteness line</strong> at <code>now - quantile(delay, level)</code>. Holidays from the temporal-effects spec are marked as red dots.</li>
+<strong>Observed epidemic process</strong> (<code>"epidemic"</code>) — <code><a href="reference/get_latest_first.html">get_latest_reported_cases()</a></code> by <code>event_date</code>, with a dashed vertical <strong>incompleteness line</strong> at <code>now - quantile(delay, level)</code>. Holidays from the temporal-effects spec are marked with dots.</li>
 <li>
-<strong>Calendar effect</strong> — <em>normalized</em> boxplots (cases relative to the overall mean, 1 = average). Daily data shows <strong>both</strong> day-of-week and week-of-year panels; weekly shows week-of-year; monthly shows month-of-year.</li>
+<strong>Calendar effect</strong> (<code>"calendar_weekday"</code>, <code>"calendar_week"</code>, <code>"calendar_month"</code>) — <em>normalized</em> boxplots (cases ÷ overall mean, 1 = average).</li>
 <li>
-<strong>Seasonality periodogram</strong> — the dominant peak suggests a Fourier <code>seasons</code> length to pass to <code><a href="reference/temporal_effects.html">temporal_effects()</a></code>.</li>
-</ol><p>Key arguments:</p>
+<strong>Seasonality periodogram</strong> (<code>"seasonality"</code>) — dominant peak suggests a Fourier <code>seasons</code> length.</li>
+</ol><p><em>Reporting-delay</em> panels — to inspect <strong>delay effects</strong> (is the <em>delay itself</em> patterned?):</p>
+<ol start="5" style="list-style-type: decimal"><li>
+<strong>Delay calendar effect</strong> (<code>"delay_weekday"</code>, <code>"delay_week"</code>, <code>"delay_month"</code>) — boxplots of the <strong>normalized</strong> mean reporting delay (mean delay ÷ overall mean delay, 1 = average) by calendar group.</li>
+<li>
+<strong>Delay periodicity periodogram</strong> (<code>"delay_seasonality"</code>) — a cycle in the delay (e.g. a weekly reporting rhythm).</li>
+</ol><p>Which calendar/delay panels appear depends on the unit: <strong>daily</strong> → day-of-week <em>and</em> week-of-year; <strong>weekly</strong> → week-of-year; <strong>monthly</strong> → month-of-year. (So on <em>daily</em> data each week-of-year box legitimately summarizes ~7 daily values — that is not a stratification artefact.)</p>
+<p>Key arguments:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span></span>
 <span>  <span class="va">tn</span>,</span>
-<span>  level <span class="op">=</span> <span class="fl">0.95</span>,                                   <span class="co"># completeness threshold for the incompleteness line</span></span>
-<span>  delay_distribution_xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span>,             <span class="co"># per-panel x limits (all optional)</span></span>
+<span>  panels <span class="op">=</span> <span class="st">"all"</span>,         <span class="co"># "all" (default) | "calendar" | "delay_calendar" |</span></span>
+<span>                          <span class="co">#   a vector of concrete panel keys above.</span></span>
+<span>                          <span class="co">#   A SINGLE key returns a plain ggplot (not a patchwork).</span></span>
+<span>  by_strata <span class="op">=</span> <span class="cn">FALSE</span>,      <span class="co"># TRUE =&gt; split every panel by stratum (dodged boxes /</span></span>
+<span>                          <span class="co">#   coloured lines / dodged bars, viridis, per-stratum</span></span>
+<span>                          <span class="co">#   normalization). Errors if no strata are set.</span></span>
+<span>  strata <span class="op">=</span> <span class="cn">NULL</span>,          <span class="co"># which strata columns to group on when by_strata=TRUE</span></span>
+<span>                          <span class="co">#   (default = the object's strata; pass a subset)</span></span>
+<span>  level <span class="op">=</span> <span class="fl">0.95</span>,           <span class="co"># completeness threshold for the incompleteness line</span></span>
+<span>  delay_distribution_xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span>,   <span class="co"># per-panel x limits (all optional)</span></span>
 <span>  event_date_xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2020-01-01"</span>,<span class="st">"2020-12-31"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  calendar_effect_xlim <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  seasonality_xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">60</span><span class="op">)</span>,</span>
-<span>  palette <span class="op">=</span> <span class="fu">.tbl_now_palette</span><span class="op">(</span><span class="op">)</span>                    <span class="co"># override colours</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p><code>level</code> is the delay quantile where the line is drawn; the default in the signature is <code>1</code> (most conservative), but <code>level = 0.95</code> is the typical choice (“dates still missing ≥5% of their eventual counts are incomplete”).</p>
+<span>  palette <span class="op">=</span> <span class="fu">.tbl_now_palette</span><span class="op">(</span><span class="op">)</span>          <span class="co"># override colours</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">tn</span>, panels <span class="op">=</span> <span class="st">"delay_week"</span><span class="op">)</span>     <span class="co"># just one panel -&gt; a ggplot you can + to</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">tn</span>, by_strata <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>          <span class="co"># one fan of panels per stratum</span></span></code></pre></div>
+<p><code>level</code> is the delay quantile where the incompleteness line is drawn; <code>0.95</code> is the typical choice (“dates still missing ≥5% of their eventual counts are incomplete”). <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> works on <strong>all three data types</strong>, including <code>count-cumulative</code> (it de-accumulates internally).</p>
+<hr></div>
+<div class="section level2">
+<h2 id="skill-diagnose-reporting-delay-drift--change-points">Skill: diagnose reporting-delay drift &amp; change points<a class="anchor" aria-label="anchor" href="#skill-diagnose-reporting-delay-drift--change-points"></a></h2>
+<p>Ask whether the reporting delay is <strong>stable over time</strong> before trusting a fixed delay model. All are experimental and index by event date.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Visual: rolling fan chart of the delay distribution (median, mean, 25-75 &amp; 10-90 bands)</span></span>
+<span><span class="fu"><a href="reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">tn</span>, window <span class="op">=</span> <span class="fl">7</span>, by_strata <span class="op">=</span> <span class="cn">FALSE</span>, changepoint <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Gradual monotonic trend (autocorrelation-robust Mann-Kendall; needs `modifiedmk`)</span></span>
+<span><span class="fu"><a href="reference/test_delay_drift.html">test_delay_drift</a></span><span class="op">(</span><span class="va">tn</span>, stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"median"</span>, <span class="st">"spread"</span><span class="op">)</span><span class="op">)</span>   <span class="co"># location AND dispersion</span></span>
+<span></span>
+<span><span class="co"># Abrupt shift (Pettitt change-point test; no extra dependency)</span></span>
+<span><span class="fu"><a href="reference/test_delay_changepoint.html">test_delay_changepoint</a></span><span class="op">(</span><span class="va">tn</span>, stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"median"</span>, <span class="st">"spread"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<ul><li>
+<strong><code><a href="reference/plot_delay_drift.html">plot_delay_drift()</a></code></strong> — solid = rolling median, dashed = rolling mean, bands = 25–75% / 10–90%. <code>window</code> defaults to <strong>7 periods</strong> (7 days for daily, 7 weeks for weekly). The recent, not-yet-complete region (after the <code>level</code> incompleteness cutoff) is <strong>shaded grey</strong> — do not read it as drift. <code>changepoint = TRUE</code> marks the estimated median change point. Supports <code>by_strata</code>.</li>
+<li>
+<strong><code><a href="reference/test_delay_drift.html">test_delay_drift()</a></code></strong> returns a tidy tibble (per <code>stat</code> × stratum) with the Kendall <code>tau</code>, Sen’s slope, <code>p_value</code> and a <code>drift</code> verdict; <code>method</code> is <code>"hamed-rao"</code> (default), <code>"yue-pilon"</code> or <code>"block-bootstrap"</code>. Tests a <em>location</em> (<code>"median"</code>/<code>"mean"</code>) and a <em>dispersion</em> (<code>"iqr"</code>/<code>"spread"</code>) statistic — drift can be in either. Runs on <strong>mature</strong> data only (<code>mature_only = TRUE</code>).</li>
+<li>
+<strong><code><a href="reference/test_delay_changepoint.html">test_delay_changepoint()</a></code></strong> returns the estimated <code>changepoint</code> date, the <code>before</code>/<code>after</code> level, the <code>shift</code>, and a <code>changepoint_detected</code> verdict.</li>
+<li>Both test functions <strong>emit an experimental <code>cli</code> warning</strong> and treat a flag as a <em>potential</em> trend change / change point, not a confirmed one.</li>
+</ul><p>Use trend + change-point together: a significant trend with no change point = slow drift; a change point with weak trend = one abrupt switch.</p>
+<hr></div>
+<div class="section level2">
+<h2 id="skill-detect-batch-reporting-backlog-dumps">Skill: detect batch reporting (backlog dumps)<a class="anchor" aria-label="anchor" href="#skill-detect-batch-reporting-backlog-dumps"></a></h2>
+<p>A <strong>batch</strong> = a report date where a stalled desk releases a backlog. It <em>moves</em> reports later on the report axis <strong>without creating them</strong> (mass is conserved), so a window spanning the lull + the release has an unchanged total, whereas a real epidemic <strong>surge</strong> inflates it. That conservation law is the whole method — these are experimental, <strong>model-free</strong> (need only a <code>tbl_now</code>), and distinct from an epidemic surge by construction.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 1) Volume screen over the report axis (per report date x stratum)</span></span>
+<span><span class="va">scr</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/batch_test.html">batch_test</a></span><span class="op">(</span><span class="va">tn</span>, lookback <span class="op">=</span> <span class="fl">3</span>, alpha <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span></span>
+<span><span class="va">scr</span><span class="op">[</span><span class="va">scr</span><span class="op">$</span><span class="va">batch</span>, <span class="op">]</span>            <span class="co"># the flagged report dates</span></span>
+<span><span class="co"># LEAN output (v0.13.0): report_date, stratum, reported, baseline,</span></span>
+<span><span class="co">#   deficit (reports missing beforehand -&gt; batch), delta (window total minus</span></span>
+<span><span class="co">#   expected -&gt; creation), p_transport, p_transport_bh, batch (BH verdict).</span></span>
+<span><span class="co">#   The raw per-point `classification` column was REMOVED (over-identified;</span></span>
+<span><span class="co">#   BH `batch` is the trustworthy verdict). `baseline_method` arg also removed</span></span>
+<span><span class="co">#   (always repeated_median). transport_discriminant() KEEPS its classification.</span></span>
+<span></span>
+<span><span class="co"># 2) Shape test: did ONE report date draw from unusually OLD event dates?</span></span>
+<span><span class="co">#    (complements the volume screen; `at` must be an observed report date)</span></span>
+<span><span class="fu"><a href="reference/batch_shape_test.html">batch_shape_test</a></span><span class="op">(</span><span class="va">tn</span>, at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2010-05-24"</span><span class="op">)</span>,</span>
+<span>                 permute <span class="op">=</span> <span class="st">"items"</span><span class="op">)</span>   <span class="co"># use "blocks" if counts are overdispersed</span></span>
+<span></span>
+<span><span class="co"># 3) Validate a detector: plant a known batch and check it is recovered</span></span>
+<span><span class="va">planted</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simulate_batch.html">simulate_batch</a></span><span class="op">(</span><span class="va">tn</span>, closed_dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2010-05-10"</span>,<span class="st">"2010-05-17"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/batch_test.html">batch_test</a></span><span class="op">(</span><span class="va">planted</span><span class="op">)</span></span></code></pre></div>
+<ul><li>
+<strong><code><a href="reference/batch_test.html">batch_test()</a></code></strong> — the transport test conditions on the window total, so its size does <strong>not</strong> depend on the unknown incidence; the local baseline is refit from report dates <em>outside</em> each candidate window (Siegel’s repeated median, robust to the episode). <code>null_model = "auto"</code> is <strong>overdispersion-aware</strong>: it uses the exact Poisson null only when non-negative counts show no overdispersion (dispersion <code>&lt;= 1.5</code>) and otherwise the dispersion-corrected robust null (always robust for signed count-cumulative increments). The exact Poisson null over-flags on overdispersed surveillance counts, so prefer the default; add <code>period = 7</code> to absorb a weekly reporting cadence. BH-adjusted p-values in <code>p_transport_bh</code>. Works on <code>count-cumulative</code> data too (then <code>reported</code> are signed increments and can be negative). <strong><code>period</code> AUTO-RESOLVED from temporal effects (v0.13.0, <code>.batch_resolve_period</code>): a day_of_week effect -&gt; <code>period=7</code>, week_of_year -&gt; <code>period=52</code> (reads <code>get_temporal_effects(x)</code> list; each spec is <code>list(t_effects=&lt;S7&gt;, date_type,...)</code>, access via <code>spec$t_effects@day_of_week</code>). User <code>period</code> wins (informs on disagreement). Daily data + no temporal effect + no period -&gt; <code>cli_inform</code> suggests period=7.</strong>
+</li>
+<li>
+<strong><code><a href="reference/batch_shape_test.html">batch_shape_test()</a></code></strong> — a one-sided rank-sum on the delays at <code>at</code> vs neighbouring report dates; <strong>exactly distribution-free</strong> when incidence is locally log-linear and counts are Poisson. <code>permute = "blocks"</code> for overdispersed (NB) counts; <code>guard</code> omits dates adjacent to <code>at</code> (a batch’s own deficit sits there).</li>
+<li>
+<strong><code><a href="reference/simulate_batch.html">simulate_batch()</a></code></strong> — closes reporting on <code>closed_dates</code> and re-stamps those reports to the next open date; returns a <code>tbl_now</code>. For testing/teaching.</li>
+<li>
+<strong><code>diagnostic_plot(x, panels=, by=)</code></strong> — a gallery to <em>see</em> the reporting process. LAYOUT: <strong>5 panels in TWO COLUMNS</strong> (<code>wrap_plots(ncol=2, byrow=FALSE)</code> column-major: col1=reporting/triangle/profiles, col2=delay_drift/transport, 1 empty cell). <code>panels</code> (default <code>"all"</code>, exactly these 5): <code>"reporting"</code> (reports/report date; y-axis CAPPED at 99th pct via coord_cartesian when a dump dwarfs the curve — covid_us has a 1.8M-report dump 2021-12-06 vs 21k median), <code>"triangle"</code> (event x delay; muted blue=reported zero, blank=not yet reportable, FULL-calendar event axis; THIRD REPORT-DATE AXIS = dashed 45° iso-report diagonals labelled via <code>report_ticks=6</code>; <code>mark_batches=0</code> optional), <code>"profiles"</code> (one delay curve per date, SINGLE colour fixed alpha), <code>"delay_drift"</code>, <code>"transport"</code> (<code><a href="reference/transport_discriminant.html">transport_discriminant()</a></code> scatter, y LIMITED to batch region via <code>coord_cartesian(ylim=c(y_lo,y_hi))</code> WITHOUT clip=“off” — clip=“off” BLED into panel below, default clip does not). Single panel → plain plot; facetted by stratum; <code>by="event"</code> switches profiles; <code>...</code> routed. Each panel = stand-alone exported fn (<code>plot_reporting_process</code>, <code>plot_reporting_triangle</code>, <code>plot_delay_profiles</code>, <code>plot_delay_drift</code>, <code>plot_transport_discriminant</code>). Reporting process = RED, epidemic process = GREEN (<code>.diag_build_process</code> fill keyed on axis). <strong><code>plot_epidemic_process(x)</code></strong> now EXPORTED (green bars, cases by event date; mirror of reporting process). <strong><code>plot_creation_transport</code></strong> MOVED to devel (<code>devel/conservation_extras.R</code>, uses <code>tbl.now:::</code> for internals) — NOT exported. <strong><code>plot_reporting_v(x)</code></strong> (exported, R/v_triangle.R, NOT in gallery) = the reporting “V” — SAME data as plot_reporting_triangle ROTATED 45° (y=report date, left arm=event date, right arm=delay reading 0 out), batch = HORIZONTAL slice (diagonal in the square triangle), whole observable triangle filled w/ pale-blue zeros; coords RELATIVE to ev_min (epoch nums wreck coord_fixed); arm ticks/labels/titles all OUTSIDE each arm, perpendicular. All panels carry grey captions. <strong>EVERY plot fn takes <code>plotly=TRUE</code></strong> (→ interactive plotly widget via <code>.as_plotly</code>/<code>.combine_panels</code> in R/plotly_support.R; plotly in Suggests). <strong><code>plot_scalogram(x, type=c("reporting","epidemic"), windowrad=NULL)</code></strong> EXPORTED (R/scalogram.R) — window-inner wavelet scalogram via <code>wavScalogram::windowed_scalogram(sqrt(n), border_effects="INNER", energy_density=TRUE)</code>: computed from OBSERVED DATA ONLY, NO border padding (honest at the “now” edge; the FFT/periodic scalogram fabricates edge structure). Batch = bright SHORT-PERIOD ridge in reporting (red) that epidemic (green) lacks. <strong>Analysed on the INTEGER unit grid: <code>dt=1</code> (NOT dt=unit_days) so periods come out in the tbl’s units (weeks/days) and <code>tcentral</code> are grid INDICES; passing dt=unit_days made tcentral come back in DAY-units (range 63-1043 on a 157-week grid) → over-ran the date grid, dropped ~29k cells, scalogram looked empty on weekly denguedat. y-label <code>sprintf("Period (%s)", report_unit)</code>. ALSO for LONG series wavScalogram SUBSAMPLES tcentral (e.g. every 5th step, 197 of 1095) → drawing on the Date axis with <code>geom_tile(width=unit_days)</code> left 4-in-5 columns BLANK. FIX: plot x on the UNIFORM INTEGER window index <code>df$xi=seq_along(dates)</code> with <code>geom_tile(width=1)</code>, then RELABEL the x-axis with dates via <code>xpos=approx(as.numeric(dates), seq_along(dates), xout=as.numeric(pretty(dates)))$y</code> + <code>scale_x_continuous(breaks=xpos, labels=format(date_breaks))</code>. Works on full/filtered/daily.</strong> DEFAULTS <code>wname="PAUL"</code> (sharper batch localisation), <code>windowrad=1</code>, <code>format="%d/%b/%y"</code> (x-axis date fmt arg). Outside cone = <code>panel.background=element_rect(fill="gray10")</code> (NOT na.value); NO subtitle/caption. Devel <code>plot_scalogram_difference(x)</code> (<code>devel/wavscalogram_explore.R</code>) = log2(reporting_scalogram) − log2(epidemic_scalogram) (each per-period-normalised window-inner PAUL), <code>scale_fill_gradient2</code> green↔︎red, batch = red short-period stripe. NOT wavScalogram::wsd() (its ratio didn’t isolate the batch). GOTCHAS (all real, hit during build): (1) <code>ws$tcentral</code> are time INDICES not dates → map <code>s$date[round(ws$tcentral)]</code>; (2) plot on <code>logp=log2(period)</code> (geometric scales → regular grid) NOT raw period; (3) <code>geom_raster</code> renders BLANK on the ragged INNER cone AND <code>geom_tile</code> auto-height COLLAPSES to a thin line (dense scales) → use <code>geom_tile(width=unit_days, height=hstep)</code> with explicit <code>hstep=median(diff(sort(unique(log2(periods)))))</code>; (4) normalise per period (÷ per-period median) so the short-period burst shows over the epidemic trend. Result = the INNER dome cone (blank outside reliable region) with the ridge inside. The old devel <code>scalogram_plot(x)</code> 2×2 is SUPERSEDED. <strong>MOVED TO devel (<code>devel/conservation_extras.R</code>, uses <code>tbl.now:::</code>, NOT in package):</strong> <code>plot_creation_transport</code> (2 stacked panels transport red / creation green, signed-log), <code>plot_cumulative_backlog</code>, <code>plot_reporting_lag</code> (band floored at 0), <code>plot_conservation_dashboard</code> (=ct overlay + batch-score <code>transport−creation</code>; user found backlog/lag/dashboard/residual not worth the gallery space — batch score conflates holds+big-dumps so unreliable). Other devel: <code>plot_rotated_triangle</code> (<code>devel/rotated_triangle.R</code>), <code>plot_ternary_reporting</code>/<code>plot_ternary_transport</code> (<code>devel/ternary_plots.R</code>), <code>plot_transport_timeline</code>/<code>plot_delay_band_ternary</code> (<code>devel/removed_plots.R</code>). IMPORTANT gotcha in <code><a href="reference/batch_test.html">batch_test()</a></code>’s classification: <code>hold_or_deletion</code> OVERRIDES <code>batch</code>/<code>surge</code> whenever creation_z &lt; -z_star, REGARDLESS of transport_z — so the most extreme top-left points are holds, not batches. Also: <code>plot_transport_discriminant</code> colours RED only BH-confirmed batches (<code>td$batch</code>), NOT the raw per-point <code>classification</code> (which over-identifies ~10-20% at alpha by construction).</li>
+<li>
+<strong><code>transport_discriminant(x, lookback=, period=, alpha=)</code></strong> — the plane behind <code><a href="reference/batch_test.html">batch_test()</a></code>: per report date the deficit <code>W</code> (transport) and <code>Δ = S − M</code> (creation), standardised as <code>transport_z</code> / <code>creation_z</code>, plus the quadrant <code>classification</code>. A batch = high transport, ~0 creation (top-left). <strong>DEFAULT lookback = 7L</strong> (changed from 3L, 2026-07-10) for batch_test/transport_discriminant. Discriminant shaded region labelled “Potential batch region”; confirmed batches get bold white-on-red date labels (y_hi has +18% headroom so labels aren’t clipped). Devel plot_creation_transport titles “(a batch)”/“(a surge)” — NO question marks. &gt; TEMPORAL-EFFECT FINDING (<code>devel/temporal_baseline_explore.R</code>): the day-to-day squiggle in &gt; the creation/transport SCORES is NOT a weekday effect. Raw covid_us daily reports have a real &gt; ~25% weekly pattern (Sun 0.73×, Wed 1.22×) BUT the scores already remove it (weekly R²≈0 with &gt; or without period=7; transport_z lag-1 AC≈0.92, no zig-zag). The squiggle is overdispersion &gt; noise seen through overlapping windows. Explored trend×weekday (=period=7, best for daily &gt; residual 0.011→0.004), trend+weekday, and the average — none reaches the scores. period=7 &gt; still worth passing for the daily reporting views. &gt; The conservation-law time-series monitors — <code>plot_cumulative_backlog</code> (detrended &gt; cumulative residual; a batch is a V, a run of batches a staircase), &gt; <code>plot_conservation_dashboard</code> (3 standardised series), <code>plot_reporting_lag</code> (mean &gt; delay vs a local band) — are clearest when batches are LARGE relative to the noise &gt; (e.g. <code>covid_us</code>, where they read beautifully). On small overdispersed counts they &gt; can be noisy — there the transport-discriminant scatter + <code><a href="reference/batch_test.html">batch_test()</a></code> are the &gt; robust batch story. All three mark only BH-confirmed batches in red.
+<ul><li>
+<strong><code>covid_us</code></strong> dataset — CDC COVID-19 case surveillance, 2020-2021 events aggregated event×report (no strata), built to DEMONSTRATE batch reporting (huge right-skewed delay; big 2022 backlog dumps at 2022-01-21 ~25× and 2022-05-25 ~15×). See the “Finding batch reporting…” article + <code>data-raw/covid_us.R</code> (duckdb over the 14GB source).</li>
+</ul></li>
+</ul><blockquote>
+<p>The older <code>detect_report_batches()</code> / <code>plot_report_batches()</code> are <strong>removed</strong> — use <code><a href="reference/batch_test.html">batch_test()</a></code> + <code><a href="reference/batch_shape_test.html">batch_shape_test()</a></code>.</p>
+</blockquote>
+<hr></div>
+<div class="section level2">
+<h2 id="skill-coerce-a-tbl_now-to-a-plain-tibble--dataframe">Skill: coerce a <code>tbl_now</code> to a plain tibble / data.frame<a class="anchor" aria-label="anchor" href="#skill-coerce-a-tbl_now-to-a-plain-tibble--dataframe"></a></h2>
+<p><code><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble()</a></code> (re-exported, so it works after <code><a href="https://rodrigozepeda.github.io/tbl.now/">library(tbl.now)</a></code>) and <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> drop the <code>tbl_now</code> class and metadata:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>                                    <span class="co"># plain tibble; spec stays LAZY</span></span>
+<span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="va">tn</span>, compute_temporal_effects <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>   <span class="co"># materialise effect cols first</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">tn</span>, compute_temporal_effects <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>The default is <strong>lazy</strong> on purpose (dplyr uses these coercions internally as cheap declassers). Pass <code>compute_temporal_effects = TRUE</code> to get a modelling-ready frame with the holiday / Fourier / calendar columns filled in; the input <code>tbl_now</code> is left unchanged.</p>
 <hr></div>
 <div class="section level2">
 <h2 id="skill-convert-tofrom-other-packages">Skill: convert to/from other packages<a class="anchor" aria-label="anchor" href="#skill-convert-tofrom-other-packages"></a></h2>
@@ -353,8 +447,7 @@
 </tr><tr><td>baselinenowcast</td>
 <td align="center">✅</td>
 <td align="center">✅</td>
-<td>long df <strong>or</strong> reporting-triangle matrix ↔︎ count-incidence; <code>to</code> has <code>format = c("long","matrix")</code>
-</td>
+<td>long df <strong>or</strong> reporting-triangle matrix ↔︎ count-incidence; <code>to</code> has <code>format = c("matrix","long")</code> — <strong><code>"matrix"</code> is the default</strong>. <code>to</code>’s <code>delays_unit</code> defaults to <code>NULL</code> and is <strong>inferred</strong> from the object units (equal event/report units of <code>"days"</code>/<code>"weeks"</code>) for the matrix format, else supply it. Refuses <code>count-cumulative</code> input (would need to de-accumulate to possibly-negative increments)</td>
 </tr><tr><td>EpiNow2</td>
 <td align="center">❌</td>
 <td align="center">✅</td>
@@ -374,7 +467,7 @@
 <td align="center">✅</td>
 <td>
 <code>to</code> builds a <code>tbl_ts</code> (index defaults to <code>report_date</code>, key = other date + strata); <code>from</code> needs <code>event_date</code>, recovers strata from the key</td>
-</tr></tbody></table><div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+</tr></tbody></table><div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nowobj</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now_epinowcast.html">tbl_now_from_epinowcast</a></span><span class="op">(</span><span class="fu">epinowcast</span><span class="fu">::</span><span class="va"><a href="https://package.epinowcast.org/reference/germany_covid19_hosp.html" class="external-link">germany_covid19_hosp</a></span>,</span>
 <span>                                  strata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"location"</span>, <span class="st">"age_group"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">ts</span>     <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now_tsibble.html">tbl_now_to_tsibble</a></span><span class="op">(</span><span class="va">nowobj</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -382,7 +475,7 @@
 <hr></div>
 <div class="section level2">
 <h2 id="skill-other-utilities">Skill: other utilities<a class="anchor" aria-label="anchor" href="#skill-other-utilities"></a></h2>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/complete_zeroes.html">complete_zeroes</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>                  <span class="co"># fill missing event/report/strata cells with 0</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">tn</span>, new_data <span class="op">=</span> <span class="va">new_rows</span><span class="op">)</span>      <span class="co"># bind newer data, preserving attributes</span></span>
 <span><span class="fu"><a href="reference/align_weeks.html">align_weeks</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">date_col</span><span class="op">)</span>            <span class="co"># snap dates to a consistent epiweek day -&gt; integer .delay</span></span>
@@ -397,7 +490,7 @@
 </ul><hr></div>
 <div class="section level2">
 <h2 id="end-to-end-example">End-to-end example<a class="anchor" aria-label="anchor" href="#end-to-end-example"></a></h2>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span>; <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span>; <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavisVaughan/almanac" class="external-link">almanac</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span></span>
@@ -418,7 +511,7 @@
 <hr></div>
 <div class="section level2">
 <h2 id="reference-getters">Reference: getters<a class="anchor" aria-label="anchor" href="#reference-getters"></a></h2>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/nowcast_data_getters.html">get_event_date</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_report_date</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>   <span class="co"># COLUMN NAMES (character), not the dates</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_event_units</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_report_units</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="co"># "days"|"weeks"|"months"|"years"|"numeric"</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                                <span class="co"># Date — the as-of date</span></span>
@@ -428,11 +521,21 @@
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_data_type</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                          <span class="co"># "linelist"|"count-incidence"|"count-cumulative"</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                   <span class="co"># list of lazy specs</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_temporal_effect_cols</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>               <span class="co"># computed column names</span></span>
-<span><span class="fu"><a href="reference/get_latest_first.html">get_initial_reported_cases</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/get_latest_first.html">get_initial_reported_cases</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/get_latest_first.html">get_nth_reported_cases</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">delay</span><span class="op">)</span>          <span class="co"># cumulative count within a given delay</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="reference-diagnostics--batches-all-experimental">Reference: diagnostics &amp; batches (all experimental)<a class="anchor" aria-label="anchor" href="#reference-diagnostics--batches-all-experimental"></a></h2>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">x</span>, panels <span class="op">=</span>, by_strata <span class="op">=</span><span class="op">)</span>        <span class="co"># multi-panel diagnostic (patchwork)</span></span>
+<span><span class="fu"><a href="reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/test_delay_drift.html">test_delay_drift</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/test_delay_changepoint.html">test_delay_changepoint</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/batch_test.html">batch_test</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/batch_shape_test.html">batch_shape_test</a></span><span class="op">(</span><span class="va">x</span>, at <span class="op">=</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/simulate_batch.html">simulate_batch</a></span><span class="op">(</span><span class="va">x</span>, closed_dates <span class="op">=</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/transport_discriminant.html">transport_discriminant</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                 <span class="co"># deficit W vs discriminant Delta, per report date</span></span>
+<span><span class="fu"><a href="reference/diagnostic_plot.html">diagnostic_plot</a></span><span class="op">(</span><span class="va">x</span>, panels <span class="op">=</span>, by <span class="op">=</span><span class="op">)</span>        <span class="co"># reporting-process gallery (reporting/triangle/profiles/delay_drift/transport)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="reference-package-data">Reference: package data<a class="anchor" aria-label="anchor" href="#reference-package-data"></a></h2>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">flusight</span><span class="op">)</span>    <span class="co"># flu data in the United States (count-cumulative)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span>   <span class="co"># dengue surveillance linelist (weekly, Puerto Rico)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">mpoxdat</span><span class="op">)</span>     <span class="co"># mpox count-incidence data (has a `race` stratum + `n` counts)</span></span></code></pre></div>
@@ -446,12 +549,19 @@
 <li>
 <code><a href="reference/compute_temporal_effects.html">compute_temporal_effects()</a></code> before <code><a href="reference/add_temporal_effects.html">add_temporal_effects()</a></code> is a <strong>no-op</strong>.</li>
 <li>
-<code><a href="reference/to_count.html">to_count()</a></code> only aggregates <strong>forward</strong> (linelist→incidence→cumulative); it cannot reverse.</li>
+<code><a href="reference/to_count.html">to_count()</a></code> converts between the two count types <strong>both ways</strong> (incidence↔︎cumulative); <code>cumulative→incidence</code> de-accumulates and can yield <strong>negative</strong> increments. It can never rebuild a <code>linelist</code>.</li>
+<li>Undeclared extra columns are <strong>summed away</strong> by <code><a href="reference/to_count.html">to_count()</a></code>, not plotted per-value — a boxplot with spread on <em>daily</em> data is the days within a week, not a hidden stratum.</li>
 <li>Removing a protected column <strong>downgrades to a tibble</strong> — check <code><a href="reference/is_tbl_now.html">is_tbl_now()</a></code> after heavy dplyr.</li>
 <li>
 <code><a href="https://dplyr.tidyverse.org/reference/rowwise.html" class="external-link">rowwise()</a></code> is <strong>unsupported</strong>.</li>
 <li>For weekly data with fractional <code>.delay</code>, use <code>align_weeks</code>.</li>
 <li>Count data types <strong>require</strong> a <code>case_count</code> column.</li>
+<li>
+<code>batch_shape_test(at =)</code> needs <code>at</code> to be an <strong>observed report date</strong>; the volume screen <code><a href="reference/batch_test.html">batch_test()</a></code> scans them all.</li>
+<li>
+<code><a href="reference/test_delay_drift.html">test_delay_drift()</a></code> needs the <code>modifiedmk</code> package (a Suggests); the batch and drift diagnostics all print an experimental warning.</li>
+<li>
+<code>detect_report_batches()</code> / <code>plot_report_batches()</code> were <strong>removed</strong> — use <code><a href="reference/batch_test.html">batch_test()</a></code> + <code><a href="reference/batch_shape_test.html">batch_shape_test()</a></code>.</li>
 </ul></div>
 </div>
 
