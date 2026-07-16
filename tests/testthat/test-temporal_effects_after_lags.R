@@ -22,6 +22,12 @@ test_that("temporal_effects() stores lag depths", {
   expect_identical(te@weekend_lags, 2L)
 })
 
+test_that("temporal_effects() stores negative (before-event) lag depths", {
+  te <- temporal_effects(holidays = xmas_cal(), holiday_lags = -3, weekend_lags = -2)
+  expect_identical(te@holiday_lags, -3L)
+  expect_identical(te@weekend_lags, -2L)
+})
+
 test_that("lag depths default to 0 (off)", {
   te <- temporal_effects()
   expect_identical(te@holiday_lags, 0L)
@@ -30,16 +36,19 @@ test_that("lag depths default to 0 (off)", {
 
 test_that("holiday_lags without a holidays calendar errors", {
   expect_error(temporal_effects(holiday_lags = 2), "holidays")
+  expect_error(temporal_effects(holiday_lags = -2), "holidays")
 })
 
 test_that("weekend_lags does not require a holidays calendar", {
   expect_no_error(temporal_effects(weekend_lags = 2))
+  expect_no_error(temporal_effects(weekend_lags = -2))
 })
 
-test_that("non-integer / negative lag depths error", {
-  expect_error(temporal_effects(weekend_lags = 1.5), "non-negative integer")
-  expect_error(temporal_effects(weekend_lags = -1), "non-negative integer")
-  expect_error(temporal_effects(weekend_lags = c(1, 2)), "non-negative integer")
+test_that("non-integer lag depths error", {
+  expect_error(temporal_effects(weekend_lags = 1.5), "single integer")
+  expect_error(temporal_effects(weekend_lags = -1.5), "single integer")
+  expect_error(temporal_effects(weekend_lags = c(1, 2)), "single integer")
+  expect_error(temporal_effects(weekend_lags = NA), "single integer")
 })
 
 # ---------------------------------------------------------------------------
@@ -96,6 +105,71 @@ test_that("weekend lags skip holidays when counting working days", {
     add_temporal_effects(temporal_effects(holidays = xmas_cal(), weekend_lags = 1))
   d <- as.data.frame(compute_temporal_effects(x))
   expect_true(as.Date("2021-01-04") %in% d$onset[d$.event_weekend_lag_1 == 1])
+})
+
+# ---------------------------------------------------------------------------
+# Negative depths: before-weekend / before-holiday
+# ---------------------------------------------------------------------------
+
+test_that("negative weekend lags flag the working day(s) before a weekend", {
+  x <- tbl_now(make_daily(), event_date = "onset", report_date = "report",
+               case_count = "n", data_type = "count-incidence", verbose = FALSE) |>
+    add_temporal_effects(temporal_effects(weekend_lags = -3))
+  d <- as.data.frame(compute_temporal_effects(x))
+
+  expect_true(all(
+    c(".event_weekend_lead_1", ".event_weekend_lead_2", ".event_weekend_lead_3")
+    %in% names(d)
+  ))
+  # No `_lag_` columns: a negative depth is the before-event effect only.
+  expect_false(any(grepl("^\\.event_weekend_lag_", names(d))))
+
+  # lead_1 = Friday, lead_2 = Thursday, lead_3 = Wednesday
+  expect_true(all(weekdays(d$onset[d$.event_weekend_lead_1 == 1]) == "Friday"))
+  expect_true(all(weekdays(d$onset[d$.event_weekend_lead_2 == 1]) == "Thursday"))
+  expect_true(all(weekdays(d$onset[d$.event_weekend_lead_3 == 1]) == "Wednesday"))
+  # Fri Dec 25 / Thu Dec 24 / Wed Dec 23 run up to the Dec 26-27 weekend. No
+  # holiday calendar here, so Christmas is just another working Friday.
+  expect_true(as.Date("2020-12-25") %in% d$onset[d$.event_weekend_lead_1 == 1])
+  expect_true(as.Date("2020-12-24") %in% d$onset[d$.event_weekend_lead_2 == 1])
+  expect_true(as.Date("2020-12-23") %in% d$onset[d$.event_weekend_lead_3 == 1])
+
+  # Weekend days never carry a working-day indicator
+  expect_equal(sum(d$.event_weekend_lead_1[weekdays(d$onset) %in% c("Saturday", "Sunday")]), 0)
+})
+
+test_that("negative holiday lags flag the working days leading up to a holiday", {
+  skip_if_not_installed("almanac")
+  x <- tbl_now(make_daily(), event_date = "onset", report_date = "report",
+               case_count = "n", data_type = "count-incidence", verbose = FALSE) |>
+    add_temporal_effects(temporal_effects(holidays = xmas_cal(), holiday_lags = -2))
+  d <- as.data.frame(compute_temporal_effects(x))
+
+  lead1 <- d$onset[d$.event_holiday_lead_1 == 1]
+  lead2 <- d$onset[d$.event_holiday_lead_2 == 1]
+
+  # Christmas is Fri Dec 25 2020 -> Thu Dec 24 is the last working day before it,
+  # Wed Dec 23 the one before that.
+  expect_true(as.Date("2020-12-24") %in% lead1)
+  expect_true(as.Date("2020-12-23") %in% lead2)
+  # New Year is Fri Jan 1 2021, preceded by the Dec 26/27 weekend -> Thu Dec 31
+  # is lead_1 and Wed Dec 30 is lead_2 (the weekend is skipped, not counted).
+  expect_true(as.Date("2020-12-31") %in% lead1)
+  expect_true(as.Date("2020-12-30") %in% lead2)
+  # The holiday itself is not a before-effect
+  expect_false(as.Date("2020-12-25") %in% c(lead1, lead2))
+})
+
+test_that("before- and after-event effects can coexist on one object", {
+  skip_if_not_installed("almanac")
+  x <- tbl_now(make_daily(), event_date = "onset", report_date = "report",
+               case_count = "n", data_type = "count-incidence", verbose = FALSE) |>
+    add_temporal_effects(temporal_effects(weekend_lags = -1)) |>
+    add_temporal_effects(temporal_effects(weekend_lags = 1))
+  d <- as.data.frame(compute_temporal_effects(x))
+
+  expect_true(all(weekdays(d$onset[d$.event_weekend_lead_1 == 1]) == "Friday"))
+  expect_true(all(weekdays(d$onset[d$.event_weekend_lag_1 == 1]) == "Monday"))
 })
 
 test_that("get_temporal_effect_cols() reports the lag columns", {

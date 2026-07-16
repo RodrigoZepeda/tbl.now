@@ -386,7 +386,7 @@ get_temporal_effects(df_computed) # The spec (list of configs)
 get_temporal_effect_cols(df_computed) # The computed column names
 ```
 
-#### After-holiday and after-weekend effects
+#### Around-holiday and around-weekend effects
 
 Reporting often *rebounds* on the first working day(s) after a holiday or a
 weekend. To capture that, `temporal_effects()` has `holiday_lags` and
@@ -403,6 +403,30 @@ after_eff <- temporal_effects(
   weekend_lags = 1
 )
 after_eff
+```
+
+The mirror image — a slowdown in the days *leading up to* a break — is a negative
+depth. `..._holiday_lead_k` / `..._weekend_lead_k` then flag dates `k` working
+days **before** a holiday / weekend, counting backwards from it, so `_lead_1` is
+the working day closest to the break:
+
+```{r}
+# Flag Christmas Eve (and the eve of every other holiday), plus the Wednesday,
+# Thursday and Friday before each weekend
+before_eff <- temporal_effects(
+  holidays     = cal_us_federal(),
+  holiday_lags = -1,
+  weekend_lags = -3
+)
+before_eff
+```
+
+To model both sides of the same break, attach one specification per direction:
+
+```{r, eval=FALSE}
+df_now |>
+  add_temporal_effects(temporal_effects(weekend_lags = -1)) |> # the Friday before
+  add_temporal_effects(temporal_effects(weekend_lags = 1)) # the Monday after
 ```
 
 #### Event- vs report-date effects

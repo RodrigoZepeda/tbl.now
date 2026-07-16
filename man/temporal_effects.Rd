@@ -28,20 +28,35 @@ temporal_effects(
 
 \item{week_of_year}{Logical. Whether to include an effect for the epidemiological week.}
 
-\item{holiday_lags}{Non-negative integer (default \code{0}). Depth \code{N} of the
-\emph{after-holiday} effect. When \code{N > 0} (and \code{holidays} is supplied) a set of
-indicator columns \code{..._holiday_lag_1}, ..., \code{..._holiday_lag_N} is created,
-where \code{..._holiday_lag_k} flags dates that fall exactly \code{k} \strong{working days}
-after a holiday. Working days skip weekends (see \code{weekend_days} in
-\code{\link[=add_temporal_effects]{add_temporal_effects()}}) and other holidays, so the effect lands on the first
-day back at work. Use it to capture a rise in cases just after a holiday.}
+\item{holiday_lags}{Single integer (default \code{0}). Signed depth \code{N} of the
+\emph{holiday} lag effect; \code{holidays} must be supplied whenever \code{N != 0}.
 
-\item{weekend_lags}{Non-negative integer (default \code{0}). Depth \code{N} of the
-\emph{after-weekend} effect. When \code{N > 0} a set of indicator columns
-\code{..._weekend_lag_1}, ..., \code{..._weekend_lag_N} is created, where
-\code{..._weekend_lag_k} flags dates that fall exactly \code{k} \strong{working days} after a
-weekend (again skipping weekends and holidays). Use it to capture a rise in
-cases on the first working day(s) after a weekend.}
+When \code{N > 0} the effect is placed \strong{after} the holiday: indicator columns
+\code{..._holiday_lag_1}, ..., \code{..._holiday_lag_N} are created, where
+\code{..._holiday_lag_k} flags dates that fall exactly \code{k} \strong{working days} after a
+holiday. Working days skip weekends (see \code{weekend_days} in
+\code{\link[=add_temporal_effects]{add_temporal_effects()}}) and other holidays, so the effect lands on the first
+day back at work. Use it to capture a rise in cases just after a holiday.
+
+When \code{N < 0} the effect is placed \strong{before} the holiday instead: columns
+\code{..._holiday_lead_1}, ..., \verb{..._holiday_lead_|N|} are created, where
+\code{..._holiday_lead_k} flags dates that fall exactly \code{k} working days \emph{before} a
+holiday. So \code{holiday_lags = -1} flags Christmas Eve, and \code{holiday_lags = -3}
+flags the last three working days leading up to Christmas.}
+
+\item{weekend_lags}{Single integer (default \code{0}). Signed depth \code{N} of the
+\emph{weekend} lag effect, mirroring \code{holiday_lags} but resetting on weekend days
+rather than holidays (and needing no calendar).
+
+When \code{N > 0}, columns \code{..._weekend_lag_1}, ..., \code{..._weekend_lag_N} flag dates
+exactly \code{k} working days after a weekend, so with Sat/Sun weekends
+\code{weekend_lags = 1} flags the Monday. When \code{N < 0}, columns
+\code{..._weekend_lead_1}, ..., \verb{..._weekend_lead_|N|} flag dates \code{k} working days
+before a weekend instead: \code{weekend_lags = -1} flags the Friday, and
+\code{weekend_lags = -3} flags the Wednesday, Thursday and Friday.
+
+To model both sides of the same break, add two specifications (see the
+examples).}
 
 \item{seasons}{Vector. Either \code{integer(0)} (no seasonal effects) or a positive-numeric
 vector where each entry is the number of seasons (cycles) to model. The actual Fourier
@@ -50,6 +65,7 @@ period for the i-th entry is \code{seasons[i] * season_length[i]}.}
 \item{season_length}{Either a single positive number or a vector of the same length as
 \code{seasons}. Specifies the duration (in data units) of each season cycle. Defaults to \code{1},
 meaning the period equals \code{seasons} directly.
+
 Use a value greater than 1 when the data unit is finer than the season.
 For example, to model 52-week annual seasonality in \strong{daily} data set
 \verb{seasons = 52, season_length = 7} (period = 364 days).}
@@ -74,6 +90,114 @@ Example:
 temporal_effects(holidays = cal_us_federal())
 }\if{html}{\out{</div>}}
 }
+\section{Using a different holiday calendar}{
+
+
+\code{holidays} accepts \strong{any} \code{\link[almanac:rcalendar]{almanac::rcalendar()}}.
+
+A calendar is a set of \emph{recurrence rules}, so you describe how
+a holiday is constructed . say "the fourth Thursday of November", and
+\pkg{almanac} generates it for every year. In general, you should avoid
+hardcoding specific dates (like "18/11/2021").
+
+A calendar has four building blocks:
+\itemize{
+\item \strong{Built-in holidays.} \pkg{almanac} ships rules for common US holidays:
+\code{hol_us_thanksgiving()}, \code{hol_us_memorial_day()}, \code{hol_christmas()},
+\code{hol_us_election_day()}, and so on. See \code{\link[almanac:rholiday]{almanac::rholiday()}} for the list.
+\item \strong{Your own holidays.} Anything without a built-in rule is a \code{yearly()}
+recurrence narrowed with \verb{recur_on_*()} and named with
+\code{\link[almanac:rholiday]{almanac::rholiday()}}.
+\item \strong{Observance.} \code{\link[almanac:hol_observe]{almanac::hol_observe()}} shifts a fixed-date holiday that
+lands on a weekend onto a working day. \code{adjustment = adj_nearest} gives the
+usual US rule (Saturday moves back to Friday, Sunday forward to Monday);
+\code{adj_following} and \code{adj_preceding} always move one way.
+\item \strong{Editing a calendar.} \code{\link[almanac:cal_add]{almanac::cal_add()}} and
+\code{\link[almanac:cal_remove]{almanac::cal_remove()}} tweak an existing calendar, and
+\code{\link[almanac:cal_names]{almanac::cal_names()}} lists what is in one.
+}
+
+Use \code{\link[almanac:cal_events]{almanac::cal_events()}} to check what you built before modelling with
+it.
+\subsection{Worked example: the New York City calendar}{
+
+NYC observes the US federal holidays plus Lincoln's Birthday and Election Day,
+and calls the October holiday Columbus Day. Only Lincoln's Birthday needs a
+hand-written rule; everything else is built-in, with \code{hol_observe()} on the
+fixed-date holidays.
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{library(almanac)
+
+cal_nyc <- function(since = NULL, until = NULL) \{
+
+  #Adjust if a holiday happens on a weekend move to the closest date
+  #i.e. 4th of July on Saturday in 2026 moves to Friday July 3rd
+  on_weekends <- recur_on_weekends(weekly(since = since, until = until))
+  observed <- function(x) \{
+    hol_observe(x, adjust_on = on_weekends, adjustment = adj_nearest)
+  \}
+
+  # Build a rule for Lincoln's birthday: February 12th, every year.
+  lincolns_birthday <- yearly(since = since, until = until) |>
+    recur_on_month_of_year("February") |>
+    recur_on_day_of_month(12L) |>
+    rholiday(name = "Lincoln's Birthday")
+
+  rcalendar(
+    #New years day moves to closest weekday
+    observed(hol_new_years_day(since = since, until = until)),
+    #MLK day happens that day
+    hol_us_martin_luther_king_junior_day(since = since, until = until),
+    #Lincoln's birthday moves to closest weekday
+    observed(lincolns_birthday),
+    #President's day happens that day
+    hol_us_presidents_day(since = since, until = until),
+    #Memorials day happens that day
+    hol_us_memorial_day(since = since, until = until),
+    #Juneteenth is moved to closest weekday
+    observed(hol_us_juneteenth(since = since, until = until)),
+    #4th of July is moved to closest weekday
+    observed(hol_us_independence_day(since = since, until = until)),
+    #Labor day happens that specific day
+    hol_us_labor_day(since = since, until = until),
+    #We can rename what almanac names Indigenous People's day to Columbus
+    hol_rename(
+      hol_us_indigenous_peoples_day(since = since, until = until),
+      "Columbus Day"
+    ),
+    #Election day
+    hol_us_election_day(since = since, until = until),
+    #Veteran's day moves closest
+    observed(hol_us_veterans_day(since = since, until = until)),
+    #Thanksgiving happens that specific Thursday
+    hol_us_thanksgiving(since = since, until = until),
+    #Christmas moves to closest day
+    observed(hol_christmas(since = since, until = until))
+  )
+\}
+
+# Check it before using it. The same rules generate any year you ask for:
+cal_events(cal_nyc(), year = 2026, observed = TRUE)
+cal_events(cal_nyc(), year = 2027, observed = TRUE)
+
+# Then hand it to temporal_effects() like any other calendar:
+temporal_effects(holidays = cal_nyc())
+}\if{html}{\out{</div>}}
+
+Two of those show the rules we implemented:
+\itemize{
+\item \strong{Independence Day is Jul 3, not Jul 4.} Jul 4 2026 is a Saturday, so
+\code{adj_nearest} moves the observance \emph{back} to Friday Jul 3. In 2027 it lands on a
+Sunday and moves \emph{forward} to Mon Jul 5.
+\item \strong{Christmas 2027 is observed on Fri Dec 24}, and New Year's Day 2028 is
+pulled back to Fri Dec 31 2027 — so it appears in the 2027 events, not 2028.
+}
+
+\strong{Note} NYC's Lincoln's Birthday is a floating holiday so
+consider removing from here.
+}
+}
+
 \examples{
 temporal_effects(day_of_week = TRUE, week_of_year = TRUE)
 
@@ -86,11 +210,39 @@ temporal_effects(seasons = 52, season_length = 7)
 # After-weekend effect: flag the first two working days after a weekend
 temporal_effects(weekend = TRUE, weekend_lags = 2)
 
+# Before-weekend effect: flag the last working day before a weekend (Friday)
+temporal_effects(weekend = TRUE, weekend_lags = -1)
+
 if (rlang::is_installed("almanac")) {
   cal <- almanac::rcalendar(almanac::hol_christmas())
   temporal_effects(holidays = cal, day_of_month = TRUE, seasons = c(7, 365))
 
   # After-holiday effect: flag the first 3 working days back after a holiday
   temporal_effects(holidays = cal, holiday_lags = 3)
+
+  # Before-holiday effect: flag the 2 working days leading up to a holiday
+  temporal_effects(holidays = cal, holiday_lags = -2)
+
+  # A calendar of your own: write a rule for the holiday, not a date, and
+  # almanac generates it for every year (see "Using a different holiday
+  # calendar" above for a full local calendar).
+  lincolns_birthday <- almanac::yearly() |>
+    almanac::recur_on_month_of_year("February") |>
+    almanac::recur_on_day_of_month(12L) |>
+    almanac::rholiday(name = "Lincoln's Birthday")
+
+  # Add it to the federal calendar and check what you built
+  cal_local <- almanac::cal_add(almanac::cal_us_federal(), lincolns_birthday)
+  almanac::cal_events(cal_local, year = 2026, observed = TRUE)
+
+  temporal_effects(holidays = cal_local, holiday_lags = 2)
+
+  # Both sides of the holiday: add one specification per direction
+  data(denguedat)
+  tbl_now(denguedat,
+    event_date = onset_week, report_date = report_week, verbose = FALSE
+  ) |>
+    add_temporal_effects(temporal_effects(holidays = cal, holiday_lags = -2)) |>
+    add_temporal_effects(temporal_effects(holidays = cal, holiday_lags = 2))
 }
 }
