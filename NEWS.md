@@ -1,3 +1,24 @@
+# tbl.now 0.14.0
+
+* `holiday_lags` and `weekend_lags` in `temporal_effects()` now accept **negative
+  depths**, placing the effect *before* the break instead of after it. A negative
+  depth creates `..._holiday_lead_k` / `..._weekend_lead_k` indicator columns that
+  flag dates exactly `k` **working days** before a holiday / weekend, counting
+  backwards from it — so `_lead_1` is the working day closest to the break.
+  `weekend_lags = -1` flags the Friday, `weekend_lags = -3` flags the Wednesday,
+  Thursday and Friday, and `holiday_lags = -1` flags Christmas Eve. Working days
+  skip weekends and holidays exactly as they do for positive depths, and
+  `holiday_lags` still requires a `holidays` calendar for either sign. Use it to
+  capture the reporting slowdown that precedes a break; attach one specification
+  per direction to model both sides of it. Positive depths are unchanged.
+* `?temporal_effects` gained a **"Using a different holiday calendar"** section.
+  `holidays` has always accepted any `almanac::rcalendar()`, but the docs only
+  showed `cal_us_federal()`; reporting holidays are local, so the section covers
+  the building blocks (built-in `hol_*()` rules, custom `rholiday()` rules,
+  weekend observance with `hol_observe()`, and editing a calendar with
+  `cal_add()` / `cal_remove()`), and works through the New York City calendar as
+  an example.
+
 # tbl.now 0.13.1
 
 * Fixed style in the batch reporting vignette
