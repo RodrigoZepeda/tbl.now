@@ -626,7 +626,7 @@ get_temporal_effect_cols(df_computed) # The computed column names
 #> [1] ".event_day_of_week"  ".event_week_of_year" ".event_holiday"
 ```
 
-#### After-holiday and after-weekend effects
+#### Around-holiday and around-weekend effects
 
 Reporting often *rebounds* on the first working day(s) after a holiday
 or a weekend. To capture that,
@@ -655,6 +655,42 @@ after_eff
 #>   1. New Year's Day, US Martin Luther King Jr. Day, US Presidents' Day, US
 #>   Memorial Day, US Juneteenth, US Independence Day, US Labor Day, US Indigenous
 #>   Peoples' Day, US Veterans Day, US Thanksgiving, and Christmas
+```
+
+The mirror image — a slowdown in the days *leading up to* a break — is a
+negative depth. `..._holiday_lead_k` / `..._weekend_lead_k` then flag
+dates `k` working days **before** a holiday / weekend, counting
+backwards from it, so `_lead_1` is the working day closest to the break:
+
+``` r
+
+# Flag Christmas Eve (and the eve of every other holiday), plus the Wednesday,
+# Thursday and Friday before each weekend
+before_eff <- temporal_effects(
+  holidays     = cal_us_federal(),
+  holiday_lags = -1,
+  weekend_lags = -3
+)
+before_eff
+#> 
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "before-holiday" effect: last working day
+#> • "before-weekend" effect: last 3 working days
+#> • "holidays":
+#>   1. New Year's Day, US Martin Luther King Jr. Day, US Presidents' Day, US
+#>   Memorial Day, US Juneteenth, US Independence Day, US Labor Day, US Indigenous
+#>   Peoples' Day, US Veterans Day, US Thanksgiving, and Christmas
+```
+
+To model both sides of the same break, attach one specification per
+direction:
+
+``` r
+
+df_now |>
+  add_temporal_effects(temporal_effects(weekend_lags = -1)) |> # the Friday before
+  add_temporal_effects(temporal_effects(weekend_lags = 1)) # the Monday after
 ```
 
 #### Event- vs report-date effects

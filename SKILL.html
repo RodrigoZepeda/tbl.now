@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -228,8 +228,8 @@
 <span>  day_of_month  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  month_of_year <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  week_of_year  <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  holiday_lags  <span class="op">=</span> <span class="fl">0</span>,            <span class="co"># after-HOLIDAY effect (see below); needs `holidays`</span></span>
-<span>  weekend_lags  <span class="op">=</span> <span class="fl">0</span>,            <span class="co"># after-WEEKEND effect (see below)</span></span>
+<span>  holiday_lags  <span class="op">=</span> <span class="fl">0</span>,            <span class="co"># HOLIDAY lag effect (see below); needs `holidays`</span></span>
+<span>  weekend_lags  <span class="op">=</span> <span class="fl">0</span>,            <span class="co"># WEEKEND lag effect (see below)</span></span>
 <span>  seasons       <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">integer</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>,   <span class="co"># Fourier periods, e.g. c(7, 52, 365)</span></span>
 <span>  season_length <span class="op">=</span> <span class="fl">1</span>,            <span class="co"># multiply each season; period = seasons * season_length</span></span>
 <span>  holidays      <span class="op">=</span> <span class="cn">NULL</span>          <span class="co"># an almanac::rcalendar(), see next skill</span></span>
@@ -248,7 +248,13 @@
 <li>
 <strong>Seasonality / Fourier</strong>: <code>seasons</code> are the cycle periods. For <em>daily</em> data with weekly seasonality use <code>seasons = 52, season_length = 7</code> (period = 364 days); <code>season_length</code> defaults to <code>1</code> (period = <code>seasons</code>).</li>
 <li>
-<strong>After-holiday / after-weekend lags</strong> (capture the rebound <em>after</em> a break): <code>holiday_lags = N</code> / <code>weekend_lags = N</code> are non-negative integer depths that materialise indicator columns <code>..._holiday_lag_1 … _N</code> and <code>..._weekend_lag_1 … _N</code>, flagging dates exactly <code>k</code> <strong>working days</strong> after a holiday / weekend (weekends <em>and</em> holidays are skipped when counting, so the effect lands on the first day back at work). <code>holiday_lags</code> requires a <code>holidays</code> calendar. Best for daily data.</li>
+<strong>Holiday / weekend lags</strong> (capture the lull <em>before</em> a break or the rebound <em>after</em> it): <code>holiday_lags = N</code> / <code>weekend_lags = N</code> are signed integer depths. Each flags dates exactly <code>k</code> <strong>working days</strong> from a holiday / weekend, with weekends <em>and</em> holidays skipped when counting, so the effect lands on the first day back at work or the last day before the break.
+<ul><li>
+<code>N &gt; 0</code> → <em>after</em> the event: columns <code>..._holiday_lag_1 … _N</code> / <code>..._weekend_lag_1 … _N</code>. With Sat/Sun weekends <code>weekend_lags = 1</code> is the Monday.</li>
+<li>
+<code>N &lt; 0</code> → <em>before</em> the event: columns <code>..._holiday_lead_1 … _|N|</code> / <code>..._weekend_lead_1 … _|N|</code>, counting backwards, so <code>_lead_1</code> is the working day closest to the event. <code>weekend_lags = -1</code> is the Friday, <code>-3</code> is the Wednesday, Thursday and Friday, and <code>holiday_lags = -1</code> is Christmas Eve.</li>
+<li>For both sides of the same break, attach one spec per direction.</li>
+</ul><code>holiday_lags</code> requires a <code>holidays</code> calendar (either sign). Best for daily data.</li>
 <li>Replace or clear:</li>
 </ul><div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/remove.html">replace_temporal_effects</a></span><span class="op">(</span><span class="va">tn</span>, <span class="fu"><a href="reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>  <span class="co"># drops old computed cols</span></span>

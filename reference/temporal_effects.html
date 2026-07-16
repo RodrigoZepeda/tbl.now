@@ -25,7 +25,7 @@ should be included in a nowcasting model (e.g., day of week, month, holidays, et
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -106,22 +106,33 @@ should be included in a nowcasting model (e.g., day of week, month, holidays, et
 
 
 <dt id="arg-holiday-lags">holiday_lags<a class="anchor" aria-label="anchor" href="#arg-holiday-lags"></a></dt>
-<dd><p>Non-negative integer (default <code>0</code>). Depth <code>N</code> of the
-<em>after-holiday</em> effect. When <code>N &gt; 0</code> (and <code>holidays</code> is supplied) a set of
-indicator columns <code>..._holiday_lag_1</code>, ..., <code>..._holiday_lag_N</code> is created,
-where <code>..._holiday_lag_k</code> flags dates that fall exactly <code>k</code> <strong>working days</strong>
-after a holiday. Working days skip weekends (see <code>weekend_days</code> in
+<dd><p>Single integer (default <code>0</code>). Signed depth <code>N</code> of the
+<em>holiday</em> lag effect; <code>holidays</code> must be supplied whenever <code>N != 0</code>.</p>
+<p>When <code>N &gt; 0</code> the effect is placed <strong>after</strong> the holiday: indicator columns
+<code>..._holiday_lag_1</code>, ..., <code>..._holiday_lag_N</code> are created, where
+<code>..._holiday_lag_k</code> flags dates that fall exactly <code>k</code> <strong>working days</strong> after a
+holiday. Working days skip weekends (see <code>weekend_days</code> in
 <code><a href="add_temporal_effects.html">add_temporal_effects()</a></code>) and other holidays, so the effect lands on the first
-day back at work. Use it to capture a rise in cases just after a holiday.</p></dd>
+day back at work. Use it to capture a rise in cases just after a holiday.</p>
+<p>When <code>N &lt; 0</code> the effect is placed <strong>before</strong> the holiday instead: columns
+<code>..._holiday_lead_1</code>, ..., <code>..._holiday_lead_|N|</code> are created, where
+<code>..._holiday_lead_k</code> flags dates that fall exactly <code>k</code> working days <em>before</em> a
+holiday. So <code>holiday_lags = -1</code> flags Christmas Eve, and <code>holiday_lags = -3</code>
+flags the last three working days leading up to Christmas.</p></dd>
 
 
 <dt id="arg-weekend-lags">weekend_lags<a class="anchor" aria-label="anchor" href="#arg-weekend-lags"></a></dt>
-<dd><p>Non-negative integer (default <code>0</code>). Depth <code>N</code> of the
-<em>after-weekend</em> effect. When <code>N &gt; 0</code> a set of indicator columns
-<code>..._weekend_lag_1</code>, ..., <code>..._weekend_lag_N</code> is created, where
-<code>..._weekend_lag_k</code> flags dates that fall exactly <code>k</code> <strong>working days</strong> after a
-weekend (again skipping weekends and holidays). Use it to capture a rise in
-cases on the first working day(s) after a weekend.</p></dd>
+<dd><p>Single integer (default <code>0</code>). Signed depth <code>N</code> of the
+<em>weekend</em> lag effect, mirroring <code>holiday_lags</code> but resetting on weekend days
+rather than holidays (and needing no calendar).</p>
+<p>When <code>N &gt; 0</code>, columns <code>..._weekend_lag_1</code>, ..., <code>..._weekend_lag_N</code> flag dates
+exactly <code>k</code> working days after a weekend, so with Sat/Sun weekends
+<code>weekend_lags = 1</code> flags the Monday. When <code>N &lt; 0</code>, columns
+<code>..._weekend_lead_1</code>, ..., <code>..._weekend_lead_|N|</code> flag dates <code>k</code> working days
+before a weekend instead: <code>weekend_lags = -1</code> flags the Friday, and
+<code>weekend_lags = -3</code> flags the Wednesday, Thursday and Friday.</p>
+<p>To model both sides of the same break, add two specifications (see the
+examples).</p></dd>
 
 
 <dt id="arg-seasons">seasons<a class="anchor" aria-label="anchor" href="#arg-seasons"></a></dt>
@@ -133,8 +144,8 @@ period for the i-th entry is <code>seasons[i] * season_length[i]</code>.</p></dd
 <dt id="arg-season-length">season_length<a class="anchor" aria-label="anchor" href="#arg-season-length"></a></dt>
 <dd><p>Either a single positive number or a vector of the same length as
 <code>seasons</code>. Specifies the duration (in data units) of each season cycle. Defaults to <code>1</code>,
-meaning the period equals <code>seasons</code> directly.
-Use a value greater than 1 when the data unit is finer than the season.
+meaning the period equals <code>seasons</code> directly.</p>
+<p>Use a value greater than 1 when the data unit is finer than the season.
 For example, to model 52-week annual seasonality in <strong>daily</strong> data set
 <code>seasons = 52, season_length = 7</code> (period = 364 days).</p></dd>
 
@@ -153,6 +164,104 @@ For example, to model 52-week annual seasonality in <strong>daily</strong> data 
 <p>Example:</p>
 <p></p><div class="sourceCode r"><pre><code><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavisVaughan/almanac" class="external-link">almanac</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>holidays <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/cal_us_federal.html" class="external-link">cal_us_federal</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre><p></p></div>
+    </div>
+    <div class="section level2">
+    <h2 id="using-a-different-holiday-calendar">Using a different holiday calendar<a class="anchor" aria-label="anchor" href="#using-a-different-holiday-calendar"></a></h2>
+
+
+
+<p><code>holidays</code> accepts <strong>any</strong> <code><a href="https://rdrr.io/pkg/almanac/man/rcalendar.html" class="external-link">almanac::rcalendar()</a></code>.</p>
+<p>A calendar is a set of <em>recurrence rules</em>, so you describe how
+a holiday is constructed . say "the fourth Thursday of November", and
+<span class="pkg">almanac</span> generates it for every year. In general, you should avoid
+hardcoding specific dates (like "18/11/2021").</p>
+<p>A calendar has four building blocks:</p><ul><li><p><strong>Built-in holidays.</strong> <span class="pkg">almanac</span> ships rules for common US holidays:
+<code><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_us_thanksgiving()</a></code>, <code><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_us_memorial_day()</a></code>, <code><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_christmas()</a></code>,
+<code><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_us_election_day()</a></code>, and so on. See <code><a href="https://rdrr.io/pkg/almanac/man/rholiday.html" class="external-link">almanac::rholiday()</a></code> for the list.</p></li>
+<li><p><strong>Your own holidays.</strong> Anything without a built-in rule is a <code><a href="https://rdrr.io/pkg/almanac/man/rrule.html" class="external-link">yearly()</a></code>
+recurrence narrowed with <code>recur_on_*()</code> and named with
+<code><a href="https://rdrr.io/pkg/almanac/man/rholiday.html" class="external-link">almanac::rholiday()</a></code>.</p></li>
+<li><p><strong>Observance.</strong> <code><a href="https://rdrr.io/pkg/almanac/man/holiday-utilities.html" class="external-link">almanac::hol_observe()</a></code> shifts a fixed-date holiday that
+lands on a weekend onto a working day. <code>adjustment = adj_nearest</code> gives the
+usual US rule (Saturday moves back to Friday, Sunday forward to Monday);
+<code>adj_following</code> and <code>adj_preceding</code> always move one way.</p></li>
+<li><p><strong>Editing a calendar.</strong> <code><a href="https://rdrr.io/pkg/almanac/man/calendar-add-remove.html" class="external-link">almanac::cal_add()</a></code> and
+<code><a href="https://rdrr.io/pkg/almanac/man/calendar-add-remove.html" class="external-link">almanac::cal_remove()</a></code> tweak an existing calendar, and
+<code><a href="https://rdrr.io/pkg/almanac/man/cal_names.html" class="external-link">almanac::cal_names()</a></code> lists what is in one.</p></li>
+</ul><p>Use <code><a href="https://rdrr.io/pkg/almanac/man/cal_events.html" class="external-link">almanac::cal_events()</a></code> to check what you built before modelling with
+it.</p><div class="section">
+<h3 id="worked-example-the-new-york-city-calendar">Worked example: the New York City calendar<a class="anchor" aria-label="anchor" href="#worked-example-the-new-york-city-calendar"></a></h3>
+
+
+<p>NYC observes the US federal holidays plus Lincoln's Birthday and Election Day,
+and calls the October holiday Columbus Day. Only Lincoln's Birthday needs a
+hand-written rule; everything else is built-in, with <code><a href="https://rdrr.io/pkg/almanac/man/holiday-utilities.html" class="external-link">hol_observe()</a></code> on the
+fixed-date holidays.</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavisVaughan/almanac" class="external-link">almanac</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">cal_nyc</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">since</span> <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">until</span> <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span> <span class="op">{</span></span>
+<span></span>
+<span>  <span class="co">#Adjust if a holiday happens on a weekend move to the closest date</span></span>
+<span>  <span class="co">#i.e. 4th of July on Saturday in 2026 moves to Friday July 3rd</span></span>
+<span>  <span class="va">on_weekends</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/recur_on_day_of_week.html" class="external-link">recur_on_weekends</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rrule.html" class="external-link">weekly</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="va">observed</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holiday-utilities.html" class="external-link">hol_observe</a></span><span class="op">(</span><span class="va">x</span>, adjust_on <span class="op">=</span> <span class="va">on_weekends</span>, adjustment <span class="op">=</span> <span class="va">adj_nearest</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span></span>
+<span>  <span class="co"># Build a rule for Lincoln's birthday: February 12th, every year.</span></span>
+<span>  <span class="va">lincolns_birthday</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rrule.html" class="external-link">yearly</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/recur_on_month_of_year.html" class="external-link">recur_on_month_of_year</a></span><span class="op">(</span><span class="st">"February"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/recur_on_day_of_month.html" class="external-link">recur_on_day_of_month</a></span><span class="op">(</span><span class="fl">12L</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rholiday.html" class="external-link">rholiday</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Lincoln's Birthday"</span><span class="op">)</span></span>
+<span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rcalendar.html" class="external-link">rcalendar</a></span><span class="op">(</span></span>
+<span>    <span class="co">#New years day moves to closest weekday</span></span>
+<span>    <span class="fu">observed</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_new_years_day</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="co">#MLK day happens that day</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_us_martin_luther_king_junior_day</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span>,</span>
+<span>    <span class="co">#Lincoln's birthday moves to closest weekday</span></span>
+<span>    <span class="fu">observed</span><span class="op">(</span><span class="va">lincolns_birthday</span><span class="op">)</span>,</span>
+<span>    <span class="co">#President's day happens that day</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_us_presidents_day</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span>,</span>
+<span>    <span class="co">#Memorials day happens that day</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_us_memorial_day</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span>,</span>
+<span>    <span class="co">#Juneteenth is moved to closest weekday</span></span>
+<span>    <span class="fu">observed</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_us_juneteenth</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="co">#4th of July is moved to closest weekday</span></span>
+<span>    <span class="fu">observed</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_us_independence_day</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="co">#Labor day happens that specific day</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_us_labor_day</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span>,</span>
+<span>    <span class="co">#We can rename what almanac names Indigenous People's day to Columbus</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holiday-utilities.html" class="external-link">hol_rename</a></span><span class="op">(</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_us_indigenous_peoples_day</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span>,</span>
+<span>      <span class="st">"Columbus Day"</span></span>
+<span>    <span class="op">)</span>,</span>
+<span>    <span class="co">#Election day</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_us_election_day</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span>,</span>
+<span>    <span class="co">#Veteran's day moves closest</span></span>
+<span>    <span class="fu">observed</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_us_veterans_day</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="co">#Thanksgiving happens that specific Thursday</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_us_thanksgiving</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span>,</span>
+<span>    <span class="co">#Christmas moves to closest day</span></span>
+<span>    <span class="fu">observed</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_christmas</a></span><span class="op">(</span>since <span class="op">=</span> <span class="va">since</span>, until <span class="op">=</span> <span class="va">until</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="co"># Check it before using it. The same rules generate any year you ask for:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/cal_events.html" class="external-link">cal_events</a></span><span class="op">(</span><span class="fu">cal_nyc</span><span class="op">(</span><span class="op">)</span>, year <span class="op">=</span> <span class="fl">2026</span>, observed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/cal_events.html" class="external-link">cal_events</a></span><span class="op">(</span><span class="fu">cal_nyc</span><span class="op">(</span><span class="op">)</span>, year <span class="op">=</span> <span class="fl">2027</span>, observed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Then hand it to temporal_effects() like any other calendar:</span></span>
+<span><span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>holidays <span class="op">=</span> <span class="fu">cal_nyc</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre><p></p></div>
+<p>Two of those show the rules we implemented:</p><ul><li><p><strong>Independence Day is Jul 3, not Jul 4.</strong> Jul 4 2026 is a Saturday, so
+<code>adj_nearest</code> moves the observance <em>back</em> to Friday Jul 3. In 2027 it lands on a
+Sunday and moves <em>forward</em> to Mon Jul 5.</p></li>
+<li><p><strong>Christmas 2027 is observed on Fri Dec 24</strong>, and New Year's Day 2028 is
+pulled back to Fri Dec 31 2027 — so it appears in the 2027 events, not 2028.</p></li>
+</ul><p><strong>Note</strong> NYC's Lincoln's Birthday is a floating holiday so
+consider removing from here.</p>
+</div>
+
     </div>
 
     <div class="section level2">
@@ -186,19 +295,67 @@ For example, to model 52-week annual seasonality in <strong>daily</strong> data 
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"weekend"</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"after-weekend"</span> effect: <span style="font-style: italic;">first 2 working days</span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Before-weekend effect: flag the last working day before a weekend (Friday)</span></span></span>
+<span class="r-in"><span><span class="fu">temporal_effects</span><span class="op">(</span>weekend <span class="op">=</span> <span class="cn">TRUE</span>, weekend_lags <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Temporal Effects</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"weekend"</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"before-weekend"</span> effect: <span style="font-style: italic;">last working day</span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu">rlang</span><span class="fu">::</span><span class="fu"><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">is_installed</a></span><span class="op">(</span><span class="st">"almanac"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="va">cal</span> <span class="op">&lt;-</span> <span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rcalendar.html" class="external-link">rcalendar</a></span><span class="op">(</span><span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_christmas</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu">temporal_effects</span><span class="op">(</span>holidays <span class="op">=</span> <span class="va">cal</span>, day_of_month <span class="op">=</span> <span class="cn">TRUE</span>, seasons <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">7</span>, <span class="fl">365</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span>  <span class="co"># After-holiday effect: flag the first 3 working days back after a holiday</span></span></span>
 <span class="r-in"><span>  <span class="fu">temporal_effects</span><span class="op">(</span>holidays <span class="op">=</span> <span class="va">cal</span>, holiday_lags <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="co"># Before-holiday effect: flag the 2 working days leading up to a holiday</span></span></span>
+<span class="r-in"><span>  <span class="fu">temporal_effects</span><span class="op">(</span>holidays <span class="op">=</span> <span class="va">cal</span>, holiday_lags <span class="op">=</span> <span class="op">-</span><span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="co"># A calendar of your own: write a rule for the holiday, not a date, and</span></span></span>
+<span class="r-in"><span>  <span class="co"># almanac generates it for every year (see "Using a different holiday</span></span></span>
+<span class="r-in"><span>  <span class="co"># calendar" above for a full local calendar).</span></span></span>
+<span class="r-in"><span>  <span class="va">lincolns_birthday</span> <span class="op">&lt;-</span> <span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rrule.html" class="external-link">yearly</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>    <span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/recur_on_month_of_year.html" class="external-link">recur_on_month_of_year</a></span><span class="op">(</span><span class="st">"February"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>    <span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/recur_on_day_of_month.html" class="external-link">recur_on_day_of_month</a></span><span class="op">(</span><span class="fl">12L</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>    <span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rholiday.html" class="external-link">rholiday</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Lincoln's Birthday"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="co"># Add it to the federal calendar and check what you built</span></span></span>
+<span class="r-in"><span>  <span class="va">cal_local</span> <span class="op">&lt;-</span> <span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/calendar-add-remove.html" class="external-link">cal_add</a></span><span class="op">(</span><span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/cal_us_federal.html" class="external-link">cal_us_federal</a></span><span class="op">(</span><span class="op">)</span>, <span class="va">lincolns_birthday</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/cal_events.html" class="external-link">cal_events</a></span><span class="op">(</span><span class="va">cal_local</span>, year <span class="op">=</span> <span class="fl">2026</span>, observed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="fu">temporal_effects</span><span class="op">(</span>holidays <span class="op">=</span> <span class="va">cal_local</span>, holiday_lags <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="co"># Both sides of the holiday: add one specification per direction</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>,</span></span>
+<span class="r-in"><span>    event_date <span class="op">=</span> <span class="va">onset_week</span>, report_date <span class="op">=</span> <span class="va">report_week</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="fu">temporal_effects</span><span class="op">(</span>holidays <span class="op">=</span> <span class="va">cal</span>, holiday_lags <span class="op">=</span> <span class="op">-</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="fu">temporal_effects</span><span class="op">(</span>holidays <span class="op">=</span> <span class="va">cal</span>, holiday_lags <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Temporal Effects</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"after-holiday"</span> effect: <span style="font-style: italic;">first 3 working days</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"holidays"</span>:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   1. <span style="font-style: italic;">Christmas</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 6</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    onset_week   report_week   gender .event_num .report_num .delay</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1990-01-01   1990-01-01    Male            0           0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1990-01-01   1990-01-01    Female          0           0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 1990-01-01   1990-01-01    Female          0           0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1990-01-01   1990-01-08    Female          0           1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1990-01-01   1990-01-08    Male            0           1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 1990-01-01   1990-01-15    Female          0           2      2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1990-01-01   1990-01-15    Female          0           2      2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1990-01-01   1990-01-15    Female          0           2      2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-01   1990-01-22    Female          0           3      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01   1990-01-08    Female          0           1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-20</span> | Event date: <span style="color: #0000BB;">"onset_week"</span> | Report date: <span style="color: #0000BB;">"report_week"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # T. effects (lazy): [event_date] holidays | [event_date] holidays</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 52,977 more rows</span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

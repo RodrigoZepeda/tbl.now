@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,6 +54,13 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.14.0" id="tblnow-0140">tbl.now 0.14.0<a class="anchor" aria-label="anchor" href="#tblnow-0140"></a></h2>
+<ul><li>
+<code>holiday_lags</code> and <code>weekend_lags</code> in <code><a href="../reference/temporal_effects.html">temporal_effects()</a></code> now accept <strong>negative depths</strong>, placing the effect <em>before</em> the break instead of after it. A negative depth creates <code>..._holiday_lead_k</code> / <code>..._weekend_lead_k</code> indicator columns that flag dates exactly <code>k</code> <strong>working days</strong> before a holiday / weekend, counting backwards from it — so <code>_lead_1</code> is the working day closest to the break. <code>weekend_lags = -1</code> flags the Friday, <code>weekend_lags = -3</code> flags the Wednesday, Thursday and Friday, and <code>holiday_lags = -1</code> flags Christmas Eve. Working days skip weekends and holidays exactly as they do for positive depths, and <code>holiday_lags</code> still requires a <code>holidays</code> calendar for either sign. Use it to capture the reporting slowdown that precedes a break; attach one specification per direction to model both sides of it. Positive depths are unchanged.</li>
+<li>
+<code><a href="../reference/temporal_effects.html">?temporal_effects</a></code> gained a <strong>“Using a different holiday calendar”</strong> section. <code>holidays</code> has always accepted any <code><a href="https://rdrr.io/pkg/almanac/man/rcalendar.html" class="external-link">almanac::rcalendar()</a></code>, but the docs only showed <code><a href="https://rdrr.io/pkg/almanac/man/cal_us_federal.html" class="external-link">cal_us_federal()</a></code>; reporting holidays are local, so the section covers the building blocks (built-in <code>hol_*()</code> rules, custom <code><a href="https://rdrr.io/pkg/almanac/man/rholiday.html" class="external-link">rholiday()</a></code> rules, weekend observance with <code><a href="https://rdrr.io/pkg/almanac/man/holiday-utilities.html" class="external-link">hol_observe()</a></code>, and editing a calendar with <code><a href="https://rdrr.io/pkg/almanac/man/calendar-add-remove.html" class="external-link">cal_add()</a></code> / <code><a href="https://rdrr.io/pkg/almanac/man/calendar-add-remove.html" class="external-link">cal_remove()</a></code>), and works through the New York City calendar as an example.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.13.1" id="tblnow-0131">tbl.now 0.13.1<a class="anchor" aria-label="anchor" href="#tblnow-0131"></a></h2>
 <ul><li>Fixed style in the batch reporting vignette</li>

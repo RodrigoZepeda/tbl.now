@@ -282,8 +282,8 @@ spec <- temporal_effects(
   day_of_month  = FALSE,
   month_of_year = TRUE,
   week_of_year  = TRUE,
-  holiday_lags  = 0,            # after-HOLIDAY effect (see below); needs `holidays`
-  weekend_lags  = 0,            # after-WEEKEND effect (see below)
+  holiday_lags  = 0,            # HOLIDAY lag effect (see below); needs `holidays`
+  weekend_lags  = 0,            # WEEKEND lag effect (see below)
   seasons       = integer(0),   # Fourier periods, e.g. c(7, 52, 365)
   season_length = 1,            # multiply each season; period = seasons * season_length
   holidays      = NULL          # an almanac::rcalendar(), see next skill
@@ -306,14 +306,24 @@ get_temporal_effect_cols(tn)   # character(0) before compute; column names after
   *daily* data with weekly seasonality use
   `seasons = 52, season_length = 7` (period = 364 days); `season_length`
   defaults to `1` (period = `seasons`).
-- **After-holiday / after-weekend lags** (capture the rebound *after* a
-  break): `holiday_lags = N` / `weekend_lags = N` are non-negative
-  integer depths that materialise indicator columns
-  `..._holiday_lag_1 … _N` and `..._weekend_lag_1 … _N`, flagging dates
-  exactly `k` **working days** after a holiday / weekend (weekends *and*
-  holidays are skipped when counting, so the effect lands on the first
-  day back at work). `holiday_lags` requires a `holidays` calendar. Best
-  for daily data.
+- **Holiday / weekend lags** (capture the lull *before* a break or the
+  rebound *after* it): `holiday_lags = N` / `weekend_lags = N` are
+  signed integer depths. Each flags dates exactly `k` **working days**
+  from a holiday / weekend, with weekends *and* holidays skipped when
+  counting, so the effect lands on the first day back at work or the
+  last day before the break.
+  - `N > 0` → *after* the event: columns `..._holiday_lag_1 … _N` /
+    `..._weekend_lag_1 … _N`. With Sat/Sun weekends `weekend_lags = 1`
+    is the Monday.
+  - `N < 0` → *before* the event: columns `..._holiday_lead_1 … _|N|` /
+    `..._weekend_lead_1 … _|N|`, counting backwards, so `_lead_1` is the
+    working day closest to the event. `weekend_lags = -1` is the Friday,
+    `-3` is the Wednesday, Thursday and Friday, and `holiday_lags = -1`
+    is Christmas Eve.
+  - For both sides of the same break, attach one spec per direction.
+
+  `holiday_lags` requires a `holidays` calendar (either sign). Best for
+  daily data.
 - Replace or clear:
 
 ``` r
