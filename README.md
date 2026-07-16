@@ -66,10 +66,10 @@ Convert it to a
 ``` r
 df_now <- df |>
   tbl_now(event_date = event_date, report_date = report_date, case_count = n)
-#> i Identified data as <count-incidence> with counts in column "n".
+#> ℹ Identified data as <count-incidence> with counts in column "n".
 
 df_now
-#> # A tibble:  4 x 6
+#> # A tibble:  4 × 6
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay
@@ -79,9 +79,9 @@ df_now
 #> 2 2023-12-26   2023-12-26          2          1           1      0
 #> 3 2023-12-25   2023-12-27          5          0           2      2
 #> 4 2023-12-26   2023-12-27         11          1           2      1
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
 `tbl_now()` automatically:
@@ -100,7 +100,7 @@ Use it like any tibble:
 ``` r
 df_now |>
   filter(n > 5)
-#> # A tibble:  2 x 6
+#> # A tibble:  2 × 6
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay
@@ -108,9 +108,9 @@ df_now |>
 #>   [event_date] [report_date] [cases]      [...]       [...]  [...]
 #> 1 2023-12-25   2023-12-26         10          0           1      1
 #> 2 2023-12-26   2023-12-27         11          1           2      1
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
 > **Note** Linelist, count-incidence and count-cumulative data is
@@ -130,7 +130,7 @@ df_now <- df_now |>
   mutate(sex = c("M", "M", "F", "M"))
 
 df_now
-#> # A tibble:  4 x 7
+#> # A tibble:  4 × 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex  
@@ -140,9 +140,9 @@ df_now
 #> 2 2023-12-26   2023-12-26          2          1           1      0 M    
 #> 3 2023-12-25   2023-12-27          5          0           2      2 F    
 #> 4 2023-12-26   2023-12-27         11          1           2      1 M    
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
 Use the `add_strata` to specify the new column is a stratum:
@@ -150,7 +150,7 @@ Use the `add_strata` to specify the new column is a stratum:
 ``` r
 df_now |>
   add_strata("sex")
-#> # A tibble:  4 x 7
+#> # A tibble:  4 × 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex     
@@ -160,10 +160,10 @@ df_now |>
 #> 2 2023-12-26   2023-12-26          2          1           1      0 M       
 #> 3 2023-12-25   2023-12-27          5          0           2      2 F       
 #> 4 2023-12-26   2023-12-27         11          1           2      1 M       
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # Strata: "sex"
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
 The object now records `"sex"` as a stratification variable, preserved
@@ -183,11 +183,11 @@ t_eff <- temporal_effects(
 
 t_eff
 #> 
-#> -- Temporal Effects ------------------------------------------------------------
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
 #> The following effects are in place:
-#> * "day_of_week"
-#> * "week_of_year"
-#> * "holidays":
+#> • "day_of_week"
+#> • "week_of_year"
+#> • "holidays":
 #>   1. New Year's Day, US Martin Luther King Jr. Day, US Presidents' Day, US
 #>   Memorial Day, US Juneteenth, US Independence Day, US Labor Day, US Indigenous
 #>   Peoples' Day, US Veterans Day, US Thanksgiving, and Christmas
@@ -200,7 +200,7 @@ df_now <- df_now |>
   add_temporal_effects(t_eff)
 
 df_now
-#> # A tibble:  4 x 7
+#> # A tibble:  4 × 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex  
@@ -210,10 +210,10 @@ df_now
 #> 2 2023-12-26   2023-12-26          2          1           1      0 M    
 #> 3 2023-12-25   2023-12-27          5          0           2      2 F    
 #> 4 2023-12-26   2023-12-27         11          1           2      1 M    
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # T. effects (lazy): [event_date] day_of_week, week_of_year, holidays
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
 This lazily adds to the table `day_of_week`, `week_of_year`, and
@@ -223,7 +223,7 @@ This lazily adds to the table `day_of_week`, `week_of_year`, and
 ``` r
 df_now |>
   compute_temporal_effects()
-#> # A tibble:  4 x 10
+#> # A tibble:  4 × 10
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex  
@@ -240,12 +240,12 @@ df_now |>
 #> 2                  3                   1              0
 #> 3                  2                   1              1
 #> 4                  3                   1              0
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # T. effects: [event_date] day_of_week, week_of_year, holidays
 #> # T. effect cols: ".event_day_of_week", ".event_week_of_year", and
 #> # ".event_holiday"
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
 You can also attach effects related to the `report_date`:
@@ -255,7 +255,7 @@ r_eff <- temporal_effects(day_of_week = TRUE)
 
 df_now |>
   add_temporal_effects(r_eff, date_type = "report_date")
-#> # A tibble:  4 x 7
+#> # A tibble:  4 × 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex  
@@ -265,11 +265,11 @@ df_now |>
 #> 2 2023-12-26   2023-12-26          2          1           1      0 M    
 #> 3 2023-12-25   2023-12-27          5          0           2      2 F    
 #> 4 2023-12-26   2023-12-27         11          1           2      1 M    
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # T. effects (lazy): [event_date] day_of_week, week_of_year, holidays |
 #> # [report_date] day_of_week
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
 ## Working with the “now”
@@ -298,70 +298,135 @@ method gives a quick diagnostic overview of a `tbl_now`.
 ``` r
 library(ggplot2)
 library(patchwork)
-data("flusight")
+data("mpoxdat")
 
-flusight_now <- tbl_now(flusight,
-  event_date  = target_end_date,
-  report_date = as_of,
-  case_count  = observation,
+mpoxdat_now <- tbl_now(mpoxdat,
+  event_date  = dx_date,
+  report_date = dx_report_date,
+  case_count  = n,
   verbose     = FALSE
 )
 
-autoplot(flusight_now, level = 1)
+autoplot(mpoxdat_now)
 ```
 
 <img src="man/figures/README-autoplot-1.png" alt="" width="100%" />
 
 ## Diagnosing reporting problems
 
-`tbl.now` also helps diagnose two common reporting artefacts directly
-from the data.
+`tbl.now` also diagnoses common reporting artefacts directly from the
+data.
 
-**Does the reporting delay drift over time?** `plot_delay_drift()` draws
-a rolling fan chart of the delay distribution, while
-`test_delay_drift()` and `test_delay_changepoint()` test for a gradual
-trend or an abrupt change (with an autocorrelation-robust test, since a
-delay series is correlated with itself).
+### Does the reporting delay drift over time?
 
-**Batch reporting.** Laboratories sometimes withhold results and then
-release a whole backlog at once. Such a *batch* moves reports along the
-report axis without creating them, so a window spanning the lull and the
-spike has an unchanged total — unlike a genuine epidemic surge, which
-adds cases. `batch_screen()` uses this to tell the two apart, per report
-date:
+The `plot_delay_drift()` function draws a rolling fan chart of the delay
+distribution, while `test_delay_drift()` and `test_delay_changepoint()`
+test for a gradual trend or an abrupt change.
 
 ``` r
-data(denguedat)
-dengue <- tbl_now(denguedat,
-  event_date = onset_week, report_date = report_week, verbose = FALSE
-)
+data("covid_colombia")
 
-batches <- batch_screen(dengue, lookback = 2)
+covidat_now <- covid_colombia %>%
+  filter(notification_date <= as.Date("2021/01/01"), 
+         diagnosis_date    <= as.Date("2021/01/01")) %>% 
+  tbl_now(
+    event_date  = notification_date,
+    report_date = diagnosis_date,
+    case_count  = n,
+    strata      = sex,
+    verbose     = FALSE,
+    data_type = "count-incidence"
+  )
 
-batches |>
-  filter(batch) |>
-  select(report_date, reported, baseline, deficit, delta, classification)
-#> # A tibble: 69 x 6
-#>    report_date reported baseline deficit    delta classification 
-#>    <date>         <dbl>    <dbl>   <dbl>    <dbl> <chr>          
-#>  1 1990-12-03       124     67    -44    101      batch_and_surge
-#>  2 1991-02-04        53     38.4   14.5    0.0625 batch          
-#>  3 1991-08-12        61     50.2   37.3  -26.6    batch          
-#>  4 1991-12-02       241    154     12     75      batch_and_surge
-#>  5 1992-01-20       126     99.2   50.0  -23.2    batch          
-#>  6 1992-06-22        54     41.1   18.8   -5.83   batch          
-#>  7 1993-01-18       150     62.2   -2.80  90.6    batch_and_surge
-#>  8 1993-03-22        46     31.4   20.4   -5.73   batch          
-#>  9 1993-09-27        65     40.7   21.5    2.85   batch          
-#> 10 1993-10-25        83     53.4   24.7    4.88   batch          
-#> # i 59 more rows
+plot_delay_drift(covidat_now, changepoint = TRUE)
 ```
 
-A spike paid for by a preceding `deficit`, with `delta` near zero, is a
-batch; a large `delta` would instead signal a real surge.
-`batch_shape_test()` adds a complementary check on whether a flagged
-date drew on unusually *old* event dates. These functions are
-experimental — see the *Batch detection* article.
+<img src="man/figures/README-unnamed-chunk-15-1.png" alt="" width="100%" />
+
+We can see that the delay does change in time varying a lot at the
+beginning of the epidemic (before April) then stabilizing between April
+and July, and finally shifting downwards around August. The
+**changepoint** option uses [Pettitt’s
+test](https://doi.org/10.2307/2346729) to identify **one** changepoint
+in the data. It can be recovered with `test_delay_changepoint()`:
+
+``` r
+test_delay_changepoint(covidat_now)
+#> Warning: ! `test_delay_changepoint()` is experimental: results are not guaranteed and
+#>   the interface may change.
+#> ℹ Treat a detected change as a potential change point, not a confirmed one.
+#> This warning is displayed once every 8 hours.
+#> # A tibble: 2 × 10
+#>   strata stat       n changepoint statistic  p_value before after shift
+#>   <chr>  <chr>  <int> <date>          <dbl>    <dbl>  <dbl> <dbl> <dbl>
+#> 1 all    median   292 2020-08-17      11818 5.41e-15   5.90  3.92 -1.98
+#> 2 all    spread   292 2020-05-09       8670 2.89e- 8   8.85 11.1   2.25
+#>   changepoint_detected
+#>   <lgl>               
+#> 1 TRUE                
+#> 2 TRUE
+```
+
+As context, on August 10th 2020 the [Colombian government anounced the
+massive use of antigen
+testing](https://www.semana.com/que-son-las-pruebas-de-antigeno-y-quien-las-provee-en-colombia/692542/)
+for COVID-19 and in August 25th implemented the [PRASS
+programme](https://revistas.saludcapital.gov.co/index.php/BED/article/view/228/379.)
+which shifted the sampling and reporting paradigm for the country. These
+are the changes potentially identified by `test_delay_changepoint()`.
+
+> \[!NOTE\] Pettitt’s test in `test_delay_changepoint()` detects only
+> one change point: the largest one. If your data has more than one
+> changepoint break your data into chuncks and run the test for each of
+> them.
+
+### Batch reporting
+
+Some systems might withhold results and then release their backlog at
+once. Such *batches* displace reports along the report axis by first
+*not presenting them in time* and then reporting all in bulk. Batches do
+not create new cases they just shift their report dates to a later
+period.
+
+The `batch_test()` function uses this idea to identify batches. The
+confidence level can be set with `alpha`. For example here we set a
+level of 80%:
+
+``` r
+covidat_now %>% 
+  remove_all_strata() %>% 
+  batch_test(period = 7, alpha = 0.2) 
+```
+
+    #> # A tibble: 302 × 9
+    #>    report_date reported baseline p_transport_bh batch stratum deficit  delta
+    #>    <date>         <dbl>    <dbl>          <dbl> <lgl> <chr>     <dbl>  <dbl>
+    #>  1 2020-07-19      7880    5273.          0.179 TRUE  all       2806.  -199.
+    #>  2 2020-10-02      9713    7908.          0.159 TRUE  all       3042. -1237.
+    #>  3 2020-11-20     11259    8655.          0.108 TRUE  all       3636. -1032.
+    #>  4 2020-03-06         1      NA          NA     FALSE all         NA     NA 
+    #>  5 2020-03-07         0      NA          NA     FALSE all         NA     NA 
+    #>  6 2020-03-08         0      NA          NA     FALSE all         NA     NA 
+    #>  7 2020-03-09         2      NA          NA     FALSE all         NA     NA 
+    #>  8 2020-03-10         0      NA          NA     FALSE all         NA     NA 
+    #>  9 2020-03-11         6      NA          NA     FALSE all         NA     NA 
+    #> 10 2020-03-12         4      NA          NA     FALSE all         NA     NA 
+    #>    p_transport
+    #>          <dbl>
+    #>  1      0.0508
+    #>  2      0.0437
+    #>  3      0.0265
+    #>  4     NA     
+    #>  5     NA     
+    #>  6     NA     
+    #>  7     NA     
+    #>  8     NA     
+    #>  9     NA     
+    #> 10     NA     
+    #> # ℹ 292 more rows
+
+Additional batch detection tools can be found in the [corresponding
+article]((https://rodrigozepeda.github.io/tbl.now/articles/Example.html)).
 
 ## Extreme delays
 
@@ -382,9 +447,9 @@ tn <- tbl_now(df,
 
 # the 300-day report becomes censored (an upper bound on its delay)
 censor_delays_above(tn, max_delay = 60)
-#> i Marked 1 report with delay > 60 days as censored.
-#> * This delay is now an upper bound (is_censored).
-#> # A tibble:  4 x 6
+#> ℹ Marked 1 report with delay > 60 days as censored.
+#> • This delay is now an upper bound (is_censored).
+#> # A tibble:  4 × 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
 #>   onset        reported      .event_num .report_num .delay .is_censored 
@@ -394,17 +459,22 @@ censor_delays_above(tn, max_delay = 60)
 #> 2 2020-01-01   2020-01-06             0           5      5 FALSE        
 #> 3 2020-01-02   2020-01-03             1           2      1 FALSE        
 #> 4 2020-01-03   2020-10-27             2         300    298 TRUE         
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2020-10-27 | Event date: "onset" | Report date: "reported"
 #> # Right-censored indicator: ".is_censored"
-#> # --------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────
 ```
 
 ## Learning more
 
 - Introduction vignette:
   <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html>
+
 - Full walk-through with real CDC Flusight data:
   <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
+
+- Tutorial on detecting batches and other reporting-delay artifacts:
+  <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
+
 - Package reference:
   <https://rodrigozepeda.github.io/tbl.now/reference/>

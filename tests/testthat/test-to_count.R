@@ -732,3 +732,63 @@ test_that("to_count validates output", {
   # Result should be a valid tbl_now
   expect_true(validate_tbl_now(result))
 })
+
+test_that("count-cumulative -> count-incidence de-accumulates (round-trips)", {
+  data(denguedat)
+  dengue <- tbl_now(denguedat[1:3000, ],
+    event_date = "onset_week", report_date = "report_week", strata = "gender",
+    data_type = "linelist", verbose = FALSE
+  )
+  incidence <- to_count(dengue, to = "count-incidence")
+  cumulative <- to_count(incidence, to = "count-cumulative")
+  back <- to_count(cumulative, to = "count-incidence")
+
+  expect_equal(get_data_type(back), "count-incidence")
+
+  canon <- function(x) {
+    x <- as.data.frame(x)[, c("onset_week", "report_week", "gender", "n")]
+    x <- x[do.call(order, x), ]
+    rownames(x) <- NULL
+    x
+  }
+  # incidence -> cumulative -> incidence recovers the original increments
+  expect_equal(canon(incidence), canon(back))
+})
+
+test_that("de-accumulation yields negative increments for downward revisions", {
+  # cumulative total revised DOWN from 10 to 7 -> increment of -3
+  revised <- data.frame(
+    event_date = as.Date(rep("2020-07-08", 3)),
+    report_date = as.Date(c("2020-07-09", "2020-07-10", "2020-07-11")),
+    n = c(5, 10, 7)
+  )
+  ndata <- tbl_now(revised,
+    event_date = "event_date", report_date = "report_date", case_count = n,
+    report_units = "days", event_units = "days",
+    data_type = "count-cumulative", verbose = FALSE
+  )
+  incidence <- to_count(ndata, to = "count-incidence")
+  # cumulative 5, 10, 7 -> increments 5, 10-5 = 5, 7-10 = -3
+  expect_equal(sort(incidence$n), c(-3, 5, 5))
+})
+
+test_that("autoplot works on count-cumulative data (issue #26)", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  data(flusight)
+  california <- flusight |>
+    dplyr::filter(
+      location_name == "California" & target_end_date >= as.Date("2023-10-01")
+    ) |>
+    dplyr::filter(
+      target_end_date <= as.Date("2024-01-27") & as_of <= as.Date("2024-01-27")
+    ) |>
+    dplyr::distinct()
+  flu_tbl <- tbl_now(california,
+    event_date = target_end_date, report_date = as_of,
+    case_count = observation, data_type = "count-cumulative", verbose = FALSE
+  )
+
+  expect_s3_class(ggplot2::autoplot(flu_tbl), "patchwork")
+})

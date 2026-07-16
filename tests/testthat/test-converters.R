@@ -154,6 +154,43 @@ test_that("baselinenowcast matrix round-trip preserves NA vs 0 exactly", {
   expect_identical(rt, back)
 })
 
+test_that("tbl_now_to_baselinenowcast infers delays_unit from the object units", {
+  skip_if_not_installed("baselinenowcast")
+  data(denguedat)
+  weekly <- tbl_now(denguedat[1:2000, ],
+    event_date = "onset_week", report_date = "report_week", verbose = FALSE
+  )
+  inferred <- suppressWarnings(tbl_now_to_baselinenowcast(weekly, verbose = FALSE))
+  explicit <- suppressWarnings(
+    tbl_now_to_baselinenowcast(weekly, delays_unit = "weeks", verbose = FALSE)
+  )
+  # weekly units -> inferred "weeks"
+  expect_identical(inferred, explicit)
+  expect_equal(attr(inferred, "delays_unit"), "weeks")
+
+  # long format never needs delays_unit
+  expect_no_error(
+    suppressWarnings(tbl_now_to_baselinenowcast(weekly, format = "long", verbose = FALSE))
+  )
+})
+
+test_that("tbl_now_to_baselinenowcast errors when delays_unit cannot be inferred", {
+  monthly <- tbl_now(
+    data.frame(
+      ev = seq(as.Date("2020-01-01"), by = "month", length.out = 30),
+      rp = seq(as.Date("2020-02-01"), by = "month", length.out = 30),
+      n = 1:30
+    ),
+    event_date = ev, report_date = rp, case_count = n,
+    data_type = "count-incidence", event_units = "months", report_units = "months",
+    verbose = FALSE
+  )
+  expect_error(
+    tbl_now_to_baselinenowcast(monthly, verbose = FALSE),
+    "delays_unit"
+  )
+})
+
 test_that("tbl_now_from_baselinenowcast reads the long data.frame", {
   skip_if_not_installed("baselinenowcast")
 

@@ -2,9 +2,9 @@
 # Model-free shape test on the report axis
 # =============================================================================
 # NOTE ON PACKAGE PLACEMENT.  Model-free; destined for `tbl.now`.  See the header
-# of `35_batch_screen_tbl_now.R`.
+# of `35_batch_test_tbl_now.R`.
 #
-# `batch_screen()` looks only at *how many* reports arrived on each date.  This
+# `batch_test()` looks only at *how many* reports arrived on each date.  This
 # file looks at *which event dates they came from* -- equivalently, at the
 # distribution of reporting delays among the reports that arrived on one date.
 #
@@ -37,79 +37,35 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' A complement to [batch_screen()], which sees only report *volumes*.  This test
+#' A complement to [batch_test()], which sees only report *volumes*.  This test
 #' asks whether the reports that arrived on a candidate date came from
 #' systematically *older* event dates -- the signature of a released backlog --
 #' by comparing their delays with those of neighbouring report dates.  It is
 #' **model-free** and, under the conditions below, **exactly distribution-free**.
 #'
 #' @details
-#' # The mathematics
-#'
-#' Under a stable reporting process, an item reported on date \eqn{r} came from
-#' \eqn{\delta} days earlier with probability proportional to how many items that
-#' day produced times the chance of a delay \eqn{\delta}:
-#'
-#' \deqn{q_r(\delta) \;\propto\; \lambda_{r-\delta}\, g_D(\delta),}
-#'
-#' where \eqn{\lambda_t} is the number of items with event date \eqn{t} and
-#' \eqn{g_D} is the reporting-delay distribution.  This looks as though it needs a
-#' model.  It does not.  Suppose the incidence is *log-linear* across a short
-#' window, \eqn{\lambda_t = e^{a + \zeta t}}.  Then
-#'
-#' \deqn{q_r(\delta) \;\propto\; e^{a + \zeta(r-\delta)} g_D(\delta) \;\propto\; e^{-\zeta\delta} g_D(\delta),}
-#'
-#' because the factor \eqn{e^{a + \zeta r}} is constant in \eqn{\delta} and cancels
-#' in the normalisation.  **The result does not depend on \eqn{r}:** neighbouring
-#' report dates share one common delay profile, whatever \eqn{\lambda}, \eqn{g_D}
-#' and even \eqn{\zeta} happen to be.
-#'
-#' When two samples share a distribution their labels are *exchangeable*, so a
-#' permutation test comparing the delays on `at` against those of its neighbours is
-#' **exactly distribution-free** -- it needs neither the delay distribution nor the
-#' epidemic curve, only that the curve be locally log-linear (which any smooth
-#' curve is).  A released backlog is old, so `batch_shape_test()` uses a one-sided
-#' rank-sum directed at *longer* delays; this is the rank analogue of the score
-#' statistic \eqn{\sum_\delta \delta\, c_r(\delta)} (the mean delay), which is the
-#' locally most powerful test against a backlog tilt.  Only the *curvature* of
-#' \eqn{\log\lambda} biases it, at second order; overdispersion breaks exactness
-#' (neighbouring dates share event dates), which `permute = "blocks"` repairs by
-#' permuting whole report dates.
-#'
-#' # What is tested
-#'
 #' The delays of the reports arriving on `at` are compared with the pooled delays
-#' of the reports arriving on nearby dates, using a one-sided rank-sum
-#' (Wilcoxon) statistic directed at *longer* delays on `at`.  The \eqn{p}-value is
-#' obtained by permutation, so no asymptotic approximation is used.
+#' of the reports arriving on nearby dates, using a one-sided rank-sum (Wilcoxon)
+#' statistic directed at *longer* delays on `at`. The p-value comes from a
+#' permutation, so no asymptotic approximation is used.
 #'
-#' # When it is exact
-#'
-#' Neighbouring report dates share a common delay profile provided
-#' \eqn{\log \lambda_t} is *linear* across the comparison window (not constant --
-#' linear, which any smooth trend is, locally).  Under that condition, and with
-#' Poisson counts, the date labels are exchangeable and `permute = "items"` gives
-#' an exact test.
-#'
-#' If the counts are overdispersed (a shared per-event-date random effect, as in
-#' the negative-binomial model), neighbouring report dates are *dependent*
-#' because they draw on the same event dates.  Exchangeability of individual
-#' items then fails.  Use `permute = "blocks"`, which permutes whole report dates
-#' rather than individual reports and so respects that dependence.
+#' The test is model-free: as long as the epidemic curve is locally smooth,
+#' neighbouring report dates share one common delay profile, so their delay labels
+#' are exchangeable and the permutation test is (essentially) distribution-free --
+#' it needs neither the delay distribution nor the epidemic curve. With Poisson
+#' counts `permute = "items"` is exact; if the counts are overdispersed
+#' (neighbouring report dates share event dates, so individual items are not
+#' exchangeable) use `permute = "blocks"`, which permutes whole report dates.
 #'
 #' The `guard` argument omits report dates immediately adjacent to `at` from the
 #' comparison set: if a batch is present, its own deficit dates sit right beside
-#' the spike and would contaminate the reference group.
-#'
-#' # Signed (count-cumulative) data
-#'
-#' Only positive increments describe reports *appearing*; negative increments are
-#' down-revisions of an earlier total and carry no meaningful delay for this
-#' test.  They are dropped, with a message.
+#' the spike and would contaminate the reference group. For `"count-cumulative"`
+#' data only positive increments carry a meaningful delay; negative increments
+#' (down-revisions) are dropped with a message.
 #'
 #' @param data A [tbl_now()] object.
 #' @param at The candidate report date (coercible to the class of the report
-#'   column), typically one flagged by [batch_screen()].
+#'   column), typically one flagged by [batch_test()].
 #' @param neighbours Number of report dates on each side used as the reference
 #'   group.  Default `3`.
 #' @param guard Number of report dates immediately either side of `at` to skip.
@@ -124,7 +80,7 @@
 #'   `n_reference`, `mean_delay_at`, `mean_delay_reference`, `statistic`
 #'   (standardised rank-sum) and `p_value` (one-sided: longer delays on `at`).
 #'
-#' @seealso [batch_screen()], [simulate_batch()]
+#' @seealso [batch_test()], [simulate_batch()]
 #'
 #' @examples
 #' library(tbl.now)
@@ -260,13 +216,16 @@ batch_shape_test <- function(data,
 #' @noRd
 .batch_rank_sum_statistic <- function(candidate_delays, reference_delays) {
   pooled_ranks     <- rank(c(candidate_delays, reference_delays))
-  n_candidate      <- length(candidate_delays)
-  n_reference      <- length(reference_delays)
+  # Use doubles: on count data the delays are expanded to one value per item, so
+  # the group sizes can exceed the 32-bit integer range and their product would
+  # otherwise overflow to NA (`n_candidate * n_reference` for two 50k+ groups).
+  n_candidate      <- as.double(length(candidate_delays))
+  n_reference      <- as.double(length(reference_delays))
   candidate_sum    <- sum(pooled_ranks[seq_len(n_candidate)])
 
   expected_sum <- n_candidate * (n_candidate + n_reference + 1) / 2
   variance_sum <- n_candidate * n_reference * (n_candidate + n_reference + 1) / 12
-  if (variance_sum <= 0) return(0)
+  if (!is.finite(variance_sum) || variance_sum <= 0) return(0)
   (candidate_sum - expected_sum) / sqrt(variance_sum)
 }
 

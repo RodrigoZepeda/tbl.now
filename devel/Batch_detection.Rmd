@@ -42,7 +42,7 @@ report date as a *potential* batch, not a confirmed one.
 :::
 
 The theory and its proofs live in the help pages — every function has a **"The
-mathematics"** section (see `?batch_screen`, `?batch_shape_test`,
+mathematics"** section (see `?batch_test`, `?batch_shape_test`,
 `?simulate_batch`). This article is about *using* them.
 
 ```{r libraries, warning=FALSE, message=FALSE}
@@ -63,7 +63,7 @@ arrived on a different day.
 
 A genuine epidemic surge is different: it *creates* cases, and the box count goes up.
 
-`batch_screen()` computes exactly these two quantities for every report date:
+`batch_test()` computes exactly these two quantities for every report date:
 
 | quantity | meaning | what it detects |
 |---|---|---|
@@ -136,11 +136,11 @@ bind_rows(
 ### Screening for it
 
 ```{r dengue-screen}
-screened <- batch_screen(dengue_batched, lookback = 3)
+screened <- batch_test(dengue_batched, lookback = 3)
 screened
 ```
 
-`batch_screen()` found the release week and nothing else. Look at what happened
+`batch_test()` found the release week and nothing else. Look at what happened
 around the closure:
 
 ```{r dengue-window}
@@ -167,7 +167,7 @@ its window. This is not an approximation — it is a *pathwise* identity, and we
 check it exactly:
 
 ```{r dengue-pivot}
-screened_clean <- batch_screen(dengue_tbl, lookback = 3)
+screened_clean <- batch_test(dengue_tbl, lookback = 3)
 
 delta_clean   <- screened_clean$delta[screened_clean$report_date == release_week]
 delta_batched <- screened$delta[screened$report_date == release_week]
@@ -182,7 +182,7 @@ of a batch.
 
 ### Looking at *who* was reported, not just how many
 
-`batch_screen()` counts reports. `batch_shape_test()` asks a complementary question:
+`batch_test()` counts reports. `batch_shape_test()` asks a complementary question:
 did the reports arriving on this date come from unusually **old** event dates? A
 released backlog is old, so its delays should be inflated.
 
@@ -233,7 +233,7 @@ flusight_tbl <- flusight |>
 get_data_type(flusight_tbl)
 ```
 
-`batch_screen()` de-accumulates the cumulative curve into the signed increment each
+`batch_test()` de-accumulates the cumulative curve into the signed increment each
 report announced, then proceeds exactly as before. Because the increments are signed,
 the window total is a difference of counting processes rather than a count, so the
 exact Poisson reference is replaced by a robust normal approximation. You do not have
@@ -245,7 +245,7 @@ flusight_batched <- simulate_batch(
   closed_dates = as.Date(c("2024-01-13", "2024-01-20"))
 )
 
-flusight_screened <- batch_screen(flusight_batched, lookback = 2)
+flusight_screened <- batch_test(flusight_batched, lookback = 2)
 attr(flusight_screened, "null_model")
 
 flusight_screened |>
@@ -262,7 +262,7 @@ the window, and an exponential epidemic rise is not a straight line. So `"surge"
 fires — on the *original* data too:
 
 ```{r flusight-clean}
-flusight_clean <- batch_screen(flusight_tbl, lookback = 2)
+flusight_clean <- batch_test(flusight_tbl, lookback = 2)
 
 peak_week <- as.Date("2024-01-27")
 tibble(
@@ -326,12 +326,12 @@ scheduled_tbl <- bind_rows(report_rows) |>
           data_type = "linelist", verbose = FALSE)
 ```
 
-Screen it twice — once naively, once telling `batch_screen()` that the cycle is seven
+Screen it twice — once naively, once telling `batch_test()` that the cycle is seven
 days long:
 
 ```{r schedule-compare}
-naive    <- batch_screen(scheduled_tbl, lookback = 3)
-adjusted <- batch_screen(scheduled_tbl, lookback = 3, period = 7)
+naive    <- batch_test(scheduled_tbl, lookback = 3)
+adjusted <- batch_test(scheduled_tbl, lookback = 3, period = 7)
 
 c(
   "flagged without `period`" = sum(naive$batch,    na.rm = TRUE),
@@ -340,7 +340,7 @@ c(
 ```
 
 Every Monday is a phantom batch until the schedule is modelled; afterwards, none of
-them are. `batch_screen()` estimates the effect of each phase of the cycle by taking
+them are. `batch_test()` estimates the effect of each phase of the cycle by taking
 **medians across cycles**, which recovers the schedule as long as irregular batches
 hit any given phase in fewer than half of its cycles.
 
@@ -353,7 +353,7 @@ irregular_closure <- as.Date(c("2021-03-08", "2021-03-09", "2021-03-10", "2021-0
 scheduled_batched <- simulate_batch(scheduled_tbl, closed_dates = irregular_closure,
                                     verbose = FALSE)
 
-batch_screen(scheduled_batched, lookback = 4, period = 7) |>
+batch_test(scheduled_batched, lookback = 4, period = 7) |>
   filter(batch) |>
   select(report_date, reported, baseline, deficit, delta, classification)
 ```
@@ -369,7 +369,7 @@ small and the deficit falls outside the window; too large and you lose power, be
 the box total gets noisier. When in doubt, try a few values — a real batch survives.
 
 **Choosing `baseline_window`.** It must satisfy `baseline_window >= 2 * lookback + 3`,
-which `batch_screen()` enforces, so that a batch episode can never outvote the robust
+which `batch_test()` enforces, so that a batch episode can never outvote the robust
 baseline it is being measured against. The default is the smallest admissible value.
 
 **Reading the output.**
@@ -382,13 +382,13 @@ baseline it is being measured against. The default is the smallest admissible va
   neighbour; that is expected, not a second batch.
 
 **Strata.** A batch is a report date that is anomalous *for at least one stratum* — one
-laboratory can stall while others do not. `batch_screen()` returns one row per (report
+laboratory can stall while others do not. `batch_test()` returns one row per (report
 date, stratum) and corrects across all of them.
 
 **What this will not do.** If a stall has not cleared by the end of your data, you see
 the lull and never the spike. Within the data you have, that is *indistinguishable*
 from cases being deleted — an honest impossibility, not a failure of the method.
-`batch_screen()` labels it `"hold_or_deletion"` rather than guessing.
+`batch_test()` labels it `"hold_or_deletion"` rather than guessing.
 
 **A batch is not a single strange report.** It is tempting to look for one case
 with a shockingly long delay. But a batch produces **many cases with mildly
@@ -403,13 +403,13 @@ Use each tool for its question:
 
 | question | tool |
 |---|---|
-| Did *this report date* release a backlog? | `batch_screen()` |
+| Did *this report date* release a backlog? | `batch_test()` |
 | Did *this report date* draw on unusually old cases? | `batch_shape_test()` |
 | Is *this individual report* implausibly delayed? | see `test_delay_drift()` and downstream model-based checks |
 
 ## See also
 
-* `?batch_screen`, `?batch_shape_test`, `?simulate_batch` — each help page has a
+* `?batch_test`, `?batch_shape_test`, `?simulate_batch` — each help page has a
   **"The mathematics"** section deriving the method.
 * [`test_delay_drift()`](../reference/test_delay_drift.html) and
   [`test_delay_changepoint()`](../reference/test_delay_changepoint.html) — the

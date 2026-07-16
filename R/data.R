@@ -142,6 +142,63 @@
 #' @md
 "covidat"
 
+#' covid_us: CDC COVID-19 Case Surveillance Public Use Data (2020-2021)
+#'
+#' A compact aggregation of the U.S. CDC's individual-level COVID-19 case
+#' surveillance database, prepared to illustrate **batch reporting**. Each row is
+#' a unique (event date, report date) pair with the number of cases `n`.
+#'
+#' In the nowcasting context the **event date** is `cdc_case_earliest_dt` (the
+#' earlier of the clinical/specimen date and the date the case was received by
+#' CDC) and the **report date** is `cdc_report_dt` (the date the case was first
+#' reported to CDC). The delay between them is enormous and heavily right-skewed:
+#' cases were reported to CDC not smoothly but in large backlog dumps -- a textbook
+#' batch-reporting pattern that [batch_test()] and [transport_discriminant()]
+#' recover.
+#'
+#' Cases are kept when both their event date and their report date fall between
+#' 2020-01-01 and 2021-12-31 -- a self-consistent "as of the end of 2021" snapshot,
+#' so the epidemic and its reporting are seen over the same two years. The handful
+#' of rows whose report date precedes their event date (data-entry errors) were
+#' dropped. See `data-raw/covid_us.R` for the exact duckdb aggregation of the
+#' 14 GB source file.
+#'
+#' @format A data frame with three variables:
+#' \describe{
+#'   \item{cdc_case_earliest_dt}{`Date`. The event date -- the earlier of the
+#'     clinical date and the date received by CDC.}
+#'   \item{cdc_report_dt}{`Date`. The report date -- when the case was first
+#'     reported to CDC.}
+#'   \item{n}{`integer`. Number of cases with this (event date, report date)
+#'     pair.}
+#' }
+#'
+#' @source Centers for Disease Control and Prevention (CDC), COVID-19 Response.
+#'   *COVID-19 Case Surveillance Public Use Data* (version date: June 21, 2024).
+#'   \url{https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data/vbim-akqf/about_data}.
+#'   COVID-19 case surveillance data are collected by jurisdictions and reported
+#'   voluntarily to CDC.
+#'
+#' @docType data
+#'
+#' @usage data(covid_us)
+#'
+#' @keywords covid
+#'
+#' @examples
+#' data(covid_us)
+#' tn <- tbl_now(
+#'   covid_us,
+#'   event_date  = cdc_case_earliest_dt,
+#'   report_date = cdc_report_dt,
+#'   case_count  = n,
+#'   data_type   = "count-incidence",
+#'   verbose     = FALSE
+#' )
+#' tn
+#' @md
+"covid_us"
+
 #' #' vectordat: Vector borne reportable diseases from Mexico (Feb-Dec 2024)
 #' #'
 #' #' Surveillance count data provided by Mexico's General Directorate

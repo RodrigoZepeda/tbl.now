@@ -20,7 +20,7 @@ tbl_now_to_baselinenowcast(
   x,
   ...,
   format = c("matrix", "long"),
-  delays_unit = "days",
+  delays_unit = NULL,
   verbose = TRUE
 )
 }
@@ -32,8 +32,13 @@ tbl_now_to_baselinenowcast(
 
 \item{reference_date, report_date, count}{Column names (long format only).}
 
-\item{delays_unit}{Unit of the delay axis (passed to
-\code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}}). Defaults to \code{"days"}.}
+\item{delays_unit}{Unit of the delay axis of the reporting triangle, one of
+\code{"days"} or \code{"weeks"}. For \code{tbl_now_from_baselinenowcast()} this says how to
+read an input matrix's delay columns and defaults to \code{"days"}. For
+\code{tbl_now_to_baselinenowcast()} (matrix format only) it defaults to \code{NULL},
+meaning it is \strong{inferred} from the object's time units when the event and
+report units agree and are \code{"days"} or \code{"weeks"}; otherwise you must supply
+it explicitly.}
 
 \item{verbose}{Logical. Print the choices that were made.}
 

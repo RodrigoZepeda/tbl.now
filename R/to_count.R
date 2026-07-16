@@ -1,9 +1,10 @@
 #' Transform an object to count data
 #'
 #' @description `r lifecycle::badge("stable")`
-#' Transforms a `tbl.now` from:
+#' Transforms a `tbl.now` between count data types:
 #' * `linelist`: to `count-incidence` or `count-cumulative`
-#' * `count-incidence`: to  `count-cumulative`
+#' * `count-incidence`: to `count-cumulative`
+#' * `count-cumulative`: to `count-incidence`
 #'
 #' @details
 #' This is an S3 generic. This package provides methods for the
@@ -11,6 +12,13 @@
 #'
 #' * `tbl_now`: takes a `tbl_now` object and creates a new column with
 #' name `n` of counts of observations if `data_type = "linelist"`.
+#'
+#' Converting `count-cumulative` to `count-incidence` **de-accumulates** the
+#' series: within each event date (and grouping), ordered by report date, the
+#' incremental count is the cumulative total minus the previous one. Because
+#' cumulative totals can be revised *downward*, an increment can be **negative**;
+#' callers that need non-negative increments (for example
+#' [tbl_now_to_baselinenowcast()]) must handle or refuse that case.
 #'
 #' @param x Data to be transformed from `linelist` to count data
 #'
@@ -111,6 +119,19 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
   } else if (get_data_type(x) == "count-cumulative" & to == "count-cumulative") {
     x <- x |>
       summarise(!!as.symbol(case_count) := sum(!!as.symbol(case_count)), .groups = "drop")
+  } else if (get_data_type(x) == "count-cumulative" & to == "count-incidence") {
+    # De-accumulate: within each series (event date x grouping, ordered by report
+    # date) the incremental count is the cumulative total minus the previous one.
+    # Because cumulative totals can be revised *downward*, an increment can be
+    # negative; callers that need non-negative increments must handle that.
+    x <- x |>
+      to_count(to = "count-cumulative") |> # collapse any duplicate cells first
+      dplyr::group_by(dplyr::across(dplyr::all_of(c(get_event_date(x), get_is_censored(x), get_strata(x), get_temporal_effect_cols(x), get_covariates(x))))) |>
+      dplyr::arrange(dplyr::across(dplyr::all_of(get_report_date(x))), .by_group = TRUE) |>
+      dplyr::mutate(!!as.symbol(case_count) := !!as.symbol(case_count) - dplyr::lag(!!as.symbol(case_count), default = 0)) |>
+      ungroup()
+
+    attr(x, "data_type") <- "count-incidence"
   } else if (get_data_type(x) == "linelist" & to == "linelist") {
     x <- x |>
       ungroup()

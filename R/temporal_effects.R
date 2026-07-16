@@ -162,15 +162,6 @@ temporal_effects <- S7::new_class(
   )
 )
 
-#' Validate a single non-negative integer lag depth
-#'
-#' @param x The value supplied for `holiday_lags` / `weekend_lags`.
-#' @param name The argument name (for the error message).
-#'
-#' @return The validated depth as a single non-negative integer.
-#'
-#' @keywords internal
-#' @noRd
 #' Human-readable label for an after-holiday / after-weekend lag depth
 #'
 #' @param depth A single non-negative integer lag depth.
@@ -187,6 +178,15 @@ temporal_effects <- S7::new_class(
   }
 }
 
+#' Validate a single non-negative integer lag depth
+#'
+#' @param x The value supplied for `holiday_lags` / `weekend_lags`.
+#' @param name The argument name (for the error message).
+#'
+#' @return The validated depth as a single non-negative integer.
+#'
+#' @keywords internal
+#' @noRd
 .check_lag_depth <- function(x, name) {
   if (is.null(x) || length(x) == 0) {
     return(0L)

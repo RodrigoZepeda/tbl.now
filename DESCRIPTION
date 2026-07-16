@@ -1,7 +1,7 @@
 Package: tbl.now
 Type: Package
 Title: Tidy Extension for Nowcasting
-Version: 0.12.0
+Version: 0.13.0
 Authors@R: 
     c(person("Rodrigo", "Zepeda-Tello", , "rzepeda17@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-4471-5270")),
@@ -29,9 +29,12 @@ Suggests:
     knitr,
     modifiedmk,
     patchwork,
+    plotly,
     rmarkdown,
     testthat (>= 3.0.0),
-    tsibble
+    tsibble,
+    wavScalogram,
+    WaveletComp
 Additional_repositories:
     https://epinowcast.r-universe.dev
 Config/testthat/edition: 3
@@ -46,12 +49,15 @@ Imports:
     pillar,
     rlang,
     S7,
+    scales,
     stats,
     tibble,
     tidyr,
-    tidyselect
+    tidyselect,
+    utils
 URL: https://rodrigozepeda.github.io/tbl.now/
 VignetteBuilder: knitr
 Config/Needs/website: rmarkdown
 Roxygen: list(markdown = TRUE)
 Config/roxygen2/version: 8.0.0
+RoxygenNote: 8.0.0

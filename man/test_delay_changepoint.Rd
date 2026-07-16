@@ -7,7 +7,7 @@
 test_delay_changepoint(
   x,
   ...,
-  stat = c("median", "spread", "mean", "iqr"),
+  stat = c("median", "spread"),
   by_strata = FALSE,
   strata = NULL,
   mature_only = TRUE,

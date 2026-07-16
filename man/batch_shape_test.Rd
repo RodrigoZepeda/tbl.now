@@ -18,7 +18,7 @@ batch_shape_test(
 \item{data}{A \code{\link[=tbl_now]{tbl_now()}} object.}
 
 \item{at}{The candidate report date (coercible to the class of the report
-column), typically one flagged by \code{\link[=batch_screen]{batch_screen()}}.}
+column), typically one flagged by \code{\link[=batch_test]{batch_test()}}.}
 
 \item{neighbours}{Number of report dates on each side used as the reference
 group.  Default \code{3}.}
@@ -42,75 +42,32 @@ A tibble, one row per stratum, with \code{stratum}, \code{n_at},
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-A complement to \code{\link[=batch_screen]{batch_screen()}}, which sees only report \emph{volumes}.  This test
+A complement to \code{\link[=batch_test]{batch_test()}}, which sees only report \emph{volumes}.  This test
 asks whether the reports that arrived on a candidate date came from
 systematically \emph{older} event dates -- the signature of a released backlog --
 by comparing their delays with those of neighbouring report dates.  It is
 \strong{model-free} and, under the conditions below, \strong{exactly distribution-free}.
 }
-\section{The mathematics}{
-Under a stable reporting process, an item reported on date \eqn{r} came from
-\eqn{\delta} days earlier with probability proportional to how many items that
-day produced times the chance of a delay \eqn{\delta}:
-
-\deqn{q_r(\delta) \;\propto\; \lambda_{r-\delta}\, g_D(\delta),}
-
-where \eqn{\lambda_t} is the number of items with event date \eqn{t} and
-\eqn{g_D} is the reporting-delay distribution.  This looks as though it needs a
-model.  It does not.  Suppose the incidence is \emph{log-linear} across a short
-window, \eqn{\lambda_t = e^{a + \zeta t}}.  Then
-
-\deqn{q_r(\delta) \;\propto\; e^{a + \zeta(r-\delta)} g_D(\delta) \;\propto\; e^{-\zeta\delta} g_D(\delta),}
-
-because the factor \eqn{e^{a + \zeta r}} is constant in \eqn{\delta} and cancels
-in the normalisation.  \strong{The result does not depend on \eqn{r}:} neighbouring
-report dates share one common delay profile, whatever \eqn{\lambda}, \eqn{g_D}
-and even \eqn{\zeta} happen to be.
-
-When two samples share a distribution their labels are \emph{exchangeable}, so a
-permutation test comparing the delays on \code{at} against those of its neighbours is
-\strong{exactly distribution-free} -- it needs neither the delay distribution nor the
-epidemic curve, only that the curve be locally log-linear (which any smooth
-curve is).  A released backlog is old, so \code{batch_shape_test()} uses a one-sided
-rank-sum directed at \emph{longer} delays; this is the rank analogue of the score
-statistic \eqn{\sum_\delta \delta\, c_r(\delta)} (the mean delay), which is the
-locally most powerful test against a backlog tilt.  Only the \emph{curvature} of
-\eqn{\log\lambda} biases it, at second order; overdispersion breaks exactness
-(neighbouring dates share event dates), which \code{permute = "blocks"} repairs by
-permuting whole report dates.
-}
-
-\section{What is tested}{
+\details{
 The delays of the reports arriving on \code{at} are compared with the pooled delays
-of the reports arriving on nearby dates, using a one-sided rank-sum
-(Wilcoxon) statistic directed at \emph{longer} delays on \code{at}.  The \eqn{p}-value is
-obtained by permutation, so no asymptotic approximation is used.
-}
+of the reports arriving on nearby dates, using a one-sided rank-sum (Wilcoxon)
+statistic directed at \emph{longer} delays on \code{at}. The p-value comes from a
+permutation, so no asymptotic approximation is used.
 
-\section{When it is exact}{
-Neighbouring report dates share a common delay profile provided
-\eqn{\log \lambda_t} is \emph{linear} across the comparison window (not constant --
-linear, which any smooth trend is, locally).  Under that condition, and with
-Poisson counts, the date labels are exchangeable and \code{permute = "items"} gives
-an exact test.
-
-If the counts are overdispersed (a shared per-event-date random effect, as in
-the negative-binomial model), neighbouring report dates are \emph{dependent}
-because they draw on the same event dates.  Exchangeability of individual
-items then fails.  Use \code{permute = "blocks"}, which permutes whole report dates
-rather than individual reports and so respects that dependence.
+The test is model-free: as long as the epidemic curve is locally smooth,
+neighbouring report dates share one common delay profile, so their delay labels
+are exchangeable and the permutation test is (essentially) distribution-free --
+it needs neither the delay distribution nor the epidemic curve. With Poisson
+counts \code{permute = "items"} is exact; if the counts are overdispersed
+(neighbouring report dates share event dates, so individual items are not
+exchangeable) use \code{permute = "blocks"}, which permutes whole report dates.
 
 The \code{guard} argument omits report dates immediately adjacent to \code{at} from the
 comparison set: if a batch is present, its own deficit dates sit right beside
-the spike and would contaminate the reference group.
+the spike and would contaminate the reference group. For \code{"count-cumulative"}
+data only positive increments carry a meaningful delay; negative increments
+(down-revisions) are dropped with a message.
 }
-
-\section{Signed (count-cumulative) data}{
-Only positive increments describe reports \emph{appearing}; negative increments are
-down-revisions of an earlier total and carry no meaningful delay for this
-test.  They are dropped, with a message.
-}
-
 \examples{
 library(tbl.now)
 data(denguedat, package = "tbl.now")
@@ -127,5 +84,5 @@ batch_shape_test(dengue_tbl, at = as.Date("1990-06-25"), n_permutations = 99)
 
 }
 \seealso{
-\code{\link[=batch_screen]{batch_screen()}}, \code{\link[=simulate_batch]{simulate_batch()}}
+\code{\link[=batch_test]{batch_test()}}, \code{\link[=simulate_batch]{simulate_batch()}}
 }

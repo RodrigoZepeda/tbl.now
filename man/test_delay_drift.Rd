@@ -7,7 +7,7 @@
 test_delay_drift(
   x,
   ...,
-  stat = c("median", "spread", "mean", "iqr"),
+  stat = c("median", "spread"),
   method = c("hamed-rao", "yue-pilon", "block-bootstrap"),
   by_strata = FALSE,
   strata = NULL,

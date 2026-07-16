@@ -30,6 +30,9 @@
     ggplot2::theme(
       plot.title       = ggplot2::element_text(face = "bold", colour = palette[["near_black"]]),
       plot.subtitle    = ggplot2::element_text(colour = palette[["muted_green"]]),
+      plot.caption     = ggplot2::element_text(colour = palette[["muted_green"]], hjust = 0,
+                                               size = 8, lineheight = 1.05),
+      plot.caption.position = "plot",
       axis.title       = ggplot2::element_text(colour = palette[["near_black"]]),
       axis.text        = ggplot2::element_text(colour = palette[["near_black"]]),
       panel.grid.minor = ggplot2::element_blank()
@@ -104,6 +107,58 @@
     weight = incidence[[case_count_column]]
   ) |>
     dplyr::filter(!is.na(.data$delay), !is.na(.data$weight), .data$weight > 0)
+}
+
+#' Multiplicative growth of the cumulative count per delay
+#'
+#' For **count-cumulative** data the "delay distribution" is better read as how the
+#' cumulative count *stabilises* with delay. For each event date (and stratum), and
+#' each delay `d`, this is the ratio of the cumulative count at delay `d` to the
+#' cumulative count at the previous observed delay: a ratio `> 1` is an upward
+#' revision (more cases arrived), `< 1` a downward revision, and it converges to
+#' `1` as reporting completes. On a log scale a doubling and a halving are
+#' symmetric about `1`.
+#'
+#' @param object A `tbl_now` object (expected `count-cumulative`).
+#' @param strata_cols Optional strata columns; when supplied a combined `strata`
+#'   label is added and growth is computed within each stratum.
+#'
+#' @return A tibble with `delay`, `ratio` (and `strata` when grouped); only finite,
+#'   positive ratios are kept.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_cumulative_growth <- function(object, strata_cols = NULL) {
+  cumulative <- object |>
+    ungroup() |>
+    to_count(to = "count-cumulative")
+  count_col <- get_case_count(cumulative)
+  event_col <- get_event_date(object)
+  observations <- dplyr::as_tibble(cumulative)
+
+  group_cols <- "event_date"
+  if (!is.null(strata_cols)) {
+    observations <- dplyr::mutate(
+      observations,
+      strata = .tbl_now_strata_label(observations, strata_cols)
+    )
+    group_cols <- c("strata", "event_date")
+  }
+
+  # Total cumulative count per (event date [, stratum], delay), summed over any
+  # columns that are not strata, then the ratio to the previous delay.
+  observations |>
+    dplyr::rename(event_date = dplyr::all_of(event_col), delay = ".delay") |>
+    dplyr::summarise(
+      cumulative = sum(.data[[count_col]]),
+      .by = dplyr::all_of(c(group_cols, "delay"))
+    ) |>
+    dplyr::arrange(dplyr::across(dplyr::all_of(c(group_cols, "delay")))) |>
+    dplyr::mutate(
+      ratio = .data$cumulative / dplyr::lag(.data$cumulative),
+      .by = dplyr::all_of(group_cols)
+    ) |>
+    dplyr::filter(is.finite(.data$ratio), .data$ratio > 0)
 }
 
 #' Observed incidence per event date
@@ -191,6 +246,79 @@
     ggplot2::labs(
       title = "Empirical delay distribution",
       x = "Reporting delay", y = "Density"
+    )
+}
+
+#' Panel: cumulative growth per delay (count-cumulative only)
+#'
+#' Boxplots of the per-delay cumulative growth ratio (see
+#' `.tbl_now_cumulative_growth()`), on a log scale with a dashed reference at
+#' `1` (no change). The boxes shrink toward `1` as reporting completes.
+#'
+#' @param growth A tibble from `.tbl_now_cumulative_growth()`.
+#' @param palette A named colour palette.
+#'
+#' @return A ggplot object (or an empty panel when there is nothing to show).
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_panel_delay_cumulative <- function(growth, palette) {
+  if (nrow(growth) == 0) {
+    return(.tbl_now_empty_panel(
+      "Not enough cumulative history for growth ratios", palette
+    ))
+  }
+  ggplot2::ggplot(growth, ggplot2::aes(x = .data$delay, y = .data$ratio)) +
+    ggplot2::geom_hline(
+      yintercept = 1, linetype = "dashed",
+      colour = palette[["near_black"]], linewidth = 0.4
+    ) +
+    ggplot2::geom_boxplot(
+      ggplot2::aes(group = .data$delay),
+      fill = palette[["light_red"]], colour = palette[["accent_red"]],
+      outlier.colour = palette[["near_black"]], outlier.size = 0.6, linewidth = 0.4
+    ) +
+    ggplot2::scale_y_log10() +
+    ggplot2::labs(
+      title = "Cumulative growth by delay",
+      subtitle = "Ratio to the previous delay (1 = stable, log scale)",
+      x = "Reporting delay", y = "Cumulative count ratio"
+    )
+}
+
+#' Panel: cumulative growth per delay, split by stratum
+#'
+#' @param growth_by A tibble from `.tbl_now_cumulative_growth()` carrying `strata`.
+#' @param palette A named colour palette.
+#'
+#' @return A ggplot object (or an empty panel).
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_panel_delay_cumulative_strata <- function(growth_by, palette) {
+  if (nrow(growth_by) == 0) {
+    return(.tbl_now_empty_panel(
+      "Not enough cumulative history for growth ratios", palette
+    ))
+  }
+  ggplot2::ggplot(growth_by, ggplot2::aes(
+    x = .data$delay, y = .data$ratio, fill = .data$strata
+  )) +
+    ggplot2::geom_hline(
+      yintercept = 1, linetype = "dashed",
+      colour = palette[["near_black"]], linewidth = 0.4
+    ) +
+    ggplot2::geom_boxplot(
+      ggplot2::aes(group = interaction(.data$delay, .data$strata)),
+      position = ggplot2::position_dodge2(preserve = "single"),
+      outlier.size = 0.5, linewidth = 0.3
+    ) +
+    ggplot2::scale_y_log10() +
+    .tbl_now_strata_fill_scale() +
+    ggplot2::labs(
+      title = "Cumulative growth by delay",
+      subtitle = "Ratio to the previous delay (1 = stable, log scale)",
+      x = "Reporting delay", y = "Cumulative count ratio"
     )
 }
 
@@ -1106,7 +1234,11 @@
     return(.tbl_now_build_panel_strata(key, ctx, palette))
   }
   switch(key,
-    delay_distribution = .tbl_now_panel_delay(ctx$delay_distribution, palette),
+    delay_distribution = if (identical(ctx$data_type, "count-cumulative")) {
+      .tbl_now_panel_delay_cumulative(ctx$delay_growth, palette)
+    } else {
+      .tbl_now_panel_delay(ctx$delay_distribution, palette)
+    },
     epidemic = .tbl_now_panel_epidemic(
       ctx$epidemic_process, ctx$incomplete_threshold, ctx$level, palette,
       ctx$holiday_points
@@ -1153,7 +1285,11 @@
   }
 
   switch(key,
-    delay_distribution = .tbl_now_panel_delay_strata(ctx$delay_distribution_by, palette),
+    delay_distribution = if (identical(ctx$data_type, "count-cumulative")) {
+      .tbl_now_panel_delay_cumulative_strata(ctx$delay_growth_by, palette)
+    } else {
+      .tbl_now_panel_delay_strata(ctx$delay_distribution_by, palette)
+    },
     epidemic = .tbl_now_panel_epidemic_strata(
       ctx$epidemic_process_by, ctx$incomplete_threshold, ctx$level, palette
     ),
@@ -1221,7 +1357,12 @@ ggplot2::autoplot
 #' **Case-count panels**
 #'
 #' * `"delay_distribution"` — a (case-count weighted) histogram of the reporting
-#'   delay (`.delay`).
+#'   delay (`.delay`). For **`count-cumulative`** data this panel instead shows the
+#'   *cumulative growth by delay*: boxplots (on a log scale, with a dashed
+#'   reference at `1`) of the ratio of each event date's cumulative count at a
+#'   delay to its cumulative count at the previous delay. A ratio above `1` is an
+#'   upward revision, below `1` a downward one, and the boxes converge to `1` as
+#'   reporting completes.
 #' * `"epidemic"` — the latest reported case counts per `event_date`, with a
 #'   dashed vertical line marking where the data become incomplete (less than
 #'   `level` of the delay distribution has arrived). Holidays from the attached
@@ -1272,6 +1413,8 @@ ggplot2::autoplot
 #'   `now - q`, where `q` is the `level` quantile of the delay distribution. With
 #'   the default `0.95`, the line marks where at least 5 percent of delays are
 #'   yet to arrive.
+#' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget (the panels
+#'   stacked) instead of a static \pkg{patchwork}. Default `FALSE`.
 #' @param palette A named character vector of colours. Defaults to the package
 #'   palette.
 #' @param delay_distribution_xlim,event_date_xlim,calendar_effect_xlim,seasonality_xlim
@@ -1312,7 +1455,7 @@ ggplot2::autoplot
 #' @importFrom ggplot2 autoplot
 #' @exportS3Method ggplot2::autoplot
 autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
-                             strata = NULL, level = 0.95,
+                             strata = NULL, level = 0.95, plotly = FALSE,
                              palette = .tbl_now_palette(),
                              delay_distribution_xlim = NULL,
                              event_date_xlim = NULL,
@@ -1336,6 +1479,7 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
 
   object <- ungroup(object)
   event_units <- get_event_units(object)
+  data_type <- get_data_type(object)
   panel_keys <- .tbl_now_resolve_panels(panels, event_units)
 
   strata_cols <- if (isTRUE(by_strata)) {
@@ -1376,6 +1520,10 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
   needs_delay_effects <- any(
     grepl("^delay_(weekday|week|month|seasonality)$", panel_keys)
   )
+  # For count-cumulative data the delay-distribution panel becomes the cumulative
+  # growth-ratio panel instead of a histogram of increments.
+  is_cumulative <- identical(data_type, "count-cumulative")
+  needs_growth <- is_cumulative && "delay_distribution" %in% panel_keys
 
   if (isTRUE(by_strata)) {
     # Only compute the by-strata frames that the requested panels need.
@@ -1385,14 +1533,18 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
     ))
     ctx <- list(
       by_strata            = TRUE,
+      data_type            = data_type,
       event_units          = event_units,
       incomplete_threshold = incomplete_threshold,
       level                = level,
       epidemic_process_by  = if (epidemic_needed) {
         .tbl_now_epidemic_process_by(object, strata_cols)
       },
-      delay_distribution_by = if ("delay_distribution" %in% panel_keys) {
+      delay_distribution_by = if ("delay_distribution" %in% panel_keys && !is_cumulative) {
         .tbl_now_delay_distribution_by(object, strata_cols)
+      },
+      delay_growth_by = if (needs_growth) {
+        .tbl_now_cumulative_growth(object, strata_cols)
       },
       delay_per_date_by = if (needs_delay_effects) {
         trim_to_complete(.tbl_now_delay_per_date_by(object, strata_cols))
@@ -1405,7 +1557,9 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
     }
     ctx <- list(
       by_strata            = FALSE,
+      data_type            = data_type,
       delay_distribution   = delay_distribution,
+      delay_growth         = if (needs_growth) .tbl_now_cumulative_growth(object),
       epidemic_process     = epidemic_process,
       delay_per_date       = delay_per_date,
       event_units          = event_units,
@@ -1430,14 +1584,9 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
 
   # A single selected panel is returned as a plain ggplot for convenience.
   if (length(built_panels) == 1) {
-    return(built_panels[[1]])
+    return(.as_plotly(built_panels[[1]], plotly))
   }
 
-  patchwork::wrap_plots(built_panels, ncol = 2) +
-    patchwork::plot_annotation(
-      title = "Diagnostic plots",
-      theme = ggplot2::theme(
-        plot.title = ggplot2::element_text(face = "bold", colour = palette[["near_black"]])
-      )
-    )
+  .combine_panels(built_panels, plotly = plotly, ncol = 2, byrow = TRUE,
+                  title = "Automatic plot of effects", palette = palette)
 }

@@ -1,3 +1,181 @@
+# tbl.now 0.13.0
+
+* Bug fix: `batch_shape_test()` no longer errors ("missing value where TRUE/FALSE
+  needed") on large count data. The standardised rank-sum expands counts to one
+  value per item, so the group sizes could exceed the 32-bit integer range and
+  their product overflowed to `NA`; the group sizes are now computed as doubles.
+* `batch_test()` now returns a **lean, Benjamini-Hochberg-only** result:
+  `report_date`, `stratum`, `reported`, `baseline`, `deficit`, `delta`,
+  `p_transport`, `p_transport_bh` and the `batch` flag, each documented under
+  `?batch_test`. The raw per-point `classification` column (and the
+  `p_creation`/`p_deletion`/scale columns behind it) has been dropped: it was not
+  multiplicity-corrected and over-identified, whereas `batch` controls the false
+  discovery rate. (`transport_discriminant()` keeps its `classification`.)
+* `batch_test()` (and `transport_discriminant()`) now infer the calendar
+  `period` from the object's temporal effects: a **day-of-week** effect sets
+  `period = 7`, a **week-of-year** effect `period = 52` (see
+  [add_temporal_effects()]). A `period` you pass still wins, with a note if it
+  disagrees; and if the data is daily with no temporal effect, the function
+  suggests `period = 7`.
+* The `baseline_method` argument of `batch_test()` and `transport_discriminant()`
+  has been **removed** — the baseline is always the repeated-median local line.
+  The running-median (local-constant) alternative had no advantage: it reduces to
+  the same fit on a flat series and is biased the moment the series trends.
+
+* New `covid_us` dataset: a compact aggregation of the U.S. CDC COVID-19 Case
+  Surveillance Public Use Data, with both event and report dates in 2020-2021 (a
+  self-consistent "as of the end of 2021" snapshot), built to demonstrate **batch
+  reporting**. Its reporting delay is huge and heavily right-skewed — cases were
+  released to CDC in large backlog dumps — so `batch_test()` and the batch plots
+  recover a clear, real signal (and correctly call the biggest December-2021
+  spikes *surges*, since they land on the Omicron wave). Prepared with duckdb from
+  the 14 GB source (see `data-raw/covid_us.R`).
+* New article, *Finding batch reporting in CDC COVID-19 case surveillance data*,
+  written for public-health practitioners with no maths. It builds a made-up
+  outbreak with a planted batch to show what each plot looks like (including a
+  novel **V reporting triangle** -- the reporting triangle rotated 45° so a batch
+  is a horizontal slice), rehearses on a **real dengue epidemic curve** with
+  simulated log-normal reporting and self-planted batches, finds the batches in the
+  real `covid_us` data, adds a **wavelet** view (window-inner report-vs-event
+  scalograms, via \pkg{wavScalogram}), and ends with a one-page summary table. A
+  new **transport-vs-creation tutorial** plants a hold, a batch and a surge in a
+  made-up outbreak and colours each day the same way on the reporting timeline and
+  in the creation/transport plane, so a reader can trace a bar to its dot and see
+  why a batch goes *up*, a surge goes *right*, and a hold drifts *up-and-left*.
+* Every plot function now takes **`plotly = TRUE`** to return an interactive
+  \pkg{plotly} widget (hover, zoom) instead of a static \pkg{ggplot2} plot:
+  `plot_reporting_process()`, `plot_epidemic_process()`, `plot_reporting_triangle()`,
+  `plot_delay_profiles()`, `plot_delay_drift()`, `plot_transport_discriminant()`,
+  `plot_reporting_v()`, `plot_scalogram()`, `diagnostic_plot()` and `autoplot()`.
+  Needs the (suggested) \pkg{plotly} package.
+* New `plot_reporting_v()`: the reporting **"V"** -- the same data as
+  `plot_reporting_triangle()` (the same event-date x delay cells) rotated 45° so
+  report date runs up the page and the data opens into a V (left arm = event date,
+  right arm = delay). A batch, a diagonal in the square triangle, becomes a
+  horizontal slice. The whole observable triangle is filled (pale-blue reported
+  zeros + coloured reports).
+* New wavelet **scalograms**, `plot_scalogram(type = "reporting")` and
+  `plot_scalogram(type = "epidemic")`, plus the paired `plot_reporting_process()`
+  and `plot_epidemic_process()` bar charts. The scalogram splits the count series
+  into fast wiggles (short periods) and slow swings (long periods) and shows the energy
+  at each: a **batch** lights up as a bright short-period ridge in the *reporting*
+  scalogram that the *epidemic* (event) scalogram lacks. These use a **window-inner**
+  scalogram (\pkg{wavScalogram}, `border_effects = "INNER"`): computed from observed
+  data only, with **no border padding**, so nothing is fabricated at the recent
+  ("now") edge that matters for nowcasting. Reporting views are drawn in red,
+  epidemic views in green. `plot_scalogram()` defaults to the PAUL wavelet
+  (`wname`), which localises a batch more sharply; takes a `format` argument for
+  the x-axis date labels (default `"%d/%b/%y"`); and paints the region outside the
+  cone of influence dark grey. The series is analysed on its own integer time grid,
+  so weekly (or monthly) data is handled correctly, and the heat map tiles a
+  uniform index relabelled with dates so it stays gapless even for long series.
+* The conservation monitors — `plot_creation_transport()` (the two window scores as
+  stacked panels) together with the cumulative-backlog, reporting-lag, dashboard and
+  transport-minus-creation "batch score" plots — live in
+  `devel/conservation_extras.R`, kept out of the package: clean on large batches but
+  noisy in general. The transport diagnostics keep their exported
+  `transport_discriminant()` / `plot_transport_discriminant()`.
+* `simulate_batch()` gains a **`held_fraction`** argument: the fraction of each
+  closed date's reports actually held back and released later (default `1`, a full
+  closure). With `held_fraction = 0.5`, roughly half of each day's reports are held
+  and half report on time -- a realistic partial slow-down rather than a total
+  blackout. Supported for `"linelist"` and `"count-incidence"` data (a cumulative
+  total cannot be split).
+* The default `lookback` for `batch_test()` and `transport_discriminant()` is
+  now **7** (a week of daily reporting) rather than 3.
+* The `@details` of the batch functions (`batch_test()`,
+  `transport_discriminant()`, `batch_shape_test()`, `simulate_batch()`) and the
+  batch plots were trimmed: the formal theorem / null-distribution derivations
+  were replaced with concise, plain-language explanations.
+* New `diagnostic_plot()`: a gallery of complementary views of the reporting
+  process for spotting reporting artefacts (above all *batch reporting*), laid out
+  in **two columns**. The five panels are the **reporting process** (reports by
+  report date), the **reporting triangle** (event date x delay), the per-date
+  **delay profiles**, the **reporting-delay drift** (`plot_delay_drift()`), and the
+  **transport discriminant** plane. Each is also its own exported function. Choose
+  views with `panels` (a single one is returned as a plain plot), and every view
+  is facetted by stratum. `by = c("report", "event")` switches the profiles panel;
+  `...` (e.g. `period = 7`) is routed to whichever panels accept it.
+    * Every panel carries a plain-language, grey **caption** explaining what it
+      shows and what the colours mean, and legends are labelled in words.
+    * The **reporting process** y-axis is capped at the 99th percentile only when a
+      *pathological* dump (over 30x the median day, e.g. covid's 1.8M-report day)
+      would otherwise flatten the whole series; an ordinary batch spike -- the very
+      thing the plot exists to show -- is left to tower.
+    * The **transport discriminant** y-axis is limited to the batch region (with
+      default clipping, so points stop at the panel edge) so the deep-negative
+      "hold" dates do not squash the confirmed batches; the shaded region is now
+      labelled *"Potential batch region"* and each confirmed batch gets a bold,
+      unclipped date label.
+    * The **reporting triangle** draws a **third axis for report date**: evenly
+      spaced dashed diagonals (`report = event + delay`) running up-right at 45°,
+      labelled by report date, so event date (x), delay (y) and report date are all
+      readable off one plot (`plot_reporting_triangle(report_ticks =)`, default 6;
+      `mark_batches =` optionally highlights the biggest batch stripes). It also
+      distinguishes an *observable reported zero* (muted blue) from a *not yet
+      reportable* cell (blank), on the *full calendar* event axis.
+    * The **delay profiles** draw in a single colour at fixed transparency.
+    * The **transport discriminant** colours red only the
+      `batch_test()`-confirmed batches (BH-corrected), not the raw per-point
+      classification -- which at level `alpha` painted 10-20% of points
+      batch/surge/hold by construction, ignoring multiplicity and the heavy
+      autocorrelation of the window statistics. The shaded batch region and the
+      `±z*` lines are drawn only as a reference for where a batch would sit.
+* New `transport_discriminant()`: exposes the plane behind `batch_test()`'s
+  conservation law -- for every report date the **deficit** (the transport axis:
+  reports the preceding window is missing) and the window **discriminant** (the
+  creation axis: the window total relative to its baseline), with robust
+  standardised `transport_z` / `creation_z` and the same quadrant `classification`.
+  A batch sits top-left (a deficit paid the spike, no net creation); a surge sits
+  bottom-right. Returned as a `transport_discriminant` tibble and plotted by
+  `diagnostic_plot(panels = "transport")`.
+* The multi-panel `autoplot()` title changed from *"Diagnostic plots"* to
+  **"Automatic plot of effects"** (that phrase now titles `diagnostic_plot()`).
+* `batch_test(null_model = "auto")` is now **overdispersion-aware**. The exact
+  Poisson/Binomial null assumes Poisson counts *and* a baseline that captures the
+  mean; real surveillance counts are overdispersed, and the conditional transport
+  test is then badly anti-conservative (on clean but overdispersed Poisson data it
+  can fake dozens of batches). `auto` now reserves the exact null for non-negative
+  counts with no detected overdispersion (dispersion `<= 1.5`) and otherwise falls
+  back to the dispersion-corrected robust null; signed (count-cumulative)
+  increments still always use the robust null. This makes the default far more
+  realistic on overdispersed data (e.g. filtered `covid_colombia` drops from ~125
+  flags to ~18; add `period = 7` for its weekly reporting cadence to reach ~4).
+  Force the old behaviour with `null_model = "poisson"` if you need it.
+* `autoplot()`'s **empirical delay distribution** panel now adapts to
+  `count-cumulative` data: instead of a histogram of increments it shows the
+  *cumulative growth by delay* — boxplots (on a log scale, with a dashed reference
+  at `1`) of the ratio of each event date's cumulative count at a delay to its
+  count at the previous delay. Ratios above `1` are upward revisions, below `1`
+  downward ones, and they converge to `1` as reporting completes, so you can see
+  the cumulative curve stabilise. The log scale makes a doubling and a halving
+  symmetric about `1`. `linelist` / `count-incidence` data keep the histogram, and
+  the panel respects `by_strata`.
+* `tbl_now_to_baselinenowcast(delays_unit = )` now defaults to `NULL` and is
+  **inferred** from the object's time units for the `"matrix"` format: when the
+  event and report units are equal and either `"days"` or `"weeks"`, that unit is
+  used; otherwise the function errors asking you to supply `delays_unit`
+  explicitly. (The `"long"` format never uses it.)
+* Added the `covid_colombia` dataset from `diseasenowcasting` to here. 
+* Fixed several documentation issues that produced *"could not resolve link"*
+  warnings when building the docs (links to internal helpers / to the un-declared
+  `trend` package, a `[0, 1]` mis-parsed as a link, and a mis-ordered internal
+  roxygen block).
+* `to_count()` now supports `count-cumulative` -> `count-incidence` by
+  **de-accumulating** the series (increment = cumulative total minus the previous
+  one within each event date and grouping). Because cumulative totals can be
+  revised downward, an increment can be negative. This fixes `autoplot()` (and the
+  other delay diagnostics) on `count-cumulative` data such as FluSight, which
+  previously errored with *"Transformation from `data_type` count-cumulative to
+  count-incidence not implemented"* (#26).
+* Updated `SKILL.md` (the AI-agent usage guide) to cover everything added since
+  0.10.0: reporting-delay `autoplot()` panels and the `panels` / `by_strata`
+  selectors, `plot_delay_drift()` / `test_delay_drift()` / `test_delay_changepoint()`,
+  the model-free batch detectors (`batch_test()`, `batch_shape_test()`,
+  `simulate_batch()`), `get_nth_reported_cases()`, the after-holiday/weekend
+  temporal-effect lags, `as_tibble()` / `as.data.frame()` coercion, and the new
+  `count-cumulative` -> `count-incidence` support.
+
 # tbl.now 0.12.0
 
 ## Batch detection, rebuilt around a conservation law
@@ -11,7 +189,7 @@ the model-based conditional scan) are **removed** and replaced by three
 model-free, `r lifecycle::badge("experimental")` functions. Each derives its
 mathematics in a **"The mathematics"** section of its help page.
 
-* New `batch_screen()` returns, per (report date, stratum), the `deficit` (reports
+* New `batch_test()` returns, per (report date, stratum), the `deficit` (reports
   missing beforehand — sensitive to a batch) and `delta` (the window total minus
   its expected value — sensitive to a real surge), and classifies each date as
   `"batch"`, `"surge"`, `"batch_and_surge"`, `"hold_or_deletion"` or `"none"`. The
