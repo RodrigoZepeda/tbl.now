@@ -18,8 +18,7 @@
 # spike and count everything inside it, that count is unchanged by the batch --
 # every item we would have seen in the window, we still see in the window, just
 # on a different day.  A genuine surge, by contrast, adds items and inflates the
-# window total.  This is what separates the two, and it is exact (see the
-# "The mathematics" section of `?batch_screen`).
+# window total.  This is what separates the two.
 #
 # Writing `R_r` for the number of items reported on date `r` and `mu_r` for its
 # expected value under "no batch", over the window W = {r-k, ..., r}:
@@ -53,160 +52,93 @@
 #' Detects **batches**: report dates at which a stalled reporting system releases
 #' a backlog.  A batch *moves* reports along the report axis without creating
 #' them, so it shows up as a spike preceded by a deficit, while the total over a
-#' window spanning both is unchanged.  `batch_screen()` is completely
+#' window spanning both is unchanged.  `batch_test()` is completely
 #' **model-free** -- it needs only a [tbl_now()], not a fitted model -- which
 #' makes it the right tool for exploratory data analysis before any nowcasting
 #' model is chosen.
 #'
 #' @details
-#' # The mathematics
+#' The idea is that a batch **moves** reports along the report axis without
+#' creating them. Over a window of report dates that spans both the lull and the
+#' release, the *total* is therefore unchanged -- every report you would have seen
+#' in the window you still see, just on a different day. A genuine surge instead
+#' **adds** reports and inflates the window total. So two quantities separate the
+#' two cases: the **deficit** (how many reports the days just before the spike
+#' were missing) picks up transport, and the window total (relative to a baseline)
+#' picks up creation. A batch has a large deficit but a conserved window total; a
+#' surge has an inflated window total but no deficit.
 #'
-#' Index each item by its **event date** \eqn{t} (when it happened) and its
-#' **report date** \eqn{r} (when it was recorded); the reporting delay is
-#' \eqn{d = r - t}.  Let \eqn{R_r} be the number of items reported on date \eqn{r}
-#' and \eqn{\mu_r} its expected value under a stable reporting process.
+#' The baseline for each candidate window is refit from report dates lying
+#' strictly *outside* that window, using a robust local line (Siegel's repeated
+#' median). Smoothing through the episode instead would let the deficit drag the
+#' baseline down and the batch would mask itself as a surge.
 #'
-#' **A batch is a transport, not a creation.**  When a stalled desk releases a
-#' backlog, it *relabels the report date* of items that already exist; it never
-#' creates or destroys them, and it can only ever move an item *later*.  This has
-#' an exact consequence.  Over a window \eqn{\mathcal{W} = \{r-k,\dots,r\}} that
-#' contains both the lull and the spike, write the window total and its null mean
-#'
-#' \deqn{S = \sum_{j\in\mathcal{W}} R_j, \qquad M = \sum_{j\in\mathcal{W}} \mu_j.}
-#'
-#' The **transport discriminant** is their difference,
-#'
-#' \deqn{\Delta_r(k) = (R_r - \mu_r) - \underbrace{\textstyle\sum_{j<r}(\mu_j - R_j)}_{\text{deficit } W_r(k)} = S - M,}
-#'
-#' i.e. simply the window total, centred.  **Theorem.** Under *any* batch
-#' mechanism whose displacements stay inside \eqn{\mathcal{W}} -- deterministic or
-#' random, clearing the backlog in any order -- the count in the window is a
-#' *pathwise* invariant, so \eqn{S \sim \mathrm{Poisson}(M)} exactly, with
-#' \eqn{\mathbb{E}\,\Delta = 0}.  A genuine surge that *creates* items with mean
-#' \eqn{\eta} instead gives \eqn{S \sim \mathrm{Poisson}(M + \eta)}, so
-#' \eqn{\mathbb{E}\,\Delta = \eta}.  Hence \eqn{\Delta} sees only creation and the
-#' deficit \eqn{W} sees only transport, and the pair separates a batch from a
-#' surge:
-#'
-#' \tabular{lll}{
-#'   \tab \eqn{W \approx 0} \tab \eqn{W \gg 0} \cr
-#'   \eqn{\Delta \approx 0} \tab nothing \tab **batch** \cr
-#'   \eqn{\Delta \gg 0} \tab **surge** \tab batch and surge \cr
-#'   \eqn{\Delta < 0} \tab -- \tab **hold in progress / deletion** \cr
-#' }
-#'
-#' **Estimating \eqn{M} without cheating.** The theorem is about the *true* mean.
-#' If \eqn{M} were smoothed from a series containing the very episode under test,
-#' the deficits would drag it down and \eqn{\Delta} would acquire a spurious
-#' positive mean -- the batch would mask itself as a surge.  `batch_screen()`
-#' therefore refits the baseline for each candidate window from report dates lying
-#' strictly *outside* that window (the model-free analogue of leaving an
-#' observation out).  Because the transport never crosses the window boundary,
-#' \eqn{M} cannot see it, and \eqn{\Delta} is invariant to the batch pathwise.  The
-#' baseline is a robust local line (Siegel's repeated median), which keeps a 50%
-#' breakdown point against the episode while remaining unbiased under a trend.
-#'
-#' # What is computed
-#'
-#' For every report date `r` and stratum, with a look-back window
-#' `W = {r - lookback, ..., r}`:
-#'
-#' \describe{
-#'   \item{`reported`}{\eqn{R_r}, the number of items reported on date `r`.  For
-#'     `"count-cumulative"` data these are the *signed increments* of the
-#'     cumulative curve, so `reported` may be negative (a net down-revision).}
-#'   \item{`baseline`}{\eqn{\hat\mu_r}, a robust running-median estimate of how
-#'     many reports date `r` *should* have carried.}
-#'   \item{`deficit`}{\eqn{W_r(k) = \sum_{j<r}(\hat\mu_j - R_j)}, the reports
-#'     that went missing in the `lookback` dates before `r`.}
-#'   \item{`delta`}{\eqn{\Delta_r(k) = S - M}, the window total minus its null
-#'     mean.  Blind to any transport confined to the window; sensitive to
-#'     creation.}
-#'   \item{`p_transport`, `p_creation`, `p_deletion`}{One-sided \eqn{p}-values
-#'     for the three directions.}
-#'   \item{`classification`}{One of `"batch"`, `"surge"`, `"batch_and_surge"`,
-#'     `"hold_or_deletion"`, `"none"`.}
-#'   \item{`batch`}{Logical: `p_transport` survives a Benjamini-Hochberg
-#'     correction across all (report date, stratum) pairs at level `alpha`.}
-#' }
-#'
-#' # The null distribution
-#'
-#' For non-negative counts (`"linelist"` and `"count-incidence"` data):
-#'
-#' * *transport* (**exact**): conditionally on the window total \eqn{S}, the
-#'   reports allocate across the window's dates multinomially, so the share
-#'   landing on the final date is
-#'   \eqn{R_r \mid S \sim \mathrm{Binomial}(S, \hat\mu_r / M)}.  A batch pushes
-#'   reports to the *last* date, so we test the upper tail.  Conditioning on
-#'   \eqn{S} removes the unknown intensity entirely, which is what makes this test
-#'   exactly the right size whatever the truth happens to be -- **and what makes it
-#'   insensitive to error in the baseline.**
-#' * *creation* (**dispersion-corrected**): the theory gives
-#'   \eqn{S \sim \mathrm{Poisson}(M)} exactly under any within-window batch, but
-#'   with \eqn{M} *known*.  Here \eqn{M} is estimated from the same series, so
-#'   \eqn{\Delta} carries the baseline's error as well as Poisson noise.  An exact
-#'   Poisson tail would then be anti-conservative, so the creation test is widened
-#'   by a robustly-estimated quasi-Poisson dispersion.
-#'
-#' The asymmetry is not an accident: it is the practical face of the conditioning
-#' argument.  The batch verdict is the trustworthy one.
-#'
-#' For `"count-cumulative"` data the increments are signed, the window total is
-#' a difference of two counting processes rather than a count, and the exact
-#' Poisson/Binomial reference is replaced by a robust normal approximation
-#' (`null_model = "robust"`).  The conservation logic is unchanged; only the
-#' reference law degrades.
-#'
-#' # A caveat on the `"surge"` verdict
-#'
-#' The two channels are *not* equally trustworthy without a model.  The
-#' **transport** verdict (`"batch"`) compares dates *within* one window and is
-#' insensitive to the overall level -- in the exact Poisson path it literally
-#' conditions on the window total -- so it is stable.  The **creation** verdict
-#' (`"surge"`) compares the window total against the baseline, and is therefore
-#' only as good as the baseline.  A robust local-linear baseline is unbiased under
-#' a *linear* trend but not under a sharply *curved* one, so on a steeply growing
-#' epidemic curve `"surge"` will fire on ordinary growth.  That is not a bug: mass
-#' really is being created.  It does mean that if you want to detect genuine
-#' surges you should fit a model rather than rely on this screen.
-#'
-#' # Calendar effects
+#' The `batch` flag is the trustworthy verdict: it compares dates *within* one
+#' window (insensitive to the overall level) and is **Benjamini-Hochberg
+#' corrected** across every (report date, stratum) pair, so it controls the false
+#' discovery rate rather than firing on every point that crosses a raw threshold.
+#' A per-point creation ("surge") label is deliberately *not* returned: it only
+#' compares the window total against the baseline, so on a steeply curved epidemic
+#' curve it fires on ordinary growth. If you need genuine surges, fit a model.
+#' For `"count-cumulative"` data the increments are signed and `reported` can be
+#' negative (a down-revision).
 #'
 #' A reporting system that is always closed at weekends produces every batch
-#' symptom, every week.  Pass `period` (e.g. `period = 7` for daily data) and
-#' the baseline is corrected by per-phase medians taken across cycles, which
-#' recovers the schedule exactly provided each phase is hit by *irregular*
-#' batches in fewer than half of its cycles.  An irregular batch is then an
-#' excursion *relative to the schedule*.
+#' symptom, every week, so `batch_test()` needs the length of any scheduled
+#' cycle. It reads that from the object's temporal effects when it can: a
+#' **day-of-week** effect sets `period = 7`, a **week-of-year** effect
+#' `period = 52` (see [add_temporal_effects()]). Pass `period` yourself to
+#' override; if the data is daily and carries no temporal effect, the function
+#' suggests `period = 7`. With a period set, the baseline is corrected by per-phase
+#' medians across cycles, so an irregular batch reads as an excursion relative to
+#' the schedule.
 #'
 #' @param data A [tbl_now()] object of any `data_type`.
 #' @param lookback Integer `k`: how many report dates before `r` the window
 #'   reaches back.  Should comfortably cover the longest plausible stall.
-#'   Default `3`.
-#' @param baseline_window Odd integer width of the running median used to
-#'   estimate the baseline.  Must satisfy `baseline_window >= 2 * lookback + 3`
-#'   so that a clean date is never outvoted by a batch episode.  Defaults to the
-#'   smallest admissible odd value (adjusted upward to a multiple of `period`
-#'   plus one when `period` is supplied).
-#' @param baseline_method How the baseline is smoothed.  `"repeated_median"`
-#'   (default) fits a robust local *line* (Siegel's repeated median), which keeps
-#'   the 50% breakdown that makes a median immune to the batch episode while
-#'   remaining unbiased when the report series trends -- essential on an epidemic
-#'   curve, where a local *constant* fit would call every rising date a surge.
-#'   `"running_median"` fits a local constant; use it for a flat series.
-#' @param period Optional integer cycle length of a *scheduled* reporting
-#'   pattern (e.g. `7` for a weekly cycle on daily data).  `NULL` (default)
-#'   disables the calendar correction.
-#' @param null_model `"auto"` (default) uses the exact Poisson/Binomial null for
-#'   non-negative counts and the robust normal approximation for signed
-#'   (count-cumulative) increments.  `"poisson"` and `"robust"` force the choice.
-#' @param alpha Significance level for the Benjamini-Hochberg flag and for the
-#'   `classification` column.  Default `0.05`.
+#'   Default `7` (a week of daily reporting).
+#' @param baseline_window Odd integer width of the smoother used to estimate the
+#'   baseline (a robust local line, Siegel's repeated median).  Must satisfy
+#'   `baseline_window >= 2 * lookback + 3` so that a clean date is never outvoted
+#'   by a batch episode.  Defaults to the smallest admissible odd value (adjusted
+#'   upward to a multiple of `period` plus one when `period` is supplied).
+#' @param period Optional integer cycle length of a *scheduled* reporting pattern
+#'   (e.g. `7` for a weekly cycle on daily data). `NULL` (default) means the cycle
+#'   is taken from the object's temporal effects if present (day-of-week -> `7`,
+#'   week-of-year -> `52`), and otherwise no calendar correction is applied. A
+#'   value passed here always wins.
+#' @param null_model `"auto"` (default) picks the null from the data. The exact
+#'   Poisson/Binomial null assumes Poisson counts *and* a baseline that captures
+#'   the mean; real surveillance counts are overdispersed, so on non-negative
+#'   counts `auto` uses the exact null only when no overdispersion is detected
+#'   (dispersion at most 1.5) and otherwise falls back to the dispersion-corrected
+#'   robust normal approximation. Signed (count-cumulative) increments always use
+#'   the robust null. `"poisson"` and `"robust"` force the choice; note that
+#'   `"poisson"` is anti-conservative (over-flags) on overdispersed counts.
+#' @param alpha Significance level for the Benjamini-Hochberg `batch` flag.
+#'   Default `0.05`.
 #'
-#' @returns A tibble of class `batch_screen`, one row per (report date, stratum),
-#'   with the columns described under **Details**.  Has a `print()` method that
-#'   summarises the flagged dates.
+#' @returns A tibble of class `batch_test`, one row per (report date, stratum),
+#'   with a `print()` method that summarises the flagged dates. Columns:
+#'   \describe{
+#'     \item{`report_date`}{The report (registration) date the row describes.}
+#'     \item{`stratum`}{The stratum label, or `"all"` when the data is unstratified.}
+#'     \item{`reported`}{Reports recorded on `report_date` (a signed increment for
+#'       `"count-cumulative"` data, so it can be negative).}
+#'     \item{`baseline`}{The robust expected number of reports on `report_date`
+#'       under "no batch", from the leave-window-out local line.}
+#'     \item{`deficit`}{How many reports the `lookback` days *before* `report_date`
+#'       were missing relative to baseline -- the **transport** signal. Large and
+#'       positive when a stall preceded a spike.}
+#'     \item{`delta`}{The window total minus its baseline mean -- the **creation**
+#'       signal. Near zero for a pure batch (mass only moved), large for a surge.}
+#'     \item{`p_transport`}{One-sided p-value that the deficit is larger than noise
+#'       (the raw, per-point transport test).}
+#'     \item{`p_transport_bh`}{`p_transport` after a Benjamini-Hochberg correction
+#'       across all rows; the flag below thresholds this.}
+#'     \item{`batch`}{Logical verdict: `TRUE` when `p_transport_bh < alpha` and the
+#'       window is not still depleted (a hold). This is the column to trust.}
+#'   }
 #'
 #' @seealso [batch_shape_test()] for the complementary test on *which* event
 #'   dates a report date drew from, and [simulate_batch()] to inject a known
@@ -224,20 +156,18 @@
 #'   verbose     = FALSE
 #' )
 #'
-#' screened <- batch_screen(dengue_tbl, lookback = 2)
+#' screened <- batch_test(dengue_tbl, lookback = 2)
 #' head(screened)
 #'
 #' @export
-batch_screen <- function(data,
-                         lookback        = 3L,
+batch_test <- function(data,
+                         lookback        = 7L,
                          baseline_window = NULL,
-                         baseline_method = c("repeated_median", "running_median"),
                          period          = NULL,
                          null_model      = c("auto", "poisson", "robust"),
                          alpha           = 0.05) {
   null_model      <- match.arg(null_model)
-  baseline_method <- match.arg(baseline_method)
-  .batch_experimental_warning("batch_screen")
+  .batch_experimental_warning("batch_test")
   .batch_check_tbl_now(data)
 
   lookback <- as.integer(lookback)
@@ -248,49 +178,66 @@ batch_screen <- function(data,
     cli::cli_abort("`alpha` must lie strictly between 0 and 1. Got {alpha}.")
   }
 
-  # -- 1. reduce the tbl_now to one signed count per (event, report, stratum) --
-  increments <- .batch_report_increments(data)
+  # Fill in / sanity-check the calendar period from the object's temporal effects.
+  period <- .batch_resolve_period(data, period)
 
-  # -- 2. lay those counts on the complete report-date grid, per stratum -------
-  # A report date with no reports at all is a genuine zero -- that is exactly the
-  # lull a batch leaves behind -- so the grid must be completed, not dropped.
-  registration <- .batch_registration_totals(increments, data)
-
-  # -- 3. robust baseline, optionally calendar-adjusted -------------------------
-  # Two passes.  The first is an ordinary robust smooth of the whole series; it is
-  # used only to estimate the calendar factors and the dispersion.  The second
-  # re-estimates the baseline for each candidate window from dates OUTSIDE that
-  # window (see `.batch_add_window_statistics()`), which is what keeps the episode
-  # from contaminating the baseline it is being judged against.
-  baseline_window <- .batch_baseline_window(baseline_window, lookback, period)
-  registration    <- .batch_add_baseline(registration, baseline_window, period, baseline_method)
-
-  # -- 4. window statistics Delta and W, on a leave-window-out baseline ---------
-  registration <- .batch_add_window_statistics(
-    registration, lookback, baseline_window, period
-  )
+  # -- 1-4. reporting totals, baseline and the window statistics Delta and W ----
+  registration <- .batch_registration(data, lookback, baseline_window, period)
 
   # -- 5. p-values under the appropriate null ---------------------------------
+  # The exact Poisson/Binomial null is only valid when the counts are Poisson AND
+  # the baseline captures the mean. Real surveillance counts are overdispersed (a
+  # shared per-date random effect) and/or carry mean structure the baseline cannot
+  # track; the conditional transport test is then anti-conservative and over-flags.
+  # `auto` therefore reserves the exact Poisson null for non-negative counts that
+  # show no overdispersion, and falls back to the dispersion-corrected robust null
+  # for signed increments or whenever overdispersion is detected.
   is_signed  <- identical(get_data_type(data), "count-cumulative")
-  null_used  <- if (identical(null_model, "auto")) {
-    if (is_signed) "robust" else "poisson"
-  } else {
+  null_used  <- if (!identical(null_model, "auto")) {
     null_model
+  } else if (is_signed || .batch_dispersion(registration) > 1.5) {
+    "robust"
+  } else {
+    "poisson"
   }
   registration <- .batch_add_p_values(registration, null_used)
 
-  # -- 6. classify and flag ----------------------------------------------------
+  # -- 6. flag after Benjamini-Hochberg correction -----------------------------
+  # `.batch_classify()` also builds the raw per-point `classification`, but that is
+  # the non-multiplicity-corrected quadrant label and it over-identifies; the
+  # trustworthy verdict is the BH-adjusted `batch` flag, so we keep only that.
   registration <- .batch_classify(registration, alpha)
-  registration <- dplyr::select(registration, -"baseline_global", -"baseline_smooth")
+  registration <- dplyr::select(
+    registration,
+    "report_date", "stratum", "reported", "baseline", "deficit", "delta",
+    "p_transport", "p_transport_bh", "batch"
+  )
 
   structure(
     dplyr::as_tibble(registration),
-    class      = c("batch_screen", class(dplyr::tibble())),
+    class      = c("batch_test", class(dplyr::tibble())),
     lookback   = lookback,
     period     = period,
     null_model = null_used,
     alpha      = alpha
   )
+}
+
+#' Reporting totals, baseline and the window statistics, shared by
+#' `batch_test()` and `transport_discriminant()`.
+#'
+#' Runs steps 1-4 of the pipeline: reduce to signed counts, lay them on the
+#' complete report-date grid, fit the robust (optionally calendar-adjusted)
+#' baseline, and attach the window total, its null mean, the deficit `W` and the
+#' discriminant `Delta` on a leave-window-out baseline.
+#' @keywords internal
+#' @noRd
+.batch_registration <- function(data, lookback, baseline_window, period) {
+  increments      <- .batch_report_increments(data)
+  registration    <- .batch_registration_totals(increments, data)
+  baseline_window <- .batch_baseline_window(baseline_window, lookback, period)
+  registration    <- .batch_add_baseline(registration, baseline_window, period)
+  .batch_add_window_statistics(registration, lookback, baseline_window, period)
 }
 
 # =============================================================================
@@ -523,7 +470,7 @@ batch_screen <- function(data,
 #' factors and the dispersion -- never for `Delta`.
 #' @keywords internal
 #' @noRd
-.batch_add_baseline <- function(registration, baseline_window, period, baseline_method) {
+.batch_add_baseline <- function(registration, baseline_window, period) {
   stratum_levels    <- sort(unique(registration$stratum))
   smooth_values     <- rep(NA_real_, nrow(registration))   # schedule-blind
   adjusted_values   <- rep(NA_real_, nrow(registration))   # schedule-corrected
@@ -535,7 +482,7 @@ batch_screen <- function(data,
     # The schedule-blind smooth is what the phase factors must be estimated from:
     # taking the ratio of the data to an already-corrected baseline would show no
     # cycle at all.
-    stratum_smooth <- .batch_smooth(reported, baseline_window, baseline_method)
+    stratum_smooth <- .batch_repeated_median(reported, baseline_window)
     smooth_values[stratum_rows] <- stratum_smooth
 
     adjusted_values[stratum_rows] <- if (!is.null(period) && period > 1L) {
@@ -551,17 +498,6 @@ batch_screen <- function(data,
     baseline_smooth = smooth_values,
     baseline_global = adjusted_values
   )
-}
-
-#' Dispatch to the chosen robust smoother.
-#' @keywords internal
-#' @noRd
-.batch_smooth <- function(reported, baseline_window, baseline_method) {
-  if (identical(baseline_method, "repeated_median")) {
-    .batch_repeated_median(reported, baseline_window)
-  } else {
-    .batch_running_median(reported, baseline_window)
-  }
 }
 
 #' Per-phase multiplicative factors of a scheduled reporting cycle.
@@ -601,9 +537,10 @@ batch_screen <- function(data,
 #' Running median with median end-rule; falls back to the global median when the
 #' series is shorter than the window.
 #'
-#' Fits a local *constant*, so it is biased wherever the series trends.  Kept as
-#' an option because it is the estimator the theory is stated for, and it is the
-#' right choice for a flat series.
+#' Fits a local *constant*, so it is biased wherever the series trends. No longer
+#' used by the baseline (the repeated median dominates it -- see
+#' `.batch_repeated_median`); retained only as the reference the comparison test
+#' measures the repeated median against.
 #' @keywords internal
 #' @noRd
 .batch_running_median <- function(reported, baseline_window) {
@@ -628,10 +565,9 @@ batch_screen <- function(data,
 #' statistics in opposite directions.  Estimating the local slope explicitly is
 #' what lets the fit survive it.
 #'
-#' Measured on real data (see the "Batch detection" vignette): with a planted
-#' release on FluSight, the residual \eqn{|\Delta|} at the release date falls from
-#' 424 to 49 when the running median is replaced by the repeated median, and
-#' clean-data false positives fall from 1 to 0 on both FluSight and dengue.
+#' Measured on real data: with a planted release on FluSight, the residual at the
+#' release date falls sharply when the running median is replaced by the repeated
+#' median, and clean-data false positives fall to zero on both FluSight and dengue.
 #' @keywords internal
 #' @noRd
 .batch_repeated_median <- function(reported, baseline_window) {
@@ -744,8 +680,8 @@ batch_screen <- function(data,
 #'
 #' `Delta = S - M` is algebraically identical to
 #' `(reported - baseline) - deficit`; the window-total form is used because it is
-#' the one with the exact null (see the mathematics vignette, Theorem 1).
-#' Rows whose window runs off the start of the series get `NA`.
+#' the one with the exact null. Rows whose window runs off the start of the series
+#' get `NA`.
 #' @keywords internal
 #' @noRd
 .batch_add_window_statistics <- function(registration, lookback, baseline_window,
@@ -941,7 +877,7 @@ batch_screen <- function(data,
   dispersion
 }
 
-#' Keep p-values inside [0, 1] and propagate NA.
+#' Keep p-values inside `[0, 1]` and propagate NA.
 #' @keywords internal
 #' @noRd
 .batch_clamp_p <- function(p_value) {
@@ -990,10 +926,62 @@ batch_screen <- function(data,
 # Utilities
 # =============================================================================
 
+#' Fill in (or sanity-check) the calendar `period` from the object's temporal
+#' effects.
+#'
+#' A scheduled reporting cycle -- a desk that is shut at weekends, say -- produces
+#' every batch symptom, every cycle, so `batch_test()` needs to know the cycle
+#' length. When the user does not pass `period`, we read it off the `tbl_now`'s
+#' temporal-effect specs: a **day-of-week** effect implies a weekly cycle
+#' (`period = 7`), a **week-of-year** effect a yearly one (`period = 52`). A
+#' user-supplied `period` always wins, but we note when it disagrees with the
+#' object's effects. If the data is daily and carries no temporal effect at all,
+#' we suggest `period = 7`, since daily reporting usually has a weekly rhythm.
+#' @keywords internal
+#' @noRd
+.batch_resolve_period <- function(data, period) {
+  specs  <- get_temporal_effects(data) %||% list()
+  # Each spec is `list(t_effects = <temporal_effects>, date_type, ...)`.
+  te_has <- function(prop) any(vapply(specs, function(s) {
+    te <- tryCatch(s$t_effects, error = function(e) NULL)
+    if (is.null(te)) return(FALSE)
+    isTRUE(tryCatch(S7::prop(te, prop), error = function(e) FALSE))
+  }, logical(1)))
+  has_dow <- te_has("day_of_week")
+  has_woy <- te_has("week_of_year")
+  implied      <- if (has_dow) 7L else if (has_woy) 52L else NULL
+  implied_from <- if (has_dow) "day-of-week" else if (has_woy) "week-of-year" else NULL
+  report_unit  <- get_report_units(data) %||% "days"
+
+  if (is.null(period)) {
+    if (!is.null(implied)) {
+      cli::cli_inform(c(
+        "i" = "Using {.code period = {implied}} from the object's {implied_from} temporal effect."
+      ))
+      return(implied)
+    }
+    if (identical(report_unit, "days")) {
+      cli::cli_inform(c(
+        "i" = "Your data is daily and carries no temporal effect. If reporting follows a \\
+               weekly cycle, pass {.code period = 7} so a weekend lull is not read as a batch."
+      ))
+    }
+    return(NULL)
+  }
+
+  if (!is.null(implied) && !isTRUE(period == implied)) {
+    cli::cli_inform(c(
+      "i" = "You passed {.code period = {period}}, but the object's {implied_from} temporal \\
+             effect suggests {.code period = {implied}}."
+    ))
+  }
+  period
+}
+
 #' Warn, on every call, that the batch-detection functions are experimental.
 #'
 #' The batch detectors are new and their statistical behaviour and interface are
-#' still settling.  Every user-facing entry point (`batch_screen()`,
+#' still settling.  Every user-facing entry point (`batch_test()`,
 #' `batch_shape_test()`, `simulate_batch()`) calls this so a user is always told
 #' that a flagged batch is a *potential* batch, not a confirmed one.
 #' @param function_name The calling function, for the message.
@@ -1029,11 +1017,11 @@ batch_screen <- function(data,
 }
 
 #' Print a batch screen
-#' @param x A `batch_screen` object.
+#' @param x A `batch_test` object.
 #' @param ... Unused.
 #' @export
 #' @noRd
-print.batch_screen <- function(x, ...) {
+print.batch_test <- function(x, ...) {
   flagged <- x[!is.na(x$batch) & x$batch, , drop = FALSE]
 
   cli::cli_h1("Batch screen")
@@ -1059,14 +1047,6 @@ print.batch_screen <- function(x, ...) {
       )
     }
     if (nrow(flagged) > 10L) cli::cli_text("... and {nrow(flagged) - 10L} more.")
-  }
-
-  classification_counts <- table(x$classification, useNA = "no")
-  if (length(classification_counts) > 0L) {
-    cli::cli_h3("Classification")
-    for (label in names(classification_counts)) {
-      cli::cli_li("{label}: {classification_counts[[label]]}")
-    }
   }
   invisible(x)
 }

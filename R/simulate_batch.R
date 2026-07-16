@@ -2,7 +2,7 @@
 # Inject a known batch into a tbl_now (for validation and teaching)
 # =============================================================================
 # NOTE ON PACKAGE PLACEMENT.  Model-free; destined for `tbl.now`.  See the header
-# of `35_batch_screen_tbl_now.R`.
+# of `35_batch_test_tbl_now.R`.
 #
 # This implements the deterministic release mechanism exactly as the theory
 # defines it.  Let `H` be a set of "closed" report dates.  Define the
@@ -13,7 +13,7 @@
 # and move every report whose report date falls in `H` to `rho(report date)`.
 # Nothing is created and nothing is destroyed: each report keeps its event date
 # and only its *report* date changes, and it can only ever move later.  That is
-# precisely the definition of a transport, and it is what `batch_screen()` is
+# precisely the definition of a transport, and it is what `batch_test()` is
 # built to detect.
 # =============================================================================
 
@@ -26,31 +26,14 @@
 #' and releases its accumulated backlog on the next open date.  Reports keep
 #' their event dates and merely move *later* on the report axis, so no cases are
 #' created or destroyed -- the defining property of a batch.  Useful for checking
-#' that [batch_screen()] and [batch_shape_test()] recover a batch you planted.
+#' that [batch_test()] and [batch_shape_test()] recover a batch you planted.
 #'
 #' @details
-#' # The mathematics
-#'
-#' A batch is a **transport**: a rule that moves an item's report date later while
-#' leaving its event date untouched, creating and destroying nothing.  This
-#' function implements the deterministic case exactly.  Let \eqn{H} be the set of
-#' closed report dates and define the *next-open-date* map
-#'
-#' \deqn{\varrho(u) = \min\{\, v \ge u : v \notin H \,\}.}
-#'
-#' Every item with ideal report date \eqn{r^\star} is observed at
-#' \eqn{r = \varrho(r^\star) \ge r^\star}, so its delay can only grow.  A maximal
-#' closed run \eqn{\{b-L,\dots,b-1\}} followed by an open date \eqn{b} therefore
-#' produces the four textbook symptoms at \eqn{b} -- a volume spike, inflated
-#' delays, many contributing event dates, and \eqn{L} preceding empty dates --
-#' from this single mechanism.  Because mass is conserved, the window total
-#' spanning the run and the release is unchanged, which is exactly the invariant
-#' [batch_screen()] tests (see its **Details**).
-#'
-#' # What the mechanism does
-#'
-#' Every report whose report date lies in `closed_dates` is re-stamped with the
-#' first report date at or after it that is *not* closed.  Consequently:
+#' A batch is a **transport**: it moves an item's report date later while leaving
+#' its event date untouched, creating and destroying nothing. Every report whose
+#' report date lies in `closed_dates` (or, with `held_fraction < 1`, a random share
+#' of them) is re-stamped with the first report date at or after it that is *not*
+#' closed. Consequently:
 #'
 #' * the closed dates report nothing (the **deficit**);
 #' * the release date reports its own items *plus* the whole backlog (the **spike**);
@@ -77,6 +60,14 @@
 #' @param data A [tbl_now()] object.
 #' @param closed_dates A vector of report dates on which the reporting system is
 #'   closed. Must be coercible to the class of the report-date column.
+#' @param held_fraction Fraction of the reports due on each closed date that are
+#'   actually **held back** (and released later); the rest report on time, so the
+#'   closure is only partial. Default `1` (the whole desk is closed). With, say,
+#'   `held_fraction = 0.5`, roughly half of each closed day's reports are held and
+#'   half report normally. This uses the random number generator (Binomial /
+#'   Bernoulli sampling), so set a seed for reproducibility. Only supported for
+#'   `"linelist"` and `"count-incidence"` data (a `"count-cumulative"` total cannot
+#'   be split).
 #' @param drop_unreleased Logical; drop reports whose closed run never reopens
 #'   before the end of the report axis. Default `TRUE`.
 #' @param verbose Logical; report what was moved. Default `TRUE`.
@@ -84,7 +75,7 @@
 #' @returns A new `tbl_now` with the same event dates, strata and data type, and
 #'   modified report dates.
 #'
-#' @seealso [batch_screen()], [batch_shape_test()]
+#' @seealso [batch_test()], [batch_shape_test()]
 #'
 #' @examples
 #' library(tbl.now)
@@ -105,10 +96,15 @@
 #' @export
 simulate_batch <- function(data,
                            closed_dates,
+                           held_fraction   = 1,
                            drop_unreleased = TRUE,
                            verbose         = TRUE) {
   .batch_experimental_warning("simulate_batch")
   .batch_check_tbl_now(data)
+  if (!is.numeric(held_fraction) || length(held_fraction) != 1L ||
+      is.na(held_fraction) || held_fraction <= 0 || held_fraction > 1) {
+    cli::cli_abort("`held_fraction` must be a single number in (0, 1].")
+  }
 
   observations <- as.data.frame(data)
   event_col      <- get_event_date(data)
@@ -135,14 +131,50 @@ simulate_batch <- function(data,
     cli::cli_abort("Every report date is closed; there is nowhere to release the backlog.")
   }
 
-  # rho(u) = first open date at or after u; NA when the run never reopens.  Keep
-  # the pre-move report date as a column so it survives the filtering below and
-  # can order colliding cumulative reports.
+  # Keep the pre-move report date as a column so it survives the filtering below
+  # and can order colliding cumulative reports.
   observations$.original_report <- observations[[report_col]]
-  released_reports <- .batch_next_open_date(observations$.original_report, open_dates)
+  on_closed <- observations$.original_report %in% closed_dates
+  is_count  <- !is.null(case_count_col) && case_count_col %in% names(observations)
 
-  moved_count      <- sum(!is.na(released_reports) & released_reports != observations$.original_report)
-  unreleased_count <- sum(is.na(released_reports))
+  # `held_fraction` decides how much of each closed date is actually held back.
+  # `.hold` flags the rows that will be released later; the rest report on time.
+  if (held_fraction >= 1) {
+    observations$.hold <- on_closed
+  } else if (identical(data_type, "count-cumulative")) {
+    cli::cli_abort(c(
+      "`held_fraction` < 1 is not supported for {.val count-cumulative} data.",
+      "i" = "A cumulative total cannot be split; use `held_fraction = 1` (a full closure)."
+    ))
+  } else if (is_count) {
+    # split each closed-date row: hold a Binomial(count, held_fraction) share and
+    # leave the rest to report on time (uses the RNG; set a seed for reproducibility).
+    idx      <- which(on_closed)
+    n_closed <- pmax(round(observations[[case_count_col]][idx]), 0)
+    held_n   <- stats::rbinom(length(idx), size = as.integer(n_closed), prob = held_fraction)
+    held_rows <- observations[idx, , drop = FALSE]
+    held_rows[[case_count_col]] <- held_n
+    held_rows$.hold <- TRUE
+    observations[[case_count_col]][idx] <- n_closed - held_n   # the part that stays
+    observations$.hold <- FALSE
+    observations <- rbind(observations, held_rows)
+    # drop the empty split parts (a held/stayed piece that came out zero)
+    observations <- observations[!(observations$.original_report %in% closed_dates &
+                                   observations[[case_count_col]] == 0), , drop = FALSE]
+  } else {
+    # linelist: hold each closed report with probability `held_fraction`
+    observations$.hold <- FALSE
+    observations$.hold[on_closed] <- as.logical(stats::rbinom(sum(on_closed), 1L, held_fraction))
+  }
+
+  # rho(u) = first open date at or after u; NA when the run never reopens. Only the
+  # held rows move; everything else keeps its original report date.
+  released_reports <- observations$.original_report
+  held <- observations$.hold
+  released_reports[held] <- .batch_next_open_date(observations$.original_report[held], open_dates)
+
+  moved_count      <- sum(held & !is.na(released_reports) & released_reports != observations$.original_report)
+  unreleased_count <- sum(held & is.na(released_reports))
 
   observations[[report_col]] <- released_reports
   if (drop_unreleased) {
@@ -160,6 +192,7 @@ simulate_batch <- function(data,
     )
   }
   observations$.original_report <- NULL
+  observations$.hold <- NULL
 
   if (verbose) {
     cli::cli_alert_info(

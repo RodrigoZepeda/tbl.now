@@ -216,6 +216,8 @@
 #'   [test_delay_changepoint()].
 #' @param level Completeness level for the immature-region shading (default
 #'   `0.95`; see [autoplot()]).
+#' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget instead of a
+#'   static plot. Default `FALSE`.
 #' @param palette A named colour palette (defaults to the package palette).
 #' @param ... Unused.
 #'
@@ -233,7 +235,7 @@
 #' @export
 plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
                              by_strata = FALSE, strata = NULL, changepoint = FALSE,
-                             level = 0.95, palette = .tbl_now_palette()) {
+                             level = 0.95, plotly = FALSE, palette = .tbl_now_palette()) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_delay_drift}.")
   }
@@ -308,16 +310,19 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
     days = "days", weeks = "weeks", months = "months", years = "years", "units"
   )
 
-  drift_subtitle <- paste0(
-    "Rolling ", window, "-", unit_label,
-    " window. Line: median (solid) & mean (dashed); ",
-    "bands: 25-75% and 10-90%. Grey = incomplete (recent)."
+  drift_caption <- paste0(
+    "Rolling ", window, "-", unit_label, " window. Grey = incomplete (recent)."
   )
   if (!is.null(changepoint_lines) && nrow(changepoint_lines) > 0) {
-    drift_subtitle <- paste0(
-      drift_subtitle, " Dotdash line: potential change point."
-    )
+    drift_caption <- paste0(drift_caption, " Dotdash line: possible changepoint.")
   }
+
+  # Labels used as the legend keys (series identity is mapped, not fixed, so the
+  # median/mean lines and the two bands read off a legend on top of the plot).
+  lab_med  <- "Median"
+  lab_mean <- "Mean"
+  lab_iqr  <- "25-75%"
+  lab_idr  <- "10-90%"
 
   plot <- ggplot2::ggplot(rolled, ggplot2::aes(x = .data$time))
 
@@ -328,37 +333,52 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
       ggplot2::annotate(
         "rect",
         xmin = maturity_threshold, xmax = max(rolled$time), ymin = -Inf, ymax = Inf,
-        fill = palette[["near_black"]], alpha = 0.08
+        fill = palette[["muted_green"]], alpha = 0.2
       ) +
       ggplot2::geom_vline(
         xintercept = maturity_threshold,
-        colour = palette[["near_black"]], linetype = "dashed", linewidth = 0.5
+        colour = palette[["muted_green"]], linetype = "dashed", linewidth = 0.5
       )
   }
 
   plot <- plot +
     ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = .data$q10, ymax = .data$q90),
-      fill = palette[["light_red"]], alpha = 0.35
+      ggplot2::aes(ymin = .data$q10, ymax = .data$q90, fill = lab_idr),
+      alpha = 0.35
     ) +
     ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = .data$q25, ymax = .data$q75),
-      fill = palette[["accent_red"]], alpha = 0.30
+      ggplot2::aes(ymin = .data$q25, ymax = .data$q75, fill = lab_iqr),
+      alpha = 0.30
     ) +
     ggplot2::geom_line(
-      ggplot2::aes(y = .data$mean),
-      colour = palette[["near_black"]], linetype = "dashed", linewidth = 0.6
+      ggplot2::aes(y = .data$mean, colour = lab_mean, linetype = lab_mean),
+      linewidth = 0.6
     ) +
     ggplot2::geom_line(
-      ggplot2::aes(y = .data$q50),
-      colour = palette[["accent_red"]], linewidth = 0.8
+      ggplot2::aes(y = .data$q50, colour = lab_med, linetype = lab_med),
+      linewidth = 0.8
+    ) +
+    ggplot2::scale_fill_manual(
+      name = NULL, breaks = c(lab_iqr, lab_idr),
+      values = stats::setNames(c(palette[["accent_red"]], palette[["light_red"]]),
+                               c(lab_iqr, lab_idr))
+    ) +
+    ggplot2::scale_colour_manual(
+      name = NULL, breaks = c(lab_med, lab_mean),
+      values = stats::setNames(c(palette[["accent_red"]], palette[["near_black"]]),
+                               c(lab_med, lab_mean))
+    ) +
+    ggplot2::scale_linetype_manual(
+      name = NULL, breaks = c(lab_med, lab_mean),
+      values = stats::setNames(c("solid", "dashed"), c(lab_med, lab_mean))
     ) +
     ggplot2::labs(
       title = "Reporting-delay drift",
-      subtitle = drift_subtitle,
+      caption = drift_caption,
       x = x_label, y = paste0("Reporting delay (", unit_label, ")")
     ) +
-    .tbl_now_theme(palette)
+    .tbl_now_theme(palette) +
+    ggplot2::theme(legend.position = "top")
 
   # Change-point marker(s), when requested and detected.
   if (!is.null(changepoint_lines) && nrow(changepoint_lines) > 0) {
@@ -366,7 +386,7 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
       ggplot2::geom_vline(
         data = changepoint_lines,
         ggplot2::aes(xintercept = .data$xintercept),
-        colour = palette[["dark_green"]], linetype = "dotdash", linewidth = 0.7
+        colour = palette[["accent_red"]], linetype = "dotdash", linewidth = 0.7
       )
   }
 
@@ -374,7 +394,7 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
     plot <- plot + ggplot2::facet_wrap(ggplot2::vars(.data$strata))
   }
 
-  plot
+  .as_plotly(plot, plotly)
 }
 
 
@@ -466,7 +486,7 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
 #'
 #' @export
 test_delay_drift <- function(x, ...,
-                             stat = c("median", "spread", "mean", "iqr"),
+                             stat = c("median", "spread"),
                              method = c("hamed-rao", "yue-pilon", "block-bootstrap"),
                              by_strata = FALSE, strata = NULL,
                              mature_only = TRUE, level = 0.95, alpha = 0.05) {
@@ -480,7 +500,7 @@ test_delay_drift <- function(x, ...,
     ))
   }
   # `stat` may be several; `method` is a single choice.
-  stat <- match.arg(stat, several.ok = TRUE)
+  stat <- match.arg(stat, c("median", "mean", "iqr", "spread"), several.ok = TRUE)
   method <- match.arg(method)
 
   cli::cli_warn(
@@ -557,7 +577,7 @@ test_delay_drift <- function(x, ...,
 #' Pettitt's nonparametric single-change-point test
 #'
 #' Detects a single abrupt shift in the location of a series. Rank-based (so it
-#' is robust and distribution-free) and matches [trend::pettitt.test()]. The
+#' is robust and distribution-free) and matches `trend::pettitt.test()`. The
 #' change-point statistic uses the identity
 #' `U_t = 2 * cumsum(rank(x)) - t * (n + 1)`, `K = max|U_t|`, with the standard
 #' approximate p-value `2 * exp(-6 K^2 / (n^3 + n^2))`.
@@ -620,13 +640,13 @@ test_delay_drift <- function(x, ...,
 #'
 #' @export
 test_delay_changepoint <- function(x, ...,
-                                   stat = c("median", "spread", "mean", "iqr"),
+                                   stat = c("median", "spread"),
                                    by_strata = FALSE, strata = NULL,
                                    mature_only = TRUE, level = 0.95, alpha = 0.05) {
   if (!is_tbl_now(x)) {
     cli::cli_abort("{.arg x} must be a {.cls tbl_now}.")
   }
-  stat <- match.arg(stat, several.ok = TRUE)
+  stat <- match.arg(stat, c("median", "mean", "iqr", "spread"), several.ok = TRUE)
 
   cli::cli_warn(
     c(

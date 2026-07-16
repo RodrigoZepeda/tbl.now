@@ -335,7 +335,7 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
 #'   are created.
 #' @param base_name Column-name stem, e.g. `".event_holiday_lag"`.
 #' @param reset_event `"holiday"` or `"weekend"`, passed to
-#'   [.working_days_since()].
+#'   `.working_days_since()`.
 #' @param weekend_days Passed to [is_weekday()].
 #' @param holidays An [almanac::rcalendar()] or `NULL`.
 #' @param overwrite Whether to overwrite pre-existing columns.

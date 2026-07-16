@@ -8,5 +8,6 @@ NULL
 ## usethis namespace: start
 #' @importFrom lifecycle deprecated
 #' @importFrom rlang := %||%
+#' @importFrom utils head
 ## usethis namespace: end
 NULL

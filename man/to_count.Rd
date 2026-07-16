@@ -23,10 +23,11 @@ aggregated into the \code{case_count} column.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
-Transforms a \code{tbl.now} from:
+Transforms a \code{tbl.now} between count data types:
 \itemize{
 \item \code{linelist}: to \code{count-incidence} or \code{count-cumulative}
-\item \code{count-incidence}: to  \code{count-cumulative}
+\item \code{count-incidence}: to \code{count-cumulative}
+\item \code{count-cumulative}: to \code{count-incidence}
 }
 }
 \details{
@@ -36,6 +37,13 @@ following classes:
 \item \code{tbl_now}: takes a \code{tbl_now} object and creates a new column with
 name \code{n} of counts of observations if \code{data_type = "linelist"}.
 }
+
+Converting \code{count-cumulative} to \code{count-incidence} \strong{de-accumulates} the
+series: within each event date (and grouping), ordered by report date, the
+incremental count is the cumulative total minus the previous one. Because
+cumulative totals can be revised \emph{downward}, an increment can be \strong{negative};
+callers that need non-negative increments (for example
+\code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast()}}) must handle or refuse that case.
 }
 \note{
 \code{linelist} data cannot be reconstructed from \verb{count-*} data. Trying

@@ -14,6 +14,7 @@ plot_delay_drift(
   strata = NULL,
   changepoint = FALSE,
   level = 0.95,
+  plotly = FALSE,
   palette = .tbl_now_palette()
 )
 }
@@ -44,6 +45,9 @@ with a vertical line, when one is detected (p < 0.05). See
 
 \item{level}{Completeness level for the immature-region shading (default
 \code{0.95}; see \code{\link[=autoplot]{autoplot()}}).}
+
+\item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget instead of a
+static plot. Default \code{FALSE}.}
 
 \item{palette}{A named colour palette (defaults to the package palette).}
 }

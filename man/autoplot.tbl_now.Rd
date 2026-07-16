@@ -11,6 +11,7 @@
   by_strata = FALSE,
   strata = NULL,
   level = 0.95,
+  plotly = FALSE,
   palette = .tbl_now_palette(),
   delay_distribution_xlim = NULL,
   event_date_xlim = NULL,
@@ -49,6 +50,9 @@ some of them. Ignored when \code{by_strata = FALSE}.}
 the default \code{0.95}, the line marks where at least 5 percent of delays are
 yet to arrive.}
 
+\item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget (the panels
+stacked) instead of a static \pkg{patchwork}. Default \code{FALSE}.}
+
 \item{palette}{A named character vector of colours. Defaults to the package
 palette.}
 
@@ -73,7 +77,12 @@ delay} — and you choose which to draw with the \code{panels} argument.
 \strong{Case-count panels}
 \itemize{
 \item \code{"delay_distribution"} — a (case-count weighted) histogram of the reporting
-delay (\code{.delay}).
+delay (\code{.delay}). For \strong{\code{count-cumulative}} data this panel instead shows the
+\emph{cumulative growth by delay}: boxplots (on a log scale, with a dashed
+reference at \code{1}) of the ratio of each event date's cumulative count at a
+delay to its cumulative count at the previous delay. A ratio above \code{1} is an
+upward revision, below \code{1} a downward one, and the boxes converge to \code{1} as
+reporting completes.
 \item \code{"epidemic"} — the latest reported case counts per \code{event_date}, with a
 dashed vertical line marking where the data become incomplete (less than
 \code{level} of the delay distribution has arrived). Holidays from the attached

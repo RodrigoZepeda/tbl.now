@@ -1,5 +1,5 @@
 # =============================================================================
-# Model-free batch detection: batch_screen(), batch_shape_test(), simulate_batch()
+# Model-free batch detection: batch_test(), batch_shape_test(), simulate_batch()
 # =============================================================================
 # These functions are model-free (no nowcast, no RTMB), so every test here is
 # fast and uses small synthetic data with a *known* planted batch.
@@ -54,6 +54,40 @@ test_that("simulate_batch() conserves items and only ever moves reports later", 
   expect_false(any(batched_frame$report %in% closed))
 })
 
+test_that("simulate_batch(held_fraction) holds only a partial share", {
+  clean_tbl <- make_flat_linelist(seed = 3L)
+  closed    <- as.Date(c("2021-02-01", "2021-02-02", "2021-02-03"))
+  release   <- as.Date("2021-02-04")
+
+  set.seed(1)
+  half <- simulate_batch(clean_tbl, closed_dates = closed, held_fraction = 0.5, verbose = FALSE)
+  clean_frame <- as.data.frame(clean_tbl)
+  half_frame  <- as.data.frame(half)
+
+  # still conserves mass and never moves a report earlier
+  expect_equal(nrow(half_frame), nrow(clean_frame))
+  expect_true(all(sort(half_frame$report) >= sort(clean_frame$report)))
+
+  # the closed dates now still report SOMETHING (partial closure), unlike a full one
+  expect_true(any(half_frame$report %in% closed))
+
+  # roughly half of each closed day is held: the release gets less than a full closure
+  full <- simulate_batch(clean_tbl, closed_dates = closed, held_fraction = 1, verbose = FALSE)
+  n_release_half <- sum(as.data.frame(half)$report == release)
+  n_release_full <- sum(as.data.frame(full)$report == release)
+  expect_lt(n_release_half, n_release_full)
+  expect_gt(n_release_half, n_release_full * 0.3)   # but clearly more than its own day
+
+  # invalid fractions and cumulative fractional holds are rejected
+  expect_error(simulate_batch(clean_tbl, closed_dates = closed, held_fraction = 0), "0, 1")
+  expect_error(simulate_batch(clean_tbl, closed_dates = closed, held_fraction = 1.5), "0, 1")
+  cc <- to_count(clean_tbl, to = "count-cumulative")
+  expect_error(
+    simulate_batch(cc, closed_dates = closed, held_fraction = 0.5, verbose = FALSE),
+    "count-cumulative"
+  )
+})
+
 test_that("simulate_batch() rejects an empty or fully-closed schedule", {
   clean_tbl <- make_flat_linelist(n_origins = 20L)
   expect_error(simulate_batch(clean_tbl, closed_dates = as.Date(character(0))), "no batch")
@@ -62,18 +96,18 @@ test_that("simulate_batch() rejects an empty or fully-closed schedule", {
   expect_error(simulate_batch(clean_tbl, closed_dates = every_date), "nowhere to release")
 })
 
-# -- batch_screen(): the conservation law --------------------------------------
+# -- batch_test(): the conservation law --------------------------------------
 
-test_that("batch_screen() recovers a planted batch and finds none in clean data", {
+test_that("batch_test() recovers a planted batch and finds none in clean data", {
   clean_tbl   <- make_flat_linelist()
   closed      <- as.Date(c("2021-02-01", "2021-02-02", "2021-02-03"))
   release_date <- as.Date("2021-02-04")
   batched_tbl <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
 
-  clean_screen   <- batch_screen(clean_tbl,   lookback = 3L)
-  batched_screen <- batch_screen(batched_tbl, lookback = 3L)
+  clean_screen   <- batch_test(clean_tbl,   lookback = 3L)
+  batched_screen <- batch_test(batched_tbl, lookback = 3L)
 
-  expect_s3_class(batched_screen, "batch_screen")
+  expect_s3_class(batched_screen, "batch_test")
   expect_equal(sum(clean_screen$batch, na.rm = TRUE), 0L)
 
   flagged_dates <- batched_screen$report_date[!is.na(batched_screen$batch) & batched_screen$batch]
@@ -86,7 +120,7 @@ test_that("the release date shows a spike paid for by a deficit", {
   release_date <- as.Date("2021-02-04")
   batched_tbl  <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
 
-  screened <- batch_screen(batched_tbl, lookback = 3L)
+  screened <- batch_test(batched_tbl, lookback = 3L)
   release_row <- screened[screened$report_date == release_date, ]
 
   # The spike is large ...
@@ -95,10 +129,9 @@ test_that("the release date shows a spike paid for by a deficit", {
   expect_gt(release_row$deficit, 0)
   # ... and the window total is essentially unchanged next to the spike.
   expect_lt(abs(release_row$delta), 0.5 * release_row$reported)
-  # The transport signal is overwhelming; a *creation* flag may also fire by
-  # chance at rate alpha, so both verdicts containing "batch" are acceptable.
+  # The transport signal is overwhelming, so the BH-corrected `batch` flag fires.
   expect_lt(release_row$p_transport, 1e-4)
-  expect_true(release_row$classification %in% c("batch", "batch_and_surge"))
+  expect_true(release_row$batch)
 })
 
 test_that("Delta is an exact pivot: a within-window transport cannot move it at all", {
@@ -115,8 +148,8 @@ test_that("Delta is an exact pivot: a within-window transport cannot move it at 
     clean_tbl   <- make_flat_linelist(seed = 100L + replicate_index)
     batched_tbl <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
 
-    clean_screen   <- batch_screen(clean_tbl,   lookback = 3L)
-    batched_screen <- batch_screen(batched_tbl, lookback = 3L)
+    clean_screen   <- batch_test(clean_tbl,   lookback = 3L)
+    batched_screen <- batch_test(batched_tbl, lookback = 3L)
 
     delta_clean   <- clean_screen$delta[clean_screen$report_date == release_date]
     delta_batched <- batched_screen$delta[batched_screen$report_date == release_date]
@@ -133,8 +166,8 @@ test_that("the deficit, by contrast, is exactly what the batch moved", {
   clean_tbl   <- make_flat_linelist(seed = 11L)
   batched_tbl <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
 
-  clean_screen   <- batch_screen(clean_tbl,   lookback = 3L)
-  batched_screen <- batch_screen(batched_tbl, lookback = 3L)
+  clean_screen   <- batch_test(clean_tbl,   lookback = 3L)
+  batched_screen <- batch_test(batched_tbl, lookback = 3L)
 
   clean_deficit   <- clean_screen$deficit[clean_screen$report_date == release_date]
   batched_deficit <- batched_screen$deficit[batched_screen$report_date == release_date]
@@ -151,14 +184,14 @@ test_that("a hold that never releases is classified as hold_or_deletion, not a b
 
   batched_tbl <- simulate_batch(clean_tbl, closed_dates = closed,
                                 drop_unreleased = TRUE, verbose = FALSE)
-  screened <- batch_screen(batched_tbl, lookback = 3L)
+  screened <- batch_test(batched_tbl, lookback = 3L)
 
-  # No spike ever arrives, so nothing should be called a batch at the tail.
+  # No spike ever arrives, so nothing should be flagged a batch at the tail.
   tail_rows <- utils::tail(screened, 3L)
-  expect_false(any(tail_rows$classification %in% "batch", na.rm = TRUE))
+  expect_false(any(tail_rows$batch %in% TRUE, na.rm = TRUE))
 })
 
-# -- batch_screen(): calendar effects ------------------------------------------
+# -- batch_test(): calendar effects ------------------------------------------
 
 test_that("a scheduled weekly closure is absorbed by `period` and not called a batch", {
   set.seed(7)
@@ -181,8 +214,11 @@ test_that("a scheduled weekly closure is absorbed by `period` and not called a b
     data_type = "linelist", verbose = FALSE
   )
 
-  unadjusted <- batch_screen(scheduled_tbl, lookback = 3L)
-  adjusted   <- batch_screen(scheduled_tbl, lookback = 3L, period = 7L)
+  # Pin the sensitive Poisson null so the test isolates the calendar correction:
+  # `auto` would otherwise read the weekly pileups as overdispersion and switch to
+  # the conservative robust null, absorbing the schedule on its own.
+  unadjusted <- batch_test(scheduled_tbl, lookback = 3L, null_model = "poisson")
+  adjusted   <- batch_test(scheduled_tbl, lookback = 3L, period = 7L, null_model = "poisson")
 
   unadjusted_flags <- sum(unadjusted$batch, na.rm = TRUE)
   adjusted_flags   <- sum(adjusted$batch,   na.rm = TRUE)
@@ -194,24 +230,46 @@ test_that("a scheduled weekly closure is absorbed by `period` and not called a b
   expect_lte(adjusted_flags, 2L)
 })
 
-# -- batch_screen(): argument validation ---------------------------------------
+# -- batch_test(): argument validation ---------------------------------------
 
-test_that("batch_screen() validates its inputs", {
+test_that("batch_test() validates its inputs", {
   clean_tbl <- make_flat_linelist(n_origins = 30L)
 
-  expect_error(batch_screen(as.data.frame(clean_tbl)), "tbl_now")
-  expect_error(batch_screen(clean_tbl, lookback = 0L), "positive integer")
-  expect_error(batch_screen(clean_tbl, alpha = 1.5), "strictly between")
+  expect_error(batch_test(as.data.frame(clean_tbl)), "tbl_now")
+  expect_error(batch_test(clean_tbl, lookback = 0L), "positive integer")
+  expect_error(batch_test(clean_tbl, alpha = 1.5), "strictly between")
   # An even baseline window has no unique median.
-  expect_error(batch_screen(clean_tbl, baseline_window = 8L), "must be odd")
+  expect_error(batch_test(clean_tbl, baseline_window = 8L), "must be odd")
   # Too narrow: a batch episode would outvote the median measuring it.
-  expect_error(batch_screen(clean_tbl, lookback = 3L, baseline_window = 5L), "too narrow")
+  expect_error(batch_test(clean_tbl, lookback = 3L, baseline_window = 5L), "too narrow")
 })
 
 test_that("the null model is chosen from the data type", {
   clean_tbl <- make_flat_linelist(n_origins = 40L)
-  expect_equal(attr(batch_screen(clean_tbl), "null_model"), "poisson")
-  expect_equal(attr(batch_screen(clean_tbl, null_model = "robust"), "null_model"), "robust")
+  expect_equal(attr(batch_test(clean_tbl), "null_model"), "poisson")
+  expect_equal(attr(batch_test(clean_tbl, null_model = "robust"), "null_model"), "robust")
+})
+
+test_that("auto falls back to the robust null when the counts are overdispersed", {
+  # A shared per-report-date random effect blows the variance well past the mean;
+  # the exact Poisson null would over-flag, so `auto` must switch to robust.
+  set.seed(7)
+  origins <- seq(as.Date("2021-01-01"), by = "day", length.out = 80L)
+  rows <- lapply(origins, function(origin_date) {
+    day_effect <- stats::rgamma(1L, shape = 0.3, rate = 0.3)   # mean 1, heavy tail
+    counts     <- stats::rpois(6L, lambda = 40 * day_effect)
+    data.frame(
+      event  = origin_date,
+      report = origin_date + 0:5,
+      n      = counts
+    )
+  })
+  overdispersed <- tbl_now(
+    dplyr::bind_rows(rows),
+    event_date = !!as.symbol("event"), report_date = !!as.symbol("report"),
+    case_count = !!as.symbol("n"), data_type = "count-incidence", verbose = FALSE
+  )
+  expect_equal(attr(batch_test(overdispersed), "null_model"), "robust")
 })
 
 # -- the robust baseline -------------------------------------------------------
@@ -314,8 +372,8 @@ test_that("count-cumulative data de-accumulates and screens with the robust null
     case_count = !!as.symbol("total"), data_type = "count-cumulative", verbose = FALSE
   )
 
-  screened <- batch_screen(cumulative_tbl, lookback = 2L)
-  expect_s3_class(screened, "batch_screen")
+  screened <- batch_test(cumulative_tbl, lookback = 2L)
+  expect_s3_class(screened, "batch_test")
   expect_equal(attr(screened, "null_model"), "robust")
   expect_true(all(c("delta", "deficit", "p_transport") %in% names(screened)))
 })

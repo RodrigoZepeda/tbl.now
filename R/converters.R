@@ -693,8 +693,13 @@ tbl_now_from_epinowcast <- function(data, ...,
 #' @param data A long `data.frame` or a `reporting_triangle` matrix.
 #' @param x A `tbl_now` object.
 #' @param reference_date,report_date,count Column names (long format only).
-#' @param delays_unit Unit of the delay axis (passed to
-#'   [baselinenowcast::as_reporting_triangle()]). Defaults to `"days"`.
+#' @param delays_unit Unit of the delay axis of the reporting triangle, one of
+#'   `"days"` or `"weeks"`. For `tbl_now_from_baselinenowcast()` this says how to
+#'   read an input matrix's delay columns and defaults to `"days"`. For
+#'   `tbl_now_to_baselinenowcast()` (matrix format only) it defaults to `NULL`,
+#'   meaning it is **inferred** from the object's time units when the event and
+#'   report units agree and are `"days"` or `"weeks"`; otherwise you must supply
+#'   it explicitly.
 #' @param format For `to`: `"matrix"` (default) or `"long"`.
 #' @param verbose Logical. Print the choices that were made.
 #' @param ... Forwarded to [as_tbl_now()] (`from`) or
@@ -1180,10 +1185,45 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
   )
 }
 
+#' Resolve the reporting-triangle delay unit for `tbl_now_to_baselinenowcast()`
+#'
+#' When `delays_unit` is `NULL` it is inferred from the object's time units: this
+#' is only well defined when the event and report units agree and are either
+#' `"days"` or `"weeks"` (the units \pkg{baselinenowcast}'s delay axis
+#' understands). Otherwise the user must supply it.
+#'
+#' @param x A `tbl_now` object.
+#' @param delays_unit The user-supplied value, or `NULL` to infer.
+#'
+#' @return A single string, `"days"` or `"weeks"` (or the user's value verbatim).
+#'
+#' @keywords internal
+#' @noRd
+.baselinenowcast_delays_unit <- function(x, delays_unit) {
+  if (!is.null(delays_unit)) {
+    return(delays_unit)
+  }
+  event_units <- get_event_units(x)
+  report_units <- get_report_units(x)
+  if (identical(event_units, report_units) && event_units %in% c("days", "weeks")) {
+    return(event_units)
+  }
+  cli::cli_abort(c(
+    "Could not infer {.arg delays_unit} for the {.pkg baselinenowcast} \\
+     reporting triangle.",
+    "i" = "It is inferred only when {.field event_units} \\
+           ({.val {event_units}}) and {.field report_units} \\
+           ({.val {report_units}}) are equal and either {.val days} or \\
+           {.val weeks}.",
+    "i" = "Please supply {.arg delays_unit} explicitly, e.g. \\
+           {.code delays_unit = \"weeks\"}."
+  ))
+}
+
 #' @rdname tbl_now_baselinenowcast
 #' @export
 tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
-                                       delays_unit = "days", verbose = TRUE) {
+                                       delays_unit = NULL, verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_baselinenowcast")
   format <- match.arg(format)
 
@@ -1241,6 +1281,13 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
       dplyr::all_of(extra_cols)
     )
 
+  # `delays_unit` only applies to the reporting-triangle matrix. When `NULL` it is
+  # inferred from the object's time units (equal event/report units of days or
+  # weeks); otherwise the user must supply it.
+  if (format == "matrix") {
+    delays_unit <- .baselinenowcast_delays_unit(x, delays_unit)
+  }
+
   if (verbose) {
     cli::cli_h3("Converting {.cls tbl_now} to {.pkg baselinenowcast} {format}")
     cli::cli_ul()
@@ -1251,6 +1298,9 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
       cli::cli_li("kept columns: {.val {extra_cols}}")
     }
     cli::cli_li("format: {.val {format}}")
+    if (format == "matrix") {
+      cli::cli_li("delays_unit: {.val {delays_unit}}")
+    }
     cli::cli_end()
   }
 

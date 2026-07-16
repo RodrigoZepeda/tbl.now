@@ -417,3 +417,71 @@ test_that("autoplot renders with holidays marked", {
     add_temporal_effects(temporal_effects(holidays = almanac::cal_us_federal()))
   expect_s3_class(ggplot2::autoplot(nowobj), "patchwork")
 })
+
+# --- cumulative growth (count-cumulative delay panel) -----------------------
+
+make_cumulative_now <- function() {
+  # two event dates, cumulative counts revised UP then DOWN over report delay
+  df <- data.frame(
+    event_date  = as.Date(c(rep("2021-01-04", 4), rep("2021-01-11", 4))),
+    report_date = as.Date(c(
+      "2021-01-04", "2021-01-11", "2021-01-18", "2021-01-25",
+      "2021-01-11", "2021-01-18", "2021-01-25", "2021-02-01"
+    )),
+    n = c(10, 30, 30, 21, 5, 8, 8, 8) # event 1: x3 then stable then down to 70%
+  )
+  tbl_now(df,
+    event_date = event_date, report_date = report_date, case_count = n,
+    data_type = "count-cumulative", event_units = "weeks", report_units = "weeks",
+    verbose = FALSE
+  )
+}
+
+test_that("cumulative growth helper computes ratios to the previous delay", {
+  g <- tbl.now:::.tbl_now_cumulative_growth(make_cumulative_now())
+  expect_true(all(c("event_date", "delay", "ratio") %in% names(g)))
+  expect_true(all(is.finite(g$ratio) & g$ratio > 0))
+  # event 1 delay 1: 30/10 = 3 ; delay 3: 21/30 = 0.7
+  ev1 <- g[g$event_date == as.Date("2021-01-04"), ]
+  expect_equal(ev1$ratio[ev1$delay == 1], 3)
+  expect_equal(ev1$ratio[ev1$delay == 3], 0.7)
+})
+
+test_that("count-cumulative delay panel is the growth panel (log scale)", {
+  skip_if_not_installed("ggplot2")
+  p <- ggplot2::autoplot(make_cumulative_now(), panels = "delay_distribution")
+  expect_equal(p$labels$title, "Cumulative growth by delay")
+  expect_equal(p$labels$y, "Cumulative count ratio")
+  # a log-10 y scale is applied
+  is_log <- any(vapply(p$scales$scales, function(s) {
+    !is.null(s$trans) && identical(s$trans$name, "log-10")
+  }, logical(1)))
+  expect_true(is_log)
+  expect_s3_class(ggplot2::ggplot_build(p), "ggplot_built")
+})
+
+test_that("non-cumulative data keeps the histogram delay panel", {
+  skip_if_not_installed("ggplot2")
+  p <- ggplot2::autoplot(make_daily_now(), panels = "delay_distribution")
+  expect_equal(p$labels$title, "Empirical delay distribution")
+})
+
+test_that("cumulative growth panel works by stratum and full autoplot builds", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  df <- data.frame(
+    event_date  = as.Date(rep(c("2021-01-04", "2021-01-11"), each = 6)),
+    report_date = as.Date(rep(c("2021-01-04", "2021-01-11", "2021-01-18"), 4)),
+    grp = rep(c("a", "b"), each = 3, times = 2),
+    n = c(10, 20, 22, 5, 9, 9, 8, 12, 12, 4, 6, 6)
+  )
+  nowobj <- tbl_now(df,
+    event_date = event_date, report_date = report_date, case_count = n,
+    strata = "grp", data_type = "count-cumulative",
+    event_units = "weeks", report_units = "weeks", verbose = FALSE
+  )
+  ps <- ggplot2::autoplot(nowobj, panels = "delay_distribution", by_strata = TRUE)
+  expect_equal(ps$labels$title, "Cumulative growth by delay")
+  expect_s3_class(ggplot2::autoplot(nowobj, by_strata = TRUE), "patchwork")
+})

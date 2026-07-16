@@ -15,7 +15,10 @@ data type). It is fully **dplyr-compatible**.
 
 `tbl.now` is a **data-structure + specification layer**, *not* a modelling
 engine. It standardises/validates data and stores lazy specs; the actual
-nowcasting is done downstream by **`diseasenowcasting`**.
+nowcasting is done downstream by **`diseasenowcasting`**. It also ships
+**model-free diagnostics** — `autoplot()`, reporting-delay drift / change-point
+tests, and batch (backlog-dump) detection — for exploring data before a model is
+chosen (all experimental).
 
 Every `tbl_now` auto-computes three **protected** numeric columns:
 
@@ -116,20 +119,34 @@ to_count(x, to = "count-incidence")
 to_count(x, to = "count-cumulative")
 ```
 
-**Conversion is one-directional — toward more aggregation only:**
+**Conversions between the two count types go both ways; you can never rebuild a
+linelist:**
 
 ```
-linelist  ──►  count-incidence  ──►  count-cumulative
+linelist  ──►  count-incidence  ◄──►  count-cumulative
 ```
 
 Supported: `linelist→incidence`, `linelist→cumulative`, `incidence→cumulative`,
-and re-aggregation within the same type. **Not supported** (errors):
+**`cumulative→incidence`**, and re-aggregation within the same type.
 
-- `count-cumulative → count-incidence` (cannot de-accumulate here)
-- `count-* → linelist` (cannot un-count aggregated data)
+`cumulative → incidence` **de-accumulates**: within each event date (× grouping),
+ordered by report date, the increment is the cumulative total minus the previous
+one. Because cumulative totals can be revised *downward*, an increment can be
+**negative** — that is a legitimate net down-revision, and delay diagnostics drop
+non-positive weights. (This is why `autoplot()` etc. now work on
+`count-cumulative` data such as FluSight.) A downstream model needing non-negative
+increments — e.g. `tbl_now_to_baselinenowcast()` — still refuses cumulative input.
 
-So decide the granularity early. Keep a linelist if you might need incidence
-later.
+**Not supported** (errors): `count-* → linelist` (cannot un-count aggregated
+data). So if you might need individual records, keep the linelist.
+
+> **Pre-aggregation is automatic.** Every function that needs incidence calls
+> `to_count()` first, which groups by `(event_date, report_date, .event_num,
+> .report_num, strata, is_censored, covariates, temporal-effect cols)` and sums
+> the counts — so any **extra column you did *not* declare as a stratum is summed
+> away**, not plotted. (If a column like `race` is present but not a stratum, its
+> rows are correctly collapsed.) A `tbl_now` with such extra columns prints a
+> non-uniqueness warning at construction to flag this.
 
 ---
 
@@ -140,6 +157,7 @@ Two views of "how many cases occurred on each `event_date`":
 ```r
 get_initial_reported_cases(tn)   # the FIRST reported count per event_date
 get_latest_reported_cases(tn)    # the MOST-RECENT reported count per event_date
+get_nth_reported_cases(tn, delay = 2)   # cumulative count observed within delay <= 2
 ```
 
 - **`get_initial_reported_cases`** = what was *first* observed for each event date
@@ -147,9 +165,16 @@ get_latest_reported_cases(tn)    # the MOST-RECENT reported count per event_date
 - **`get_latest_reported_cases`** = the best current estimate given everything
   reported up to `now`. This is the de-facto **"truth so far"** used for plotting
   the observed epidemic curve and for scoring nowcasts.
+- **`get_nth_reported_cases(tn, delay)`** = the cumulative count for each event
+  date using only reports with **delay ≤ `delay`** (in report units). `delay = 0`
+  is the initial snapshot (cases reported at delay 0); `delay = 1` adds delay-1
+  reports; `delay = Inf` (or the maximum delay) equals `get_latest_reported_cases()`.
+  Use it to reconstruct the reporting triangle "as observed `delay` periods after
+  the event".
 
-Both return a `count-cumulative`-style `tbl_now` collapsed to one row per
-`event_date` (× strata). The gap between them is exactly what a nowcast predicts.
+All three return a `count-cumulative`-style `tbl_now` collapsed to one row per
+`event_date` (× strata). The gap between initial and latest is exactly what a
+nowcast predicts.
 
 ---
 
@@ -222,6 +247,8 @@ spec <- temporal_effects(
   day_of_month  = FALSE,
   month_of_year = TRUE,
   week_of_year  = TRUE,
+  holiday_lags  = 0,            # after-HOLIDAY effect (see below); needs `holidays`
+  weekend_lags  = 0,            # after-WEEKEND effect (see below)
   seasons       = integer(0),   # Fourier periods, e.g. c(7, 52, 365)
   season_length = 1,            # multiply each season; period = seasons * season_length
   holidays      = NULL          # an almanac::rcalendar(), see next skill
@@ -242,6 +269,13 @@ get_temporal_effect_cols(tn)   # character(0) before compute; column names after
 - **Seasonality / Fourier**: `seasons` are the cycle periods. For *daily* data
   with weekly seasonality use `seasons = 52, season_length = 7` (period = 364
   days); `season_length` defaults to `1` (period = `seasons`).
+- **After-holiday / after-weekend lags** (capture the rebound *after* a break):
+  `holiday_lags = N` / `weekend_lags = N` are non-negative integer depths that
+  materialise indicator columns `..._holiday_lag_1 … _N` and
+  `..._weekend_lag_1 … _N`, flagging dates exactly `k` **working days** after a
+  holiday / weekend (weekends *and* holidays are skipped when counting, so the
+  effect lands on the first day back at work). `holiday_lags` requires a `holidays`
+  calendar. Best for daily data.
 - Replace or clear:
 
 ```r
@@ -332,35 +366,261 @@ library(tbl.now)
 autoplot(tn)                       # bare call works after library(tbl.now)
 ```
 
-Panels:
+Two panel **families**. *Case-count* panels:
 
-1. **Empirical delay distribution** — case-count-weighted kernel density of `.delay`.
-2. **Observed epidemic process** — `get_latest_reported_cases()` by `event_date`,
-   with a dashed vertical **incompleteness line** at `now - quantile(delay, level)`.
-   Holidays from the temporal-effects spec are marked as red dots.
-3. **Calendar effect** — *normalized* boxplots (cases relative to the overall
-   mean, 1 = average). Daily data shows **both** day-of-week and week-of-year
-   panels; weekly shows week-of-year; monthly shows month-of-year.
-4. **Seasonality periodogram** — the dominant peak suggests a Fourier `seasons`
-   length to pass to `temporal_effects()`.
+1. **Empirical delay distribution** (`"delay_distribution"`) — case-count-weighted
+   histogram of `.delay`.
+2. **Observed epidemic process** (`"epidemic"`) — `get_latest_reported_cases()` by
+   `event_date`, with a dashed vertical **incompleteness line** at
+   `now - quantile(delay, level)`. Holidays from the temporal-effects spec are
+   marked with dots.
+3. **Calendar effect** (`"calendar_weekday"`, `"calendar_week"`,
+   `"calendar_month"`) — *normalized* boxplots (cases ÷ overall mean, 1 = average).
+4. **Seasonality periodogram** (`"seasonality"`) — dominant peak suggests a Fourier
+   `seasons` length.
+
+*Reporting-delay* panels — to inspect **delay effects** (is the *delay itself*
+patterned?):
+
+5. **Delay calendar effect** (`"delay_weekday"`, `"delay_week"`, `"delay_month"`) —
+   boxplots of the **normalized** mean reporting delay (mean delay ÷ overall mean
+   delay, 1 = average) by calendar group.
+6. **Delay periodicity periodogram** (`"delay_seasonality"`) — a cycle in the delay
+   (e.g. a weekly reporting rhythm).
+
+Which calendar/delay panels appear depends on the unit: **daily** → day-of-week
+*and* week-of-year; **weekly** → week-of-year; **monthly** → month-of-year. (So on
+*daily* data each week-of-year box legitimately summarizes ~7 daily values — that
+is not a stratification artefact.)
 
 Key arguments:
 
 ```r
 autoplot(
   tn,
-  level = 0.95,                                   # completeness threshold for the incompleteness line
-  delay_distribution_xlim = c(0, 10),             # per-panel x limits (all optional)
+  panels = "all",         # "all" (default) | "calendar" | "delay_calendar" |
+                          #   a vector of concrete panel keys above.
+                          #   A SINGLE key returns a plain ggplot (not a patchwork).
+  by_strata = FALSE,      # TRUE => split every panel by stratum (dodged boxes /
+                          #   coloured lines / dodged bars, viridis, per-stratum
+                          #   normalization). Errors if no strata are set.
+  strata = NULL,          # which strata columns to group on when by_strata=TRUE
+                          #   (default = the object's strata; pass a subset)
+  level = 0.95,           # completeness threshold for the incompleteness line
+  delay_distribution_xlim = c(0, 10),   # per-panel x limits (all optional)
   event_date_xlim = as.Date(c("2020-01-01","2020-12-31")),
   calendar_effect_xlim = NULL,
   seasonality_xlim = c(0, 60),
-  palette = .tbl_now_palette()                    # override colours
+  palette = .tbl_now_palette()          # override colours
 )
+
+autoplot(tn, panels = "delay_week")     # just one panel -> a ggplot you can + to
+autoplot(tn, by_strata = TRUE)          # one fan of panels per stratum
 ```
 
-`level` is the delay quantile where the line is drawn; the default in the
-signature is `1` (most conservative), but `level = 0.95` is the typical choice
-("dates still missing ≥5% of their eventual counts are incomplete").
+`level` is the delay quantile where the incompleteness line is drawn; `0.95` is
+the typical choice ("dates still missing ≥5% of their eventual counts are
+incomplete"). `autoplot()` works on **all three data types**, including
+`count-cumulative` (it de-accumulates internally).
+
+---
+
+## Skill: diagnose reporting-delay drift & change points
+
+Ask whether the reporting delay is **stable over time** before trusting a fixed
+delay model. All are experimental and index by event date.
+
+```r
+# Visual: rolling fan chart of the delay distribution (median, mean, 25-75 & 10-90 bands)
+plot_delay_drift(tn, window = 7, by_strata = FALSE, changepoint = FALSE)
+
+# Gradual monotonic trend (autocorrelation-robust Mann-Kendall; needs `modifiedmk`)
+test_delay_drift(tn, stat = c("median", "spread"))   # location AND dispersion
+
+# Abrupt shift (Pettitt change-point test; no extra dependency)
+test_delay_changepoint(tn, stat = c("median", "spread"))
+```
+
+- **`plot_delay_drift()`** — solid = rolling median, dashed = rolling mean, bands =
+  25–75% / 10–90%. `window` defaults to **7 periods** (7 days for daily, 7 weeks for
+  weekly). The recent, not-yet-complete region (after the `level` incompleteness
+  cutoff) is **shaded grey** — do not read it as drift. `changepoint = TRUE` marks
+  the estimated median change point. Supports `by_strata`.
+- **`test_delay_drift()`** returns a tidy tibble (per `stat` × stratum) with the
+  Kendall `tau`, Sen's slope, `p_value` and a `drift` verdict; `method` is
+  `"hamed-rao"` (default), `"yue-pilon"` or `"block-bootstrap"`. Tests a *location*
+  (`"median"`/`"mean"`) and a *dispersion* (`"iqr"`/`"spread"`) statistic — drift
+  can be in either. Runs on **mature** data only (`mature_only = TRUE`).
+- **`test_delay_changepoint()`** returns the estimated `changepoint` date, the
+  `before`/`after` level, the `shift`, and a `changepoint_detected` verdict.
+- Both test functions **emit an experimental `cli` warning** and treat a flag as a
+  *potential* trend change / change point, not a confirmed one.
+
+Use trend + change-point together: a significant trend with no change point =
+slow drift; a change point with weak trend = one abrupt switch.
+
+---
+
+## Skill: detect batch reporting (backlog dumps)
+
+A **batch** = a report date where a stalled desk releases a backlog. It *moves*
+reports later on the report axis **without creating them** (mass is conserved), so
+a window spanning the lull + the release has an unchanged total, whereas a real
+epidemic **surge** inflates it. That conservation law is the whole method — these
+are experimental, **model-free** (need only a `tbl_now`),
+and distinct from an epidemic surge by construction.
+
+```r
+# 1) Volume screen over the report axis (per report date x stratum)
+scr <- batch_test(tn, lookback = 3, alpha = 0.05)
+scr[scr$batch, ]            # the flagged report dates
+# LEAN output (v0.13.0): report_date, stratum, reported, baseline,
+#   deficit (reports missing beforehand -> batch), delta (window total minus
+#   expected -> creation), p_transport, p_transport_bh, batch (BH verdict).
+#   The raw per-point `classification` column was REMOVED (over-identified;
+#   BH `batch` is the trustworthy verdict). `baseline_method` arg also removed
+#   (always repeated_median). transport_discriminant() KEEPS its classification.
+
+# 2) Shape test: did ONE report date draw from unusually OLD event dates?
+#    (complements the volume screen; `at` must be an observed report date)
+batch_shape_test(tn, at = as.Date("2010-05-24"),
+                 permute = "items")   # use "blocks" if counts are overdispersed
+
+# 3) Validate a detector: plant a known batch and check it is recovered
+planted <- simulate_batch(tn, closed_dates = as.Date(c("2010-05-10","2010-05-17")))
+batch_test(planted)
+```
+
+- **`batch_test()`** — the transport test conditions on the window total, so its
+  size does **not** depend on the unknown incidence; the local baseline is refit
+  from report dates *outside* each candidate window (Siegel's repeated median,
+  robust to the episode). `null_model = "auto"` is **overdispersion-aware**: it uses
+  the exact Poisson null only when non-negative counts show no overdispersion
+  (dispersion `<= 1.5`) and otherwise the dispersion-corrected robust null (always
+  robust for signed count-cumulative increments). The exact Poisson null
+  over-flags on overdispersed surveillance counts, so prefer the default; add
+  `period = 7` to absorb a weekly reporting cadence. BH-adjusted p-values in
+  `p_transport_bh`. Works on `count-cumulative` data too (then `reported` are signed
+  increments and can be negative). **`period` AUTO-RESOLVED from temporal effects
+  (v0.13.0, `.batch_resolve_period`): a day_of_week effect -> `period=7`, week_of_year
+  -> `period=52` (reads `get_temporal_effects(x)` list; each spec is `list(t_effects=<S7>,
+  date_type,...)`, access via `spec$t_effects@day_of_week`). User `period` wins (informs on
+  disagreement). Daily data + no temporal effect + no period -> `cli_inform` suggests period=7.**
+- **`batch_shape_test()`** — a one-sided rank-sum on the delays at `at` vs
+  neighbouring report dates; **exactly distribution-free** when incidence is
+  locally log-linear and counts are Poisson. `permute = "blocks"` for overdispersed
+  (NB) counts; `guard` omits dates adjacent to `at` (a batch's own deficit sits
+  there).
+- **`simulate_batch()`** — closes reporting on `closed_dates` and re-stamps those
+  reports to the next open date; returns a `tbl_now`. For testing/teaching.
+- **`diagnostic_plot(x, panels=, by=)`** — a gallery to *see* the reporting process.
+  LAYOUT: **5 panels in TWO COLUMNS** (`wrap_plots(ncol=2, byrow=FALSE)` column-major:
+  col1=reporting/triangle/profiles, col2=delay_drift/transport, 1 empty cell).
+  `panels` (default `"all"`, exactly these 5): `"reporting"` (reports/report date; y-axis
+  CAPPED at 99th pct via coord_cartesian when a dump dwarfs the curve — covid_us has a
+  1.8M-report dump 2021-12-06 vs 21k median), `"triangle"` (event x delay; muted blue=reported
+  zero, blank=not yet reportable, FULL-calendar event axis; THIRD REPORT-DATE AXIS = dashed 45°
+  iso-report diagonals labelled via `report_ticks=6`; `mark_batches=0` optional), `"profiles"`
+  (one delay curve per date, SINGLE colour fixed alpha), `"delay_drift"`, `"transport"`
+  (`transport_discriminant()` scatter, y LIMITED to batch region via `coord_cartesian(ylim=c(y_lo,y_hi))`
+  WITHOUT clip="off" — clip="off" BLED into panel below, default clip does not). Single panel →
+  plain plot; facetted by stratum; `by="event"` switches profiles; `...` routed. Each panel =
+  stand-alone exported fn (`plot_reporting_process`, `plot_reporting_triangle`, `plot_delay_profiles`,
+  `plot_delay_drift`, `plot_transport_discriminant`). Reporting process = RED, epidemic process = GREEN
+  (`.diag_build_process` fill keyed on axis). **`plot_epidemic_process(x)`** now EXPORTED (green bars,
+  cases by event date; mirror of reporting process). **`plot_creation_transport`** MOVED to devel
+  (`devel/conservation_extras.R`, uses `tbl.now:::` for internals) — NOT exported.
+  **`plot_reporting_v(x)`** (exported, R/v_triangle.R, NOT in gallery) = the reporting "V" — SAME data
+  as plot_reporting_triangle ROTATED 45° (y=report date, left arm=event date, right arm=delay reading
+  0 out), batch = HORIZONTAL slice (diagonal in the square triangle), whole observable triangle filled
+  w/ pale-blue zeros; coords RELATIVE to ev_min (epoch nums wreck coord_fixed); arm ticks/labels/titles
+  all OUTSIDE each arm, perpendicular.
+  All panels carry grey captions. **EVERY plot fn takes `plotly=TRUE`** (→ interactive
+  plotly widget via `.as_plotly`/`.combine_panels` in R/plotly_support.R; plotly in Suggests).
+  **`plot_scalogram(x, type=c("reporting","epidemic"), windowrad=NULL)`** EXPORTED (R/scalogram.R) —
+  window-inner wavelet scalogram via `wavScalogram::windowed_scalogram(sqrt(n), border_effects="INNER",
+  energy_density=TRUE)`: computed from OBSERVED DATA ONLY, NO border padding (honest at the "now" edge;
+  the FFT/periodic scalogram fabricates edge structure). Batch = bright SHORT-PERIOD ridge in reporting
+  (red) that epidemic (green) lacks. **Analysed on the INTEGER unit grid: `dt=1` (NOT dt=unit_days) so periods come out in the tbl's
+  units (weeks/days) and `tcentral` are grid INDICES; passing dt=unit_days made tcentral come back
+  in DAY-units (range 63-1043 on a 157-week grid) → over-ran the date grid, dropped ~29k cells,
+  scalogram looked empty on weekly denguedat. y-label `sprintf("Period (%s)", report_unit)`. ALSO
+  for LONG series wavScalogram SUBSAMPLES tcentral (e.g. every 5th step, 197 of 1095) → drawing on the
+  Date axis with `geom_tile(width=unit_days)` left 4-in-5 columns BLANK. FIX: plot x on the UNIFORM
+  INTEGER window index `df$xi=seq_along(dates)` with `geom_tile(width=1)`, then RELABEL the x-axis with
+  dates via `xpos=approx(as.numeric(dates), seq_along(dates), xout=as.numeric(pretty(dates)))$y` +
+  `scale_x_continuous(breaks=xpos, labels=format(date_breaks))`. Works on full/filtered/daily.**
+  DEFAULTS `wname="PAUL"` (sharper batch localisation), `windowrad=1`, `format="%d/%b/%y"` (x-axis date
+  fmt arg). Outside cone = `panel.background=element_rect(fill="gray10")` (NOT na.value); NO subtitle/caption.
+  Devel `plot_scalogram_difference(x)` (`devel/wavscalogram_explore.R`) = log2(reporting_scalogram) −
+  log2(epidemic_scalogram) (each per-period-normalised window-inner PAUL), `scale_fill_gradient2` green↔red,
+  batch = red short-period stripe. NOT wavScalogram::wsd() (its ratio didn't isolate the batch).
+  GOTCHAS (all real, hit during build): (1) `ws$tcentral` are time
+  INDICES not dates → map `s$date[round(ws$tcentral)]`; (2) plot on `logp=log2(period)` (geometric scales →
+  regular grid) NOT raw period; (3) `geom_raster` renders BLANK on the ragged INNER cone AND `geom_tile`
+  auto-height COLLAPSES to a thin line (dense scales) → use `geom_tile(width=unit_days, height=hstep)`
+  with explicit `hstep=median(diff(sort(unique(log2(periods)))))`; (4) normalise per period (÷ per-period
+  median) so the short-period burst shows over the epidemic trend. Result = the INNER dome cone (blank
+  outside reliable region) with the ridge inside. The old devel `scalogram_plot(x)` 2×2 is SUPERSEDED.
+  **MOVED TO devel (`devel/conservation_extras.R`, uses `tbl.now:::`, NOT in package):**
+  `plot_creation_transport` (2 stacked panels transport red / creation green, signed-log),
+  `plot_cumulative_backlog`, `plot_reporting_lag` (band floored at 0), `plot_conservation_dashboard`
+  (=ct overlay + batch-score `transport−creation`; user found backlog/lag/dashboard/residual not worth
+  the gallery space — batch score conflates holds+big-dumps so unreliable). Other devel:
+  `plot_rotated_triangle` (`devel/rotated_triangle.R`), `plot_ternary_reporting`/`plot_ternary_transport`
+  (`devel/ternary_plots.R`), `plot_transport_timeline`/`plot_delay_band_ternary` (`devel/removed_plots.R`).
+  IMPORTANT gotcha in `batch_test()`'s classification: `hold_or_deletion` OVERRIDES
+  `batch`/`surge` whenever creation_z < -z_star, REGARDLESS of transport_z — so the
+  most extreme top-left points are holds, not batches. Also: `plot_transport_discriminant`
+  colours RED only BH-confirmed batches (`td$batch`), NOT the raw per-point
+  `classification` (which over-identifies ~10-20% at alpha by construction).
+- **`transport_discriminant(x, lookback=, period=, alpha=)`** — the plane behind
+  `batch_test()`: per report date the deficit `W` (transport) and `Δ = S − M`
+  (creation), standardised as `transport_z` / `creation_z`, plus the quadrant
+  `classification`. A batch = high transport, ~0 creation (top-left). **DEFAULT
+  lookback = 7L** (changed from 3L, 2026-07-10) for batch_test/transport_discriminant.
+  Discriminant shaded region labelled "Potential batch region";
+  confirmed batches get bold white-on-red date labels (y_hi has +18% headroom so labels
+  aren't clipped). Devel plot_creation_transport titles "(a batch)"/"(a surge)" — NO question marks.
+  > TEMPORAL-EFFECT FINDING (`devel/temporal_baseline_explore.R`): the day-to-day squiggle in
+  > the creation/transport SCORES is NOT a weekday effect. Raw covid_us daily reports have a real
+  > ~25% weekly pattern (Sun 0.73×, Wed 1.22×) BUT the scores already remove it (weekly R²≈0 with
+  > or without period=7; transport_z lag-1 AC≈0.92, no zig-zag). The squiggle is overdispersion
+  > noise seen through overlapping windows. Explored trend×weekday (=period=7, best for daily
+  > residual 0.011→0.004), trend+weekday, and the average — none reaches the scores. period=7
+  > still worth passing for the daily reporting views.
+  > The conservation-law time-series monitors — `plot_cumulative_backlog` (detrended
+  > cumulative residual; a batch is a V, a run of batches a staircase),
+  > `plot_conservation_dashboard` (3 standardised series), `plot_reporting_lag` (mean
+  > delay vs a local band) — are clearest when batches are LARGE relative to the noise
+  > (e.g. `covid_us`, where they read beautifully). On small overdispersed counts they
+  > can be noisy — there the transport-discriminant scatter + `batch_test()` are the
+  > robust batch story. All three mark only BH-confirmed batches in red.
+  - **`covid_us`** dataset — CDC COVID-19 case surveillance, 2020-2021 events aggregated
+    event×report (no strata), built to DEMONSTRATE batch reporting (huge right-skewed
+    delay; big 2022 backlog dumps at 2022-01-21 ~25× and 2022-05-25 ~15×). See the
+    "Finding batch reporting…" article + `data-raw/covid_us.R` (duckdb over the 14GB source).
+
+> The older `detect_report_batches()` / `plot_report_batches()` are **removed** —
+> use `batch_test()` + `batch_shape_test()`.
+
+---
+
+## Skill: coerce a `tbl_now` to a plain tibble / data.frame
+
+`as_tibble()` (re-exported, so it works after `library(tbl.now)`) and
+`as.data.frame()` drop the `tbl_now` class and metadata:
+
+```r
+as_tibble(tn)                                    # plain tibble; spec stays LAZY
+as_tibble(tn, compute_temporal_effects = TRUE)   # materialise effect cols first
+as.data.frame(tn, compute_temporal_effects = TRUE)
+```
+
+The default is **lazy** on purpose (dplyr uses these coercions internally as cheap
+declassers). Pass `compute_temporal_effects = TRUE` to get a modelling-ready frame
+with the holiday / Fourier / calendar columns filled in; the input `tbl_now` is
+left unchanged.
 
 ---
 
@@ -375,7 +635,7 @@ so a converted object round-trips straight back.
 | Package | from | to | Mapping |
 |---------|:---:|:---:|---------|
 | epinowcast | ✅ | ✅ | `reference_date`/`report_date`/`confirm` ↔ count-cumulative. `from` accepts the raw long input, a preprocessed `enw_preprocess_data` object, **or** a fitted `epinowcast` object (grouping auto-detected). `to` builds the preprocessed `enw_preprocess_data` object (or the completed-input `data.table` with `preprocess = FALSE`) |
-| baselinenowcast | ✅ | ✅ | long df **or** reporting-triangle matrix ↔ count-incidence; `to` has `format = c("long","matrix")` |
+| baselinenowcast | ✅ | ✅ | long df **or** reporting-triangle matrix ↔ count-incidence; `to` has `format = c("matrix","long")` — **`"matrix"` is the default**. `to`'s `delays_unit` defaults to `NULL` and is **inferred** from the object units (equal event/report units of `"days"`/`"weeks"`) for the matrix format, else supply it. Refuses `count-cumulative` input (would need to de-accumulate to possibly-negative increments) |
 | EpiNow2 | ❌ | ✅ | `to` only. `model = "estimate_infections"` (default) → a single `date`/`confirm` series for `estimate_infections()`/`epinow()`. `model = "estimate_truncation"` → a list of `date`/`confirm` snapshots (one per report date) for `estimate_truncation()`, which *does* use the report dimension |
 | data.table | ✅ | ✅ | `tbl_now_from_data_table()` / `tbl_now_to_data_table()` (underscores) |
 | epidist | ✅ | ✅ | epidist 0.4.0 interval-censored dates; `format = "linelist"` uses lower bounds as dates, `format = "interval"` attaches upper bounds as covariates |
@@ -447,6 +707,17 @@ get_data_type(x)                          # "linelist"|"count-incidence"|"count-
 get_temporal_effects(x)                   # list of lazy specs
 get_temporal_effect_cols(x)               # computed column names
 get_initial_reported_cases(x) / get_latest_reported_cases(x)
+get_nth_reported_cases(x, delay)          # cumulative count within a given delay
+```
+
+## Reference: diagnostics & batches (all experimental)
+
+```r
+autoplot(x, panels =, by_strata =)        # multi-panel diagnostic (patchwork)
+plot_delay_drift(x) / test_delay_drift(x) / test_delay_changepoint(x)
+batch_test(x) / batch_shape_test(x, at =) / simulate_batch(x, closed_dates =)
+transport_discriminant(x)                 # deficit W vs discriminant Delta, per report date
+diagnostic_plot(x, panels =, by =)        # reporting-process gallery (reporting/triangle/profiles/delay_drift/transport)
 ```
 
 ## Reference: package data
@@ -464,8 +735,18 @@ data(mpoxdat)     # mpox count-incidence data (has a `race` stratum + `n` counts
 - `get_event_date()` returns the **column name**, not the dates.
 - `get_temporal_effects()` returns **specs**; use `get_temporal_effect_cols()` for column names.
 - `compute_temporal_effects()` before `add_temporal_effects()` is a **no-op**.
-- `to_count()` only aggregates **forward** (linelist→incidence→cumulative); it cannot reverse.
+- `to_count()` converts between the two count types **both ways** (incidence↔cumulative);
+  `cumulative→incidence` de-accumulates and can yield **negative** increments. It can
+  never rebuild a `linelist`.
+- Undeclared extra columns are **summed away** by `to_count()`, not plotted per-value —
+  a boxplot with spread on *daily* data is the days within a week, not a hidden stratum.
 - Removing a protected column **downgrades to a tibble** — check `is_tbl_now()` after heavy dplyr.
 - `rowwise()` is **unsupported**.
 - For weekly data with fractional `.delay`, use `align_weeks`.
 - Count data types **require** a `case_count` column.
+- `batch_shape_test(at =)` needs `at` to be an **observed report date**; the volume
+  screen `batch_test()` scans them all.
+- `test_delay_drift()` needs the `modifiedmk` package (a Suggests); the batch and
+  drift diagnostics all print an experimental warning.
+- `detect_report_batches()` / `plot_report_batches()` were **removed** —
+  use `batch_test()` + `batch_shape_test()`.
