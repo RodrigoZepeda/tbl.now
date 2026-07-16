@@ -111,7 +111,7 @@ plot_reporting_process(tn)
 ## The reporting process
 
 This plot, which we have previously shown, shows how many reports
-arrived by date. Barches or surges might correspond to spikes towering
+arrived by date. Batches or surges might correspond to spikes towering
 over their neighbours.
 
 ``` r
@@ -195,7 +195,7 @@ can be seen more easily.
 plot_reporting_v(ideal)
 ```
 
-![](batch-reporting_files/figure-html/unnamed-chunk-10-1.png)
+![](batch-reporting_files/figure-html/v-sim-1.png)
 
 On covid the V opens into a full wedge; the potential batches are the
 faint horizontal streaks in June 2020.
@@ -205,23 +205,24 @@ faint horizontal streaks in June 2020.
 plot_reporting_v(tn)
 ```
 
-![](batch-reporting_files/figure-html/v-covid2-1.png)
+![](batch-reporting_files/figure-html/v-covid-1.png)
 
 ## Scalograms
 
 The scalogram functions are **very experimental**. We have yet to
-confirm they work for all batch cases. Feel free to skip to the
-@sec-transport
+confirm they work for all batch cases. Feel free to skip to the section
+on
+[transport](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html#sec-transport)
 
 Scalograms show reductions of cases. For this example, consider the
 following simulated reporting process:
 
-![](batch-reporting_files/figure-html/unnamed-chunk-11-1.png)
+![](batch-reporting_files/figure-html/unnamed-chunk-10-1.png)
 
 Its scalogram shows the decreases in the reporting cases as vertical
 streaks aligned with the minimal date of this decrease:
 
-![](batch-reporting_files/figure-html/unnamed-chunk-12-1.png)
+![](batch-reporting_files/figure-html/unnamed-chunk-11-1.png)
 
 One can see the same vertical streaks in the previous reporting process
 we had been working on corresponding to the dip before the batch:
@@ -231,7 +232,7 @@ we had been working on corresponding to the dip before the batch:
 plot_scalogram(ideal)
 ```
 
-![](batch-reporting_files/figure-html/unnamed-chunk-14-1.png)
+![](batch-reporting_files/figure-html/unnamed-chunk-13-1.png)
 
 and again the same June dates being the most identified with additional
 dates having less of a clear pattern:
@@ -241,7 +242,7 @@ dates having less of a clear pattern:
 plot_scalogram(tn)
 ```
 
-![](batch-reporting_files/figure-html/unnamed-chunk-16-1.png)
+![](batch-reporting_files/figure-html/unnamed-chunk-15-1.png)
 
 ## Transport vs creation
 
@@ -256,8 +257,8 @@ incoming each day. Three things can change the number of reports:
 - a **surge** – an increase in the epidemic process: more people falling
   ill and being reported.
 
-We simulate one of each in a clean epidemic and colour every day by
-which it is (grey = an ordinary day):
+We simulate one of each in a clean epidemic and colour every day by its
+type (grey = ordinary day):
 
 ![](batch-reporting_files/figure-html/tut-data-1.png)
 
@@ -279,14 +280,14 @@ three disturbances:
 
 Identifying any bar with its dot we can conclude:
 
-- A **batch (backlog release, red)** shoots **up** – the days before
-  were depleted (high transport) but not as many new cases were created
-  (right);
+- A **batch (backlog release, red)** shoots **up and right** – the days
+  before were depleted (high transport) but not as many new cases were
+  created (right);
 - A **surge (green)** shoots **right** – cases genuinely appeared (high
   creation), with apparent preceding hole;
-- A **hold (blue)** drifts **up and to the left** – reports have
-  apparently gone missing (transport rising) while the window has *lost*
-  cases (creation negative).
+- A **hold (blue)** drifts **left** – reports have apparently gone
+  missing (transport rising) while the window has *lost* cases (creation
+  negative).
 
 Ordinary days (grey) sit in the cloud through the middle. That is the
 whole idea behind
@@ -360,6 +361,8 @@ batch_test(tn, period = 7) %>%
     #> 2 2020-06-20     33784   17009.  21427.  -4652.     0.000102   TRUE 
     #> 3 2020-03-24     13532    4712.  11449.  -2629.     0.0000138  TRUE
 
+The sensitivity of the batch flag can be adapted with `alpha`.
+
 ## Delay changes
 
 The reporting delay might change through time. Here we show two
@@ -394,7 +397,9 @@ and
 [`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md)
 test for a gradual or abrupt changes in the delay. We can see, for
 example, that it correctly identifies the drift in the COVID-19 dataset
-that is not present in the ideal example:
+both for the median (trend) and the spread (see the quantiles getting
+tighter). On the ideal example this doesn’t happen so it does not detect
+a drift:
 
 ``` r
 
@@ -412,9 +417,9 @@ test_delay_drift(ideal)
 #> 2 all    spread   100 -0.0204          0    -0.305   0.760 hamed-rao FALSE
 ```
 
-while it also finds the June change-point in the COVID-19 delay
-distribution which fails to be sustained for long enought to be detected
-in the ideal example:
+The change-point function also detects that by April the COVID-19 delay
+distribution has completely changed from before. In the case of the
+ideal example the change is not long enough to be detected:
 
 ``` r
 

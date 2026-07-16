@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,6 +54,11 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.13.1" id="tblnow-0131">tbl.now 0.13.1<a class="anchor" aria-label="anchor" href="#tblnow-0131"></a></h2>
+<ul><li>Fixed style in the batch reporting vignette</li>
+<li>Improved the axis title position in the v triangle to better visualize the dates</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.13.0" id="tblnow-0130">tbl.now 0.13.0<a class="anchor" aria-label="anchor" href="#tblnow-0130"></a></h2>
 <ul><li><p>Bug fix: <code><a href="../reference/batch_shape_test.html">batch_shape_test()</a></code> no longer errors (“missing value where TRUE/FALSE needed”) on large count data. The standardised rank-sum expands counts to one value per item, so the group sizes could exceed the 32-bit integer range and their product overflowed to <code>NA</code>; the group sizes are now computed as doubles.</p></li>

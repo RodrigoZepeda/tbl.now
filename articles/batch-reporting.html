@@ -41,7 +41,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -187,7 +187,7 @@ report-date perspectives:</p>
 <h2 id="the-reporting-process">The reporting process<a class="anchor" aria-label="anchor" href="#the-reporting-process"></a>
 </h2>
 <p>This plot, which we have previously shown, shows how many reports
-arrived by date. Barches or surges might correspond to spikes towering
+arrived by date. Batches or surges might correspond to spikes towering
 over their neighbours.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_reporting_process.html">plot_reporting_process</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span></code></pre></div>
@@ -255,12 +255,12 @@ are horizontal slices where the reporting dates can be seen more
 easily.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_reporting_v.html">plot_reporting_v</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span></code></pre></div>
-<p><img src="batch-reporting_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="" width="1200"></p>
+<p><img src="batch-reporting_files/figure-html/v-sim-1.png" class="r-plt" alt="" width="1200"></p>
 <p>On covid the V opens into a full wedge; the potential batches are the
 faint horizontal streaks in June 2020.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_reporting_v.html">plot_reporting_v</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span></code></pre></div>
-<p><img src="batch-reporting_files/figure-html/v-covid2-1.png" class="r-plt" alt="" width="1200"></p>
+<p><img src="batch-reporting_files/figure-html/v-covid-1.png" class="r-plt" alt="" width="1200"></p>
 </div>
 </div>
 <div class="section level2">
@@ -269,25 +269,25 @@ faint horizontal streaks in June 2020.</p>
 <div class="alert alert-warning">
 <p>The scalogram functions are <strong>very experimental</strong>. We
 have yet to confirm they work for all batch cases. Feel free to skip to
-the <span class="citation">@sec-transport</span></p>
+the section on <a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html#sec-transport">transport</a></p>
 </div>
 <p>Scalograms show reductions of cases. For this example, consider the
 following simulated reporting process:</p>
-<p><img src="batch-reporting_files/figure-html/unnamed-chunk-11-1.png" class="r-plt" alt="" width="1200"></p>
+<p><img src="batch-reporting_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="" width="1200"></p>
 <p>Its scalogram shows the decreases in the reporting cases as vertical
 streaks aligned with the minimal date of this decrease:</p>
-<p><img src="batch-reporting_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="" width="1200"></p>
+<p><img src="batch-reporting_files/figure-html/unnamed-chunk-11-1.png" class="r-plt" alt="" width="1200"></p>
 <p>One can see the same vertical streaks in the previous reporting
 process we had been working on corresponding to the dip before the
 batch:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_scalogram.html">plot_scalogram</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span></code></pre></div>
-<p><img src="batch-reporting_files/figure-html/unnamed-chunk-14-1.png" class="r-plt" alt="" width="1200"></p>
+<p><img src="batch-reporting_files/figure-html/unnamed-chunk-13-1.png" class="r-plt" alt="" width="1200"></p>
 <p>and again the same June dates being the most identified with
 additional dates having less of a clear pattern:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_scalogram.html">plot_scalogram</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span></code></pre></div>
-<p><img src="batch-reporting_files/figure-html/unnamed-chunk-16-1.png" class="r-plt" alt="" width="1200"></p>
+<p><img src="batch-reporting_files/figure-html/unnamed-chunk-15-1.png" class="r-plt" alt="" width="1200"></p>
 </div>
 <div class="section level2">
 <h2 id="sec-transport">Transport vs creation<a class="anchor" aria-label="anchor" href="#sec-transport"></a>
@@ -305,7 +305,7 @@ released, all at once;</li>
 people falling ill and being reported.</li>
 </ul>
 <p>We simulate one of each in a clean epidemic and colour every day by
-which it is (grey = an ordinary day):</p>
+its type (grey = ordinary day):</p>
 <p><img src="batch-reporting_files/figure-html/tut-data-1.png" class="r-plt" alt="" width="1200"></p>
 <p>In the previous plot, every bar is one report date. The
 <strong>batch</strong> towers where the held reports land together; the
@@ -326,15 +326,15 @@ the three disturbances:</p>
 <p><img src="batch-reporting_files/figure-html/tut-plane-1.png" class="r-plt" alt="" width="960"></p>
 <p>Identifying any bar with its dot we can conclude:</p>
 <ul>
-<li>A <strong>batch (backlog release, red)</strong> shoots
-<strong>up</strong> – the days before were depleted (high transport) but
+<li>A <strong>batch (backlog release, red)</strong> shoots <strong>up
+and right</strong> – the days before were depleted (high transport) but
 not as many new cases were created (right);</li>
 <li>A <strong>surge (green)</strong> shoots <strong>right</strong> –
 cases genuinely appeared (high creation), with apparent preceding
 hole;</li>
-<li>A <strong>hold (blue)</strong> drifts <strong>up and to the
-left</strong> – reports have apparently gone missing (transport rising)
-while the window has <em>lost</em> cases (creation negative).</li>
+<li>A <strong>hold (blue)</strong> drifts <strong>left</strong> –
+reports have apparently gone missing (transport rising) while the window
+has <em>lost</em> cases (creation negative).</li>
 </ul>
 <p>Ordinary days (grey) sit in the cloud through the middle. That is the
 whole idea behind <code><a href="../reference/transport_discriminant.html">transport_discriminant()</a></code> and
@@ -386,6 +386,8 @@ spring/summer-2020 releases – each reported far more than its neighbours
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-06-10    <span style="text-decoration: underline;">162</span>150   <span style="text-decoration: underline;">16</span>713.  <span style="text-decoration: underline;">25</span>372. <span style="text-decoration: underline;">120</span>065.     0.000<span style="text-decoration: underline;">002</span>96 TRUE </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-06-20     <span style="text-decoration: underline;">33</span>784   <span style="text-decoration: underline;">17</span>009.  <span style="text-decoration: underline;">21</span>427.  -<span style="color: #BB0000; text-decoration: underline;">4</span><span style="color: #BB0000;">652.</span>     0.000<span style="text-decoration: underline;">102</span>   TRUE </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-03-24     <span style="text-decoration: underline;">13</span>532    <span style="text-decoration: underline;">4</span>712.  <span style="text-decoration: underline;">11</span>449.  -<span style="color: #BB0000; text-decoration: underline;">2</span><span style="color: #BB0000;">629.</span>     0.000<span style="text-decoration: underline;">013</span>8  TRUE</span></span></code></pre>
+<p>The sensitivity of the batch flag can be adapted with
+<code>alpha</code>.</p>
 </div>
 </div>
 <div class="section level2">
@@ -411,8 +413,9 @@ trend that decreases the delay in time:</p>
 <p>The functions <code><a href="../reference/test_delay_drift.html">test_delay_drift()</a></code> and
 <code><a href="../reference/test_delay_changepoint.html">test_delay_changepoint()</a></code> test for a gradual or abrupt
 changes in the delay. We can see, for example, that it correctly
-identifies the drift in the COVID-19 dataset that is not present in the
-ideal example:</p>
+identifies the drift in the COVID-19 dataset both for the median (trend)
+and the spread (see the quantiles getting tighter). On the ideal example
+this doesn’t happen so it does not detect a drift:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/test_delay_drift.html">test_delay_drift</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 9</span></span></span>
@@ -426,9 +429,9 @@ ideal example:</p>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all    median   100  0.012<span style="text-decoration: underline;">9</span>          0     0.151   0.880 hamed-rao FALSE</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> all    spread   100 -<span style="color: #BB0000;">0.020</span><span style="color: #BB0000; text-decoration: underline;">4</span>          0    -<span style="color: #BB0000;">0.305</span>   0.760 hamed-rao FALSE</span></span></code></pre></div>
-<p>while it also finds the June change-point in the COVID-19 delay
-distribution which fails to be sustained for long enought to be detected
-in the ideal example:</p>
+<p>The change-point function also detects that by April the COVID-19
+delay distribution has completely changed from before. In the case of
+the ideal example the change is not long enough to be detected:</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/test_delay_changepoint.html">test_delay_changepoint</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 10</span></span></span>
