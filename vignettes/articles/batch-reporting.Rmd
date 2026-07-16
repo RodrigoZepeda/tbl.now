@@ -229,8 +229,7 @@ plot_epidemic_process(tn) + plot_reporting_process(tn)
 
 ## The reporting process
 
-This plot, which we have previously shown, shows how many reports arrived by date. Barches or surges might correspond
-to spikes towering over their neighbours. 
+This plot, which we have previously shown, shows how many reports arrived by date. Batches or surges might correspond to spikes towering over their neighbours. 
 
 ```{r, fig.cap="Reporting process of the simulated data"}
 plot_reporting_process(ideal)
@@ -288,29 +287,23 @@ so that the report date is the main vertical axis.  Here batches
 that were diagonals in the previous interpretation are horizontal slices 
 where the reporting dates can be seen more easily.
 
-```{r v-sim, eval = FALSE}
+```{r v-sim, eval = TRUE}
 plot_reporting_v(ideal)
 ```
-```{r, echo = FALSE}
-plot_reporting_v(ideal) + plot_reporting_process(ideal)
-```
+
 
 On covid the V opens into a full wedge; the potential batches are the faint horizontal
 streaks in June 2020.
 
-```{r v-covid, eval = FALSE}
+```{r v-covid, eval = TRUE}
 plot_reporting_v(tn)
 ```
 
-```{r v-covid2, echo = FALSE}
-plot_reporting_v(tn) + plot_reporting_process(tn)
-```
 
 ## Scalograms
 
 ::: {.alert .alert-warning}
-The scalogram functions are **very experimental**. We have yet to confirm they work for all batch cases. Feel free to skip
-to the @sec-transport
+The scalogram functions are **very experimental**. We have yet to confirm they work for all batch cases. Feel free to skip to the section on [transport](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html#sec-transport)
 :::
 
 Scalograms show reductions of cases. For this example, consider the following simulated reporting  process:
@@ -368,8 +361,8 @@ each day. Three things can change the number of reports:
 - a **batch** -- the day the backlog (hold) is finally released, all at once;
 - a **surge** -- an increase in the epidemic process: more people falling ill and being reported.
 
-We simulate one of each in a clean epidemic and colour every day by which it is (grey
-= an ordinary day):
+We simulate one of each in a clean epidemic and colour every day by its type (grey
+= ordinary day):
 
 ```{r tut-data, echo = FALSE}
 tut_cols <- c(Normal = "grey72", Hold = "#4E79A7",
@@ -454,11 +447,11 @@ ggplot(scores, aes(creation_z, transport_z, colour = kind)) +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.14))) +
   scale_x_continuous(expand = expansion(mult = 0.09)) +
   annotate("text", x = 8, y = ty + 3, size = 3, fontface = "bold",
-           colour = tut_cols[["Batch"]], label = "Backlog release: shoots UP and RIGHT") +
-  annotate("text", x = rx * 0.72, y = 4, size = 3, fontface = "bold",
-           colour = tut_cols[["Surge"]], label = "Real surge:\nshoots RIGHT") +
-  annotate("text", x = lx * 0.55, y = 21, size = 3, fontface = "bold",
-           colour = tut_cols[["Hold"]], label = "Hold:\ngoes UP and to the LEFT") +
+           colour = tut_cols[["Batch"]], label = "Batch: shoots UP and RIGHT") +
+  annotate("text", x = 20, y = -5, size = 3, fontface = "bold",
+           colour = tut_cols[["Surge"]], label = "Surge:\nshoots RIGHT") +
+  annotate("text", x = lx * 0.55, y = -10, size = 3, fontface = "bold",
+           colour = tut_cols[["Hold"]], label = "Hold:\ngoes goes DOWN") +
   labs(x = "Creation score",
        y = "Transport score",
        title = "2. Where each day lands in the transport-vs-creation plane") +
@@ -468,11 +461,11 @@ ggplot(scores, aes(creation_z, transport_z, colour = kind)) +
 
 Identifying any bar with its dot we can conclude:
 
-- A **batch (backlog release, red)** shoots **up** -- the days before were
+- A **batch (backlog release, red)** shoots **up and right** -- the days before were
   depleted (high transport) but not as many new cases were created (right);
 - A **surge (green)** shoots **right** -- cases genuinely appeared (high
   creation), with apparent preceding hole;
-- A **hold (blue)** drifts **up and to the left** -- reports have apparently gone
+- A **hold (blue)** drifts **left** -- reports have apparently gone
 missing (transport rising) while the window has *lost* cases (creation negative).
 
 Ordinary days (grey) sit in the cloud through the middle. That is the whole idea
@@ -540,6 +533,8 @@ batch_test(tn, period = 7) %>%
   arrange(desc(reported))
 ```
 
+The sensitivity of the batch flag can be adapted with `alpha`. 
+
 
 ## Delay changes 
 
@@ -564,14 +559,14 @@ plot_delay_drift(tn)
 ```
 
 The functions `test_delay_drift()` and `test_delay_changepoint()` test 
-for a gradual or abrupt changes in the delay. We can see, for example, that it correctly identifies the drift in the COVID-19 dataset that is not present in the ideal example:
+for a gradual or abrupt changes in the delay. We can see, for example, that it correctly identifies the drift in the COVID-19 dataset both for the median (trend) and the spread (see the quantiles getting tighter). On the ideal example this doesn't happen so it does not detect a drift:
 
 ```{r, warning=FALSE}
 test_delay_drift(tn)
 test_delay_drift(ideal)
 ```
 
-while it also finds the June change-point in the COVID-19 delay distribution which fails to be sustained for long enought to be detected in the ideal example: 
+The change-point function also detects that by April the COVID-19 delay distribution has completely changed from before. In the case of the ideal example the change is not  long enough to be detected: 
 
 ```{r, warning=FALSE}
 test_delay_changepoint(tn)

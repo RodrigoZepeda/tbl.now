@@ -1,3 +1,8 @@
+# tbl.now 0.13.1
+
+* Fixed style in the batch reporting vignette
+* Improved the axis title position in the v triangle to better visualize the dates
+
 # tbl.now 0.13.0
 
 * Bug fix: `batch_shape_test()` no longer errors ("missing value where TRUE/FALSE

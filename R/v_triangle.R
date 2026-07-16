@@ -117,8 +117,8 @@ plot_reporting_v <- function(x, max_delay = NULL, point_size = NULL,
 
   p <- ggplot2::ggplot(grid, ggplot2::aes(.data$x, .data$y)) +
     ggplot2::geom_hline(yintercept = r_rel, colour = "grey92", linewidth = 0.3) +
-    ggplot2::geom_point(data = zeros, colour = .DIAG_ZERO_COLOUR, shape = 25, size = psize) +
-    ggplot2::geom_point(data = positive, ggplot2::aes(colour = .data$n), shape = 25, size = psize) +
+    ggplot2::geom_point(data = zeros, colour = .DIAG_ZERO_COLOUR, shape = 12, size = psize) +
+    ggplot2::geom_point(data = positive, ggplot2::aes(colour = .data$n), shape = 12, size = psize) +
     ggplot2::scale_colour_gradient(name = "reports", low = "grey80",
                                    high = palette[["accent_red"]], transform = "sqrt",
                                    labels = scales::label_comma()) +
@@ -134,11 +134,11 @@ plot_reporting_v <- function(x, max_delay = NULL, point_size = NULL,
                        angle = 45, hjust = 1, size = 2.6, colour = "grey30") +
     ggplot2::geom_text(data = dl_ticks, ggplot2::aes(.data$lx, .data$ly, label = .data$lab),
                        angle = -45, hjust = 0, size = 2.6, colour = "grey30") +
-    ggplot2::annotate("text", x = ev_title[["x"]], y = ev_title[["y"]],
-                      label = "event date", angle = -45, fontface = "bold",
+    ggplot2::annotate("text", x = ev_title[["x"]], y = e_top, angle = -45,
+                      label = "event date", fontface = "bold",
                       colour = "grey25", size = 3.4) +
-    ggplot2::annotate("text", x = dl_title[["x"]], y = dl_title[["y"]],
-                      label = "delay", angle = 45, fontface = "bold",
+    ggplot2::annotate("text", x = dl_title[["x"]], y = e_top, angle = 45,
+                      label = "delay", fontface = "bold",
                       colour = "grey25", size = 3.4) +
     ggplot2::scale_y_continuous(breaks = r_rel, labels = format(r_breaks)) +
     ggplot2::coord_fixed(ratio = 1, clip = "off") +
@@ -149,6 +149,7 @@ plot_reporting_v <- function(x, max_delay = NULL, point_size = NULL,
     .tbl_now_theme(palette) +
     ggplot2::theme(axis.text.x = ggplot2::element_blank(),
                    axis.ticks.x = ggplot2::element_blank(),
+                   axis.title.y = ggplot2::element_text(face = "bold"),
                    panel.grid = ggplot2::element_blank(),
                    legend.text = ggplot2::element_text(hjust = 0.5, vjust = 1, angle = 90),
                    legend.box.margin = ggplot2::margin(0, 0, 0, 20),
