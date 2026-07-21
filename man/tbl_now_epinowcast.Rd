@@ -20,6 +20,7 @@ tbl_now_to_epinowcast(
   x,
   ...,
   max_delay = NULL,
+  timestep = NULL,
   missing_reference = FALSE,
   preprocess = TRUE,
   verbose = TRUE,
@@ -46,7 +47,16 @@ for raw input, any column other than \code{reference_date}, \code{report_date} a
 \item{x}{A \code{tbl_now} object.}
 
 \item{max_delay}{Maximum delay (in \code{timestep}s) to use when preprocessing.
-If \code{NULL} it is inferred from the data as \code{max(.delay) + 1}.}
+If \code{NULL} it is inferred from the data as \code{max(.delay) + 1}. Because \code{.delay}
+is measured in the object's report units, this is only in \code{timestep}s when
+\code{timestep} matches those units — which is what the default infers.}
+
+\item{timestep}{The \pkg{epinowcast} timestep: \code{"day"}, \code{"week"}, or a whole
+number of days. \code{NULL} (default) infers it from the object's report units
+(\code{"days"} -> \code{"day"}, \code{"weeks"} -> \code{"week"}), which keeps \code{max_delay} and the
+temporal-effect covariates on the same grid as the data. Other units cannot
+be inferred (\pkg{epinowcast} does not support calendar months) — pass a
+number of days explicitly, e.g. \code{timestep = 28}.}
 
 \item{missing_reference}{Passed to \code{\link[epinowcast:enw_complete_dates]{epinowcast::enw_complete_dates()}}.
 Defaults to \code{FALSE} (unlike epinowcast's own default of \code{TRUE}): a

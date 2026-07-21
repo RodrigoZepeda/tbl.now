@@ -1,3 +1,61 @@
+# tbl.now 0.14.1
+
+* Strata are now carried into the model converters that can use them.
+  `tbl_now_to_epidist()` keeps the strata as data columns (usable as covariates in
+  an epidist formula), and `tbl_now_to_baselinenowcast(format = "long")` keeps them
+  so you can build one reporting triangle per stratum. A single reporting-triangle
+  **matrix** has no strata dimension, so `format = "matrix"` now **pools** the
+  strata with a warning instead of erroring on duplicate cells.
+  `tbl_now_to_epinowcast()` already passed strata as its grouping (`by`).
+* The nowcasting-models article was restructured: each package is now shown
+  **bare** (from `dengue_now`) and then **enriched** — one `dengue_seasonal` object
+  carrying a stratum and temporal effects flows through every converter — so the
+  separate "Carrying delay effects into each model" section is gone. It adds a
+  worked **per-stratum** `baselinenowcast` loop (one triangle per stratum). The
+  \pkg{baselinenowcast} workflow also had a bug: it used the plural
+  `estimate_and_apply_delays()` (which expects a *list* of retrospective triangles)
+  on a single triangle; it now uses the one-call `baselinenowcast()` wrapper for
+  samples and notes the singular `estimate_and_apply_delay()` for a point nowcast.
+* New `plot_reporting_hexamap()`: draws the reporting triangle as an
+  age-period-cohort **hexamap** (Jalal and Burke, 2020). Event date, report date
+  and delay are the cohort, period and age (`report = event + delay`); each cell is
+  a hexagon coloured by its report count, and a **batch** — a single report date —
+  reads as a clean **vertical stripe**. The number of hexagons is bounded by a
+  `max_cells` safety cap (the delay axis is auto-capped, with a message, rather
+  than drawing an unbounded map). Replaces the reporting-V panel in the batch
+  article.
+* Bug fix for issue #33: `autoplot(x, strata = "race", by_strata = TRUE)` no longer errors with
+  a strata passed as column name. 
+* `autoplot()` gained four **holiday panels**, which describe the attached
+  `temporal_effects()` spec rather than the event unit:
+  - `"calendar_holiday"` / `"delay_holiday"` — normalized cases / mean reporting
+    delay by **day type**. The categories follow the spec: a `holidays` calendar
+    plus `weekend = TRUE` gives `Weekday`/`Weekend`/`Holiday`, a calendar alone
+    gives `Non-holiday`/`Holiday`, and a weekend effect alone gives
+    `Weekday`/`Weekend`. A holiday falling on a weekend counts as a holiday.
+  - `"calendar_holiday_lag"` / `"delay_holiday_lag"` — the same, by **position
+    relative to the nearest holiday** (`"2 before"`, `"1 before"`, `"Holiday"`,
+    `"1 after"`, ..., plus `"Other"` as the reference), as asked for by
+    `holiday_lags`. These show exactly the days the `..._holiday_lag_k` /
+    `..._holiday_lead_k` columns flag, so you can check a lag is worth modelling
+    before you model it. A date that is both after one holiday and before the next
+    is attributed to the nearer one, ties going to the "after" side.
+
+* Bug fix: `tbl_now_to_epinowcast()` now passes a `timestep` to \pkg{epinowcast},
+  inferred from the object's report units (`"days"` -> `"day"`, `"weeks"` ->
+  `"week"`) and overridable with the new `timestep` argument. It previously left
+  \pkg{epinowcast} on its `"day"` default whatever the data, so **weekly** data was
+  laid out on a daily grid. 
+
+* Bug fix: `tbl_now_to_epinowcast()` now derives the temporal-effect covariates on
+  \pkg{epinowcast}'s completed date grid instead of carrying them through
+  `enw_complete_dates()`. That function fills the (reference, report) grid and
+  extends the reference axis into the nowcast horizon, but sets every non-schema
+  column to `NA` on the rows it adds — so the covariates previously survived only on
+  the original rows. Becasue the effects are functions of a date alone, they are n
+  ow re-derived from the completed grid and cover every row, 
+  including the recent horizon dates a nowcast has to predict.
+
 # tbl.now 0.14.0
 
 * `holiday_lags` and `weekend_lags` in `temporal_effects()` now accept **negative

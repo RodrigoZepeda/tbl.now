@@ -1428,6 +1428,94 @@ test_that("tbl_now_to_epinowcast carries temporal effects into obs + metareferen
   expect_true(all(temporal_now_cols %in% names(pre$metareference[[1]])))
 })
 
+test_that("temporal effects cover every completed row, including the horizon", {
+  skip_if_not_installed("epinowcast")
+  skip_if_not_installed("almanac")
+
+  # Weekly data with a calendar effect and a Fourier term. `enw_complete_dates()`
+  # fills the (reference, report) grid and extends the reference axis past the
+  # data; the effects are derived from that grid, so no row can be left NA.
+  data(denguedat)
+  dengue <- denguedat[denguedat$onset_week >= as.Date("2009-01-01"), ]
+  weekly <- tbl_now(dengue,
+    event_date = onset_week, report_date = report_week,
+    data_type = "linelist", verbose = FALSE
+  ) |>
+    add_temporal_effects(
+      temporal_effects(week_of_year = TRUE, seasons = 52,
+                       holidays = almanac::rcalendar(almanac::hol_christmas()),
+                       holiday_lags = 1)
+    )
+
+  completed <- suppressWarnings(
+    tbl_now_to_epinowcast(weekly, verbose = FALSE, quiet = TRUE, preprocess = FALSE)
+  )
+  effect_cols <- grep("^[.]event", names(completed), value = TRUE)
+  expect_setequal(
+    effect_cols,
+    c(".event_week_of_year", ".event_season_52_cos", ".event_season_52_sin",
+      ".event_holiday", ".event_holiday_lag_1")
+  )
+  for (column in effect_cols) {
+    expect_false(anyNA(completed[[column]]), label = column)
+  }
+
+  # And they still cover every row once epinowcast lays out its metadata tables.
+  preprocessed <- suppressWarnings(
+    tbl_now_to_epinowcast(weekly, verbose = FALSE, quiet = TRUE)
+  )
+  metareference <- preprocessed$metareference[[1]]
+  for (column in intersect(effect_cols, names(metareference))) {
+    expect_false(anyNA(metareference[[column]]), label = column)
+  }
+})
+
+test_that("effects on the completed grid match what the object itself computes", {
+  skip_if_not_installed("epinowcast")
+  skip_if_not_installed("almanac")
+
+  # Deriving from the completed grid must reproduce the object's own values: the
+  # Fourier anchor (earliest event date) and the calendar are the same, so the
+  # only difference is the extra horizon rows.
+  data(denguedat)
+  dengue <- denguedat[denguedat$onset_week >= as.Date("2009-01-01"), ]
+  effect_columns <- c(".event_week_of_year", ".event_season_52_cos",
+                      ".event_season_52_sin", ".event_holiday")
+  weekly <- tbl_now(dengue,
+    event_date = onset_week, report_date = report_week,
+    data_type = "linelist", verbose = FALSE
+  ) |>
+    add_temporal_effects(
+      temporal_effects(week_of_year = TRUE, seasons = 52,
+                       holidays = almanac::rcalendar(almanac::hol_christmas()))
+    )
+
+  from_object <- compute_temporal_effects(weekly) |>
+    as.data.frame() |>
+    dplyr::distinct(reference_date = onset_week,
+                    dplyr::across(dplyr::all_of(effect_columns)))
+  from_grid <- suppressWarnings(
+    tbl_now_to_epinowcast(weekly, verbose = FALSE, quiet = TRUE, preprocess = FALSE)
+  ) |>
+    as.data.frame() |>
+    dplyr::mutate(reference_date = as.Date(.data$reference_date)) |>
+    dplyr::distinct(.data$reference_date,
+                    dplyr::across(dplyr::all_of(effect_columns)))
+
+  shared <- dplyr::inner_join(from_object, from_grid, by = "reference_date",
+                              suffix = c("_object", "_grid"))
+  expect_gt(nrow(shared), 0)
+  for (column in effect_columns) {
+    expect_equal(shared[[paste0(column, "_object")]],
+                 shared[[paste0(column, "_grid")]], label = column)
+  }
+
+  # The grid additionally covers the horizon weeks the data never reached.
+  expect_gt(
+    length(setdiff(from_grid$reference_date, from_object$reference_date)), 0
+  )
+})
+
 test_that("holiday effects are carried as a covariate column", {
   skip_if_not_installed("data.table")
   skip_if_not_installed("almanac")
@@ -1455,4 +1543,130 @@ test_that("already-computed temporal effects are not recomputed or duplicated", 
   expect_true(all(temporal_now_cols %in% names(dt)))
   # no duplicated column names introduced by a second computation
   expect_false(any(duplicated(names(dt))))
+})
+
+# ---------------------------------------------------------------------------
+# epinowcast timestep (weekly data must not be laid out on a daily grid)
+# ---------------------------------------------------------------------------
+
+test_that(".epinowcast_timestep maps report units onto what epinowcast accepts", {
+  expect_identical(.epinowcast_timestep("days"), "day")
+  expect_identical(.epinowcast_timestep("weeks"), "week")
+
+  # epinowcast supports only "day", "week" or a whole number of days, so units it
+  # cannot express must say so rather than silently fall back to "day".
+  expect_error(.epinowcast_timestep("months"), "timestep")
+  expect_error(.epinowcast_timestep("years"), "timestep")
+  expect_error(.epinowcast_timestep("numeric"), "timestep")
+})
+
+test_that("tbl_now_to_epinowcast puts weekly data on a weekly grid", {
+  skip_if_not_installed("epinowcast")
+
+  data(denguedat)
+  dengue <- denguedat[denguedat$onset_week >= as.Date("2009-01-01"), ]
+  weekly <- tbl_now(dengue,
+    event_date = onset_week, report_date = report_week,
+    data_type = "linelist", verbose = FALSE
+  )
+  expect_identical(get_report_units(weekly), "weeks")
+
+  enw <- suppressWarnings(
+    tbl_now_to_epinowcast(weekly, verbose = FALSE, quiet = TRUE)
+  )
+  reference_dates <- sort(unique(enw$metareference[[1]]$date))
+
+  # The reference grid must step in weeks, not days: `.delay` is measured in the
+  # object's report units, so a daily grid would both misread `max_delay` (weeks
+  # read as days) and strand the weekly covariates on rows that do not exist.
+  expect_true(all(diff(reference_dates) == 7))
+})
+
+test_that("tbl_now_to_epinowcast reads max_delay in the inferred timestep", {
+  skip_if_not_installed("epinowcast")
+
+  data(denguedat)
+  dengue <- denguedat[denguedat$onset_week >= as.Date("2009-01-01"), ]
+  weekly <- tbl_now(dengue,
+    event_date = onset_week, report_date = report_week,
+    data_type = "linelist", verbose = FALSE
+  )
+  max_delay_weeks <- as.integer(max(as.data.frame(weekly)$.delay)) + 1L
+
+  completed <- suppressWarnings(
+    tbl_now_to_epinowcast(weekly, verbose = FALSE, quiet = TRUE, preprocess = FALSE)
+  )
+  observed_delays <- as.numeric(
+    completed$report_date - completed$reference_date
+  ) / 7
+
+  # max_delay counts timesteps, so on weekly data it must bound the delay in
+  # WEEKS. Left on epinowcast's "day" default it would have truncated a 14-week
+  # delay range at 15 days (~2 weeks).
+  expect_lte(max(observed_delays), max_delay_weeks)
+  expect_gt(max(observed_delays), 2)
+})
+
+test_that("tbl_now_to_epinowcast infers a daily timestep for daily data", {
+  skip_if_not_installed("epinowcast")
+
+  set.seed(3)
+  days <- seq(as.Date("2023-01-01"), as.Date("2023-03-31"), by = "day")
+  rows <- do.call(rbind, lapply(days, function(day) {
+    max_delay <- rpois(1, 3)
+    data.frame(onset = day, reported = day + 0:max_delay, n = rpois(max_delay + 1, 5))
+  }))
+  daily <- tbl_now(rows,
+    event_date = onset, report_date = reported, case_count = n,
+    data_type = "count-incidence", verbose = FALSE
+  )
+  expect_identical(get_report_units(daily), "days")
+
+  enw <- suppressWarnings(
+    tbl_now_to_epinowcast(daily, verbose = FALSE, quiet = TRUE)
+  )
+  reference_dates <- sort(unique(enw$metareference[[1]]$date))
+  expect_true(all(diff(reference_dates) == 1))
+})
+
+# -- strata are carried into the model converters (issue: strata passing) ------
+
+make_strata_tbl <- function() {
+  data(denguedat, package = "tbl.now", envir = environment())
+  d <- denguedat[denguedat$onset_week >= as.Date("2009-06-01"), ]
+  tbl_now(d, event_date = onset_week, report_date = report_week,
+          strata = gender, data_type = "linelist", verbose = FALSE)
+}
+
+test_that("tbl_now_to_baselinenowcast carries strata in long format and pools for the matrix", {
+  skip_if_not_installed("baselinenowcast")
+  tn <- make_strata_tbl()
+
+  long <- suppressWarnings(suppressMessages(
+    tbl_now_to_baselinenowcast(tn, format = "long", verbose = FALSE)
+  ))
+  expect_true("gender" %in% names(long))
+
+  # a single triangle has no strata dimension: pool with a warning, not a crash
+  expect_warning(
+    mat <- tbl_now_to_baselinenowcast(tn, format = "matrix", verbose = FALSE),
+    "pooling over strata"
+  )
+  expect_true(is.matrix(mat))
+})
+
+test_that("tbl_now_to_epidist carries strata as a column", {
+  skip_if_not_installed("epidist")
+  tn <- make_strata_tbl()
+  ed <- suppressWarnings(suppressMessages(tbl_now_to_epidist(tn, verbose = FALSE)))
+  expect_true("gender" %in% names(ed))
+})
+
+test_that("tbl_now_to_epinowcast passes strata as grouping", {
+  skip_if_not_installed("epinowcast")
+  tn  <- make_strata_tbl()
+  enw <- suppressWarnings(suppressMessages(
+    tbl_now_to_epinowcast(tn, verbose = FALSE, quiet = TRUE)
+  ))
+  expect_equal(length(unique(enw$metareference[[1]]$.group)), 2L)
 })

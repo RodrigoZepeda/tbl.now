@@ -61,10 +61,12 @@ and converts it into a \code{tbl_now} of \code{data_type = "count-incidence"}.
 (\code{format = "matrix"}, the default) via
 \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}}, or the long
 \code{baselinenowcast}-style \code{data.frame} (\code{format = "long"}). The long format also
-carries the
+carries the \strong{strata}, the
 covariates, the censoring indicator and any materialised temporal-effect
 columns (see \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}); the matrix holds only the three
-core columns.
+core columns. A single reporting-triangle matrix has no strata dimension, so
+\code{format = "matrix"} \strong{pools} any strata (summing the counts) with a warning;
+build one triangle per stratum (from the long format) to nowcast each stratum.
 }
 \section{Round-trip}{
 

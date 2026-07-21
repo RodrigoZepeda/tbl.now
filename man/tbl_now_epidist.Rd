@@ -103,9 +103,11 @@ epidist time 0) — encoding the \code{tbl_now} convention that a censored repor
 is only known to lie in \verb{[0, report_date]}.
 }
 
-Covariate columns and any materialised temporal-effect columns (holidays,
-Fourier terms, calendar effects; see \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}) are
-carried onto the epidist data unchanged.
+The strata, the covariate columns and any materialised temporal-effect columns
+(holidays, Fourier terms, calendar effects; see \code{\link[=compute_temporal_effects]{compute_temporal_effects()}})
+are carried onto the epidist data unchanged, so the strata are available as
+covariates in an epidist model formula (epidist has no separate grouping
+argument).
 }
 \examples{
 \dontshow{if (requireNamespace("epidist", quietly = TRUE)) withAutoprint(\{ # examplesIf}

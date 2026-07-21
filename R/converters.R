@@ -546,7 +546,15 @@
 #'   for raw input, any column other than `reference_date`, `report_date` and
 #'   `confirm`.
 #' @param max_delay Maximum delay (in `timestep`s) to use when preprocessing.
-#'   If `NULL` it is inferred from the data as `max(.delay) + 1`.
+#'   If `NULL` it is inferred from the data as `max(.delay) + 1`. Because `.delay`
+#'   is measured in the object's report units, this is only in `timestep`s when
+#'   `timestep` matches those units — which is what the default infers.
+#' @param timestep The \pkg{epinowcast} timestep: `"day"`, `"week"`, or a whole
+#'   number of days. `NULL` (default) infers it from the object's report units
+#'   (`"days"` -> `"day"`, `"weeks"` -> `"week"`), which keeps `max_delay` and the
+#'   temporal-effect covariates on the same grid as the data. Other units cannot
+#'   be inferred (\pkg{epinowcast} does not support calendar months) — pass a
+#'   number of days explicitly, e.g. `timestep = 28`.
 #' @param missing_reference Passed to [epinowcast::enw_complete_dates()].
 #'   Defaults to `FALSE` (unlike epinowcast's own default of `TRUE`): a
 #'   `tbl_now` never carries reports with a missing `reference_date`, so leaving
@@ -685,10 +693,12 @@ tbl_now_from_epinowcast <- function(data, ...,
 #' (`format = "matrix"`, the default) via
 #' [baselinenowcast::as_reporting_triangle()], or the long
 #' `baselinenowcast`-style `data.frame` (`format = "long"`). The long format also
-#' carries the
+#' carries the **strata**, the
 #' covariates, the censoring indicator and any materialised temporal-effect
 #' columns (see [compute_temporal_effects()]); the matrix holds only the three
-#' core columns.
+#' core columns. A single reporting-triangle matrix has no strata dimension, so
+#' `format = "matrix"` **pools** any strata (summing the counts) with a warning;
+#' build one triangle per stratum (from the long format) to nowcast each stratum.
 #'
 #' @param data A long `data.frame` or a `reporting_triangle` matrix.
 #' @param x A `tbl_now` object.
@@ -869,9 +879,11 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'   epidist time 0) — encoding the `tbl_now` convention that a censored report
 #'   is only known to lie in `[0, report_date]`.
 #'
-#' Covariate columns and any materialised temporal-effect columns (holidays,
-#' Fourier terms, calendar effects; see [compute_temporal_effects()]) are
-#' carried onto the epidist data unchanged.
+#' The strata, the covariate columns and any materialised temporal-effect columns
+#' (holidays, Fourier terms, calendar effects; see [compute_temporal_effects()])
+#' are carried onto the epidist data unchanged, so the strata are available as
+#' covariates in an epidist model formula (epidist has no separate grouping
+#' argument).
 #'
 #' @param data A `data.frame`, `epidist_linelist_data` or
 #'   `epidist_aggregate_data` of \pkg{epidist} delay data.
@@ -1103,15 +1115,128 @@ tbl_now_from_tsibble <- function(data, report_date, event_date = NULL,
 
 # 3. tbl_now_to_*()  (tbl_now -> package object)------
 
+#' The `epinowcast` timestep implied by a `tbl_now`'s report units
+#'
+#' `epinowcast` measures `max_delay`, and lays out its reference/report date
+#' grids, in `timestep`s. A `tbl_now`'s `.delay` is in report units, so the two
+#' agree only when the timestep *is* the report unit; leaving `epinowcast` on its
+#' `"day"` default would read a delay of 14 weeks as 14 days and expand the
+#' metadata tables to a daily grid the weekly covariates have no values on.
+#'
+#' @param report_units The object's report units (see [get_report_units()]).
+#'
+#' @return `"day"` or `"week"`; aborts for units `epinowcast` cannot express.
+#'
+#' @keywords internal
+#' @noRd
+.epinowcast_timestep <- function(report_units) {
+  switch(report_units,
+    days  = "day",
+    weeks = "week",
+    cli::cli_abort(c(
+      "Can't infer an {.pkg epinowcast} {.arg timestep} from report units \\
+       {.val {report_units}}.",
+      "i" = "{.pkg epinowcast} accepts {.val day}, {.val week}, or a whole \\
+             number of days; it does not support calendar months.",
+      "i" = "Pass one explicitly, e.g. {.code timestep = 28} for monthly data."
+    ))
+  )
+}
+
+#' Derive the temporal-effect columns on epinowcast's completed date grid
+#'
+#' [epinowcast::enw_complete_dates()] fills in every (reference, report) cell the
+#' data never had, and it extends the reference axis past the data into the
+#' nowcast horizon. It knows only its own schema, so any other column — including
+#' the temporal effects — comes back `NA` on every row it adds. Carrying the
+#' effect columns *through* the completion therefore strands them on the original
+#' rows only, which is the wrong way round: the horizon dates are precisely the
+#' ones a nowcast has to predict, and so precisely the ones the covariates must
+#' cover.
+#'
+#' The effects are functions of a date alone, so deriving them *from* the
+#' completed grid gives every row a real value.
+#'
+#' @param completed The `data.table` returned by
+#'   [epinowcast::enw_complete_dates()].
+#' @param x The `tbl_now` the spec belongs to.
+#'
+#' @return A list with `data` (`completed` plus the effect columns) and `cols`
+#'   (their names).
+#'
+#' @keywords internal
+#' @noRd
+.epinowcast_temporal_effects <- function(completed, x) {
+  specs <- get_temporal_effects(x)
+  if (length(specs) == 0) {
+    return(list(data = completed, cols = character(0)))
+  }
+
+  # epinowcast hands back data.table `IDate`s, which almanac refuses ("Can't
+  # convert `x` <IDate> to <date>"), so derive on plain Dates. epinowcast's own
+  # columns are left exactly as they were and the effects appended to them.
+  on_grid <- as.data.frame(completed)
+  date_cols <- intersect(c("reference_date", "report_date"), names(on_grid))
+  on_grid[date_cols] <- lapply(on_grid[date_cols], as.Date)
+  derived_from <- names(on_grid)
+
+  # Fourier terms are computed from `.event_num` / `.report_num`, which
+  # `time_cols_to_numeric()` anchors at the earliest event date. Completion only
+  # ever extends the grid forward — it takes its `min_date` from the observations
+  # — so re-deriving them here reproduces the object's own anchor, and the
+  # seasonal phase carries onto the horizon dates unchanged.
+  on_grid <- time_cols_to_numeric(
+    on_grid,
+    event_date   = "reference_date",
+    report_date  = "report_date",
+    event_units  = get_event_units(x),
+    report_units = get_report_units(x),
+    force = TRUE
+  )
+
+  for (spec in specs) {
+    from_event_date <- identical(spec$date_type, "event_date")
+    on_grid <- add_temporal_effects.data.frame(
+      on_grid,
+      t_effects    = spec$t_effects,
+      date_col     = if (from_event_date) "reference_date" else "report_date",
+      numeric_col  = if (from_event_date) ".event_num" else ".report_num",
+      name_prefix  = if (from_event_date) ".event" else ".report",
+      overwrite    = TRUE,
+      weekend_days = spec$weekend_days
+    )
+  }
+
+  # `.event_num` / `.report_num` / `.delay` are scaffolding for the Fourier
+  # terms, not covariates, and epinowcast derives its own delay index.
+  scaffolding <- c(".event_num", ".report_num", ".delay")
+  effect_cols <- setdiff(names(on_grid), c(derived_from, scaffolding))
+
+  list(
+    data = data.table::as.data.table(
+      dplyr::bind_cols(as.data.frame(completed), on_grid[effect_cols])
+    ),
+    cols = effect_cols
+  )
+}
+
 #' @rdname tbl_now_epinowcast
 #' @export
 tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
+                                  timestep = NULL,
                                   missing_reference = FALSE,
                                   preprocess = TRUE, verbose = TRUE,
                                   quiet = FALSE) {
   .assert_tbl_now(x, "tbl_now_to_epinowcast")
   .need_pkg("epinowcast")
   .warn_lossy_conversion("epinowcast", quiet)
+
+  # Both epinowcast calls below must agree on the timestep: completing the dates
+  # on a daily grid and then preprocessing weekly is an error, and completing
+  # daily and preprocessing daily silently puts weekly data on the wrong grid.
+  if (is.null(timestep)) {
+    timestep <- .epinowcast_timestep(get_report_units(x))
+  }
 
   # epinowcast models the cumulative reporting process, so coerce first.
   if (get_data_type(x) != "count-cumulative") {
@@ -1122,28 +1247,22 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
     x <- to_count(x, to = "count-cumulative")
   }
 
-  # Materialise the lazy temporal-effect columns (holidays, Fourier terms,
-  # calendar effects) so they can be carried into epinowcast as covariates.
-  materialised  <- .materialize_temporal_effects(x)
-  x             <- materialised$x
-  temporal_cols <- materialised$cols
-
   event_col   <- get_event_date(x)
   report_col  <- get_report_date(x)
   count_col   <- get_case_count(x)
   strata_cols <- get_strata(x)
 
-  # epinowcast's schema is reference_date / report_date / confirm (+ grouping).
-  # is_censored has no place in it, but the temporal-effect columns are carried
-  # along so they are available to epinowcast's reference/report modules.
+  # epinowcast's schema is reference_date / report_date / confirm (+ grouping);
+  # is_censored has no place in it. The temporal effects are deliberately *not*
+  # carried here: they are added after the dates are completed, so they also
+  # cover the rows completion adds (see `.epinowcast_temporal_effects()`).
   observations <- x |>
     dplyr::as_tibble() |>
     dplyr::select(
       reference_date = dplyr::all_of(event_col),
       report_date    = dplyr::all_of(report_col),
       confirm        = dplyr::all_of(count_col),
-      dplyr::all_of(strata_cols),
-      dplyr::all_of(temporal_cols)
+      dplyr::all_of(strata_cols)
     ) |>
     data.table::as.data.table()
 
@@ -1151,6 +1270,18 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
     max_delay <- as.integer(max(dplyr::pull(x, ".delay"), na.rm = TRUE)) + 1L
   }
   grouping <- if (length(strata_cols) > 0) strata_cols else NULL
+
+  # `missing_reference = FALSE` by default: a tbl_now never carries NA-reference
+  # reports (they are dropped on the way in), so the epinowcast default of
+  # synthesising padding rows for them would invent observations the data never
+  # had. See the Round-trip section.
+  completed <- epinowcast::enw_complete_dates(
+    observations, by = grouping, max_delay = max_delay,
+    missing_reference = missing_reference, timestep = timestep
+  )
+  with_effects  <- .epinowcast_temporal_effects(completed, x)
+  completed     <- with_effects$data
+  temporal_cols <- with_effects$cols
 
   if (verbose) {
     cli::cli_h3("Converting {.cls tbl_now} into an {.pkg epinowcast} object")
@@ -1162,26 +1293,19 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
     if (length(temporal_cols) > 0) {
       cli::cli_li("temporal effects: {.val {temporal_cols}}")
     }
-    cli::cli_li("max_delay: {.val {max_delay}}")
+    cli::cli_li("timestep: {.val {timestep}}")
+    cli::cli_li("max_delay: {.val {max_delay}} {.emph {timestep}{?s}}")
     cli::cli_li("missing_reference: {.val {missing_reference}}")
     cli::cli_li("preprocess: {.val {preprocess}}")
     cli::cli_end()
   }
 
-  # `missing_reference = FALSE` by default: a tbl_now never carries NA-reference
-  # reports (they are dropped on the way in), so the epinowcast default of
-  # synthesising padding rows for them would invent observations the data never
-  # had. See the Round-trip section.
-  completed <- epinowcast::enw_complete_dates(
-    observations, by = grouping, max_delay = max_delay,
-    missing_reference = missing_reference
-  )
   if (!preprocess) {
     return(completed)
   }
 
   epinowcast::enw_preprocess_data(
-    completed, by = grouping, max_delay = max_delay, ...
+    completed, by = grouping, max_delay = max_delay, timestep = timestep, ...
   )
 }
 
@@ -1261,13 +1385,15 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
   count_col      <- get_case_count(x)
   covariate_cols <- get_covariates(x)
   censored_col   <- get_is_censored(x)
+  strata_cols    <- get_strata(x)
 
-  # The long format is a tidy data frame, so it can also carry the covariates,
-  # the temporal-effect columns and the censoring indicator. The
-  # reporting-triangle matrix cannot, so only the three core columns are kept
-  # for it.
+  # The long format is a tidy data frame, so it can also carry the strata, the
+  # covariates, the temporal-effect columns and the censoring indicator (a user
+  # can then build one triangle per stratum). The reporting-triangle *matrix* has
+  # no strata dimension, so only the three core columns are kept for it and the
+  # strata are pooled below.
   extra_cols <- if (format == "long") {
-    c(covariate_cols, temporal_cols, censored_col)
+    c(strata_cols, covariate_cols, temporal_cols, censored_col)
   } else {
     NULL
   }
@@ -1280,6 +1406,25 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
       count          = dplyr::all_of(count_col),
       dplyr::all_of(extra_cols)
     )
+
+  # A single reporting triangle cannot hold strata: with strata present the long
+  # data has one row per (reference_date, report_date, stratum), which
+  # `as_reporting_triangle()` rejects as duplicate cells. Pool the strata (summing
+  # the counts, keeping a cell NA only when every stratum is NA) and warn.
+  if (format == "matrix" && length(strata_cols) > 0) {
+    cli::cli_warn(c(
+      "{.pkg baselinenowcast} builds a single reporting triangle, which has no \\
+       strata dimension; pooling over strata {.val {strata_cols}}.",
+      "i" = "For a nowcast per stratum, build one triangle per stratum (split the \\
+             data, or use {.code format = \"long\"} and group by {.val {strata_cols}})."
+    ))
+    long_data <- long_data |>
+      dplyr::group_by(.data$reference_date, .data$report_date) |>
+      dplyr::summarise(
+        count = if (all(is.na(.data$count))) NA_real_ else sum(.data$count, na.rm = TRUE),
+        .groups = "drop"
+      )
+  }
 
   # `delays_unit` only applies to the reporting-triangle matrix. When `NULL` it is
   # inferred from the object's time units (equal event/report units of days or
@@ -1498,6 +1643,7 @@ tbl_now_to_epidist <- function(x, ...,
 
   covariate_cols <- get_covariates(x)
   censored_col   <- get_is_censored(x)
+  strata_cols    <- get_strata(x)
 
   # --- Legacy "interval" branch: upper bounds taken from covariate columns. ---
   if (format == "interval") {
@@ -1525,7 +1671,7 @@ tbl_now_to_epidist <- function(x, ...,
         sdate_upr = .data[[secondary_upper]]
       )
     carried_cols <- setdiff(
-      c(covariate_cols, temporal_cols, censored_col), upper_bounds
+      c(strata_cols, covariate_cols, temporal_cols, censored_col), upper_bounds
     )
     if (length(carried_cols) > 0) {
       epidist_data <- dplyr::bind_cols(
@@ -1611,7 +1757,10 @@ tbl_now_to_epidist <- function(x, ...,
   collapsed <- epidist_data$sdate_upr <= epidist_data$sdate_lwr
   epidist_data$sdate_lwr[collapsed] <- epidist_data$sdate_upr[collapsed] - win
 
-  carry_cols <- c(covariate_cols, temporal_cols)
+  # Strata are carried as ordinary columns so they can be used as covariates in an
+  # epidist model formula (epidist estimates the delay distribution; it has no
+  # dedicated grouping argument, so the strata travel as data columns).
+  carry_cols <- c(strata_cols, covariate_cols, temporal_cols)
   if (length(carry_cols) > 0) {
     epidist_data <- dplyr::bind_cols(
       epidist_data, dplyr::select(obs, dplyr::all_of(carry_cols))
@@ -1635,7 +1784,7 @@ tbl_now_to_epidist <- function(x, ...,
     cli::cli_li("left-censored rows ({.field is_censored}): {.val {sum(censored)}}")
     if (format == "aggregate") cli::cli_li("n <- {.val {count_col}}")
     if (length(carry_cols) > 0) {
-      cli::cli_li("kept covariates: {.val {carry_cols}}")
+      cli::cli_li("kept columns (strata/covariates): {.val {carry_cols}}")
     }
     cli::cli_end()
   }

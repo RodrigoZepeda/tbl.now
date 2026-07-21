@@ -284,6 +284,49 @@ test_that("by_strata errors without strata and honours the strata override", {
   expect_error(ggplot2::autoplot(make_daily_strata_now(), by_strata = "yes"), "by_strata")
 })
 
+test_that("strata= works on a column that is not a declared stratum", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  # `grp` is a column of the data but was never declared as a stratum, so
+  # `to_count()` would sum it away before the panels could group on it.
+  set.seed(11)
+  dates <- seq(as.Date("2021-01-01"), as.Date("2021-04-30"), by = "day")
+  rows <- do.call(rbind, lapply(dates, function(day) {
+    do.call(rbind, lapply(c("a", "b"), function(group) {
+      max_delay <- rpois(1, 3)
+      data.frame(
+        event_date  = day,
+        report_date = day + 0:max_delay,
+        n           = rpois(max_delay + 1, 4),
+        grp         = group
+      )
+    }))
+  }))
+  # Leaving `grp` undeclared makes (event, report) pairs repeat, which `tbl_now()`
+  # rightly flags — that non-uniqueness is the scenario under test.
+  undeclared <- suppressWarnings(tbl_now(rows,
+    event_date = event_date, report_date = report_date, case_count = n,
+    data_type = "count-incidence",
+    event_units = "days", report_units = "days", verbose = FALSE
+  ))
+  expect_length(get_strata(undeclared), 0)
+
+  expect_no_error(
+    ggplot2::autoplot(undeclared, strata = "grp", by_strata = TRUE)
+  )
+
+  # Passing strata= must match declaring the stratum up front.
+  from_argument <- ggplot2::autoplot(undeclared, panels = "epidemic",
+                                     strata = "grp", by_strata = TRUE)
+  from_declared <- ggplot2::autoplot(add_strata(undeclared, grp),
+                                     panels = "epidemic", by_strata = TRUE)
+  expect_equal(
+    ggplot2::ggplot_build(from_argument)$data,
+    ggplot2::ggplot_build(from_declared)$data
+  )
+})
+
 test_that("by-strata data helpers carry a combined strata label", {
   nowobj <- make_daily_strata_now()
 
@@ -484,4 +527,202 @@ test_that("cumulative growth panel works by stratum and full autoplot builds", {
   ps <- ggplot2::autoplot(nowobj, panels = "delay_distribution", by_strata = TRUE)
   expect_equal(ps$labels$title, "Cumulative growth by delay")
   expect_s3_class(ggplot2::autoplot(nowobj, by_strata = TRUE), "patchwork")
+})
+
+# ---------------------------------------------------------------------------
+# Holiday panels (calendar_holiday / calendar_holiday_lag + delay twins)
+# ---------------------------------------------------------------------------
+
+# A daily tbl_now spanning Christmas and New Year, so the US federal calendar
+# has holidays to find.
+make_holiday_now <- function() {
+  set.seed(7)
+  dates <- seq(as.Date("2020-12-01"), as.Date("2021-01-31"), by = "day")
+  rows <- lapply(dates, function(day) {
+    max_delay <- rpois(1, 3)
+    data.frame(
+      event_date  = day,
+      report_date = day + 0:max_delay,
+      n           = rpois(max_delay + 1, 4)
+    )
+  })
+  tbl_now(do.call(rbind, rows),
+    event_date = event_date, report_date = report_date, case_count = n,
+    data_type = "count-incidence", event_units = "days", report_units = "days",
+    verbose = FALSE
+  )
+}
+
+holiday_panel_keys <- c(
+  "calendar_holiday", "calendar_holiday_lag", "delay_holiday", "delay_holiday_lag"
+)
+
+test_that("holiday panels appear only when a holiday or weekend effect is attached", {
+  skip_if_not_installed("almanac")
+
+  # No temporal effect at all -> no holiday panels, and asking for one warns
+  bare <- make_holiday_now()
+  expect_null(.tbl_now_holiday_config(bare))
+  expect_false(any(holiday_panel_keys %in% .tbl_now_all_panel_keys("days", NULL)))
+  expect_warning(
+    ggplot2::autoplot(bare, panels = c("epidemic", "calendar_holiday")),
+    "holiday or weekend temporal effect"
+  )
+
+  # A weekend effect alone is enough for the day-type panels, but the lag panels
+  # need a calendar and a non-zero depth.
+  weekend_only <- add_temporal_effects(bare, temporal_effects(weekend = TRUE))
+  keys <- .tbl_now_all_panel_keys("days", .tbl_now_holiday_config(weekend_only))
+  expect_true(all(c("calendar_holiday", "delay_holiday") %in% keys))
+  expect_false(any(c("calendar_holiday_lag", "delay_holiday_lag") %in% keys))
+
+  # Holidays with a lag depth unlock all four
+  full <- add_temporal_effects(
+    bare,
+    temporal_effects(weekend = TRUE, holidays = almanac::cal_us_federal(),
+                     holiday_lags = 2)
+  )
+  expect_true(all(holiday_panel_keys %in%
+                    .tbl_now_all_panel_keys("days", .tbl_now_holiday_config(full))))
+})
+
+test_that("the holiday config folds every attached spec together", {
+  skip_if_not_installed("almanac")
+
+  # The documented both-sides idiom: one spec per direction.
+  calendar <- almanac::cal_us_federal()
+  object <- make_holiday_now() |>
+    add_temporal_effects(temporal_effects(weekend = TRUE, holidays = calendar,
+                                          holiday_lags = -2)) |>
+    add_temporal_effects(temporal_effects(holidays = calendar, holiday_lags = 3))
+
+  config <- .tbl_now_holiday_config(object)
+  expect_true(config$weekend)
+  expect_length(config$calendars, 2)
+  expect_identical(config$lag_depths, c(-2L, 3L))
+
+  # Both directions reach the axis, ordered before -> holiday -> after -> other
+  expect_identical(
+    .tbl_now_holiday_lag_levels(config$lag_depths),
+    c("2 before", "1 before", "Holiday", "1 after", "2 after", "3 after", "Other")
+  )
+})
+
+test_that("day-type categories follow what the spec asked for", {
+  skip_if_not_installed("almanac")
+
+  calendar <- almanac::rcalendar(almanac::hol_christmas())
+  # Christmas 2020 is a Friday; Dec 26 a Saturday; Dec 28 a Monday.
+  dates <- as.Date(c("2020-12-25", "2020-12-26", "2020-12-28"))
+
+  both <- list(calendars = list(calendar), weekend = TRUE,
+               weekend_days = c("Sat", "Sun"), lag_depths = integer(0))
+  expect_identical(
+    as.character(.tbl_now_holiday_group(dates, both)),
+    c("Holiday", "Weekend", "Weekday")
+  )
+  expect_identical(.tbl_now_holiday_levels(both), c("Weekday", "Weekend", "Holiday"))
+
+  # A calendar with no weekend effect contrasts holidays with everything else
+  holiday_only <- list(calendars = list(calendar), weekend = FALSE,
+                       weekend_days = c("Sat", "Sun"), lag_depths = integer(0))
+  expect_identical(
+    as.character(.tbl_now_holiday_group(dates, holiday_only)),
+    c("Holiday", "Non-holiday", "Non-holiday")
+  )
+
+  # A weekend effect with no calendar knows nothing about Christmas
+  weekend_only <- list(calendars = list(), weekend = TRUE,
+                       weekend_days = c("Sat", "Sun"), lag_depths = integer(0))
+  expect_identical(
+    as.character(.tbl_now_holiday_group(dates, weekend_only)),
+    c("Weekday", "Weekend", "Weekday")
+  )
+  expect_identical(.tbl_now_holiday_levels(weekend_only), c("Weekday", "Weekend"))
+})
+
+test_that("holiday lag positions skip weekends and match the lag columns", {
+  skip_if_not_installed("almanac")
+
+  config <- list(
+    calendars = list(almanac::rcalendar(almanac::hol_christmas())),
+    weekend = TRUE, weekend_days = c("Sat", "Sun"), lag_depths = c(-2L, 2L)
+  )
+  dates <- seq(as.Date("2020-12-18"), as.Date("2021-01-05"), by = "day")
+  group <- .tbl_now_holiday_lag_group(dates, config)
+  named <- stats::setNames(as.character(group), format(dates))
+
+  # Christmas is Fri Dec 25 2020. The weekend Dec 26/27 is skipped, so the
+  # working days around it are Wed 23 / Thu 24 before and Mon 28 / Tue 29 after.
+  expect_identical(named[["2020-12-25"]], "Holiday")
+  expect_identical(named[["2020-12-24"]], "1 before")
+  expect_identical(named[["2020-12-23"]], "2 before")
+  expect_identical(named[["2020-12-28"]], "1 after")
+  expect_identical(named[["2020-12-29"]], "2 after")
+
+  # Weekend days are not working days, so they carry no lag position
+  expect_identical(named[["2020-12-26"]], "Other")
+  expect_identical(named[["2020-12-27"]], "Other")
+  # Days beyond the requested depth fall back to the reference category
+  expect_identical(named[["2020-12-30"]], "Other")
+
+  # The panel must flag exactly the dates the effect columns flag
+  columns <- make_holiday_now() |>
+    add_temporal_effects(
+      temporal_effects(holidays = config$calendars[[1]], holiday_lags = 2)
+    ) |>
+    compute_temporal_effects() |>
+    as.data.frame()
+  flagged_by_column <- sort(unique(columns$event_date[columns$.event_holiday_lag_1 == 1]))
+  panel_config <- utils::modifyList(config, list(lag_depths = 2L))
+  panel_dates <- sort(unique(columns$event_date))
+  flagged_by_panel <- panel_dates[
+    .tbl_now_holiday_lag_group(panel_dates, panel_config) == "1 after"
+  ]
+  expect_identical(flagged_by_panel, flagged_by_column)
+})
+
+test_that("all four holiday panels build, alone and by strata", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+  skip_if_not_installed("almanac")
+
+  object <- make_holiday_now() |>
+    add_temporal_effects(
+      temporal_effects(weekend = TRUE, holidays = almanac::cal_us_federal(),
+                       holiday_lags = 2)
+    )
+
+  for (key in holiday_panel_keys) {
+    panel <- ggplot2::autoplot(object, panels = key)
+    expect_s3_class(panel, "ggplot")
+    # The boxes are the day-type / lag categories, not raw dates
+    expect_true(is.factor(ggplot2::ggplot_build(panel)$plot$data$calendar_group))
+  }
+
+  # They join the "all" gallery and the calendar aliases
+  expect_true(all(holiday_panel_keys %in%
+                    .tbl_now_resolve_panels("all", "days", .tbl_now_holiday_config(object))))
+  expect_true("calendar_holiday" %in%
+                .tbl_now_resolve_panels("calendar", "days", .tbl_now_holiday_config(object)))
+  expect_true("delay_holiday" %in%
+                .tbl_now_resolve_panels("delay_calendar", "days", .tbl_now_holiday_config(object)))
+
+  # And they split by stratum like every other panel
+  rows <- as.data.frame(make_holiday_now())[, c("event_date", "report_date", "n")]
+  stratified <- rbind(
+    transform(rows, grp = "a"),
+    transform(rows, grp = "b")
+  ) |>
+    tbl_now(event_date = event_date, report_date = report_date, case_count = n,
+            strata = "grp", data_type = "count-incidence",
+            event_units = "days", report_units = "days", verbose = FALSE) |>
+    add_temporal_effects(
+      temporal_effects(weekend = TRUE, holidays = almanac::cal_us_federal(),
+                       holiday_lags = 2)
+    )
+  expect_s3_class(
+    ggplot2::autoplot(stratified, panels = "delay_holiday_lag", by_strata = TRUE),
+    "ggplot"
+  )
 })

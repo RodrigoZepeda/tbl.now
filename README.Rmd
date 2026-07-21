@@ -280,8 +280,7 @@ censor_delays_above(tn, max_delay = 60)
 
 + Introduction vignette: [https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html)
 + Full walk-through with real CDC Flusight data: [https://rodrigozepeda.github.io/tbl.now/articles/Example.html](https://rodrigozepeda.github.io/tbl.now/articles/Example.html) 
-+ Tutorial on detecting batches and other reporting-delay artifacts: [https://rodrigozepeda.github.io/tbl.now/articles/Example.html](https://rodrigozepeda.github.io/tbl.now/articles/Example.html) 
-
++ Tutorial on detecting batches and other reporting-delay artifacts: [https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html) 
 + Package reference: [https://rodrigozepeda.github.io/tbl.now/reference/](https://rodrigozepeda.github.io/tbl.now/reference/)
 
 
