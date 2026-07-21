@@ -41,7 +41,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -93,23 +93,12 @@
 <div class="section level2">
 <h2 id="why-this-vignette">Why this vignette?<a class="anchor" aria-label="anchor" href="#why-this-vignette"></a>
 </h2>
-<p>If you work in public health surveillance you have almost certainly
-hit the same wall: <strong>reported case counts for the most recent days
-or weeks are incomplete.</strong> A case that happened last week may not
-be reported until next week, so the freshest numbers always look
-artificially low. <em>Nowcasting</em> is the family of methods that
-corrects for this reporting delay and estimates what the recent counts
-will look like once reporting is complete.</p>
-<p>The good news is that the <code>R</code> ecosystem has many excellent
-nowcasting packages. The bad news is that <strong>each one wants its
-data in a different shape</strong>: a reporting triangle here, a
-cumulative long table there, a line list somewhere else. Preparing the
-same outbreak data five different ways is tedious and error-prone.</p>
-<p>This is exactly the gap <a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a>
-fills. You describe your data <strong>once</strong> — which column is
-the event date, which is the report date, what the counts mean — and
+<p>Preparing the same outbreak data different ways can be tedious and
+error-prone. This is exactly what <a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a>
+does for you. You describe your data once by specifying which column is
+the event date, which is the report date, what the counts mean and
 <code>tbl.now</code> hands it to each modelling package in the format
-that package expects. In this vignette we take a single dengue line list
+that package expects. In this vignette we take a single dengue line-list
 and, from that one object, drive five different nowcasting /
 delay-estimation tools:</p>
 <table class="table">
@@ -150,7 +139,7 @@ delay-estimation tools:</p>
 <tr class="odd">
 <td><a href="https://cran.r-project.org/package=NobBS" class="external-link">NobBS</a></td>
 <td>Nowcasting by Bayesian Smoothing</td>
-<td>a plain line list (<code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code>)</td>
+<td>a plain line-list (<code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code>)</td>
 </tr>
 </tbody>
 </table>
@@ -162,35 +151,37 @@ models.</p>
 <h2 id="the-data-one-tbl_now-to-rule-them-all">The data: one <code>tbl_now</code> to rule them all<a class="anchor" aria-label="anchor" href="#the-data-one-tbl_now-to-rule-them-all"></a>
 </h2>
 <p><code>tbl.now</code> ships with <code>denguedat</code>, a weekly
-dengue line list (one row per case) with the week of symptom
+dengue line-list (one row per case) with the week of symptom
 <strong>onset</strong> and the week the case was
 <strong>reported</strong>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   onset_week report_week gender</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt;   onset_week report_week gender</span></span>
 <span><span class="co">#&gt; 1 1990-01-01  1990-01-01   Male</span></span>
 <span><span class="co">#&gt; 2 1990-01-01  1990-01-01 Female</span></span>
 <span><span class="co">#&gt; 3 1990-01-01  1990-01-01 Female</span></span>
 <span><span class="co">#&gt; 4 1990-01-01  1990-01-08 Female</span></span>
 <span><span class="co">#&gt; 5 1990-01-01  1990-01-08   Male</span></span>
-<span><span class="co">#&gt; 6 1990-01-01  1990-01-15 Female</span></span></code></pre></div>
+<span><span class="co">#&gt; 6 1990-01-01  1990-01-15 Female</span></span></code></pre>
 <p>We build a single <code>tbl_now</code>. We only have to say which
-column is the event date (symptom onset) and which is the report date;
-<code>tbl.now</code> infers the rest (the data are a line list, measured
-in weeks, and the “now” is the last report).</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+column is the event date (<code>onset_week</code>) and which is the
+report date (<code>report_week</code>); <code>tbl.now</code> infers the
+rest (the data is line-list, measured in weeks, and the “now” is the
+last report, <code>2010-12-20</code>).</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># A compact recent window keeps the vignette fast to build.</span></span>
-<span><span class="va">dengue</span> <span class="op">&lt;-</span> <span class="va">denguedat</span><span class="op">[</span><span class="va">denguedat</span><span class="op">$</span><span class="va">onset_week</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2009-01-01"</span><span class="op">)</span>, <span class="op">]</span></span>
+<span><span class="va">dengue</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">onset_week</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2009-01-01"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
 <span>  <span class="va">dengue</span>,</span>
 <span>  event_date  <span class="op">=</span> <span class="va">onset_week</span>,</span>
 <span>  report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
 <span>  data_type   <span class="op">=</span> <span class="st">"linelist"</span></span>
-<span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="va">dengue_now</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  9,268 × 6</span></span></span>
@@ -213,8 +204,34 @@ in weeks, and the “now” is the last report).</p>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2010-12-20</span> | Event date: <span style="color: #0000BB;">"onset_week"</span> | Report date: <span style="color: #0000BB;">"report_week"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9,258 more rows</span></span></span></code></pre></div>
-<p>That is the <em>only</em> data-wrangling step in this whole vignette.
-Everything below starts from <code>dengue_now</code>.</p>
+<div class="section level3">
+<h3 id="a-more-complex-object-strata-and-temporal-effects">A more complex object: strata and temporal effects<a class="anchor" aria-label="anchor" href="#a-more-complex-object-strata-and-temporal-effects"></a>
+</h3>
+<p>Reporting delays are rarely constant and many series are reported for
+several <strong>strata</strong> (here, the patient’s sex) that you may
+want to nowcast separately. <a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a>
+lets you attach both <strong>once</strong> and carries them into
+whichever format can hold them. Here we build a second object,
+<code>dengue_seasonal</code>, that adds a <code>gender</code> stratum
+and a week-of-year plus annual-Fourier <strong>temporal (delay)
+effect</strong> on top of <code>dengue_now</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dengue_seasonal</span> <span class="op">&lt;-</span> <span class="va">dengue_now</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add.html">add_strata</a></span><span class="op">(</span><span class="va">gender</span><span class="op">)</span> <span class="op">|&gt;</span>      <span class="co"># nowcast Male/Female separately</span></span>
+<span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span></span>
+<span>      week_of_year <span class="op">=</span> <span class="cn">TRUE</span>,   <span class="co"># a separate level per epidemiological week</span></span>
+<span>      seasons      <span class="op">=</span> <span class="fl">52</span>      <span class="co"># an annual Fourier cycle (period = 52 weeks)</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p>For each package below we show the <strong>bare</strong> conversion
+of <code>dengue_now</code> first, then how the same call carries the
+strata and the effects when handed <code>dengue_seasonal</code>. (Tip:
+run <a href="https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html"><code>autoplot()</code></a>
+with <code>panels = "delay_seasonality"</code> or
+<code>"delay_calendar"</code> first to <em>see</em> whether such effects
+are present before modelling them.)</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="diseasenowcasting-no-conversion-at-all">1. diseasenowcasting — no conversion at all<a class="anchor" aria-label="anchor" href="#diseasenowcasting-no-conversion-at-all"></a>
@@ -223,41 +240,34 @@ Everything below starts from <code>dengue_now</code>.</p>
 was designed hand-in-hand with <code>tbl.now</code>, so it takes a
 <code>tbl_now</code> <strong>directly</strong>. You just hand it the
 object:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">diseasenowcasting</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dnc_fit</span> <span class="op">&lt;-</span> <span class="fu">nowcast</span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dnc_fit</span></span></code></pre></div>
-<p><code>diseasenowcasting</code> will even reach into the
-<code>tbl_now</code> for any temporal effects you attached (see the <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html#temporal-effects">temporal
-effects</a> section of the main vignette). For example, to let the model
-account for a seasonal cycle and a post-holiday reporting bump:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavisVaughan/almanac" class="external-link">almanac</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">dengue_seasonal</span> <span class="op">&lt;-</span> <span class="va">dengue_now</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span></span>
-<span>      seasons      <span class="op">=</span> <span class="fl">52</span>,                          <span class="co"># annual seasonality (weekly data)</span></span>
-<span>      holidays     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rcalendar.html" class="external-link">rcalendar</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_christmas</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>,  <span class="co"># Christmas holiday effect</span></span>
-<span>      holiday_lags <span class="op">=</span> <span class="fl">2</span>                            <span class="co"># + the two weeks "after" it</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span></span>
-<span><span class="fu">nowcast</span><span class="op">(</span><span class="va">dengue_seasonal</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="with-strata-and-effects-">With strata and effects.<a class="anchor" aria-label="anchor" href="#with-strata-and-effects-"></a>
+</h3>
+<p><code>diseasenowcasting</code> reaches into the <code>tbl_now</code>
+itself, so the enriched object needs no extra arguments: it picks up the
+<code>gender</code> stratum and the week-of-year / seasonal effect
+columns automatically.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">nowcast</span><span class="op">(</span><span class="va">dengue_seasonal</span><span class="op">)</span>   <span class="co"># the strata and temporal effects are used automatically</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="baselinenowcast-a-reporting-triangle">2. baselinenowcast — a reporting triangle<a class="anchor" aria-label="anchor" href="#baselinenowcast-a-reporting-triangle"></a>
 </h2>
 <p><a href="https://baselinenowcast.epinowcast.org/" class="external-link"><code>baselinenowcast</code></a>
-is a deliberately simple, fast baseline. It works from a
-<strong>reporting triangle</strong>: a matrix with one row per reference
-(onset) week and one column per reporting delay, where the lower-right
-corner is the not-yet-observed part we want to fill in.</p>
+is a simple, fast baseline. It works from a <strong>reporting
+triangle</strong>: a matrix with one row per reference (onset) week and
+one column per reporting delay, where the lower-right corner is the
+not-yet-observed part we want to fill in.</p>
 <p><code><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code> builds that triangle for
-you (aggregating the line list to weekly incidence on the way):</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+you (aggregating the line-list to weekly incidence on the way):</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/epinowcast/baselinenowcast" class="external-link">baselinenowcast</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># `delays_unit` defaults to NULL and is inferred from the object's weekly units;</span></span>
@@ -273,51 +283,105 @@ you (aggregating the line list to weekly incidence on the way):</p>
 <span><span class="co">#&gt; 2009-01-26 0 13 12 4 0 0</span></span>
 <span><span class="co">#&gt; 2009-02-02 1 22 17 8 0 0</span></span></code></pre></div>
 <p>Because <code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">as_reporting_triangle()</a></code> is registered as a
-method for <code>tbl_now</code>, you can also write the idiomatic
-<code>baselinenowcast</code> call and pass the <code>tbl_now</code>
-straight in:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dengue_triangle2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">as_reporting_triangle</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">dengue_triangle</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">dengue_triangle2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
-<p>From here you follow <code>baselinenowcast</code>’s own workflow —
-estimate the delay from the triangle and sample nowcasts:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Estimate the delay from the triangle, apply it, and draw nowcast samples</span></span>
-<span><span class="co"># (see the baselinenowcast documentation for the full workflow).</span></span>
-<span><span class="va">point_nowcast</span> <span class="op">&lt;-</span> <span class="va">dengue_triangle</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/estimate_and_apply_delays.html" class="external-link">estimate_and_apply_delays</a></span><span class="op">(</span><span class="op">)</span></span>
+method for <code>tbl_now</code>, alternatively you can also write the
+idiomatic <code>baselinenowcast</code> call and pass the
+<code>tbl_now</code> straight in:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dengue_triangle2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">as_reporting_triangle</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span></code></pre></div>
+<p>From here you follow <code>baselinenowcast</code>’s own workflow. The
+one-call <code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast()</a></code> wrapper estimates the delay from
+the triangle, applies it, and draws nowcast samples in a single
+step:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># One-call workflow: estimate the delay, apply it, and draw nowcast samples.</span></span>
+<span><span class="va">nowcast_samples</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast</a></span><span class="op">(</span></span>
+<span>  <span class="va">dengue_triangle2</span>,</span>
+<span>  output_type <span class="op">=</span> <span class="st">"samples"</span>,</span>
+<span>  draws       <span class="op">=</span> <span class="fl">1000</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">nowcast_samples</span> <span class="op">&lt;-</span> <span class="va">point_nowcast</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/sample_nowcasts.html" class="external-link">sample_nowcasts</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">nowcast_samples</span><span class="op">)</span></span></code></pre></div>
+<p>If you want the intermediate point nowcast (rather than samples), the
+single-triangle helper is <code><a href="https://baselinenowcast.epinowcast.org/reference/estimate_and_apply_delay.html" class="external-link">estimate_and_apply_delay()</a></code>:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">point_nowcast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/estimate_and_apply_delay.html" class="external-link">estimate_and_apply_delay</a></span><span class="op">(</span><span class="va">dengue_triangle2</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="with-strata-and-effects--1">With strata and effects.<a class="anchor" aria-label="anchor" href="#with-strata-and-effects--1"></a>
+</h3>
+<p>A reporting-triangle <em>matrix</em> is a single table with no room
+for strata or covariates, so <code>format = "matrix"</code> pools the
+strata (with a warning) and drops the effect columns. To keep them and
+to nowcast each stratum separately take the <strong>long</strong>
+format, which carries <code>gender</code> and the effect columns, and
+build one triangle per stratum:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dengue_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="va">dengue_seasonal</span>, format <span class="op">=</span> <span class="st">"long"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># List with one reporting triangle per stratum</span></span>
+<span><span class="va">triangles_by_stratum</span> <span class="op">&lt;-</span> <span class="va">dengue_long</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/split.html" class="external-link">split</a></span><span class="op">(</span><span class="va">dengue_long</span><span class="op">$</span><span class="va">gender</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="co">#</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">as_reporting_triangle</a></span><span class="op">(</span><span class="va">df</span>, delays_unit <span class="op">=</span> <span class="st">"weeks"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#One nowcast per triangle</span></span>
+<span><span class="va">nowcasts_by_stratum</span> <span class="op">&lt;-</span> <span class="va">triangles_by_stratum</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">tri</span><span class="op">)</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast</a></span><span class="op">(</span><span class="va">tri</span>, output_type <span class="op">=</span> <span class="st">"samples"</span>, draws <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="epinowcast-a-preprocessed-bayesian-model-object">3. epinowcast — a preprocessed Bayesian model object<a class="anchor" aria-label="anchor" href="#epinowcast-a-preprocessed-bayesian-model-object"></a>
 </h2>
 <p><a href="https://package.epinowcast.org/" class="external-link"><code>epinowcast</code></a>
 fits a flexible Bayesian model with separate modules for the reporting
-delay and the reference (epidemic) process. It expects
-<strong>cumulative</strong> counts and a preprocessed object built by
-<code><a href="https://package.epinowcast.org/reference/enw_preprocess_data.html" class="external-link">enw_preprocess_data()</a></code>.</p>
-<p><code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> handles the cumulation and the
-preprocessing, returning an object you can pass straight to
+delay and the reference (epidemic) process. It expects a preprocessed
+object built by <code><a href="https://package.epinowcast.org/reference/enw_preprocess_data.html" class="external-link">enw_preprocess_data()</a></code>.</p>
+<p><code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> handles the preprocessing,
+returning an object you can pass straight to
 <code><a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast::epinowcast()</a></code>:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://package.epinowcast.org" class="external-link">epinowcast</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dengue_enw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">dengue_now</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dengue_enw</span></span></code></pre></div>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># A minimal epinowcast fit from the preprocessed object</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast</a></span><span class="op">(</span></span>
 <span>  <span class="va">dengue_enw</span>,</span>
 <span>  fit <span class="op">=</span> <span class="fu"><a href="https://package.epinowcast.org/reference/enw_fit_opts.html" class="external-link">enw_fit_opts</a></span><span class="op">(</span>pp <span class="op">=</span> <span class="cn">TRUE</span>, chains <span class="op">=</span> <span class="fl">2</span>, iter_sampling <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>If you attached temporal effects to the <code>tbl_now</code>, they
-are carried into the <code>metareference</code> /
-<code>metareport</code> tables as covariate columns, ready for use in
-epinowcast’s reference and report modules.</p>
+<div class="section level3">
+<h3 id="with-strata-and-effects--2">With strata and effects.<a class="anchor" aria-label="anchor" href="#with-strata-and-effects--2"></a>
+</h3>
+<p>Handing <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> the enriched object does
+two things automatically: the <code>gender</code> stratum becomes
+epinowcast’s grouping (<code>by</code>), so the model fits a delay per
+sex, and the temporal-effect columns land in the
+<code>metareference</code> / <code>metareport</code> tables on every
+completed reference date, including the recent incomplete ones ready to
+be used in a module formula.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">enw_seasonal</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">dengue_seasonal</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># One group per stratum:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">enw_seasonal</span><span class="op">$</span><span class="va">metareference</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">.group</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 2</span></span>
+<span></span>
+<span><span class="co"># The effect columns are in the per-reference-date metadata, ready for a formula:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">enw_seasonal</span><span class="op">$</span><span class="va">metareference</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] ... ".event_week_of_year"  ".event_season_52_cos" ".event_season_52_sin" ...</span></span>
+<span></span>
+<span><span class="co"># Drop the seasonal terms into a reference-module formula and fit as usual: the</span></span>
+<span><span class="co"># covariates now enter the reference model.</span></span>
+<span><span class="fu"><a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast</a></span><span class="op">(</span></span>
+<span>  <span class="va">enw_seasonal</span>,</span>
+<span>  reference <span class="op">=</span> <span class="fu"><a href="https://package.epinowcast.org/reference/enw_reference.html" class="external-link">enw_reference</a></span><span class="op">(</span></span>
+<span>    parametric   <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">+</span> <span class="va">.event_season_52_sin</span> <span class="op">+</span> <span class="va">.event_season_52_cos</span>,</span>
+<span>    distribution <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>    data         <span class="op">=</span> <span class="va">enw_seasonal</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  fit <span class="op">=</span> <span class="fu"><a href="https://package.epinowcast.org/reference/enw_fit_opts.html" class="external-link">enw_fit_opts</a></span><span class="op">(</span>pp <span class="op">=</span> <span class="cn">TRUE</span>, chains <span class="op">=</span> <span class="fl">2</span>, iter_sampling <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="epidist-the-reporting-delay-distribution">4. epidist — the reporting delay distribution<a class="anchor" aria-label="anchor" href="#epidist-the-reporting-delay-distribution"></a>
@@ -328,48 +392,63 @@ report, and how variable is it? <a href="https://epidist.epinowcast.org/" class=
 estimates exactly that, treating each case as an interval-censored
 onset/report pair.</p>
 <p><code><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> converts the <code>tbl_now</code>
-into the censored line list <code>epidist</code> expects. Because our
+into the censored line-list <code>epidist</code> expects. Because our
 data are weekly, each event is censored over its whole week
 automatically:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://epidist.epinowcast.org/" class="external-link">epidist</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dengue_epidist</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span><span class="va">dengue_now</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">dengue_epidist</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 10</span></span></span>
-<span><span class="co">#&gt;   ptime_lwr ptime_upr stime_lwr stime_upr obs_time pdate_lwr  pdate_upr </span></span>
-<span><span class="co">#&gt;       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>         0         7         7        14      721 2009-01-05 2009-01-12</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>         0         7         7        14      721 2009-01-05 2009-01-12</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>         0         7        14        21      721 2009-01-05 2009-01-12</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>         0         7         7        14      721 2009-01-05 2009-01-12</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>         0         7         7        14      721 2009-01-05 2009-01-12</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>         0         7         7        14      721 2009-01-05 2009-01-12</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 3 more variables: sdate_lwr &lt;date&gt;, sdate_upr &lt;date&gt;, obs_date &lt;date&gt;</span></span></span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<span><span class="va">dengue_epidist</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span><span class="va">dengue_now</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit the delay distribution (see the epidist documentation for model choices)</span></span>
 <span><span class="va">delay_model</span> <span class="op">&lt;-</span> <span class="va">dengue_epidist</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/as_epidist_marginal_model.html" class="external-link">as_epidist_marginal_model</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/epidist.html" class="external-link">epidist</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>The fitted delay distribution can then feed back into a nowcast — for
-example as a prior in <code>epinowcast</code> or
-<code>EpiNow2</code>.</p>
+<p>The fitted delay distribution can then feed back into a nowcast for
+example as a data-informed prior in <code>epinowcast</code>.</p>
+<div class="section level3">
+<h3 id="with-strata-and-effects--3">With strata and effects.<a class="anchor" aria-label="anchor" href="#with-strata-and-effects--3"></a>
+</h3>
+<p><code>epidist</code> has no separate grouping argument, so the
+<code>gender</code> stratum and the temporal-effect columns simply ride
+along as extra columns on the censored line-list — where an
+<code>epidist</code> model <strong>formula</strong> can use them. The
+mean of the delay distribution (<code>mu</code>) can be made to vary by
+sex, or by season through the Fourier terms:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dengue_epidist_eff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span><span class="va">dengue_seasonal</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># the strata and effect columns are on the line-list, ready for a formula</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">dengue_epidist_eff</span><span class="op">)</span></span>
+<span><span class="co">#&gt;  [1] "ptime_lwr"            "ptime_upr"            "stime_lwr"           </span></span>
+<span><span class="co">#&gt;  [4] "stime_upr"            "obs_time"             "pdate_lwr"           </span></span>
+<span><span class="co">#&gt;  [7] "pdate_upr"            "sdate_lwr"            "sdate_upr"           </span></span>
+<span><span class="co">#&gt; [10] "gender"               ".event_week_of_year"  ".event_season_52_cos"</span></span>
+<span><span class="co">#&gt; [13] ".event_season_52_sin" "obs_date"</span></span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># A sex-varying mean delay: `gender` enters the model for `mu`.</span></span>
+<span><span class="va">delay_by_sex</span> <span class="op">&lt;-</span> <span class="va">dengue_epidist_eff</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/as_epidist_marginal_model.html" class="external-link">as_epidist_marginal_model</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/epidist.html" class="external-link">epidist</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="va">mu</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">+</span> <span class="va">gender</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># A season-varying mean delay uses the Fourier pair instead:</span></span>
+<span><span class="va">delay_seasonal</span> <span class="op">&lt;-</span> <span class="va">dengue_epidist_eff</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/as_epidist_marginal_model.html" class="external-link">as_epidist_marginal_model</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/epidist.html" class="external-link">epidist</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="va">mu</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">+</span> <span class="va">.event_season_52_sin</span> <span class="op">+</span> <span class="va">.event_season_52_cos</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="nobbs-nowcasting-by-bayesian-smoothing">5. NobBS — Nowcasting by Bayesian Smoothing<a class="anchor" aria-label="anchor" href="#nobbs-nowcasting-by-bayesian-smoothing"></a>
 </h2>
 <p><a href="https://cran.r-project.org/package=NobBS" class="external-link"><code>NobBS</code></a>
-works from a <strong>line list</strong> with an onset-date column and a
+works from a <strong>line-list</strong> with an onset-date column and a
 report-date column — precisely what a <code>linelist</code>
 <code>tbl_now</code> already is. Drop the <code>tbl.now</code> classes
 with <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> and hand the columns to
 <code>NobBS()</code>:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dengue_linelist</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">dengue_linelist</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dengue_linelist</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">NobBS</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">nobbs_fit</span> <span class="op">&lt;-</span> <span class="fu">NobBS</span><span class="op">(</span></span>
@@ -385,142 +464,32 @@ with <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-l
 <code><a href="../reference/nowcast_data_getters.html">get_now()</a></code>, <code><a href="../reference/nowcast_data_getters.html">get_event_date()</a></code> and
 <code><a href="../reference/nowcast_data_getters.html">get_report_date()</a></code> tell <code>NobBS</code> what
 <code>tbl.now</code> already figured out.</p>
+<div class="section level3">
+<h3 id="with-strata-and-effects--4">With strata and effects.<a class="anchor" aria-label="anchor" href="#with-strata-and-effects--4"></a>
+</h3>
+<p>Call <code>NobBS.strat()</code> and pass the column name to the
+strata option:</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dengue_nobbs</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">dengue_seasonal</span><span class="op">)</span></span>
+<span><span class="va">stratified_nobbs</span> <span class="op">&lt;-</span> <span class="fu">NobBS.strat</span><span class="op">(</span><span class="va">dengue_nobbs</span>, </span>
+<span>                                strata        <span class="op">=</span> <span class="st">"gender"</span>, </span>
+<span>                                now         <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">dengue_seasonal</span><span class="op">)</span>, </span>
+<span>                                units       <span class="op">=</span> <span class="st">"1 week"</span>,</span>
+<span>                                onset_date  <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_event_date</a></span><span class="op">(</span><span class="va">dengue_seasonal</span><span class="op">)</span>,</span>
+<span>                                report_date <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_report_date</a></span><span class="op">(</span><span class="va">dengue_seasonal</span><span class="op">)</span>,</span>
+<span>                                <span class="co">#These two values are set small for the example</span></span>
+<span>                                max_D         <span class="op">=</span> <span class="fl">5</span>, </span>
+<span>                                moving_window <span class="op">=</span> <span class="fl">7</span></span>
+<span>                                <span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
-<h2 id="carrying-delay-effects-into-each-model">Carrying delay effects into each model<a class="anchor" aria-label="anchor" href="#carrying-delay-effects-into-each-model"></a>
+<h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
-<p>Reporting delays are rarely constant — they wax and wane with the day
-of the week, the season, and around holidays. <code>tbl.now</code> lets
-you attach these <strong>temporal (delay) effects</strong> once, with <a href="https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html"><code>add_temporal_effects()</code></a>,
-and then carries the resulting covariate columns into whichever model
-format can hold them. (Use <a href="https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html"><code>autoplot()</code></a>
-with <code>panels = "delay_calendar"</code> or
-<code>panels = "delay_seasonality"</code> first to <em>see</em> whether
-such effects exist in your data before modelling them.)</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavisVaughan/almanac" class="external-link">almanac</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">dengue_eff</span> <span class="op">&lt;-</span> <span class="va">dengue_now</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span></span>
-<span>      week_of_year <span class="op">=</span> <span class="cn">TRUE</span>,                        <span class="co"># week-of-year delay effect</span></span>
-<span>      holidays     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rcalendar.html" class="external-link">rcalendar</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_christmas</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>,  <span class="co"># holiday indicator</span></span>
-<span>      holiday_lags <span class="op">=</span> <span class="fl">1</span>                            <span class="co"># + the first week after a holiday</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span></span>
-<span><span class="co"># The spec is lazy; materialise it to see the columns it produces</span></span>
-<span><span class="fu"><a href="../reference/compute_temporal_effects.html">compute_temporal_effects</a></span><span class="op">(</span><span class="va">dengue_eff</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effect_cols</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] ".event_week_of_year"  ".event_holiday"       ".event_holiday_lag_1"</span></span></code></pre></div>
-<p>These columns then ride along automatically when you convert. For
-example, into the <code>baselinenowcast</code> long format and into
-<code>epinowcast</code>’s metadata tables:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bln_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="va">dengue_eff</span>, format <span class="op">=</span> <span class="st">"long"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grep</a></span><span class="op">(</span><span class="st">"holiday|week_of_year"</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">bln_long</span><span class="op">)</span>, value <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] ".event_week_of_year"  ".event_holiday"       ".event_holiday_lag_1"</span></span></code></pre></div>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">enw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">dengue_eff</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co"># The effect columns appear in the reference and report metadata tables,</span></span>
-<span><span class="co"># ready to be used in epinowcast's reference / report module formulas.</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grep</a></span><span class="op">(</span><span class="st">"holiday|week_of_year"</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">enw</span><span class="op">$</span><span class="va">metareference</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>, value <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p><strong>Where do the columns end up, and does the model use
-them?</strong> Carrying a column and <em>using</em> it are two different
-things — <code>tbl.now</code> does the former; whether a model consumes
-it is up to that model:</p>
-<table class="table">
-<colgroup>
-<col width="25%">
-<col width="25%">
-<col width="25%">
-<col width="25%">
-</colgroup>
-<thead><tr class="header">
-<th>Target</th>
-<th>Delay-effect columns</th>
-<th>Generic <code>covariates</code>
-</th>
-<th>How the model can use them</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td><code>diseasenowcasting</code></td>
-<td>consumed automatically</td>
-<td>—</td>
-<td>
-<code>nowcast()</code> reads the effect columns straight from the
-<code>tbl_now</code> and adds them to the model</td>
-</tr>
-<tr class="even">
-<td><code>epinowcast</code></td>
-<td>in <code>metareference</code> <strong>and</strong>
-<code>metareport</code>
-</td>
-<td>dropped (fixed schema)</td>
-<td>reference / report module formulas
-(e.g. <code>~ 1 + .event_holiday</code>)</td>
-</tr>
-<tr class="odd">
-<td>
-<code>baselinenowcast</code> (long)</td>
-<td>extra columns</td>
-<td>extra columns</td>
-<td>carried for you; the core triangle estimator ignores them</td>
-</tr>
-<tr class="even">
-<td>
-<code>baselinenowcast</code> (matrix)</td>
-<td>dropped</td>
-<td>dropped</td>
-<td>the matrix holds only counts</td>
-</tr>
-<tr class="odd">
-<td><code>epidist</code></td>
-<td>extra linelist columns</td>
-<td>extra linelist columns</td>
-<td>available to formula-based delay models</td>
-</tr>
-<tr class="even">
-<td>
-<code>data.table</code> / <code>tsibble</code>
-</td>
-<td>kept</td>
-<td>kept</td>
-<td>yours to use however you like</td>
-</tr>
-<tr class="odd">
-<td><code>NobBS</code></td>
-<td>not used</td>
-<td>not used</td>
-<td>
-<code>NobBS</code> models only the onset/report dates</td>
-</tr>
-</tbody>
-</table>
-<p>Two practical notes for practitioners:</p>
-<ul>
-<li>
-<strong>Delay effects are date-derived</strong>, so they aggregate
-cleanly from a line list to counts and survive every conversion above. A
-<strong>generic per-case covariate</strong> (say a per-patient lab
-value) does <em>not</em> aggregate to a reference-date × report-date
-cell, so it is only meaningful for the line-list / long formats — and
-<code>epinowcast</code>’s cumulative schema will reject it.</li>
-<li>The <code>baselinenowcast</code> <strong>matrix</strong> and any
-purely count-based format cannot carry covariates at all; use the
-<strong>long</strong> format when you want the effects to travel.</li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="the-pay-off">The pay-off<a class="anchor" aria-label="anchor" href="#the-pay-off"></a>
-</h2>
-<p>Look back at what changed between the five models: <strong>almost
-nothing.</strong> We described the dengue data once as a
-<code>tbl_now</code>, and then a single converter call (or, for
-<code>diseasenowcasting</code>, no call at all) handed it to each
-package in the shape it needed:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<p>We described the dengue data once as a <code>tbl_now</code>, and then
+a single converter call (or, for <code>diseasenowcasting</code>, no call
+at all) handed it to each package in the shape it needed:</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">dengue</span>, event_date <span class="op">=</span> <span class="va">onset_week</span>, report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
 <span>                      data_type <span class="op">=</span> <span class="st">"linelist"</span><span class="op">)</span></span>
 <span></span>
@@ -529,11 +498,13 @@ package in the shape it needed:</p>
 <span><span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>       <span class="co"># epinowcast</span></span>
 <span><span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>          <span class="co"># epidist</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>               <span class="co"># NobBS or others</span></span></code></pre></div>
-<p>For a public-health team this means you can <strong>benchmark several
-nowcasting methods on your own surveillance data without re-plumbing it
-each time</strong> — making it practical to compare models, cross-check
-results, and pick the tool that works best for your disease and
-reporting system.</p>
+<p>Attaching <strong>strata</strong> and <strong>temporal
+effects</strong> once (<code>dengue_seasonal</code>) then rides along
+the same converters: each package receives them in whatever way it can
+use — a grouping in <code>epinowcast</code>, covariate columns in
+<code>epidist</code> and the <code>baselinenowcast</code> long format,
+one triangle/series per stratum where the model takes a single series,
+and automatically in <code>diseasenowcasting</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
@@ -546,6 +517,9 @@ and temporal effects.</li>
 <a href="https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html"><code>autoplot()</code></a>
 for a quick diagnostic overview (delay distribution, epidemic curve,
 calendar effects, seasonality) of any <code>tbl_now</code>.</li>
+<li>Tutorial on detecting batches and other reporting-delay artifacts:
+<a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html">https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html</a>
+</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

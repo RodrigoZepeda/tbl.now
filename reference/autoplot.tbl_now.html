@@ -19,6 +19,19 @@ temporal_effects() spec are marked with dots.
 &quot;calendar_weekday&quot;, &quot;calendar_week&quot;, &quot;calendar_month&quot; — boxplots of
 the normalized case effect (each event date's cases divided by the overall
 mean, so 1 is average) by day of week, epidemiological week, or month.
+&quot;calendar_holiday&quot; — the same normalized boxplots by day type. The
+categories follow the attached temporal_effects() spec: a holiday calendar
+and a weekend effect together give Weekday / Weekend / Holiday, a
+calendar alone gives Non-holiday / Holiday, and a weekend effect alone
+gives Weekday / Weekend. A holiday falling on a weekend counts as a
+holiday.
+&quot;calendar_holiday_lag&quot; — the same normalized boxplots by position
+relative to the nearest holiday, as asked for by holiday_lags (see
+temporal_effects()): &quot;2 before&quot;, &quot;1 before&quot;, &quot;Holiday&quot;, &quot;1 after&quot;,
+..., plus &quot;Other&quot; for every other day as the reference. It shows exactly
+the days the ..._holiday_lag_k / ..._holiday_lead_k columns flag —
+weekends and other holidays are skipped when counting working days — so you
+can see whether the lags you asked for are the ones that matter.
 &quot;seasonality&quot; — a periodogram of the incidence series whose dominant peak
 suggests a Fourier season length for temporal_effects().
 
@@ -30,15 +43,27 @@ the overall mean delay, so 1 is average) by day of week, epidemiological
 week, or month; these reveal whether the delay itself has a calendar
 pattern. Normalizing keeps them on the same scale as the case-count
 calendar panels and makes them comparable across strata.
+&quot;delay_holiday&quot;, &quot;delay_holiday_lag&quot; — the reporting-delay twins of the
+two holiday panels above: the normalized mean delay by day type and by
+position relative to the nearest holiday. These are often the more telling
+pair — a holiday usually does not change how many cases occur, but it very
+much changes how long they take to be reported.
 &quot;delay_seasonality&quot; — a periodogram of the mean-delay series, whose peak
 marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).
 
 
-The calendar/delay panels shown depend on the event unit: daily data offers
-day-of-week and week-of-year panels, weekly data week-of-year, monthly
-data month-of-year. The delay panels are computed on the complete portion of
-the series (event dates on or before the incompleteness line) so the recent
-reporting truncation does not bias them."><meta property="og:description" content="
+Which panels are available depends on the object. The calendar/delay
+panels follow the event unit: daily data offers day-of-week and
+week-of-year panels, weekly data week-of-year, monthly data month-of-year. The
+four holiday panels describe the attached temporal_effects() spec, so
+they appear only when there is one to describe: &quot;calendar_holiday&quot; /
+&quot;delay_holiday&quot; need a holidays calendar or a weekend effect, and the
+two lag panels additionally need a non-zero holiday_lags. Requesting a
+holiday panel without the matching effect warns and skips it. The spec is read
+directly, so you do not need to call compute_temporal_effects() first.
+The delay panels are computed on the complete portion of the series (event
+dates on or before the incompleteness line) so the recent reporting truncation
+does not bias them."><meta property="og:description" content="
 Produces a multi-panel diagnostic overview of a tbl_now using
 ggplot2::ggplot() and patchwork. Two families of panels are available
 — one describing the case counts and one describing the reporting
@@ -58,6 +83,19 @@ temporal_effects() spec are marked with dots.
 &quot;calendar_weekday&quot;, &quot;calendar_week&quot;, &quot;calendar_month&quot; — boxplots of
 the normalized case effect (each event date's cases divided by the overall
 mean, so 1 is average) by day of week, epidemiological week, or month.
+&quot;calendar_holiday&quot; — the same normalized boxplots by day type. The
+categories follow the attached temporal_effects() spec: a holiday calendar
+and a weekend effect together give Weekday / Weekend / Holiday, a
+calendar alone gives Non-holiday / Holiday, and a weekend effect alone
+gives Weekday / Weekend. A holiday falling on a weekend counts as a
+holiday.
+&quot;calendar_holiday_lag&quot; — the same normalized boxplots by position
+relative to the nearest holiday, as asked for by holiday_lags (see
+temporal_effects()): &quot;2 before&quot;, &quot;1 before&quot;, &quot;Holiday&quot;, &quot;1 after&quot;,
+..., plus &quot;Other&quot; for every other day as the reference. It shows exactly
+the days the ..._holiday_lag_k / ..._holiday_lead_k columns flag —
+weekends and other holidays are skipped when counting working days — so you
+can see whether the lags you asked for are the ones that matter.
 &quot;seasonality&quot; — a periodogram of the incidence series whose dominant peak
 suggests a Fourier season length for temporal_effects().
 
@@ -69,15 +107,27 @@ the overall mean delay, so 1 is average) by day of week, epidemiological
 week, or month; these reveal whether the delay itself has a calendar
 pattern. Normalizing keeps them on the same scale as the case-count
 calendar panels and makes them comparable across strata.
+&quot;delay_holiday&quot;, &quot;delay_holiday_lag&quot; — the reporting-delay twins of the
+two holiday panels above: the normalized mean delay by day type and by
+position relative to the nearest holiday. These are often the more telling
+pair — a holiday usually does not change how many cases occur, but it very
+much changes how long they take to be reported.
 &quot;delay_seasonality&quot; — a periodogram of the mean-delay series, whose peak
 marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).
 
 
-The calendar/delay panels shown depend on the event unit: daily data offers
-day-of-week and week-of-year panels, weekly data week-of-year, monthly
-data month-of-year. The delay panels are computed on the complete portion of
-the series (event dates on or before the incompleteness line) so the recent
-reporting truncation does not bias them."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
+Which panels are available depends on the object. The calendar/delay
+panels follow the event unit: daily data offers day-of-week and
+week-of-year panels, weekly data week-of-year, monthly data month-of-year. The
+four holiday panels describe the attached temporal_effects() spec, so
+they appear only when there is one to describe: &quot;calendar_holiday&quot; /
+&quot;delay_holiday&quot; need a holidays calendar or a weekend effect, and the
+two lag panels additionally need a non-zero holiday_lags. Requesting a
+holiday panel without the matching effect warns and skips it. The spec is read
+directly, so you do not need to call compute_temporal_effects() first.
+The delay panels are computed on the complete portion of the series (event
+dates on or before the incompleteness line) so the recent reporting truncation
+does not bias them."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
 
 
 
@@ -99,7 +149,7 @@ reporting truncation does not bias them."><meta property="og:image" content="htt
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -153,6 +203,19 @@ dashed vertical line marking where the data become incomplete (less than
 <li><p><code>"calendar_weekday"</code>, <code>"calendar_week"</code>, <code>"calendar_month"</code> — boxplots of
 the <em>normalized</em> case effect (each event date's cases divided by the overall
 mean, so 1 is average) by day of week, epidemiological week, or month.</p></li>
+<li><p><code>"calendar_holiday"</code> — the same normalized boxplots by <strong>day type</strong>. The
+categories follow the attached <code><a href="temporal_effects.html">temporal_effects()</a></code> spec: a holiday calendar
+and a <code>weekend</code> effect together give <code>Weekday</code> / <code>Weekend</code> / <code>Holiday</code>, a
+calendar alone gives <code>Non-holiday</code> / <code>Holiday</code>, and a <code>weekend</code> effect alone
+gives <code>Weekday</code> / <code>Weekend</code>. A holiday falling on a weekend counts as a
+holiday.</p></li>
+<li><p><code>"calendar_holiday_lag"</code> — the same normalized boxplots by <strong>position
+relative to the nearest holiday</strong>, as asked for by <code>holiday_lags</code> (see
+<code><a href="temporal_effects.html">temporal_effects()</a></code>): <code>"2 before"</code>, <code>"1 before"</code>, <code>"Holiday"</code>, <code>"1 after"</code>,
+..., plus <code>"Other"</code> for every other day as the reference. It shows exactly
+the days the <code>..._holiday_lag_k</code> / <code>..._holiday_lead_k</code> columns flag —
+weekends and other holidays are skipped when counting working days — so you
+can see whether the lags you asked for are the ones that matter.</p></li>
 <li><p><code>"seasonality"</code> — a periodogram of the incidence series whose dominant peak
 suggests a Fourier season length for <code><a href="temporal_effects.html">temporal_effects()</a></code>.</p></li>
 </ul><p><strong>Reporting-delay panels</strong> (to inspect <em>delay effects</em>)</p><ul><li><p><code>"delay_weekday"</code>, <code>"delay_week"</code>, <code>"delay_month"</code> — boxplots of the
@@ -161,13 +224,25 @@ the overall mean delay, so 1 is average) by day of week, epidemiological
 week, or month; these reveal whether the delay itself has a calendar
 pattern. Normalizing keeps them on the same scale as the case-count
 calendar panels and makes them comparable across strata.</p></li>
+<li><p><code>"delay_holiday"</code>, <code>"delay_holiday_lag"</code> — the reporting-delay twins of the
+two holiday panels above: the <em>normalized</em> mean delay by day type and by
+position relative to the nearest holiday. These are often the more telling
+pair — a holiday usually does not change how many cases occur, but it very
+much changes how long they take to be reported.</p></li>
 <li><p><code>"delay_seasonality"</code> — a periodogram of the mean-delay series, whose peak
 marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).</p></li>
-</ul><p>The calendar/delay panels shown depend on the event unit: daily data offers
-day-of-week <strong>and</strong> week-of-year panels, weekly data week-of-year, monthly
-data month-of-year. The delay panels are computed on the <em>complete</em> portion of
-the series (event dates on or before the incompleteness line) so the recent
-reporting truncation does not bias them.</p>
+</ul><p>Which panels are available depends on the object. The <strong>calendar/delay</strong>
+panels follow the event unit: daily data offers day-of-week <strong>and</strong>
+week-of-year panels, weekly data week-of-year, monthly data month-of-year. The
+four <strong>holiday</strong> panels describe the attached <code><a href="temporal_effects.html">temporal_effects()</a></code> spec, so
+they appear only when there is one to describe: <code>"calendar_holiday"</code> /
+<code>"delay_holiday"</code> need a <code>holidays</code> calendar or a <code>weekend</code> effect, and the
+two lag panels additionally need a non-zero <code>holiday_lags</code>. Requesting a
+holiday panel without the matching effect warns and skips it. The spec is read
+directly, so you do <strong>not</strong> need to call <code><a href="compute_temporal_effects.html">compute_temporal_effects()</a></code> first.</p>
+<p>The delay panels are computed on the <em>complete</em> portion of the series (event
+dates on or before the incompleteness line) so the recent reporting truncation
+does not bias them.</p>
     </div>
 
     <div class="section level2">

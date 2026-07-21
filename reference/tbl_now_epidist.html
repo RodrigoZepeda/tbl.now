@@ -36,9 +36,11 @@ epidist time 0) — encoding the tbl_now convention that a censored report
 is only known to lie in [0, report_date].
 
 
-Covariate columns and any materialised temporal-effect columns (holidays,
-Fourier terms, calendar effects; see compute_temporal_effects()) are
-carried onto the epidist data unchanged.'><meta property="og:description" content='
+The strata, the covariate columns and any materialised temporal-effect columns
+(holidays, Fourier terms, calendar effects; see compute_temporal_effects())
+are carried onto the epidist data unchanged, so the strata are available as
+covariates in an epidist model formula (epidist has no separate grouping
+argument).'><meta property="og:description" content='
 epidist models the delay between a primary event (e.g. symptom
 onset) and a secondary event (e.g. report), storing each as an
 interval-censored pair of date columns: pdate_lwr/pdate_upr for the
@@ -75,9 +77,11 @@ epidist time 0) — encoding the tbl_now convention that a censored report
 is only known to lie in [0, report_date].
 
 
-Covariate columns and any materialised temporal-effect columns (holidays,
-Fourier terms, calendar effects; see compute_temporal_effects()) are
-carried onto the epidist data unchanged.'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
+The strata, the covariate columns and any materialised temporal-effect columns
+(holidays, Fourier terms, calendar effects; see compute_temporal_effects())
+are carried onto the epidist data unchanged, so the strata are available as
+covariates in an epidist model formula (epidist has no separate grouping
+argument).'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
 
 
 
@@ -99,7 +103,7 @@ carried onto the epidist data unchanged.'><meta property="og:image" content="htt
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -165,9 +169,11 @@ for rows flagged by <code>is_censored</code> it is left-censored to
 <code>[origin, report_date]</code> (with <code>origin</code> the earliest <code>event_date</code>, i.e.
 epidist time 0) — encoding the <code>tbl_now</code> convention that a censored report
 is only known to lie in <code>[0, report_date]</code>.</p></li>
-</ul><p>Covariate columns and any materialised temporal-effect columns (holidays,
-Fourier terms, calendar effects; see <code><a href="compute_temporal_effects.html">compute_temporal_effects()</a></code>) are
-carried onto the epidist data unchanged.</p>
+</ul><p>The strata, the covariate columns and any materialised temporal-effect columns
+(holidays, Fourier terms, calendar effects; see <code><a href="compute_temporal_effects.html">compute_temporal_effects()</a></code>)
+are carried onto the epidist data unchanged, so the strata are available as
+covariates in an epidist model formula (epidist has no separate grouping
+argument).</p>
     </div>
 
     <div class="section level2">

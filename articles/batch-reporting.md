@@ -182,30 +182,36 @@ data](batch-reporting_files/figure-html/unnamed-chunk-9-1.png)
 
 Classical reporting triangle of the COVID-19 data
 
-### The reporting V
+### The reporting hexamap
 
-[`plot_reporting_v()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_v.md)
-shows *exactly the same data* but rotated 45 degrees so that the report
-date is the main vertical axis. Here batches that were diagonals in the
-previous interpretation are horizontal slices where the reporting dates
-can be seen more easily.
-
-``` r
-
-plot_reporting_v(ideal)
-```
-
-![](batch-reporting_files/figure-html/v-sim-1.png)
-
-On covid the V opens into a full wedge; the potential batches are the
-faint horizontal streaks in June 2020.
+Event date, report date and reporting delay can be seen as an
+**age-period-cohort** triple (`report = event + delay`, exactly
+`period = cohort + age`), so the reporting triangle can be drawn as a
+hexamap in the style of [Jalal and Burke
+(2020)](https://doi.org/10.1097/EDE.0000000000001236): each
+`(event, delay)` cell is a hexagon, coloured by its report count, with
+event date, report date and delay running along the three 60-degree
+axes. Because a batch is a happens in the **report date**, it shows up
+as a **vertical stripe**; the fast reporting bulk sits along the
+short-delay bottom edge.
 
 ``` r
 
-plot_reporting_v(tn)
+plot_reporting_hexamap(ideal)
 ```
 
-![](batch-reporting_files/figure-html/v-covid-1.png)
+![](batch-reporting_files/figure-html/hex-sim-1.png)
+
+On covid the vertical stripes are the spring/summer-2020 backlog
+releases. The delay axis is capped with `max_delay` to keep the map to
+where the reports are.
+
+``` r
+
+plot_reporting_hexamap(tn, max_delay = 60)
+```
+
+![](batch-reporting_files/figure-html/hex-covid-1.png)
 
 ## Scalograms
 

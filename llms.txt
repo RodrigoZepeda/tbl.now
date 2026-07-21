@@ -488,13 +488,10 @@ censor_delays_above(tn, max_delay = 60)
 
 - Introduction vignette:
   <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html>
-
 - Full walk-through with real CDC Flusight data:
   <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
-
 - Tutorial on detecting batches and other reporting-delay artifacts:
-  <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
-
+  <https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html>
 - Package reference:
   <https://rodrigozepeda.github.io/tbl.now/reference/>
 
@@ -636,6 +633,10 @@ censor_delays_above(tn, max_delay = 60)
 
 - [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md)
   **\[experimental\]** : Plot the epidemic process
+
+- [`plot_reporting_hexamap()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.md)
+  **\[experimental\]** : Plot the reporting triangle as an
+  age-period-cohort hexamap
 
 - [`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_process.md)
   **\[experimental\]** : Plot the reporting process

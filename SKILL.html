@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -337,13 +337,19 @@
 <li>
 <strong>Calendar effect</strong> (<code>"calendar_weekday"</code>, <code>"calendar_week"</code>, <code>"calendar_month"</code>) — <em>normalized</em> boxplots (cases ÷ overall mean, 1 = average).</li>
 <li>
+<strong>Holiday effect</strong> (<code>"calendar_holiday"</code>) — the same normalized boxplots by <strong>day type</strong>. Categories follow the attached spec: holidays + <code>weekend = TRUE</code> → <code>Weekday</code>/<code>Weekend</code>/<code>Holiday</code>; a calendar alone → <code>Non-holiday</code>/<code>Holiday</code>; a weekend effect alone → <code>Weekday</code>/<code>Weekend</code>. A holiday on a weekend counts as a <strong>holiday</strong>.</li>
+<li>
+<strong>Holiday lag effect</strong> (<code>"calendar_holiday_lag"</code>) — normalized boxplots by position relative to the nearest holiday, as asked for by <code>holiday_lags</code>: <code>"2 before"</code>, <code>"1 before"</code>, <code>"Holiday"</code>, <code>"1 after"</code>, … plus <code>"Other"</code> (every other day = the reference). Shows exactly the days the <code>..._holiday_lag_k</code> / <code>..._holiday_lead_k</code> columns flag (weekends/other holidays skipped when counting working days). A date that is both after one holiday and before the next goes to the <strong>nearer</strong> one, ties to <code>"after"</code>.</li>
+<li>
 <strong>Seasonality periodogram</strong> (<code>"seasonality"</code>) — dominant peak suggests a Fourier <code>seasons</code> length.</li>
 </ol><p><em>Reporting-delay</em> panels — to inspect <strong>delay effects</strong> (is the <em>delay itself</em> patterned?):</p>
-<ol start="5" style="list-style-type: decimal"><li>
+<ol start="7" style="list-style-type: decimal"><li>
 <strong>Delay calendar effect</strong> (<code>"delay_weekday"</code>, <code>"delay_week"</code>, <code>"delay_month"</code>) — boxplots of the <strong>normalized</strong> mean reporting delay (mean delay ÷ overall mean delay, 1 = average) by calendar group.</li>
 <li>
+<strong>Delay holiday effects</strong> (<code>"delay_holiday"</code>, <code>"delay_holiday_lag"</code>) — the delay twins of panels 4/5. Often the more telling pair: a holiday rarely changes how many cases <em>occur</em>, but very much changes how long they take to be <em>reported</em>.</li>
+<li>
 <strong>Delay periodicity periodogram</strong> (<code>"delay_seasonality"</code>) — a cycle in the delay (e.g. a weekly reporting rhythm).</li>
-</ol><p>Which calendar/delay panels appear depends on the unit: <strong>daily</strong> → day-of-week <em>and</em> week-of-year; <strong>weekly</strong> → week-of-year; <strong>monthly</strong> → month-of-year. (So on <em>daily</em> data each week-of-year box legitimately summarizes ~7 daily values — that is not a stratification artefact.)</p>
+</ol><p>Which panels are available depends on the object. <strong>Calendar/delay</strong> panels follow the unit: <strong>daily</strong> → day-of-week <em>and</em> week-of-year; <strong>weekly</strong> → week-of-year; <strong>monthly</strong> → month-of-year. (So on <em>daily</em> data each week-of-year box legitimately summarizes ~7 daily values — that is not a stratification artefact.) The four <strong>holiday</strong> panels follow the <em>temporal-effects spec</em>, not the unit: they appear only when there is one to describe (<code>calendar_holiday</code>/<code>delay_holiday</code> need a <code>holidays</code> calendar <strong>or</strong> <code>weekend = TRUE</code>; the <code>_lag</code> panels additionally need a non-zero <code>holiday_lags</code>). Asking for one without the effect warns and skips it. The spec is read directly — <strong>no</strong> <code><a href="reference/compute_temporal_effects.html">compute_temporal_effects()</a></code> needed first.</p>
 <p>Key arguments:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span></span>
@@ -354,8 +360,11 @@
 <span>  by_strata <span class="op">=</span> <span class="cn">FALSE</span>,      <span class="co"># TRUE =&gt; split every panel by stratum (dodged boxes /</span></span>
 <span>                          <span class="co">#   coloured lines / dodged bars, viridis, per-stratum</span></span>
 <span>                          <span class="co">#   normalization). Errors if no strata are set.</span></span>
-<span>  strata <span class="op">=</span> <span class="cn">NULL</span>,          <span class="co"># which strata columns to group on when by_strata=TRUE</span></span>
-<span>                          <span class="co">#   (default = the object's strata; pass a subset)</span></span>
+<span>  strata <span class="op">=</span> <span class="cn">NULL</span>,          <span class="co"># which columns to group on when by_strata=TRUE (default =</span></span>
+<span>                          <span class="co">#   the object's strata). NEED NOT be declared strata: any</span></span>
+<span>                          <span class="co">#   data column works and is declared for you, so</span></span>
+<span>                          <span class="co">#   `autoplot(x, strata = "race", by_strata = TRUE)` ==</span></span>
+<span>                          <span class="co">#   `autoplot(add_strata(x, race), by_strata = TRUE)`.</span></span>
 <span>  level <span class="op">=</span> <span class="fl">0.95</span>,           <span class="co"># completeness threshold for the incompleteness line</span></span>
 <span>  delay_distribution_xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span>,   <span class="co"># per-panel x limits (all optional)</span></span>
 <span>  event_date_xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2020-01-01"</span>,<span class="st">"2020-12-31"</span><span class="op">)</span><span class="op">)</span>,</span>

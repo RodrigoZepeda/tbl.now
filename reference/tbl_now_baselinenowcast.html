@@ -8,10 +8,12 @@ tbl_now_to_baselinenowcast() returns either a reporting_triangle matrix
 (format = "matrix", the default) via
 baselinenowcast::as_reporting_triangle(), or the long
 baselinenowcast-style data.frame (format = "long"). The long format also
-carries the
+carries the strata, the
 covariates, the censoring indicator and any materialised temporal-effect
 columns (see compute_temporal_effects()); the matrix holds only the three
-core columns.'><meta property="og:description" content='
+core columns. A single reporting-triangle matrix has no strata dimension, so
+format = "matrix" pools any strata (summing the counts) with a warning;
+build one triangle per stratum (from the long format) to nowcast each stratum.'><meta property="og:description" content='
 tbl_now_from_baselinenowcast() accepts either the long data.frame
 (reference_date, report_date, count) or a reporting_triangle
 matrix (rownames = reference dates, colnames = delays, incremental counts)
@@ -20,10 +22,12 @@ tbl_now_to_baselinenowcast() returns either a reporting_triangle matrix
 (format = "matrix", the default) via
 baselinenowcast::as_reporting_triangle(), or the long
 baselinenowcast-style data.frame (format = "long"). The long format also
-carries the
+carries the strata, the
 covariates, the censoring indicator and any materialised temporal-effect
 columns (see compute_temporal_effects()); the matrix holds only the three
-core columns.'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
+core columns. A single reporting-triangle matrix has no strata dimension, so
+format = "matrix" pools any strata (summing the counts) with a warning;
+build one triangle per stratum (from the long format) to nowcast each stratum.'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
 
 
 
@@ -45,7 +49,7 @@ core columns.'><meta property="og:image" content="https://rodrigozepeda.github.i
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -89,10 +93,12 @@ and converts it into a <code>tbl_now</code> of <code>data_type = "count-incidenc
 (<code>format = "matrix"</code>, the default) via
 <code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code>, or the long
 <code>baselinenowcast</code>-style <code>data.frame</code> (<code>format = "long"</code>). The long format also
-carries the
+carries the <strong>strata</strong>, the
 covariates, the censoring indicator and any materialised temporal-effect
 columns (see <code><a href="compute_temporal_effects.html">compute_temporal_effects()</a></code>); the matrix holds only the three
-core columns.</p>
+core columns. A single reporting-triangle matrix has no strata dimension, so
+<code>format = "matrix"</code> <strong>pools</strong> any strata (summing the counts) with a warning;
+build one triangle per stratum (from the long format) to nowcast each stratum.</p>
     </div>
 
     <div class="section level2">

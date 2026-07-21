@@ -1,5 +1,6 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/404.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/BATCH_DETECTION_EXPLAINED.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE-text.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/SKILL.html</loc></url>
@@ -52,6 +53,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_profiles.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_process.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_v.html</loc></url>

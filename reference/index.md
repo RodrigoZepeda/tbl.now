@@ -137,6 +137,10 @@
 - [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md)
   **\[experimental\]** : Plot the epidemic process
 
+- [`plot_reporting_hexamap()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.md)
+  **\[experimental\]** : Plot the reporting triangle as an
+  age-period-cohort hexamap
+
 - [`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_process.md)
   **\[experimental\]** : Plot the reporting process
 

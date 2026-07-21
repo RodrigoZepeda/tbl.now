@@ -451,23 +451,48 @@ Two panel **families**. *Case-count* panels:
 3.  **Calendar effect** (`"calendar_weekday"`, `"calendar_week"`,
     `"calendar_month"`) — *normalized* boxplots (cases ÷ overall mean, 1
     = average).
-4.  **Seasonality periodogram** (`"seasonality"`) — dominant peak
+4.  **Holiday effect** (`"calendar_holiday"`) — the same normalized
+    boxplots by **day type**. Categories follow the attached spec:
+    holidays + `weekend = TRUE` → `Weekday`/`Weekend`/`Holiday`; a
+    calendar alone → `Non-holiday`/`Holiday`; a weekend effect alone →
+    `Weekday`/`Weekend`. A holiday on a weekend counts as a **holiday**.
+5.  **Holiday lag effect** (`"calendar_holiday_lag"`) — normalized
+    boxplots by position relative to the nearest holiday, as asked for
+    by `holiday_lags`: `"2 before"`, `"1 before"`, `"Holiday"`,
+    `"1 after"`, … plus `"Other"` (every other day = the reference).
+    Shows exactly the days the `..._holiday_lag_k` /
+    `..._holiday_lead_k` columns flag (weekends/other holidays skipped
+    when counting working days). A date that is both after one holiday
+    and before the next goes to the **nearer** one, ties to `"after"`.
+6.  **Seasonality periodogram** (`"seasonality"`) — dominant peak
     suggests a Fourier `seasons` length.
 
 *Reporting-delay* panels — to inspect **delay effects** (is the *delay
 itself* patterned?):
 
-5.  **Delay calendar effect** (`"delay_weekday"`, `"delay_week"`,
+7.  **Delay calendar effect** (`"delay_weekday"`, `"delay_week"`,
     `"delay_month"`) — boxplots of the **normalized** mean reporting
     delay (mean delay ÷ overall mean delay, 1 = average) by calendar
     group.
-6.  **Delay periodicity periodogram** (`"delay_seasonality"`) — a cycle
+8.  **Delay holiday effects** (`"delay_holiday"`, `"delay_holiday_lag"`)
+    — the delay twins of panels 4/5. Often the more telling pair: a
+    holiday rarely changes how many cases *occur*, but very much changes
+    how long they take to be *reported*.
+9.  **Delay periodicity periodogram** (`"delay_seasonality"`) — a cycle
     in the delay (e.g. a weekly reporting rhythm).
 
-Which calendar/delay panels appear depends on the unit: **daily** →
-day-of-week *and* week-of-year; **weekly** → week-of-year; **monthly** →
-month-of-year. (So on *daily* data each week-of-year box legitimately
-summarizes ~7 daily values — that is not a stratification artefact.)
+Which panels are available depends on the object. **Calendar/delay**
+panels follow the unit: **daily** → day-of-week *and* week-of-year;
+**weekly** → week-of-year; **monthly** → month-of-year. (So on *daily*
+data each week-of-year box legitimately summarizes ~7 daily values —
+that is not a stratification artefact.) The four **holiday** panels
+follow the *temporal-effects spec*, not the unit: they appear only when
+there is one to describe (`calendar_holiday`/`delay_holiday` need a
+`holidays` calendar **or** `weekend = TRUE`; the `_lag` panels
+additionally need a non-zero `holiday_lags`). Asking for one without the
+effect warns and skips it. The spec is read directly — **no**
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
+needed first.
 
 Key arguments:
 
@@ -481,8 +506,11 @@ autoplot(
   by_strata = FALSE,      # TRUE => split every panel by stratum (dodged boxes /
                           #   coloured lines / dodged bars, viridis, per-stratum
                           #   normalization). Errors if no strata are set.
-  strata = NULL,          # which strata columns to group on when by_strata=TRUE
-                          #   (default = the object's strata; pass a subset)
+  strata = NULL,          # which columns to group on when by_strata=TRUE (default =
+                          #   the object's strata). NEED NOT be declared strata: any
+                          #   data column works and is declared for you, so
+                          #   `autoplot(x, strata = "race", by_strata = TRUE)` ==
+                          #   `autoplot(add_strata(x, race), by_strata = TRUE)`.
   level = 0.95,           # completeness threshold for the incompleteness line
   delay_distribution_xlim = c(0, 10),   # per-panel x limits (all optional)
   event_date_xlim = as.Date(c("2020-01-01","2020-12-31")),

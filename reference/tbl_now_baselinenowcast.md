@@ -12,10 +12,14 @@ counts) and converts it into a `tbl_now` of
 matrix (`format = "matrix"`, the default) via
 [`baselinenowcast::as_reporting_triangle()`](https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html),
 or the long `baselinenowcast`-style `data.frame` (`format = "long"`).
-The long format also carries the covariates, the censoring indicator and
-any materialised temporal-effect columns (see
+The long format also carries the **strata**, the covariates, the
+censoring indicator and any materialised temporal-effect columns (see
 [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md));
-the matrix holds only the three core columns.
+the matrix holds only the three core columns. A single
+reporting-triangle matrix has no strata dimension, so
+`format = "matrix"` **pools** any strata (summing the counts) with a
+warning; build one triangle per stratum (from the long format) to
+nowcast each stratum.
 
 ## Usage
 

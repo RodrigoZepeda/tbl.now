@@ -30,6 +30,25 @@ choose which to draw with the `panels` argument.
   the overall mean, so 1 is average) by day of week, epidemiological
   week, or month.
 
+- `"calendar_holiday"` — the same normalized boxplots by **day type**.
+  The categories follow the attached
+  [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
+  spec: a holiday calendar and a `weekend` effect together give
+  `Weekday` / `Weekend` / `Holiday`, a calendar alone gives
+  `Non-holiday` / `Holiday`, and a `weekend` effect alone gives
+  `Weekday` / `Weekend`. A holiday falling on a weekend counts as a
+  holiday.
+
+- `"calendar_holiday_lag"` — the same normalized boxplots by **position
+  relative to the nearest holiday**, as asked for by `holiday_lags` (see
+  [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)):
+  `"2 before"`, `"1 before"`, `"Holiday"`, `"1 after"`, ..., plus
+  `"Other"` for every other day as the reference. It shows exactly the
+  days the `..._holiday_lag_k` / `..._holiday_lead_k` columns flag —
+  weekends and other holidays are skipped when counting working days —
+  so you can see whether the lags you asked for are the ones that
+  matter.
+
 - `"seasonality"` — a periodogram of the incidence series whose dominant
   peak suggests a Fourier season length for
   [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md).
@@ -44,16 +63,34 @@ choose which to draw with the `panels` argument.
   the case-count calendar panels and makes them comparable across
   strata.
 
+- `"delay_holiday"`, `"delay_holiday_lag"` — the reporting-delay twins
+  of the two holiday panels above: the *normalized* mean delay by day
+  type and by position relative to the nearest holiday. These are often
+  the more telling pair — a holiday usually does not change how many
+  cases occur, but it very much changes how long they take to be
+  reported.
+
 - `"delay_seasonality"` — a periodogram of the mean-delay series, whose
   peak marks a cycle in the reporting delay (e.g. a weekly reporting
   rhythm).
 
-The calendar/delay panels shown depend on the event unit: daily data
-offers day-of-week **and** week-of-year panels, weekly data
-week-of-year, monthly data month-of-year. The delay panels are computed
-on the *complete* portion of the series (event dates on or before the
-incompleteness line) so the recent reporting truncation does not bias
-them.
+Which panels are available depends on the object. The **calendar/delay**
+panels follow the event unit: daily data offers day-of-week **and**
+week-of-year panels, weekly data week-of-year, monthly data
+month-of-year. The four **holiday** panels describe the attached
+[`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
+spec, so they appear only when there is one to describe:
+`"calendar_holiday"` / `"delay_holiday"` need a `holidays` calendar or a
+`weekend` effect, and the two lag panels additionally need a non-zero
+`holiday_lags`. Requesting a holiday panel without the matching effect
+warns and skips it. The spec is read directly, so you do **not** need to
+call
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
+first.
+
+The delay panels are computed on the *complete* portion of the series
+(event dates on or before the incompleteness line) so the recent
+reporting truncation does not bias them.
 
 ## Usage
 

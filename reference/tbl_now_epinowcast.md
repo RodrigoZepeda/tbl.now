@@ -48,6 +48,7 @@ tbl_now_to_epinowcast(
   x,
   ...,
   max_delay = NULL,
+  timestep = NULL,
   missing_reference = FALSE,
   preprocess = TRUE,
   verbose = TRUE,
@@ -93,7 +94,19 @@ tbl_now_to_epinowcast(
 - max_delay:
 
   Maximum delay (in `timestep`s) to use when preprocessing. If `NULL` it
-  is inferred from the data as `max(.delay) + 1`.
+  is inferred from the data as `max(.delay) + 1`. Because `.delay` is
+  measured in the object's report units, this is only in `timestep`s
+  when `timestep` matches those units — which is what the default
+  infers.
+
+- timestep:
+
+  The epinowcast timestep: `"day"`, `"week"`, or a whole number of days.
+  `NULL` (default) infers it from the object's report units (`"days"`
+  -\> `"day"`, `"weeks"` -\> `"week"`), which keeps `max_delay` and the
+  temporal-effect covariates on the same grid as the data. Other units
+  cannot be inferred (epinowcast does not support calendar months) —
+  pass a number of days explicitly, e.g. `timestep = 28`.
 
 - missing_reference:
 
@@ -183,7 +196,7 @@ library(data.table)
 #>     %notin%
 library(epinowcast)
 #> ! `enw_cache_location` is not set.
-#> ℹ Using `tempdir()` at /tmp/Rtmpx3TgQo for the epinowcast model cache location.
+#> ℹ Using `tempdir()` at /tmp/RtmpnaywXq for the epinowcast model cache location.
 #> ℹ Set a specific cache location using `enw_set_cache` to control Stan
 #>   recompilation in this R session or across R sessions.
 #> ℹ For example: `enw_set_cache(tools::R_user_dir(package = "epinowcast",
@@ -239,7 +252,8 @@ preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
 #> • report_date <- "report_date"
 #> • confirm <- "confirm"
 #> • by: "age_group"
-#> • max_delay: 40
+#> • timestep: "day"
+#> • max_delay: 40 day
 #> • missing_reference: FALSE
 #> • preprocess: TRUE
 # }
