@@ -25,24 +25,12 @@ has <- function(pkg) requireNamespace(pkg, quietly = TRUE)
 
 ## Why this vignette?
 
-If you work in public health surveillance you have almost certainly hit the
-same wall: **reported case counts for the most recent days or weeks are
-incomplete.** A case that happened last week may not be reported until next
-week, so the freshest numbers always look artificially low. *Nowcasting* is the
-family of methods that corrects for this reporting delay and estimates what the
-recent counts will look like once reporting is complete.
-
-The good news is that the `R` ecosystem has many excellent nowcasting packages.
-The bad news is that **each one wants its data in a different shape**: a
-reporting triangle here, a cumulative long table there, a line list somewhere
-else. Preparing the same outbreak data five different ways is tedious and
-error-prone.
-
-This is exactly the gap [`tbl.now`](https://rodrigozepeda.github.io/tbl.now/)
-fills. You describe your data **once** — which column is the event date, which
-is the report date, what the counts mean — and `tbl.now` hands it to each
+Preparing the same outbreak data different ways can be tedious and
+error-prone. This is exactly what [`tbl.now`](https://rodrigozepeda.github.io/tbl.now/)
+does for you. You describe your data once by specifying which column is the event date, which
+is the report date, what the counts mean and `tbl.now` hands it to each
 modelling package in the format that package expects. In this vignette we take a
-single dengue line list and, from that one object, drive five different
+single dengue line-list and, from that one object, drive five different
 nowcasting / delay-estimation tools:
 
 | Package | What it does | `tbl.now` bridge |
@@ -51,43 +39,72 @@ nowcasting / delay-estimation tools:
 | [baselinenowcast](https://baselinenowcast.epinowcast.org/) | fast, assumption-light baseline nowcast | `tbl_now_to_baselinenowcast()` |
 | [epinowcast](https://package.epinowcast.org/) | flexible Bayesian nowcast (delay + reference modules) | `tbl_now_to_epinowcast()` |
 | [epidist](https://epidist.epinowcast.org/) | estimates the reporting **delay distribution** | `tbl_now_to_epidist()` |
-| [NobBS](https://cran.r-project.org/package=NobBS) | Nowcasting by Bayesian Smoothing | a plain line list (`as.data.frame()`) |
+| [NobBS](https://cran.r-project.org/package=NobBS) | Nowcasting by Bayesian Smoothing | a plain line-list (`as.data.frame()`) |
 
 You do not need to be an expert in any of them to follow along — the point is
 how little changes on *your* side when you switch models.
 
 ## The data: one `tbl_now` to rule them all
 
-`tbl.now` ships with `denguedat`, a weekly dengue line list (one row per case)
+`tbl.now` ships with `denguedat`, a weekly dengue line-list (one row per case)
 with the week of symptom **onset** and the week the case was **reported**.
 
 ```{r setup, message=FALSE}
+library(dplyr)
 library(tbl.now)
 
 data(denguedat)
+```
+
+```{r, echo = FALSE}
 head(denguedat)
 ```
 
 We build a single `tbl_now`. We only have to say which column is the event date
-(symptom onset) and which is the report date; `tbl.now` infers the rest (the
-data are a line list, measured in weeks, and the "now" is the last report).
+(`onset_week`) and which is the report date (`report_week`); `tbl.now` infers the rest (the
+data is line-list, measured in weeks, and the "now" is the last report, `2010-12-20`).
 
 ```{r build-tbl-now}
 # A compact recent window keeps the vignette fast to build.
-dengue <- denguedat[denguedat$onset_week >= as.Date("2009-01-01"), ]
+dengue <- denguedat %>% 
+  filter(onset_week >= as.Date("2009-01-01"))
 
 dengue_now <- tbl_now(
   dengue,
   event_date  = onset_week,
   report_date = report_week,
   data_type   = "linelist"
-)
+  )
 
 dengue_now
 ```
 
-That is the *only* data-wrangling step in this whole vignette. Everything below
-starts from `dengue_now`.
+### A more complex object: strata and temporal effects
+
+Reporting delays are rarely constant and many series are reported for several **strata** (here, the
+patient's sex) that you may want to nowcast separately.
+[`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) lets you attach both **once**
+and carries them into whichever format can hold them. Here we build a second
+object, `dengue_seasonal`, that adds a `gender` stratum and a week-of-year plus
+annual-Fourier **temporal (delay) effect** on top of `dengue_now`:
+
+```{r build-seasonal, message=FALSE}
+dengue_seasonal <- dengue_now |>
+  add_strata(gender) |>      # nowcast Male/Female separately
+  add_temporal_effects(
+    temporal_effects(
+      week_of_year = TRUE,   # a separate level per epidemiological week
+      seasons      = 52      # an annual Fourier cycle (period = 52 weeks)
+    )
+  )
+```
+
+For each package below we show the **bare** conversion of `dengue_now` first, then
+how the same call carries the strata and the effects when handed
+`dengue_seasonal`. (Tip: run
+[`autoplot()`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html)
+with `panels = "delay_seasonality"` or `"delay_calendar"` first to *see* whether
+such effects are present before modelling them.)
 
 ## 1. diseasenowcasting — no conversion at all
 
@@ -95,7 +112,7 @@ starts from `dengue_now`.
 designed hand-in-hand with `tbl.now`, so it takes a `tbl_now` **directly**. You
 just hand it the object:
 
-```{r dnc, eval=run_models && has("diseasenowcasting")}
+```{r dnc, eval=run_models && has("diseasenowcasting"), message=FALSE}
 library(diseasenowcasting)
 
 dnc_fit <- nowcast(dengue_now)
@@ -103,35 +120,24 @@ dnc_fit <- nowcast(dengue_now)
 dnc_fit
 ```
 
-`diseasenowcasting` will even reach into the `tbl_now` for any temporal effects
-you attached (see the [temporal effects](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html#temporal-effects)
-section of the main vignette). For example, to let the model account for a
-seasonal cycle and a post-holiday reporting bump:
+### With strata and effects.
 
-```{r dnc-teff, eval=FALSE}
-library(almanac)
+`diseasenowcasting` reaches into the `tbl_now` itself, so the enriched object needs no extra arguments: it picks up the `gender`
+stratum and the week-of-year / seasonal effect columns automatically.
 
-dengue_seasonal <- dengue_now |>
-  add_temporal_effects(
-    temporal_effects(
-      seasons      = 52,                          # annual seasonality (weekly data)
-      holidays     = rcalendar(hol_christmas()),  # Christmas holiday effect
-      holiday_lags = 2                            # + the two weeks "after" it
-    )
-  )
-
-nowcast(dengue_seasonal)
+```{r dnc-teff, eval=run_models && has("diseasenowcasting"), message=FALSE}
+nowcast(dengue_seasonal)   # the strata and temporal effects are used automatically
 ```
 
 ## 2. baselinenowcast — a reporting triangle
 
-[`baselinenowcast`](https://baselinenowcast.epinowcast.org/) is a deliberately
+[`baselinenowcast`](https://baselinenowcast.epinowcast.org/) is a 
 simple, fast baseline. It works from a **reporting triangle**: a matrix with one
 row per reference (onset) week and one column per reporting delay, where the
 lower-right corner is the not-yet-observed part we want to fill in.
 
 `tbl_now_to_baselinenowcast()` builds that triangle for you (aggregating the
-line list to weekly incidence on the way):
+line-list to weekly incidence on the way):
 
 ```{r bln-convert, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
 library(baselinenowcast)
@@ -144,36 +150,66 @@ dengue_triangle <- tbl_now_to_baselinenowcast(dengue_now, verbose = FALSE)
 dengue_triangle[1:5, 1:6]
 ```
 
-Because `as_reporting_triangle()` is registered as a method for `tbl_now`, you
+Because `as_reporting_triangle()` is registered as a method for `tbl_now`, alternatively you
 can also write the idiomatic `baselinenowcast` call and pass the `tbl_now`
 straight in:
 
 ```{r bln-method, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
 dengue_triangle2 <- as_reporting_triangle(dengue_now)
-identical(dim(dengue_triangle), dim(dengue_triangle2))
 ```
 
-From here you follow `baselinenowcast`'s own workflow — estimate the delay from
-the triangle and sample nowcasts:
+From here you follow `baselinenowcast`'s own workflow. The one-call
+`baselinenowcast()` wrapper estimates the delay from the triangle, applies it, and
+draws nowcast samples in a single step:
 
-```{r bln-fit, eval=run_models && has("baselinenowcast")}
-# Estimate the delay from the triangle, apply it, and draw nowcast samples
-# (see the baselinenowcast documentation for the full workflow).
-point_nowcast <- dengue_triangle |>
-  estimate_and_apply_delays()
+```{r bln-fit, eval=run_models && has("baselinenowcast"), message=FALSE}
+# One-call workflow: estimate the delay, apply it, and draw nowcast samples.
+nowcast_samples <- baselinenowcast(
+  dengue_triangle2,
+  output_type = "samples",
+  draws       = 1000
+)
 
-nowcast_samples <- point_nowcast |>
-  sample_nowcasts()
+head(nowcast_samples)
+```
+
+If you want the intermediate point nowcast (rather than samples), the
+single-triangle helper is `estimate_and_apply_delay()`:
+
+```{r bln-point, eval=run_models && has("baselinenowcast"), message=FALSE}
+point_nowcast <- estimate_and_apply_delay(dengue_triangle2)
+```
+
+### With strata and effects.
+
+A reporting-triangle *matrix* is a single table with
+no room for strata or covariates, so `format = "matrix"` pools the strata (with a
+warning) and drops the effect columns. To keep them and to nowcast each stratum
+separately take the **long** format, which carries `gender` and the effect
+columns, and build one triangle per stratum:
+
+```{r bln-strata, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
+dengue_long <- tbl_now_to_baselinenowcast(dengue_seasonal, format = "long", verbose = FALSE)
+
+# List with one reporting triangle per stratum
+triangles_by_stratum <- dengue_long |>
+  split(dengue_long$gender) |> #
+  lapply(\(df) as_reporting_triangle(df, delays_unit = "weeks"))
+```
+
+```{r bln-strata-fit, eval=run_models && has("baselinenowcast"), message=FALSE}
+#One nowcast per triangle
+nowcasts_by_stratum <- triangles_by_stratum |>
+  lapply(\(tri) baselinenowcast(tri, output_type = "samples", draws = 1000))
 ```
 
 ## 3. epinowcast — a preprocessed Bayesian model object
 
 [`epinowcast`](https://package.epinowcast.org/) fits a flexible Bayesian model
 with separate modules for the reporting delay and the reference (epidemic)
-process. It expects **cumulative** counts and a preprocessed object built by
-`enw_preprocess_data()`.
+process. It expects a preprocessed object built by `enw_preprocess_data()`.
 
-`tbl_now_to_epinowcast()` handles the cumulation and the preprocessing, returning
+`tbl_now_to_epinowcast()` handles the preprocessing, returning
 an object you can pass straight to `epinowcast::epinowcast()`:
 
 ```{r enw-convert, eval=run_models && has("epinowcast"), message=FALSE, warning=FALSE}
@@ -184,7 +220,7 @@ dengue_enw <- tbl_now_to_epinowcast(dengue_now, verbose = FALSE, quiet = TRUE)
 dengue_enw
 ```
 
-```{r enw-fit, eval=FALSE}
+```{r enw-fit, eval=run_models && has("epinowcast"), message = FALSE, warning = FALSE}
 # A minimal epinowcast fit from the preprocessed object
 fit <- epinowcast(
   dengue_enw,
@@ -192,9 +228,37 @@ fit <- epinowcast(
 )
 ```
 
-If you attached temporal effects to the `tbl_now`, they are carried into the
-`metareference` / `metareport` tables as covariate columns, ready for use in
-epinowcast's reference and report modules.
+### With strata and effects.
+
+Handing `tbl_now_to_epinowcast()` the enriched object
+does two things automatically: the `gender` stratum becomes epinowcast's grouping
+(`by`), so the model fits a delay per sex, and the temporal-effect columns land in
+the `metareference` / `metareport` tables on every completed reference date,
+including the recent incomplete ones ready to be used in a module formula.
+
+```{r effects-enw-fit, eval=run_models && has("epinowcast")}
+enw_seasonal <- tbl_now_to_epinowcast(dengue_seasonal, verbose = FALSE, quiet = TRUE)
+
+# One group per stratum:
+length(unique(enw_seasonal$metareference[[1]]$.group))
+#> [1] 2
+
+# The effect columns are in the per-reference-date metadata, ready for a formula:
+names(enw_seasonal$metareference[[1]])
+#> [1] ... ".event_week_of_year"  ".event_season_52_cos" ".event_season_52_sin" ...
+
+# Drop the seasonal terms into a reference-module formula and fit as usual: the
+# covariates now enter the reference model.
+epinowcast(
+  enw_seasonal,
+  reference = enw_reference(
+    parametric   = ~ 1 + .event_season_52_sin + .event_season_52_cos,
+    distribution = "lognormal",
+    data         = enw_seasonal
+  ),
+  fit = enw_fit_opts(pp = TRUE, chains = 2, iter_sampling = 500)
+)
+```
 
 ## 4. epidist — the reporting delay distribution
 
@@ -203,7 +267,7 @@ how long, on average, between onset and report, and how variable is it?
 [`epidist`](https://epidist.epinowcast.org/) estimates exactly that, treating
 each case as an interval-censored onset/report pair.
 
-`tbl_now_to_epidist()` converts the `tbl_now` into the censored line list
+`tbl_now_to_epidist()` converts the `tbl_now` into the censored line-list
 `epidist` expects. Because our data are weekly, each event is censored over its
 whole week automatically:
 
@@ -212,7 +276,6 @@ library(epidist)
 
 dengue_epidist <- tbl_now_to_epidist(dengue_now, verbose = FALSE)
 
-head(dengue_epidist)
 ```
 
 ```{r epidist-fit, eval=FALSE}
@@ -222,20 +285,45 @@ delay_model <- dengue_epidist |>
   epidist()
 ```
 
-The fitted delay distribution can then feed back into a nowcast — for example as
-a prior in `epinowcast` or `EpiNow2`.
+The fitted delay distribution can then feed back into a nowcast for example as
+a data-informed prior in `epinowcast`.
+
+### With strata and effects.
+
+`epidist` has no separate grouping argument, so the `gender` stratum and the
+temporal-effect columns simply ride along as extra columns on the censored
+line-list — where an `epidist` model **formula** can use them. The mean of the
+delay distribution (`mu`) can be made to vary by sex, or by season through the
+Fourier terms:
+
+```{r epidist-strata, eval=has("epidist"), message=FALSE, warning=FALSE}
+dengue_epidist_eff <- tbl_now_to_epidist(dengue_seasonal, verbose = FALSE)
+
+# the strata and effect columns are on the line-list, ready for a formula
+names(dengue_epidist_eff)
+```
+
+```{r epidist-strata-fit, eval=FALSE}
+# A sex-varying mean delay: `gender` enters the model for `mu`.
+delay_by_sex <- dengue_epidist_eff |>
+  as_epidist_marginal_model() |>
+  epidist(formula = mu ~ 1 + gender)
+
+# A season-varying mean delay uses the Fourier pair instead:
+delay_seasonal <- dengue_epidist_eff |>
+  as_epidist_marginal_model() |>
+  epidist(formula = mu ~ 1 + .event_season_52_sin + .event_season_52_cos)
+```
 
 ## 5. NobBS — Nowcasting by Bayesian Smoothing
 
-[`NobBS`](https://cran.r-project.org/package=NobBS) works from a **line list**
+[`NobBS`](https://cran.r-project.org/package=NobBS) works from a **line-list**
 with an onset-date column and a report-date column — precisely what a `linelist`
 `tbl_now` already is. Drop the `tbl.now` classes with `as.data.frame()` and hand
 the columns to `NobBS()`:
 
 ```{r nobbs-convert, eval=has("NobBS")}
 dengue_linelist <- as.data.frame(dengue_now)
-
-names(dengue_linelist)
 ```
 
 ```{r nobbs-fit, eval=run_models && has("NobBS")}
@@ -256,77 +344,27 @@ Notice that even the arguments come from the `tbl_now`: `get_now()`,
 `get_event_date()` and `get_report_date()` tell `NobBS` what `tbl.now` already
 figured out.
 
-## Carrying delay effects into each model
+### With strata and effects.
 
-Reporting delays are rarely constant — they wax and wane with the day of the
-week, the season, and around holidays. `tbl.now` lets you attach these
-**temporal (delay) effects** once, with
-[`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html),
-and then carries the resulting covariate columns into whichever model format can
-hold them. (Use [`autoplot()`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html)
-with `panels = "delay_calendar"` or `panels = "delay_seasonality"` first to *see*
-whether such effects exist in your data before modelling them.)
+Call `NobBS.strat()` and pass the column name to the strata option:
 
-```{r attach-effects, eval=has("almanac"), message=FALSE}
-library(almanac)
-
-dengue_eff <- dengue_now |>
-  add_temporal_effects(
-    temporal_effects(
-      week_of_year = TRUE,                        # week-of-year delay effect
-      holidays     = rcalendar(hol_christmas()),  # holiday indicator
-      holiday_lags = 1                            # + the first week after a holiday
-    )
-  )
-
-# The spec is lazy; materialise it to see the columns it produces
-compute_temporal_effects(dengue_eff) |>
-  get_temporal_effect_cols()
+```{r nobbs-strata, eval=run_models && has("NobBS"), warning=FALSE, message=FALSE}
+dengue_nobbs     <- as.data.frame(dengue_seasonal)
+stratified_nobbs <- NobBS.strat(dengue_nobbs, 
+                                strata        = "gender", 
+                                now         = get_now(dengue_seasonal), 
+                                units       = "1 week",
+                                onset_date  = get_event_date(dengue_seasonal),
+                                report_date = get_report_date(dengue_seasonal),
+                                #These two values are set small for the example
+                                max_D         = 5, 
+                                moving_window = 7
+                                )
 ```
 
-These columns then ride along automatically when you convert. For example, into
-the `baselinenowcast` long format and into `epinowcast`'s metadata tables:
+## Summary
 
-```{r effects-baselinenowcast, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
-bln_long <- tbl_now_to_baselinenowcast(dengue_eff, format = "long", verbose = FALSE)
-grep("holiday|week_of_year", names(bln_long), value = TRUE)
-```
-
-```{r effects-epinowcast, eval=run_models && has("epinowcast"), message=FALSE, warning=FALSE}
-enw <- tbl_now_to_epinowcast(dengue_eff, verbose = FALSE, quiet = TRUE)
-# The effect columns appear in the reference and report metadata tables,
-# ready to be used in epinowcast's reference / report module formulas.
-grep("holiday|week_of_year", names(enw$metareference[[1]]), value = TRUE)
-```
-
-**Where do the columns end up, and does the model use them?** Carrying a column
-and *using* it are two different things — `tbl.now` does the former; whether a
-model consumes it is up to that model:
-
-| Target | Delay-effect columns | Generic `covariates` | How the model can use them |
-|---|---|---|---|
-| `diseasenowcasting` | consumed automatically | — | `nowcast()` reads the effect columns straight from the `tbl_now` and adds them to the model |
-| `epinowcast` | in `metareference` **and** `metareport` | dropped (fixed schema) | reference / report module formulas (e.g. `~ 1 + .event_holiday`) |
-| `baselinenowcast` (long) | extra columns | extra columns | carried for you; the core triangle estimator ignores them |
-| `baselinenowcast` (matrix) | dropped | dropped | the matrix holds only counts |
-| `epidist` | extra linelist columns | extra linelist columns | available to formula-based delay models |
-| `data.table` / `tsibble` | kept | kept | yours to use however you like |
-| `NobBS` | not used | not used | `NobBS` models only the onset/report dates |
-
-Two practical notes for practitioners:
-
-* **Delay effects are date-derived**, so they aggregate cleanly from a line list
-  to counts and survive every conversion above. A **generic per-case covariate**
-  (say a per-patient lab value) does *not* aggregate to a reference-date ×
-  report-date cell, so it is only meaningful for the line-list / long formats —
-  and `epinowcast`'s cumulative schema will reject it.
-* The `baselinenowcast` **matrix** and any purely count-based format cannot carry
-  covariates at all; use the **long** format when you want the effects to travel.
-
-## The pay-off
-
-Look back at what changed between the five models: **almost nothing.** We
-described the dengue data once as a `tbl_now`, and then a single converter call
+We described the dengue data once as a `tbl_now`, and then a single converter call
 (or, for `diseasenowcasting`, no call at all) handed it to each package in the
 shape it needed:
 
@@ -341,10 +379,11 @@ tbl_now_to_epidist(dengue_now)          # epidist
 as.data.frame(dengue_now)               # NobBS or others
 ```
 
-For a public-health team this means you can **benchmark several nowcasting
-methods on your own surveillance data without re-plumbing it each time** —
-making it practical to compare models, cross-check results, and pick the tool
-that works best for your disease and reporting system.
+Attaching **strata** and **temporal effects** once (`dengue_seasonal`) then rides
+along the same converters: each package receives them in whatever way it can use —
+a grouping in `epinowcast`, covariate columns in `epidist` and the
+`baselinenowcast` long format, one triangle/series per stratum where the model
+takes a single series, and automatically in `diseasenowcasting`. 
 
 ## See also
 
@@ -353,3 +392,4 @@ that works best for your disease and reporting system.
 * [`autoplot()`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html)
   for a quick diagnostic overview (delay distribution, epidemic curve, calendar
   effects, seasonality) of any `tbl_now`.
+* Tutorial on detecting batches and other reporting-delay artifacts: [https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html) 

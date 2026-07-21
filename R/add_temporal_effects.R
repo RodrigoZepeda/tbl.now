@@ -66,6 +66,75 @@ add_temporal_effects <- function(x, t_effects = NULL, overwrite = FALSE, ...) {
   UseMethod("add_temporal_effects")
 }
 
+#' Is each date a holiday in any of one or more calendars?
+#'
+#' Accepts the several shapes a holiday calendar arrives in: nothing at all, a
+#' single [almanac::rcalendar()], or a list of them (a `tbl_now` carries one
+#' temporal-effects spec per `add_temporal_effects()` call, each with its own
+#' calendar).
+#'
+#' @param dates A vector of `<Date>` values.
+#' @param holidays `NULL`, an [almanac::rcalendar()], or a list of them.
+#'
+#' @return A logical vector the same length as `dates`, `TRUE` where the date is
+#'   a holiday in at least one calendar.
+#'
+#' @keywords internal
+#' @noRd
+.alma_in_any <- function(dates, holidays) {
+  not_a_holiday <- rep(FALSE, length(dates))
+  if (is.null(holidays)) {
+    return(not_a_holiday)
+  }
+  calendars <- if (inherits(holidays, "almanac_rcalendar")) list(holidays) else holidays
+  Reduce(
+    `|`,
+    lapply(calendars, function(calendar) almanac::alma_in(dates, calendar)),
+    init = not_a_holiday
+  )
+}
+
+#' Count working days from the nearest "reset" event along a daily grid
+#'
+#' The engine shared by the temporal-effect lag columns and the `autoplot()`
+#' holiday-lag panel. Walks the grid once, restarting the count at every reset
+#' day and incrementing it on every working day.
+#'
+#' @param is_reset Logical vector: does this grid day restart the count?
+#' @param is_working Logical vector: is this grid day a working day?
+#' @param direction `"after"` walks the grid forwards (working days *since* the
+#'   last reset); `"before"` walks it backwards (working days *until* the next
+#'   one). The counting rules are identical in both directions.
+#'
+#' @return An integer vector the same length as the grid: the number of working
+#'   days from the nearest reset event, `NA` on reset days, on non-working days,
+#'   and before any reset event has been seen.
+#'
+#' @keywords internal
+#' @noRd
+.working_days_counter <- function(is_reset, is_working, direction) {
+  grid_order <- if (direction == "before") {
+    rev(seq_along(is_reset))
+  } else {
+    seq_along(is_reset)
+  }
+
+  counter <- rep(NA_integer_, length(is_reset))
+  running <- NA_integer_
+  for (i in grid_order) {
+    if (is_reset[i]) {
+      # The reset day starts a new count; it is not itself "after" the event.
+      running <- 0L
+    } else if (is_working[i]) {
+      if (!is.na(running)) running <- running + 1L
+      counter[i] <- running
+    }
+    # Non-working, non-reset days (e.g. a holiday while counting after a
+    # weekend) carry `running` forward without incrementing and keep `NA`.
+  }
+  counter
+}
+
 #' Working days separating each date from the nearest "reset" event
 #'
 #' Powers the *after-*/*before-holiday* and *after-*/*before-weekend* lag
@@ -81,7 +150,7 @@ add_temporal_effects <- function(x, t_effects = NULL, overwrite = FALSE, ...) {
 #' @param direction `"after"` counts working days since the most recent reset
 #'   event; `"before"` counts working days until the next one.
 #' @param weekend_days Passed to [is_weekday()].
-#' @param holidays An [almanac::rcalendar()] or `NULL`.
+#' @param holidays `NULL`, an [almanac::rcalendar()], or a list of them.
 #'
 #' @return An integer vector, the same length as `dates`, giving the number of
 #'   working days from the nearest reset event (`NA` where undefined or where
@@ -101,32 +170,11 @@ add_temporal_effects <- function(x, t_effects = NULL, overwrite = FALSE, ...) {
   grid <- seq(min(valid), max(valid), by = "day")
 
   is_weekend <- !is_weekday(grid, weekend_days = weekend_days)
-  is_holiday <- if (!is.null(holidays)) {
-    almanac::alma_in(grid, holidays)
-  } else {
-    rep(FALSE, length(grid))
-  }
+  is_holiday <- .alma_in_any(grid, holidays)
   is_working <- !is_weekend & !is_holiday
   is_reset   <- if (reset_event == "holiday") is_holiday else is_weekend
 
-  # Walking the grid backwards turns "working days since the last reset" into
-  # "working days until the next reset"; the counting rules are identical.
-  order <- if (direction == "before") rev(seq_along(grid)) else seq_along(grid)
-
-  counter <- rep(NA_integer_, length(grid))
-  running <- NA_integer_
-  for (i in order) {
-    if (is_reset[i]) {
-      # The reset day starts a new count; it is not itself "after" the event.
-      running <- 0L
-    } else if (is_working[i]) {
-      if (!is.na(running)) running <- running + 1L
-      counter[i] <- running
-    }
-    # Non-working, non-reset days (e.g. a holiday while counting after a
-    # weekend) carry `running` forward without incrementing and keep `NA`.
-  }
-
+  counter <- .working_days_counter(is_reset, is_working, direction)
   counter[match(dates, grid)]
 }
 

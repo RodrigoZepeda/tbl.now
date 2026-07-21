@@ -90,6 +90,19 @@ dashed vertical line marking where the data become incomplete (less than
 \item \code{"calendar_weekday"}, \code{"calendar_week"}, \code{"calendar_month"} — boxplots of
 the \emph{normalized} case effect (each event date's cases divided by the overall
 mean, so 1 is average) by day of week, epidemiological week, or month.
+\item \code{"calendar_holiday"} — the same normalized boxplots by \strong{day type}. The
+categories follow the attached \code{\link[=temporal_effects]{temporal_effects()}} spec: a holiday calendar
+and a \code{weekend} effect together give \code{Weekday} / \code{Weekend} / \code{Holiday}, a
+calendar alone gives \code{Non-holiday} / \code{Holiday}, and a \code{weekend} effect alone
+gives \code{Weekday} / \code{Weekend}. A holiday falling on a weekend counts as a
+holiday.
+\item \code{"calendar_holiday_lag"} — the same normalized boxplots by \strong{position
+relative to the nearest holiday}, as asked for by \code{holiday_lags} (see
+\code{\link[=temporal_effects]{temporal_effects()}}): \code{"2 before"}, \code{"1 before"}, \code{"Holiday"}, \code{"1 after"},
+..., plus \code{"Other"} for every other day as the reference. It shows exactly
+the days the \code{..._holiday_lag_k} / \code{..._holiday_lead_k} columns flag —
+weekends and other holidays are skipped when counting working days — so you
+can see whether the lags you asked for are the ones that matter.
 \item \code{"seasonality"} — a periodogram of the incidence series whose dominant peak
 suggests a Fourier season length for \code{\link[=temporal_effects]{temporal_effects()}}.
 }
@@ -102,15 +115,28 @@ the overall mean delay, so 1 is average) by day of week, epidemiological
 week, or month; these reveal whether the delay itself has a calendar
 pattern. Normalizing keeps them on the same scale as the case-count
 calendar panels and makes them comparable across strata.
+\item \code{"delay_holiday"}, \code{"delay_holiday_lag"} — the reporting-delay twins of the
+two holiday panels above: the \emph{normalized} mean delay by day type and by
+position relative to the nearest holiday. These are often the more telling
+pair — a holiday usually does not change how many cases occur, but it very
+much changes how long they take to be reported.
 \item \code{"delay_seasonality"} — a periodogram of the mean-delay series, whose peak
 marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).
 }
 
-The calendar/delay panels shown depend on the event unit: daily data offers
-day-of-week \strong{and} week-of-year panels, weekly data week-of-year, monthly
-data month-of-year. The delay panels are computed on the \emph{complete} portion of
-the series (event dates on or before the incompleteness line) so the recent
-reporting truncation does not bias them.
+Which panels are available depends on the object. The \strong{calendar/delay}
+panels follow the event unit: daily data offers day-of-week \strong{and}
+week-of-year panels, weekly data week-of-year, monthly data month-of-year. The
+four \strong{holiday} panels describe the attached \code{\link[=temporal_effects]{temporal_effects()}} spec, so
+they appear only when there is one to describe: \code{"calendar_holiday"} /
+\code{"delay_holiday"} need a \code{holidays} calendar or a \code{weekend} effect, and the
+two lag panels additionally need a non-zero \code{holiday_lags}. Requesting a
+holiday panel without the matching effect warns and skips it. The spec is read
+directly, so you do \strong{not} need to call \code{\link[=compute_temporal_effects]{compute_temporal_effects()}} first.
+
+The delay panels are computed on the \emph{complete} portion of the series (event
+dates on or before the incompleteness line) so the recent reporting truncation
+does not bias them.
 }
 \examples{
 \dontshow{if (requireNamespace("patchwork", quietly = TRUE)) withAutoprint(\{ # examplesIf}

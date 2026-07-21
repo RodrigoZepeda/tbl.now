@@ -424,11 +424,217 @@
     return(no_holidays)
   }
 
-  is_holiday <- rep(FALSE, nrow(epidemic_process))
-  for (calendar in calendars) {
-    is_holiday <- is_holiday | almanac::alma_in(epidemic_process$event_date, calendar)
+  dplyr::slice(
+    epidemic_process,
+    which(.alma_in_any(epidemic_process$event_date, calendars))
+  )
+}
+
+#' The holiday / weekend configuration asked for by the temporal-effects spec
+#'
+#' Reads every [temporal_effects()] spec attached to the object and folds them
+#' into the one description the holiday panels need. A `tbl_now` carries one spec
+#' per [add_temporal_effects()] call, and each may name its own calendar, weekend
+#' effect and holiday-lag depth — including the two-spec idiom that models both
+#' sides of a holiday (see `?temporal_effects`).
+#'
+#' @param object A `tbl_now` object.
+#'
+#' @return `NULL` when no holiday or weekend effect is attached (the holiday
+#'   panels then do not apply). Otherwise a list with:
+#'   * `calendars` — a list of [almanac::rcalendar()]s (possibly empty).
+#'   * `weekend` — `TRUE` when any spec asks for a weekend effect.
+#'   * `weekend_days` — the weekend definition (from the first spec).
+#'   * `lag_depths` — the distinct non-zero `holiday_lags` depths, signed
+#'     (negative = working days *before* a holiday).
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_holiday_config <- function(object) {
+  specs <- get_temporal_effects(object)
+  if (length(specs) == 0) {
+    return(NULL)
   }
-  dplyr::slice(epidemic_process, which(is_holiday))
+
+  calendars <- Filter(Negate(is.null), lapply(specs, function(spec) {
+    spec$t_effects@holidays
+  }))
+  has_weekend <- any(vapply(specs, function(spec) {
+    isTRUE(spec$t_effects@weekend)
+  }, logical(1)))
+  lag_depths <- vapply(specs, function(spec) {
+    as.integer(spec$t_effects@holiday_lags)
+  }, integer(1))
+
+  # Marking holidays needs almanac; a weekend-only effect does not.
+  if (length(calendars) > 0 && !requireNamespace("almanac", quietly = TRUE)) {
+    cli::cli_warn(
+      "Package {.pkg almanac} is needed for the holiday panels; skipping them."
+    )
+    calendars <- list()
+    lag_depths <- integer(0)
+  }
+
+  if (length(calendars) == 0 && !has_weekend) {
+    return(NULL)
+  }
+
+  list(
+    calendars    = calendars,
+    weekend      = has_weekend,
+    # Every spec carries a weekend definition; they agree in all but pathological
+    # cases, so the first one speaks for the object.
+    weekend_days = specs[[1]]$weekend_days,
+    lag_depths   = sort(unique(lag_depths[lag_depths != 0]))
+  )
+}
+
+#' Which holiday groupings the attached spec supports
+#'
+#' @param holiday_config A list from `.tbl_now_holiday_config()`, or `NULL`.
+#'
+#' @return A character vector of groupings (`"holiday"`, `"holiday_lag"`),
+#'   possibly empty.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_holiday_groupings <- function(holiday_config) {
+  if (is.null(holiday_config)) {
+    return(character(0))
+  }
+  c(
+    "holiday",
+    # The lag panel needs a calendar to count from and a depth to count to.
+    if (length(holiday_config$calendars) > 0 &&
+        length(holiday_config$lag_depths) > 0) {
+      "holiday_lag"
+    }
+  )
+}
+
+#' Classify dates as Weekday / Weekend / Holiday
+#'
+#' Which categories exist depends on what the spec asked for: a holiday calendar
+#' alone contrasts holidays with everything else, a weekend effect alone
+#' contrasts weekends with working days, and both together give the three-way
+#' split. A holiday falling on a weekend counts as a **holiday** — it is the
+#' stronger claim about why reporting stopped.
+#'
+#' @param dates A vector of `<Date>` values.
+#' @param holiday_config A list from `.tbl_now_holiday_config()`.
+#'
+#' @return A factor with the levels from `.tbl_now_holiday_levels()`.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_holiday_group <- function(dates, holiday_config) {
+  has_calendar <- length(holiday_config$calendars) > 0
+  is_holiday <- .alma_in_any(dates, holiday_config$calendars)
+  is_weekend <- !is_weekday(dates, weekend_days = holiday_config$weekend_days)
+
+  group <- if (holiday_config$weekend) {
+    dplyr::if_else(is_weekend, "Weekend", "Weekday")
+  } else {
+    rep("Non-holiday", length(dates))
+  }
+  if (has_calendar) {
+    group[is_holiday] <- "Holiday"
+  }
+
+  factor(group, levels = .tbl_now_holiday_levels(holiday_config))
+}
+
+#' The ordered categories of the holiday effect panel
+#'
+#' @param holiday_config A list from `.tbl_now_holiday_config()`.
+#'
+#' @return A character vector of factor levels.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_holiday_levels <- function(holiday_config) {
+  has_calendar <- length(holiday_config$calendars) > 0
+  c(
+    if (holiday_config$weekend) c("Weekday", "Weekend") else "Non-holiday",
+    if (has_calendar) "Holiday"
+  )
+}
+
+#' Assign each date its position relative to the nearest holiday
+#'
+#' Uses the same working-day counting as the `..._holiday_lag_k` /
+#' `..._holiday_lead_k` effect columns, so the panel shows exactly the days those
+#' columns flag: weekends and other holidays are skipped, and the count reaches
+#' only as far as the depths the spec asked for. Everything else is `"Other"` —
+#' the baseline the lag days should be read against.
+#'
+#' @param dates A vector of `<Date>` values.
+#' @param holiday_config A list from `.tbl_now_holiday_config()`.
+#'
+#' @return A factor with the levels from `.tbl_now_holiday_lag_levels()`.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_holiday_lag_group <- function(dates, holiday_config) {
+  depths <- holiday_config$lag_depths
+  days_after  <- max(c(depths[depths > 0], 0L))
+  days_before <- max(c(-depths[depths < 0], 0L))
+
+  working_days_from <- function(direction) {
+    .working_days_from_reset(
+      dates,
+      reset_event  = "holiday",
+      direction    = direction,
+      weekend_days = holiday_config$weekend_days,
+      holidays     = holiday_config$calendars
+    )
+  }
+  no_distance <- rep(NA_integer_, length(dates))
+  distance_after <- if (days_after > 0) working_days_from("after") else no_distance
+  distance_before <- if (days_before > 0) working_days_from("before") else no_distance
+
+  within_after <- !is.na(distance_after) &
+    distance_after >= 1L & distance_after <= days_after
+  within_before <- !is.na(distance_before) &
+    distance_before >= 1L & distance_before <= days_before
+
+  # A date can sit both after one holiday and before the next (the days between
+  # Christmas and New Year). Attribute it to whichever holiday is nearer, and to
+  # the "after" side when equidistant: the post-holiday rebound is the effect
+  # these lags exist to capture.
+  label_after <- within_after &
+    (!within_before | distance_after <= distance_before)
+  label_before <- within_before & !label_after
+
+  group <- rep("Other", length(dates))
+  group[label_before] <- paste0(distance_before[label_before], " before")
+  group[label_after] <- paste0(distance_after[label_after], " after")
+  group[.alma_in_any(dates, holiday_config$calendars)] <- "Holiday"
+
+  factor(group, levels = .tbl_now_holiday_lag_levels(depths))
+}
+
+#' The ordered categories of the holiday-lag panel
+#'
+#' Reads left-to-right as time does: the working days running up to a holiday,
+#' the holiday itself, the working days after it, and finally every other day as
+#' the reference.
+#'
+#' @param depths The signed, non-zero `holiday_lags` depths from the spec.
+#'
+#' @return A character vector of factor levels.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_holiday_lag_levels <- function(depths) {
+  days_after  <- max(c(depths[depths > 0], 0L))
+  days_before <- max(c(-depths[depths < 0], 0L))
+  c(
+    if (days_before > 0) paste0(rev(seq_len(days_before)), " before"),
+    "Holiday",
+    if (days_after > 0) paste0(seq_len(days_after), " after"),
+    "Other"
+  )
 }
 
 #' Titles for a calendar grouping
@@ -442,9 +648,11 @@
 #' @noRd
 .tbl_now_calendar_group_spec <- function(grouping) {
   switch(grouping,
-    weekday = list(title = "Day-of-week",   x = "Day of week"),
-    week    = list(title = "Week-of-year",  x = "Epidemiological week"),
-    month   = list(title = "Month-of-year", x = "Month"),
+    weekday     = list(title = "Day-of-week",   x = "Day of week"),
+    week        = list(title = "Week-of-year",  x = "Epidemiological week"),
+    month       = list(title = "Month-of-year", x = "Month"),
+    holiday     = list(title = "Holiday",       x = "Day type"),
+    holiday_lag = list(title = "Holiday lag",   x = "Working days from the nearest holiday"),
     NULL
   )
 }
@@ -452,20 +660,33 @@
 #' Add a `calendar_group` factor derived from a date column
 #'
 #' @param data A data frame with a date column.
-#' @param grouping One of `"weekday"`, `"week"` or `"month"`.
+#' @param grouping One of `"weekday"`, `"week"`, `"month"`, `"holiday"` or
+#'   `"holiday_lag"`.
 #' @param date_col Name of the date column (default `"event_date"`).
+#' @param holiday_config A list from `.tbl_now_holiday_config()`. Required by the
+#'   `"holiday"` / `"holiday_lag"` groupings, which read the calendar, weekend
+#'   definition and lag depths from the temporal-effects spec; ignored by the
+#'   others, which need only the date.
 #'
 #' @return `data` with a `calendar_group` column, or `NULL` for an unknown
-#'   grouping.
+#'   grouping (or a holiday grouping with no spec to read).
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_add_calendar_group <- function(data, grouping, date_col = "event_date") {
+.tbl_now_add_calendar_group <- function(data, grouping, date_col = "event_date",
+                                        holiday_config = NULL) {
   dates <- data[[date_col]]
+  needs_config <- grouping %in% c("holiday", "holiday_lag")
+  if (needs_config && is.null(holiday_config)) {
+    return(NULL)
+  }
+
   calendar_group <- switch(grouping,
-    weekday = lubridate::wday(dates, label = TRUE, abbr = FALSE, week_start = 1),
-    week    = factor(lubridate::epiweek(dates)),
-    month   = lubridate::month(dates, label = TRUE, abbr = TRUE),
+    weekday     = lubridate::wday(dates, label = TRUE, abbr = FALSE, week_start = 1),
+    week        = factor(lubridate::epiweek(dates)),
+    month       = lubridate::month(dates, label = TRUE, abbr = TRUE),
+    holiday     = .tbl_now_holiday_group(dates, holiday_config),
+    holiday_lag = .tbl_now_holiday_lag_group(dates, holiday_config),
     return(NULL)
   )
   dplyr::mutate(data, calendar_group = calendar_group)
@@ -484,14 +705,16 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_panel_calendar <- function(epidemic_process, grouping, palette) {
+.tbl_now_panel_calendar <- function(epidemic_process, grouping, palette,
+                                    holiday_config = NULL) {
   overall_mean <- mean(epidemic_process$case_count, na.rm = TRUE)
   if (is.na(overall_mean) || overall_mean == 0) {
     return(.tbl_now_empty_panel("No cases to compute a calendar effect", palette))
   }
 
   labels <- .tbl_now_calendar_group_spec(grouping)
-  grouped <- .tbl_now_add_calendar_group(epidemic_process, grouping)
+  grouped <- .tbl_now_add_calendar_group(epidemic_process, grouping,
+                                        holiday_config = holiday_config)
   if (is.null(labels) || is.null(grouped)) {
     return(.tbl_now_empty_panel(
       paste0("Calendar effect unavailable for ", grouping), palette
@@ -534,7 +757,8 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_panel_delay_calendar <- function(delay_per_date, grouping, palette) {
+.tbl_now_panel_delay_calendar <- function(delay_per_date, grouping, palette,
+                                          holiday_config = NULL) {
   if (nrow(delay_per_date) == 0) {
     return(.tbl_now_empty_panel("No delays to summarise", palette))
   }
@@ -545,7 +769,8 @@
   }
 
   labels <- .tbl_now_calendar_group_spec(grouping)
-  grouped <- .tbl_now_add_calendar_group(delay_per_date, grouping)
+  grouped <- .tbl_now_add_calendar_group(delay_per_date, grouping,
+                                        holiday_config = holiday_config)
   if (is.null(labels) || is.null(grouped)) {
     return(.tbl_now_empty_panel(
       paste0("Delay effect unavailable for ", grouping), palette
@@ -948,9 +1173,11 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_panel_calendar_strata <- function(epidemic_process_by, grouping, palette) {
+.tbl_now_panel_calendar_strata <- function(epidemic_process_by, grouping, palette,
+                                           holiday_config = NULL) {
   labels <- .tbl_now_calendar_group_spec(grouping)
-  grouped <- .tbl_now_add_calendar_group(epidemic_process_by, grouping)
+  grouped <- .tbl_now_add_calendar_group(epidemic_process_by, grouping,
+                                        holiday_config = holiday_config)
   if (is.null(labels) || is.null(grouped)) {
     return(.tbl_now_empty_panel(
       paste0("Calendar effect unavailable for ", grouping), palette
@@ -997,12 +1224,14 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_panel_delay_calendar_strata <- function(delay_per_date_by, grouping, palette) {
+.tbl_now_panel_delay_calendar_strata <- function(delay_per_date_by, grouping, palette,
+                                                 holiday_config = NULL) {
   if (nrow(delay_per_date_by) == 0) {
     return(.tbl_now_empty_panel("No delays to summarise", palette))
   }
   labels <- .tbl_now_calendar_group_spec(grouping)
-  grouped <- .tbl_now_add_calendar_group(delay_per_date_by, grouping)
+  grouped <- .tbl_now_add_calendar_group(delay_per_date_by, grouping,
+                                        holiday_config = holiday_config)
   if (is.null(labels) || is.null(grouped)) {
     return(.tbl_now_empty_panel(
       paste0("Delay effect unavailable for ", grouping), palette
@@ -1139,13 +1368,19 @@
 #' The full, ordered set of panel keys applicable to an event unit
 #'
 #' @param event_units The event units (`"days"`, `"weeks"`, `"months"`, ...).
+#' @param holiday_config A list from `.tbl_now_holiday_config()`, or `NULL`. The
+#'   holiday panels are available only when the object carries a holiday or
+#'   weekend temporal effect for them to describe.
 #'
 #' @return An ordered character vector of concrete panel keys.
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_all_panel_keys <- function(event_units) {
-  calendar_groupings <- .tbl_now_calendar_groupings(event_units)
+.tbl_now_all_panel_keys <- function(event_units, holiday_config = NULL) {
+  calendar_groupings <- c(
+    .tbl_now_calendar_groupings(event_units),
+    .tbl_now_holiday_groupings(holiday_config)
+  )
   c(
     "delay_distribution",
     "epidemic",
@@ -1164,14 +1399,18 @@
 #'
 #' @param panels The user's `panels` argument (character vector or `NULL`).
 #' @param event_units The event units.
+#' @param holiday_config A list from `.tbl_now_holiday_config()`, or `NULL`.
 #'
 #' @return An ordered character vector of concrete panel keys.
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_resolve_panels <- function(panels, event_units) {
-  all_keys <- .tbl_now_all_panel_keys(event_units)
-  calendar_groupings <- .tbl_now_calendar_groupings(event_units)
+.tbl_now_resolve_panels <- function(panels, event_units, holiday_config = NULL) {
+  all_keys <- .tbl_now_all_panel_keys(event_units, holiday_config)
+  calendar_groupings <- c(
+    .tbl_now_calendar_groupings(event_units),
+    .tbl_now_holiday_groupings(holiday_config)
+  )
 
   if (is.null(panels)) panels <- "all"
   if (!is.character(panels)) {
@@ -1190,8 +1429,10 @@
 
   known_keys <- c(
     "delay_distribution", "epidemic",
-    "calendar_weekday", "calendar_week", "calendar_month", "seasonality",
-    "delay_weekday", "delay_week", "delay_month", "delay_seasonality"
+    "calendar_weekday", "calendar_week", "calendar_month",
+    "calendar_holiday", "calendar_holiday_lag", "seasonality",
+    "delay_weekday", "delay_week", "delay_month",
+    "delay_holiday", "delay_holiday_lag", "delay_seasonality"
   )
   aliases <- c("all", "calendar", "delay_calendar")
   unknown <- setdiff(requested, known_keys)
@@ -1202,16 +1443,33 @@
     ))
   }
 
-  # Drop keys that do not apply to this event unit (e.g. a day-of-week panel for
-  # weekly data), keeping the user informed.
+  # A requested panel can be unavailable for two different reasons, and they have
+  # two different fixes, so say which one applies.
+  holiday_keys <- c(
+    "calendar_holiday", "calendar_holiday_lag",
+    "delay_holiday", "delay_holiday_lag"
+  )
   inapplicable <- setdiff(requested, all_keys)
-  if (length(inapplicable) > 0) {
+  unavailable_holiday <- intersect(inapplicable, holiday_keys)
+  unavailable_unit <- setdiff(inapplicable, holiday_keys)
+
+  if (length(unavailable_unit) > 0) {
     cli::cli_warn(
-      "{cli::qty(inapplicable)}Panel{?s} {.val {inapplicable}} {?does/do} not apply \\
-       to {.val {event_units}} data and {?was/were} skipped."
+      "{cli::qty(unavailable_unit)}Panel{?s} {.val {unavailable_unit}} {?does/do} \\
+       not apply to {.val {event_units}} data and {?was/were} skipped."
     )
-    requested <- intersect(requested, all_keys)
   }
+  if (length(unavailable_holiday) > 0) {
+    cli::cli_warn(c(
+      "{cli::qty(unavailable_holiday)}Panel{?s} {.val {unavailable_holiday}} \\
+       need{?s/} a holiday or weekend temporal effect and {?was/were} skipped.",
+      "i" = "Attach one with {.fn add_temporal_effects}, e.g. \\
+             {.code temporal_effects(weekend = TRUE, holidays = almanac::cal_us_federal())}. \\
+             The lag panels also need a non-zero {.arg holiday_lags}."
+    ))
+  }
+  requested <- intersect(requested, all_keys)
+
   if (length(requested) == 0) {
     cli::cli_abort("No applicable panels were selected.")
   }
@@ -1252,9 +1510,21 @@
     calendar_weekday = .tbl_now_panel_calendar(ctx$epidemic_process, "weekday", palette),
     calendar_week    = .tbl_now_panel_calendar(ctx$epidemic_process, "week", palette),
     calendar_month   = .tbl_now_panel_calendar(ctx$epidemic_process, "month", palette),
+    calendar_holiday = .tbl_now_panel_calendar(
+      ctx$epidemic_process, "holiday", palette, ctx$holiday_config
+    ),
+    calendar_holiday_lag = .tbl_now_panel_calendar(
+      ctx$epidemic_process, "holiday_lag", palette, ctx$holiday_config
+    ),
     delay_weekday = .tbl_now_panel_delay_calendar(ctx$delay_per_date, "weekday", palette),
     delay_week    = .tbl_now_panel_delay_calendar(ctx$delay_per_date, "week", palette),
     delay_month   = .tbl_now_panel_delay_calendar(ctx$delay_per_date, "month", palette),
+    delay_holiday = .tbl_now_panel_delay_calendar(
+      ctx$delay_per_date, "holiday", palette, ctx$holiday_config
+    ),
+    delay_holiday_lag = .tbl_now_panel_delay_calendar(
+      ctx$delay_per_date, "holiday_lag", palette, ctx$holiday_config
+    ),
     .tbl_now_empty_panel(paste0("Unknown panel: ", key), palette)
   )
 }
@@ -1308,9 +1578,21 @@
     calendar_weekday = .tbl_now_panel_calendar_strata(ctx$epidemic_process_by, "weekday", palette),
     calendar_week    = .tbl_now_panel_calendar_strata(ctx$epidemic_process_by, "week", palette),
     calendar_month   = .tbl_now_panel_calendar_strata(ctx$epidemic_process_by, "month", palette),
+    calendar_holiday = .tbl_now_panel_calendar_strata(
+      ctx$epidemic_process_by, "holiday", palette, ctx$holiday_config
+    ),
+    calendar_holiday_lag = .tbl_now_panel_calendar_strata(
+      ctx$epidemic_process_by, "holiday_lag", palette, ctx$holiday_config
+    ),
     delay_weekday = .tbl_now_panel_delay_calendar_strata(ctx$delay_per_date_by, "weekday", palette),
     delay_week    = .tbl_now_panel_delay_calendar_strata(ctx$delay_per_date_by, "week", palette),
     delay_month   = .tbl_now_panel_delay_calendar_strata(ctx$delay_per_date_by, "month", palette),
+    delay_holiday = .tbl_now_panel_delay_calendar_strata(
+      ctx$delay_per_date_by, "holiday", palette, ctx$holiday_config
+    ),
+    delay_holiday_lag = .tbl_now_panel_delay_calendar_strata(
+      ctx$delay_per_date_by, "holiday_lag", palette, ctx$holiday_config
+    ),
     .tbl_now_empty_panel(paste0("Unknown panel: ", key), palette)
   )
 }
@@ -1370,6 +1652,19 @@ ggplot2::autoplot
 #' * `"calendar_weekday"`, `"calendar_week"`, `"calendar_month"` — boxplots of
 #'   the *normalized* case effect (each event date's cases divided by the overall
 #'   mean, so 1 is average) by day of week, epidemiological week, or month.
+#' * `"calendar_holiday"` — the same normalized boxplots by **day type**. The
+#'   categories follow the attached [temporal_effects()] spec: a holiday calendar
+#'   and a `weekend` effect together give `Weekday` / `Weekend` / `Holiday`, a
+#'   calendar alone gives `Non-holiday` / `Holiday`, and a `weekend` effect alone
+#'   gives `Weekday` / `Weekend`. A holiday falling on a weekend counts as a
+#'   holiday.
+#' * `"calendar_holiday_lag"` — the same normalized boxplots by **position
+#'   relative to the nearest holiday**, as asked for by `holiday_lags` (see
+#'   [temporal_effects()]): `"2 before"`, `"1 before"`, `"Holiday"`, `"1 after"`,
+#'   ..., plus `"Other"` for every other day as the reference. It shows exactly
+#'   the days the `..._holiday_lag_k` / `..._holiday_lead_k` columns flag —
+#'   weekends and other holidays are skipped when counting working days — so you
+#'   can see whether the lags you asked for are the ones that matter.
 #' * `"seasonality"` — a periodogram of the incidence series whose dominant peak
 #'   suggests a Fourier season length for [temporal_effects()].
 #'
@@ -1381,14 +1676,27 @@ ggplot2::autoplot
 #'   week, or month; these reveal whether the delay itself has a calendar
 #'   pattern. Normalizing keeps them on the same scale as the case-count
 #'   calendar panels and makes them comparable across strata.
+#' * `"delay_holiday"`, `"delay_holiday_lag"` — the reporting-delay twins of the
+#'   two holiday panels above: the *normalized* mean delay by day type and by
+#'   position relative to the nearest holiday. These are often the more telling
+#'   pair — a holiday usually does not change how many cases occur, but it very
+#'   much changes how long they take to be reported.
 #' * `"delay_seasonality"` — a periodogram of the mean-delay series, whose peak
 #'   marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).
 #'
-#' The calendar/delay panels shown depend on the event unit: daily data offers
-#' day-of-week **and** week-of-year panels, weekly data week-of-year, monthly
-#' data month-of-year. The delay panels are computed on the *complete* portion of
-#' the series (event dates on or before the incompleteness line) so the recent
-#' reporting truncation does not bias them.
+#' Which panels are available depends on the object. The **calendar/delay**
+#' panels follow the event unit: daily data offers day-of-week **and**
+#' week-of-year panels, weekly data week-of-year, monthly data month-of-year. The
+#' four **holiday** panels describe the attached [temporal_effects()] spec, so
+#' they appear only when there is one to describe: `"calendar_holiday"` /
+#' `"delay_holiday"` need a `holidays` calendar or a `weekend` effect, and the
+#' two lag panels additionally need a non-zero `holiday_lags`. Requesting a
+#' holiday panel without the matching effect warns and skips it. The spec is read
+#' directly, so you do **not** need to call [compute_temporal_effects()] first.
+#'
+#' The delay panels are computed on the *complete* portion of the series (event
+#' dates on or before the incompleteness line) so the recent reporting truncation
+#' does not bias them.
 #'
 #' @param object A `tbl_now` object.
 #' @param panels Which panels to draw. Either a vector of the concrete keys
@@ -1480,12 +1788,26 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
   object <- ungroup(object)
   event_units <- get_event_units(object)
   data_type <- get_data_type(object)
-  panel_keys <- .tbl_now_resolve_panels(panels, event_units)
+
+  # The holiday panels describe the attached temporal-effects spec, so which of
+  # them exist depends on the object, not just on its time unit.
+  holiday_config <- .tbl_now_holiday_config(object)
+  panel_keys <- .tbl_now_resolve_panels(panels, event_units, holiday_config)
 
   strata_cols <- if (isTRUE(by_strata)) {
     .tbl_now_resolve_strata_cols(object, strata)
   } else {
     NULL
+  }
+
+  # `strata` may name columns that are not declared strata on the object. Every
+  # panel pre-aggregates with `to_count()`, which sums over each column it was
+  # not told to keep, so an undeclared column is summed away before the panels
+  # can group on it. Declaring them first makes `autoplot(x, strata = "race")`
+  # behave like `autoplot(add_strata(x, race))`.
+  undeclared_strata <- setdiff(strata_cols, get_strata(object))
+  if (length(undeclared_strata) > 0) {
+    object <- add_strata(object, dplyr::all_of(undeclared_strata))
   }
 
   delay_distribution <- .tbl_now_delay_distribution(object)
@@ -1518,7 +1840,7 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
     delay_by_date
   }
   needs_delay_effects <- any(
-    grepl("^delay_(weekday|week|month|seasonality)$", panel_keys)
+    grepl("^delay_(weekday|week|month|holiday_lag|holiday|seasonality)$", panel_keys)
   )
   # For count-cumulative data the delay-distribution panel becomes the cumulative
   # growth-ratio panel instead of a histogram of increments.
@@ -1529,7 +1851,7 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
     # Only compute the by-strata frames that the requested panels need.
     epidemic_needed <- any(panel_keys %in% c(
       "epidemic", "calendar_weekday", "calendar_week", "calendar_month",
-      "seasonality"
+      "calendar_holiday", "calendar_holiday_lag", "seasonality"
     ))
     ctx <- list(
       by_strata            = TRUE,
@@ -1537,6 +1859,7 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
       event_units          = event_units,
       incomplete_threshold = incomplete_threshold,
       level                = level,
+      holiday_config       = holiday_config,
       epidemic_process_by  = if (epidemic_needed) {
         .tbl_now_epidemic_process_by(object, strata_cols)
       },
@@ -1565,6 +1888,7 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
       event_units          = event_units,
       incomplete_threshold = incomplete_threshold,
       level                = level,
+      holiday_config       = holiday_config,
       holiday_points       = .tbl_now_holiday_points(object, epidemic_process)
     )
   }
