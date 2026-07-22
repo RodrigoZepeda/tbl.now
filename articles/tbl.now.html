@@ -41,7 +41,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -1189,7 +1189,7 @@ month.</li>
 effect</strong>: the same normalized boxplots by <em>day type</em> and
 by <em>position relative to the nearest holiday</em> — see <a href="#holiday-effects">Holiday effects</a> below.</li>
 <li>
-<strong>Seasonality</strong> — a periodogram of the incidence series
+<strong>Cycles</strong> — a periodogram of the incidence series
 whose dominant peak suggests a Fourier season length to pass to <a href="https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html">temporal_effects()</a>.</li>
 </ol>
 <p>…and the <strong>reporting-delay</strong> panels, which reveal
@@ -1203,9 +1203,15 @@ reporting delay by day of week / week of year / month.</li>
 <strong>Delay holiday effects</strong>: the delay twins of panel
 4.</li>
 <li>
-<strong>Delay periodicity</strong>: a periodogram of the mean-delay
+<strong>Cycles</strong> (reporting): a periodogram of the mean-delay
 series (e.g. a weekly reporting rhythm).</li>
 </ol>
+<p>The two families are colour-coded the same way everywhere in the
+package: <strong>red</strong> for anything reporting-related and
+<strong>green</strong> for the epidemic (event-date) process. Every
+panel also names its process in the subtitle — <em>“Reporting delay
+process”</em> or <em>“Epidemic (event-date) process”</em> — so a panel
+lifted out of the grid still says what it is.</p>
 <p>Which calendar/delay panels appear depends on the event unit (daily
 data gets day-of-week <em>and</em> week-of-year; weekly data
 week-of-year; monthly data month-of-year). Use the <code>panels</code>
@@ -1223,13 +1229,119 @@ normalized <em>per stratum</em> (1 = that stratum’s own average) so the
 calendar pattern is comparable across strata. By default the object’s
 <code>strata</code> are used; pass <code>strata = "gender"</code> to
 group on a subset.</p>
+<div class="section level4">
+<h4 id="one-panel-at-a-time-the-plot_-functions">One panel at a time: the <code>plot_*()</code> functions<a class="anchor" aria-label="anchor" href="#one-panel-at-a-time-the-plot_-functions"></a>
+</h4>
+<p><code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> draws the whole grid in one call. When you
+want a single effect on its own — in its own figure, at its own size —
+every panel also has a standalone <code>plot_*()</code> twin. They take
+the same object and return the identical plot, so
+<code>autoplot(x, panels = "calendar_weekday")</code> and
+<code>plot_day_of_week_effects(x)</code> are the same figure. Use
+<code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> for the overview; reach for a
+<code>plot_*()</code> when you want to place one effect in a report.</p>
+<p>Each calendar/holiday twin takes a <code>type</code> argument
+choosing the process: <code>type = "epidemic"</code> (the default, green
+— how the <em>cases</em> vary) or <code>type = "report"</code> (red —
+how the <em>reporting</em> does).</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Function</th>
+<th>
+<code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> panel</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>plot_day_of_week_effects(x, type = )</code></td>
+<td>
+<code>calendar_weekday</code> / <code>delay_weekday</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>plot_week_of_year_effects(x, type = )</code></td>
+<td>
+<code>calendar_week</code> / <code>delay_week</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>plot_month_of_year_effects(x, type = )</code></td>
+<td>
+<code>calendar_month</code> / <code>delay_month</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>plot_holiday_effects(x, type = )</code></td>
+<td>
+<code>calendar_holiday</code> / <code>delay_holiday</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>plot_holiday_lag_effects(x, type = )</code></td>
+<td>
+<code>calendar_holiday_lag</code> /
+<code>delay_holiday_lag</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>plot_cycles(x, type = )</code></td>
+<td>
+<code>seasonality</code> / <code>delay_seasonality</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>plot_delay_distribution(x)</code></td>
+<td><code>delay_distribution</code></td>
+</tr>
+<tr class="even">
+<td><code>plot_observed_cases(x)</code></td>
+<td><code>epidemic</code></td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># The same figure, two ways:</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">dengue_now</span>, panels <span class="op">=</span> <span class="st">"calendar_week"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/calendar_effect_plots.html">plot_week_of_year_effects</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># The reporting twin (red):</span></span>
+<span><span class="fu"><a href="../reference/calendar_effect_plots.html">plot_week_of_year_effects</a></span><span class="op">(</span><span class="va">dengue_now</span>, type <span class="op">=</span> <span class="st">"report"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level4">
+<h4 id="normalized-vs--percentage-effects">Normalized vs. percentage effects<a class="anchor" aria-label="anchor" href="#normalized-vs--percentage-effects"></a>
+</h4>
+<p>The day-of-week, week-of-year, month-of-year, holiday and
+weekend/holiday panels take a <code>measure</code> argument (in
+<code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> and in every <code>plot_*()</code> twin):</p>
+<ul>
+<li>
+<code>measure = "normalized"</code> (the default) is the view shown
+above: each value divided by its overall mean, so the dashed line at 1
+marks an average level.</li>
+<li>
+<code>measure = "percent"</code> reads as a <strong>share</strong>
+instead: the percentage of cases that fall in each group, with the IQR
+around it. So a weekend box might sit at <em>10% of cases at the weekend
+versus 90% on weekdays</em>. The shares add up over a natural block —
+the seven weekdays within a week, the epidemiological weeks within a
+year — and the reporting (<code>type = "report"</code>) version shares
+out the <strong>reports</strong> by report date, answering “what share
+of the reports <em>arrive</em> at the weekend?”. It needs
+<code>Date</code> event/report columns.</li>
+</ul>
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># What share of the reports arrive on each weekday?</span></span>
+<span><span class="fu"><a href="../reference/calendar_effect_plots.html">plot_day_of_week_effects</a></span><span class="op">(</span><span class="va">dengue_now</span>, type <span class="op">=</span> <span class="st">"report"</span>, measure <span class="op">=</span> <span class="st">"percent"</span><span class="op">)</span></span></code></pre></div>
 <p>The <code>strata</code> argument does <strong>not</strong> have to
 name a declared stratum — any column of the data works, and it is
 declared for you, so these two are the same plot:</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">mpox_now</span>, strata <span class="op">=</span> <span class="st">"race"</span>, by_strata <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">mpox_now</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/add.html">add_strata</a></span><span class="op">(</span><span class="va">race</span><span class="op">)</span>, by_strata <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span>
 <span></span>
@@ -1244,9 +1356,13 @@ declared for you, so these two are the same plot:</p>
 <p>For the weekly dengue data the periodogram peaks near 52 weeks,
 suggesting an annual cycle. We could capture this with a Fourier term of
 <code>temporal_effects(seasons = 52)</code>.</p>
+</div>
 <div class="section level3">
 <h3 id="holiday-effects">Holiday effects<a class="anchor" aria-label="anchor" href="#holiday-effects"></a>
 </h3>
+<blockquote>
+<p><strong>Note.</strong> This section was written by AI.</p>
+</blockquote>
 <p>The four holiday panels are different from the rest: they describe
 the <a href="https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html">temporal_effects()</a>
 spec you attached, so they appear only once there is one to describe.
@@ -1257,29 +1373,16 @@ a non-zero <code>holiday_lags</code>. The spec is read directly, so
 there is no need to call <code><a href="../reference/compute_temporal_effects.html">compute_temporal_effects()</a></code>
 first.</p>
 <p>Holidays are a daily phenomenon, so we switch to daily data — here a
-synthetic series whose reporting deliberately <strong>stalls on weekends
-and holidays</strong>:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavisVaughan/almanac" class="external-link">almanac</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">us_holidays</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/cal_us_federal.html" class="external-link">cal_us_federal</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">event_days</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2022-01-01"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2023-12-31"</span><span class="op">)</span>, by <span class="op">=</span> <span class="st">"day"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Reporting takes longer when the desk is shut: +6 days on a holiday, +3 on a weekend.</span></span>
-<span><span class="va">reports</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">event_days</span>, <span class="kw">function</span><span class="op">(</span><span class="va">day</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">closed_for</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/alma_in.html" class="external-link">alma_in</a></span><span class="op">(</span><span class="va">day</span>, <span class="va">us_holidays</span><span class="op">)</span><span class="op">)</span> <span class="fl">6</span> <span class="kw">else</span> <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="../reference/is_weekday.html">is_weekday</a></span><span class="op">(</span><span class="va">day</span><span class="op">)</span><span class="op">)</span> <span class="fl">3</span> <span class="kw">else</span> <span class="fl">0</span></span>
-<span>  <span class="va">delays</span> <span class="op">&lt;-</span> <span class="fl">0</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/stats/Poisson.html" class="external-link">rpois</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span> <span class="op">+</span> <span class="va">closed_for</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>onset <span class="op">=</span> <span class="va">day</span>, reported <span class="op">=</span> <span class="va">day</span> <span class="op">+</span> <span class="va">delays</span>, n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Poisson.html" class="external-link">rpois</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">delays</span><span class="op">)</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">holiday_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">reports</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
+synthetic daily series, <code>reports</code>, whose reporting
+deliberately <strong>stalls on weekends and holidays</strong>. Attaching
+the spec is all it takes:</p>
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">holiday_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">reports</span>,</span>
 <span>    event_date <span class="op">=</span> <span class="va">onset</span>, report_date <span class="op">=</span> <span class="va">reported</span>, case_count <span class="op">=</span> <span class="va">n</span>,</span>
 <span>    data_type <span class="op">=</span> <span class="st">"count-incidence"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>weekend <span class="op">=</span> <span class="cn">TRUE</span>, holidays <span class="op">=</span> <span class="va">us_holidays</span>, holiday_lags <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>weekend <span class="op">=</span> <span class="cn">TRUE</span>, holidays <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/cal_us_federal.html" class="external-link">cal_us_federal</a></span><span class="op">(</span><span class="op">)</span>, holiday_lags <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <p>The <strong>holiday effect</strong> panel splits the days by
 <em>type</em>. Which categories you get follows the spec: a calendar
@@ -1298,11 +1401,11 @@ holiday, so the axis reads left-to-right as time does. Counting is in
 <strong>working days</strong>, so weekends and other holidays are
 skipped exactly as they are for the <code>..._holiday_lag_k</code>
 columns.</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">holiday_now</span>, panels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"calendar_holiday"</span>, <span class="st">"calendar_holiday_lag"</span>,</span>
 <span>                                 <span class="st">"delay_holiday"</span>, <span class="st">"delay_holiday_lag"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tbl.now_files/figure-html/holiday-panels-1.png" class="r-plt" alt="" width="864"></p>
-<p>The <strong>delay</strong> twins (the green panels) are usually the
+<p>The <strong>delay</strong> twins (the red panels) are usually the
 more telling pair. A holiday rarely changes how many cases
 <em>occur</em> — but it very much changes how long they take to be
 <em>reported</em>, which is exactly what a nowcast has to model. Here
@@ -1319,6 +1422,11 @@ the break and you want a negative <code>holiday_lags</code> (see
 <div class="section level3">
 <h3 id="do-delay-distributions-drift-over-time">Do delay distributions drift over time?<a class="anchor" aria-label="anchor" href="#do-delay-distributions-drift-over-time"></a>
 </h3>
+<blockquote>
+<p><strong>Note.</strong> This section was written by AI. For a
+human-written treatment of reporting-delay artefacts, see the <a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html">batch-reporting
+article</a>.</p>
+</blockquote>
 <p>Reporting delays are not always stable: a surveillance system may
 speed up or slow down over a season or across years. <a href="https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.html">plot_delay_drift()</a>
 draws a rolling <em>fan chart</em> of the delay distribution indexed by
@@ -1326,7 +1434,7 @@ event date — a solid rolling median, a dashed rolling mean, and 25–75% /
 10–90% quantile bands. A rising or falling centre line signals
 <em>location</em> drift; widening or narrowing bands signal
 <em>spread</em> drift.</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tbl.now_files/figure-html/delay-drift-1.png" class="r-plt" alt="" width="864"></p>
 <p>Because the most recent event dates have not had time to be fully
@@ -1340,7 +1448,7 @@ per-period delay summaries — a delay series is correlated with itself,
 so an ordinary trend test would over-state significance. It tests both a
 location statistic (the median) and a dispersion statistic (the 10–90
 spread), on mature data only:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/test_delay_drift.html">test_delay_drift</a></span><span class="op">(</span><span class="va">dengue_now</span>, stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"median"</span>, <span class="st">"spread"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: <span style="color: #BBBB00;">!</span> `test_delay_drift()` is <span style="font-style: italic;">experimental</span>: results are not guaranteed and the</span></span>
 <span><span class="co">#&gt;   interface may change.</span></span>
@@ -1361,7 +1469,7 @@ suspect an <strong>abrupt</strong> shift — a reporting-system change on
 some date — use <a href="https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.html">test_delay_changepoint()</a>,
 which applies Pettitt’s nonparametric change-point test and returns the
 estimated change date together with the before/after delay level:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/test_delay_changepoint.html">test_delay_changepoint</a></span><span class="op">(</span><span class="va">dengue_now</span>, stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"median"</span>, <span class="st">"spread"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: <span style="color: #BBBB00;">!</span> `test_delay_changepoint()` is <span style="font-style: italic;">experimental</span>: results are not guaranteed and</span></span>
 <span><span class="co">#&gt;   the interface may change.</span></span>
@@ -1379,6 +1487,11 @@ estimated change date together with the before/after delay level:</p>
 <div class="section level3">
 <h3 id="detecting-batch-reporting">Detecting batch reporting<a class="anchor" aria-label="anchor" href="#detecting-batch-reporting"></a>
 </h3>
+<blockquote>
+<p><strong>Note.</strong> This section was written by AI. For a
+human-written treatment of batch reporting, see the <a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html">batch-reporting
+article</a>.</p>
+</blockquote>
 <p>Laboratories sometimes withhold results and then release a whole
 backlog at once — a <strong>batch</strong>. The key idea is that a batch
 <em>moves</em> reports along the report axis without <em>creating</em>
@@ -1386,7 +1499,7 @@ them, so a window of report dates spanning both the lull and the spike
 has an unchanged total — whereas a genuine epidemic surge adds cases and
 inflates it. <a href="https://rodrigozepeda.github.io/tbl.now/reference/batch_test.html">batch_test()</a>
 turns this into a per-report-date diagnostic that separates the two:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">batches</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/batch_test.html">batch_test</a></span><span class="op">(</span><span class="va">dengue_now</span>, lookback <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">batches</span> <span class="op">|&gt;</span></span>
@@ -1414,7 +1527,7 @@ vignette</a>.</p>
 <p>The function <a href="https://rodrigozepeda.github.io/tbl.now/reference/week_2_date.html">week_2_date()</a>
 converts epidemiological week/year combinations into an aligned calendar
 date.</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  epidemiological_week <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,</span>
 <span>  epidemiological_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">2024</span>, <span class="fl">5</span><span class="op">)</span></span>
@@ -1440,7 +1553,7 @@ and get_latest_reported_cases()</a> extract the number of cases first
 reported for each event date and the most recently reported totals,
 respectively. These utilities allow users to quantify revisions between
 initial and final reports.</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_reports</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fl">6</span><span class="op">)</span>,</span>
@@ -1474,7 +1587,7 @@ initial and final reports.</p>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-09-17</span> | Event date: <span style="color: #0000BB;">"event_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 <p>The initial reported cases:</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_latest_first.html">get_initial_reported_cases</a></span><span class="op">(</span><span class="va">tbl_reports</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
@@ -1487,7 +1600,7 @@ initial and final reports.</p>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-09-17</span> | Event date: <span style="color: #0000BB;">"event_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 <p>and the latest totals:</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="va">tbl_reports</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
@@ -1508,7 +1621,7 @@ function standardizes dates within the same epidemiological week to a
 single reference day (for example, the start of the week). This is
 helpful when computing differences across weekly reporting periods,
 avoiding fractional time intervals.</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-10-31"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-11-07"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-11-13"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  epiweek <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">44</span>, <span class="fl">45</span>, <span class="fl">46</span><span class="op">)</span></span>
@@ -1523,7 +1636,7 @@ avoiding fractional time intervals.</p>
 <span><span class="co">#&gt; 3 2022-11-13      46   2022-11-13</span></span></code></pre></div>
 <p>You can verify the resulting weekday using the <a href="https://lubridate.tidyverse.org/reference/day.html" class="external-link">wday()
 function from the lubridate package</a>:</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_aligned</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>day_label <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/day.html" class="external-link">wday</a></span><span class="op">(</span><span class="va">date_aligned</span>, label <span class="op">=</span> <span class="cn">TRUE</span>, abbr <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;         date epiweek date_aligned day_label</span></span>
@@ -1539,7 +1652,7 @@ function fills with zeroes those cases where the <code>event</code> or
 <code>report</code> weeks have not been observed.</p>
 <p>Consider for example the following data with just two observations
 per date:</p>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
 <span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/12"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/14"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/14"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/13"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/15"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/18"</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -1566,7 +1679,7 @@ per date:</p>
 <p>Notice that there are no observations for <code>2021/01/13</code>.
 Furthermore, if we assume that the maximum possible observed delay is of
 <code>4</code>, we can fill the unobserved cases with:</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/complete_zeroes.html">complete_zeroes</a></span><span class="op">(</span><span class="va">ndata</span>, max_delay <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  14 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span></span>
@@ -1600,7 +1713,7 @@ the counts to zero if they have not been observed.</p>
 <p>The function <code><a href="../reference/censor_delays_above.html">censor_delays_above()</a></code> marks all delays
 above a threshold value (<code>max_delay</code>) as censored. This is
 useful to indicate extreme delays in some nowcast models:</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  onset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-01-01"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
 <span>  reported <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-01-01"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">2</span>, <span class="fl">300</span><span class="op">)</span></span>
@@ -1717,7 +1830,7 @@ key)</td>
 <p>The object produced by any <code>tbl_now_to_*()</code> can be
 converted straight back with <a href="https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.html">as_tbl_now()</a>,
 which has methods for each of these classes:</p>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>,</span>
 <span>  event_date <span class="op">=</span> <span class="st">"onset_week"</span>,</span>
 <span>  report_date <span class="op">=</span> <span class="st">"report_week"</span>, strata <span class="op">=</span> <span class="st">"gender"</span>,</span>
@@ -1753,7 +1866,7 @@ which has methods for each of these classes:</p>
 <p>For example, the <a href="https://package.epinowcast.org/" class="external-link">epinowcast</a> hospitalization
 data ships in long cumulative format and converts straight into a
 <code>count-cumulative</code> <code>tbl_now</code>:</p>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://package.epinowcast.org" class="external-link">epinowcast</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">germany_covid19_hosp</span><span class="op">)</span></span>
 <span></span>
@@ -1793,7 +1906,7 @@ data ships in long cumulative format and converts straight into a
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 48,269 more rows</span></span></span></code></pre></div>
 <p>Going the other way, <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> returns an
 <code>enw_preprocess_data</code> object ready for <a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast::epinowcast()</a>:</p>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">epinowcast_object</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">hospitalizations_now</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: <span style="color: #BBBB00;">!</span> Converting a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> to <span style="color: #0000BB;">epinowcast</span> is <span style="font-style: italic;">lossy</span>: the result is not guaranteed</span></span>
 <span><span class="co">#&gt;   to be identical to a native <span style="color: #0000BB;">epinowcast</span> object.</span></span>

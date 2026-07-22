@@ -1,5 +1,60 @@
 # Changelog
 
+## tbl.now 0.15.0
+
+- [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  panels are now consistently **colour-coded by process**: red for
+  everything reporting-related (the delay distribution, the delay
+  calendar/holiday effects, the delay periodogram) and green for the
+  epidemic (event-date) process (the observed cases and their
+  calendar/holiday effects). This matches the colours the standalone
+  diagnostic plots
+  ([`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_process.md)
+  /
+  [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md),
+  [`plot_scalogram()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.md),
+  …) already used, so a panel and its standalone twin read the same.
+- Every
+  [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  panel now says **which process it describes** in its subtitle — either
+  “Reporting delay process” or “Epidemic (event-date) process” —
+  replacing the per-panel explanatory subtitles. A single panel
+  therefore reads on its own.
+- The two periodogram panels are renamed **“Cycles (periodogram)”**
+  (previously “Seasonality” / “Delay periodicity”).
+- Every
+  [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  panel now has a standalone `plot_*()` twin that draws just that panel
+  (identical data, colours and subtitle):
+  [`plot_day_of_week_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md),
+  [`plot_week_of_year_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md),
+  [`plot_month_of_year_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md),
+  [`plot_holiday_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md),
+  [`plot_holiday_lag_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
+  (each taking `type = "epidemic"` or `type = "report"`), plus
+  [`plot_cycles()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_cycles.md),
+  [`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.md)
+  and
+  [`plot_observed_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_observed_cases.md).
+  Use
+  [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  for the grid and a `plot_*()` for one effect on its own.
+- The day-of-week, week-of-year, month-of-year, holiday and
+  weekend/holiday-lag panels gained a `measure` argument (in
+  [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  and every `plot_*()` twin). `measure = "normalized"` (the default) is
+  the existing view — each value divided by its overall mean, 1 =
+  average. `measure = "percent"` instead shows the **share of cases**
+  falling in each group with its IQR (e.g. “10% of cases at the weekend
+  versus 90% on weekdays”); the reporting version shares out the reports
+  by report date. Percentages need `Date` event/report columns.
+- Vignettes: the Get Started guide documents the `plot_*()` twins and
+  the `measure` argument, and marks the “Holiday effects”, “Do delay
+  distributions drift over time?” and “Detecting batch reporting”
+  sections as AI-written, pointing readers to the human-written
+  batch-reporting article. The FluSight example analysis is flagged as a
+  work in progress.
+
 ## tbl.now 0.14.1
 
 - Strata are now carried into the model converters that can use them.

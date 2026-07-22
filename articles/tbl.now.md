@@ -1032,8 +1032,8 @@ families of panels. The **case-count** panels:
 4.  **Holiday effect** and **holiday lag effect**: the same normalized
     boxplots by *day type* and by *position relative to the nearest
     holiday* — see [Holiday effects](#holiday-effects) below.
-5.  **Seasonality** — a periodogram of the incidence series whose
-    dominant peak suggests a Fourier season length to pass to
+5.  **Cycles** — a periodogram of the incidence series whose dominant
+    peak suggests a Fourier season length to pass to
     [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html).
 
 …and the **reporting-delay** panels, which reveal *delay effects*
@@ -1042,8 +1042,14 @@ families of panels. The **case-count** panels:
 6.  **Delay calendar effect**: boxplots of the mean reporting delay by
     day of week / week of year / month.
 7.  **Delay holiday effects**: the delay twins of panel 4.
-8.  **Delay periodicity**: a periodogram of the mean-delay series
+8.  **Cycles** (reporting): a periodogram of the mean-delay series
     (e.g. a weekly reporting rhythm).
+
+The two families are colour-coded the same way everywhere in the
+package: **red** for anything reporting-related and **green** for the
+epidemic (event-date) process. Every panel also names its process in the
+subtitle — *“Reporting delay process”* or *“Epidemic (event-date)
+process”* — so a panel lifted out of the grid still says what it is.
 
 Which calendar/delay panels appear depends on the event unit (daily data
 gets day-of-week *and* week-of-year; weekly data week-of-year; monthly
@@ -1060,6 +1066,68 @@ delay distribution becomes dodged bars. The boxplots are then normalized
 *per stratum* (1 = that stratum’s own average) so the calendar pattern
 is comparable across strata. By default the object’s `strata` are used;
 pass `strata = "gender"` to group on a subset.
+
+#### One panel at a time: the `plot_*()` functions
+
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+draws the whole grid in one call. When you want a single effect on its
+own — in its own figure, at its own size — every panel also has a
+standalone `plot_*()` twin. They take the same object and return the
+identical plot, so `autoplot(x, panels = "calendar_weekday")` and
+`plot_day_of_week_effects(x)` are the same figure. Use
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+for the overview; reach for a `plot_*()` when you want to place one
+effect in a report.
+
+Each calendar/holiday twin takes a `type` argument choosing the process:
+`type = "epidemic"` (the default, green — how the *cases* vary) or
+`type = "report"` (red — how the *reporting* does).
+
+| Function | [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html) panel |
+|----|----|
+| `plot_day_of_week_effects(x, type = )` | `calendar_weekday` / `delay_weekday` |
+| `plot_week_of_year_effects(x, type = )` | `calendar_week` / `delay_week` |
+| `plot_month_of_year_effects(x, type = )` | `calendar_month` / `delay_month` |
+| `plot_holiday_effects(x, type = )` | `calendar_holiday` / `delay_holiday` |
+| `plot_holiday_lag_effects(x, type = )` | `calendar_holiday_lag` / `delay_holiday_lag` |
+| `plot_cycles(x, type = )` | `seasonality` / `delay_seasonality` |
+| `plot_delay_distribution(x)` | `delay_distribution` |
+| `plot_observed_cases(x)` | `epidemic` |
+
+``` r
+
+# The same figure, two ways:
+autoplot(dengue_now, panels = "calendar_week")
+plot_week_of_year_effects(dengue_now)
+
+# The reporting twin (red):
+plot_week_of_year_effects(dengue_now, type = "report")
+```
+
+#### Normalized vs. percentage effects
+
+The day-of-week, week-of-year, month-of-year, holiday and
+weekend/holiday panels take a `measure` argument (in
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+and in every `plot_*()` twin):
+
+- `measure = "normalized"` (the default) is the view shown above: each
+  value divided by its overall mean, so the dashed line at 1 marks an
+  average level.
+- `measure = "percent"` reads as a **share** instead: the percentage of
+  cases that fall in each group, with the IQR around it. So a weekend
+  box might sit at *10% of cases at the weekend versus 90% on weekdays*.
+  The shares add up over a natural block — the seven weekdays within a
+  week, the epidemiological weeks within a year — and the reporting
+  (`type = "report"`) version shares out the **reports** by report date,
+  answering “what share of the reports *arrive* at the weekend?”. It
+  needs `Date` event/report columns.
+
+``` r
+
+# What share of the reports arrive on each weekday?
+plot_day_of_week_effects(dengue_now, type = "report", measure = "percent")
+```
 
 The `strata` argument does **not** have to name a declared stratum — any
 column of the data works, and it is declared for you, so these two are
@@ -1093,6 +1161,8 @@ suggesting an annual cycle. We could capture this with a Fourier term of
 
 ### Holiday effects
 
+> **Note.** This section was written by AI.
+
 The four holiday panels are different from the rest: they describe the
 [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html)
 spec you attached, so they appear only once there is one to describe.
@@ -1103,31 +1173,17 @@ spec you attached, so they appear only once there is one to describe.
 first.
 
 Holidays are a daily phenomenon, so we switch to daily data — here a
-synthetic series whose reporting deliberately **stalls on weekends and
-holidays**:
+synthetic daily series, `reports`, whose reporting deliberately **stalls
+on weekends and holidays**. Attaching the spec is all it takes:
 
 ``` r
 
-library(almanac)
-set.seed(42)
-
-us_holidays <- cal_us_federal()
-event_days <- seq(as.Date("2022-01-01"), as.Date("2023-12-31"), by = "day")
-
-# Reporting takes longer when the desk is shut: +6 days on a holiday, +3 on a weekend.
-reports <- lapply(event_days, function(day) {
-  closed_for <- if (alma_in(day, us_holidays)) 6 else if (!is_weekday(day)) 3 else 0
-  delays <- 0:rpois(1, 2 + closed_for)
-  data.frame(onset = day, reported = day + delays, n = rpois(length(delays), 5))
-})
-
-holiday_now <- do.call(rbind, reports) |>
-  tbl_now(
+holiday_now <- tbl_now(reports,
     event_date = onset, report_date = reported, case_count = n,
     data_type = "count-incidence", verbose = FALSE
   ) |>
   add_temporal_effects(
-    temporal_effects(weekend = TRUE, holidays = us_holidays, holiday_lags = 2)
+    temporal_effects(weekend = TRUE, holidays = cal_us_federal(), holiday_lags = 2)
   )
 ```
 
@@ -1154,8 +1210,8 @@ autoplot(holiday_now, panels = c("calendar_holiday", "calendar_holiday_lag",
 
 ![](tbl.now_files/figure-html/holiday-panels-1.png)
 
-The **delay** twins (the green panels) are usually the more telling
-pair. A holiday rarely changes how many cases *occur* — but it very much
+The **delay** twins (the red panels) are usually the more telling pair.
+A holiday rarely changes how many cases *occur* — but it very much
 changes how long they take to be *reported*, which is exactly what a
 nowcast has to model. Here the planted effect comes straight back out:
 the mean delay is well above average on holidays, above it at weekends,
@@ -1169,6 +1225,10 @@ your reporting slows down **ahead** of the break and you want a negative
 [`?temporal_effects`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)).
 
 ### Do delay distributions drift over time?
+
+> **Note.** This section was written by AI. For a human-written
+> treatment of reporting-delay artefacts, see the [batch-reporting
+> article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html).
 
 Reporting delays are not always stable: a surveillance system may speed
 up or slow down over a season or across years.
@@ -1243,6 +1303,10 @@ You can mark the detected change point on the fan chart with
 `plot_delay_drift(dengue_now, changepoint = TRUE)`.
 
 ### Detecting batch reporting
+
+> **Note.** This section was written by AI. For a human-written
+> treatment of batch reporting, see the [batch-reporting
+> article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html).
 
 Laboratories sometimes withhold results and then release a whole backlog
 at once — a **batch**. The key idea is that a batch *moves* reports

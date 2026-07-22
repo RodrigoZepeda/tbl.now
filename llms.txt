@@ -537,6 +537,14 @@ censor_delays_above(tn, max_delay = 60)
 - [`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md)
   **\[experimental\]** : Screen the report axis for batched reporting
 
+- [`plot_day_of_week_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
+  [`plot_week_of_year_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
+  [`plot_month_of_year_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
+  [`plot_holiday_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
+  [`plot_holiday_lag_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
+  **\[experimental\]** : Calendar effects on the case counts or on the
+  reporting delay
+
 - [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
   **\[experimental\]** : Flag reports with an implausibly long delay as
   censored
@@ -624,6 +632,13 @@ censor_delays_above(tn, max_delay = 60)
   [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   **\[experimental\]** : Getters for tbl_now attributes
 
+- [`plot_cycles()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_cycles.md)
+  **\[experimental\]** : Periodogram of the case counts or of the
+  reporting delay
+
+- [`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.md)
+  **\[experimental\]** : Empirical distribution of the reporting delay
+
 - [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)
   **\[experimental\]** : Visualise whether the reporting-delay
   distribution drifts over time
@@ -633,6 +648,10 @@ censor_delays_above(tn, max_delay = 60)
 
 - [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md)
   **\[experimental\]** : Plot the epidemic process
+
+- [`plot_observed_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_observed_cases.md)
+  **\[experimental\]** : Observed epidemic process with the
+  incompleteness line
 
 - [`plot_reporting_hexamap()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.md)
   **\[experimental\]** : Plot the reporting triangle as an

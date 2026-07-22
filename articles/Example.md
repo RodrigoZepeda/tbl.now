@@ -1,5 +1,8 @@
 # Example analysis with Flusight
 
+> **Work in progress.** This example analysis is still under active
+> development and may change in future releases.
+
 In this vignette we demonstrate how to use the `tbl.now` framework with
 real data from the U.S. Centers for Disease Control and Prevention
 (CDC). Specifically, we work with the Flusight dataset, which contains

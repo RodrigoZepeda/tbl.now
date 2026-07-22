@@ -49,8 +49,8 @@ choose which to draw with the `panels` argument.
   so you can see whether the lags you asked for are the ones that
   matter.
 
-- `"seasonality"` — a periodogram of the incidence series whose dominant
-  peak suggests a Fourier season length for
+- `"seasonality"` — a **cycles** periodogram of the incidence series
+  whose dominant peak suggests a Fourier season length for
   [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md).
 
 **Reporting-delay panels** (to inspect *delay effects*)
@@ -70,9 +70,14 @@ choose which to draw with the `panels` argument.
   cases occur, but it very much changes how long they take to be
   reported.
 
-- `"delay_seasonality"` — a periodogram of the mean-delay series, whose
-  peak marks a cycle in the reporting delay (e.g. a weekly reporting
-  rhythm).
+- `"delay_seasonality"` — a **cycles** periodogram of the mean-delay
+  series, whose peak marks a cycle in the reporting delay (e.g. a weekly
+  reporting rhythm).
+
+Every panel is colour-coded by the process it describes — **red** for
+the reporting-delay panels, **green** for the case-count (epidemic) ones
+— and says which one it is in its subtitle, so a single panel still
+reads on its own.
 
 Which panels are available depends on the object. The **calendar/delay**
 panels follow the event unit: daily data offers day-of-week **and**
@@ -102,6 +107,7 @@ autoplot(
   panels = "all",
   by_strata = FALSE,
   strata = NULL,
+  measure = c("normalized", "percent"),
   level = 0.95,
   plotly = FALSE,
   palette = .tbl_now_palette(),
@@ -151,6 +157,27 @@ autoplot(
   [`get_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md));
   pass a subset (e.g. `strata = "gender"`) to group by only some of
   them. Ignored when `by_strata = FALSE`.
+
+- measure:
+
+  How to express the calendar-effect boxplots (the day-of-week,
+  week-of-year, month-of-year, holiday and holiday-lag panels; every
+  other panel ignores it).
+
+  - `"normalized"` (default) — the value divided by its overall mean, so
+    `1` (the dashed line) marks an average level. Case-count panels
+    normalize the cases per event date; delay panels normalize the mean
+    reporting delay.
+
+  - `"percent"` — the **share of cases** falling in each group, as a
+    percentage, so the box reads directly as "10% of cases at the
+    weekend versus 90% on weekdays" with the IQR around it. One
+    observation per calendar block: the seven weekdays (and the day
+    types) are shared out within each **week**, the holiday lags within
+    each **month**, and the epidemiological weeks and months within each
+    **year**. The reporting-delay panels then switch from the event date
+    to the **report date**, so they answer "what share of the reports
+    *arrive* on a weekend?". Needs `Date` event/report columns.
 
 - level:
 

@@ -32,8 +32,8 @@ temporal_effects()): &quot;2 before&quot;, &quot;1 before&quot;, &quot;Holiday&q
 the days the ..._holiday_lag_k / ..._holiday_lead_k columns flag —
 weekends and other holidays are skipped when counting working days — so you
 can see whether the lags you asked for are the ones that matter.
-&quot;seasonality&quot; — a periodogram of the incidence series whose dominant peak
-suggests a Fourier season length for temporal_effects().
+&quot;seasonality&quot; — a cycles periodogram of the incidence series whose
+dominant peak suggests a Fourier season length for temporal_effects().
 
 
 Reporting-delay panels (to inspect delay effects)
@@ -48,10 +48,14 @@ two holiday panels above: the normalized mean delay by day type and by
 position relative to the nearest holiday. These are often the more telling
 pair — a holiday usually does not change how many cases occur, but it very
 much changes how long they take to be reported.
-&quot;delay_seasonality&quot; — a periodogram of the mean-delay series, whose peak
-marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).
+&quot;delay_seasonality&quot; — a cycles periodogram of the mean-delay series,
+whose peak marks a cycle in the reporting delay (e.g. a weekly reporting
+rhythm).
 
 
+Every panel is colour-coded by the process it describes — red for the
+reporting-delay panels, green for the case-count (epidemic) ones — and
+says which one it is in its subtitle, so a single panel still reads on its own.
 Which panels are available depends on the object. The calendar/delay
 panels follow the event unit: daily data offers day-of-week and
 week-of-year panels, weekly data week-of-year, monthly data month-of-year. The
@@ -96,8 +100,8 @@ temporal_effects()): &quot;2 before&quot;, &quot;1 before&quot;, &quot;Holiday&q
 the days the ..._holiday_lag_k / ..._holiday_lead_k columns flag —
 weekends and other holidays are skipped when counting working days — so you
 can see whether the lags you asked for are the ones that matter.
-&quot;seasonality&quot; — a periodogram of the incidence series whose dominant peak
-suggests a Fourier season length for temporal_effects().
+&quot;seasonality&quot; — a cycles periodogram of the incidence series whose
+dominant peak suggests a Fourier season length for temporal_effects().
 
 
 Reporting-delay panels (to inspect delay effects)
@@ -112,10 +116,14 @@ two holiday panels above: the normalized mean delay by day type and by
 position relative to the nearest holiday. These are often the more telling
 pair — a holiday usually does not change how many cases occur, but it very
 much changes how long they take to be reported.
-&quot;delay_seasonality&quot; — a periodogram of the mean-delay series, whose peak
-marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).
+&quot;delay_seasonality&quot; — a cycles periodogram of the mean-delay series,
+whose peak marks a cycle in the reporting delay (e.g. a weekly reporting
+rhythm).
 
 
+Every panel is colour-coded by the process it describes — red for the
+reporting-delay panels, green for the case-count (epidemic) ones — and
+says which one it is in its subtitle, so a single panel still reads on its own.
 Which panels are available depends on the object. The calendar/delay
 panels follow the event unit: daily data offers day-of-week and
 week-of-year panels, weekly data week-of-year, monthly data month-of-year. The
@@ -149,7 +157,7 @@ does not bias them."><meta property="og:image" content="https://rodrigozepeda.gi
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -216,8 +224,8 @@ relative to the nearest holiday</strong>, as asked for by <code>holiday_lags</co
 the days the <code>..._holiday_lag_k</code> / <code>..._holiday_lead_k</code> columns flag —
 weekends and other holidays are skipped when counting working days — so you
 can see whether the lags you asked for are the ones that matter.</p></li>
-<li><p><code>"seasonality"</code> — a periodogram of the incidence series whose dominant peak
-suggests a Fourier season length for <code><a href="temporal_effects.html">temporal_effects()</a></code>.</p></li>
+<li><p><code>"seasonality"</code> — a <strong>cycles</strong> periodogram of the incidence series whose
+dominant peak suggests a Fourier season length for <code><a href="temporal_effects.html">temporal_effects()</a></code>.</p></li>
 </ul><p><strong>Reporting-delay panels</strong> (to inspect <em>delay effects</em>)</p><ul><li><p><code>"delay_weekday"</code>, <code>"delay_week"</code>, <code>"delay_month"</code> — boxplots of the
 <em>normalized</em> mean reporting delay (each event date's mean delay divided by
 the overall mean delay, so 1 is average) by day of week, epidemiological
@@ -229,9 +237,13 @@ two holiday panels above: the <em>normalized</em> mean delay by day type and by
 position relative to the nearest holiday. These are often the more telling
 pair — a holiday usually does not change how many cases occur, but it very
 much changes how long they take to be reported.</p></li>
-<li><p><code>"delay_seasonality"</code> — a periodogram of the mean-delay series, whose peak
-marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).</p></li>
-</ul><p>Which panels are available depends on the object. The <strong>calendar/delay</strong>
+<li><p><code>"delay_seasonality"</code> — a <strong>cycles</strong> periodogram of the mean-delay series,
+whose peak marks a cycle in the reporting delay (e.g. a weekly reporting
+rhythm).</p></li>
+</ul><p>Every panel is colour-coded by the process it describes — <strong>red</strong> for the
+reporting-delay panels, <strong>green</strong> for the case-count (epidemic) ones — and
+says which one it is in its subtitle, so a single panel still reads on its own.</p>
+<p>Which panels are available depends on the object. The <strong>calendar/delay</strong>
 panels follow the event unit: daily data offers day-of-week <strong>and</strong>
 week-of-year panels, weekly data week-of-year, monthly data month-of-year. The
 four <strong>holiday</strong> panels describe the attached <code><a href="temporal_effects.html">temporal_effects()</a></code> spec, so
@@ -254,6 +266,7 @@ does not bias them.</p>
 <span>  panels <span class="op">=</span> <span class="st">"all"</span>,</span>
 <span>  by_strata <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"normalized"</span>, <span class="st">"percent"</span><span class="op">)</span>,</span>
 <span>  level <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  plotly <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  palette <span class="op">=</span> <span class="fu">.tbl_now_palette</span><span class="op">(</span><span class="op">)</span>,</span>
@@ -300,6 +313,24 @@ holiday dots are omitted from the epidemic panel.</p></dd>
 <code>by_strata = TRUE</code>. <code>NULL</code> (default) uses the object's <code>strata</code> (see
 <code><a href="nowcast_data_getters.html">get_strata()</a></code>); pass a subset (e.g. <code>strata = "gender"</code>) to group by only
 some of them. Ignored when <code>by_strata = FALSE</code>.</p></dd>
+
+
+<dt id="arg-measure">measure<a class="anchor" aria-label="anchor" href="#arg-measure"></a></dt>
+<dd><p>How to express the calendar-effect boxplots (the day-of-week,
+week-of-year, month-of-year, holiday and holiday-lag panels; every other
+panel ignores it).</p><ul><li><p><code>"normalized"</code> (default) — the value divided by its overall mean, so <code>1</code>
+(the dashed line) marks an average level. Case-count panels normalize the
+cases per event date; delay panels normalize the mean reporting delay.</p></li>
+<li><p><code>"percent"</code> — the <strong>share of cases</strong> falling in each group, as a
+percentage, so the box reads directly as "10% of cases at the weekend
+versus 90% on weekdays" with the IQR around it. One observation per
+calendar block: the seven weekdays (and the day types) are shared out
+within each <strong>week</strong>, the holiday lags within each <strong>month</strong>, and the
+epidemiological weeks and months within each <strong>year</strong>. The reporting-delay
+panels then switch from the event date to the <strong>report date</strong>, so they
+answer "what share of the reports <em>arrive</em> on a weekend?". Needs <code>Date</code>
+event/report columns.</p></li>
+</ul></dd>
 
 
 <dt id="arg-level">level<a class="anchor" aria-label="anchor" href="#arg-level"></a></dt>

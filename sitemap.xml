@@ -20,6 +20,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/batch_test.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/change.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/check_bool.html</loc></url>
@@ -50,9 +51,12 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/names_tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_cycles.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_profiles.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_observed_cases.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_process.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.html</loc></url>
