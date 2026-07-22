@@ -10,6 +10,7 @@
   panels = "all",
   by_strata = FALSE,
   strata = NULL,
+  measure = c("normalized", "percent"),
   level = 0.95,
   plotly = FALSE,
   palette = .tbl_now_palette(),
@@ -43,6 +44,24 @@ holiday dots are omitted from the epidemic panel.}
 \code{by_strata = TRUE}. \code{NULL} (default) uses the object's \code{strata} (see
 \code{\link[=get_strata]{get_strata()}}); pass a subset (e.g. \code{strata = "gender"}) to group by only
 some of them. Ignored when \code{by_strata = FALSE}.}
+
+\item{measure}{How to express the calendar-effect boxplots (the day-of-week,
+week-of-year, month-of-year, holiday and holiday-lag panels; every other
+panel ignores it).
+\itemize{
+\item \code{"normalized"} (default) — the value divided by its overall mean, so \code{1}
+(the dashed line) marks an average level. Case-count panels normalize the
+cases per event date; delay panels normalize the mean reporting delay.
+\item \code{"percent"} — the \strong{share of cases} falling in each group, as a
+percentage, so the box reads directly as "10\% of cases at the weekend
+versus 90\% on weekdays" with the IQR around it. One observation per
+calendar block: the seven weekdays (and the day types) are shared out
+within each \strong{week}, the holiday lags within each \strong{month}, and the
+epidemiological weeks and months within each \strong{year}. The reporting-delay
+panels then switch from the event date to the \strong{report date}, so they
+answer "what share of the reports \emph{arrive} on a weekend?". Needs \code{Date}
+event/report columns.
+}}
 
 \item{level}{Completeness level used for the incompleteness line in the
 \code{"epidemic"} panel (and to trim the delay panels). The line is drawn at
@@ -103,8 +122,8 @@ relative to the nearest holiday}, as asked for by \code{holiday_lags} (see
 the days the \code{..._holiday_lag_k} / \code{..._holiday_lead_k} columns flag —
 weekends and other holidays are skipped when counting working days — so you
 can see whether the lags you asked for are the ones that matter.
-\item \code{"seasonality"} — a periodogram of the incidence series whose dominant peak
-suggests a Fourier season length for \code{\link[=temporal_effects]{temporal_effects()}}.
+\item \code{"seasonality"} — a \strong{cycles} periodogram of the incidence series whose
+dominant peak suggests a Fourier season length for \code{\link[=temporal_effects]{temporal_effects()}}.
 }
 
 \strong{Reporting-delay panels} (to inspect \emph{delay effects})
@@ -120,9 +139,14 @@ two holiday panels above: the \emph{normalized} mean delay by day type and by
 position relative to the nearest holiday. These are often the more telling
 pair — a holiday usually does not change how many cases occur, but it very
 much changes how long they take to be reported.
-\item \code{"delay_seasonality"} — a periodogram of the mean-delay series, whose peak
-marks a cycle in the reporting delay (e.g. a weekly reporting rhythm).
+\item \code{"delay_seasonality"} — a \strong{cycles} periodogram of the mean-delay series,
+whose peak marks a cycle in the reporting delay (e.g. a weekly reporting
+rhythm).
 }
+
+Every panel is colour-coded by the process it describes — \strong{red} for the
+reporting-delay panels, \strong{green} for the case-count (epidemic) ones — and
+says which one it is in its subtitle, so a single panel still reads on its own.
 
 Which panels are available depends on the object. The \strong{calendar/delay}
 panels follow the event unit: daily data offers day-of-week \strong{and}

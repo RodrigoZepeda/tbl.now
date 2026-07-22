@@ -202,7 +202,7 @@ test_that("delay calendar panel plots a normalized delay effect centred on ~1", 
     dpd, "weekday", tbl.now:::.tbl_now_palette()
   )
   expect_s3_class(panel$layers[[1]]$geom, "GeomBoxplot")
-  expect_equal(panel$labels$y, "Normalized delay")
+  expect_equal(panel$labels$y, "Normalized mean delay (1 = average)")
 
   built <- ggplot2::ggplot_build(panel)
   box_medians <- built$data[[1]]$middle # boxplot medians per weekday
@@ -391,7 +391,7 @@ test_that("calendar panel draws boxplots of a normalized effect centred on ~1", 
   box_medians <- built$data[[1]]$middle # boxplot medians per weekday
   expect_true(all(box_medians > 0))
   expect_lt(abs(mean(box_medians) - 1), 0.5)
-  expect_equal(panel$labels$y, "Normalized effect")
+  expect_equal(panel$labels$y, "Normalized effect (1 = average)")
 })
 
 test_that("calendar panel supports weekday, week and month groupings", {
@@ -494,7 +494,7 @@ test_that("count-cumulative delay panel is the growth panel (log scale)", {
   skip_if_not_installed("ggplot2")
   p <- ggplot2::autoplot(make_cumulative_now(), panels = "delay_distribution")
   expect_equal(p$labels$title, "Cumulative growth by delay")
-  expect_equal(p$labels$y, "Cumulative count ratio")
+  expect_equal(p$labels$y, "Ratio to the previous delay (1 = stable, log scale)")
   # a log-10 y scale is applied
   is_log <- any(vapply(p$scales$scales, function(s) {
     !is.null(s$trans) && identical(s$trans$name, "log-10")
@@ -724,5 +724,123 @@ test_that("all four holiday panels build, alone and by strata", {
   expect_s3_class(
     ggplot2::autoplot(stratified, panels = "delay_holiday_lag", by_strata = TRUE),
     "ggplot"
+  )
+})
+
+
+# --- process colours, subtitles and the percent measure ---------------------
+
+test_that("every panel names the process it describes in its subtitle", {
+  skip_if_not_installed("ggplot2")
+  object <- make_daily_now()
+
+  epidemic_keys  <- c("epidemic", "calendar_weekday", "calendar_week", "seasonality")
+  reporting_keys <- c("delay_distribution", "delay_weekday", "delay_week",
+                      "delay_seasonality")
+
+  for (key in epidemic_keys) {
+    expect_equal(
+      ggplot2::autoplot(object, panels = key)$labels$subtitle,
+      "Epidemic (event-date) process",
+      info = key
+    )
+  }
+  for (key in reporting_keys) {
+    expect_equal(
+      ggplot2::autoplot(object, panels = key)$labels$subtitle,
+      "Reporting delay process",
+      info = key
+    )
+  }
+})
+
+test_that("both periodogram panels are titled 'Cycles (periodogram)'", {
+  skip_if_not_installed("ggplot2")
+  object <- make_daily_now()
+
+  expect_equal(
+    ggplot2::autoplot(object, panels = "seasonality")$labels$title,
+    "Cycles (periodogram)"
+  )
+  expect_equal(
+    ggplot2::autoplot(object, panels = "delay_seasonality")$labels$title,
+    "Cycles (periodogram)"
+  )
+})
+
+test_that("percent shares of a calendar block add up to 100", {
+  object <- make_daily_now()
+  epidemic_process <- tbl.now:::.tbl_now_epidemic_process(object)
+
+  shares <- tbl.now:::.tbl_now_percent_shares(
+    epidemic_process, "weekday", "event_date", "case_count"
+  )
+  # One block is a week, so the seven weekdays share out 100% of its cases.
+  totals <- tapply(shares$percent, shares$block, sum)
+  expect_true(all(abs(totals - 100) < 1e-8))
+  expect_setequal(
+    as.character(unique(shares$calendar_group)),
+    c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+  )
+})
+
+test_that("measure = 'percent' switches the panels to percentage shares", {
+  skip_if_not_installed("ggplot2")
+  object <- make_daily_now()
+
+  cases <- ggplot2::autoplot(object, panels = "calendar_weekday", measure = "percent")
+  expect_equal(cases$labels$y, "Percent of cases (%)")
+
+  # The reporting twin moves to the report date and shares out the reports.
+  reports <- ggplot2::autoplot(object, panels = "delay_weekday", measure = "percent")
+  expect_equal(reports$labels$y, "Percent of reported cases (%)")
+  expect_equal(reports$labels$title, "Day-of-week reporting effect")
+
+  # ... and the default is still the normalized view.
+  expect_equal(
+    ggplot2::autoplot(object, panels = "calendar_weekday")$labels$y,
+    "Normalized effect (1 = average)"
+  )
+})
+
+test_that("the plot_* twins draw the same panel as autoplot()", {
+  skip_if_not_installed("ggplot2")
+  object <- make_daily_now()
+
+  expect_equal(
+    plot_day_of_week_effects(object)$labels,
+    ggplot2::autoplot(object, panels = "calendar_weekday")$labels
+  )
+  expect_equal(
+    plot_day_of_week_effects(object, type = "report", measure = "percent")$labels,
+    ggplot2::autoplot(object, panels = "delay_weekday", measure = "percent")$labels
+  )
+  expect_equal(
+    plot_cycles(object, type = "report")$labels,
+    ggplot2::autoplot(object, panels = "delay_seasonality")$labels
+  )
+  expect_s3_class(plot_delay_distribution(object), "ggplot")
+  expect_s3_class(plot_observed_cases(object), "ggplot")
+  expect_s3_class(plot_week_of_year_effects(object), "ggplot")
+})
+
+test_that("percent needs date columns", {
+  skip_if_not_installed("ggplot2")
+  numeric_data <- data.frame(
+    event_date = rep(1:20, each = 3),
+    report_date = rep(1:20, each = 3) + 0:2,
+    n = 5
+  )
+  object <- tbl_now(numeric_data,
+    event_date = event_date, report_date = report_date, case_count = n,
+    data_type = "count-incidence", verbose = FALSE
+  )
+  # Numeric time has no weeks to share out, so the panel says so rather than
+  # inventing a denominator.
+  expect_null(
+    tbl.now:::.tbl_now_percent_shares(
+      data.frame(event_date = 1:10, case_count = 1),
+      "weekday", "event_date", "case_count"
+    )
   )
 })
