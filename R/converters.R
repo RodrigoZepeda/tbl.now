@@ -859,7 +859,7 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'   `epidist_aggregate_data` (or any input with an `n` column) becomes
 #'   `data_type = "count-incidence"` with `case_count = "n"`; otherwise
 #'   `data_type = "linelist"`. The `event_units`/`report_units` are inferred
-#'   from the primary censoring-window width (a 7-day window ⇒ `"weeks"`), and a
+#'   from the primary censoring-window width (a 7-day window -> `"weeks"`), and a
 #'   left-censored secondary window `[origin, report]` is decoded back to
 #'   `is_censored = TRUE` with the report taken from `secondary_upper`.
 #' * `"interval"`: instead attach the upper bounds `primary_upper`
@@ -871,7 +871,7 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' `epidist_linelist_data` otherwise, filling all four interval columns:
 #'
 #' * the primary event spans `[event_date, event_date + w]`, where the window
-#'   `w` matches the `tbl_now` unit (`"days"` ⇒ 1 day, `"weeks"` ⇒ 7 days, ...,
+#'   `w` matches the `tbl_now` unit (`"days"` -> 1 day, `"weeks"` -> 7 days, ...,
 #'   or `censoring_window` if supplied);
 #' * the secondary event spans `[report_date, report_date + w]` normally, but
 #'   for rows flagged by `is_censored` it is left-censored to

@@ -53,12 +53,6 @@ test_that("each panel has a stand-alone plotting function", {
   expect_error(plot_epidemic_process(mtcars), class = "rlang_error")
 })
 
-test_that("plot_reporting_v (the rotated reporting triangle) builds and validates", {
-  tn <- make_diag_tbl(strata = FALSE)
-  expect_true(builds_ok(suppressWarnings(plot_reporting_v(tn))))
-  expect_error(plot_reporting_v(mtcars), class = "rlang_error")
-})
-
 test_that(".diag_batch_stripes finds an obvious volume spike and honours k = 0", {
   inc <- data.frame(
     .report_date = as.Date("2023-01-01") + 0:29,

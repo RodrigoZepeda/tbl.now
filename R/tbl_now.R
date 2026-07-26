@@ -485,7 +485,7 @@ tbl_now <- function(data,
 #' 3. a symbol/call that *evaluates* to a character vector (e.g. internal calls
 #'    such as `strata = get_strata(.data)`, or `v <- "sex"; tbl_now(d, strata = v)`)
 #'    — wrapped in `all_of()` so tidyselect does not treat it as an external vector;
-#' 4. anything else (bare column names, tidy-select expressions) → `eval_select`.
+#' 4. anything else (bare column names, tidy-select expressions) -> `eval_select`.
 #'
 #' @param quo A quosure capturing the selection (from [rlang::enquo()]).
 #' @param data The data frame to select columns from.

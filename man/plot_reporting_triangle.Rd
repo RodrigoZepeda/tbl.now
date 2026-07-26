@@ -52,5 +52,5 @@ dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
 plot_reporting_triangle(dn)
 }
 \seealso{
-\code{\link[=diagnostic_plot]{diagnostic_plot()}}, \code{\link[=plot_reporting_v]{plot_reporting_v()}}.
+\code{\link[=diagnostic_plot]{diagnostic_plot()}}.
 }
