@@ -15,7 +15,7 @@ event_date, secondary (sdate_lwr) becomes report_date. An
 epidist_aggregate_data (or any input with an n column) becomes
 data_type = "count-incidence" with case_count = "n"; otherwise
 data_type = "linelist". The event_units/report_units are inferred
-from the primary censoring-window width (a 7-day window ⇒ "weeks"), and a
+from the primary censoring-window width (a 7-day window -&amp;gt; "weeks"), and a
 left-censored secondary window [origin, report] is decoded back to
 is_censored = TRUE with the report taken from secondary_upper.
 "interval": instead attach the upper bounds primary_upper
@@ -27,7 +27,7 @@ tbl_now_to_epidist() performs the inverse. By default (format = "auto")
 it builds an epidist_aggregate_data when x holds counts and an
 epidist_linelist_data otherwise, filling all four interval columns:
 the primary event spans [event_date, event_date + w], where the window
-w matches the tbl_now unit ("days" ⇒ 1 day, "weeks" ⇒ 7 days, ...,
+w matches the tbl_now unit ("days" -&amp;gt; 1 day, "weeks" -&amp;gt; 7 days, ...,
 or censoring_window if supplied);
 the secondary event spans [report_date, report_date + w] normally, but
 for rows flagged by is_censored it is left-censored to
@@ -56,7 +56,7 @@ event_date, secondary (sdate_lwr) becomes report_date. An
 epidist_aggregate_data (or any input with an n column) becomes
 data_type = "count-incidence" with case_count = "n"; otherwise
 data_type = "linelist". The event_units/report_units are inferred
-from the primary censoring-window width (a 7-day window ⇒ "weeks"), and a
+from the primary censoring-window width (a 7-day window -&amp;gt; "weeks"), and a
 left-censored secondary window [origin, report] is decoded back to
 is_censored = TRUE with the report taken from secondary_upper.
 "interval": instead attach the upper bounds primary_upper
@@ -68,7 +68,7 @@ tbl_now_to_epidist() performs the inverse. By default (format = "auto")
 it builds an epidist_aggregate_data when x holds counts and an
 epidist_linelist_data otherwise, filling all four interval columns:
 the primary event spans [event_date, event_date + w], where the window
-w matches the tbl_now unit ("days" ⇒ 1 day, "weeks" ⇒ 7 days, ...,
+w matches the tbl_now unit ("days" -&amp;gt; 1 day, "weeks" -&amp;gt; 7 days, ...,
 or censoring_window if supplied);
 the secondary event spans [report_date, report_date + w] normally, but
 for rows flagged by is_censored it is left-censored to
@@ -153,7 +153,7 @@ strictly positive width.</p>
 <code>epidist_aggregate_data</code> (or any input with an <code>n</code> column) becomes
 <code>data_type = "count-incidence"</code> with <code>case_count = "n"</code>; otherwise
 <code>data_type = "linelist"</code>. The <code>event_units</code>/<code>report_units</code> are inferred
-from the primary censoring-window width (a 7-day window ⇒ <code>"weeks"</code>), and a
+from the primary censoring-window width (a 7-day window -&gt; <code>"weeks"</code>), and a
 left-censored secondary window <code>[origin, report]</code> is decoded back to
 <code>is_censored = TRUE</code> with the report taken from <code>secondary_upper</code>.</p></li>
 <li><p><code>"interval"</code>: instead attach the upper bounds <code>primary_upper</code>
@@ -162,7 +162,7 @@ left-censored secondary window <code>[origin, report]</code> is decoded back to
 </ul><p><code>tbl_now_to_epidist()</code> performs the inverse. By default (<code>format = "auto"</code>)
 it builds an <code>epidist_aggregate_data</code> when <code>x</code> holds counts and an
 <code>epidist_linelist_data</code> otherwise, filling all four interval columns:</p><ul><li><p>the primary event spans <code>[event_date, event_date + w]</code>, where the window
-<code>w</code> matches the <code>tbl_now</code> unit (<code>"days"</code> ⇒ 1 day, <code>"weeks"</code> ⇒ 7 days, ...,
+<code>w</code> matches the <code>tbl_now</code> unit (<code>"days"</code> -&gt; 1 day, <code>"weeks"</code> -&gt; 7 days, ...,
 or <code>censoring_window</code> if supplied);</p></li>
 <li><p>the secondary event spans <code>[report_date, report_date + w]</code> normally, but
 for rows flagged by <code>is_censored</code> it is left-censored to

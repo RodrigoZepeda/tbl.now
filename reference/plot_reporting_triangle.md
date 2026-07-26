@@ -66,8 +66,7 @@ plot. A batch is a single report date, i.e. one such diagonal.
 
 ## See also
 
-[`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md),
-[`plot_reporting_v()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_v.md).
+[`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md).
 
 ## Examples
 

@@ -166,9 +166,6 @@
 - [`plot_reporting_triangle()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.md)
   **\[experimental\]** : Plot the reporting triangle
 
-- [`plot_reporting_v()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_v.md)
-  **\[experimental\]** : Plot the reporting "V"
-
 - [`plot_scalogram()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.md)
   **\[experimental\]** : Plot the reporting or epidemic scalogram
 

@@ -253,16 +253,14 @@
   [`plot_delay_profiles()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_profiles.md),
   [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md),
   [`plot_transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_transport_discriminant.md),
-  [`plot_reporting_v()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_v.md),
+  `plot_reporting_v()`,
   [`plot_scalogram()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.md),
   [`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md)
   and
   [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html).
   Needs the (suggested) package.
 
-- New
-  [`plot_reporting_v()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_v.md):
-  the reporting **“V”** – the same data as
+- New `plot_reporting_v()`: the reporting **“V”** – the same data as
   [`plot_reporting_triangle()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.md)
   (the same event-date x delay cells) rotated 45° so report date runs up
   the page and the data opens into a V (left arm = event date, right arm

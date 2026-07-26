@@ -381,10 +381,10 @@ test_delay_changepoint(covidat_now)
 As context, on August 10th 2020 the [Colombian government anounced the
 massive use of antigen
 testing](https://www.semana.com/que-son-las-pruebas-de-antigeno-y-quien-las-provee-en-colombia/692542/)
-for COVID-19 and in August 25th implemented the [PRASS
-programme](https://revistas.saludcapital.gov.co/index.php/BED/article/view/228/379.)
-which shifted the sampling and reporting paradigm for the country. These
-are the changes potentially identified by
+for COVID-19 and in August 25th implemented the **PRASS
+programme\]**which shifted the sampling and reporting paradigm for the
+country (*Osorio Saldarriga et al*). These are the changes potentially
+identified by
 [`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md).
 
 > \[!NOTE\] Pettitt’s test in
@@ -443,7 +443,7 @@ covidat_now %>%
 ```
 
 Additional batch detection tools can be found in the [corresponding
-article](NA).
+article](https://rodrigozepeda.github.io/tbl.now/articles/Example.html).
 
 ## Extreme delays
 
