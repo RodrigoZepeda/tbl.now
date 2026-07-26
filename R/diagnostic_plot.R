@@ -171,7 +171,7 @@ plot_epidemic_process <- function(x, plotly = FALSE, palette = .tbl_now_palette(
 #'   static plot. Default `FALSE`.
 #' @param palette A named colour palette. Defaults to the package palette.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
-#' @seealso [diagnostic_plot()], [plot_reporting_v()].
+#' @seealso [diagnostic_plot()].
 #' @examples
 #' data(denguedat)
 #' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)

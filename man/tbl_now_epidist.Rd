@@ -81,7 +81,7 @@ strictly positive width.
 \code{epidist_aggregate_data} (or any input with an \code{n} column) becomes
 \code{data_type = "count-incidence"} with \code{case_count = "n"}; otherwise
 \code{data_type = "linelist"}. The \code{event_units}/\code{report_units} are inferred
-from the primary censoring-window width (a 7-day window ⇒ \code{"weeks"}), and a
+from the primary censoring-window width (a 7-day window -> \code{"weeks"}), and a
 left-censored secondary window \verb{[origin, report]} is decoded back to
 \code{is_censored = TRUE} with the report taken from \code{secondary_upper}.
 \item \code{"interval"}: instead attach the upper bounds \code{primary_upper}
@@ -94,7 +94,7 @@ it builds an \code{epidist_aggregate_data} when \code{x} holds counts and an
 \code{epidist_linelist_data} otherwise, filling all four interval columns:
 \itemize{
 \item the primary event spans \verb{[event_date, event_date + w]}, where the window
-\code{w} matches the \code{tbl_now} unit (\code{"days"} ⇒ 1 day, \code{"weeks"} ⇒ 7 days, ...,
+\code{w} matches the \code{tbl_now} unit (\code{"days"} -> 1 day, \code{"weeks"} -> 7 days, ...,
 or \code{censoring_window} if supplied);
 \item the secondary event spans \verb{[report_date, report_date + w]} normally, but
 for rows flagged by \code{is_censored} it is left-censored to

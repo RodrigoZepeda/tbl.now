@@ -22,3 +22,5 @@
 ^\.positai$
 ^\.claude$
 ^SKILL.md$
+^BATCH_DETECTION_EXPLAINED\.md$
+^paper$
