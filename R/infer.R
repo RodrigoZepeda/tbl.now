@@ -9,7 +9,6 @@
 #' of the data or specified by the user
 #'
 #' @examples
-#' \dontrun{
 #' # Get the maximum report date
 #' ddata <- data.frame(
 #'   event_date = c(as.Date("2020/07/08"), as.Date("2020/07/09")),
@@ -22,9 +21,9 @@
 #'   event_date = "event_date",
 #'   report_date = "report_date"
 #' )
-#' }
 #'
 #' @keywords internal
+#' @noRd
 infer_now <- function(data, now, event_date, report_date) {
   # Force conversion of data to avoid loops with dplyr_reconstruct
   data <- dplyr::as_tibble(data)
@@ -67,7 +66,6 @@ infer_now <- function(data, now, event_date, report_date) {
 #'
 #' @return Whether the data's date_units are `days`, `weeks`, `months`, `years` or `numeric`.
 #' @examples
-#' \dontrun{
 #' # Get the maximum report date and infer the data distribution
 #' daily_data <- data.frame(
 #'   event_date = c(as.Date("2020/07/08"), as.Date("2020/07/09"), as.Date("2020/07/10")),
@@ -87,8 +85,8 @@ infer_now <- function(data, now, event_date, report_date) {
 #'
 #' # Also works with numeric
 #' infer_units_one_column(data.frame(report_date = 1:20), date_units = "auto", "report_date")
-#' }
 #' @keywords internal
+#' @noRd
 infer_units_one_column <- function(data, date_column, date_units) {
   # Force conversion of data to avoid loops with dplyr_reconstruct
   data <- dplyr::as_tibble(data)

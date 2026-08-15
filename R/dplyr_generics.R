@@ -29,10 +29,8 @@
 #' # Validate without errors
 #' validate_tbl_now(ndata)
 #'
-#' # Validate with errors
-#' if (FALSE) {
-#'   validate_tbl_now(data.frame(x = 1:3))
-#' }
+#' # Validate with errors (wrapped in try() since this intentionally errors)
+#' try(validate_tbl_now(data.frame(x = 1:3)))
 #'
 #' @export
 validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
