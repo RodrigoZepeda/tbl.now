@@ -317,13 +317,11 @@ check_data_type <- function(data_type) {
 #' @param name Name of the argument for printing error messages
 #'
 #' @examples
-#' \dontrun{
 #' check_bool(TRUE, "value")
 #'
 #' # Using a non boolean gives an error message
 #' not_a_boolean <- "hello"
 #' check_bool(not_a_boolean, "not_a_boolean")
-#' }
 #'
 #' @references
 #' From https://stackoverflow.com/a/60346779/5067372
@@ -331,6 +329,7 @@ check_data_type <- function(data_type) {
 #' @return invisible (TRUE). Called for its side effects.
 #'
 #' @keywords internal
+#' @noRd
 check_bool <- function(x, name) {
   if (!rlang::is_bool(x)) {
     cli::cli_abort("`{name}` must be either {.val TRUE} or {.val FALSE}. Got {.val {x}} instead.")
