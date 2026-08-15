@@ -45,8 +45,14 @@ ndata <- tbl_now(denguedat,
 # Validate without errors
 validate_tbl_now(ndata)
 
-# Validate with errors
-if (FALSE) {
-  validate_tbl_now(data.frame(x = 1:3))
-}
+# Validate with errors (wrapped in try() since this intentionally errors)
+try(validate_tbl_now(data.frame(x = 1:3)))
+#> Error in validate_tbl_now(data.frame(x = 1:3)) : 
+#>   Invalid `tbl_now` object:
+#> Missing required attribute: "event_date"
+#> Missing required attribute: "report_date"
+#> Missing required attribute: "now"
+#> Missing required attribute: "event_units"
+#> Missing required attribute: "report_units"
+#> Missing required attribute: "data_type"
 ```

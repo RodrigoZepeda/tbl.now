@@ -23,7 +23,6 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/change.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/check_bool.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/check_data_type.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/check_date_columns.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/check_delay_is_censored.html</loc></url>
@@ -42,9 +41,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/index.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/infer_data_type.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/infer_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/infer_units.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/infer_units_one_column.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/is_tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/is_weekday.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/money_tbl_now.html</loc></url>
