@@ -252,3 +252,6 @@ legend("right",
 )
 ```
 
+
+```{r learning-more, child = "../man/fragments/learning-more.Rmd"}
+```

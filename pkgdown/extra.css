@@ -13,13 +13,135 @@
   background-color: #C55F53 !important;
 }
 
+/* --------------------------------------------------------------------------
+   Navbar dropdowns (the "Articles" menu).
+
+   Bootstrap 5 renders these as `.dropdown-menu`, NOT `.submenu`, so the old
+   `.submenu` rules never matched and the menu fell through to the Bootswatch
+   "flatly" default, which is near-black. Both selectors are kept below so the
+   styling survives a pkgdown/Bootstrap version bump.
+
+   Target: a pale tint of the plot palette's `light_red` (#e78b7f) with the
+   `near_black` (#262626) text used elsewhere in the package.
+   -------------------------------------------------------------------------- */
+.navbar .dropdown-menu,
 .navbar .submenu {
-  background-color: #B85348 !important; /* Changes the background color */
+  background-color: #f9e6e2 !important;
+  border: 1px solid #e78b7f !important;
+  box-shadow: 0 0.5rem 1rem rgba(38, 38, 38, 0.15);
 }
 
-[data-bs-theme="dark"] .navbar .submenu {
-  background-color: #C55F53 !important; /* Changes the background color */
+.navbar .dropdown-menu .dropdown-item,
+.navbar .submenu .dropdown-item {
+  color: #262626 !important;
 }
+
+.navbar .dropdown-menu .dropdown-item:hover,
+.navbar .dropdown-menu .dropdown-item:focus,
+.navbar .submenu .dropdown-item:hover,
+.navbar .submenu .dropdown-item:focus {
+  background-color: #e78b7f !important;
+  color: #262626 !important;
+}
+
+.navbar .dropdown-menu .dropdown-item.active,
+.navbar .dropdown-menu .dropdown-item:active {
+  background-color: #B85348 !important;
+  color: #ffffff !important;
+}
+
+/* Section headers and separators inside the dropdown. */
+.navbar .dropdown-menu .dropdown-header {
+  color: #8a4038 !important;
+  font-weight: 600;
+}
+
+.navbar .dropdown-menu .dropdown-divider {
+  border-top-color: #e78b7f !important;
+}
+
+/* The pale treatment is legible in both themes, so dark mode keeps it rather
+   than reverting to the dark Bootswatch default. */
+[data-bs-theme="dark"] .navbar .dropdown-menu,
+[data-bs-theme="dark"] .navbar .submenu {
+  background-color: #f4ddd9 !important;
+  border-color: #C55F53 !important;
+}
+
+[data-bs-theme="dark"] .navbar .dropdown-menu .dropdown-item,
+[data-bs-theme="dark"] .navbar .submenu .dropdown-item {
+  color: #262626 !important;
+}
+
+/* --------------------------------------------------------------------------
+   Navbar search box, matched to the Articles dropdown above.
+
+   pkgdown's search is the Algolia autocomplete widget: `#search-input` is the
+   box itself and the results render into `.aa-dropdown-menu` / `.aa-suggestion`
+   (NOT a Bootstrap `.dropdown-menu`), so the results list has to be styled
+   separately or it stays on the Bootswatch default while the box turns pale.
+   -------------------------------------------------------------------------- */
+.navbar #search-input,
+.navbar #search-input.form-control {
+  background-color: #f9e6e2 !important;
+  color: #262626 !important;
+  border: 1px solid #e78b7f !important;
+}
+
+.navbar #search-input::placeholder {
+  color: #a9675d !important;
+  opacity: 1; /* Firefox dims placeholders by default. */
+}
+
+.navbar #search-input:focus {
+  background-color: #fdf3f1 !important;
+  border-color: #B85348 !important;
+  box-shadow: 0 0 0 0.2rem rgba(184, 83, 72, 0.3) !important;
+}
+
+/* Results list. */
+.aa-dropdown-menu {
+  background-color: #f9e6e2 !important;
+  border: 1px solid #e78b7f !important;
+  box-shadow: 0 0.5rem 1rem rgba(38, 38, 38, 0.15);
+}
+
+.aa-dropdown-menu .aa-suggestion {
+  color: #262626 !important;
+}
+
+.aa-dropdown-menu .aa-suggestion:hover,
+.aa-dropdown-menu .aa-suggestion.aa-cursor {
+  background-color: #e78b7f !important;
+  color: #262626 !important;
+}
+
+/* mark.js wraps matched terms in <mark>; the default yellow clashes with the
+   pale red ground. */
+.aa-dropdown-menu .aa-suggestion mark {
+  background-color: #B85348 !important;
+  color: #ffffff !important;
+  padding: 0 0.15em;
+  border-radius: 2px;
+}
+
+/* "No results found" and the dimmed context line under each hit. */
+.aa-dropdown-menu .aa-suggestion .search-details,
+.aa-dropdown-menu .aa-suggestion .autocomplete-item {
+  color: #6d4a44 !important;
+}
+
+/* NO `[data-bs-theme="dark"]` override for the search box or its results.
+   pkgdown stamps `data-bs-theme="dark"` on the <nav class="navbar"> ELEMENT
+   itself, so that navbar text stays light on the coloured bar. Anything nested
+   inside the navbar — which includes `.aa-dropdown-menu` — therefore matches
+   `[data-bs-theme="dark"] ...` on *every* page, light mode included. A
+   dark-mode variant here would permanently mis-colour the results list and
+   leave it a different shade from the Articles menu. The single pale palette
+   above is legible in both themes, so it is used unconditionally.
+
+   (The `.navbar .dropdown-menu` dark rule further up is fine: it needs a themed
+   ANCESTOR of `.navbar`, which only exists when the page itself is dark.) */
 
 
 .navbar .navbar-brand,
@@ -55,6 +177,13 @@ code {
   background-color: #ebefeb;
   padding: 0.2em 0.4em;
   border-radius: 4px;
+}
+
+pre, pre code {
+  white-space: pre;
+  padding-right: 1rem;
+  overflow: auto;
+  word-wrap: normal;
 }
 
 /* Background color for code chunks/blocks */

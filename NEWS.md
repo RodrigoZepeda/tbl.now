@@ -1,3 +1,34 @@
+# tbl.now 0.15.1
+
+* New dataset **`hai_bucamaranga`**: 1,423 healthcare-associated infections
+  (IAAS) notified in Bucaramanga, Colombia, 2016-2023, from the Colombian open
+  data portal. Column names and categorical values are translated from Spanish.
+  It is a deliberately *unpolished* extract and its help page documents the
+  defects in detail — a `1900-01-01` missing-date sentinel, 88 negative
+  reporting delays, 100 exact duplicate records, and a strongly bimodal delay
+  (3-day median, 92-day 90th percentile) — which makes it a realistic exercise
+  for the delay diagnostics rather than a clean modelling example.
+* `test_delay_drift()` and `test_delay_changepoint()` now document **every
+  column of their output**, plus new *Interpreting the result* sections. The
+  `test_delay_drift()` help gained a *Choosing a method* section explaining why
+  `"hamed-rao"` is the default (deterministic, no AR(1) assumption, effectively
+  instant) and when to cross-check with `"block-bootstrap"`, which is robust to
+  weekly periodicity but stochastic and thousands of times slower.
+* The Get Started vignette now opens the nowcasting problem with a **figure**
+  showing observed-to-date cases, the reports still in transit, and the nowcast
+  of the eventual total.
+* The "Learning more" links live in a single `man/fragments/learning-more.Rmd`
+  and are included in the README and at the end of every vignette and article,
+  so they only have to be edited in one place.
+* Website: the "Articles" navbar dropdown was rendering near-black with grey
+  text because the styling targeted `.submenu`, which Bootstrap 5 does not use;
+  it now targets `.dropdown-menu` and matches the pale red of the package
+  plots. `pkgdown/extra.css` is also no longer listed under
+  `includes: in_header:`, which was pasting raw CSS into `<head>` where it was
+  ignored.
+* README code blocks no longer wrap mid-tibble: printed output was being split
+  into stacked column blocks by R itself, which no stylesheet could undo.
+  
 # tbl.now 0.15.0
 
 * `autoplot()` panels are now consistently **colour-coded by process**: red for
@@ -459,7 +490,7 @@ unchanged), and the columns are passed to `data.table`, `tsibble`,
 `baselinenowcast` long format, `epidist`, and `epinowcast` (where they appear in
 the observations and `metareference` tables for use in the reference module).
 The `baselinenowcast` reporting-triangle matrix still cannot hold them.
-* Removed the `%>%` export and changed all the pipes to `|>`
+* Removed the `|>` export and changed all the pipes to `|>`
 * Refactored `converters.R` for readability (dplyr column operations instead of
 base indexing, full variable names, lintr-clean).
 * The `tbl_now_to_*()` converters now keep the `covariates` and `is_censored`

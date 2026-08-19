@@ -29,7 +29,7 @@ i.e. one \emph{location} and one \emph{dispersion} statistic.}
 \item{method}{Trend test: \code{"hamed-rao"} (default; Hamed-Rao variance
 correction, \code{\link[modifiedmk:mmkh]{modifiedmk::mmkh()}}), \code{"yue-pilon"} (Yue-Pilon,
 \code{\link[modifiedmk:mmky]{modifiedmk::mmky()}}) or \code{"block-bootstrap"} (block-bootstrap MK,
-\code{\link[modifiedmk:bbsmk]{modifiedmk::bbsmk()}}).}
+\code{\link[modifiedmk:bbsmk]{modifiedmk::bbsmk()}}). See the \emph{Choosing a method} section.}
 
 \item{by_strata}{Logical (default \code{FALSE}). When \code{TRUE}, the test is run
 separately per stratum.}
@@ -46,10 +46,43 @@ separately per stratum.}
 \code{0.05}).}
 }
 \value{
-A tibble with one row per \code{stat} x stratum: \code{strata}, \code{stat},
-\code{n} (series length), \code{tau}, \code{sens_slope} (change in the statistic per
-period), \code{statistic}, \code{p_value}, \code{method} and a logical \code{drift}
-(\code{p_value < alpha}).
+A \link[tibble:tibble]{tibble} with \strong{one row per requested \code{stat} per
+stratum}, and the following columns:
+
+\describe{
+\item{\code{strata}}{\code{character}. The stratum the row refers to. When
+\code{by_strata = FALSE} (the default) there is a single stratum labelled
+\code{"all"}; otherwise one level per observed combination of \code{strata}.}
+\item{\code{stat}}{\code{character}. Which delay summary was tested — one of
+\code{"median"}, \code{"mean"}, \code{"iqr"} or \code{"spread"}. \code{"median"}/\code{"mean"} are
+\emph{location} statistics (are delays getting longer?); \code{"iqr"}/\code{"spread"}
+are \emph{dispersion} statistics (are delays getting more erratic?).}
+\item{\code{n}}{\code{integer}. \strong{Length of the tested series}, i.e. the number of
+event dates contributing a non-missing value after the \code{mature_only}
+filter. This is a count of \emph{periods}, not a count of cases. Series with
+\code{n < 10} (or with zero variance) are not tested and return \code{NA} for every
+test column.}
+\item{\code{tau}}{\code{numeric} in \verb{[-1, 1]}. Kendall's rank correlation between the
+statistic and time — the \emph{effect size}. Positive means delays are growing,
+negative means they are shrinking. Roughly, \verb{|tau|} below 0.1 is a
+negligible trend even when \code{p_value} is small.}
+\item{\code{sens_slope}}{\code{numeric}. Sen's slope: the median pairwise rate of
+change, expressed \strong{in delay units per period} — so for weekly data with
+delays measured in weeks, "weeks of delay gained per week elapsed".
+Multiply by \code{n} for the total drift implied across the series. Unlike an
+OLS slope this is robust to outlying periods.}
+\item{\code{statistic}}{\code{numeric}. The autocorrelation-corrected Mann-Kendall
+\code{Z} score. Under the null it is standard normal, so \verb{|Z| > 1.96}
+corresponds to \code{p_value < 0.05}.}
+\item{\code{p_value}}{\code{numeric}. Two-sided p-value for the null hypothesis of
+\emph{no monotonic trend}, after the serial-correlation correction implied by
+\code{method}. \code{NA} when the series was too short or constant.}
+\item{\code{method}}{\code{character}. The \code{method} actually used, echoed back so the
+result is self-documenting when several runs are bound together.}
+\item{\code{drift}}{\code{logical}. The verdict: \code{TRUE} when
+\code{p_value < alpha}. \code{NA} p-values give \code{FALSE}, so a \code{FALSE} means
+"no drift detected" and not necessarily "no drift".}
+}
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -70,6 +103,69 @@ By default the test uses only \strong{mature} event dates (those on or before th
 \code{level} incompleteness cutoff), because the recent, not-yet-fully-reported
 dates would otherwise inject a spurious downward trend.
 }
+\section{Interpreting the result}{
+
+
+Read \code{tau} and \code{sens_slope} \emph{before} \code{p_value}. On long surveillance series a
+tiny, operationally irrelevant trend will still be highly significant, so
+\code{drift = TRUE} on its own is not a reason to act. The question to ask is
+whether \code{sens_slope * n} — the total drift implied over the observed window —
+is large relative to the delays themselves.
+
+The location and dispersion statistics answer different questions and can
+disagree, which is informative rather than contradictory:
+\itemize{
+\item \code{median} drifting up, \code{spread} flat: reporting is uniformly slower.
+\item \code{median} flat, \code{spread} drifting up: the typical case is unaffected but the
+tail is getting worse — often a subset of reporting sites degrading.
+\item both drifting up: broad deterioration in reporting timeliness.
+}
+
+A detected drift means a nowcasting model fitted on a \strong{fixed} delay
+distribution will be biased, because it is averaging over delay regimes that
+are not exchangeable. Consider a model with a time-varying delay, or fitting
+only to the recent, homogeneous stretch of data.
+
+Because this is a trend test it will \emph{not} find an abrupt one-off shift; a
+step change can even cancel out to a non-significant monotonic trend. Pair it
+with \code{\link[=test_delay_changepoint]{test_delay_changepoint()}}, which is built for exactly that case.
+}
+
+\section{Choosing a method}{
+
+
+All three options are Mann-Kendall tests that correct for the serial
+correlation of a delay series; they differ in what they assume about that
+correlation, and in cost.
+
+\describe{
+\item{\code{"hamed-rao"} (default)}{Inflates the Mann-Kendall variance using all
+\emph{significant} autocorrelation lags of the detrended ranks. It makes no
+AR(1) assumption, is deterministic, and is effectively instantaneous, so
+it is the sensible default for a routine diagnostic. Its variance
+correction is known to be unstable on short series — treat results with
+\code{n} below roughly 30 as indicative only.}
+\item{\code{"yue-pilon"}}{Trend-free pre-whitening, which effectively assumes the
+series is \strong{AR(1)}. That assumption is a poor fit for daily reporting
+delays, which carry strong day-of-week periodicity, and pre-whitening is
+known to remove part of the very trend being tested. Offered for
+comparability with the hydrology literature; rarely the right choice
+here.}
+\item{\code{"block-bootstrap"}}{Resamples contiguous blocks, so it accommodates
+arbitrary dependence \emph{within} a block — including weekly periodicity, if
+the block length covers it. Statistically the most defensible for daily
+data, and the best cross-check when a \code{hamed-rao} result is borderline.
+Two caveats: it is \strong{stochastic}, so call \code{\link[=set.seed]{set.seed()}} first for a
+reproducible p-value, and it is \strong{thousands of times slower} — it scales
+at roughly the square of the series length, so a multi-year daily series
+can take many minutes per statistic. Reduce \code{nsim} (passed through \code{...})
+or restrict to a shorter window before reaching for it.}
+}
+
+When a decision matters, run the default first and confirm a borderline
+result with \code{method = "block-bootstrap"} on a restricted window.
+}
+
 \examples{
 \dontshow{if (requireNamespace("modifiedmk", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
@@ -80,5 +176,6 @@ test_delay_drift(dengue)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=plot_delay_drift]{plot_delay_drift()}}
+\code{\link[=test_delay_changepoint]{test_delay_changepoint()}} for abrupt shifts,
+\code{\link[=plot_delay_drift]{plot_delay_drift()}} to visualise the series being tested.
 }

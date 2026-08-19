@@ -57,9 +57,87 @@ In an epidemiological nowcast, we typically observe two key dates:
 
 The nowcasting task is:
 
-> To estimate, for each past `event_date`, how many events have already occurred 
-but have not yet been reported as of **now**. That is, the nowcast will predict how 
-many observations will eventually be observed for the `event_date`s. 
+> To estimate, for each past `event_date`, how many events have already occurred
+but have not yet been reported as of **now**. That is, the nowcast will predict how
+many observations will eventually be observed for the `event_date`s.
+
+Visually:
+
+```{r nowcast-explainer, echo = FALSE, message = FALSE, fig.width = 8, fig.height = 4.6, out.width = "100%", fig.alt = "Stacked bar chart of cases by event date. Green bars show cases already reported as of now; pale red bars stacked on top show the cases not yet reported, which grow rapidly over the most recent event dates. A red line traces the total that will eventually be reported, rising steadily, while the green observed bars turn downward near now."}
+library(ggplot2)
+
+now_date <- ymd("2024-03-31")
+horizon <- 24
+
+explain <- tibble::tibble(event_date = now_date - (horizon:0))
+explain$age <- as.numeric(now_date - explain$event_date)
+
+# A rising epidemic: the eventual (final) count for each event date.
+explain$eventual <- round(20 * exp(0.055 * (horizon - explain$age)))
+# Reporting completeness grows with how old the event date is.
+explain$completeness <- 1 - exp(-0.55 * (explain$age + 0.35))
+explain$observed <- round(explain$eventual * explain$completeness)
+explain$missing <- explain$eventual - explain$observed
+
+lab_obs <- "Already reported as of now"
+lab_mis <- "Not yet reported (what the nowcast estimates)"
+lab_now <- "Nowcast: total that will eventually be reported"
+
+bars <- tidyr::pivot_longer(
+  explain[, c("event_date", "observed", "missing")],
+  cols = c("observed", "missing"), names_to = "part", values_to = "cases"
+)
+bars$part <- factor(
+  bars$part, levels = c("missing", "observed"), labels = c(lab_mis, lab_obs)
+)
+
+ggplot(bars, aes(x = event_date, y = cases)) +
+  geom_col(aes(fill = part), width = 0.75) +
+  geom_line(data = explain, aes(y = eventual, colour = lab_now), linewidth = 0.9) +
+  geom_point(data = explain, aes(y = eventual, colour = lab_now), size = 1.5) +
+  scale_fill_manual(
+    name = NULL, breaks = c(lab_obs, lab_mis),
+    values = stats::setNames(c("#5F7E62", "#e78b7f"), c(lab_obs, lab_mis))
+  ) +
+  scale_colour_manual(name = NULL, values = stats::setNames("#B85348", lab_now)) +
+  annotate(
+    "segment",
+    x = now_date + 0.62, xend = now_date + 0.62,
+    y = 0, yend = max(explain$eventual) * 1.06,
+    linetype = "dashed", colour = "#262626", linewidth = 0.4
+  ) +
+  annotate(
+    "text", x = now_date + 0.45, y = max(explain$eventual) * 1.10,
+    label = "now", hjust = 1, vjust = 0, fontface = "bold",
+    size = 3.4, colour = "#262626"
+  ) +
+  labs(
+    x = "Event date", y = "Cases",
+    title = "What a nowcast estimates",
+    subtitle = paste(
+      "Recent event dates look like a downturn only because",
+      "their reports have not arrived yet"
+    )
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    legend.position = "top",
+    legend.box = "vertical",
+    legend.margin = margin(b = -4),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", colour = "#334335")
+  ) +
+  guides(
+    fill = guide_legend(order = 1, ncol = 2),
+    colour = guide_legend(order = 2)
+  )
+```
+
+The green bars are what you actually have in hand at **now**; the pale red
+segments are the reports still in transit. Because completeness decays sharply
+over the most recent event dates, the observed counts bend *downwards* near the
+right edge even though the epidemic is still growing. The nowcast is the red
+line: an estimate of the height each bar will eventually reach.
 
 A `tbl.now` object is therefore a specialized [tibble()](https://tibble.tidyverse.org/) that:
 
@@ -965,6 +1043,9 @@ epinowcast_object
 ```
 
 The same pattern works for the other packages. <!---For example `tbl_now_to_EpiNow2()` collapses the object into the single `date`/`confirm` time series that [EpiNow2](https://epiforecasts.io/EpiNow2/)'s `estimate_infections()`/`epinow()` expect; passing `model = "estimate_truncation"` instead returns the list of report-date snapshots that `estimate_truncation()` consumes (the one EpiNow2 model that uses the report dimension).-->
+
+```{r learning-more, child = "../man/fragments/learning-more.Rmd"}
+```
 
 ## References
 

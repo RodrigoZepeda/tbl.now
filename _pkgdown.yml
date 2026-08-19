@@ -8,8 +8,9 @@ home:
 
 template:
   bootstrap: 5
-  includes:
-    in_header: pkgdown/extra.css
+  # NOTE: `pkgdown/extra.css` is picked up and linked automatically by pkgdown.
+  # It must NOT be listed under `includes: in_header:` — that slot expects HTML
+  # and would paste raw CSS text into <head>, where the browser ignores it.
   math-rendering: katex
   bslib:
     bootswatch: flatly
