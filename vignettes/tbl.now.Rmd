@@ -378,7 +378,7 @@ df_count_inc |>
 + **Aggregation within the same type**: The [to_count()](https://rodrigozepeda.github.io/tbl.now/reference/to_count.html) may also be used to re-aggregate datasets that contain duplicate event–report pairs. This is useful when raw surveillance feeds contain repeated entries such as in this case:
 
 ```{r}
-df_example <- data.frame(
+tbl_example <- data.frame(
   n = c(8, 11, 0, 1, 1, 5, 2, 4, 1, 10, 9, 11, 3, 1),
   sex = c(rep("M", 3), rep("F", 4), rep("M", 2), rep("F", 5)),
   event_date = c(
@@ -393,8 +393,7 @@ df_example <- data.frame(
     ymd("2020/09/15"), ymd("2020/09/13"), ymd("2020/09/14"),
     ymd("2020/09/13"), ymd("2020/09/14"),
     ymd("2020/09/15"), ymd("2020/09/16"), ymd("2020/09/17")
-  )
-) |>
+  )) |>
   tbl_now(
     event_date = event_date, report_date = report_date,
     data_type = "count-incidence", case_count = n, verbose = FALSE,
@@ -646,7 +645,7 @@ Other operations like mutate and select work as long as the original columns and
 
 ```{r}
 df_now <- df_now |>
-  mutate(GENDER = toupper(gender)) |> 
+  mutate(GENDER = toupper(male_or_female)) |> 
   select(GENDER, everything())
 
 df_now
