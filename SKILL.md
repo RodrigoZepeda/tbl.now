@@ -208,10 +208,10 @@ character, or factor.
 
 ---
 
-## Skill: mark whether data is right-censored
+## Skill: mark whether data is left-censored
 
 `is_censored` flags reports that arrive in artificial **batches** representing
-right-censoring rather than true reporting dynamics (e.g. a lab outage where a
+left-censoring rather than true reporting dynamics (e.g. a lab outage where a
 week of reports all land on the same later day). The `is_censored` attribute
 stores the **name of a logical column** (`TRUE`/`FALSE` per row).
 

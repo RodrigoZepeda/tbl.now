@@ -17,21 +17,23 @@ knitr::opts_chunk$set(
 ```
 
 
-Within `R`, the [tidyverse](https://tidyverse.org/) ecosystem [@tidyverse] provides a widely adopted framework for data analysis. In this paradigm, data is structured such that rows represent individual observations and columns represent variables. This approach is commonly referred to as tidy data [@wickham2014tidy].
+## Introduction 
 
-Several tidyverse extensions exist for working with time series data, including [tsibble](https://tsibble.tidyverts.org/), [tibbletime](https://business-science.github.io/tibbletime/), and [timetk](https://business-science.github.io/timetk/) [@wang2020new; @wang2019tidy; @timetk]. These packages provide time-aware tibbles and tools that integrate smoothly with the tidyverse. However, epidemiological nowcasting requires two time indices simultaneously: an **event time** and a **reporting time**. Classical time-series abstractions assume only a single index and therefore do not fully support this structure.
+The [tidyverse](https://tidyverse.org/) ecosystem [@tidyverse] provides a widely adopted framework for data analysis. Within this paradigm, data is structured such that rows represent individual observations and columns represent variables. This approach is commonly referred to as [tidy data](https://tidyr.tidyverse.org/articles/tidy-data.html) [@wickham2014tidy].
+
+Several tidyverse extensions exist for working with time series including [tsibble](https://tsibble.tidyverts.org/), [tibbletime](https://business-science.github.io/tibbletime/), and [timetk](https://business-science.github.io/timetk/) [@wang2020new; @wang2019tidy; @timetk]. These packages provide time-aware tibbles and tools that integrate smoothly with the tidyverse. However, epidemiological nowcasting requires two time indices simultaneously: an **event time** and a **reporting time**. Classical time-series abstractions assume only a single index and therefore do not fully support this structure.
 
 The `tbl.now` class and package addresses this gap. The `tbl.now` extends a regular  [tibble()](https://tibble.tidyverse.org/) to explicitly encode epidemiological event and report dates, allowing consistent data transformation, delay computation, and integration with the [diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/) modeling workflow.
 
-More concretely, tbl.now was designed to:
+More concretely, `tbl.now` was designed to:
 
 + Standardize the data inputs required by [diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/)  models.
 
 + Preserve  [tidyverse](https://tidyverse.org/)  compatibility so users can continue to apply familiar [dplyr](https://dplyr.tidyverse.org/) operations.
 
-+ Diagnose reporting artefacts directly from the data — reporting-delay drift and change points ([test_delay_drift()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.html), [test_delay_changepoint()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.html)) and batch (backlog) reporting ([detect_report_batches()](https://rodrigozepeda.github.io/tbl.now/reference/detect_report_batches.html)).
++ [Diagnose reporting artefacts](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html) directly from the data (such as reporting-delay drift and change points) as well as batch (backlog) reporting.
 
-+ Facilitate seamless integration into iterative modeling workflows [@gelman2020bayesian; @wickham2023r]:
++ Facilitate integration into iterative modeling workflows with [different nowcasting packages](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html) [@gelman2020bayesian; @wickham2023r]:
 
 ```
 Data Cleaning -> Modeling -> New Data Cleaning -> New Modeling -> ...
@@ -46,10 +48,11 @@ library(tbl.now)
 ```
 
 
+## How `tbl.now` works 
 
-## The `tbl.now` Framework 
+In an epidemiological nowcast, we typically observe at least two key dates[^1]:
 
-In an epidemiological nowcast, we typically observe two key dates:
+[^1]: More key dates are possible such as a `confirmation_date`. For example in the case of influenza one might consider the `event_date` = symptom onset, the `report_date` = when the patient was first diagnosed by a medical professional, and `confirmation_date` = when the positive test's results for influenza were recorded. We will come back to these multiple dates later. 
 
 + `event_date`: when the underlying event occurred (e.g., symptom onset, exposure, sample collection).
 
@@ -57,19 +60,20 @@ In an epidemiological nowcast, we typically observe two key dates:
 
 The nowcasting task is:
 
-> To estimate, for each past `event_date`, how many events have already occurred
+> To estimate, for each past `event_date`, how many events (e.g. cases) have already occurred
 but have not yet been reported as of **now**. That is, the nowcast will predict how
-many observations will eventually be observed for the `event_date`s.
+many observations will eventually be observed for each (past or present) `event_date`.
 
 Visually:
 
-```{r nowcast-explainer, echo = FALSE, message = FALSE, fig.width = 8, fig.height = 4.6, out.width = "100%", fig.alt = "Stacked bar chart of cases by event date. Green bars show cases already reported as of now; pale red bars stacked on top show the cases not yet reported, which grow rapidly over the most recent event dates. A red line traces the total that will eventually be reported, rising steadily, while the green observed bars turn downward near now."}
+```{r nowcast-explainer, echo = FALSE, message = FALSE, fig.width = 8, fig.height = 4.6, out.width = "100%", fig.alt = "Stacked bar chart of cases by event date. Green bars show cases already reported as of now; pale red bars stacked on top show the cases not yet reported, which grow rapidly over the most recent event dates. A black line traces the total that will eventually be reported, rising steadily, while the green observed bars turn downward near now."}
 library(ggplot2)
+library(dplyr)
 
 now_date <- ymd("2024-03-31")
 horizon <- 24
 
-explain <- tibble::tibble(event_date = now_date - (horizon:0))
+explain <- dplyr::tibble(event_date = now_date - (horizon:0))
 explain$age <- as.numeric(now_date - explain$event_date)
 
 # A rising epidemic: the eventual (final) count for each event date.
@@ -81,7 +85,7 @@ explain$missing <- explain$eventual - explain$observed
 
 lab_obs <- "Already reported as of now"
 lab_mis <- "Not yet reported (what the nowcast estimates)"
-lab_now <- "Nowcast: total that will eventually be reported"
+lab_now <- "Nowcast: a model for what will eventually be reported"
 
 bars <- tidyr::pivot_longer(
   explain[, c("event_date", "observed", "missing")],
@@ -99,18 +103,15 @@ ggplot(bars, aes(x = event_date, y = cases)) +
     name = NULL, breaks = c(lab_obs, lab_mis),
     values = stats::setNames(c("#5F7E62", "#e78b7f"), c(lab_obs, lab_mis))
   ) +
-  scale_colour_manual(name = NULL, values = stats::setNames("#B85348", lab_now)) +
+  scale_colour_manual(name = NULL, values = stats::setNames("#262626", lab_now)) +
+  geom_vline(aes(xintercept = now_date), data = dplyr::tibble(now_date = now_date),
+             linetype = "dashed", colour = "#262626", linewidth = 0.4) +
   annotate(
-    "segment",
-    x = now_date + 0.62, xend = now_date + 0.62,
-    y = 0, yend = max(explain$eventual) * 1.06,
-    linetype = "dashed", colour = "#262626", linewidth = 0.4
-  ) +
-  annotate(
-    "text", x = now_date + 0.45, y = max(explain$eventual) * 1.10,
-    label = "now", hjust = 1, vjust = 0, fontface = "bold",
+    "label", x = now_date, y = max(explain$eventual) * 1.10,
+    label = "now", hjust = 0.5, vjust = 0, fontface = "bold",
     size = 3.4, colour = "#262626"
   ) +
+  coord_cartesian(ylim = c(0, max(explain$eventual) * 1.15)) +
   labs(
     x = "Event date", y = "Cases",
     title = "What a nowcast estimates",
@@ -125,7 +126,7 @@ ggplot(bars, aes(x = event_date, y = cases)) +
     legend.box = "vertical",
     legend.margin = margin(b = -4),
     panel.grid.minor = element_blank(),
-    plot.title = element_text(face = "bold", colour = "#334335")
+    plot.title = element_text(face = "bold", colour = "#262626")
   ) +
   guides(
     fill = guide_legend(order = 1, ncol = 2),
@@ -133,47 +134,57 @@ ggplot(bars, aes(x = event_date, y = cases)) +
   )
 ```
 
-The green bars are what you actually have in hand at **now**; the pale red
-segments are the reports still in transit. Because completeness decays sharply
+
+>In the figure above, the green bars represent the number of cases (events)
+that have been observed until **now**; the pale red segments are the 
+reports still in transit. Because completeness decays sharply
 over the most recent event dates, the observed counts bend *downwards* near the
-right edge even though the epidemic is still growing. The nowcast is the red
+right edge even though the epidemic is still growing. The **nowcast** is the red
 line: an estimate of the height each bar will eventually reach.
 
-A `tbl.now` object is therefore a specialized [tibble()](https://tibble.tidyverse.org/) that:
+A `tbl.now` object is a specialized [tibble()](https://tibble.tidyverse.org/) that:
 
 + Identifies the `event_date` and `report_date` columns.
 
-+ Stores these as attributes to enable consistent processing.
++ Stores these as `attributes()` to enable consistent processing.
 
 + Automatically computes auxiliary fields such as delay, numerical indices, and frequency units.
 
-+ Ensures the dataset is well-formed for downstream [diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/) models.
++ Ensures the dataset is correctly formatted for [diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/) models.
 
-### Example
+## Example: A simple `tbl.now`
 
 Consider the following dataset:
 
-```{r}
-df <- data.frame(
-  symptom_onset = c(ymd("2023/12/25"), ymd("2023/12/26"), ymd("2023/12/25"), ymd("2023/12/26")),
-  medical_visit = c(ymd("2023/12/26"), ymd("2023/12/26"), ymd("2023/12/27"), ymd("2023/12/27")),
-  n = c(10, 2, 5, 11)
-)
+| symptom_onset | medical_visit |  n |
+| ------------- | ------------- | -: |
+| 2023-12-25    | 2023-12-26    | 10 |
+| 2023-12-26    | 2023-12-26    |  2 |
+| 2023-12-25    | 2023-12-27    |  5 |
+| 2023-12-26    | 2023-12-27    | 11 |
 
-knitr::kable(df, caption = "Example dataset")
-```
 
-Here:
+Where:
 
-+ `symptom_onset` is the event date.
++ `symptom_onset` is the `event_date`.
 
-+ `medical_visit` is the report date.
++ `medical_visit` is the `report_date`.
 
 + `n` is the number of reported cases for each event–report combination.
 
-We can convert this into a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html):
+We can convert this into a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) by first creating a `data.frame` and then using the `tbl_now()` function:
 
 ```{r}
+#Create a data.frame
+df <- data.frame(
+  symptom_onset = c(ymd("2023/12/25"), ymd("2023/12/26"), 
+                    ymd("2023/12/25"), ymd("2023/12/26")),
+  medical_visit = c(ymd("2023/12/26"), ymd("2023/12/26"), 
+                    ymd("2023/12/27"), ymd("2023/12/27")),
+  n = c(10, 2, 5, 11)
+)
+
+#Convert to tbl.now
 df |>
   tbl_now(event_date = symptom_onset, report_date = medical_visit, case_count = n)
 ```
@@ -181,13 +192,13 @@ df |>
 
 This performs several operations automatically:
 
-+ Detects the **data type** (`count-incidence` in this example).
++ Detects the **data type** (`count-incidence` in this example). See [below](#data-types) for all the data types available. 
 
 + Infers the **frequency units** of event and report dates (daily).
 
 + Tags the correct columns as `event_date`, `report_date`, and `case_count.`
 
-+ Computes `.event_num`, `.report_num`, and `.delay` columns.
++ Computes `.event_num`, `.report_num`, and `.delay` columns the numerical versions (indexed at 0) of event, report and `.delay = report_date - event_date` columns.
 
 + Identifies the appropriate **now** date (the most recent report date).
 
@@ -196,7 +207,7 @@ The remaining sections describe these features and the broader `tbl.now` toolkit
 
 ## Attributes of a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) 
 
-A [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) stores information about its structure using object attributes, ensuring consistent behavior across transformations and modeling steps. The primary attributes are:
+A [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) stores information about its structure using object attributes, ensuring consistent behavior across `dplyr` transformations. The primary attributes are:
 
 + **now**: the "current" reporting date used for nowcasting, typically the most recent `report_date`.
 
@@ -209,30 +220,36 @@ A [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) st
 + **report_units**: the temporal units for report dates.
 
 + **data_type**: one of the following (see [the data types section](#data-types)):
-    + linelist
-    + count-incidence
-    + count-cumulative.
+    + `"linelist"`: each row is an individual observation
+    + `"count-incidence"`: each row contains counts. Those counts represent the
+    exact number of events observed for each event-report date combination. 
+    + `"count-cumulative"`:  each row contains cumulative counts. Those counts represent the
+    cumulative number of events observed by each report date for that event. Later
+    report dates accumulate the earlier ones into the count. 
 
-+ **strata** (optional)[^1]: variables for which the nowcast should be 
++ **strata** (optional)[^2]: variables for which the nowcast should be 
 computed separately (e.g., age group, sex).
 
 + **covariates** (optional): predictor variables that may improve the 
 nowcast (e.g., weather covariates).
 
-+ **is_censored** (optional): identifies cases where some reports arrive 
-in artificial "batches" representing right-censoring rather than true 
-reporting dynamics (e.g. when there is a system error and reports from a lab 
-are not registered until a week after)
++ **is_censored** (optional): identifies cases where the report
+date represents not the exact date it was reported but an upper limit
+to that exact date (i.e. left-censored). As an example, one can consider 
+a system error and reports from a lab are not registered until a week after. 
 
 + **case_count** (optional): the column storing case counts when the dataset 
 is aggregated.
 
-+ **temporal_effects** (optional): a lazy specification (list of [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html) configs) stored via [add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html). Columns are only materialised when [compute_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html) is called. See the [temporal effects](#temporal-effects) section for more details.
++ **temporal_effects** (optional): a lazy specification for temporal effects
+such as day of the week, holiday, week of the year and other temporal effects. See the [temporal effects](#temporal-effects) section for more details.
 
 You can access any attribute using the corresponding [getter](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html), e.g. [get_event_date()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html) or [get_strata()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html).
 
-[^1]: Optional attributes are set to `NULL` by default. 
+[^2]: Optional attributes are set to `NULL` by default. 
 
+
+Below we provide more information on some of the attributes.
 
 ### Data types 
 
@@ -258,16 +275,10 @@ df_linelist <- data.frame(
   )
 )
 
-df_linelist <- df_linelist |>
-  tbl_now(
-    event_date = event_date, report_date = report_date,
-    case_col = n, verbose = FALSE
-  )
-
 knitr::kable(df_linelist, caption = "Linelist data")
 ```
 
-2. **Count-incidence**: Each row summarizes how many events with a given `event_date` were reported exactly on that `report_date.`
+2. **Count-incidence**: Each row summarizes how many events with a given `event_date` were reported **exactly** on that `report_date.`
 
 ```{r, echo=FALSE, cache=FALSE}
 df_count_inc <- data.frame(
@@ -285,12 +296,6 @@ df_count_inc <- data.frame(
     ymd("2020/09/15")
   )
 )
-
-df_count_inc <- df_count_inc |>
-  tbl_now(
-    event_date = event_date, report_date = report_date,
-    case_count = n, verbose = FALSE
-  )
 
 knitr::kable(df_count_inc, caption = "Count-incidence data")
 ```
@@ -314,21 +319,31 @@ df_count_cum <- data.frame(
   )
 )
 
-df_count_cum <- df_count_cum |>
-  tbl_now(
-    event_date = event_date, report_date = report_date,
-    case_count = n, verbose = FALSE
-  )
-
 knitr::kable(df_count_cum, caption = "Count-cumulative data")
 ```
 
-The `to_count()` function allows you to easily convert between different 
-data-types.
+The `to_count()` function allows you to convert between different data-types as we see below:
 
 ### Converting Between Data Types
 
-The [to_count()](https://rodrigozepeda.github.io/tbl.now/reference/to_count.html) function supports structured transformations:
+The [to_count()](https://rodrigozepeda.github.io/tbl.now/reference/to_count.html) function supports structured transformations. Here we start with linelist data as an example:
+
+```{r}
+#The original data.frame has one row per patient
+df_linelist <- data.frame(
+  patient     = 1:6,
+  event_date  = c(rep(ymd("2020/09/12"), 3), rep(ymd("2020/09/13"), 3)),
+  report_date = c(rep(ymd("2020/09/12"), 2), rep(ymd("2020/09/13"), 4))
+)
+
+#We can convert it to a tbl.now
+df_linelist <- df_linelist |> 
+  tbl_now(event_date = event_date, report_date = report_date, 
+          data_type = "linelist")
+
+#This is what it looks like
+df_linelist
+```
 
 + **Linelist → Count-Incidence**: Aggregates by event–report date, counting only cases reported on that date.
 
@@ -349,6 +364,13 @@ df_linelist |>
 + **Count-Incidence → Count-Cumulative**: Computes cumulative sums for each event date across report dates.
 
 ```{r}
+df_count_inc <- df_linelist |>
+  to_count(to = "count-incidence")
+
+#This is count incidence:
+df_count_inc
+
+#Turns to count cumulative:
 df_count_inc |>
   to_count(to = "count-cumulative")
 ```
@@ -372,9 +394,7 @@ df_example <- data.frame(
     ymd("2020/09/13"), ymd("2020/09/14"),
     ymd("2020/09/15"), ymd("2020/09/16"), ymd("2020/09/17")
   )
-)
-
-tbl_example <- df_example |>
+) |>
   tbl_now(
     event_date = event_date, report_date = report_date,
     data_type = "count-incidence", case_count = n, verbose = FALSE,
@@ -384,7 +404,7 @@ tbl_example <- df_example |>
 tbl_example
 ```
 
-This dataset intentionally contains repeated event_date–report_date pairs within each stratum. If the user wants to aggregate redundant rows, the [to_count()](https://rodrigozepeda.github.io/tbl.now/reference/to_count.html)  function can be used to collapse duplicates by summing the `case_count` column.
+This dataset intentionally contains repeated event_date–report_date pairs for each `sex`. You can  aggregate redundant rows with the [to_count()](https://rodrigozepeda.github.io/tbl.now/reference/to_count.html)  function that collapses duplicates by summing the `case_count` column.
 
 
 ```{r}
@@ -403,7 +423,7 @@ The function ensures that:
 
 ### Temporal effects
 
-Often, temporal covariates improve nowcasting performance by helping adjust for systematic changes occurring within the calendar cycle (e.g., day-of-week effects, seasonal effects, or reporting artefacts). The [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html) function creates a *specification* (recipe) of the features to compute:
+Often, temporal covariates improve nowcasting performance by helping to adjust systematic changes within the calendar cycle (e.g., day-of-week effects, seasonal effects, or other reporting artefacts). The [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html) function creates a *specification* (recipe) of the features to compute:
 
 ```{r}
 library(almanac)
@@ -418,11 +438,11 @@ t_eff
 
 > Note that the holidays calendar is an [rcalendar](https://davisvaughan.github.io/almanac/reference/rcalendar.html) object from the [almanac](https://davisvaughan.github.io/almanac/articles/almanac.html) package.
 
-#### Lazy evaluation: attach first, compute later
+#### How do thet work?
 
 Temporal effects in `tbl.now` follow a **lazy evaluation** pattern:
 
-1. **Attach the spec** with [add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html) (or via the `t_effects` argument of `tbl_now()`). This records *what* should be computed but adds **no columns** yet.
+1. **Add** with [add_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html) (or via the `t_effects` argument of `tbl_now()`). This records *what* should be computed but adds **no columns** yet.
 
 2. **Materialise the columns** with [compute_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html) when you are ready to use them in a model.
 
@@ -443,9 +463,9 @@ df_now <- df_now |>
 df_now
 ```
 
-The footer now shows the spec with `(lazy)` to signal that the columns have not been computed yet. No new columns appear in the tibble at this point.
+The footer now shows the spec with `(lazy)` to signal that the columns have not been computed yet. No new columns appear in the tibble at this point. When we compute, they appear (scroll to the right):
 
-```{r, R.options=list(pillar.width=250)}
+```{r}
 # Step 2 — materialise the columns when needed
 df_computed <- compute_temporal_effects(df_now)
 
@@ -456,8 +476,8 @@ df_computed
 After `compute_temporal_effects()`:
 
 + The effect columns (`.event_day_of_week`, `.event_week_of_year`, `.event_holiday`) are added.
-+ `get_temporal_effect_cols()` lists them.
-+ The original spec remains accessible via `get_temporal_effects()`, so you always know which effects were requested even after further dplyr operations.
++ The function `get_temporal_effect_cols()` lists the column names while
++ The original call remains accessible via `get_temporal_effects()`, so you always know which effects were requested even after further dplyr operations.
 
 ```{r}
 get_temporal_effects(df_computed) # The spec (list of configs)
@@ -521,7 +541,7 @@ df_now |>
 ```
 
 
-### Modifying a [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) with `dplyr`
+### Getting, removing and changing attributes
 
 A [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)’s attributes can be modified using the functions in [add_*](https://rodrigozepeda.github.io/tbl.now/reference/add.html), [change_*](https://rodrigozepeda.github.io/tbl.now/reference/change.html), or [remove_*](https://rodrigozepeda.github.io/tbl.now/reference/remove.html). These functions share a consistent interface that allows users to incrementally manipulate strata, covariates, and temporal effects.
 
@@ -571,7 +591,7 @@ get_temporal_effect_cols(df_now)
 
 Attributes can be removed using the corresponding [remove_*](https://rodrigozepeda.github.io/tbl.now/reference/remove.html) functions. `remove_temporal_effects()` drops both the spec and any computed columns:
 
-```{r, R.options=list(pillar.width = 250)}
+```{r}
 df_now <- df_now |>
   remove_temporal_effects() |>
   remove_all_strata()
@@ -621,6 +641,17 @@ df_now |>
   summarise(number_males = sum(male_or_female == "Male"))
 ```
  
+ 
+Other operations like mutate and select work as long as the original columns and the required for the attributes are kept:
+
+```{r}
+df_now <- df_now |>
+  mutate(GENDER = toupper(gender)) |> 
+  select(GENDER, everything())
+
+df_now
+```
+
  
 ### Updating a tbl_now()
 
@@ -852,7 +883,7 @@ Additional information on dealing with batches and other reporting delay artifac
 
 ### Convert epidemiological weeks to dates
 
-The function [week_2_date()](https://rodrigozepeda.github.io/tbl.now/reference/week_2_date.html) converts epidemiological week/year combinations into an aligned calendar date.
+The function [week_2_date()](https://rodrigozepeda.github.io/tbl.now/reference/week_2_date.html) converts epidemiological week/year combinations into a calendar date aligned on the first day of the week (Sunday).
 
 ```{r}
 df <- data.frame(
@@ -977,26 +1008,13 @@ censor_delays_above(tn, max_delay = 60)
 
 ### Converting to data formats from other packages
 
-> **NOTE** This is still work in progress `r lifecycle::badge("experimental")`
-
 `tbl.now` ships converters that move data between a `tbl_now` and the data structures used by other nowcasting and delay-estimation packages. They all follow the same naming convention:
 
 + `tbl_now_from_*()` builds a `tbl_now` (it wraps [as_tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.html), so `...` is forwarded to [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)).
 
 + `tbl_now_to_*()` converts a `tbl_now` into that package's native object.
 
-Each function accepts a `verbose` argument that reports the choices it made (the inferred `now`, the data type, the units, the column mapping, and so on). The supported packages — [epinowcast](https://package.epinowcast.org/), [baselinenowcast](https://baselinenowcast.epinowcast.org/), [EpiNow2](https://epiforecasts.io/EpiNow2/), [epidist](https://epidist.epinowcast.org/), [data.table](https://rdatatable.gitlab.io/data.table/) and [tsibble](https://tsibble.tidyverts.org/) — are all optional (`Suggests`).
-
-| Package | `from` | `to` | Maps to |
-|---|---|---|---|
-| `epinowcast` | yes | yes | `count-cumulative` (`reference_date`, `report_date`, `confirm`); `from` also accepts a preprocessed `enw_preprocess_data` or fitted object |
-| `baselinenowcast` | yes | yes | `count-incidence` (long data frame or reporting-triangle matrix) |
-| `EpiNow2` | — | yes | a single `date`/`confirm` series for `estimate_infections()`, or (with `model = "estimate_truncation"`) a list of report-date snapshots for `estimate_truncation()` |
-| `data.table` | yes | yes | any data type |
-| `epidist` | yes | yes | `linelist` (primary/secondary event dates) |
-| `tsibble` | yes | yes | a `tbl_ts` (one date as index, the other date + strata as key) |
-
-The object produced by any `tbl_now_to_*()` can be converted straight back with [as_tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.html), which has methods for each of these classes:
+Each function accepts a `verbose` argument that reports the choices it made (the inferred `now`, the data type, For example here we can convert to `tsibble`:
 
 ```{r converters-roundtrip, eval=requireNamespace("tsibble", quietly = TRUE), message=FALSE}
 dengue_now <- tbl_now(denguedat,
@@ -1007,45 +1025,16 @@ dengue_now <- tbl_now(denguedat,
 
 # tbl_now -> tsibble -> tbl_now
 dengue_ts <- tbl_now_to_tsibble(dengue_now, verbose = FALSE)
+
+#This returns a tsibble
+dengue_ts
+
+#Which can be converted back to tbl.now
 as_tbl_now(dengue_ts, report_date = "report_week", verbose = FALSE)
 ```
 
-For example, the [epinowcast](https://package.epinowcast.org/) hospitalization data ships in long cumulative format and converts straight into a `count-cumulative` `tbl_now`:
+See the [vignette on using different models](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html) to see all conversion formats. 
 
-```{r converters-available, include=FALSE}
-epinowcast_available <- requireNamespace("epinowcast", quietly = TRUE)
-```
-
-```{r converters-from, eval=epinowcast_available, message=FALSE}
-library(epinowcast)
-data(germany_covid19_hosp)
-
-
-#Read data from epinowcast
-obs  <- germany_covid19_hosp[location == "DE"]
-
-#Remove unused column
-obs  <- obs[, location := NULL]
-
-#Pre-process data
-pobs <- epinowcast::enw_preprocess_data(obs, max_delay = 40, by = "age_group")
-
-hospitalizations_now <- tbl_now_from_epinowcast(pobs)
-  
-hospitalizations_now
-```
-
-Going the other way, `tbl_now_to_epinowcast()` returns an `enw_preprocess_data` object ready for [epinowcast::epinowcast()](https://package.epinowcast.org/reference/epinowcast.html):
-
-```{r converters-to, eval=epinowcast_available, message=FALSE}
-epinowcast_object <- tbl_now_to_epinowcast(hospitalizations_now, verbose = FALSE)
-epinowcast_object
-```
-
-The same pattern works for the other packages. <!---For example `tbl_now_to_EpiNow2()` collapses the object into the single `date`/`confirm` time series that [EpiNow2](https://epiforecasts.io/EpiNow2/)'s `estimate_infections()`/`epinow()` expect; passing `model = "estimate_truncation"` instead returns the list of report-date snapshots that `estimate_truncation()` consumes (the one EpiNow2 model that uses the report dimension).-->
-
-```{r learning-more, child = "../man/fragments/learning-more.Rmd"}
-```
 
 ## References
 
