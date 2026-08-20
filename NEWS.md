@@ -1,6 +1,39 @@
 # tbl.now 0.15.1
 
-* New dataset **`hai_bucamaranga`**: 1,423 healthcare-associated infections
+* Two new converters, bringing the supported nowcasting back-ends to seven:
+  * `tbl_now_to_surveillance()` builds the individual-level line list
+    [surveillance::nowcast()] works from, renaming the event and report dates to
+    \pkg{surveillance}'s own `dHospital` / `dReport` defaults. `format = "sts"`
+    instead returns the observed curve as a `surveillance` `sts` object.
+  * `tbl_now_to_nowcaster()` builds the line list
+    `nowcaster::nowcasting_inla()` expects, renaming the dates to `date_onset` /
+    `date_report`. Note that `nowcasting_inla()` takes those two as *bare*
+    column names (tidy-evaluation), not strings.
+
+  Both accept count data as well as line lists, expanding counts back to one row
+  per case (de-accumulating first when the data is cumulative). \pkg{surveillance}
+  and \pkg{nowcaster} are new `Suggests`; \pkg{nowcaster} is not on CRAN, so the
+  covid19br r-universe was added to `Additional_repositories`.
+* The nowcasting-models article gained sections for both packages and a closing
+  **comparison of every engine on one set of axes** — one plot for the
+  unstratified object and one faceted by stratum, with a colour per package, the
+  incomplete data each engine actually saw, and the counts those weeks
+  eventually reached. The comparison deliberately uses an earlier 2002-2003
+  window rather than the article's main `dengue_now`, because the latter runs to
+  the end of `denguedat` and so has no ground truth to check against. The fits
+  are precomputed by `data-raw/nowcast_comparison.R` and read from a saved file,
+  so editing the prose no longer re-runs Stan, JAGS and INLA.
+
+* `flusight` no longer ships duplicate rows (#25). The upstream FluSight
+  `time-series.csv` contains 39,139 exact duplicates, which forced every example
+  to open with a `distinct()` call; the dataset now goes from 491,706 to 452,567
+  rows. The removal is lossless — every repeated
+  (`as_of`, `target_end_date`, `location_name`) key carried an identical
+  `observation`, with no conflicting values — so that triple is now a unique key.
+  The help page documents the change, and the FluSight example vignette drops the
+  de-duplication step.
+
+* New dataset **`hai_bucaramanga`**: 1,423 healthcare-associated infections
   (IAAS) notified in Bucaramanga, Colombia, 2016-2023, from the Colombian open
   data portal. Column names and categorical values are translated from Spanish.
   It is a deliberately *unpolished* extract and its help page documents the

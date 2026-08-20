@@ -16,7 +16,7 @@
 #'
 #' The column names and all categorical values have been translated from the
 #' original Spanish. The dataset has been trimmed to the columns relevant to a
-#' delay or nowcasting analysis; see `data-raw/hai_bucamaranga.R` in the
+#' delay or nowcasting analysis; see `data-raw/hai_bucaramanga.R` in the
 #' package sources for the full translation tables and the list of dropped
 #' columns.
 #'
@@ -96,18 +96,18 @@
 #'   national open-data portal
 #'   \url{https://www.datos.gov.co/Salud-y-Protecci-n-Social/48-Infecciones-asociadas-a-la-atenci-n-en-salud-IA/w4zx-wbff/about_data}.
 #'   Retrieved 2026-08-17. Column names and categorical values translated from
-#'   Spanish; see `data-raw/hai_bucamaranga.R` for the mapping.
+#'   Spanish; see `data-raw/hai_bucaramanga.R` for the mapping.
 #'
 #' @seealso [covid_colombia] for a second Colombian surveillance dataset,
 #'   [test_delay_drift()] and [test_delay_changepoint()] for the delay
 #'   diagnostics this dataset is well suited to.
 #'
 #' @examples
-#' data(hai_bucamaranga)
+#' data(hai_bucaramanga)
 #'
 #' # The source ships 100 exact duplicates and a number of unusable rows.
 #' # Reduce to unique records with a valid, non-negative reporting delay.
-#' iaas_clean <- dplyr::distinct(hai_bucamaranga) |>
+#' iaas_clean <- dplyr::distinct(hai_bucaramanga) |>
 #'   dplyr::filter(
 #'     !is.na(specimen_date), !is.na(report_date),
 #'     report_date >= specimen_date
@@ -126,4 +126,4 @@
 #'
 #' # The delay is strongly bimodal: a 3-day median with a long secondary mode.
 #' quantile(iaas_now$.delay, c(0.5, 0.75, 0.9, 0.99), na.rm = TRUE)
-"hai_bucamaranga"
+"hai_bucaramanga"

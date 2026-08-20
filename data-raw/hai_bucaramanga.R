@@ -1,4 +1,4 @@
-# hai_bucamaranga -------------------------------------------------------------
+# hai_bucaramanga -------------------------------------------------------------
 #
 # Healthcare-associated infections (IAAS -- "Infecciones Asociadas a la Atencion
 # en Salud") notified in the municipality of Bucaramanga, Santander, Colombia.
@@ -10,7 +10,7 @@
 # The source file is a Spanish-language line list with 1,423 records and 36
 # columns. This script translates it to English, trims it to the columns that
 # matter for a nowcasting/delay analysis, and repairs the encoding quirks
-# documented below. Run with:  source("data-raw/hai_bucamaranga.R")
+# documented below. Run with:  source("data-raw/hai_bucaramanga.R")
 #
 # KNOWN DEFECTS IN THE SOURCE (deliberately preserved, not silently repaired):
 #
@@ -251,7 +251,7 @@ map_microorganism <- c(
 
 # -- build ---------------------------------------------------------------------
 
-hai_bucamaranga <- tibble::tibble(
+hai_bucaramanga <- tibble::tibble(
   id            = as.integer(raw[["Orden"]]),
   specimen_date = parse_date(raw[["fecha examen"]]),
   received_date = parse_date(raw[["fecha recepcion"]]),
@@ -284,29 +284,29 @@ hai_bucamaranga <- tibble::tibble(
 # -- sanity checks -------------------------------------------------------------
 
 stopifnot(
-  nrow(hai_bucamaranga) == 1423L,
-  !anyNA(hai_bucamaranga$id),
+  nrow(hai_bucaramanga) == 1423L,
+  !anyNA(hai_bucaramanga$id),
   # 100 exact duplicates are expected and deliberately retained (see above).
-  sum(duplicated(hai_bucamaranga)) == 100L,
-  sum(duplicated(hai_bucamaranga$id)) == 100L,
-  sum(!is.na(hai_bucamaranga$specimen_date)) == 1105L,
-  sum(!is.na(hai_bucamaranga$received_date)) == 229L,
-  sum(!is.na(hai_bucamaranga$report_date)) == 840L,
+  sum(duplicated(hai_bucaramanga)) == 100L,
+  sum(duplicated(hai_bucaramanga$id)) == 100L,
+  sum(!is.na(hai_bucaramanga$specimen_date)) == 1105L,
+  sum(!is.na(hai_bucaramanga$received_date)) == 229L,
+  sum(!is.na(hai_bucaramanga$report_date)) == 840L,
   # The 314 clinically-confirmed records must have lost their fake specimen /
   # test / organism values, and only those.
-  sum(is.na(hai_bucamaranga$microorganism)) == 320L,
-  nlevels(hai_bucamaranga$icu_type) == 3L
+  sum(is.na(hai_bucaramanga$microorganism)) == 320L,
+  nlevels(hai_bucaramanga$icu_type) == 3L
 )
 
-delay <- as.numeric(hai_bucamaranga$report_date - hai_bucamaranga$specimen_date)
+delay <- as.numeric(hai_bucaramanga$report_date - hai_bucaramanga$specimen_date)
 stopifnot(sum(!is.na(delay)) == 826L, sum(delay < 0, na.rm = TRUE) == 88L)
 
 message(
-  "hai_bucamaranga: ", nrow(hai_bucamaranga), " rows x ",
-  ncol(hai_bucamaranga), " cols | ",
+  "hai_bucaramanga: ", nrow(hai_bucaramanga), " rows x ",
+  ncol(hai_bucaramanga), " cols | ",
   sum(!is.na(delay) & delay >= 0), " rows usable for a specimen -> report ",
   "nowcast | median delay ", stats::median(delay[!is.na(delay) & delay >= 0]),
   " days"
 )
 
-usethis::use_data(hai_bucamaranga, overwrite = TRUE, compress = "xz")
+usethis::use_data(hai_bucaramanga, overwrite = TRUE, compress = "xz")

@@ -86,7 +86,7 @@ To construct a tbl_now object, we must indicate:
 
 + `strata`: grouping variables that define separate strata (e.g., states)
 
-A first attempt produces several warnings:
+A first attempt produces a warning and an inference message:
 
 ```{r}
 df_wrong <- flusight |>
@@ -98,27 +98,22 @@ df_wrong <- flusight |>
   )
 ```
 
-These warnings arise because:
+These arise because:
 
-1. Duplicate rows exist for some event–report combinations.
+1. Missing values appear in the case count column.
 
-2. Missing values appear in the case count column.
+2. The data is incorrectly inferred to represent count-incidence rather than
+   count-cumulative. `tbl_now()` cannot tell the two apart from the values alone,
+   and defaults to incidence.
 
-3. The data is incorrectly inferred to represent count-incidence rather than count-cumulative, because cumulative-type datasets often contain repeated records.
+> **A note on duplicates.** The `flusight` dataset shipped with `tbl.now` has
+> already had the 39,139 exact duplicate rows present in the upstream FluSight
+> file removed (see `?flusight`). If you download `time-series.csv` yourself,
+> insert a [`distinct()`](https://dplyr.tidyverse.org/reference/distinct.html)
+> step here — otherwise `tbl_now()` raises a third warning about duplicated
+> event–report combinations.
 
-Inspecting a subset confirms duplicated rows:
-
-```{r}
-flusight[c(422146, 422147, 422148, 422149), ]
-```
-
-Using [`dplyr's distinct()](https://dplyr.tidyverse.org/reference/distinct.html) we remove the duplicates:
-
-```{r}
-flusight <- flusight |> distinct()
-```
-
-Next, we remove observations with missing case counts:
+We start by removing observations with missing case counts:
 
 ```{r}
 flusight <- flusight |> filter(!is.na(observation))

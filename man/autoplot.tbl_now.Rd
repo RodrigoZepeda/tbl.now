@@ -10,7 +10,7 @@
   panels = "all",
   by_strata = FALSE,
   strata = NULL,
-  measure = c("normalized", "percent"),
+  measure = c("percent", "normalized"),
   level = 0.95,
   plotly = FALSE,
   palette = .tbl_now_palette(),
@@ -49,10 +49,10 @@ some of them. Ignored when \code{by_strata = FALSE}.}
 week-of-year, month-of-year, holiday and holiday-lag panels; every other
 panel ignores it).
 \itemize{
-\item \code{"normalized"} (default) — the value divided by its overall mean, so \code{1}
+\item \code{"normalized"}  — the value divided by its overall mean, so \code{1}
 (the dashed line) marks an average level. Case-count panels normalize the
 cases per event date; delay panels normalize the mean reporting delay.
-\item \code{"percent"} — the \strong{share of cases} falling in each group, as a
+\item \code{"percent"} (default) — the \strong{share of cases} falling in each group, as a
 percentage, so the box reads directly as "10\% of cases at the weekend
 versus 90\% on weekdays" with the IQR around it. One observation per
 calendar block: the seven weekdays (and the day types) are shared out

@@ -111,12 +111,17 @@
 #'
 #' @keywords internal
 #' @noRd
-.need_pkg <- function(pkg) {
+.need_pkg <- function(pkg, repo = NULL) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
+    # Most optional back-ends live on the epinowcast r-universe; `repo` lets a
+    # caller point at a different one (e.g. nowcaster on covid19br).
+    if (is.null(repo)) {
+      repo <- c(epinowcast = "https://epinowcast.r-universe.dev")
+    }
     install_call <- paste0(
       "install.packages(\"", pkg, "\", ",
       "repos = c(options('repos'), ",
-      "epinowcast = 'https://epinowcast.r-universe.dev'))"
+      names(repo)[1], " = '", unname(repo)[1], "'))"
     )
     cli::cli_abort(c(
       "Package {.pkg {pkg}} is required for this conversion.",
@@ -1861,6 +1866,254 @@ tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
     key   = tidyselect::all_of(key_cols),
     ...
   )
+}
+
+
+
+# -- shared helper for the line-list back-ends ---------------------------------
+
+#' Reduce a `tbl_now` to a one-row-per-case line list
+#'
+#' \pkg{surveillance} and \pkg{nowcaster} both model an individual-level line
+#' list. A `linelist` `tbl_now` already is one; count data has to be expanded
+#' back out, which is only meaningful for *incidence* counts, so cumulative data
+#' is de-accumulated first.
+#'
+#' @param x A `tbl_now` object.
+#' @param fn Calling function, for error messages.
+#'
+#' @return A plain data frame with one row per case.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_expand_to_linelist <- function(x, fn) {
+  if (get_data_type(x) == "linelist") {
+    return(.strip_tbl_now(x))
+  }
+
+  # Cumulative counts are not case counts; de-accumulate before expanding.
+  if (get_data_type(x) == "count-cumulative") {
+    x <- to_count(x, to = "count-incidence")
+  }
+
+  count_col <- get_case_count(x)
+  cli::cli_warn(
+    "{.fn {fn}} needs a line list; expanding {.val {get_data_type(x)}} counts \\
+     in {.val {count_col}} to one row per case."
+  )
+
+  observations <- .strip_tbl_now(x)
+  counts <- observations[[count_col]]
+
+  # De-accumulation can yield negative increments on a downward revision, and
+  # tidyr::uncount() errors on those. Drop them explicitly rather than failing.
+  negative <- !is.na(counts) & counts < 0
+  if (any(negative)) {
+    cli::cli_warn(
+      "Dropping {sum(negative)} row{?s} with a negative count (a downward \\
+       revision cannot be expanded into cases)."
+    )
+    observations <- observations[!negative, , drop = FALSE]
+  }
+  observations <- observations[!is.na(observations[[count_col]]), , drop = FALSE]
+
+  tidyr::uncount(observations, weights = !!rlang::sym(count_col))
+}
+
+
+#' Convert a `tbl_now` into the line list \pkg{surveillance} nowcasts from
+#'
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' [surveillance::nowcast()] works from an individual-level line list with one
+#' column holding the event date and another the report date, named by its
+#' `dEventCol` / `dReportCol` arguments. `tbl_now_to_surveillance()` produces
+#' exactly that data frame, renaming the two dates to \pkg{surveillance}'s own
+#' defaults so the result can be passed straight through.
+#'
+#' With `format = "sts"` it instead returns the observed epidemic curve as an
+#' [surveillance::sts] object via [surveillance::linelist2sts()], which is what
+#' \pkg{surveillance}'s plotting and outbreak-detection verbs consume.
+#'
+#' `now` and the delay unit are *not* baked into the result: pass them from the
+#' object with [get_now()] and [get_event_units()], as in the example below.
+#'
+#' @param x A `tbl_now` object.
+#' @param event_col,report_col Names to give the event and report date columns
+#'   in the result. Default to \pkg{surveillance}'s own `"dHospital"` and
+#'   `"dReport"`, so [surveillance::nowcast()] finds them without further
+#'   arguments.
+#' @param format `"linelist"` (default) for the data frame
+#'   [surveillance::nowcast()] expects, or `"sts"` for an
+#'   [surveillance::sts] object of the observed curve.
+#' @param aggregate_by Aggregation interval for `format = "sts"`, e.g.
+#'   `"1 week"`. `NULL` (default) derives it from the object's event units.
+#' @param verbose Logical. Print the choices that were made.
+#' @param ... Forwarded to [surveillance::linelist2sts()] when
+#'   `format = "sts"`; ignored otherwise.
+#'
+#' @return A `data.frame` line list (`format = "linelist"`) or an
+#'   [surveillance::sts] object (`format = "sts"`).
+#'
+#' @seealso [tbl_now_to_nowcaster()], [tbl_now_to_epinowcast()]
+#'
+#' @examplesIf requireNamespace("surveillance", quietly = TRUE)
+#' data(denguedat)
+#' nowobj <- tbl_now(denguedat,
+#'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
+#' )
+#' sur <- tbl_now_to_surveillance(nowobj, verbose = FALSE)
+#' head(sur)
+#'
+#' # `now` and the aggregation unit come from the object itself:
+#' get_now(nowobj)
+#'
+#' @name tbl_now_surveillance
+#' @export
+tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
+                                    report_col = "dReport",
+                                    format = c("linelist", "sts"),
+                                    aggregate_by = NULL, verbose = TRUE) {
+  .assert_tbl_now(x, "tbl_now_to_surveillance")
+  .need_pkg("surveillance")
+  format <- match.arg(format)
+
+  event_date_col  <- get_event_date(x)
+  report_date_col <- get_report_date(x)
+  strata_cols     <- get_strata(x)
+  covariate_cols  <- get_covariates(x)
+
+  # Temporal effects ride along as ordinary columns so they can be used in a
+  # per-stratum loop or a downstream model formula.
+  materialised  <- .materialize_temporal_effects(x)
+  x             <- materialised$x
+  temporal_cols <- materialised$cols
+
+  linelist <- .tbl_now_expand_to_linelist(x, "tbl_now_to_surveillance")
+
+  kept <- c(
+    event_date_col, report_date_col, strata_cols, covariate_cols, temporal_cols
+  )
+  linelist <- as.data.frame(linelist[, kept, drop = FALSE])
+
+  # surveillance indexes by name, so rename the two dates to what it expects.
+  names(linelist)[match(event_date_col, names(linelist))]  <- event_col
+  names(linelist)[match(report_date_col, names(linelist))] <- report_col
+
+  # surveillance requires plain Dates on both columns.
+  linelist[[event_col]]  <- as.Date(linelist[[event_col]])
+  linelist[[report_col]] <- as.Date(linelist[[report_col]])
+
+  if (is.null(aggregate_by)) {
+    aggregate_by <- switch(get_event_units(x),
+      "days"   = "1 day",
+      "weeks"  = "1 week",
+      "months" = "1 month",
+      "1 week"
+    )
+  }
+
+  if (verbose) {
+    cli::cli_h3("Converting {.cls tbl_now} into a {.pkg surveillance} line list")
+    cli::cli_ul()
+    cli::cli_li("{.arg dEventCol} <- {.val {event_col}}")
+    cli::cli_li("{.arg dReportCol} <- {.val {report_col}}")
+    cli::cli_li("{.arg aggregate.by} <- {.val {aggregate_by}}")
+    cli::cli_li("{.arg now} <- {.val {as.character(get_now(x))}}")
+    cli::cli_end()
+  }
+
+  if (format == "sts") {
+    return(surveillance::linelist2sts(
+      linelist, dateCol = event_col, aggregate.by = aggregate_by, ...
+    ))
+  }
+
+  linelist
+}
+
+
+#' Convert a `tbl_now` into the line list \pkg{nowcaster} nowcasts from
+#'
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' [nowcaster::nowcasting_inla()] fits an INLA nowcast to an individual-level
+#' line list with an onset-date column and a report-date column.
+#' `tbl_now_to_nowcaster()` produces that data frame, renaming the two dates to
+#' \pkg{nowcaster}'s own vocabulary (`date_onset` / `date_report`) so they can
+#' be handed over directly.
+#'
+#' `nowcasting_inla()` takes those two arguments as **bare column names**
+#' (tidy-evaluation), so pass them unquoted:
+#' `nowcasting_inla(df, date_onset = date_onset, date_report = date_report)`.
+#'
+#' \pkg{nowcaster}'s only native grouping is by **age** (`age_col` together with
+#' `bins_age`). A `tbl_now` stratum is not necessarily an age band, so strata are
+#' returned as ordinary columns rather than being forced into `age_col`; loop
+#' over them and fit one nowcast per stratum.
+#'
+#' @param x A `tbl_now` object.
+#' @param event_col,report_col Names to give the event and report date columns
+#'   in the result. Default to `"date_onset"` and `"date_report"`.
+#' @param verbose Logical. Print the choices that were made.
+#' @param ... Currently unused, for extensibility.
+#'
+#' @return A `data.frame` line list with one row per case.
+#'
+#' @seealso [tbl_now_to_surveillance()], [tbl_now_to_epinowcast()]
+#'
+#' @examplesIf requireNamespace("nowcaster", quietly = TRUE)
+#' data(denguedat)
+#' nowobj <- tbl_now(denguedat,
+#'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
+#' )
+#' nc <- tbl_now_to_nowcaster(nowobj, verbose = FALSE)
+#' head(nc)
+#'
+#' @name tbl_now_nowcaster
+#' @export
+tbl_now_to_nowcaster <- function(x, ..., event_col = "date_onset",
+                                 report_col = "date_report", verbose = TRUE) {
+  .assert_tbl_now(x, "tbl_now_to_nowcaster")
+  .need_pkg("nowcaster", c(covid19br = "https://covid19br.r-universe.dev"))
+
+  event_date_col  <- get_event_date(x)
+  report_date_col <- get_report_date(x)
+  strata_cols     <- get_strata(x)
+  covariate_cols  <- get_covariates(x)
+
+  materialised  <- .materialize_temporal_effects(x)
+  x             <- materialised$x
+  temporal_cols <- materialised$cols
+
+  linelist <- .tbl_now_expand_to_linelist(x, "tbl_now_to_nowcaster")
+
+  kept <- c(
+    event_date_col, report_date_col, strata_cols, covariate_cols, temporal_cols
+  )
+  linelist <- as.data.frame(linelist[, kept, drop = FALSE])
+
+  names(linelist)[match(event_date_col, names(linelist))]  <- event_col
+  names(linelist)[match(report_date_col, names(linelist))] <- report_col
+
+  linelist[[event_col]]  <- as.Date(linelist[[event_col]])
+  linelist[[report_col]] <- as.Date(linelist[[report_col]])
+
+  if (verbose) {
+    cli::cli_h3("Converting {.cls tbl_now} into a {.pkg nowcaster} line list")
+    cli::cli_ul()
+    cli::cli_li("{.arg date_onset} <- {.val {event_col}}")
+    cli::cli_li("{.arg date_report} <- {.val {report_col}}")
+    if (length(strata_cols)) {
+      cli::cli_li(
+        "strata {.val {strata_cols}} kept as column{?s}; \\
+         {.pkg nowcaster} groups only by age, so fit one nowcast per stratum"
+      )
+    }
+    cli::cli_end()
+  }
+
+  linelist
 }
 
 

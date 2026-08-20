@@ -28,15 +28,18 @@ Suggests:
     epinowcast,
     knitr,
     modifiedmk,
+    nowcaster,
     patchwork,
     plotly,
     rmarkdown,
+    surveillance,
     testthat (>= 3.0.0),
     tsibble,
     wavScalogram,
     WaveletComp
 Additional_repositories:
-    https://epinowcast.r-universe.dev
+    https://epinowcast.r-universe.dev,
+    https://covid19br.r-universe.dev
 Config/testthat/edition: 3
 Config/testthat/parallel: false
 Imports:

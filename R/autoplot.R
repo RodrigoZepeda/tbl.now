@@ -2066,10 +2066,10 @@ ggplot2::autoplot
 #'   week-of-year, month-of-year, holiday and holiday-lag panels; every other
 #'   panel ignores it).
 #'
-#'   * `"normalized"` (default) — the value divided by its overall mean, so `1`
+#'   * `"normalized"`  — the value divided by its overall mean, so `1`
 #'     (the dashed line) marks an average level. Case-count panels normalize the
 #'     cases per event date; delay panels normalize the mean reporting delay.
-#'   * `"percent"` — the **share of cases** falling in each group, as a
+#'   * `"percent"` (default) — the **share of cases** falling in each group, as a
 #'     percentage, so the box reads directly as "10% of cases at the weekend
 #'     versus 90% on weekdays" with the IQR around it. One observation per
 #'     calendar block: the seven weekdays (and the day types) are shared out
@@ -2126,7 +2126,7 @@ ggplot2::autoplot
 #' @exportS3Method ggplot2::autoplot
 autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
                              strata = NULL,
-                             measure = c("normalized", "percent"),
+                             measure = c("percent", "normalized"),
                              level = 0.95, plotly = FALSE,
                              palette = .tbl_now_palette(),
                              delay_distribution_xlim = NULL,

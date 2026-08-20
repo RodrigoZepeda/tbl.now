@@ -5,7 +5,7 @@
 \alias{flusight}
 \title{flusight: NHSN Weekly Hospital Respiratory Data from FluSight}
 \format{
-A data frame.
+A data frame with 452,567 rows and 4 variables.
 }
 \usage{
 data(flusight)
@@ -22,14 +22,32 @@ Data represents how many cases were considered influenza during the week of
 \emph{target_end_date} given the information known until week \emph{as_of}. Note
 that \emph{as_of} is always one week ahead of \emph{target_end_date}.
 
-This is count data. The columns are as follows:
+This is count data with 452,567 rows and 4 columns:
 \itemize{
-\item \code{as_of}: The
-\item \code{target_end_date}: The date where the case happened
-\item \code{observation}: Case counts for those dates
-\item \code{location_name}: State, district or territory
+\item \code{as_of}: The report date -- the date the snapshot was taken, i.e. what was
+known as of that week.
+\item \code{target_end_date}: The event date -- the week the admissions occurred.
+\item \code{location_name}: State, district or territory (53 levels).
+\item \code{observation}: Case counts for those dates. \code{NA} for 1,152 rows.
 }
+
+Together, \code{as_of}, \code{target_end_date} and \code{location_name} form a unique key.
 }
+\section{Duplicate rows removed}{
+
+
+The upstream FluSight \code{time-series.csv} ships exact duplicate rows -- 39,139
+of them in this snapshot. They were dropped with \code{\link[dplyr:distinct]{dplyr::distinct()}} before
+the dataset was saved (issue #25), taking it from 491,706 to 452,567 rows.
+
+The removal is lossless: every repeated
+(\code{as_of}, \code{target_end_date}, \code{location_name}) key carried an \emph{identical}
+\code{observation}, with no conflicting values anywhere in the file, so no
+information was discarded and the key became unique. If you download the
+upstream file yourself you will still see the duplicates and should
+\code{distinct()} them before use.
+}
+
 \examples{
 data(flusight)
 }

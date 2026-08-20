@@ -12,35 +12,35 @@
 plot_day_of_week_effects(
   x,
   type = c("epidemic", "report"),
-  measure = c("normalized", "percent"),
+  measure = c("percent", "normalized"),
   ...
 )
 
 plot_week_of_year_effects(
   x,
   type = c("epidemic", "report"),
-  measure = c("normalized", "percent"),
+  measure = c("percent", "normalized"),
   ...
 )
 
 plot_month_of_year_effects(
   x,
   type = c("epidemic", "report"),
-  measure = c("normalized", "percent"),
+  measure = c("percent", "normalized"),
   ...
 )
 
 plot_holiday_effects(
   x,
   type = c("epidemic", "report"),
-  measure = c("normalized", "percent"),
+  measure = c("percent", "normalized"),
   ...
 )
 
 plot_holiday_lag_effects(
   x,
   type = c("epidemic", "report"),
-  measure = c("normalized", "percent"),
+  measure = c("percent", "normalized"),
   ...
 )
 }
