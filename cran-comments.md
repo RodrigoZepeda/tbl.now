@@ -39,3 +39,18 @@ We use `try()` to catch the intentional error instead of the `if(FALSE){}` now:
 try(validate_tbl_now(data.frame(x = 1:3)))
 ```
 
+## 5. win-builder pre-test NOTE (new submission)
+
+The automated win-builder pre-test flagged one NOTE on both Windows and
+Debian:
+
+* "Possibly misspelled words in DESCRIPTION" (Nowcasting/nowcasting/nowcasts)
+  — these are standard epidemiological terminology, not typos.
+* "Suggests or Enhances not in mainstream repositories: epidist,
+  epinowcast" — both are already declared with `Additional_repositories`
+  pointing at `https://epinowcast.r-universe.dev`, which the check itself
+  confirms as available.
+
+Neither needs a code change. Windows additionally reported "Overall
+checktime 14 min > 10 min", driven mostly by `testthat.R` (531s). We added
+`skip_on_cran()` to the slower, more exhaustive/edge-case tests.

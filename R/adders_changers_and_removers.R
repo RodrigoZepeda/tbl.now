@@ -78,6 +78,10 @@
 #' ndata <- change_now(ndata, now = as.Date("2025-01-01"))
 #' ndata
 #'
+#' # Bring `now` back to the latest date actually observed
+#' ndata <- ndata |> update_now()
+#' ndata
+#'
 #' # Change case count column
 #' count_data <- ndata |>
 #'   to_count(to = "count-incidence")

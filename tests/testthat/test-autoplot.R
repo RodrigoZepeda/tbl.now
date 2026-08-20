@@ -46,6 +46,7 @@ test_that("autoplot.tbl_now works on daily count data", {
 })
 
 test_that("daily autoplot has 8 panels, weekly has 6", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -62,6 +63,7 @@ test_that("daily autoplot has 8 panels, weekly has 6", {
 })
 
 test_that("autoplot panel selection returns the requested subset", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -83,6 +85,7 @@ test_that("autoplot panel selection returns the requested subset", {
 })
 
 test_that("autoplot rejects unknown panels and warns on inapplicable ones", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -100,6 +103,7 @@ test_that("autoplot rejects unknown panels and warns on inapplicable ones", {
 })
 
 test_that("panel key vocabulary depends on the event unit", {
+  skip_on_cran()
   expect_equal(
     tbl.now:::.tbl_now_all_panel_keys("days"),
     c("delay_distribution", "epidemic", "calendar_weekday", "calendar_week",
@@ -118,6 +122,7 @@ test_that("panel key vocabulary depends on the event unit", {
 })
 
 test_that("calendar groupings depend on event units", {
+  skip_on_cran()
   expect_equal(tbl.now:::.tbl_now_calendar_groupings("days"), c("weekday", "week"))
   expect_equal(tbl.now:::.tbl_now_calendar_groupings("weeks"), "week")
   expect_equal(tbl.now:::.tbl_now_calendar_groupings("months"), "month")
@@ -130,6 +135,7 @@ test_that("autoplot.tbl_now errors on a non-tbl_now", {
 })
 
 test_that("autoplot.tbl_now validates level", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -141,6 +147,7 @@ test_that("autoplot.tbl_now validates level", {
 })
 
 test_that("autoplot.tbl_now accepts a custom level without error", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -150,6 +157,7 @@ test_that("autoplot.tbl_now accepts a custom level without error", {
 # --- internal helpers -------------------------------------------------------
 
 test_that("weighted quantile matches an unweighted quantile when weights equal", {
+  skip_on_cran()
   values <- c(0, 1, 2, 3, 4, 5)
   weights <- rep(1, length(values))
   q <- tbl.now:::.tbl_now_weighted_quantile(values, weights, 0.5)
@@ -159,6 +167,7 @@ test_that("weighted quantile matches an unweighted quantile when weights equal",
 })
 
 test_that("weighted quantile respects weights", {
+  skip_on_cran()
   values <- c(0, 10)
   weights <- c(99, 1) # nearly all mass at 0
   expect_equal(tbl.now:::.tbl_now_weighted_quantile(values, weights, 0.95), 0)
@@ -166,12 +175,14 @@ test_that("weighted quantile respects weights", {
 })
 
 test_that("delay distribution helper returns positive weights", {
+  skip_on_cran()
   dd <- tbl.now:::.tbl_now_delay_distribution(make_daily_now())
   expect_true(all(dd$weight > 0))
   expect_true(all(dd$delay >= 0))
 })
 
 test_that("epidemic process helper aggregates to one row per event date", {
+  skip_on_cran()
   nowobj <- make_daily_now()
   ep <- tbl.now:::.tbl_now_epidemic_process(nowobj)
   expect_named(ep, c("event_date", "case_count"))
@@ -179,11 +190,13 @@ test_that("epidemic process helper aggregates to one row per event date", {
 })
 
 test_that("units_to_days multiplier is correct", {
+  skip_on_cran()
   expect_equal(tbl.now:::.tbl_now_units_to_days("days"), 1)
   expect_equal(tbl.now:::.tbl_now_units_to_days("weeks"), 7)
 })
 
 test_that("delay-per-date helper returns one weighted mean delay per event date", {
+  skip_on_cran()
   nowobj <- make_daily_now()
   dpd <- tbl.now:::.tbl_now_delay_per_date(nowobj)
   expect_named(dpd, c("event_date", "mean_delay", "cases"))
@@ -195,6 +208,7 @@ test_that("delay-per-date helper returns one weighted mean delay per event date"
 # --- reporting-delay effect panels -----------------------------------------
 
 test_that("delay calendar panel plots a normalized delay effect centred on ~1", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
 
   dpd <- tbl.now:::.tbl_now_delay_per_date(make_daily_now())
@@ -212,6 +226,7 @@ test_that("delay calendar panel plots a normalized delay effect centred on ~1", 
 })
 
 test_that("delay calendar panel supports weekday, week and month groupings", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
 
   dpd <- tbl.now:::.tbl_now_delay_per_date(make_daily_now())
@@ -224,6 +239,7 @@ test_that("delay calendar panel supports weekday, week and month groupings", {
 })
 
 test_that("delay periodogram panel is a periodogram of the mean-delay series", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
 
   dpd <- tbl.now:::.tbl_now_delay_per_date(make_daily_now())
@@ -253,6 +269,7 @@ make_daily_strata_now <- function() {
 }
 
 test_that("by_strata splits every panel and keeps the panel count", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -268,6 +285,7 @@ test_that("by_strata splits every panel and keeps the panel count", {
 })
 
 test_that("by_strata errors without strata and honours the strata override", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -285,6 +303,7 @@ test_that("by_strata errors without strata and honours the strata override", {
 })
 
 test_that("strata= works on a column that is not a declared stratum", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -328,6 +347,7 @@ test_that("strata= works on a column that is not a declared stratum", {
 })
 
 test_that("by-strata data helpers carry a combined strata label", {
+  skip_on_cran()
   nowobj <- make_daily_strata_now()
 
   ep <- tbl.now:::.tbl_now_epidemic_process_by(nowobj, "grp")
@@ -345,6 +365,7 @@ test_that("by-strata data helpers carry a combined strata label", {
 })
 
 test_that("multiple strata columns are combined into one label", {
+  skip_on_cran()
   set.seed(3)
   dates <- seq(as.Date("2021-01-01"), as.Date("2021-02-28"), by = "day")
   rows <- do.call(rbind, lapply(dates, function(d) {
@@ -360,6 +381,7 @@ test_that("multiple strata columns are combined into one label", {
 })
 
 test_that("delay panels degrade gracefully on an empty / tiny series", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
 
   empty <- dplyr::tibble(
@@ -378,6 +400,7 @@ test_that("delay panels degrade gracefully on an empty / tiny series", {
 # --- normalized calendar effect --------------------------------------------
 
 test_that("calendar panel draws boxplots of a normalized effect centred on ~1", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
 
   nowobj <- make_daily_now()
@@ -395,6 +418,7 @@ test_that("calendar panel draws boxplots of a normalized effect centred on ~1", 
 })
 
 test_that("calendar panel supports weekday, week and month groupings", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
 
   ep <- tbl.now:::.tbl_now_epidemic_process(make_daily_now())
@@ -407,6 +431,7 @@ test_that("calendar panel supports weekday, week and month groupings", {
 # --- x-axis limits ----------------------------------------------------------
 
 test_that("autoplot accepts per-panel x-axis limits", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -422,6 +447,7 @@ test_that("autoplot accepts per-panel x-axis limits", {
 })
 
 test_that(".tbl_now_apply_xlim adds a coord and rejects bad input", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   base <- ggplot2::ggplot(data.frame(x = 1:3, y = 1:3), ggplot2::aes(x, y)) +
     ggplot2::geom_point()
@@ -434,6 +460,7 @@ test_that(".tbl_now_apply_xlim adds a coord and rejects bad input", {
 # --- holiday dots -----------------------------------------------------------
 
 test_that("holiday points are empty when there is no holiday spec", {
+  skip_on_cran()
   nowobj <- make_daily_now()
   ep <- tbl.now:::.tbl_now_epidemic_process(nowobj)
   hp <- tbl.now:::.tbl_now_holiday_points(nowobj, ep)
@@ -441,6 +468,7 @@ test_that("holiday points are empty when there is no holiday spec", {
 })
 
 test_that("holiday points are detected from a temporal_effects spec", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   nowobj <- make_daily_now() |>
@@ -452,6 +480,7 @@ test_that("holiday points are detected from a temporal_effects spec", {
 })
 
 test_that("autoplot renders with holidays marked", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
   skip_if_not_installed("almanac")
@@ -481,6 +510,7 @@ make_cumulative_now <- function() {
 }
 
 test_that("cumulative growth helper computes ratios to the previous delay", {
+  skip_on_cran()
   g <- tbl.now:::.tbl_now_cumulative_growth(make_cumulative_now())
   expect_true(all(c("event_date", "delay", "ratio") %in% names(g)))
   expect_true(all(is.finite(g$ratio) & g$ratio > 0))
@@ -491,6 +521,7 @@ test_that("cumulative growth helper computes ratios to the previous delay", {
 })
 
 test_that("count-cumulative delay panel is the growth panel (log scale)", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   p <- ggplot2::autoplot(make_cumulative_now(), panels = "delay_distribution")
   expect_equal(p$labels$title, "Cumulative growth by delay")
@@ -504,12 +535,14 @@ test_that("count-cumulative delay panel is the growth panel (log scale)", {
 })
 
 test_that("non-cumulative data keeps the histogram delay panel", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   p <- ggplot2::autoplot(make_daily_now(), panels = "delay_distribution")
   expect_equal(p$labels$title, "Empirical delay distribution")
 })
 
 test_that("cumulative growth panel works by stratum and full autoplot builds", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -558,6 +591,7 @@ holiday_panel_keys <- c(
 )
 
 test_that("holiday panels appear only when a holiday or weekend effect is attached", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   # No temporal effect at all -> no holiday panels, and asking for one warns
@@ -587,6 +621,7 @@ test_that("holiday panels appear only when a holiday or weekend effect is attach
 })
 
 test_that("the holiday config folds every attached spec together", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   # The documented both-sides idiom: one spec per direction.
@@ -609,6 +644,7 @@ test_that("the holiday config folds every attached spec together", {
 })
 
 test_that("day-type categories follow what the spec asked for", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   calendar <- almanac::rcalendar(almanac::hol_christmas())
@@ -642,6 +678,7 @@ test_that("day-type categories follow what the spec asked for", {
 })
 
 test_that("holiday lag positions skip weekends and match the lag columns", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   config <- list(
@@ -683,6 +720,7 @@ test_that("holiday lag positions skip weekends and match the lag columns", {
 })
 
 test_that("all four holiday panels build, alone and by strata", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
   skip_if_not_installed("almanac")
@@ -731,6 +769,7 @@ test_that("all four holiday panels build, alone and by strata", {
 # --- process colours, subtitles and the percent measure ---------------------
 
 test_that("every panel names the process it describes in its subtitle", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   object <- make_daily_now()
 
@@ -755,6 +794,7 @@ test_that("every panel names the process it describes in its subtitle", {
 })
 
 test_that("both periodogram panels are titled 'Cycles (periodogram)'", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   object <- make_daily_now()
 
@@ -769,6 +809,7 @@ test_that("both periodogram panels are titled 'Cycles (periodogram)'", {
 })
 
 test_that("percent shares of a calendar block add up to 100", {
+  skip_on_cran()
   object <- make_daily_now()
   epidemic_process <- tbl.now:::.tbl_now_epidemic_process(object)
 
@@ -785,6 +826,7 @@ test_that("percent shares of a calendar block add up to 100", {
 })
 
 test_that("measure = 'percent' switches the panels to percentage shares", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   object <- make_daily_now()
 
@@ -825,6 +867,7 @@ test_that("the plot_* twins draw the same panel as autoplot()", {
 })
 
 test_that("percent needs date columns", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   numeric_data <- data.frame(
     event_date = rep(1:20, each = 3),

@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 .DS_Store
+Rplots.pdf
 docs
 src/*.o
 src/*.so

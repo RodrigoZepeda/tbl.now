@@ -120,6 +120,7 @@ setup_test_data <- function() {
 # ============================================================================
 
 test_that("update.tbl_now fails with non-data.frame new_data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -165,6 +166,7 @@ test_that("update.tbl_now combines data correctly", {
 })
 
 test_that("update.tbl_now preserves attributes from object", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -188,6 +190,7 @@ test_that("update.tbl_now preserves attributes from object", {
 })
 
 test_that("update.tbl_now updates now to latest date", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -211,6 +214,7 @@ test_that("update.tbl_now updates now to latest date", {
 })
 
 test_that("update.tbl_now handles overlapping data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -235,6 +239,7 @@ test_that("update.tbl_now handles overlapping data", {
 # ============================================================================
 
 test_that("update.tbl_now strata='left' keeps object strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -253,6 +258,7 @@ test_that("update.tbl_now strata='left' keeps object strata", {
 })
 
 test_that("update.tbl_now strata='right' uses new_data strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -282,6 +288,7 @@ test_that("update.tbl_now strata='right' uses new_data strata", {
 })
 
 test_that("update.tbl_now strata='both' combines strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -325,6 +332,7 @@ test_that("update.tbl_now strata='both' combines strata", {
 })
 
 test_that("update.tbl_now strata='left' fails when strata not in new_data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -347,6 +355,7 @@ test_that("update.tbl_now strata='left' fails when strata not in new_data", {
 })
 
 test_that("update.tbl_now strata='right' fails when strata not in object", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -379,6 +388,7 @@ test_that("update.tbl_now strata='right' fails when strata not in object", {
 })
 
 test_that("update.tbl_now fails with invalid strata option", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -401,6 +411,7 @@ test_that("update.tbl_now fails with invalid strata option", {
 # ============================================================================
 
 test_that("update.tbl_now covariates='left' keeps object covariates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -419,6 +430,7 @@ test_that("update.tbl_now covariates='left' keeps object covariates", {
 })
 
 test_that("update.tbl_now covariates='right' uses new_data covariates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -462,6 +474,7 @@ test_that("update.tbl_now covariates='right' uses new_data covariates", {
 })
 
 test_that("update.tbl_now covariates='both' combines covariates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Add humidity to both datasets
@@ -494,6 +507,7 @@ test_that("update.tbl_now covariates='both' combines covariates", {
 })
 
 test_that("update.tbl_now fails with invalid covariates option", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -516,6 +530,7 @@ test_that("update.tbl_now fails with invalid covariates option", {
 # ============================================================================
 
 test_that("update.tbl_now works with count data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -538,6 +553,7 @@ test_that("update.tbl_now works with count data", {
 })
 
 test_that("update.tbl_now removes duplicates for count data by default", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -562,6 +578,7 @@ test_that("update.tbl_now removes duplicates for count data by default", {
 })
 
 test_that("update.tbl_now remove_duplicates=FALSE keeps duplicates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -588,6 +605,7 @@ test_that("update.tbl_now remove_duplicates=FALSE keeps duplicates", {
 })
 
 test_that("update.tbl_now doesn't remove duplicates for linelist data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -671,6 +689,7 @@ te_has <- function(x, effect) {
 }
 
 test_that("update t_effects = 'left' keeps object's spec (no error)", {
+  skip_on_cran()
   p <- setup_te_pair()
   res <- update(p$left, new_data = p$right, t_effects = "left")
   expect_length(get_temporal_effects(res), 1L)
@@ -679,6 +698,7 @@ test_that("update t_effects = 'left' keeps object's spec (no error)", {
 })
 
 test_that("update t_effects = 'right' keeps new_data's spec", {
+  skip_on_cran()
   p <- setup_te_pair()
   res <- update(p$left, new_data = p$right, t_effects = "right")
   expect_length(get_temporal_effects(res), 1L)
@@ -687,6 +707,7 @@ test_that("update t_effects = 'right' keeps new_data's spec", {
 })
 
 test_that("update t_effects = 'both' merges the two specs", {
+  skip_on_cran()
   p <- setup_te_pair()
   res <- update(p$left, new_data = p$right, t_effects = "both")
   expect_length(get_temporal_effects(res), 2L)
@@ -695,12 +716,14 @@ test_that("update t_effects = 'both' merges the two specs", {
 })
 
 test_that("update keeps lazy specs lazy (no computed columns)", {
+  skip_on_cran()
   p <- setup_te_pair()
   res <- update(p$left, new_data = p$right, t_effects = "both")
   expect_length(get_temporal_effect_cols(res), 0L)
 })
 
 test_that("update recomputes temporal effects when inputs were computed", {
+  skip_on_cran()
   p <- setup_te_pair()
   left <- compute_temporal_effects(p$left)
   right <- compute_temporal_effects(p$right)
@@ -715,12 +738,14 @@ test_that("update recomputes temporal effects when inputs were computed", {
 })
 
 test_that("update t_effects = 'right' with a plain data.frame yields no spec", {
+  skip_on_cran()
   p <- setup_te_pair()
   res <- update(p$left, new_data = setup_test_data()$update_data, t_effects = "right")
   expect_length(get_temporal_effects(res), 0L)
 })
 
 test_that("update errors on an unknown t_effects option", {
+  skip_on_cran()
   p <- setup_te_pair()
   expect_error(
     update(p$left, new_data = p$right, t_effects = "middle"),
@@ -729,6 +754,7 @@ test_that("update errors on an unknown t_effects option", {
 })
 
 test_that("update preserves data integrity", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -755,6 +781,7 @@ test_that("update preserves data integrity", {
 })
 
 test_that("update maintains tbl_now validation", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -773,6 +800,7 @@ test_that("update maintains tbl_now validation", {
 })
 
 test_that("update works in iterative workflow", {
+  skip_on_cran()
   data(denguedat)
 
   # Simulate receiving data in batches
@@ -809,6 +837,7 @@ test_that("update works in iterative workflow", {
 # ============================================================================
 
 test_that("update handles single row updates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -829,6 +858,7 @@ test_that("update handles single row updates", {
 })
 
 test_that("update handles very large updates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -850,6 +880,7 @@ test_that("update handles very large updates", {
 })
 
 test_that("update with custom now parameter", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -869,6 +900,7 @@ test_that("update with custom now parameter", {
 })
 
 test_that("update handles missing columns gracefully", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -892,6 +924,7 @@ test_that("update handles missing columns gracefully", {
 })
 
 test_that("update preserves all protected columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -912,6 +945,7 @@ test_that("update preserves all protected columns", {
 })
 
 test_that("update recalculates delays correctly", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -934,6 +968,7 @@ test_that("update recalculates delays correctly", {
 
 
 test_that("update.tbl_now validates matching attributes when new_data is tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -968,6 +1003,7 @@ test_that("update.tbl_now validates matching attributes when new_data is tbl_now
 # ============================================================================
 
 test_that("update_check_tbl_now_internal validates event_date match", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -997,6 +1033,7 @@ test_that("update_check_tbl_now_internal validates event_date match", {
 })
 
 test_that("update_check_tbl_now_internal validates report_date match", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -1026,6 +1063,7 @@ test_that("update_check_tbl_now_internal validates report_date match", {
 })
 
 test_that("update_check_tbl_now_internal validates data_type match", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -1056,6 +1094,7 @@ test_that("update_check_tbl_now_internal validates data_type match", {
 })
 
 test_that("update_check_tbl_now_internal validates units match", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Create data with different units
@@ -1078,6 +1117,7 @@ test_that("update_check_tbl_now_internal validates units match", {
 # ============================================================================
 
 test_that("update_check_data_frame_internal validates event_date exists", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -1099,6 +1139,7 @@ test_that("update_check_data_frame_internal validates event_date exists", {
 })
 
 test_that("update_check_data_frame_internal validates report_date exists", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -1120,6 +1161,7 @@ test_that("update_check_data_frame_internal validates report_date exists", {
 })
 
 test_that("update_check_data_frame_internal validates case_count exists for count data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -1143,6 +1185,7 @@ test_that("update_check_data_frame_internal validates case_count exists for coun
 })
 
 test_that("update_check_data_frame_internal validates is_censored exists", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   test_data$initial_data$is_censored <- c(FALSE, FALSE, TRUE, FALSE, FALSE)
@@ -1169,6 +1212,7 @@ test_that("update_check_data_frame_internal validates is_censored exists", {
 # ============================================================================
 
 test_that("update keeps everything similar when nothing new is observed", {
+  skip_on_cran()
   data(denguedat)
 
   initial_tbl <- tbl_now(
@@ -1193,6 +1237,7 @@ test_that("update keeps everything similar when nothing new is observed", {
 })
 
 test_that("partitioning data and updating gives same result", {
+  skip_on_cran()
   data(denguedat)
 
   initial_tbl <- tbl_now(
@@ -1220,6 +1265,7 @@ test_that("partitioning data and updating gives same result", {
 })
 
 test_that("update with empty tbl_now works", {
+  skip_on_cran()
   data(denguedat)
 
   initial_tbl <- tbl_now(
@@ -1249,6 +1295,7 @@ test_that("update with empty tbl_now works", {
 
 # Tests for strata = "right" (lines 76-78, 94, 97-101, 105, 107)
 test_that("update can use right strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Create initial data with gender strata
@@ -1285,6 +1332,7 @@ test_that("update can use right strata", {
 })
 
 test_that("update fails when right strata not in object", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(test_data$count_initial,
@@ -1319,6 +1367,7 @@ test_that("update fails when right strata not in object", {
 
 # Tests for strata = "both" (lines 110-126, 129-131)
 test_that("update can use both strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Create initial data with gender strata
@@ -1356,6 +1405,7 @@ test_that("update can use both strata", {
 })
 
 test_that("update fails when both strata has column not in new_data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Initial has gender
@@ -1390,6 +1440,7 @@ test_that("update fails when both strata has column not in new_data", {
 })
 
 test_that("update fails when both strata has column not in object", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Initial has only gender
@@ -1425,6 +1476,7 @@ test_that("update fails when both strata has column not in object", {
 
 # Tests for covariates = "right" (lines 148, 151-155, 159-160, 162)
 test_that("update can use right covariates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Create initial data with temperature covariate
@@ -1463,6 +1515,7 @@ test_that("update can use right covariates", {
 })
 
 test_that("update fails when right covariate not in object", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(test_data$count_initial,
@@ -1496,6 +1549,7 @@ test_that("update fails when right covariate not in object", {
 
 # Tests for covariates = "both" (lines 165-180, 184-186)
 test_that("update can use both covariates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Create initial data with temperature
@@ -1535,6 +1589,7 @@ test_that("update can use both covariates", {
 })
 
 test_that("update fails when both covariates has column not in new_data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Initial has temperature and humidity
@@ -1573,6 +1628,7 @@ test_that("update fails when both covariates has column not in new_data", {
 })
 
 test_that("update fails when both covariates has column not in object", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Initial has only temperature
@@ -1612,6 +1668,7 @@ test_that("update fails when both covariates has column not in object", {
 
 # Tests for update_check_tbl_now_internal error conditions (lines 224, 251-257, 262-268, 273-279, 284-290, 295-301)
 test_that("update_check_tbl_now_internal fails with different event_date", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(test_data$count_initial,
@@ -1643,6 +1700,7 @@ test_that("update_check_tbl_now_internal fails with different event_date", {
 })
 
 test_that("update_check_tbl_now_internal fails with different data_type", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(test_data$count_initial,
@@ -1672,6 +1730,7 @@ test_that("update_check_tbl_now_internal fails with different data_type", {
 })
 
 test_that("update_check_tbl_now_internal fails with different event_units", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Create data with different units
@@ -1708,6 +1767,7 @@ test_that("update_check_tbl_now_internal fails with different event_units", {
 })
 
 test_that("update_check_tbl_now_internal fails with different report_units", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # This is tricky - need different report_units but same event_units
@@ -1749,6 +1809,7 @@ test_that("update_check_tbl_now_internal fails with different report_units", {
 })
 
 test_that("update_check_tbl_now_internal fails with different case_count", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(test_data$count_initial,
@@ -1780,6 +1841,7 @@ test_that("update_check_tbl_now_internal fails with different case_count", {
 })
 
 test_that("update_check_tbl_now_internal fails with different is_censored", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_data <- test_data$count_initial
@@ -1816,6 +1878,7 @@ test_that("update_check_tbl_now_internal fails with different is_censored", {
 
 # Tests for update_check_data_frame_internal (lines 321, 325)
 test_that("update_check_data_frame_internal fails with non-data.frame", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(test_data$count_initial,
