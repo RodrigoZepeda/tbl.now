@@ -334,6 +334,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
 #'
 #' @return A `tbl_now` object (if the input is valid) or a `data.frame`
 #' @keywords internal
+#' @noRd
 tbl_now_reconstruct <- function(data, template) {
   tbl_now_reconstruct_internal(data, template)
 }
@@ -349,6 +350,7 @@ tbl_now_reconstruct <- function(data, template) {
 #'
 #' @return A boolean logical (`TRUE` or `FALSE`)
 #' @keywords internal
+#' @noRd
 tbl_now_can_reconstruct <- function(data) {
   # check whether input is valid, ignoring its class
   valid <- tryCatch(
@@ -369,6 +371,7 @@ tbl_now_can_reconstruct <- function(data) {
 #' @return A `tbl_now` object or a `data.frame`
 #'
 #' @keywords internal
+#' @noRd
 tbl_now_reconstruct_internal <- function(data, template) {
   # Copy over *all* attributes except the data.frame essentials
   attrs <- attributes(template)

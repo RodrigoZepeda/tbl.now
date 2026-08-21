@@ -268,6 +268,7 @@ update.tbl_now <- function(object, ..., new_data,
 #' @inheritParams update.tbl_now
 #' @return TRUE (invisibly). Called for its side effects
 #' @keywords internal
+#' @noRd
 update_check_tbl_now_internal <- function(object, new_data) {
   if (!inherits(object, "tbl_now") | !inherits(new_data, "tbl_now")) {
     cli::cli_abort("`object` and `new_data` must be of class `tbl_now`")
@@ -368,6 +369,7 @@ update_check_tbl_now_internal <- function(object, new_data) {
 #' @return TRUE (invisibly). Called for its side effects
 #'
 #' @keywords internal
+#' @noRd
 update_check_data_frame_internal <- function(object, new_data) {
   if (!is.data.frame(new_data)) {
     cli::cli_abort(" `new_data` must be a data.frame")
