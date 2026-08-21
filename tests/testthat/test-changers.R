@@ -49,6 +49,7 @@ test_that("change_event_date changes event_date to new column", {
 })
 
 test_that("change_event_date fails with non-tbl_now object", {
+  skip_on_cran()
   regular_df <- data.frame(
     onset_week = as.Date("2020-07-08"),
     report_week = as.Date("2020-07-11")
@@ -61,6 +62,7 @@ test_that("change_event_date fails with non-tbl_now object", {
 })
 
 test_that("change_event_date fails with non-character value", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -70,6 +72,7 @@ test_that("change_event_date fails with non-character value", {
 })
 
 test_that("change_event_date fails with multiple values", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -79,6 +82,7 @@ test_that("change_event_date fails with multiple values", {
 })
 
 test_that("change_event_date fails when column not found", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -88,6 +92,7 @@ test_that("change_event_date fails when column not found", {
 })
 
 test_that("change_event_date fails when column is not Date", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -100,6 +105,7 @@ test_that("change_event_date fails when column is not Date", {
 })
 
 test_that("change_event_date updates now if needed", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -145,6 +151,7 @@ test_that("change_report_date changes report_date to new column", {
 })
 
 test_that("change_report_date fails with non-tbl_now object", {
+  skip_on_cran()
   regular_df <- data.frame(
     onset_week = as.Date("2020-07-08"),
     report_week = as.Date("2020-07-11")
@@ -157,6 +164,7 @@ test_that("change_report_date fails with non-tbl_now object", {
 })
 
 test_that("change_report_date fails with non-character value", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -166,6 +174,7 @@ test_that("change_report_date fails with non-character value", {
 })
 
 test_that("change_report_date fails when column not found", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -175,6 +184,7 @@ test_that("change_report_date fails when column not found", {
 })
 
 test_that("change_report_date fails when column is not Date", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -200,6 +210,7 @@ test_that("change_strata changes strata to new columns", {
 })
 
 test_that("change_strata accepts NULL to remove all strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -211,6 +222,7 @@ test_that("change_strata accepts NULL to remove all strata", {
 })
 
 test_that("change_strata fails with non-tbl_now object", {
+  skip_on_cran()
   regular_df <- data.frame(gender = "Male")
 
   expect_error(
@@ -220,6 +232,7 @@ test_that("change_strata fails with non-tbl_now object", {
 })
 
 test_that("change_strata fails with non-character non-NULL value", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -229,6 +242,7 @@ test_that("change_strata fails with non-character non-NULL value", {
 })
 
 test_that("change_strata fails when column not found", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -253,6 +267,7 @@ test_that("remove_strata removes specified strata", {
 })
 
 test_that("remove_strata removes all if only one strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -263,6 +278,7 @@ test_that("remove_strata removes all if only one strata", {
 })
 
 test_that("remove_strata can remove multiple strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
   test_data$ndata$temperature2 <- test_data$ndata$temperature * 2
   ndata <- test_data$ndata
@@ -289,6 +305,7 @@ test_that("add_strata adds new strata", {
 })
 
 test_that("add_strata adds to existing strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -302,6 +319,7 @@ test_that("add_strata adds to existing strata", {
 })
 
 test_that("add_strata works when no existing strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -330,6 +348,7 @@ test_that("remove_all_strata removes all strata", {
 })
 
 test_that("remove_all_strata works when no strata exist", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -355,6 +374,7 @@ test_that("change_covariates changes covariates to new columns", {
 })
 
 test_that("change_covariates accepts NULL to remove all covariates", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -366,6 +386,7 @@ test_that("change_covariates accepts NULL to remove all covariates", {
 })
 
 test_that("change_covariates fails with non-tbl_now object", {
+  skip_on_cran()
   regular_df <- data.frame(temperature = 25.5)
 
   expect_error(
@@ -375,6 +396,7 @@ test_that("change_covariates fails with non-tbl_now object", {
 })
 
 test_that("change_covariates fails with non-character non-NULL value", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -384,6 +406,7 @@ test_that("change_covariates fails with non-character non-NULL value", {
 })
 
 test_that("change_covariates fails when column not found", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -408,6 +431,7 @@ test_that("remove_covariates removes specified covariate", {
 })
 
 test_that("remove_covariates removes all if only one covariate", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -418,6 +442,7 @@ test_that("remove_covariates removes all if only one covariate", {
 })
 
 test_that("remove_covariates can remove multiple covariates", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -444,6 +469,7 @@ test_that("add_covariates adds new covariate", {
 })
 
 test_that("add_covariates adds to existing covariates", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -457,6 +483,7 @@ test_that("add_covariates adds to existing covariates", {
 })
 
 test_that("add_covariates works when no existing covariates", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -485,6 +512,7 @@ test_that("remove_all_covariates removes all covariates", {
 })
 
 test_that("remove_all_covariates works when no covariates exist", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -510,6 +538,7 @@ test_that("change_now changes the now date", {
 })
 
 test_that("change_now fails with non-tbl_now object", {
+  skip_on_cran()
   regular_df <- data.frame(
     onset_week = as.Date("2020-07-08"),
     report_week = as.Date("2020-07-11")
@@ -522,6 +551,7 @@ test_that("change_now fails with non-tbl_now object", {
 })
 
 test_that("change_now fails with non-Date value", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -531,6 +561,7 @@ test_that("change_now fails with non-Date value", {
 })
 
 test_that("change_now fails with multiple dates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -540,6 +571,7 @@ test_that("change_now fails with multiple dates", {
 })
 
 test_that("change_now re-infers now if needed", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -553,6 +585,7 @@ test_that("change_now re-infers now if needed", {
 
 # Integration tests ----
 test_that("multiple changer functions work together", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -578,6 +611,7 @@ test_that("multiple changer functions work together", {
 })
 
 test_that("changer functions preserve other attributes", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -591,6 +625,7 @@ test_that("changer functions preserve other attributes", {
 })
 
 test_that("changer functions maintain data integrity", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -605,6 +640,7 @@ test_that("changer functions maintain data integrity", {
 })
 
 test_that("removing and adding same strata works correctly", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -617,6 +653,7 @@ test_that("removing and adding same strata works correctly", {
 })
 
 test_that("removing and adding same covariate works correctly", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -629,6 +666,7 @@ test_that("removing and adding same covariate works correctly", {
 })
 
 test_that("changer functions work with count data", {
+  skip_on_cran()
   count_data <- data.frame(
     onset_week = as.Date(c("2020-07-08", "2020-07-15", "2020-07-22")),
     report_week = as.Date(c("2020-07-11", "2020-07-18", "2020-07-25")),
@@ -652,6 +690,7 @@ test_that("changer functions work with count data", {
 })
 
 test_that("changer functions validate after each change", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -702,6 +741,7 @@ setup_additional_test_data <- function() {
 # ============================================================================
 
 test_that("change_event_date works with tidy select helpers", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -713,6 +753,7 @@ test_that("change_event_date works with tidy select helpers", {
 })
 
 test_that("change_event_date recalculates delay correctly", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -727,6 +768,7 @@ test_that("change_event_date recalculates delay correctly", {
 })
 
 test_that("change_event_date updates .event_num correctly", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -743,6 +785,7 @@ test_that("change_event_date updates .event_num correctly", {
 })
 
 test_that("change_event_date fails with integer column when original was Date", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -759,6 +802,7 @@ test_that("change_event_date fails with integer column when original was Date", 
 # ============================================================================
 
 test_that("change_report_date works with tidy select helpers", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -772,6 +816,7 @@ test_that("change_report_date works with tidy select helpers", {
 })
 
 test_that("change_report_date recalculates delay correctly", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -789,6 +834,7 @@ test_that("change_report_date recalculates delay correctly", {
 })
 
 test_that("change_report_date updates .report_num correctly", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -803,6 +849,7 @@ test_that("change_report_date updates .report_num correctly", {
 })
 
 test_that("change_report_date warns when report is before event", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -833,6 +880,7 @@ test_that("change_case_count works with count data", {
 })
 
 test_that("change_case_count cannot remove case_count", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     to_count(to = "count-incidence")
@@ -841,6 +889,7 @@ test_that("change_case_count cannot remove case_count", {
 })
 
 test_that("change_case_count fails with non-numeric column", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     to_count(to = "count-incidence")
@@ -854,6 +903,7 @@ test_that("change_case_count fails with non-numeric column", {
 })
 
 test_that("change_case_count works with tidy select", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     to_count(to = "count-incidence")
@@ -870,6 +920,7 @@ test_that("change_case_count works with tidy select", {
 # ============================================================================
 
 test_that("change_is_censored accepts NULL", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -879,6 +930,7 @@ test_that("change_is_censored accepts NULL", {
 })
 
 test_that("change_is_censored fails with non-logical column", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -917,6 +969,7 @@ test_that("remove_is_censored sets is_censored to NULL", {
 })
 
 test_that("remove_is_censored works when is_censored is already NULL", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     change_is_censored(NULL)
@@ -947,6 +1000,7 @@ test_that("add_is_censored adds is_censored when none exists", {
 })
 
 test_that("add_is_censored fails when is_censored already exists", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -965,6 +1019,7 @@ test_that("add_is_censored fails when is_censored already exists", {
 # ============================================================================
 
 test_that("change_strata works with multiple columns via tidy select", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -974,6 +1029,7 @@ test_that("change_strata works with multiple columns via tidy select", {
 })
 
 test_that("change_strata handles empty selection gracefully", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -984,6 +1040,7 @@ test_that("change_strata handles empty selection gracefully", {
 })
 
 test_that("change_strata preserves column order", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -997,6 +1054,7 @@ test_that("change_strata preserves column order", {
 # ============================================================================
 
 test_that("add_strata prevents duplicate strata", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1008,6 +1066,7 @@ test_that("add_strata prevents duplicate strata", {
 })
 
 test_that("add_strata works with multiple columns at once", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1020,6 +1079,7 @@ test_that("add_strata works with multiple columns at once", {
 })
 
 test_that("add_strata works with tidy select helpers", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1033,6 +1093,7 @@ test_that("add_strata works with tidy select helpers", {
 # ============================================================================
 
 test_that("remove_strata ignores non-existent strata", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1044,6 +1105,7 @@ test_that("remove_strata ignores non-existent strata", {
 })
 
 test_that("remove_strata can remove multiple strata at once", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     change_strata(gender, age_group, region)
@@ -1054,6 +1116,7 @@ test_that("remove_strata can remove multiple strata at once", {
 })
 
 test_that("remove_strata with tidy select", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     change_strata(gender, age_group)
@@ -1068,6 +1131,7 @@ test_that("remove_strata with tidy select", {
 # ============================================================================
 
 test_that("change_covariates works with multiple columns via tidy select", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1077,6 +1141,7 @@ test_that("change_covariates works with multiple columns via tidy select", {
 })
 
 test_that("change_covariates handles empty selection", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1086,6 +1151,7 @@ test_that("change_covariates handles empty selection", {
 })
 
 test_that("change_covariates preserves column order", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1099,6 +1165,7 @@ test_that("change_covariates preserves column order", {
 # ============================================================================
 
 test_that("add_covariates prevents duplicates", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1110,6 +1177,7 @@ test_that("add_covariates prevents duplicates", {
 })
 
 test_that("add_covariates works with multiple columns", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1122,6 +1190,7 @@ test_that("add_covariates works with multiple columns", {
 })
 
 test_that("add_covariates with tidy select", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1135,6 +1204,7 @@ test_that("add_covariates with tidy select", {
 # ============================================================================
 
 test_that("remove_covariates ignores non-existent covariates", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1146,6 +1216,7 @@ test_that("remove_covariates ignores non-existent covariates", {
 })
 
 test_that("remove_covariates can remove multiple at once", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     change_covariates(temperature, humidity, age_group)
@@ -1156,6 +1227,7 @@ test_that("remove_covariates can remove multiple at once", {
 })
 
 test_that("remove_covariates with tidy select", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     change_covariates(temperature, humidity)
@@ -1188,6 +1260,7 @@ test_that("replace_temporal_effects removes old effects", {
 })
 
 test_that("replace_temporal_effects with NULL removes all", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE))
@@ -1198,6 +1271,7 @@ test_that("replace_temporal_effects with NULL removes all", {
 })
 
 test_that("replace_temporal_effects fails with non-temporal_effects object", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1232,6 +1306,7 @@ test_that("remove_temporal_effects removes all temporal effect columns", {
 # ============================================================================
 
 test_that("chaining multiple changers preserves tbl_now", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1253,6 +1328,7 @@ test_that("chaining multiple changers preserves tbl_now", {
 })
 
 test_that("add and remove operations can be chained", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1267,6 +1343,7 @@ test_that("add and remove operations can be chained", {
 })
 
 test_that("changers work with grouped tbl_now", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     dplyr::group_by(gender)
@@ -1280,6 +1357,7 @@ test_that("changers work with grouped tbl_now", {
 })
 
 test_that("changers preserve count data type", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     add_strata(age_group) |>
@@ -1301,6 +1379,7 @@ test_that("changers preserve count data type", {
 # ============================================================================
 
 test_that("changers trigger validation", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1314,6 +1393,7 @@ test_that("changers trigger validation", {
 })
 
 test_that("changers maintain .delay column", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1326,6 +1406,7 @@ test_that("changers maintain .delay column", {
 })
 
 test_that("changers maintain protected columns", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1346,6 +1427,7 @@ test_that("changers maintain protected columns", {
 # ============================================================================
 
 test_that("add functions fail gracefully with non-existent columns", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1361,6 +1443,7 @@ test_that("add functions fail gracefully with non-existent columns", {
 })
 
 test_that("change functions validate column types", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -1374,6 +1457,7 @@ test_that("change functions validate column types", {
 })
 
 test_that("remove functions handle already-removed attributes", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 

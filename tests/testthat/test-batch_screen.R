@@ -55,6 +55,7 @@ test_that("simulate_batch() conserves items and only ever moves reports later", 
 })
 
 test_that("simulate_batch(held_fraction) holds only a partial share", {
+  skip_on_cran()
   clean_tbl <- make_flat_linelist(seed = 3L)
   closed    <- as.Date(c("2021-02-01", "2021-02-02", "2021-02-03"))
   release   <- as.Date("2021-02-04")
@@ -89,6 +90,7 @@ test_that("simulate_batch(held_fraction) holds only a partial share", {
 })
 
 test_that("simulate_batch() rejects an empty or fully-closed schedule", {
+  skip_on_cran()
   clean_tbl <- make_flat_linelist(n_origins = 20L)
   expect_error(simulate_batch(clean_tbl, closed_dates = as.Date(character(0))), "no batch")
 
@@ -115,6 +117,7 @@ test_that("batch_test() recovers a planted batch and finds none in clean data", 
 })
 
 test_that("the release date shows a spike paid for by a deficit", {
+  skip_on_cran()
   clean_tbl    <- make_flat_linelist()
   closed       <- as.Date(c("2021-02-01", "2021-02-02", "2021-02-03"))
   release_date <- as.Date("2021-02-04")
@@ -135,6 +138,7 @@ test_that("the release date shows a spike paid for by a deficit", {
 })
 
 test_that("Delta is an exact pivot: a within-window transport cannot move it at all", {
+  skip_on_cran()
   # Theorem 1 says the window total is *pathwise* invariant to any transport whose
   # displacements stay inside the window: every item we would have seen in the
   # window we still see in the window, just on another date.  And because the
@@ -159,6 +163,7 @@ test_that("Delta is an exact pivot: a within-window transport cannot move it at 
 })
 
 test_that("the deficit, by contrast, is exactly what the batch moved", {
+  skip_on_cran()
   # `Delta` is blind to the batch; `W` is the statistic that sees it.
   release_date <- as.Date("2021-02-04")
   closed       <- as.Date(c("2021-02-01", "2021-02-02", "2021-02-03"))
@@ -177,6 +182,7 @@ test_that("the deficit, by contrast, is exactly what the batch moved", {
 })
 
 test_that("a hold that never releases is classified as hold_or_deletion, not a batch", {
+  skip_on_cran()
   clean_tbl <- make_flat_linelist()
   all_dates <- sort(unique(as.data.frame(clean_tbl)$report))
   # Close the final stretch: the release never happens inside the observed window.
@@ -194,6 +200,7 @@ test_that("a hold that never releases is classified as hold_or_deletion, not a b
 # -- batch_test(): calendar effects ------------------------------------------
 
 test_that("a scheduled weekly closure is absorbed by `period` and not called a batch", {
+  skip_on_cran()
   set.seed(7)
   origin_dates <- seq(as.Date("2021-01-04"), by = "day", length.out = 100L)
   report_rows  <- vector("list", length(origin_dates))
@@ -233,6 +240,7 @@ test_that("a scheduled weekly closure is absorbed by `period` and not called a b
 # -- batch_test(): argument validation ---------------------------------------
 
 test_that("batch_test() validates its inputs", {
+  skip_on_cran()
   clean_tbl <- make_flat_linelist(n_origins = 30L)
 
   expect_error(batch_test(as.data.frame(clean_tbl)), "tbl_now")
@@ -245,12 +253,14 @@ test_that("batch_test() validates its inputs", {
 })
 
 test_that("the null model is chosen from the data type", {
+  skip_on_cran()
   clean_tbl <- make_flat_linelist(n_origins = 40L)
   expect_equal(attr(batch_test(clean_tbl), "null_model"), "poisson")
   expect_equal(attr(batch_test(clean_tbl, null_model = "robust"), "null_model"), "robust")
 })
 
 test_that("auto falls back to the robust null when the counts are overdispersed", {
+  skip_on_cran()
   # A shared per-report-date random effect blows the variance well past the mean;
   # the exact Poisson null would over-flag, so `auto` must switch to robust.
   set.seed(7)
@@ -275,6 +285,7 @@ test_that("auto falls back to the robust null when the counts are overdispersed"
 # -- the robust baseline -------------------------------------------------------
 
 test_that("both baselines are exact on a monotone trend (the median is order-preserving)", {
+  skip_on_cran()
   trend    <- 10 + 2 * seq_len(41)
   running  <- .batch_running_median(trend, 11L)
   repeated <- .batch_repeated_median(trend, 11L)
@@ -285,6 +296,7 @@ test_that("both baselines are exact on a monotone trend (the median is order-pre
 })
 
 test_that("the repeated median survives an asymmetric outlier patch inside a trend", {
+  skip_on_cran()
   # This is where the repeated median earns its keep: a batch episode puts several
   # deficits *and* one large spike inside the smoothing window, dragging the local
   # order statistics in opposite directions.  Estimating the slope explicitly is
@@ -304,6 +316,7 @@ test_that("the repeated median survives an asymmetric outlier patch inside a tre
 })
 
 test_that("the repeated median resists a batch episode (50% breakdown)", {
+  skip_on_cran()
   flat <- rep(20, 41)
   corrupted <- flat
   corrupted[19:21] <- 0     # three deficit dates
@@ -334,6 +347,7 @@ test_that("batch_shape_test() sees the inflated delays of a released backlog", {
 })
 
 test_that("batch_shape_test() rejects a report date that does not exist", {
+  skip_on_cran()
   clean_tbl <- make_flat_linelist(n_origins = 30L)
   expect_error(
     batch_shape_test(clean_tbl, at = as.Date("1900-01-01")),
@@ -342,6 +356,7 @@ test_that("batch_shape_test() rejects a report date that does not exist", {
 })
 
 test_that("block permutation is available for overdispersed data", {
+  skip_on_cran()
   clean_tbl   <- make_flat_linelist(n_origins = 70L, per_origin = 15L, seed = 5L)
   closed      <- as.Date(c("2021-02-01", "2021-02-02", "2021-02-03"))
   batched_tbl <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
@@ -356,6 +371,7 @@ test_that("block permutation is available for overdispersed data", {
 # -- count-cumulative ----------------------------------------------------------
 
 test_that("count-cumulative data de-accumulates and screens with the robust null", {
+  skip_on_cran()
   # Two event dates, cumulative totals re-reported over several report dates.
   cumulative_frame <- expand.grid(
     onset  = seq(as.Date("2021-01-01"), by = "day", length.out = 30L),

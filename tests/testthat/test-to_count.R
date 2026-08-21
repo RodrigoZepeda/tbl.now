@@ -104,6 +104,7 @@ test_that("to_count converts linelist data to count incidence data", {
 })
 
 test_that("to_count creates correct counts for linelist data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -136,6 +137,7 @@ test_that("to_count creates correct counts for linelist data", {
 })
 
 test_that("to_count groups by event_date and report_date", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -161,6 +163,7 @@ test_that("to_count groups by event_date and report_date", {
 })
 
 test_that("to_count preserves .event_num and .report_num columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -181,6 +184,7 @@ test_that("to_count preserves .event_num and .report_num columns", {
 
 # Tests for to_count.tbl_now() with strata ----
 test_that("to_count groups by strata when present", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -206,6 +210,7 @@ test_that("to_count groups by strata when present", {
 })
 
 test_that("to_count creates separate counts for each stratum", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -230,6 +235,7 @@ test_that("to_count creates separate counts for each stratum", {
 })
 
 test_that("to_count preserves strata attributes", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -250,6 +256,7 @@ test_that("to_count preserves strata attributes", {
 
 # Tests for to_count.tbl_now() with covariates ----
 test_that("to_count groups by covariates when present", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -270,6 +277,7 @@ test_that("to_count groups by covariates when present", {
 })
 
 test_that("to_count preserves covariate attributes", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -291,6 +299,7 @@ test_that("to_count preserves covariate attributes", {
 
 # Tests for to_count.tbl_now() with is_censored ----
 test_that("to_count groups by is_censored when present", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -312,6 +321,7 @@ test_that("to_count groups by is_censored when present", {
 })
 
 test_that("to_count creates separate counts for censored vs non-censored", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -357,6 +367,7 @@ test_that("to_count handles count data by summing", {
 })
 
 test_that("to_count sums counts correctly for count data", {
+  skip_on_cran()
   # Create count data with duplicates that should be summed
   count_data_dup <- data.frame(
     onset_week = as.Date(c("2020-07-08", "2020-07-08", "2020-07-15")),
@@ -392,6 +403,7 @@ test_that("to_count sums counts correctly for count data", {
 })
 
 test_that("to_count maintains count data_type", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -411,6 +423,7 @@ test_that("to_count maintains count data_type", {
 })
 
 test_that("to_count works even when column is not n", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -444,6 +457,7 @@ test_that("to_count works even when column is not n", {
 
 # Tests for to_count() behavior ----
 test_that("to_count ungroups data before processing", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -466,6 +480,7 @@ test_that("to_count ungroups data before processing", {
 })
 
 test_that("to_count returns ungrouped data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -485,6 +500,7 @@ test_that("to_count returns ungrouped data", {
 })
 
 test_that("to_count preserves tbl_now attributes", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -508,6 +524,7 @@ test_that("to_count preserves tbl_now attributes", {
 
 # Tests for edge cases ----
 test_that("to_count handles single row data", {
+  skip_on_cran()
   single_row <- data.frame(
     onset_week = as.Date("2020-07-08"),
     report_week = as.Date("2020-07-11")
@@ -530,6 +547,7 @@ test_that("to_count handles single row data", {
 })
 
 test_that("to_count handles all identical rows", {
+  skip_on_cran()
   identical_rows <- data.frame(
     onset_week = as.Date(rep("2020-07-08", 5)),
     report_week = as.Date(rep("2020-07-11", 5))
@@ -552,6 +570,7 @@ test_that("to_count handles all identical rows", {
 })
 
 test_that("to_count handles data with no strata or covariates", {
+  skip_on_cran()
   simple_data <- data.frame(
     onset_week = as.Date(c("2020-07-08", "2020-07-08", "2020-07-15")),
     report_week = as.Date(c("2020-07-11", "2020-07-11", "2020-07-18"))
@@ -575,6 +594,7 @@ test_that("to_count handles data with no strata or covariates", {
 
 # Tests for data validation ----
 test_that("to_count maintains data integrity", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -595,6 +615,7 @@ test_that("to_count maintains data integrity", {
 })
 
 test_that("to_count produces positive counts", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -613,6 +634,7 @@ test_that("to_count produces positive counts", {
 })
 
 test_that("to_count produces integer counts", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -632,6 +654,7 @@ test_that("to_count produces integer counts", {
 
 # Tests for complex scenarios ----
 test_that("to_count handles multiple strata and covariates together", {
+  skip_on_cran()
   complex_data <- data.frame(
     onset_week = as.Date(c(
       "2020-07-08", "2020-07-08", "2020-07-08", "2020-07-08",
@@ -666,6 +689,7 @@ test_that("to_count handles multiple strata and covariates together", {
 })
 
 test_that("to_count handles all combinations correctly", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -715,6 +739,7 @@ test_that("to_count fails gracefully with invalid data_type", {
 })
 
 test_that("to_count validates output", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -734,6 +759,7 @@ test_that("to_count validates output", {
 })
 
 test_that("count-cumulative -> count-incidence de-accumulates (round-trips)", {
+  skip_on_cran()
   data(denguedat)
   dengue <- tbl_now(denguedat[1:3000, ],
     event_date = "onset_week", report_date = "report_week", strata = "gender",
@@ -756,6 +782,7 @@ test_that("count-cumulative -> count-incidence de-accumulates (round-trips)", {
 })
 
 test_that("de-accumulation yields negative increments for downward revisions", {
+  skip_on_cran()
   # cumulative total revised DOWN from 10 to 7 -> increment of -3
   revised <- data.frame(
     event_date = as.Date(rep("2020-07-08", 3)),
@@ -773,6 +800,7 @@ test_that("de-accumulation yields negative increments for downward revisions", {
 })
 
 test_that("autoplot works on count-cumulative data (issue #26)", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 

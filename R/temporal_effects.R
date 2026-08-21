@@ -376,32 +376,22 @@ temporal_effects <- S7::new_class(
   as.integer(x)
 }
 
-#' Print temporal effects
+#' Print a [temporal_effects()] specification
 #'
-#' @description `r lifecycle::badge("stable")`
-#'
-#' Print function for printing the a [temporal_effects()].
+#' Registered as an S7 method by [S7::methods_register()] in `.onLoad()`, so it
+#' needs no NAMESPACE entry of its own (the previous `@export` here produced
+#' none). Deliberately `@noRd`: giving it a help page produced an Rd aliased to
+#' the bare name `print`, which both squatted the base generic's `?print` topic
+#' and tripped CRAN's "examples for unexported functions" check.
 #'
 #' @param x A temporal_effects object created with [temporal_effects()]
 #' @param ... Additional arguments to pass to print.
 #'
 #' @return The `temporal_effects` object `x`, invisibly. Called for the
-#' side effect of printing.
+#'   side effect of printing.
 #'
-#' @examples
-#'
-#' print(temporal_effects(day_of_week = TRUE, week_of_year = TRUE))
-#'
-#' print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE))
-#'
-#' print(temporal_effects(day_of_week = FALSE, week_of_year = FALSE, seasons = 52))
-#'
-#' print(temporal_effects(seasons = 52, season_length = 7))
-#' @name print
-NULL
-
-#' @name print
-#' @export
+#' @keywords internal
+#' @noRd
 S7::method(print, temporal_effects) <- function(x, ...) {
   # Only the logical (on/off) properties are shown as bare bullets; the numeric
   # lag depths, seasons and holidays are reported separately below.

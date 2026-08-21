@@ -14,6 +14,7 @@
 #' `.report_num` corresponding to transforming the dates to numeric.
 #'
 #' @keywords internal
+#' @noRd
 time_cols_to_numeric <- function(data, event_date, report_date, event_units, report_units, force) {
   # Check that if one is numeric both are numeric
   if (any(c(report_units, event_units) == "numeric") & !all(c(report_units, event_units) == "numeric")) {
