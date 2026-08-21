@@ -53,9 +53,22 @@ Fixes applied:
 * Result: **no Rd page in the package now has `\examples` while nothing on the
   page is exported.**
 
+A second page had the same defect and is fixed too: **`print.Rd`**. It came from
+`@name print` on a `NULL` block documenting an S7 method, so it produced a page
+aliased to the bare name **`print`** — squatting the base generic's `?print`
+topic — with examples and nothing exported. (The `@export` on an
+`S7::method()<-` assignment produces no NAMESPACE entry at all; registration is
+done by `S7::methods_register()` in `.onLoad()`.) That method is now `@noRd`,
+and its examples were replaced by unit tests so the behaviour stays covered.
+
 To keep this from recurring we added a maintainer script,
 `devel/check_unexported_examples.R` (not shipped; `devel/` is in
-`.Rbuildignore`), which fails if any Rd page has examples but no exported alias.
+`.Rbuildignore`). A page is treated as safe only if it *both* carries
+`\method{generic}{class}` markup *and* has a `\name` that resolves to a real
+object; either criterion alone was insufficient. We validated the script by
+running it against the two previously rejected states: it reproduces the genuine
+findings (`check_bool.Rd`, `infer_now.Rd`, `infer_units_one_column.Rd`,
+`tbl_now_coerce.Rd`) and is clean on the current tree.
 
 ## 3. `\dontrun{}` used where not necessary
 

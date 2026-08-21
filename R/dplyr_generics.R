@@ -326,7 +326,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
 
 #' Decides whether `tbl_now` object can be reconstructed from input
 #'
-#' @description Uses [`tbl_now_reconstruct_internal()`] to determine whether the
+#' @description Uses `tbl_now_reconstruct_internal()` to determine whether the
 #' data input can be reconstructed in a valid `tbl_now` object. If it can
 #' not, it is returned as a `data.frame`.
 #'
