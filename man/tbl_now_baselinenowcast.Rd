@@ -12,14 +12,14 @@ tbl_now_from_baselinenowcast(
   reference_date = "reference_date",
   report_date = "report_date",
   count = "count",
-  delays_unit = "days",
+  delays_unit = NULL,
   verbose = TRUE
 )
 
 tbl_now_to_baselinenowcast(
   x,
   ...,
-  format = c("matrix", "long"),
+  format = c("matrix", "long", "triangle_list"),
   delays_unit = NULL,
   verbose = TRUE
 )
@@ -28,26 +28,42 @@ tbl_now_to_baselinenowcast(
 \item{data}{A long \code{data.frame} or a \code{reporting_triangle} matrix.}
 
 \item{...}{Forwarded to \code{\link[=as_tbl_now]{as_tbl_now()}} (\code{from}) or
-\code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}} (\code{to}, matrix format).}
+\code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}} (\code{to}, triangle formats).}
 
 \item{reference_date, report_date, count}{Column names (long format only).}
 
 \item{delays_unit}{Unit of the delay axis of the reporting triangle, one of
-\code{"days"} or \code{"weeks"}. For \code{tbl_now_from_baselinenowcast()} this says how to
-read an input matrix's delay columns and defaults to \code{"days"}. For
-\code{tbl_now_to_baselinenowcast()} (matrix format only) it defaults to \code{NULL},
-meaning it is \strong{inferred} from the object's time units when the event and
-report units agree and are \code{"days"} or \code{"weeks"}; otherwise you must supply
-it explicitly.}
+\code{"days"} or \code{"weeks"}. Both directions default to \code{NULL}, meaning it is
+worked out for you. For \code{tbl_now_from_baselinenowcast()} that means reading
+the input matrix's own \code{delays_unit} attribute (falling back to \code{"days"}
+when it has none); a supplied value always wins. For
+\code{tbl_now_to_baselinenowcast()} (triangle formats only) it is \strong{inferred}
+from the object's time units when the event and report units agree and are
+\code{"days"} or \code{"weeks"}; otherwise you must supply it explicitly.}
 
 \item{verbose}{Logical. Print the choices that were made.}
 
 \item{x}{A \code{tbl_now} object.}
 
-\item{format}{For \code{to}: \code{"matrix"} (default) or \code{"long"}.}
+\item{format}{For \code{to}, one of:
+\itemize{
+\item \code{"matrix"} (default) -- a single \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}}
+matrix. A triangle has no strata dimension, so any strata are \strong{pooled}
+(with a warning).
+\item \code{"long"} -- a tidy data frame, which can also carry the strata,
+covariates, temporal-effect columns and the censoring indicator.
+\item \code{"triangle_list"} -- one reporting triangle \strong{per stratum}, as a
+\link{tbl_now_triangle_list}. Use this instead of pooling when you want a
+nowcast per stratum. With no strata attached the result is still a list,
+of length one and named \code{"all"}, so the return type never depends on
+whether strata happen to be present. Unlike splitting the long format
+yourself, the delay unit and the strata are taken from the object, and
+\code{\link[=as_tbl_now]{as_tbl_now()}} can rebuild a \code{tbl_now} from the result.
+}}
 }
 \value{
-A \code{tbl_now} (\code{from}), or a \code{data.frame}/\code{reporting_triangle} (\code{to}).
+A \code{tbl_now} (\code{from}), or a \code{data.frame}, \code{reporting_triangle} or
+\link{tbl_now_triangle_list} (\code{to}), according to \code{format}.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -66,7 +82,7 @@ covariates, the censoring indicator and any materialised temporal-effect
 columns (see \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}); the matrix holds only the three
 core columns. A single reporting-triangle matrix has no strata dimension, so
 \code{format = "matrix"} \strong{pools} any strata (summing the counts) with a warning;
-build one triangle per stratum (from the long format) to nowcast each stratum.
+use \code{format = "triangle_list"} to get one triangle per stratum instead.
 }
 \section{Round-trip}{
 

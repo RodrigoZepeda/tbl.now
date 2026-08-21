@@ -9,6 +9,15 @@
 #' @param x A `tbl.now` object.
 #' @param max_delay Maximum delay to fill. For example if set to 5 it will complete
 #' with 0's all reports with delays 0 to 4. But will not fill other delays (say 6)
+#' @param until Event date to complete up to. `NULL` (the default) completes to
+#'   whichever is later, the object's [get_now()] or the last event date present
+#'   in the data. Completing only up to the last *observed* event date would
+#'   leave a gap precisely at the `now` edge, because an event date with no
+#'   reports at all does not appear in the data; several downstream converters
+#'   build their time grid from the rows they are given and would silently stop
+#'   short. A supplied `until` is never allowed to truncate below the data, and
+#'   has no effect beyond the `now`: an event date later than the `now` cannot
+#'   carry any report on or before it, so no row would survive for it.
 #'
 #' @return A `tbl.now` object with the same columns that includes
 #' the `0` observations in the `case_count`.
@@ -46,7 +55,7 @@
 #'   dplyr::arrange(event, sex, report)
 #'
 #' @export
-complete_zeroes <- function(x, max_delay = NULL) {
+complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
   if (is.null(max_delay)) {
     max_delay <- suppressWarnings(
       x |>
@@ -63,9 +72,12 @@ complete_zeroes <- function(x, max_delay = NULL) {
   }
 
   if (get_data_type(x) == "linelist") {
-    cli::cli_abort(
-      "Can only complete 'count-incidence'  or 'count-cumualtive' data."
-    )
+    cli::cli_abort(c(
+      "Can only complete {.val count-incidence} or {.val count-cumulative} data.",
+      "i" = "A line list has one row per case, so a week with zero cases cannot \
+             be represented in it at all.",
+      "i" = "Convert first with {.code to_count(x, to = \"count-incidence\")}."
+    ))
   }
 
   # Get the initial event
@@ -76,13 +88,23 @@ complete_zeroes <- function(x, max_delay = NULL) {
       dplyr::pull()
   )
 
-  # Get the final event
-  max_event <- suppressWarnings(
+  # Get the final event present in the data.
+  max_event_observed <- suppressWarnings(
     x |>
       dplyr::filter(!!as.symbol(get_event_date(x)) == max(!!as.symbol(get_event_date(x)))) |>
       dplyr::distinct(!!as.symbol(get_event_date(x))) |>
       dplyr::pull()
   )
+
+  # How far to complete. An event date with NO reports at all does not appear in
+  # the data, so stopping at the last observed event date leaves a hole exactly
+  # where nowcasting matters most -- at the `now` edge. Default to whichever is
+  # later, the `now` or the last event in the data, and never truncate below the
+  # data itself.
+  if (is.null(until)) {
+    until <- max(max_event_observed, get_now(x))
+  }
+  max_event <- max(max_event_observed, until)
 
   # Get the final report
   max_report <- suppressWarnings(
@@ -92,6 +114,10 @@ complete_zeroes <- function(x, max_delay = NULL) {
       max()
   )
 
+
+  # Reports may not run past what could have been observed. Using the later of
+  # `now` and the last report in the data guarantees no ORIGINAL row is dropped.
+  report_bound <- max(max_report, get_now(x))
 
   if (get_event_units(x) != get_report_units(x)) {
     cli::cli_abort(
@@ -161,6 +187,14 @@ complete_zeroes <- function(x, max_delay = NULL) {
       dplyr::mutate(!!as.symbol(get_report_date(x)) := !!as.symbol(get_event_date(x)) + !!as.symbol(".delay"))
   }
 
+  # Completing out to the `now` generates event/delay pairs whose report date
+  # lands after `report_bound`. Drop them HERE rather than at the end: joining
+  # them in first would momentarily build a `tbl_now` whose report dates run past
+  # its own `now`, which emits a spurious warning at the user even though the
+  # returned object is fine.
+  complete_x <- complete_x |>
+    dplyr::filter(!!as.symbol(get_report_date(x)) <= !!report_bound)
+
   # Now complete. Include the is_censored column in the join key (when present)
   # so the censored indicator is not duplicated/suffixed and lost.
   join_keys <- c(
@@ -205,9 +239,13 @@ complete_zeroes <- function(x, max_delay = NULL) {
   x <- x |>
     dplyr::mutate(!!as.symbol(get_case_count(x)) := tidyr::replace_na(!!as.symbol(get_case_count(x)), 0.0))
 
-  # Don't look into the future
+  # Drop generated rows whose report date lies beyond what could have been
+  # observed. The bound is `<=`, and is the later of `now` and the last report in
+  # the data: with `<` (and the bound at `max_report`) every genuine row reported
+  # on the final report date was silently deleted, so a function meant to ADD
+  # zeroes removed real cases.
   x <- x |>
-    dplyr::filter(!!as.symbol(get_report_date(x)) < !!max_report)
+    dplyr::filter(!!as.symbol(get_report_date(x)) <= !!report_bound)
 
   return(x)
 }

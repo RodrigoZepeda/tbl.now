@@ -11,14 +11,6 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
-# `tibble.width` alone is not enough: pillar still consults the base `width`
-# option when laying out the header and the footer, so a wide tbl_now gets
-# split into stacked column blocks and the metadata footer wraps at 80 chars.
-# No stylesheet can undo a line break that R already baked into the output, so
-# the width has to be raised here. The `pre { overflow: auto }` rule in
-# pkgdown/extra.css then gives the long lines a horizontal scrollbar.
-# 160 is wide enough for the widest tbl_now header here while keeping the
-# printed rule short; `tibble.width = Inf` stops columns being split regardless.
 options(tibble.width = Inf, width = 160, pillar.width = 160)
 ```
 
@@ -267,7 +259,7 @@ covidat_now |>
 ```
 
 
-Additional batch detection tools can be found in the [corresponding article](https://rodrigozepeda.github.io/tbl.now/articles/Example.html).
+Additional batch detection tools can be found in the [batch-reporting article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html).
 
 ### Extreme delays
 

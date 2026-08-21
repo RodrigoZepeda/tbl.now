@@ -129,11 +129,13 @@ transport_discriminant <- function(data,
 print.transport_discriminant <- function(x, ...) {
   n_batch <- sum(x$batch, na.rm = TRUE)
   n_surge <- sum(x$classification == "surge", na.rm = TRUE)
-  cli::cli_text(
+  # `cat_line()` (stdout), not `cli_text()` (a message): print output must
+  # survive `message = FALSE`, `sink()` and `capture.output()`.
+  cli::cat_line(cli::format_inline(paste0(
     "{.cls transport_discriminant}: {nrow(x)} report date{?s}, ",
-    "look-back {attr(x, 'lookback')}, {n_batch} batch{?es} and {n_surge} surge{?s} ",
-    "at {.field alpha} = {attr(x, 'alpha')}."
-  )
+    "look-back {attr(x, 'lookback')}, {n_batch} batch{?es} and {n_surge} ",
+    "surge{?s} at {.field alpha} = {attr(x, 'alpha')}."
+  )))
   NextMethod()
   invisible(x)
 }

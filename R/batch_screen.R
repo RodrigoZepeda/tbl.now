@@ -1024,29 +1024,38 @@ batch_test <- function(data,
 print.batch_test <- function(x, ...) {
   flagged <- x[!is.na(x$batch) & x$batch, , drop = FALSE]
 
-  cli::cli_h1("Batch screen")
-  cli::cli_text(
+  # stdout (`cat_*`), not messages (`cli_*`): print output must survive
+  # `message = FALSE`, `sink()` and `capture.output()`.
+  cli::cat_rule(left = "Batch screen")
+  cli::cat_line(cli::format_inline(paste0(
     "{nrow(x)} (report date, stratum) pair{?s}; ",
     "look-back {attr(x, 'lookback')}; null {.val {attr(x, 'null_model')}}",
-    if (!is.null(attr(x, "period"))) "; calendar period {attr(x, 'period')}" else ""
-  )
+    "{if (!is.null(attr(x, 'period'))) paste0('; calendar period ', attr(x, 'period')) else ''}"
+  )))
 
   if (nrow(flagged) == 0L) {
-    cli::cli_alert_success("No batches flagged at alpha = {attr(x, 'alpha')} (BH-adjusted).")
+    cli::cat_line(cli::format_inline(
+      "{cli::symbol$tick} No batches flagged at alpha = {attr(x, 'alpha')} (BH-adjusted)."
+    ))
   } else {
-    cli::cli_alert_warning(
-      "{nrow(flagged)} batch{?/es} flagged at alpha = {attr(x, 'alpha')} (BH-adjusted):"
-    )
-    for (row_index in seq_len(min(nrow(flagged), 10L))) {
-      cli::cli_li(
-        "{format(flagged$report_date[row_index])} [{flagged$stratum[row_index]}] -- ",
+    cli::cat_line(cli::format_inline(paste0(
+      "{cli::symbol$warning} {nrow(flagged)} batch{?/es} flagged at ",
+      "alpha = {attr(x, 'alpha')} (BH-adjusted):"
+    )))
+    shown <- seq_len(min(nrow(flagged), 10L))
+    cli::cat_bullet(vapply(shown, function(row_index) {
+      cli::format_inline(paste0(
+        "{format(flagged$report_date[row_index])} ",
+        "[{flagged$stratum[row_index]}] -- ",
         "reported {round(flagged$reported[row_index])}, ",
         "baseline {round(flagged$baseline[row_index], 1)}, ",
         "deficit {round(flagged$deficit[row_index], 1)}, ",
         "delta {round(flagged$delta[row_index], 1)}"
-      )
+      ))
+    }, character(1)))
+    if (nrow(flagged) > 10L) {
+      cli::cat_line(cli::format_inline("... and {nrow(flagged) - 10L} more."))
     }
-    if (nrow(flagged) > 10L) cli::cli_text("... and {nrow(flagged) - 10L} more.")
   }
   invisible(x)
 }

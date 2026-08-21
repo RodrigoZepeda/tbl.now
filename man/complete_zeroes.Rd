@@ -4,13 +4,23 @@
 \alias{complete_zeroes}
 \title{Complete with zeroes}
 \usage{
-complete_zeroes(x, max_delay = NULL)
+complete_zeroes(x, max_delay = NULL, until = NULL)
 }
 \arguments{
 \item{x}{A \code{tbl.now} object.}
 
 \item{max_delay}{Maximum delay to fill. For example if set to 5 it will complete
 with 0's all reports with delays 0 to 4. But will not fill other delays (say 6)}
+
+\item{until}{Event date to complete up to. \code{NULL} (the default) completes to
+whichever is later, the object's \code{\link[=get_now]{get_now()}} or the last event date present
+in the data. Completing only up to the last \emph{observed} event date would
+leave a gap precisely at the \code{now} edge, because an event date with no
+reports at all does not appear in the data; several downstream converters
+build their time grid from the rows they are given and would silently stop
+short. A supplied \code{until} is never allowed to truncate below the data, and
+has no effect beyond the \code{now}: an event date later than the \code{now} cannot
+carry any report on or before it, so no row would survive for it.}
 }
 \value{
 A \code{tbl.now} object with the same columns that includes

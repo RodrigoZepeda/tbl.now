@@ -144,6 +144,100 @@
    ANCESTOR of `.navbar`, which only exists when the page itself is dark.) */
 
 
+/* --------------------------------------------------------------------------
+   Callout boxes written as pandoc fenced divs, e.g.
+
+       ::: {.alert .alert-info}
+       **TIP**: ...
+       :::
+
+   Bootstrap's default `.alert-info` is a blue that belongs to no part of this
+   package's palette, so it is restyled into the sage green used for the
+   epidemic/event-date process in the plots.
+   -------------------------------------------------------------------------- */
+.alert-info {
+  background-color: #eaf1ea !important;
+  border: 1px solid #A8BFA9 !important;
+  border-left: 4px solid #5F7E62 !important;
+  color: #262626 !important;
+  border-radius: 4px;
+}
+
+/* Headings, bold lead-ins ("**TIP**") and links inside the callout. */
+.alert-info strong,
+.alert-info b,
+.alert-info h1, .alert-info h2, .alert-info h3,
+.alert-info h4, .alert-info h5, .alert-info h6 {
+  color: #334335 !important;
+}
+
+.alert-info a {
+  color: #5F7E62 !important;
+  text-decoration: underline;
+}
+
+.alert-info a:hover {
+  color: #334335 !important;
+}
+
+/* Inline code inside the callout: the page-wide `code` rule paints a pale sage
+   background that disappears against the callout, so lift it slightly. */
+.alert-info code {
+  background-color: #dbe4db !important;
+  color: #262626 !important;
+}
+
+/* The callout is legible in both themes, so dark mode keeps the same palette
+   rather than reverting to the Bootswatch default. */
+[data-bs-theme="dark"] .alert-info {
+  background-color: #e3ece3 !important;
+  border-color: #A8BFA9 !important;
+  border-left-color: #5F7E62 !important;
+  color: #262626 !important;
+}
+
+[data-bs-theme="dark"] .alert-info strong,
+[data-bs-theme="dark"] .alert-info b {
+  color: #334335 !important;
+}
+
+
+/* `.alert-warning` callouts use the attenuated red the plots use for intervals
+   (`light_red`, #e78b7f), so the two callout kinds are distinguishable at a
+   glance and both stay inside the package palette. */
+.alert-warning {
+  background-color: #fbeeeb !important;
+  border: 1px solid #e78b7f !important;
+  border-left: 4px solid #e78b7f !important;
+  color: #262626 !important;
+  border-radius: 4px;
+}
+
+.alert-warning strong,
+.alert-warning b,
+.alert-warning h1, .alert-warning h2, .alert-warning h3,
+.alert-warning h4, .alert-warning h5, .alert-warning h6 {
+  color: #a9675d !important;
+}
+
+.alert-warning a {
+  color: #a9675d !important;
+  text-decoration: underline;
+}
+
+.alert-warning code {
+  background-color: #f2d3ce !important;
+  color: #262626 !important;
+}
+
+[data-bs-theme="dark"] .alert-warning {
+  background-color: #f7e4e0 !important;
+  border-color: #e78b7f !important;
+  border-left-color: #e78b7f !important;
+  color: #262626 !important;
+}
+
+
 .navbar .navbar-brand,
 .navbar .nav-link {
   color: white !important;
@@ -177,6 +271,35 @@ code {
   background-color: #ebefeb;
   padding: 0.2em 0.4em;
   border-radius: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Code blocks must SCROLL sideways, never wrap. pkgdown/Bootstrap set
+   `white-space: pre-wrap` (and `word-break`) on `code` inside `pre`, which wins
+   over a bare `pre` rule and folds long lines onto a second line. Pin every
+   layer that can wrap, and put the scrollbar on the wrapper pandoc actually
+   emits (`div.sourceCode`) as well as on `pre`.
+   -------------------------------------------------------------------------- */
+div.sourceCode,
+div.sourceCode pre,
+pre.sourceCode,
+pre.sourceCode code,
+pre code.sourceCode,
+pre code.hljs,
+.section pre,
+.section pre code {
+  white-space: pre !important;
+  word-wrap: normal !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  overflow-x: auto !important;
+}
+
+/* The inner <code> must not create its own scroll context, or the wrapper's
+   scrollbar never appears. */
+div.sourceCode pre code {
+  overflow-x: visible !important;
+  display: block;
 }
 
 pre, pre code {

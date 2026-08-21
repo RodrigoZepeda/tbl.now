@@ -1,4 +1,174 @@
-# tbl.now 0.15.1
+# tbl.now 0.16.0
+
+* **\pkg{nowcaster} now nowcasts correctly on this data.** It had been estimating
+  *below* the counts already observed, which is impossible for a nowcast. The
+  cause is in `nowcasting_inla()`, which takes its last observable week from the
+  last **onset** rather than the last report:
+
+  ```r
+  Tmax <- max(pull(data_w, date_onset))
+  Y <- ifelse(Time + delay > Tmax.id, NA, Y)
+  ```
+
+  Every cell whose report lands after the final onset week is masked as
+  unobservable, even when that report is present in the data. If the last event
+  week holds no same-week report then `max(onset) < max(report)` and a whole
+  diagonal of real reports is silently discarded. The article's window is now
+  chosen so the last event week does contain a same-week report; with it
+  \pkg{nowcaster} matches the observed counts in **105 of 105** weeks and never
+  estimates below them (previously 100 of 105, with 6 weeks low). The article
+  explains the rule so readers can check their own data:
+  `max(event_date) == max(report_date)` after aggregating to the time unit.
+* `tbl_now_to_nowcaster()` now supports \pkg{nowcaster}'s **native
+  stratification**. It can stratify in a single fit through `age_col`, but only
+  on a *numeric* column it can `cut()` -- its help calls that a "stratum
+  column", yet a character one errors inside `cut()`, and a character `bins_age`
+  trips an `if (bins_age == "SI-PNI")` comparison on a vector. The converter now
+  pools the strata into one label, codes it `1..n` as `stratum_code` (name
+  configurable), and attaches `"nowcaster_bins"` and `"nowcaster_levels"`. One
+  fit then returns the pooled `$total` and the per-stratum `$age`, replacing the
+  previous fit-once-per-stratum loop.
+* `tidy()` understands a stratified \pkg{nowcaster} fit, reading `$age` and
+  mapping its numeric codes back to labels via the new `strata_levels` argument.
+* The nowcasting-models article documents two \pkg{nowcaster} arguments that are
+  easy to misread: **`Dmax` is the nowcast horizon** (how many past weeks are
+  estimated), not a maximum delay, and **`use.epiweek`** chooses whether weeks
+  end on the last record's weekday (`FALSE`) or follow the CDC Sunday-start
+  epiweek (`TRUE`). For `denguedat`, whose weeks are Mondays, `FALSE` is the one
+  that keeps each week in its own bin.
+* Every package section in that article now shows how to recover its predictions
+  with `tidy()`.
+* The comparison precompute falls back gracefully when \pkg{baselinenowcast}
+  rejects a triangle whose most recent reference times are all zero. A thin
+  stratum can hit that after the zero weeks are completed out to `now` -- here
+  the female series has no case in the final week even though the pooled series
+  does -- and the fallback completes only as far as the last week holding a case,
+  costing that stratum one week rather than the whole nowcast.
+
+* New **`tidy()`** methods, one shape of answer whatever engine produced the fit.
+  The converters normalise what goes *into* a nowcasting package; `tidy()`
+  normalises what comes back out. It returns `event_date`, `stratum`,
+  `estimate`, `conf.low`, `conf.high`, `level` and `engine` for fits from
+  \pkg{diseasenowcasting}, \pkg{baselinenowcast}, \pkg{epinowcast},
+  \pkg{NobBS}, \pkg{surveillance} and \pkg{nowcaster}.
+  * `probs` adds one column per requested quantile, named after the probability
+    (`q5`, `q50`, `q2.5`, ...). Only the engines that keep draws
+    (\pkg{diseasenowcasting}, \pkg{baselinenowcast}, \pkg{epinowcast}) can
+    honour it; the others error rather than return an approximation dressed up
+    as a quantile.
+  * `level` records the width each engine's interval **actually** has --
+    \pkg{epinowcast} reports a 90% band by default while the others report 95%,
+    and without it the two get compared as if they were the same.
+  * \pkg{NobBS} and \pkg{nowcaster} return *unclassed* lists, so they are told
+    apart by structure, with an `engine` argument to override.
+  * `tidy()` deliberately does **not** re-grid: packages that bin onto their own
+    week starts keep them, because snapping would hide a real difference.
+  * The generic comes from \pkg{generics} (a new, dependency-free `Imports`), so
+    it composes with \pkg{broom} rather than masking it.
+* The nowcasting-models article now cuts at the **second week of July 2002**
+  rather than the turn of the year: a December cut lands on the holiday reporting
+  slump, which says more about December than about the models. Section headings
+  are now just the package name, each package's figure carries a caption instead
+  of a heading, each gains a *Simple nowcast* heading, and packages needing an
+  external backend (Stan, JAGS, R-INLA) carry a coloured requirement callout. The
+  overview table gained an *Additional requirements* column.
+* Website: `.alert-warning` callouts now use the attenuated red the plots use for
+  intervals, and code blocks are pinned to scroll sideways rather than wrap --
+  pkgdown's `white-space: pre-wrap` on `code` inside `pre` was overriding the
+  bare `pre` rule and folding long lines onto a second line.
+
+* Print methods now write to **stdout** instead of emitting messages.
+  `print.batch_test()`, `print.transport_discriminant()`,
+  `print.tbl_now_triangle_list()` and the `temporal_effects` print method used
+  the `cli_*()` family, whose output is a *message* -- so it vanished under
+  `message = FALSE`, `sink()` or `capture.output()`, which is exactly where a
+  print method is expected to work. They now use cli's `cat_*()` family. The
+  matching tests were switched from `cli::cli_fmt()` to `capture.output()`.
+* The `epinowcast` section filtered on a hard-coded `2008-12-20`, left over from
+  the old window; against the new data that matched **zero rows** and aborted the
+  build. It now trims relative to the series, using
+  `tbl_now_to_epinowcast(preprocess = FALSE)` followed by
+  `enw_filter_reference_dates()` and `enw_preprocess_data()`.
+
+
+* `tbl_now_to_baselinenowcast()` gained `format = "triangle_list"`: one reporting
+  triangle **per stratum**, instead of pooling them into a single matrix. Unlike
+  splitting the long format by hand it takes the delay unit and the strata off
+  the object, so neither has to be restated. With no strata attached the result
+  is still a list — of length one, named `"all"` — so the return type never
+  depends on whether strata happen to be present.
+* The result is a thin `tbl_now_triangle_list` class: still an ordinary list, so
+  `lapply()` and `[[` work as before, but with a `print()` method. The class
+  earns its place as a guard: \pkg{baselinenowcast}'s
+  `estimate_and_apply_delays()` also takes a list of triangles, but *retrospective
+  snapshots of one series* rather than one per stratum, and would silently accept
+  a per-stratum list and treat the strata as points in time.
+* `as_tbl_now()` gained a method for `tbl_now_triangle_list`, rebuilding a
+  `count-incidence` `tbl_now` with the strata recoded onto their column. The
+  strata **values** are stored on the object rather than parsed back out of the
+  element names, so a stratum containing the name separator still round-trips.
+* **Bug fix: `as_tbl_now()` aborted on any weekly reporting triangle.**
+  `tbl_now_from_baselinenowcast()` ignored the triangle's own `delays_unit`
+  attribute and read the delay columns as *days*, so a weekly triangle produced
+  daily report dates against weekly event dates and unit inference contradicted
+  itself ("report_units must be coarser than or equal to event_units"). Both
+  directions now default `delays_unit = NULL` and resolve it from the attribute;
+  an explicit value still wins.
+
+* **Bug fix in `complete_zeroes()`: it was silently deleting real cases.** The
+  closing "don't look into the future" filter compared with `<` rather than
+  `<=`, so every row reported on the final report date was dropped — in the
+  function's own documented example, 5 of 55 cases vanished. A function whose
+  job is to *add* zeroes was removing data at the boundary.
+* `complete_zeroes()` now completes out to the object's `now`, not merely to the
+  last event date present in the data, and gained an `until` argument to
+  complete to a specific date instead. An event date with no reports at all does
+  not appear in the data, so the old behaviour left a gap exactly at the `now`
+  edge — where nowcasting matters. A supplied `until` never truncates below the
+  data. The line-list error message now explains why a line list cannot hold a
+  zero week and points at `to_count()`.
+* `plot_reporting_hexamap()`'s `max_cells` is now a real bound. It previously
+  took the delay at position `max_cells` and kept every cell sharing that delay,
+  so a wide band at the cut overshot the documented cap.
+* The nowcasting-models comparison now runs to the `now` for five of the six
+  engines. `baselinenowcast` gets there via `complete_zeroes()`; `surveillance`
+  cannot (a zero-count row expands to zero line-list rows, so padding evaporates)
+  and is instead given its grid directly through `control$dRange`. `nowcaster`
+  offers neither and still stops at the last week holding a case. The article
+  explains all three, including that forcing `surveillance` to estimate a week
+  with no observations is unstable on stratified data.
+
+* The nowcasting-models article now builds its `tbl_now` from the **whole**
+  `denguedat` series (52,987 cases over 1,091 weeks) instead of a pre-filtered
+  two-year window. Every converter runs on the full object in a few seconds;
+  where a package needs a shorter series to fit, the article now uses **that
+  package's own argument** rather than subsetting the data first — `moving_window`
+  in `NobBS` (which is what takes the full-series fit from impractical to about
+  six seconds), `wdw` in `nowcaster`, and `when` in `surveillance`.
+  `diseasenowcasting` (~12 s) and `baselinenowcast` (~10 s) take all 1,091 weeks
+  as they are. `epinowcast` is the one engine with no such argument, since the
+  reporting triangle is already built by the time you hold a preprocessed object;
+  the article shows `tbl_now_to_epinowcast(preprocess = FALSE)` followed by
+  `enw_filter_reference_dates()` and `enw_preprocess_data()`, and prints the full
+  and trimmed objects side by side. Each section states which it is doing.
+* Website: `.alert-info` callouts (pandoc `::: {.alert .alert-info}` fenced divs)
+  are restyled from the Bootstrap default blue into the package's sage green,
+  with a darker green left rule and heading colour.
+* The nowcasting-models article's `baselinenowcast` fit referred to a
+  `dengue_triangle2` object that no longer existed; it now uses
+  `dengue_triangle`.
+
+* The example article was rewritten from scratch around the new
+  `hai_bucaramanga` dataset and is now a full **end-to-end tutorial**: cleaning a
+  messy surveillance extract with `dplyr` + `tbl.now` (duplicate records, missing
+  dates, and reports dated before the event they describe), reading the data with
+  `autoplot()` and the standalone `plot_*()` diagnostics, testing the reporting
+  delay for drift and change points, attaching only the temporal effects the data
+  justifies, and finally nowcasting with `diseasenowcasting` and five other
+  engines. Each modelling choice at the end is traced back to a diagnostic at the
+  beginning. It moved from `vignettes/` to `vignettes/articles/` (the pkgdown
+  URL is unchanged) because `diseasenowcasting` is not on CRAN and so cannot be
+  fitted while building a shipped vignette.
 
 * Two new converters, bringing the supported nowcasting back-ends to seven:
   * `tbl_now_to_surveillance()` builds the individual-level line list

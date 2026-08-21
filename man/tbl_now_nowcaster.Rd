@@ -10,6 +10,7 @@ tbl_now_to_nowcaster(
   ...,
   event_col = "date_onset",
   report_col = "date_report",
+  stratum_col = "stratum_code",
   verbose = TRUE
 )
 }
@@ -21,10 +22,15 @@ tbl_now_to_nowcaster(
 \item{event_col, report_col}{Names to give the event and report date columns
 in the result. Default to \code{"date_onset"} and \code{"date_report"}.}
 
+\item{stratum_col}{Name for the numeric strata code column added when the
+object carries strata. Default \code{"stratum_code"}.}
+
 \item{verbose}{Logical. Print the choices that were made.}
 }
 \value{
-A \code{data.frame} line list with one row per case.
+A \code{data.frame} line list with one row per case. When the object has
+strata it also carries \code{stratum_col} plus the \code{"nowcaster_bins"} and
+\code{"nowcaster_levels"} attributes.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -39,10 +45,19 @@ be handed over directly.
 (tidy-evaluation), so pass them unquoted:
 \code{nowcasting_inla(df, date_onset = date_onset, date_report = date_report)}.
 
-\pkg{nowcaster}'s only native grouping is by \strong{age} (\code{age_col} together with
-\code{bins_age}). A \code{tbl_now} stratum is not necessarily an age band, so strata are
-returned as ordinary columns rather than being forced into \code{age_col}; loop
-over them and fit one nowcast per stratum.
+\pkg{nowcaster} can stratify, but only through \code{age_col} + \code{bins_age}, and only
+on a \strong{numeric} column it can \code{\link[=cut]{cut()}} -- despite its help calling \code{age_col} a
+"stratum column", a character one errors. When the object carries strata this
+converter therefore pools them into a single label, codes it \verb{1..n}, and
+returns it as \code{stratum_col} (default \code{"stratum_code"}), with two attributes:
+\itemize{
+\item \code{"nowcaster_bins"} -- breaks that put each level in its own bin, to pass as
+\code{bins_age}.
+\item \code{"nowcaster_levels"} -- the labels, in code order, to map the results back.
+}
+
+The stratified fit then returns an extra \verb{$age} component, one row per
+stratum per week, alongside the pooled \verb{$total}.
 }
 \examples{
 \dontshow{if (requireNamespace("nowcaster", quietly = TRUE)) withAutoprint(\{ # examplesIf}

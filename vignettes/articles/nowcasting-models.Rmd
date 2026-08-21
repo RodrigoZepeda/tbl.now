@@ -25,31 +25,31 @@ has <- function(pkg) requireNamespace(pkg, quietly = TRUE)
 
 ## Why this vignette?
 
-Preparing the same data different ways for the different nowcasting models is tedious and
+Preparing the same data different ways for the different nowcasting models can be tedious and
 error-prone. This is exactly what [`tbl.now`](https://rodrigozepeda.github.io/tbl.now/)
-does for you. You can describe your data once by specifying which column is the event date, which
+helps with. You can describe your data once by specifying which column is the event date, which
 is the report date, what the counts mean and `tbl.now` hands it to each
-modelling package in the format that package expects. In this vignette we take a
-single dengue line-list and, from that one object, drive seven different
-nowcasting / delay-estimation tools:
+modelling package in the format that package expects. 
 
-| Package | What it does | `tbl.now` bridge |
-|---|---|---|
-| [diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/) | Bayesian structural time-series nowcast | consumes a `tbl_now` **directly** |
-| [baselinenowcast](https://baselinenowcast.epinowcast.org/) | fast, assumption-light baseline nowcast | `tbl_now_to_baselinenowcast()` |
-| [epinowcast](https://package.epinowcast.org/) | flexible Bayesian nowcast (delay + reference modules) | `tbl_now_to_epinowcast()` |
-| [epidist](https://epidist.epinowcast.org/) | estimates the reporting **delay distribution** | `tbl_now_to_epidist()` |
-| [NobBS](https://cran.r-project.org/package=NobBS) | Nowcasting by Bayesian Smoothing | a plain line-list (`as.data.frame()`) |
-| [surveillance](https://cran.r-project.org/package=surveillance) | the classic Höhle & an der Heiden nowcast | `tbl_now_to_surveillance()` |
-| [nowcaster](https://covid19br.github.io/nowcaster/) | Bayesian nowcast fitted with INLA | `tbl_now_to_nowcaster()` |
+> In this vignette we take a single dataset (`denguedat`), and from that one object, drive seven different nowcasting / delay-estimation tools:
 
-You do not need to be an expert in any of them to follow along — the point is
+| Package | What it does | Additional requirements | `tbl.now` converter |
+|---|---|---|---|
+| [diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/) | flexible Bayesian nowcast (delay + epidemic processes) | none (uses `RTMB`) | consumes a `tbl_now` **directly** |
+| [baselinenowcast](https://baselinenowcast.epinowcast.org/) | fast, assumption-light baseline nowcast | none | `tbl_now_to_baselinenowcast()` |
+| [epinowcast](https://package.epinowcast.org/) | flexible Bayesian nowcast (delay + reference modules) | **Stan** | `tbl_now_to_epinowcast()` |
+| [epidist](https://epidist.epinowcast.org/) | estimates only the reporting **delay distribution** | **Stan** | `tbl_now_to_epidist()` |
+| [NobBS](https://cran.r-project.org/package=NobBS) | Nowcasting by Bayesian Smoothing | **JAGS** | a plain line-list (`as.data.frame()`) |
+| [surveillance](https://cran.r-project.org/package=surveillance) | the classic Höhle & an der Heiden nowcast | none for the method used here (**JAGS** for `bayes.trunc.ddcp`) | `tbl_now_to_surveillance()` |
+| [nowcaster](https://covid19br.github.io/nowcaster/) | Bayesian nowcast fitted with INLA | **R-INLA** | `tbl_now_to_nowcaster()` |
+
+You do not need to be an expert in any of them to follow along, the point is to show
 how little changes on *your* side when you switch models.
 
 ## The data: one `tbl_now` to rule them all
 
 `tbl.now` ships with `denguedat`, a weekly dengue line-list (one row per case)
-with the week of symptom **onset** and the week the case was **reported**.
+from Puerto Rico with the week of symptom **onset** and the week the case was **reported**.
 
 ```{r setup, message=FALSE}
 library(dplyr)
@@ -66,10 +66,25 @@ We build a single `tbl_now`. We only have to say which column is the event date
 (`onset_week`) and which is the report date (`report_week`); `tbl.now` infers the rest (the
 data is line-list, measured in weeks, and the "now" is the last report, `2010-12-20`).
 
+We cut **both** dates in mid-July 2002. That is what turns a historical dataset
+into a nowcasting problem: the object's `now` becomes the last
+report we kept, its recent weeks are genuinely incomplete — and because the full
+`denguedat` runs to 2010, we still know what those weeks eventually reached, so
+every figure below can be checked against the truth.
+
+Mid-year is a deliberate choice. Cutting at the turn of the year lands on the
+holiday reporting slump, which every engine struggles with and which tells you
+more about December than about the models.
+
+The exact *week* matters too, for a reason worth knowing before you pick your
+own: `nowcaster` needs the last event week to contain at least one same-week
+report. Its section explains why.
+
 ```{r build-tbl-now}
-# A compact recent window keeps the vignette fast to build.
+cutoff <- as.Date("2002-07-22")
+
 dengue <- denguedat |>
-  filter(onset_week >= as.Date("2009-01-01"))
+  filter(onset_week < cutoff, report_week < cutoff)
 
 dengue_now <- tbl_now(
   dengue,
@@ -81,12 +96,33 @@ dengue_now <- tbl_now(
 dengue_now
 ```
 
+That is `r format(nrow(dengue_now), big.mark = ",")` cases over
+`r dplyr::n_distinct(dengue$onset_week)` weeks, from 1990 to
+`r format(get_now(dengue_now))`. Everything in this article — every fit, every
+figure — is built from this one object, so following along step by step
+reproduces exactly what you see.
+
+::: {.alert .alert-info}
+**A note on series length.** Every conversion below runs on the full object, and
+none takes more than a few seconds. The *fits* split into two groups:
+
+* `diseasenowcasting` and `baselinenowcast` are given the **whole** series. They
+  cope with it, so nothing is trimmed.
+* `NobBS`, `nowcaster` and `surveillance` need the series shortened or they
+  become impractical. Where the package has an argument for that we use **it**,
+  rather than subsetting the data first: `moving_window` in `NobBS`, `wdw` in
+  `nowcaster`, `when` in `surveillance`. The object you built stays the object
+  you model.
+* `epinowcast` has no such argument, because the reporting triangle is already
+  built by the time you hold a preprocessed object. It is trimmed one step
+  earlier, in its own section.
+
+Each section states which it does.
+:::
+
 ### A more complex object: strata and temporal effects
 
-Reporting delays are rarely constant and many series are reported for several **strata** (here, the
-patient's sex) that you may want to nowcast separately.
-[`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) lets you attach both **once**
-and carries them into whichever format can hold them. Here we build a second
+Reporting delays are rarely constant and many series are reported for several **strata** (here, `gender`) that you may want to nowcast separately. Here we build a second
 object, `dengue_seasonal`, that adds a `gender` stratum and a week-of-year plus
 annual-Fourier **temporal (delay) effect** on top of `dengue_now`:
 
@@ -102,7 +138,7 @@ dengue_seasonal <- dengue_now |>
 ```
 
 For each package below we show the **bare** conversion of `dengue_now` first, then
-how the same call carries the strata and the effects when handed
+how the same call carries the strata and the temporal effects when handed
 `dengue_seasonal`. 
 
 ::: {.alert .alert-info}
@@ -111,45 +147,169 @@ with `panels = "delay_seasonality"` or `"delay_calendar"` first to *see* whether
 such effects are present before modelling them.
 :::
 
-## 1. diseasenowcasting — no conversion at all
+## Checking each nowcast
 
-[`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/) was
+Every section below ends with the same figure: three panels — the **total**
+series and the two **gender** strata — each showing what had been reported by
+`now` (grey bars), what those weeks eventually reached (the dark **truth** line),
+and that package's nowcast, with its uncertainty interval where the package
+provides one.
+
+The two stratum panels come from fitting each engine **separately on each
+stratum**, which is the one approach every package here supports. Some offer a
+shortcut for it — `NobBS.strat()` is shown in its own section — but the panels
+are built the uniform way so the packages stay comparable.
+
+Because the Stan, JAGS and INLA fits take minutes, they are run once by
+`data-raw/nowcast_comparison.R` — which contains the same calls, with the same
+arguments, that each section shows — and read back here. If you change a call in
+one place, change it in the other.
+
+```{r comparison-load, echo=FALSE, message=FALSE}
+library(ggplot2)
+
+comparison <- readRDS("nowcast-comparison.rds")
+nowcasts   <- comparison$nowcasts
+truth      <- comparison$truth
+meta       <- comparison$meta
+
+strata_levels  <- c("Total", "Female", "Male")
+engine_colours <- c(
+  diseasenowcasting = "#0072B2",
+  baselinenowcast   = "#D55E00",
+  epinowcast        = "#009E73",
+  NobBS             = "#CC79A7",
+  surveillance      = "#E69F00",
+  nowcaster         = "#56B4E9"
+)
+```
+
+<details>
+<summary>Show the plotting code</summary>
+
+```{r comparison-helper, message=FALSE}
+# One figure per package: Total, Female and Male side by side.
+nowcast_panels <- function(package, subtitle = NULL) {
+  window <- meta$horizon
+
+  tru <- truth[truth$event_date %in% window, ]
+  est <- nowcasts[
+    nowcasts$package == package & nowcasts$event_date %in% window,
+  ]
+  tru$stratum <- factor(tru$stratum, levels = strata_levels)
+  est$stratum <- factor(est$stratum, levels = strata_levels)
+
+  colour <- unname(engine_colours[package])
+
+  ggplot(mapping = aes(x = event_date)) +
+    # What had been reported by `now` -- the incomplete data the engine saw.
+    geom_col(
+      data = tru, aes(y = observed, fill = "Reported by now"), width = 5.5
+    ) +
+    # The interval, where the engine gives one.
+    geom_ribbon(
+      data = est[!is.na(est$lower), ],
+      aes(ymin = lower, ymax = upper), fill = colour, alpha = 0.25
+    ) +
+    # The nowcast...
+    geom_line(data = est, aes(y = estimate, colour = "Nowcast"), linewidth = 0.9) +
+    geom_point(data = est, aes(y = estimate, colour = "Nowcast"), size = 1.1) +
+    # ...then the truth ON TOP, so it stays visible where the two coincide
+    # (over the settled weeks they lie exactly on each other).
+    geom_line(
+      data = tru, aes(y = truth, linetype = "Truth"),
+      linewidth = 0.6, colour = "#262626"
+    ) +
+    facet_wrap(~stratum, nrow = 1, scales = "free_y") +
+    scale_fill_manual(name = NULL, values = c("Reported by now" = "#dfe5e0")) +
+    scale_linetype_manual(name = NULL, values = c("Truth" = "solid")) +
+    scale_colour_manual(name = NULL, values = c("Nowcast" = colour)) +
+    labs(
+      x = "Event week (symptom onset)", y = "Cases",
+      title = paste0(package, " nowcast vs. what actually happened"),
+      subtitle = subtitle %||% paste0(
+        "Now = ", format(meta$now),
+        "; last ", length(window), " weeks"
+      )
+    ) +
+    theme_minimal(base_size = 10) +
+    theme(
+      legend.position  = "top",
+      legend.box       = "horizontal",
+      legend.margin    = margin(b = -4),
+      panel.grid.minor = element_blank(),
+      plot.title       = element_text(face = "bold", colour = "#334335")
+    )
+}
+```
+
+</details>
+
+## diseasenowcasting
+
+[`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/) is
 designed hand-in-hand with `tbl.now`, so it takes a `tbl_now` **directly**. You
 just hand it the object:
+
+### Simple nowcast
 
 ```{r dnc, eval=run_models && has("diseasenowcasting")}
 library(diseasenowcasting)
 
+# The whole series, with the package's own defaults -- no trimming.
 dnc_fit <- nowcast(dengue_now)
 
 dnc_fit
 ```
 
+
 ### With strata and effects.
 
-`diseasenowcasting` reaches into the `tbl_now` itself, so the enriched object needs no extra arguments: it picks up the `gender`
-stratum and the week-of-year / seasonal effect columns automatically.
+`diseasenowcasting` reaches into the `tbl_now` itself, so the enriched object needs no extra arguments: it picks up the `gender` stratum and the week-of-year / seasonal effect columns automatically.
 
 ```{r dnc-teff, eval=run_models && has("diseasenowcasting")}
 nowcast(dengue_seasonal)   # the strata and temporal effects are used automatically
 ```
 
-## 2. baselinenowcast — a reporting triangle
+In both stratified and unstratified cases the predictions can be recovered with `tidy`:
+
+```{r dnc-tidy-1, eval=FALSE}
+tidy(dnc_fit) 
+```
+
+```{r dnc-tidy, eval=run_models && has("diseasenowcasting"), echo=FALSE}
+tidy(dnc_fit) |> head(5)
+```
+
+```{r dnc-panels, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=3.6, out.width="100%", fig.cap="Nowcast both stratified and total using the diseasenowcasting package", fig.alt="Three panels (Total, Female, Male) comparing the diseasenowcasting nowcast against the counts reported by now and the counts those weeks eventually reached."}
+nowcast_panels("diseasenowcasting")
+```
+
+## baselinenowcast
 
 [`baselinenowcast`](https://baselinenowcast.epinowcast.org/) is a 
-simple, fast baseline. It works from a **reporting triangle**: a matrix with one
+simple, fast baseline. It works from a **reporting triangle**, a matrix with one
 row per event (reference) week and one column per reporting delay. The
 lower-right corner of the matrix corresponds to the not-yet-observed part the nowcast will fill in.
 
 `tbl_now_to_baselinenowcast()` builds that triangle for you (aggregating the
 line-list to weekly incidence on the way):
 
+### Simple nowcast
+
 ```{r bln-convert, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
 library(baselinenowcast)
 
+# An event week with NO reports yet does not exist as a row, so a triangle built
+# straight from the data stops short of the `now`. `complete_zeroes()` fills
+# those weeks in with zeroes (it needs counts, not a line list).
+dengue_counts <- dengue_now |>
+  to_count(to = "count-incidence") |>
+  complete_zeroes()
+
 # `delays_unit` defaults to NULL and is inferred from the object's weekly units;
 # pass it explicitly (e.g. delays_unit = "weeks") if the units are ambiguous.
-dengue_triangle <- tbl_now_to_baselinenowcast(dengue_now, verbose = FALSE)
+dengue_triangle <- tbl_now_to_baselinenowcast(dengue_counts, verbose = FALSE)
 
 # rows = onset weeks, columns = delay in weeks
 dengue_triangle[1:5, 1:6]
@@ -162,7 +322,7 @@ draw nowcast samples:
 ```{r bln-fit, eval=run_models && has("baselinenowcast"), message=FALSE}
 # One-call workflow: estimate the delay, apply it, and draw nowcast samples.
 nowcast_samples <- baselinenowcast(
-  dengue_triangle2,
+  dengue_triangle,
   output_type = "samples",
   draws       = 1000
 )
@@ -172,30 +332,48 @@ head(nowcast_samples)
 
 ### With strata and effects.
 
-> **NOTE** This section still needs to be verified
 
-A reporting-triangle *matrix* is a single table with
-no room for strata or covariates, so `format = "matrix"` pools the strata (with a
-warning) and drops the effect columns. To keep them and to nowcast each stratum
-separately take the **long** format, which carries `gender` and the effect
-columns, and build one triangle per stratum:
+A reporting-triangle *matrix* is a single table with no room for strata or
+covariates, so `format = "matrix"` pools the strata (with a warning) and drops
+the effect columns. To nowcast each stratum separately we require a 
+`format = "triangle_list"` instead which creates one reporting-triangle per stratum. 
 
 ```{r bln-strata, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
-dengue_long <- tbl_now_to_baselinenowcast(dengue_seasonal, format = "long", verbose = FALSE)
-
-# List with one reporting triangle per stratum
-triangles_by_stratum <- dengue_long |>
-  split(dengue_long$gender) |> #
-  lapply(\(df) as_reporting_triangle(df, delays_unit = "weeks"))
+# One reporting triangle per stratum, straight from the object.
+triangles_by_stratum <- tbl_now_to_baselinenowcast(
+  dengue_seasonal,
+  format  = "triangle_list",
+  verbose = FALSE
+)
 ```
 
+```{r bln-strata-print, eval=has("baselinenowcast"), warning=FALSE}
+triangles_by_stratum
+```
+
+This can be used as a list:
+
 ```{r bln-strata-fit, eval=run_models && has("baselinenowcast"), message=FALSE}
-#One nowcast per triangle
+# One nowcast per triangle
 nowcasts_by_stratum <- triangles_by_stratum |>
   lapply(\(tri) baselinenowcast(tri, output_type = "samples", draws = 1000))
 ```
 
-## 3. epinowcast — a preprocessed Bayesian model object
+In both stratified and unstratified cases the predictions can be recovered with `tidy`:
+
+```{r bln-tidy-1, eval=FALSE}
+tidy(nowcast_samples)
+```
+
+```{r bln-tidy, eval=run_models && has("baselinenowcast"), echo=FALSE}
+tidy(nowcast_samples) |> head(5)
+```
+
+```{r bln-panels, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=3.6, out.width="100%", fig.cap="Nowcast both stratified and total using the baselinenowcast package", fig.alt="Three panels (Total, Female, Male) comparing the baselinenowcast nowcast against the counts reported by now and the counts those weeks eventually reached."}
+nowcast_panels("baselinenowcast")
+```
+
+## epinowcast
 
 [`epinowcast`](https://package.epinowcast.org/) fits a flexible Bayesian model
 with separate modules for the reporting delay and the reference (epidemic)
@@ -204,20 +382,49 @@ process. It expects a preprocessed object built by `enw_preprocess_data()`.
 `tbl_now_to_epinowcast()` handles the preprocessing, returning
 an object you can pass straight to `epinowcast::epinowcast()`:
 
-```{r enw-convert, eval=run_models && has("epinowcast"), warning=FALSE}
+**Series length: trimmed, before preprocessing.** `epinowcast` is the one engine
+here with no argument for shortening the series, because by the time you hold a
+preprocessed object the reporting triangle is already built. Its filters work one
+step earlier, on the *observations* — and `tbl_now_to_epinowcast()` will hand you
+those instead of the finished object if you ask with `preprocess = FALSE`:
+
+::: {.alert .alert-warning}
+**Warning: requires Stan.** This package fits its model with **Stan**, so it needs a working `cmdstanr` (or `rstan`) toolchain installed before any of the code below will run.
+:::
+
+### Simple nowcast
+
+```{r enw-convert, eval=has("epinowcast"), warning=FALSE, message=FALSE}
 library(epinowcast)
 
-dengue_enw <- tbl_now_to_epinowcast(dengue_now, verbose = FALSE, quiet = TRUE)
+# 1. Convert, but stop before preprocessing.
+dengue_obs <- tbl_now_to_epinowcast(
+  dengue_now,
+  preprocess = FALSE, verbose = FALSE, quiet = TRUE
+)
 
-dengue_enw
+# 2. Trim with epinowcast's own filter (include_days counts DAYS, not weeks).
+dengue_obs_recent <- enw_filter_reference_dates(dengue_obs, include_days = 104 * 7)
+
+# 3. Preprocess the trimmed observations.
+dengue_enw_recent <- enw_preprocess_data(
+  dengue_obs_recent,
+  max_delay = 10,
+  timestep  = "week"
+)
+
+dengue_enw_recent
 ```
+
+Two years preprocesses in well under a second, and it is `dengue_enw_recent` —
+not the full series — that goes to the Stan fit.
 
 This can then be passed to `epinowcast()`: 
 
 ```{r enw-fit, eval=run_models && has("epinowcast"), message = FALSE, warning = FALSE}
 # A minimal epinowcast fit from the preprocessed object
 fit <- epinowcast(
-  dengue_enw,
+  dengue_enw_recent,   # the trimmed object, not the full series
   fit = enw_fit_opts(pp = TRUE, chains = 2, iter_sampling = 500)
 )
 ```
@@ -230,7 +437,12 @@ does two things automatically: the `gender` stratum becomes epinowcast's groupin
 the `metareference` / `metareport` tables so that they can be used in a module formula.
 
 ```{r effects-enw-fit, eval=run_models && has("epinowcast")}
-enw_seasonal <- tbl_now_to_epinowcast(dengue_seasonal, verbose = FALSE, quiet = TRUE)
+
+# Same three steps, from the enriched object.
+enw_seasonal <- dengue_seasonal |>
+  tbl_now_to_epinowcast(preprocess = FALSE, verbose = FALSE, quiet = TRUE) |>
+  enw_filter_reference_dates(include_days = 104 * 7) |>
+  enw_preprocess_data(max_delay = 10, timestep = "week")
 
 # Drop the seasonal terms into a reference-module formula and fit as usual: the
 # covariates now enter the reference model.
@@ -244,8 +456,21 @@ epinowcast(
   fit = enw_fit_opts(pp = TRUE, chains = 2, iter_sampling = 500)
 )
 ```
+In both stratified and unstratified cases the predictions can be recovered with `tidy`:
 
-## 4. epidist — the reporting delay distribution
+```{r enw-tidy-1, eval=FALSE}
+tidy(fit)
+```
+
+```{r enw-tidy, eval=run_models && has("epinowcast"), echo=FALSE}
+tidy(fit) |> head(5)
+```
+
+```{r enw-panels, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=3.6, out.width="100%", fig.cap="Nowcast both stratified and total using the epinowcast package", fig.alt="Three panels (Total, Female, Male) comparing the epinowcast nowcast against the counts reported by now and the counts those weeks eventually reached."}
+nowcast_panels("epinowcast")
+```
+
+## epidist
 
 Sometimes the quantity you actually want is the **delay distribution** itself —
 how long, on average, between onset and report, and how variable is it?
@@ -255,6 +480,12 @@ each case as an interval-censored onset/report pair.
 `tbl_now_to_epidist()` converts the `tbl_now` into the censored line-list
 `epidist` expects. Because our data are weekly, each event is censored over its
 whole week automatically:
+
+::: {.alert .alert-warning}
+**Warning: requires Stan.** This package fits its model with **Stan**, so it needs a working `cmdstanr` (or `rstan`) toolchain installed before any of the code below will run.
+:::
+
+### Simple nowcast
 
 ```{r epidist-convert, eval=has("epidist"), message=FALSE, warning=FALSE}
 library(epidist)
@@ -290,29 +521,38 @@ delay_by_sex <- dengue_epidist_eff |>
   epidist(formula = mu ~ 1 + gender + .event_season_52_sin + .event_season_52_cos)
 ```
 
-## 5. NobBS — Nowcasting by Bayesian Smoothing
+## NobBS
 
 [`NobBS`](https://cran.r-project.org/package=NobBS) works from a **line-list**
 with an onset-date column and a report-date column — precisely what a `linelist`
 `tbl_now` already is. Drop the `tbl.now` classes with `as.data.frame()` and hand
 the columns to `NobBS()`:
 
+::: {.alert .alert-warning}
+**Warning: requires JAGS.** This package fits its model with **JAGS**, which is a separate program: install JAGS itself, not just the R package, before running the code below.
+:::
+
+### Simple nowcast
+
 ```{r nobbs-convert, eval=has("NobBS")}
 dengue_linelist <- as.data.frame(dengue_now)
 ```
+
 
 ```{r nobbs-fit, eval=run_models && has("NobBS")}
 library(NobBS)
 
 nobbs_fit <- NobBS(
-  data        = dengue_linelist,
-  now         = get_now(dengue_now),
-  units       = "1 week",
-  onset_date  = get_event_date(dengue_now),
-  report_date = get_report_date(dengue_now)
+  data          = dengue_linelist,
+  now           = get_now(dengue_now),
+  units         = "1 week",
+  onset_date    = get_event_date(dengue_now),
+  report_date   = get_report_date(dengue_now),
+  max_D         = 10,   # delays beyond 10 weeks are negligible here
+  moving_window = 104   # fit to the last two years; otherwise far too slow
 )
 
-nobbs_fit$estimates |> head()
+nobbs_fit$estimates |> tail()
 ```
 
 Notice that even the arguments come from the `tbl_now`: `get_now()`,
@@ -325,19 +565,32 @@ Call `NobBS.strat()` and pass the column name to the strata option:
 
 ```{r nobbs-strata, eval=run_models && has("NobBS"), warning=FALSE, message=FALSE}
 dengue_nobbs     <- as.data.frame(dengue_seasonal)
-stratified_nobbs <- NobBS.strat(dengue_nobbs, 
-                                strata        = "gender", 
-                                now         = get_now(dengue_seasonal), 
-                                units       = "1 week",
-                                onset_date  = get_event_date(dengue_seasonal),
-                                report_date = get_report_date(dengue_seasonal),
-                                #These two values are set small for the example
-                                max_D         = 5, 
-                                moving_window = 7
+stratified_nobbs <- NobBS.strat(dengue_nobbs,
+                                strata        = "gender",
+                                now           = get_now(dengue_seasonal),
+                                units         = "1 week",
+                                onset_date    = get_event_date(dengue_seasonal),
+                                report_date   = get_report_date(dengue_seasonal),
+                                max_D         = 10,
+                                moving_window = 104
                                 )
 ```
 
-## 6. surveillance — the classic nowcasting line list
+In both stratified and unstratified cases the predictions can be recovered with `tidy`:
+
+```{r nobbs-tidy-1, eval=FALSE}
+tidy(nobbs_fit)
+```
+
+```{r nobbs-tidy, eval=run_models && has("NobBS"), echo=FALSE}
+tidy(nobbs_fit) |> head(5)
+```
+
+```{r nobbs-panels, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=3.6, out.width="100%", fig.cap="Nowcast both stratified and total using the NobBS package", fig.alt="Three panels (Total, Female, Male) comparing the NobBS nowcast against the counts reported by now and the counts those weeks eventually reached."}
+nowcast_panels("NobBS")
+```
+
+## surveillance
 
 [`surveillance`](https://cran.r-project.org/package=surveillance) is the
 long-standing R package for outbreak detection and nowcasting, and implements
@@ -346,7 +599,9 @@ an individual-level **line list** with one column for the event date and one for
 the report date, named by its `dEventCol` / `dReportCol` arguments.
 
 `tbl_now_to_surveillance()` builds that data frame and renames the two dates to
-`surveillance`'s own defaults, so nothing has to be spelled out twice:
+`surveillance`'s own defaults:
+
+### Simple nowcast
 
 ```{r sur-convert, eval=has("surveillance"), message=FALSE}
 library(surveillance)
@@ -357,11 +612,16 @@ head(dengue_sur)
 ```
 
 The nowcast itself needs a `now`, the weeks you want estimated (`when`), and a
-maximum delay `D`. All of the bookkeeping comes straight off the `tbl_now`:
+maximum delay `D`. All of it can come from the `tbl_now`:
 
 ```{r sur-fit, eval=run_models && has("surveillance"), message=FALSE, warning=FALSE}
 sur_now  <- get_now(dengue_now)
-sur_when <- seq(sur_now - 7 * 10, sur_now, by = "1 week")
+sur_when <- seq(sur_now - 7 * 20, sur_now, by = "1 week")   # weeks to estimate
+
+# `dRange` gives surveillance the grid explicitly, so it reaches the `now` even
+# though the last week has no cases at all: a line list cannot express a zero
+# week (no rows), so zero-completion is no help here.
+sur_range <- seq(min(dengue_sur$dHospital), sur_now, by = "1 week")
 
 sur_fit <- nowcast(
   now          = sur_now,
@@ -371,7 +631,8 @@ sur_fit <- nowcast(
   dReportCol   = "dReport",
   aggregate.by = "1 week",
   D            = 10,
-  method       = "bayes.notrunc.bnb"
+  method       = "bayes.notrunc.bnb",
+  control      = list(dRange = sur_range, N.tInf.max = 1000, nSamples = 1000)
 )
 
 data.frame(
@@ -380,23 +641,10 @@ data.frame(
 ) |> tail()
 ```
 
-`method` is worth a word. `"bayes.notrunc.bnb"` and `"lawless"` both run in
-well under a second here. The flagship `"bayes.trunc.ddcp"` — the change-point
-model from the original paper — needs **JAGS**, and `"unif"` is only a
-sanity-check baseline (it assumes a uniform delay and badly over-predicts on
-this data).
-
-Passing `format = "sts"` returns the observed curve as a `surveillance` `sts`
-object instead, which is what the package's plotting and outbreak-detection
-verbs take:
-
-```{r sur-sts, eval=has("surveillance"), message=FALSE}
-dengue_sts <- tbl_now_to_surveillance(dengue_now, format = "sts", verbose = FALSE)
-```
 
 ### With strata and effects.
 
-`surveillance::nowcast()` has **no strata argument** — it models one series. The
+`surveillance::nowcast()` has **no strata argument** as it only models one series. The
 strata ride along as ordinary columns, so fit one nowcast per stratum in a loop:
 
 ```{r sur-strata, eval=has("surveillance"), message=FALSE, warning=FALSE}
@@ -412,17 +660,43 @@ sur_by_stratum <- dengue_sur_eff |>
   lapply(\(df) nowcast(
     now = sur_now, when = sur_when, data = df,
     dEventCol = "dHospital", dReportCol = "dReport",
-    aggregate.by = "1 week", D = 10, method = "bayes.notrunc.bnb"
+    aggregate.by = "1 week", D = 10, method = "bayes.notrunc.bnb",
+    # Each stratum runs out earlier than the pooled series, so it needs the
+    # grid spelled out too -- otherwise its curve stops before the `now`.
+    control = list(
+      dRange = seq(min(df$dHospital), sur_now, by = "1 week"),
+      N.tInf.max = 1000, nSamples = 1000
+    )
   ))
 ```
 
-## 7. nowcaster — an INLA nowcast
+In both stratified and unstratified cases the predictions can be recovered with `tidy`:
+
+```{r sur-tidy-1, eval=FALSE}
+tidy(sur_fit)
+```
+
+```{r sur-tidy, eval=run_models && has("surveillance"), echo=FALSE}
+tidy(sur_fit) |> head(5)
+```
+
+```{r sur-panels, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=3.6, out.width="100%", fig.cap="Nowcast both stratified and total using the surveillance package", fig.alt="Three panels (Total, Female, Male) comparing the surveillance nowcast against the counts reported by now and the counts those weeks eventually reached."}
+nowcast_panels("surveillance")
+```
+
+## nowcaster
 
 [`nowcaster`](https://covid19br.github.io/nowcaster/) fits a Bayesian
 nowcast with [INLA](https://www.r-inla.org/), and like `surveillance` it starts
-from a line list — here with columns it calls `date_onset` and `date_report`.
+from a linelist.
 
-`tbl_now_to_nowcaster()` renames the dates into that vocabulary:
+`tbl_now_to_nowcaster()` renames the dates into its vocabulary:
+
+::: {.alert .alert-warning}
+**Warning: requires R-INLA.** This package fits its model with **R-INLA**, which is not on CRAN. Install it from <https://www.r-inla.org/download-install> before running the code below.
+:::
+
+### Simple nowcast
 
 ```{r nowcaster-convert, eval=has("nowcaster"), message=FALSE}
 library(nowcaster)
@@ -432,17 +706,15 @@ dengue_nowcaster <- tbl_now_to_nowcaster(dengue_now, verbose = FALSE)
 head(dengue_nowcaster)
 ```
 
-One gotcha: `nowcasting_inla()` takes `date_onset` and `date_report` as **bare
-column names** (tidy-evaluation), not strings — so they are passed unquoted:
-
 ```{r nowcaster-fit, eval=run_models && has("nowcaster") && has("INLA"), message=FALSE}
 nowcaster_fit <- nowcasting_inla(
   dataset      = dengue_nowcaster,
   date_onset   = date_onset,
   date_report  = date_report,
-  data.by.week = TRUE,   # the data is already weekly
-  Dmax         = 10,
-  wdw          = 30,
+  data.by.week = TRUE,
+  use.epiweek  = FALSE,  # weeks END on the last record's weekday
+  Dmax         = 20,     # how many PAST WEEKS to nowcast, not a max delay
+  wdw          = 104,    # fitting window
   silent       = TRUE
 )
 
@@ -450,170 +722,261 @@ nowcaster_fit <- nowcasting_inla(
 tail(nowcaster_fit$total)
 ```
 
-Note that `nowcaster` aggregates onto **its own** weekly grid, which can be
-offset by a day or two from the event weeks in your data. Align on the week
-before joining its output to anything else — the comparison section below does
-exactly that.
+Two of those arguments are easy to misread, so they are worth spelling out:
+
+* **`Dmax` is the nowcast horizon**, not a maximum delay: "till how many past
+  weeks the nowcasting will estimate". Setting it to 10 gives you ten estimated
+  weeks, not a ten-week delay cap.
+* **`use.epiweek` decides where the weeks start.** With `FALSE` (the default) a
+  week *ends* on the weekday of the last record; with `TRUE` it uses the CDC
+  epiweek, which starts on Sunday. Since `denguedat`'s weeks are Mondays and our
+  last report is a Monday, `FALSE` puts each of our weeks in its own bin —
+  `TRUE` would shift them onto Sunday boundaries that do not line up.
+
+::: {.alert .alert-warning}
+**Make sure your last event week has a same-week report.** This is the one
+`nowcaster` gotcha worth internalising, because it is silent and it looks like a
+broken model.
+
+`nowcasting_inla()` takes its last observable week from the last **onset** in the
+data, not from the last report:
+
+```r
+Tmax <- max(pull(data_w, date_onset))
+Y <- ifelse(Time + delay > Tmax.id, NA, Y)
+```
+
+Every cell whose report falls after that onset week is marked *unobservable* —
+even when the report is sitting right there in your data. So if your final event
+week happens to have no same-week report, `max(onset) < max(report)` and
+`nowcaster` throws away a whole diagonal of real reports. The symptom is a
+nowcast that sits **below** the counts you have already observed, which is
+otherwise impossible.
+
+Our cutoff is chosen so the last event week (`2002-07-15`) does contain a
+same-week report. With it, `nowcaster` sees exactly what every other engine sees
+— all 105 weeks match the observed counts, and it never estimates below them.
+Shift the cutoff one week earlier and it loses a diagonal and six weeks come out
+low.
+
+To check your own data: `max(event_date) == max(report_date)` after aggregating
+to your time unit. If they differ, either move the cutoff or accept that
+`nowcaster` is working from one period less than the rest.
+:::
 
 ### With strata and effects.
 
-`nowcaster`'s only native grouping is by **age** (`age_col` plus `bins_age`), and
-a `tbl_now` stratum is not necessarily an age band. `tbl_now_to_nowcaster()`
-therefore keeps the strata as ordinary columns rather than forcing them into
-`age_col`, and you fit one nowcast per stratum:
+`nowcaster` *can* stratify, in a single fit — but only through `age_col`, and
+only on a **numeric** column it can `cut()`. Its help calls that a "stratum
+column", yet handing it a character one errors inside `cut()`, and a character
+`bins_age` trips over an `if (bins_age == "SI-PNI")` comparison on a vector.
+
+`tbl_now_to_nowcaster()` does the encoding for you: it pools the strata into one
+label, codes it `1..n` as `stratum_code`, and attaches the breaks that put each
+level in its own bin.
 
 ```{r nowcaster-strata, eval=has("nowcaster"), message=FALSE}
 dengue_nowcaster_eff <- tbl_now_to_nowcaster(dengue_seasonal, verbose = FALSE)
 
 head(dengue_nowcaster_eff)
+
+# The breaks and the labels come along as attributes.
+attr(dengue_nowcaster_eff, "nowcaster_bins")
+attr(dengue_nowcaster_eff, "nowcaster_levels")
 ```
 
+One fit then covers every stratum: `$total` holds the pooled nowcast and `$age`
+one row per stratum per week.
+
 ```{r nowcaster-strata-fit, eval=run_models && has("nowcaster") && has("INLA"), message=FALSE}
-nowcaster_by_stratum <- dengue_nowcaster_eff |>
-  split(dengue_nowcaster_eff$gender) |>
-  lapply(\(df) nowcasting_inla(
-    dataset = df, date_onset = date_onset, date_report = date_report,
-    data.by.week = TRUE, Dmax = 10, wdw = 30, silent = TRUE
-  ))
+nowcaster_stratified <- nowcasting_inla(
+  dataset      = dengue_nowcaster_eff,
+  date_onset   = date_onset,
+  date_report  = date_report,
+  age_col      = stratum_code,
+  bins_age     = attr(dengue_nowcaster_eff, "nowcaster_bins"),
+  data.by.week = TRUE,
+  use.epiweek  = FALSE,
+  Dmax         = 20,
+  wdw          = 104,
+  silent       = TRUE
+)
+
+tail(nowcaster_stratified$age)
 ```
+
+In both stratified and unstratified cases the predictions can be recovered with `tidy`:
+
+```{r nowcaster-tidy-1, eval=FALSE}
+tidy(nowcaster_stratified, strata_levels = attr(dengue_nowcaster_eff, "nowcaster_levels"))
+```
+
+```{r nowcaster-tidy, eval=run_models && has("nowcaster") && has("INLA"), echo=FALSE}
+tidy(nowcaster_stratified, strata_levels = attr(dengue_nowcaster_eff, "nowcaster_levels")) |> head(5)
+```
+
+```{r nowcaster-panels, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=3.6, out.width="100%", fig.cap="Nowcast both stratified and total using the nowcaster package", fig.alt="Three panels (Total, Female, Male) comparing the nowcaster nowcast against the counts reported by now and the counts those weeks eventually reached."}
+nowcast_panels("nowcaster")
+```
+
+## One shape of answer: `tidy()`
+
+The converters normalise what goes *into* each package. `tidy()` normalises what
+comes back out. Every engine above returns something different — a matrix of
+draws, an `stsNC` object, a Stan fit, an INLA summary, a bare list — and `tidy()`
+turns any of them into the same table:
+
+```{r tidy-demo, message=FALSE, warning=FALSE}
+# A short window so this runs quickly; any fit from any section works the same.
+recent_triangle <- dengue_now |>
+  filter(onset_week >= cutoff - 365 * 2) |>
+  to_count(to = "count-incidence") |>
+  complete_zeroes() |>
+  tbl_now_to_baselinenowcast(verbose = FALSE)
+
+bln_fit <- baselinenowcast(recent_triangle, output_type = "samples", draws = 500)
+
+tidy(bln_fit) |> tail(4)
+```
+
+The columns are the same whatever produced the fit:
+
+| column | meaning |
+|---|---|
+| `event_date` | event/reference date, **on the engine's own grid** |
+| `stratum` | `"all"` when the fit is unstratified |
+| `estimate` | point nowcast (posterior median where available) |
+| `conf.low`, `conf.high` | interval bounds, using \pkg{broom}'s names |
+| `level` | the width that interval **actually** has |
+| `engine` | which package produced it |
+
+`level` is not decoration. `epinowcast` reports a q5–q95 band by default, i.e.
+**90%**, while the others report 95%; without recording it you would compare the
+two as though they were the same thing.
+
+Pass `probs` for extra quantile columns, named after the probability:
+
+```{r tidy-probs, message=FALSE, warning=FALSE}
+tidy(bln_fit, probs = c(0.05, 0.5, 0.95)) |> tail(3)
+```
+
+::: {.alert .alert-warning}
+**Only engines that keep draws can answer an arbitrary `probs`.** That is
+`diseasenowcasting`, `baselinenowcast` and `epinowcast`. `NobBS`, `nowcaster` and
+`surveillance` report a fixed set of summaries, so asking them for a quantile
+they never computed is an **error** rather than a silent approximation.
+:::
+
+Two of these packages (`NobBS` and `nowcaster`) return an *unclassed* list, so
+`tidy()` identifies them by their structure. If it ever cannot tell, name the
+engine yourself:
+
+```{r tidy-engine, eval=FALSE}
+tidy(nobbs_fit,     engine = "NobBS")
+tidy(nowcaster_fit, engine = "nowcaster")
+```
+
+One deliberate non-goal: `tidy()` does **not** re-grid. Packages that bin onto
+their own week starts keep them, because silently snapping the dates would hide a
+real difference between engines — as the `nowcaster` note below explains.
 
 ## Putting it together: every nowcast on one plot
 
 Each engine above returns its answer in its own shape — a matrix of samples, a
-`stsNC` object, a Stan fit, an INLA summary. Below they are all drawn on the
-same axes so you can see how they actually differ.
-
-**About this comparison.** The `dengue_now` used through the rest of this
-article runs to the very end of `denguedat`, so its most recent weeks are *still
-incomplete* — there is nothing to check a nowcast against. The figures below
-therefore use an earlier window of comparable length (104 weeks across
-2002–2003). Reports are truncated at `now`, so every engine faces a real
-nowcasting problem, while the full `denguedat` still records what those weeks
-eventually reached. That gives us a genuine **truth** line.
-
-The fits are slow (Stan, JAGS and INLA), so they are computed once by
-`data-raw/nowcast_comparison.R` and read back here.
+`stsNC` object, a Stan fit, an INLA summary. Here they are on one set of axes,
+built from the very same fits the sections above plotted.
 
 <details>
 <summary>Show the plotting code</summary>
 
-```{r comparison-setup, message=FALSE}
-library(ggplot2)
+```{r comparison-all-code, eval=FALSE}
+window <- meta$horizon
+tru <- truth[truth$event_date %in% window, ]
+est <- nowcasts[nowcasts$event_date %in% window, ]
+tru$stratum <- factor(tru$stratum, levels = strata_levels)
+est$stratum <- factor(est$stratum, levels = strata_levels)
+est$package <- factor(est$package, levels = names(engine_colours))
 
-comparison <- readRDS("nowcast-comparison.rds")
-nowcasts   <- comparison$nowcasts
-truth      <- comparison$truth
-meta       <- comparison$meta
-
-# One colour per engine (Okabe-Ito, colour-blind safe).
-engine_colours <- c(
-  diseasenowcasting = "#0072B2",
-  baselinenowcast   = "#D55E00",
-  epinowcast        = "#009E73",
-  NobBS             = "#CC79A7",
-  surveillance      = "#E69F00",
-  nowcaster         = "#56B4E9"
-)
-
-nowcast_plot <- function(strata, title, subtitle) {
-  window <- meta$horizon
-  tru <- truth[truth$stratum %in% strata & truth$event_date %in% window, ]
-  est <- nowcasts[nowcasts$stratum %in% strata &
-                    nowcasts$event_date %in% window, ]
-  est$package <- factor(est$package, levels = names(engine_colours))
-
-  ggplot(mapping = aes(x = event_date)) +
-    # What was actually on hand at `now`: the incomplete data every engine saw.
-    geom_col(
-      data = tru, aes(y = observed, fill = "Reported by now"),
-      width = 5.5, alpha = 0.9
-    ) +
-    # What those weeks eventually reached.
-    geom_line(
-      data = tru, aes(y = truth, linetype = "Truth"),
-      linewidth = 1, colour = "#262626"
-    ) +
-    geom_point(data = tru, aes(y = truth), size = 1.7, colour = "#262626") +
-    # One coloured line per engine.
-    geom_line(data = est, aes(y = estimate, colour = package), linewidth = 0.8) +
-    geom_point(data = est, aes(y = estimate, colour = package), size = 1.3) +
-    scale_fill_manual(name = NULL, values = c("Reported by now" = "#dfe5e0")) +
-    scale_linetype_manual(name = NULL, values = c("Truth" = "solid")) +
-    scale_colour_manual(name = NULL, values = engine_colours, drop = FALSE) +
-    labs(x = "Event week (symptom onset)", y = "Cases",
-         title = title, subtitle = subtitle) +
-    theme_minimal(base_size = 11) +
-    theme(
-      legend.position = "top",
-      legend.box = "horizontal",
-      legend.margin = margin(b = -2),
-      legend.key.width = unit(1.1, "lines"),
-      panel.grid.minor = element_blank(),
-      plot.title = element_text(face = "bold", colour = "#334335")
-    ) +
-    guides(
-      colour   = guide_legend(order = 1, nrow = 2, byrow = TRUE),
-      linetype = guide_legend(order = 2),
-      fill     = guide_legend(order = 3)
-    )
-}
+ggplot(mapping = aes(x = event_date)) +
+  geom_col(data = tru, aes(y = observed, fill = "Reported by now"), width = 5.5) +
+  geom_line(data = est, aes(y = estimate, colour = package), linewidth = 0.7) +
+  # Truth last, so it stays visible where the engines lie on top of it.
+  geom_line(
+    data = tru, aes(y = truth, linetype = "Truth"),
+    linewidth = 0.7, colour = "#262626"
+  ) +
+  facet_wrap(~stratum, nrow = 1, scales = "free_y") +
+  scale_fill_manual(name = NULL, values = c("Reported by now" = "#dfe5e0")) +
+  scale_linetype_manual(name = NULL, values = c("Truth" = "solid")) +
+  scale_colour_manual(name = NULL, values = engine_colours, drop = FALSE) +
+  labs(x = "Event week (symptom onset)", y = "Cases",
+       title = "Every engine on the same data",
+       subtitle = paste0("Now = ", format(meta$now))) +
+  theme_minimal(base_size = 10) +
+  theme(legend.position = "top", legend.box = "horizontal",
+        panel.grid.minor = element_blank(),
+        plot.title = element_text(face = "bold", colour = "#334335")) +
+  guides(colour = guide_legend(nrow = 2, byrow = TRUE, order = 1))
 ```
 
 </details>
 
-```{r comparison-plot-total, echo=FALSE, message=FALSE, warning=FALSE, fig.width=9, fig.height=4.6, out.width="100%", fig.alt="Line chart comparing each package's nowcast against the eventually-reported truth over the last eleven event weeks. Grey bars show what had been reported as of now, a dark line shows the true final counts, and one coloured line per package shows its nowcast. The lines agree on the fully-observed weeks and fan out at the right-hand edge."}
-nowcast_plot(
-  "Total",
-  "Every engine nowcasting the same dengue data",
-  paste0("Now = ", format(meta$now),
-         "; grey bars are what had been reported by then")
-)
+```{r comparison-all, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=4.4, out.width="100%", fig.alt="Three panels (Total, Female, Male). Grey bars show the counts reported by now, a dark line the counts those weeks eventually reached, and one coloured line per package its nowcast."}
+window <- meta$horizon
+tru <- truth[truth$event_date %in% window, ]
+est <- nowcasts[nowcasts$event_date %in% window, ]
+tru$stratum <- factor(tru$stratum, levels = strata_levels)
+est$stratum <- factor(est$stratum, levels = strata_levels)
+est$package <- factor(est$package, levels = names(engine_colours))
+
+ggplot(mapping = aes(x = event_date)) +
+  geom_col(data = tru, aes(y = observed, fill = "Reported by now"), width = 5.5) +
+  geom_line(data = est, aes(y = estimate, colour = package), linewidth = 0.7) +
+  # Truth last, so it stays visible where the engines lie on top of it.
+  geom_line(
+    data = tru, aes(y = truth, linetype = "Truth"),
+    linewidth = 0.7, colour = "#262626"
+  ) +
+  facet_wrap(~stratum, nrow = 1, scales = "free_y") +
+  scale_fill_manual(name = NULL, values = c("Reported by now" = "#dfe5e0")) +
+  scale_linetype_manual(name = NULL, values = c("Truth" = "solid")) +
+  scale_colour_manual(name = NULL, values = engine_colours, drop = FALSE) +
+  labs(x = "Event week (symptom onset)", y = "Cases",
+       title = "Every engine on the same data",
+       subtitle = paste0("Now = ", format(meta$now))) +
+  theme_minimal(base_size = 10) +
+  theme(legend.position = "top", legend.box = "horizontal",
+        panel.grid.minor = element_blank(),
+        plot.title = element_text(face = "bold", colour = "#334335")) +
+  guides(colour = guide_legend(nrow = 2, byrow = TRUE, order = 1))
 ```
 
-The grey bars are the incomplete data every engine was handed; the dark line is
-what those weeks eventually reached. The gap between them, at the right-hand
-edge, is the whole nowcasting problem — and how well each coloured line closes
-it is the only thing worth judging.
+The gap between the grey bars and the dark line, at the right-hand edge, is the
+whole nowcasting problem; how well each coloured line closes it is the only
+thing worth judging. Note the panels use free y-axes — splitting by gender
+roughly halves the counts, so the strata are harder for every engine.
 
-```{r comparison-plot-strata, echo=FALSE, message=FALSE, warning=FALSE, fig.width=9, fig.height=4.6, out.width="100%", fig.alt="The same nowcast comparison split into one panel per gender stratum, with one coloured line per package and a dark truth line in each panel."}
-nowcast_plot(
-  setdiff(unique(truth$stratum), "Total"),
-  "The same comparison, stratified by gender",
-  "Each engine fitted separately per stratum"
-) + facet_wrap(~ stratum)
-```
+Three caveats worth carrying to your own data:
 
-Two caveats on the stratified figure. `surveillance` and `nowcaster` have no
-strata argument at all — as noted in their sections, they are fitted once per
-stratum in a loop — and `baselinenowcast`'s matrix format pools strata, so it
-too is given one triangle per stratum. Splitting the data also roughly halves
-the counts in each panel, which is why the engines disagree more here than on
-the total.
-
-`epidist` does not appear in either figure: it estimates the reporting-**delay
-distribution** rather than a case-count nowcast, so there is nothing to plot on
-this axis.
-
-Two honest wrinkles in how these curves were assembled, both worth knowing if
-you build a comparison like this yourself:
-
+* **`epidist` is absent on purpose.** It estimates the reporting-**delay
+  distribution**, not a case-count nowcast, so it has nothing to draw here.
 * **Not every engine reports the same quantity.** `diseasenowcasting` exposes
   both a smoothed *latent* epidemic curve and a posterior prediction of the
-  eventual counts; only the latter is comparable with the others, so
-  `predict()` is used rather than `summary()$latent`. Plotting the latent curve
-  instead would have shown it dipping *below* data that had already been
-  reported.
+  eventual counts; only the latter is comparable, so `predict()` is used rather
+  than `summary()$latent`.
 * **Not every engine uses the same weeks.** `denguedat` labels a week by its
-  Monday, while `nowcaster` re-bins onto its own Tuesday-start weeks, so its
-  label `2003-12-02` holds the cases filed here under `2003-12-08`. Every
-  engine's dates are therefore snapped onto one common grid before plotting.
-  Even so, `nowcaster`'s weeks contain a slightly different set of cases than
-  everyone else's, which is why it sits one or two cases below the observed
-  count in a handful of weeks.
+  Monday; `nowcaster` re-bins onto its own **Tuesday**-start weeks and offers no
+  argument to change that (`use.epiweek = TRUE` moves it to Sunday, not Monday).
+  Its estimates are snapped onto the common grid for these figures, but its
+  weeks hold a slightly different set of cases from everyone else's, so its line
+  can sit a few cases below the grey bars (at most three, in these figures). That is a binning artefact, not a
+  bad nowcast: checked against **its own** aggregation, `nowcaster`'s median is
+  never below what it actually observed.
 
-`data-raw/nowcast_comparison.R` checks for exactly this: a nowcast should never
-fall below what was already reported, and any engine that does so across most
-weeks is flagged as a probable alignment bug rather than quietly plotted.
+`data-raw/nowcast_comparison.R` guards against the version of this that *would*
+be a bug: a nowcast should not fall below what was already reported, and any
+engine doing so across most weeks is flagged as a probable misalignment rather
+than quietly plotted.
 
 ## Summary
 
@@ -639,8 +1002,6 @@ along the same converters: each package receives them in whatever way it can use
 a grouping in `epinowcast`, covariate columns in `epidist` and the
 `baselinenowcast` long format, one triangle/series per stratum where the model
 takes a single series, and automatically in `diseasenowcasting`. 
-
-## See also
 
 ```{r learning-more, child = "../../man/fragments/learning-more.Rmd"}
 ``` 

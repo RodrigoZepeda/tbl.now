@@ -1670,3 +1670,87 @@ test_that("tbl_now_to_epinowcast passes strata as grouping", {
   ))
   expect_equal(length(unique(enw$metareference[[1]]$.group)), 2L)
 })
+
+# format = "triangle_list" ------------------------------------------------------
+
+make_strata_tbl_now <- function() {
+  data(denguedat, envir = environment())
+  denguedat |>
+    dplyr::filter(onset_week >= as.Date("2010-01-01")) |>
+    tbl_now(
+      event_date = onset_week, report_date = report_week,
+      strata = gender, data_type = "linelist", verbose = FALSE
+    )
+}
+
+test_that("format = 'triangle_list' returns one triangle per stratum", {
+  skip_if_not_installed("baselinenowcast")
+  x  <- make_strata_tbl_now()
+  tl <- suppressWarnings(
+    tbl_now_to_baselinenowcast(x, format = "triangle_list", verbose = FALSE)
+  )
+
+  expect_s3_class(tl, "tbl_now_triangle_list")
+  # Thin class: it must still behave as a plain list.
+  expect_true(is.list(tl))
+  expect_setequal(names(tl), unique(as.character(x$gender)))
+  for (triangle in tl) expect_s3_class(triangle, "reporting_triangle")
+  expect_equal(attr(tl, "strata_cols"), "gender")
+  expect_equal(attr(tl, "now"), get_now(x))
+})
+
+test_that("format = 'triangle_list' is length-1 and named 'all' without strata", {
+  skip_if_not_installed("baselinenowcast")
+  x <- remove_all_strata(make_strata_tbl_now())
+  tl <- suppressWarnings(
+    tbl_now_to_baselinenowcast(x, format = "triangle_list", verbose = FALSE)
+  )
+
+  # The return type must not depend on whether strata happen to be attached.
+  expect_s3_class(tl, "tbl_now_triangle_list")
+  expect_length(tl, 1L)
+  expect_named(tl, "all")
+})
+
+test_that("as_tbl_now() rebuilds a tbl_now from a triangle list, strata and all", {
+  skip_if_not_installed("baselinenowcast")
+  x  <- make_strata_tbl_now()
+  tl <- suppressWarnings(
+    tbl_now_to_baselinenowcast(x, format = "triangle_list", verbose = FALSE)
+  )
+  back <- as_tbl_now(tl)
+
+  expect_true(is_tbl_now(back))
+  expect_equal(get_strata(back), "gender")
+  expect_equal(get_now(back), get_now(x))
+  expect_equal(get_event_units(back), get_event_units(x))
+  expect_setequal(unique(as.character(back$gender)), unique(as.character(x$gender)))
+
+  # No cases gained or lost, per stratum.
+  original <- x |> as.data.frame() |> dplyr::count(gender, name = "n")
+  rebuilt  <- back |>
+    as.data.frame() |>
+    dplyr::summarise(n = sum(count, na.rm = TRUE), .by = gender)
+  expect_equal(
+    rebuilt$n[order(rebuilt$gender)],
+    as.numeric(original$n[order(original$gender)])
+  )
+})
+
+test_that("a weekly reporting triangle survives the round-trip through as_tbl_now()", {
+  skip_if_not_installed("baselinenowcast")
+  # Regression: `delays_unit` was not read from the triangle's own attribute, so
+  # weekly delays were expanded as days and `as_tbl_now()` aborted with
+  # "report_units must be coarser than or equal to event_units".
+  x <- remove_all_strata(make_strata_tbl_now())
+  triangle <- suppressWarnings(tbl_now_to_baselinenowcast(x, verbose = FALSE))
+  expect_equal(attr(triangle, "delays_unit"), "weeks")
+
+  back <- suppressWarnings(suppressMessages(as_tbl_now(triangle)))
+  expect_true(is_tbl_now(back))
+  expect_equal(get_event_units(back), "weeks")
+  expect_equal(
+    max(as.numeric(back$report_date - back$reference_date)),
+    max(as.numeric(x$report_week - x$onset_week))
+  )
+})

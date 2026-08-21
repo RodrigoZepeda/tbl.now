@@ -703,24 +703,38 @@ tbl_now_from_epinowcast <- function(data, ...,
 #' columns (see [compute_temporal_effects()]); the matrix holds only the three
 #' core columns. A single reporting-triangle matrix has no strata dimension, so
 #' `format = "matrix"` **pools** any strata (summing the counts) with a warning;
-#' build one triangle per stratum (from the long format) to nowcast each stratum.
+#' use `format = "triangle_list"` to get one triangle per stratum instead.
 #'
 #' @param data A long `data.frame` or a `reporting_triangle` matrix.
 #' @param x A `tbl_now` object.
 #' @param reference_date,report_date,count Column names (long format only).
 #' @param delays_unit Unit of the delay axis of the reporting triangle, one of
-#'   `"days"` or `"weeks"`. For `tbl_now_from_baselinenowcast()` this says how to
-#'   read an input matrix's delay columns and defaults to `"days"`. For
-#'   `tbl_now_to_baselinenowcast()` (matrix format only) it defaults to `NULL`,
-#'   meaning it is **inferred** from the object's time units when the event and
-#'   report units agree and are `"days"` or `"weeks"`; otherwise you must supply
-#'   it explicitly.
-#' @param format For `to`: `"matrix"` (default) or `"long"`.
+#'   `"days"` or `"weeks"`. Both directions default to `NULL`, meaning it is
+#'   worked out for you. For `tbl_now_from_baselinenowcast()` that means reading
+#'   the input matrix's own `delays_unit` attribute (falling back to `"days"`
+#'   when it has none); a supplied value always wins. For
+#'   `tbl_now_to_baselinenowcast()` (triangle formats only) it is **inferred**
+#'   from the object's time units when the event and report units agree and are
+#'   `"days"` or `"weeks"`; otherwise you must supply it explicitly.
+#' @param format For `to`, one of:
+#'   * `"matrix"` (default) -- a single [baselinenowcast::as_reporting_triangle()]
+#'     matrix. A triangle has no strata dimension, so any strata are **pooled**
+#'     (with a warning).
+#'   * `"long"` -- a tidy data frame, which can also carry the strata,
+#'     covariates, temporal-effect columns and the censoring indicator.
+#'   * `"triangle_list"` -- one reporting triangle **per stratum**, as a
+#'     [tbl_now_triangle_list]. Use this instead of pooling when you want a
+#'     nowcast per stratum. With no strata attached the result is still a list,
+#'     of length one and named `"all"`, so the return type never depends on
+#'     whether strata happen to be present. Unlike splitting the long format
+#'     yourself, the delay unit and the strata are taken from the object, and
+#'     [as_tbl_now()] can rebuild a `tbl_now` from the result.
 #' @param verbose Logical. Print the choices that were made.
 #' @param ... Forwarded to [as_tbl_now()] (`from`) or
-#'   [baselinenowcast::as_reporting_triangle()] (`to`, matrix format).
+#'   [baselinenowcast::as_reporting_triangle()] (`to`, triangle formats).
 #'
-#' @return A `tbl_now` (`from`), or a `data.frame`/`reporting_triangle` (`to`).
+#' @return A `tbl_now` (`from`), or a `data.frame`, `reporting_triangle` or
+#'   [tbl_now_triangle_list] (`to`), according to `format`.
 #'
 #' @section Round-trip:
 #'
@@ -752,9 +766,18 @@ tbl_now_from_baselinenowcast <- function(data, ...,
                                          reference_date = "reference_date",
                                          report_date = "report_date",
                                          count = "count",
-                                         delays_unit = "days",
+                                         delays_unit = NULL,
                                          verbose = TRUE) {
   dots <- list(...)
+
+  # A `reporting_triangle` records its own delay unit. Honour it unless the
+  # caller says otherwise: reading the delays as days when the triangle is
+  # weekly places the report dates a seventh of the way along, which made
+  # `as_tbl_now()` abort outright on any weekly triangle ("report_units must be
+  # coarser than or equal to event_units").
+  if (is.null(delays_unit)) {
+    delays_unit <- attr(data, "delays_unit") %||% "days"
+  }
 
   # A reporting-triangle matrix is expanded to long incremental form; a long
   # data frame is selected and renamed to the canonical column names.
@@ -1351,7 +1374,8 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
 
 #' @rdname tbl_now_baselinenowcast
 #' @export
-tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
+tbl_now_to_baselinenowcast <- function(x, ...,
+                                       format = c("matrix", "long", "triangle_list"),
                                        delays_unit = NULL, verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_baselinenowcast")
   format <- match.arg(format)
@@ -1399,6 +1423,10 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
   # strata are pooled below.
   extra_cols <- if (format == "long") {
     c(strata_cols, covariate_cols, temporal_cols, censored_col)
+  } else if (format == "triangle_list") {
+    # Only the strata are needed: they say how to split. Everything else is
+    # dropped, because a triangle has nowhere to put it.
+    strata_cols
   } else {
     NULL
   }
@@ -1420,8 +1448,8 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
     cli::cli_warn(c(
       "{.pkg baselinenowcast} builds a single reporting triangle, which has no \\
        strata dimension; pooling over strata {.val {strata_cols}}.",
-      "i" = "For a nowcast per stratum, build one triangle per stratum (split the \\
-             data, or use {.code format = \"long\"} and group by {.val {strata_cols}})."
+      "i" = "For a nowcast per stratum use {.code format = \"triangle_list\"}, \\
+             which returns one triangle per stratum."
     ))
     long_data <- long_data |>
       dplyr::group_by(.data$reference_date, .data$report_date) |>
@@ -1431,10 +1459,10 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
       )
   }
 
-  # `delays_unit` only applies to the reporting-triangle matrix. When `NULL` it is
-  # inferred from the object's time units (equal event/report units of days or
-  # weeks); otherwise the user must supply it.
-  if (format == "matrix") {
+  # `delays_unit` applies to both triangle formats (the long format has no delay
+  # axis). When `NULL` it is inferred from the object's time units (equal
+  # event/report units of days or weeks); otherwise the user must supply it.
+  if (format %in% c("matrix", "triangle_list")) {
     delays_unit <- .baselinenowcast_delays_unit(x, delays_unit)
   }
 
@@ -1448,7 +1476,7 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
       cli::cli_li("kept columns: {.val {extra_cols}}")
     }
     cli::cli_li("format: {.val {format}}")
-    if (format == "matrix") {
+    if (format %in% c("matrix", "triangle_list")) {
       cli::cli_li("delays_unit: {.val {delays_unit}}")
     }
     cli::cli_end()
@@ -1458,9 +1486,77 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
     return(as.data.frame(long_data))
   }
 
+  if (format == "triangle_list") {
+    .need_pkg("baselinenowcast")
+
+    # Split into one group per observed strata combination. With no strata the
+    # result is still a list -- of length one, named "all" (the same convention
+    # `test_delay_drift()` uses) -- so the return type never depends on whether
+    # strata happen to be attached.
+    if (length(strata_cols) > 0) {
+      strata_frame <- as.data.frame(long_data)[, strata_cols, drop = FALSE]
+      labels <- do.call(paste, c(unname(as.list(strata_frame)), sep = " | "))
+    } else {
+      strata_frame <- NULL
+      labels <- rep("all", nrow(long_data))
+    }
+    group_rows <- split(seq_len(nrow(long_data)), labels)
+
+    triangles <- lapply(group_rows, function(rows) {
+      core <- as.data.frame(long_data)[
+        rows, c("reference_date", "report_date", "count"), drop = FALSE
+      ]
+      .tbl_now_one_triangle(core, delays_unit = delays_unit, ...)
+    })
+
+    # Keep the strata VALUES, one row per element, rather than parsing them back
+    # out of the label: a stratum containing the separator would not round-trip.
+    strata_values <- if (is.null(strata_frame)) {
+      NULL
+    } else {
+      do.call(
+        rbind,
+        lapply(group_rows, function(rows) strata_frame[rows[1], , drop = FALSE])
+      )
+    }
+    if (!is.null(strata_values)) rownames(strata_values) <- NULL
+
+    return(structure(
+      triangles,
+      class         = "tbl_now_triangle_list",
+      strata_cols   = strata_cols,
+      strata_values = strata_values,
+      now           = get_now(x),
+      event_col     = event_col,
+      report_col    = report_col,
+      delays_unit   = delays_unit
+    ))
+  }
+
   .need_pkg("baselinenowcast")
-  triangle <- baselinenowcast::as_reporting_triangle(
+  triangle <- .tbl_now_one_triangle(
     as.data.frame(long_data), delays_unit = delays_unit, ...
+  )
+  return(triangle)
+}
+
+#' Build one reporting triangle from canonical long counts
+#'
+#' Shared by `format = "matrix"` and `format = "triangle_list"` so both restore
+#' the not-yet-observed cells to `NA` in exactly the same way.
+#'
+#' @param core A data frame with `reference_date`, `report_date` and `count`.
+#' @param delays_unit Delay unit passed to
+#'   [baselinenowcast::as_reporting_triangle()].
+#' @param ... Forwarded to [baselinenowcast::as_reporting_triangle()].
+#'
+#' @return A `reporting_triangle` matrix.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_one_triangle <- function(core, delays_unit, ...) {
+  triangle <- baselinenowcast::as_reporting_triangle(
+    core, delays_unit = delays_unit, ...
   )
 
   # `as_reporting_triangle()` fills every in-triangle cell with 0; restore the
@@ -1469,7 +1565,7 @@ tbl_now_to_baselinenowcast <- function(x, ..., format = c("matrix", "long"),
   days_per_unit <- switch(delays_unit,
     days = 1, weeks = 7, months = 30, years = 365, 1
   )
-  na_long <- long_data[is.na(long_data$count), c("reference_date", "report_date")]
+  na_long <- core[is.na(core$count), c("reference_date", "report_date")]
   .restore_reporting_triangle_na(triangle, as.data.frame(na_long), days_per_unit)
 }
 
@@ -2047,18 +2143,30 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
 #' (tidy-evaluation), so pass them unquoted:
 #' `nowcasting_inla(df, date_onset = date_onset, date_report = date_report)`.
 #'
-#' \pkg{nowcaster}'s only native grouping is by **age** (`age_col` together with
-#' `bins_age`). A `tbl_now` stratum is not necessarily an age band, so strata are
-#' returned as ordinary columns rather than being forced into `age_col`; loop
-#' over them and fit one nowcast per stratum.
+#' \pkg{nowcaster} can stratify, but only through `age_col` + `bins_age`, and only
+#' on a **numeric** column it can [cut()] -- despite its help calling `age_col` a
+#' "stratum column", a character one errors. When the object carries strata this
+#' converter therefore pools them into a single label, codes it `1..n`, and
+#' returns it as `stratum_col` (default `"stratum_code"`), with two attributes:
+#'
+#' * `"nowcaster_bins"` -- breaks that put each level in its own bin, to pass as
+#'   `bins_age`.
+#' * `"nowcaster_levels"` -- the labels, in code order, to map the results back.
+#'
+#' The stratified fit then returns an extra `$age` component, one row per
+#' stratum per week, alongside the pooled `$total`.
 #'
 #' @param x A `tbl_now` object.
 #' @param event_col,report_col Names to give the event and report date columns
 #'   in the result. Default to `"date_onset"` and `"date_report"`.
+#' @param stratum_col Name for the numeric strata code column added when the
+#'   object carries strata. Default `"stratum_code"`.
 #' @param verbose Logical. Print the choices that were made.
 #' @param ... Currently unused, for extensibility.
 #'
-#' @return A `data.frame` line list with one row per case.
+#' @return A `data.frame` line list with one row per case. When the object has
+#'   strata it also carries `stratum_col` plus the `"nowcaster_bins"` and
+#'   `"nowcaster_levels"` attributes.
 #'
 #' @seealso [tbl_now_to_surveillance()], [tbl_now_to_epinowcast()]
 #'
@@ -2073,7 +2181,8 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
 #' @name tbl_now_nowcaster
 #' @export
 tbl_now_to_nowcaster <- function(x, ..., event_col = "date_onset",
-                                 report_col = "date_report", verbose = TRUE) {
+                                 report_col = "date_report",
+                                 stratum_col = "stratum_code", verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_nowcaster")
   .need_pkg("nowcaster", c(covid19br = "https://covid19br.r-universe.dev"))
 
@@ -2099,6 +2208,24 @@ tbl_now_to_nowcaster <- function(x, ..., event_col = "date_onset",
   linelist[[event_col]]  <- as.Date(linelist[[event_col]])
   linelist[[report_col]] <- as.Date(linelist[[report_col]])
 
+  # nowcaster CAN stratify, through `age_col` + `bins_age` -- but only on a
+  # NUMERIC column it can `cut()`. Its own help calls the argument a "stratum
+  # column", yet a character one hits `cut()`, and a character `bins_age` hits
+  # `if (bins_age == "SI-PNI")` with a vector. So pool the strata into one label,
+  # code it 1..n, and supply breaks that put each level in its own bin.
+  strata_levels <- NULL
+  if (length(strata_cols) > 0) {
+    labels <- do.call(
+      paste,
+      c(lapply(strata_cols, function(c1) as.character(linelist[[c1]])), sep = " | ")
+    )
+    strata_levels <- sort(unique(labels))
+    linelist[[stratum_col]] <- as.numeric(factor(labels, levels = strata_levels))
+    attr(linelist, "nowcaster_levels") <- strata_levels
+    # Breaks are half-integers so bin k holds exactly code k.
+    attr(linelist, "nowcaster_bins") <- c(0, seq_along(strata_levels) + 0.5)
+  }
+
   if (verbose) {
     cli::cli_h3("Converting {.cls tbl_now} into a {.pkg nowcaster} line list")
     cli::cli_ul()
@@ -2106,8 +2233,9 @@ tbl_now_to_nowcaster <- function(x, ..., event_col = "date_onset",
     cli::cli_li("{.arg date_report} <- {.val {report_col}}")
     if (length(strata_cols)) {
       cli::cli_li(
-        "strata {.val {strata_cols}} kept as column{?s}; \\
-         {.pkg nowcaster} groups only by age, so fit one nowcast per stratum"
+        "strata {.val {strata_cols}} pooled into {.val {stratum_col}} \\
+         ({length(strata_levels)} level{?s}); pass it as {.arg age_col} with \\
+         {.code bins_age = attr(x, \"nowcaster_bins\")}"
       )
     }
     cli::cli_end()
@@ -2116,6 +2244,127 @@ tbl_now_to_nowcaster <- function(x, ..., event_col = "date_onset",
   linelist
 }
 
+
+
+# tbl_now_triangle_list ---------------------------------------------------------
+
+#' One reporting triangle per stratum
+#'
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' The object returned by
+#' `tbl_now_to_baselinenowcast(x, format = "triangle_list")`: a list of
+#' [baselinenowcast::as_reporting_triangle()] matrices, one per observed
+#' combination of the object's strata, together with the metadata needed to
+#' rebuild a `tbl_now` from it.
+#'
+#' It is a **thin** class -- it is still a list, so `lapply()`, `[[` and friends
+#' work as usual:
+#'
+#' ```r
+#' triangles <- tbl_now_to_baselinenowcast(x, format = "triangle_list")
+#' lapply(triangles, baselinenowcast::baselinenowcast)
+#' ```
+#'
+#' The class exists for one reason. \pkg{baselinenowcast} has a function,
+#' [baselinenowcast::estimate_and_apply_delays()], whose first argument
+#' `retro_reporting_triangles` is *also* a list of triangles -- but a list of
+#' **retrospective** snapshots of one series, used to estimate uncertainty, not
+#' one triangle per stratum. Passing this object there would be accepted and
+#' would silently treat your strata as successive points in time. Printing the
+#' object says plainly what it is, so the mistake is visible rather than silent.
+#'
+#' @param x A `tbl_now_triangle_list`.
+#' @param ... Ignored.
+#'
+#' @return `print()` returns `x` invisibly.
+#'
+#' @seealso [tbl_now_to_baselinenowcast()], [as_tbl_now()]
+#'
+#' @name tbl_now_triangle_list
+NULL
+
+#' @rdname tbl_now_triangle_list
+#' @exportS3Method base::print
+print.tbl_now_triangle_list <- function(x, ...) {
+  # NOTE: a print method must write to STDOUT. The `cli_*()` family emits
+  # *messages*, so its output disappears under `message = FALSE`, `sink()` or
+  # `capture.output()` -- which is exactly where a print method is expected to
+  # work. The `cat_*()` family is the stdout counterpart.
+  strata_cols <- attr(x, "strata_cols")
+  dims <- vapply(x, function(one) paste(dim(one), collapse = " x "), character(1))
+
+  cli::cat_rule(
+    left = cli::format_inline("{length(x)} reporting triangle{?s} from a {.cls tbl_now}")
+  )
+  cli::cat_bullet(c(
+    if (length(strata_cols) > 0) {
+      cli::format_inline("One per stratum ({.val {strata_cols}}): {.val {names(x)}}")
+    } else {
+      cli::format_inline("No strata; a single triangle named {.val all}")
+    },
+    cli::format_inline("Delays unit: {.val {attr(x, 'delays_unit')}}"),
+    cli::format_inline("Now: {.val {as.character(attr(x, 'now'))}}"),
+    cli::format_inline("Dimensions (event x delay): {.val {unname(dims)}}")
+  ))
+  # NB: build the string with paste0() rather than cli's `\\` line
+  # continuation -- `format_inline()` does not strip those, so they would be
+  # printed literally.
+  cli::cat_line(cli::format_inline(paste0(
+    "{cli::symbol$info} This is one triangle per STRATUM. ",
+    "{.fn baselinenowcast::estimate_and_apply_delays} expects retrospective ",
+    "snapshots of a single series instead -- do not pass this object to it."
+  )))
+  invisible(x)
+}
+
+#' @rdname as_tbl_now
+#' @export
+as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
+  strata_cols   <- attr(object, "strata_cols")
+  strata_values <- attr(object, "strata_values")
+  delays_unit   <- attr(object, "delays_unit")
+  event_col     <- attr(object, "event_col")
+  report_col    <- attr(object, "report_col")
+
+  # Expand every triangle back to long incremental counts and re-attach the
+  # strata VALUES that were stored alongside it, rather than parsing the element
+  # names (a stratum containing the separator would not survive that).
+  pieces <- lapply(seq_along(object), function(i) {
+    long <- .reporting_triangle_to_long(object[[i]], delays_unit = delays_unit)
+    if (length(strata_cols) > 0 && nrow(long) > 0) {
+      long <- cbind(long, strata_values[rep(i, nrow(long)), , drop = FALSE])
+    }
+    long
+  })
+  long_data <- do.call(rbind, pieces)
+  rownames(long_data) <- NULL
+
+  # Back to the caller's own column names.
+  names(long_data)[match("reference_date", names(long_data))] <- event_col
+  names(long_data)[match("report_date", names(long_data))]    <- report_col
+
+  dots <- list(...)
+  if (is.null(dots$now)) dots$now <- attr(object, "now")
+
+  result <- do.call(
+    tbl_now,
+    c(
+      list(
+        long_data,
+        event_date  = event_col,
+        report_date = report_col,
+        case_count  = "count",
+        data_type   = "count-incidence",
+        strata      = if (length(strata_cols) > 0) strata_cols else NULL,
+        verbose     = FALSE
+      ),
+      dots
+    )
+  )
+
+  .drop_zero_counts(result)
+}
 
 # 4. S3 methods on other packages' coercion generics------
 #

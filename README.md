@@ -185,14 +185,12 @@ t_eff <- temporal_effects(
 )
 
 t_eff
-#> 
 #> ── Temporal Effects ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #> The following effects are in place:
 #> • "day_of_week"
 #> • "week_of_year"
 #> • "holidays":
-#>   1. New Year's Day, US Martin Luther King Jr. Day, US Presidents' Day, US Memorial Day, US Juneteenth, US Independence Day, US Labor Day, US Indigenous
-#>   Peoples' Day, US Veterans Day, US Thanksgiving, and Christmas
+#>     New Year's Day, US Martin Luther King Jr. Day, US Presidents' Day, US Memorial Day, US Juneteenth, US Independence Day, US Labor Day, US Indigenous Peoples' Day, US Veterans Day, US Thanksgiving, and Christmas
 ```
 
 Attach them to the dataset:
@@ -415,8 +413,8 @@ covidat_now |>
     #> 10 2020-03-12         4      NA          NA     FALSE all         NA     NA      NA     
     #> # ℹ 292 more rows
 
-Additional batch detection tools can be found in the [corresponding
-article](https://rodrigozepeda.github.io/tbl.now/articles/Example.html).
+Additional batch detection tools can be found in the [batch-reporting
+article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html).
 
 ### Extreme delays
 
@@ -451,7 +449,7 @@ censor_delays_above(tn, max_delay = 60)
 #> 4 2020-01-03   2020-10-27             2         300    298 TRUE         
 #> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2020-10-27 | Event date: "onset" | Report date: "reported"
-#> # Right-censored indicator: ".is_censored"
+#> # left-censored indicator: ".is_censored"
 #> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ```
 
@@ -460,8 +458,10 @@ censor_delays_above(tn, max_delay = 60)
 ## Learning more
 
 - Introduction vignette:
-  <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html>
-- Full walk-through with real CDC Flusight data:
+  <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
+  the full anatomy of a `tbl_now`, data types, and temporal effects.
+- End-to-end tutorial on real, messy surveillance data — cleaning,
+  diagnostics and nowcasting:
   <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
 - Tutorial on detecting batches and other reporting-delay artifacts:
   <https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html>

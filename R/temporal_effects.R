@@ -416,26 +416,35 @@ S7::method(print, temporal_effects) <- function(x, ...) {
   has_holiday_lags <- x@holiday_lags != 0
   has_weekend_lags <- x@weekend_lags != 0
 
-  cli::cli_h1("Temporal Effects")
+  # stdout (`cat_*`), not messages (`cli_*`): a print method's output has to
+  # survive `message = FALSE`, `sink()` and `capture.output()`.
+  cli::cat_rule(left = "Temporal Effects")
 
   if (length(effects_considered) + has_holidays + has_seasons +
         has_holiday_lags + has_weekend_lags > 0) {
-    cli::cli_text("The following effects are in place:")
-    cli::cli_ul()
-    for (eff in effects_considered) {
-      cli::cli_li("{.val {eff}}")
-    }
+    cli::cat_line("The following effects are in place:")
+
+    bullets <- vapply(
+      effects_considered,
+      function(eff) cli::format_inline("{.val {eff}}"),
+      character(1),
+      USE.NAMES = FALSE
+    )
 
     if (has_holiday_lags) {
       holiday_lag_dir <- .lag_direction_label(x@holiday_lags, "holiday")
       holiday_lag_label <- .lag_range_label(x@holiday_lags)
-      cli::cli_li("{.val {holiday_lag_dir}} effect: {.emph {holiday_lag_label}}")
+      bullets <- c(bullets, cli::format_inline(
+        "{.val {holiday_lag_dir}} effect: {.emph {holiday_lag_label}}"
+      ))
     }
 
     if (has_weekend_lags) {
       weekend_lag_dir <- .lag_direction_label(x@weekend_lags, "weekend")
       weekend_lag_label <- .lag_range_label(x@weekend_lags)
-      cli::cli_li("{.val {weekend_lag_dir}} effect: {.emph {weekend_lag_label}}")
+      bullets <- c(bullets, cli::format_inline(
+        "{.val {weekend_lag_dir}} effect: {.emph {weekend_lag_label}}"
+      ))
     }
 
     if (has_seasons) {
@@ -449,20 +458,22 @@ S7::method(print, temporal_effects) <- function(x, ...) {
           if (l == 1) as.character(p) else paste0(s, "*", l, "=", p)
         }, x@seasons, x@season_length, periods)
       }
-      cli::cli_li("{.val season} periods: {paste(season_strs, collapse = ', ')}")
+      bullets <- c(bullets, cli::format_inline(
+        "{.val season} periods: {paste(season_strs, collapse = ', ')}"
+      ))
     }
 
     if (has_holidays) {
-      cli::cli_li("{.val holidays}:")
-      if (!is.null(x@holidays$names)) {
-        cli::cli_ol()
-        cli::cli_li("{.emph {x@holidays$names}}")
-        cli::cli_end()
-      }
+      bullets <- c(bullets, cli::format_inline("{.val holidays}:"))
     }
-    cli::cli_end()
+
+    cli::cat_bullet(bullets)
+
+    if (has_holidays && !is.null(x@holidays$names)) {
+      cli::cat_line(cli::format_inline("    {.emph {x@holidays$names}}"))
+    }
   } else {
-    cli::cli_text("No temporal effects are considered.")
+    cli::cat_line("No temporal effects are considered.")
   }
 
   invisible(x)

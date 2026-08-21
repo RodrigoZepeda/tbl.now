@@ -1,134 +1,120 @@
 # nowcast_comparison -----------------------------------------------------------
 #
-# Fits every nowcasting engine covered by vignettes/articles/nowcasting-models.Rmd
-# to one common dengue window, and saves a tidy table of their nowcasts plus the
-# ground truth. The article reads the saved file and only draws the plots, so
-# editing the prose never re-runs Stan / JAGS / INLA.
+# Fits every engine covered by vignettes/articles/nowcasting-models.Rmd and saves
+# a tidy table of their nowcasts, the data each engine actually saw, and the
+# counts those weeks eventually reached.
 #
 # Run with:  source("data-raw/nowcast_comparison.R")
 # Output:    vignettes/articles/nowcast-comparison.rds
 #
-# WHY THIS WINDOW. The article's main `dengue_now` (onset >= 2009-01-01) runs to
-# the very end of `denguedat`, so its most recent weeks are still incomplete and
-# there is no ground truth to compare against. Here we use an EARLIER window of
-# comparable length (104 weeks in 2002-2003). Reports are truncated at `now`, so
-# each engine faces a genuine nowcasting problem, while the full `denguedat`
-# still holds the counts those weeks eventually reached -- the "truth" line.
+# IMPORTANT -- keep this file and the article in step. The calls below are the
+# calls the article shows. The article displays them with `eval = FALSE` and
+# reads the results from the saved file, because the Stan / JAGS / INLA fits are
+# far too slow to run on every build. If you change a call here, change it there.
 #
-# Engines: diseasenowcasting, baselinenowcast, epinowcast, NobBS, surveillance,
-# nowcaster. `epidist` is deliberately absent: it estimates the reporting-delay
-# distribution, not a case-count nowcast, so it has nothing to draw on this axis.
+# WHY THIS WINDOW. `denguedat` runs to the end of 2010. Cutting BOTH dates at
+# 2002-07-22 gives a `tbl_now` whose `now` is 2002-07-15 and whose recent weeks
+# are genuinely incomplete -- a real nowcasting problem -- while the full
+# `denguedat` still records what those weeks eventually reached. That is the
+# "truth" line. Mid-year is deliberate: a cut at the turn of the year lands on
+# the holiday reporting slump, which says more about December than about the
+# models.
+#
+# The exact week matters, because of nowcaster. `nowcasting_inla()` takes its
+# Tmax from the last **onset** in the data:
+#
+#     Tmax <- max(pull(data_w, date_onset))
+#     Y <- ifelse(Time + delay > Tmax.id, NA, Y)
+#
+# so every cell whose report lands after the last onset week is masked as
+# unobservable -- even when that report is right there in the data. If the final
+# onset week has no same-week report, `max(onset) < max(report)` and nowcaster
+# silently discards a whole diagonal of real reports, which is what made it look
+# as though it nowcast below the observed counts.
+#
+# At 2002-07-22 the last onset week (2002-07-15) does contain a same-week report,
+# so max(onset) == max(report) and nowcaster sees exactly what every other engine
+# sees: 105 of 105 weeks match, and it never estimates below the observed count.
+# At 2002-07-15 it lost one diagonal and 6 weeks came out low.
+#
+# TRIMMING. `diseasenowcasting` and `baselinenowcast` are given the WHOLE series
+# (677 weeks); they cope. The others are trimmed through their own arguments,
+# never by subsetting the data first: `moving_window` (NobBS), `wdw` (nowcaster),
+# `when` + `control$dRange` (surveillance). `epinowcast` has no such argument, so
+# it is trimmed before preprocessing.
 
 library(dplyr)
 devtools::load_all(".", quiet = TRUE)
 
-set.seed(20260819)
+set.seed(20260820)
 
-# -- the comparison window -----------------------------------------------------
+# -- the window ----------------------------------------------------------------
 
-WINDOW_START <- as.Date("2002-01-01")
-WINDOW_END   <- as.Date("2003-12-31")
-MAX_DELAY    <- 10L   # weeks; the delay window every engine is given
-N_HORIZON    <- 10L   # weeks back from `now` that we plot
+CUT       <- as.Date("2002-07-22")  # both dates strictly before this
+MAX_DELAY <- 10L                    # weeks of delay every engine is given
+TRIM      <- 104L                   # weeks kept by the engines that need trimming
+N_HORIZON <- 20L                    # weeks shown in the article's figures
 
 data(denguedat)
 
-window_data <- denguedat |>
-  filter(onset_week >= WINDOW_START, onset_week <= WINDOW_END)
+# Exactly the filter the article applies, on BOTH dates.
+dengue <- denguedat |>
+  filter(onset_week < CUT, report_week < CUT)
 
-NOW <- max(window_data$onset_week)
+NOW  <- max(dengue$report_week)
+grid <- sort(unique(dengue$onset_week))
+horizon <- utils::tail(grid, N_HORIZON)
 
-# What a nowcaster would actually have seen on `NOW`.
-observed_data <- window_data |> filter(report_week <= NOW)
-
-# The common weekly grid every engine's output is snapped onto.
-grid <- sort(unique(window_data$onset_week))
-horizon <- utils::tail(grid, N_HORIZON + 1L)
-
-# Engines aggregate onto their own week starts, which can sit a day or two off
-# `denguedat`'s Mondays, so every engine's dates are snapped onto the common
-# grid before anything is joined or plotted.
-#
-# The rule is CEILING -- the first grid week on or after the returned date --
-# not floor, and the difference matters. `denguedat` labels a week by its
-# MONDAY. \pkg{nowcaster} re-bins the line list onto its own TUESDAY-start
-# weeks, so its label 2003-12-02 covers Dec 2-8 and therefore holds the cases
-# `denguedat` files under 2003-12-08. Flooring would map it to 2003-12-01 and
-# shift that engine's whole curve a week early, making it look as though it
-# nowcast *below* the data it was given. Every other engine returns dates
-# already on the grid, and ceiling leaves those untouched.
-snap_to_grid <- function(dates, grid) {
-  dates <- as.Date(dates)
-  idx <- vapply(
-    dates,
-    function(d) {
-      hit <- which(grid >= d)
-      if (length(hit)) hit[1L] else NA_integer_
-    },
-    integer(1)
-  )
-  out <- rep(as.Date(NA), length(idx))
-  out[!is.na(idx)] <- grid[idx[!is.na(idx)]]
-  out
-}
-
-# -- ground truth --------------------------------------------------------------
+# -- truth and what was observed at `now` --------------------------------------
 
 truth_for <- function(full, seen, label) {
-  final <- full |> count(onset_week, name = "truth")
-  seen_n <- seen |> count(onset_week, name = "observed")
-  final |>
-    left_join(seen_n, by = "onset_week") |>
-    mutate(
-      observed = coalesce(observed, 0L),
-      stratum  = label
-    ) |>
+  full |>
+    count(onset_week, name = "truth") |>
+    left_join(seen |> count(onset_week, name = "observed"), by = "onset_week") |>
+    mutate(observed = coalesce(observed, 0L), stratum = label) |>
     rename(event_date = onset_week)
 }
 
+full_window <- denguedat |> filter(onset_week < CUT)  # all reports, incl. post-cut
+
 truth <- bind_rows(
-  truth_for(window_data, observed_data, "Total"),
-  window_data |>
-    group_split(gender) |>
-    lapply(function(g) {
-      lvl <- as.character(g$gender[1])
-      truth_for(g, observed_data |> filter(gender == lvl), lvl)
-    }) |>
-    bind_rows()
+  truth_for(full_window, dengue, "Total"),
+  lapply(split(full_window, full_window$gender), function(g) {
+    lvl <- as.character(g$gender[1])
+    truth_for(g, dengue |> filter(gender == lvl), lvl)
+  }) |> bind_rows()
 )
 
-# -- one tbl_now per stratum ---------------------------------------------------
+# -- the objects the article builds --------------------------------------------
 
-make_tbl_now <- function(data) {
+make_now <- function(data) {
   tbl_now(
     data,
-    event_date  = onset_week,
-    report_date = report_week,
-    data_type   = "linelist",
-    verbose     = FALSE
+    event_date = onset_week, report_date = report_week,
+    data_type = "linelist", verbose = FALSE
   )
 }
 
-objects <- list(Total = make_tbl_now(observed_data))
-for (lvl in levels(factor(observed_data$gender))) {
-  objects[[lvl]] <- make_tbl_now(observed_data |> filter(gender == lvl))
+objects <- list(Total = make_now(dengue))
+for (lvl in levels(factor(dengue$gender))) {
+  objects[[lvl]] <- make_now(dengue |> filter(gender == lvl))
+}
+
+# Engines that build their grid from the rows they get need the zero weeks.
+complete_to_now <- function(x) {
+  suppressWarnings(complete_zeroes(to_count(x, to = "count-incidence")))
 }
 
 # -- engine adapters -----------------------------------------------------------
 #
-# Each returns a tibble(event_date, estimate, lower, upper) or NULL. They are
-# called through `run_engine()`, which times them and turns a failure into a
-# warning rather than losing the whole run.
+# Each returns tibble(event_date, estimate, lower, upper). `lower`/`upper` are
+# NA when the engine gives no interval.
 
 fit_diseasenowcasting <- function(x) {
-  fit <- diseasenowcasting::nowcast(x, type = "one_stage", n_draws = 2000L)
-  # Use predict(), NOT summary(fit)$latent. `latent` is the smoothed LATENT
-  # epidemic curve, which legitimately sits below the reported counts and so is
-  # not comparable with the other engines' nowcasts. predict() returns the
-  # posterior draws of the eventual case counts, plus the event dates already on
-  # the data's own weekly grid.
+  # NO trimming, and the package's own defaults.
+  fit <- diseasenowcasting::nowcast(x)
   prediction <- stats::predict(fit)
-  draws <- S7::prop(prediction, "draws")           # draws x event times
+  draws <- S7::prop(prediction, "draws")
   tibble(
     event_date = S7::prop(prediction, "event_dates"),
     estimate   = apply(draws, 2, stats::median),
@@ -138,10 +124,34 @@ fit_diseasenowcasting <- function(x) {
 }
 
 fit_baselinenowcast <- function(x) {
-  triangle <- tbl_now_to_baselinenowcast(x, verbose = FALSE)
-  samples <- baselinenowcast::baselinenowcast(
-    triangle, output_type = "samples", draws = 1000
+  # NO trimming: the whole series.
+  #
+  # Completing the zero weeks out to `now` is what lets the triangle reach the
+  # final week -- but baselinenowcast refuses a triangle whose most recent
+  # reference times are all zero ("the method to iteratively complete the
+  # reporting triangle and estimate a delay PMF will be invalid"). A thin
+  # stratum can hit exactly that: here the female series has no case in the last
+  # week even though the pooled series does. Fall back to completing only as far
+  # as the last week that actually holds a case, which costs that stratum one
+  # week rather than the whole nowcast.
+  draw_from <- function(triangle) {
+    baselinenowcast::baselinenowcast(
+      triangle, output_type = "samples", draws = 1000
+    )
+  }
+  samples <- tryCatch(
+    draw_from(tbl_now_to_baselinenowcast(complete_to_now(x), verbose = FALSE)),
+    error = function(e) NULL
   )
+  if (is.null(samples)) {
+    counts <- to_count(x, to = "count-incidence")
+    last_seen <- max(counts[[get_event_date(counts)]], na.rm = TRUE)
+    message("      (baselinenowcast: completing only to ", format(last_seen), ")")
+    samples <- draw_from(tbl_now_to_baselinenowcast(
+      suppressWarnings(complete_zeroes(counts, until = last_seen)),
+      verbose = FALSE
+    ))
+  }
   as_tibble(samples) |>
     group_by(event_date = as.Date(.data$reference_date)) |>
     summarise(
@@ -153,9 +163,18 @@ fit_baselinenowcast <- function(x) {
 }
 
 fit_epinowcast <- function(x) {
-  enw <- tbl_now_to_epinowcast(x, verbose = FALSE, quiet = TRUE)
+  # Trimmed BEFORE preprocessing: epinowcast has no argument for it.
+  observations <- tbl_now_to_epinowcast(
+    x, preprocess = FALSE, verbose = FALSE, quiet = TRUE
+  )
+  recent <- epinowcast::enw_filter_reference_dates(
+    observations, include_days = TRIM * 7
+  )
+  preprocessed <- epinowcast::enw_preprocess_data(
+    recent, max_delay = MAX_DELAY, timestep = "week"
+  )
   fit <- epinowcast::epinowcast(
-    enw,
+    preprocessed,
     fit = epinowcast::enw_fit_opts(
       pp = TRUE, chains = 2, iter_sampling = 500, iter_warmup = 500,
       show_messages = FALSE, refresh = 0
@@ -171,14 +190,15 @@ fit_epinowcast <- function(x) {
 }
 
 fit_nobbs <- function(x) {
+  # Trimmed with NobBS's own `moving_window`.
   est <- NobBS::NobBS(
-    data        = as.data.frame(x),
-    now         = get_now(x),
-    units       = "1 week",
-    onset_date  = get_event_date(x),
-    report_date = get_report_date(x),
-    max_D       = MAX_DELAY,
-    moving_window = 52
+    data          = as.data.frame(x),
+    now           = get_now(x),
+    units         = "1 week",
+    onset_date    = get_event_date(x),
+    report_date   = get_report_date(x),
+    max_D         = MAX_DELAY,
+    moving_window = TRIM
   )$estimates
   tibble(
     event_date = as.Date(est$onset_date),
@@ -189,14 +209,17 @@ fit_nobbs <- function(x) {
 }
 
 fit_surveillance <- function(x) {
+  # Trimmed with `when`; `control$dRange` extends the grid to `now`, which a
+  # line list cannot express on its own (a zero week has no rows).
   linelist <- tbl_now_to_surveillance(x, verbose = FALSE)
-  when <- seq(get_now(x) - 7 * N_HORIZON, get_now(x), by = "1 week")
+  when   <- seq(get_now(x) - 7 * N_HORIZON, get_now(x), by = "1 week")
+  drange <- seq(min(linelist$dHospital), get_now(x), by = "1 week")
   fit <- surveillance::nowcast(
     now = get_now(x), when = when, data = linelist,
     dEventCol = "dHospital", dReportCol = "dReport",
     aggregate.by = "1 week", D = MAX_DELAY,
     method = "bayes.notrunc.bnb",
-    control = list(N.tInf.max = 1000, nSamples = 1000)
+    control = list(dRange = drange, N.tInf.max = 1000, nSamples = 1000)
   )
   tibble(
     event_date = as.Date(surveillance::epoch(fit)),
@@ -207,18 +230,47 @@ fit_surveillance <- function(x) {
     filter(!is.na(.data$estimate))
 }
 
-fit_nowcaster <- function(x) {
-  linelist <- tbl_now_to_nowcaster(x, verbose = FALSE)
+# nowcaster is the one engine fitted ONCE for all three panels: it stratifies
+# natively through `age_col`, so a single fit returns the pooled `$total` and the
+# per-stratum `$age`. `tbl_now_to_nowcaster()` supplies the numeric code column
+# and the matching breaks it needs (its `age_col` must be numeric, despite the
+# help calling it a "stratum column").
+#
+# Note `Dmax` is nowcaster's NOWCAST HORIZON -- how many past weeks it estimates
+# -- not a maximum delay. `wdw` is the fitting window.
+fit_nowcaster_all <- function(x_stratified) {
+  linelist <- tbl_now_to_nowcaster(x_stratified, verbose = FALSE)
+  levels_map <- attr(linelist, "nowcaster_levels")
+
   fit <- nowcaster::nowcasting_inla(
-    dataset = linelist, date_onset = date_onset, date_report = date_report,
-    data.by.week = TRUE, Dmax = MAX_DELAY, wdw = 30, silent = TRUE
+    dataset      = linelist,
+    date_onset   = date_onset,
+    date_report  = date_report,
+    age_col      = stratum_code,
+    bins_age     = attr(linelist, "nowcaster_bins"),
+    data.by.week = TRUE,
+    use.epiweek  = FALSE,
+    Dmax         = N_HORIZON,
+    wdw          = TRIM,
+    silent       = TRUE
   )
-  tibble(
+
+  pooled <- tibble(
     event_date = as.Date(fit$total$dt_event),
     estimate   = fit$total$Median,
     lower      = fit$total$LI,
-    upper      = fit$total$LS
+    upper      = fit$total$LS,
+    stratum    = "Total"
   )
+  by_stratum <- as.data.frame(fit$age)
+  per <- tibble(
+    event_date = as.Date(by_stratum$dt_event),
+    estimate   = by_stratum$Median,
+    lower      = by_stratum$LI,
+    upper      = by_stratum$LS,
+    stratum    = levels_map[as.integer(as.character(by_stratum$fx_etaria))]
+  )
+  dplyr::bind_rows(pooled, per)
 }
 
 ENGINES <- list(
@@ -226,9 +278,22 @@ ENGINES <- list(
   baselinenowcast   = fit_baselinenowcast,
   epinowcast        = fit_epinowcast,
   NobBS             = fit_nobbs,
-  surveillance      = fit_surveillance,
-  nowcaster         = fit_nowcaster
+  surveillance      = fit_surveillance
 )
+
+# Engines report on their own week starts; snap onto the data's grid. CEILING,
+# not floor -- see the article's caveats: nowcaster labels a week by its Tuesday,
+# so its label holds the cases `denguedat` files under the following Monday.
+snap_to_grid <- function(dates, grid) {
+  dates <- as.Date(dates)
+  idx <- vapply(dates, function(d) {
+    hit <- which(grid >= d)
+    if (length(hit)) hit[1L] else NA_integer_
+  }, integer(1))
+  out <- rep(as.Date(NA), length(idx))
+  out[!is.na(idx)] <- grid[idx[!is.na(idx)]]
+  out
+}
 
 run_engine <- function(name, fun, x, stratum) {
   message("  - ", name, " [", stratum, "] ...", appendLF = FALSE)
@@ -247,12 +312,11 @@ run_engine <- function(name, fun, x, stratum) {
     mutate(
       event_date = snap_to_grid(.data$event_date, grid),
       package    = name,
-      stratum    = stratum
+      stratum    = stratum,
+      seconds    = secs
     ) |>
     filter(!is.na(.data$event_date))
 }
-
-# -- run everything ------------------------------------------------------------
 
 results <- list()
 for (stratum in names(objects)) {
@@ -263,20 +327,48 @@ for (stratum in names(objects)) {
   }
 }
 
+# nowcaster: one stratified fit covers all three panels.
+message("== nowcaster (single stratified fit) ==")
+stratified <- tbl_now(
+  dengue,
+  event_date = onset_week, report_date = report_week,
+  strata = gender, data_type = "linelist", verbose = FALSE
+)
+nowcaster_rows <- tryCatch(
+  suppressWarnings(suppressMessages(fit_nowcaster_all(stratified))),
+  error = function(e) {
+    message("  - nowcaster FAILED: ", conditionMessage(e))
+    NULL
+  }
+)
+if (!is.null(nowcaster_rows)) {
+  message("  - nowcaster ok (", nrow(nowcaster_rows), " rows)")
+  results[[length(results) + 1L]] <- nowcaster_rows |>
+    mutate(
+      event_date = snap_to_grid(.data$event_date, grid),
+      package    = "nowcaster",
+      seconds    = NA_real_
+    ) |>
+    filter(!is.na(.data$event_date))
+}
+
 nowcasts <- bind_rows(results) |>
-  select(package, stratum, event_date, estimate, lower, upper) |>
+  select(package, stratum, event_date, estimate, lower, upper, seconds) |>
   arrange(package, stratum, event_date)
 
 comparison <- list(
   nowcasts = nowcasts,
   truth    = truth,
   meta = list(
-    now          = NOW,
-    window_start = WINDOW_START,
-    window_end   = WINDOW_END,
-    horizon      = horizon,
-    max_delay    = MAX_DELAY,
-    built_on     = Sys.Date(),
+    now           = NOW,
+    cut           = CUT,
+    window_start  = min(grid),
+    horizon       = horizon,
+    max_delay     = MAX_DELAY,
+    trim          = TRIM,
+    n_weeks       = length(grid),
+    n_cases       = nrow(dengue),
+    built_on      = Sys.Date(),
     package_order = names(ENGINES)
   )
 )
@@ -284,7 +376,7 @@ comparison <- list(
 saveRDS(comparison, "vignettes/articles/nowcast-comparison.rds")
 
 message(
-  "\nSaved ", nrow(nowcasts), " nowcast rows from ",
+  "\nSaved ", nrow(nowcasts), " rows from ",
   dplyr::n_distinct(nowcasts$package), " engine(s) across ",
   dplyr::n_distinct(nowcasts$stratum), " strata."
 )
@@ -292,13 +384,11 @@ print(nowcasts |> count(package, stratum) |> tidyr::pivot_wider(
   names_from = stratum, values_from = n, values_fill = 0L
 ))
 
-# -- alignment sanity check ----------------------------------------------------
+# -- sanity check --------------------------------------------------------------
 #
 # A nowcast estimates what a week will EVENTUALLY reach, so it should not sit
-# below what had already been reported by `now`. A whole engine landing under
-# the observed counts is the signature of a week-grid misalignment (see
-# `snap_to_grid()` above), not of a bad model, so flag it loudly here rather
-# than letting a misleading figure reach the article.
+# below what had already been reported by `now`. A whole engine landing under the
+# observed counts signals a week-grid misalignment rather than a bad model.
 alignment <- nowcasts |>
   inner_join(truth, by = c("stratum", "event_date")) |>
   filter(event_date %in% horizon) |>
@@ -309,16 +399,5 @@ alignment <- nowcasts |>
     worst_gap      = min(estimate - observed, na.rm = TRUE),
     .groups        = "drop"
   )
-
 message("\nAlignment check (estimate vs. what was already reported):")
 print(as.data.frame(alignment))
-
-suspect <- alignment |> filter(below_observed > weeks / 2)
-if (nrow(suspect)) {
-  warning(
-    "These engines nowcast below the observed data in most weeks, which \
-     usually means their dates were snapped onto the wrong grid week: ",
-    paste(suspect$package, collapse = ", "),
-    call. = FALSE
-  )
-}

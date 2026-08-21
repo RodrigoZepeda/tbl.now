@@ -231,3 +231,93 @@ test_that("complete_zeroes works with is_censored on count-cumulative data", {
   expect_false(anyNA(cz[["cens"]]))
   expect_false(anyNA(cz[[get_case_count(cz)]]))
 })
+
+# Regression tests for two problems found in 2026-08: the closing
+# "don't look into the future" filter deleted genuine rows at the final report
+# date, and completion stopped at the last *observed* event date, leaving a hole
+# exactly at the `now` edge (which is where nowcasting matters).
+
+make_gappy_tbl_now <- function() {
+  ndata <- dplyr::tibble(
+    event = rep(c(
+      as.Date("2020/01/01"), as.Date("2020/01/01"),
+      as.Date("2020/01/02"), as.Date("2020/01/04"),
+      as.Date("2020/01/04")
+    ), 2),
+    report = rep(c(
+      as.Date("2020/01/01"), as.Date("2020/01/02"),
+      as.Date("2020/01/02"), as.Date("2020/01/04"),
+      as.Date("2020/01/05")
+    ), 2),
+    n = c(4, 3, 7, 6, 3, 5, 2, 8, 4, 2),
+    sex = c(rep("Male", 5), rep("Female", 5))
+  )
+  tbl_now(ndata,
+    event_date = event, report_date = report, strata = sex,
+    case_count = n, data_type = "count-incidence", verbose = FALSE
+  )
+}
+
+test_that("complete_zeroes() does not drop cases at the final report date", {
+  x <- make_gappy_tbl_now()
+  completed <- complete_zeroes(x)
+
+  # Completing with zeroes must never change the number of cases.
+  expect_equal(
+    sum(completed[[get_case_count(completed)]]),
+    sum(x[[get_case_count(x)]])
+  )
+
+  # The rows reported on the last report date must survive.
+  last_report <- max(x[[get_report_date(x)]])
+  expect_equal(
+    sum(dplyr::filter(completed, report == last_report)[["n"]]),
+    sum(dplyr::filter(x, report == last_report)[["n"]])
+  )
+})
+
+test_that("complete_zeroes() completes up to the `now`, not just the last event", {
+  x <- make_gappy_tbl_now()
+  completed <- complete_zeroes(x)
+
+  # `now` (2020-01-05) is later than the last observed event date (2020-01-04).
+  expect_true(get_now(x) > max(x[["event"]]))
+  expect_equal(max(completed[["event"]]), get_now(x))
+
+  # Interior gaps are still filled.
+  expect_true(as.Date("2020-01-03") %in% completed[["event"]])
+
+  # Every event date from the first to the `now` is present, for every stratum.
+  expected <- seq(min(x[["event"]]), get_now(x), by = "1 day")
+  for (stratum in unique(completed[["sex"]])) {
+    expect_setequal(
+      unique(dplyr::filter(completed, sex == stratum)[["event"]]),
+      expected
+    )
+  }
+})
+
+test_that("complete_zeroes() honours `until` but never truncates the data", {
+  x <- make_gappy_tbl_now()
+
+  # An `until` earlier than the data must not remove event dates.
+  shrunk <- complete_zeroes(x, until = as.Date("2020-01-02"))
+  expect_equal(max(shrunk[["event"]]), max(x[["event"]]))
+  expect_equal(
+    sum(shrunk[[get_case_count(shrunk)]]),
+    sum(x[[get_case_count(x)]])
+  )
+})
+
+test_that("complete_zeroes() rejects a line list with actionable advice", {
+  ll <- tbl_now(
+    dplyr::tibble(
+      event  = as.Date(c("2020-01-01", "2020-01-02")),
+      report = as.Date(c("2020-01-02", "2020-01-03"))
+    ),
+    event_date = event, report_date = report,
+    data_type = "linelist", verbose = FALSE
+  )
+  expect_error(complete_zeroes(ll), "count-incidence")
+  expect_error(complete_zeroes(ll), "to_count")
+})
