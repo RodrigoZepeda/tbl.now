@@ -35,6 +35,7 @@ test_that("plot_delay_drift returns a ggplot that builds", {
 })
 
 test_that("plot_delay_drift honours window/step and by_strata", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
 
   nowobj <- make_drift_now(slope = 0.002, strata = TRUE)
@@ -45,6 +46,7 @@ test_that("plot_delay_drift honours window/step and by_strata", {
 })
 
 test_that("plot_delay_drift validates its input", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
 
   expect_error(plot_delay_drift(data.frame(a = 1)), "tbl_now")
@@ -66,6 +68,7 @@ test_that("test_delay_drift returns one tidy row per stat", {
 })
 
 test_that("test_delay_drift detects a real upward drift", {
+  skip_on_cran()
   skip_if_not_installed("modifiedmk")
 
   res <- test_delay_drift(
@@ -77,6 +80,7 @@ test_that("test_delay_drift detects a real upward drift", {
 })
 
 test_that("test_delay_drift does not flag a stationary series", {
+  skip_on_cran()
   skip_if_not_installed("modifiedmk")
 
   # Flat mean delay (slope 0); Hamed-Rao correction should keep this null.
@@ -87,6 +91,7 @@ test_that("test_delay_drift does not flag a stationary series", {
 })
 
 test_that("test_delay_drift runs per stratum", {
+  skip_on_cran()
   skip_if_not_installed("modifiedmk")
 
   res <- test_delay_drift(
@@ -97,6 +102,7 @@ test_that("test_delay_drift runs per stratum", {
 })
 
 test_that("test_delay_drift supports the block-bootstrap method", {
+  skip_on_cran()
   skip_if_not_installed("modifiedmk")
 
   res <- test_delay_drift(
@@ -133,6 +139,7 @@ make_step_now <- function(before = 1, after = 5, at = "2019-04-01",
 }
 
 test_that(".tbl_now_pettitt locates a clear step and guards edge cases", {
+  skip_on_cran()
   found <- tbl.now:::.tbl_now_pettitt(c(rep(0, 20), rep(5, 20)))
   expect_equal(found$index, 20)
   expect_lt(found$p_value, 0.05)
@@ -154,6 +161,7 @@ test_that("test_delay_changepoint returns one tidy row per stat", {
 })
 
 test_that("test_delay_changepoint detects an abrupt upward shift near the truth", {
+  skip_on_cran()
   res <- test_delay_changepoint(
     make_step_now(before = 1, after = 5, at = "2019-04-01"),
     stat = "mean", mature_only = FALSE
@@ -164,12 +172,14 @@ test_that("test_delay_changepoint detects an abrupt upward shift near the truth"
 })
 
 test_that("test_delay_changepoint runs per stratum", {
+  skip_on_cran()
   nowobj <- make_drift_now(slope = 0.003, strata = TRUE)
   res <- test_delay_changepoint(nowobj, stat = "median", by_strata = TRUE)
   expect_setequal(res$strata, c("a", "b"))
 })
 
 test_that("plot_delay_drift(changepoint = TRUE) adds a marker layer and validates", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
 
   p <- plot_delay_drift(make_step_now(), window = 30, step = 7, changepoint = TRUE)
@@ -184,6 +194,7 @@ test_that("plot_delay_drift(changepoint = TRUE) adds a marker layer and validate
 # --- internal helpers -------------------------------------------------------
 
 test_that("per-period series has one row per event date with spread columns", {
+  skip_on_cran()
   nowobj <- make_drift_now(slope = 0.002)
   dl <- tbl.now:::.tbl_now_delay_long(nowobj)
   series <- tbl.now:::.tbl_now_delay_period_series(dl)
@@ -193,6 +204,7 @@ test_that("per-period series has one row per event date with spread columns", {
 })
 
 test_that("maturity threshold drops the immature recent tail", {
+  skip_on_cran()
   nowobj <- make_drift_now(slope = 0.002)
   dl <- tbl.now:::.tbl_now_delay_long(nowobj)
   thr <- tbl.now:::.tbl_now_maturity_threshold(nowobj, dl, level = 0.95)

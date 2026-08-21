@@ -34,6 +34,7 @@ test_that("`[.tbl_now` preserves class on valid subset", {
 })
 
 test_that("`[.tbl_now` downgrades to tibble if protected columns are dropped", {
+  skip_on_cran()
   x <- make_test_tbl_now(n = 20)
 
   expect_warning(x[1:10, -1])
@@ -60,6 +61,7 @@ test_that("`names<-.tbl_now` preserves class if protected columns are not rename
 })
 
 test_that("`names<-.tbl_now` downgrades to tibble if a protected column is renamed", {
+  skip_on_cran()
   x <- make_test_tbl_now()
   # Rename the protected column "onset_week" (first column)
   original_names <- names(x)
@@ -193,6 +195,7 @@ test_that("`summarise.tbl_now` preserves class when valid", {
 })
 
 test_that("`summarise.tbl_now` drops class when protected columns are missing", {
+  skip_on_cran()
   x <- make_test_tbl_now()
   # This summary drops the protected column `onset_week`
   summarized_invalid <- suppressWarnings({ # Suppress 'Dropping `tbl_now` attributes' warning
@@ -206,6 +209,7 @@ test_that("`summarise.tbl_now` drops class when protected columns are missing", 
 })
 
 test_that("`summarise.grouped_tbl_now` works via delegation", {
+  skip_on_cran()
   x <- make_test_tbl_now()
   grouped <- x |> group_by(gender)
 
@@ -254,6 +258,7 @@ test_that("validate_tbl_now passes for valid tbl_now", {
 })
 
 test_that("validate_tbl_now fails for non-data.frame", {
+  skip_on_cran()
   expect_error(
     validate_tbl_now(list(a = 1, b = 2)),
     "must inherit from.*data.frame"
@@ -261,6 +266,7 @@ test_that("validate_tbl_now fails for non-data.frame", {
 })
 
 test_that("validate_tbl_now fails when required attributes are missing", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -274,6 +280,7 @@ test_that("validate_tbl_now fails when required attributes are missing", {
 })
 
 test_that("validate_tbl_now fails when event_date is not character", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -286,6 +293,7 @@ test_that("validate_tbl_now fails when event_date is not character", {
 })
 
 test_that("validate_tbl_now fails when report_date is not character", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -298,6 +306,7 @@ test_that("validate_tbl_now fails when report_date is not character", {
 })
 
 test_that("validate_tbl_now fails when report or event date is not date", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   for (type in c("report_date", "event_date")) {
@@ -313,6 +322,7 @@ test_that("validate_tbl_now fails when report or event date is not date", {
 })
 
 test_that("validate_tbl_now fails when is_censored is not logical", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
   ndata <- ndata |>
@@ -325,6 +335,7 @@ test_that("validate_tbl_now fails when is_censored is not logical", {
 })
 
 test_that("validate_tbl_now fails when now is not date", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -337,6 +348,7 @@ test_that("validate_tbl_now fails when now is not date", {
 })
 
 test_that("validate_tbl_now fails when data_type is not count, linelist or official", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -349,6 +361,7 @@ test_that("validate_tbl_now fails when data_type is not count, linelist or offic
 })
 
 test_that("validate_tbl_now fails when is_censored is not specified correctly", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -373,6 +386,7 @@ test_that("validate_tbl_now fails when is_censored is not specified correctly", 
 })
 
 test_that("validate_tbl_now fails when units is not valid", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -387,6 +401,7 @@ test_that("validate_tbl_now fails when units is not valid", {
 })
 
 test_that("arrange then mutate respects all groups (e.g. gender)", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |>
@@ -411,6 +426,7 @@ test_that("arrange then mutate respects all groups (e.g. gender)", {
 
 
 test_that("validate_tbl_now fails when columns don't exist", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -424,6 +440,7 @@ test_that("validate_tbl_now fails when columns don't exist", {
 })
 
 test_that("validate_tbl_now warns when report_date before event_date", {
+  skip_on_cran()
   bad_data <- data.frame(
     onset_week = as.Date(c("2020-07-15", "2020-07-22")),
     report_week = as.Date(c("2020-07-08", "2020-07-18")) # First is before event
@@ -453,12 +470,14 @@ test_that("is_tbl_now returns TRUE for valid tbl_now", {
 })
 
 test_that("is_tbl_now returns FALSE for regular data.frame", {
+  skip_on_cran()
   regular_df <- data.frame(x = 1:3, y = 4:6)
 
   expect_false(is_tbl_now(regular_df))
 })
 
 test_that("is_tbl_now returns FALSE for invalid tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -469,6 +488,7 @@ test_that("is_tbl_now returns FALSE for invalid tbl_now", {
 })
 
 test_that("is_tbl_now returns FALSE for object with tbl_now class but invalid structure", {
+  skip_on_cran()
   fake_tbl_now <- data.frame(x = 1:3)
   class(fake_tbl_now) <- c("tbl_now", "data.frame")
 
@@ -477,6 +497,7 @@ test_that("is_tbl_now returns FALSE for object with tbl_now class but invalid st
 
 # Tests for subsetting with [.tbl_now ----
 test_that("[.tbl_now maintains tbl_now class with valid subset", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata[1:2, ]
@@ -486,6 +507,7 @@ test_that("[.tbl_now maintains tbl_now class with valid subset", {
 })
 
 test_that("[.tbl_now maintains attributes", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata[1:2, ]
@@ -496,6 +518,7 @@ test_that("[.tbl_now maintains attributes", {
 })
 
 test_that("[.tbl_now drops to data.frame when removing protected columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Remove event_date column
@@ -509,6 +532,7 @@ test_that("[.tbl_now drops to data.frame when removing protected columns", {
 })
 
 test_that("[.tbl_now updates now when rows change", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   original_now <- get_now(test_data$ndata)
@@ -521,6 +545,7 @@ test_that("[.tbl_now updates now when rows change", {
 })
 
 test_that("[.tbl_now handles column selection", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Select specific columns including protected ones
@@ -533,6 +558,7 @@ test_that("[.tbl_now handles column selection", {
 
 # Tests for names<-.tbl_now ----
 test_that("names<-.tbl_now maintains tbl_now class with valid names", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- test_data$ndata
@@ -545,6 +571,7 @@ test_that("names<-.tbl_now maintains tbl_now class with valid names", {
 })
 
 test_that("names<-.tbl_now drops to data.frame when renaming protected columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   for (protected in c("onset_week", "report_week", ".event_num", ".report_num")) {
@@ -563,6 +590,7 @@ test_that("names<-.tbl_now drops to data.frame when renaming protected columns",
 
 # Tests for $<-.tbl_now ----
 test_that("$<-.tbl_now maintains tbl_now class when adding column", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- test_data$ndata
@@ -573,6 +601,7 @@ test_that("$<-.tbl_now maintains tbl_now class when adding column", {
 })
 
 test_that("$<-.tbl_now maintains tbl_now class when modifying column", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- test_data$ndata
@@ -582,6 +611,7 @@ test_that("$<-.tbl_now maintains tbl_now class when modifying column", {
 })
 
 test_that("$<-.tbl_now allows modifying non-protected columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- test_data$ndata
@@ -593,6 +623,7 @@ test_that("$<-.tbl_now allows modifying non-protected columns", {
 
 # Tests for dplyr_row_slice.tbl_now ----
 test_that("dplyr_row_slice maintains tbl_now with valid slice", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |> dplyr::slice(1:2)
@@ -602,6 +633,7 @@ test_that("dplyr_row_slice maintains tbl_now with valid slice", {
 })
 
 test_that("dplyr_row_slice preserves attributes", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |> dplyr::slice(1:3)
@@ -612,6 +644,7 @@ test_that("dplyr_row_slice preserves attributes", {
 
 # Tests for dplyr_col_modify.tbl_now ----
 test_that("dplyr_col_modify maintains tbl_now when adding columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |> dplyr::mutate(new_col = value * 2)
@@ -621,6 +654,7 @@ test_that("dplyr_col_modify maintains tbl_now when adding columns", {
 })
 
 test_that("dplyr_col_modify maintains tbl_now when modifying columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |> dplyr::mutate(value = value + 10)
@@ -629,6 +663,7 @@ test_that("dplyr_col_modify maintains tbl_now when modifying columns", {
 })
 
 test_that("dplyr_col_modify drops to tibble when removing protected columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_warning(
@@ -641,6 +676,7 @@ test_that("dplyr_col_modify drops to tibble when removing protected columns", {
 
 # Tests for group_by.tbl_now ----
 test_that("group_by creates grouped_tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |> dplyr::group_by(gender)
@@ -651,6 +687,7 @@ test_that("group_by creates grouped_tbl_now", {
 })
 
 test_that("group_by preserves tbl_now attributes", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |> dplyr::group_by(gender)
@@ -661,6 +698,7 @@ test_that("group_by preserves tbl_now attributes", {
 })
 
 test_that("group_by handles multiple grouping variables", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |> dplyr::group_by(gender, age_group)
@@ -670,6 +708,7 @@ test_that("group_by handles multiple grouping variables", {
 })
 
 test_that("group_by returns tbl_now when no groups specified", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Group by nothing
@@ -680,6 +719,7 @@ test_that("group_by returns tbl_now when no groups specified", {
 
 # Tests for ungroup.grouped_tbl_now ----
 test_that("ungroup removes grouping from grouped_tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   grouped <- test_data$ndata |> dplyr::group_by(gender)
@@ -690,6 +730,7 @@ test_that("ungroup removes grouping from grouped_tbl_now", {
 })
 
 test_that("ungroup preserves tbl_now attributes", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   grouped <- test_data$ndata |> dplyr::group_by(gender)
@@ -701,6 +742,7 @@ test_that("ungroup preserves tbl_now attributes", {
 })
 
 test_that("ungroup handles partial ungrouping", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   grouped <- test_data$ndata |> dplyr::group_by(gender, age_group)
@@ -713,6 +755,7 @@ test_that("ungroup handles partial ungrouping", {
 
 # Tests for summarise.tbl_now ----
 test_that("summarise maintains tbl_now when valid", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- suppressWarnings(
@@ -727,6 +770,7 @@ test_that("summarise maintains tbl_now when valid", {
 
 
 test_that("summarise drops to tibble when losing required columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_warning(
@@ -740,6 +784,7 @@ test_that("summarise drops to tibble when losing required columns", {
 })
 
 test_that("summarise with grouped_tbl_now works", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   grouped <- test_data$ndata |> dplyr::group_by(gender)
@@ -763,6 +808,7 @@ test_that("summarise with grouped_tbl_now works", {
 })
 
 test_that("summarize (American spelling) works", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Test that both spellings work
@@ -783,6 +829,7 @@ test_that("summarize (American spelling) works", {
 })
 
 test_that("summarize (American spelling) works in ungrouped", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Test that both spellings work
@@ -802,6 +849,7 @@ test_that("summarize (American spelling) works in ungrouped", {
 
 # Tests for tbl_now_reconstruct ----
 test_that("tbl_now_reconstruct maintains valid tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Simulate a dplyr operation
@@ -813,6 +861,7 @@ test_that("tbl_now_reconstruct maintains valid tbl_now", {
 })
 
 test_that("tbl_now_reconstruct drops to tibble when invalid", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Remove protected column
@@ -830,6 +879,7 @@ test_that("tbl_now_reconstruct drops to tibble when invalid", {
 })
 
 test_that("tbl_now_reconstruct updates strata when columns dropped", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Add multiple strata
@@ -849,6 +899,7 @@ test_that("tbl_now_reconstruct updates strata when columns dropped", {
 })
 
 test_that("tbl_now_reconstruct updates covariates when columns dropped", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Add multiple covariates
@@ -869,6 +920,7 @@ test_that("tbl_now_reconstruct updates covariates when columns dropped", {
 })
 
 test_that("tbl_now_reconstruct doesn't change now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   old_now <- get_now(test_data$ndata)
@@ -881,6 +933,7 @@ test_that("tbl_now_reconstruct doesn't change now", {
 
 # Tests for filtering ----
 test_that("filter maintains tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |> dplyr::filter(gender == "Male")
@@ -890,6 +943,7 @@ test_that("filter maintains tbl_now", {
 })
 
 test_that("filter preserves attributes", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |> dplyr::filter(value > 15)
@@ -899,6 +953,7 @@ test_that("filter preserves attributes", {
 })
 
 test_that("validate works with numeric", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |>
@@ -913,6 +968,7 @@ test_that("validate works with numeric", {
 })
 
 test_that("test dropping delay column", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_warning(
@@ -923,6 +979,7 @@ test_that("test dropping delay column", {
 })
 
 test_that("test dropping count column", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_warning(
@@ -935,6 +992,7 @@ test_that("test dropping count column", {
 
 # Tests for select ----
 test_that("select maintains tbl_now with protected columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |>
@@ -944,6 +1002,7 @@ test_that("select maintains tbl_now with protected columns", {
 })
 
 test_that("select drops to tibble without protected columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_warning(
@@ -956,6 +1015,7 @@ test_that("select drops to tibble without protected columns", {
 
 # Tests for arrange ----
 test_that("arrange maintains tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |> dplyr::arrange(desc(value))
@@ -965,6 +1025,7 @@ test_that("arrange maintains tbl_now", {
 })
 
 test_that("arrange preserves attributes", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |> dplyr::arrange(onset_week)
@@ -975,6 +1036,7 @@ test_that("arrange preserves attributes", {
 
 # Integration tests ----
 test_that("chaining dplyr verbs maintains tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |>
@@ -987,6 +1049,7 @@ test_that("chaining dplyr verbs maintains tbl_now", {
 })
 
 test_that("group_by then summarise works correctly", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- suppressWarnings(
@@ -1004,6 +1067,7 @@ test_that("group_by then summarise works correctly", {
 })
 
 test_that("complex dplyr operations maintain or drop class appropriately", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Should maintain
@@ -1025,6 +1089,7 @@ test_that("complex dplyr operations maintain or drop class appropriately", {
 
 # Tests for edge cases ----
 test_that("empty subset maintains structure", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |> dplyr::filter(value > 1000)
@@ -1034,6 +1099,7 @@ test_that("empty subset maintains structure", {
 })
 
 test_that("operations on grouped_tbl_now maintain structure", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$ndata |>

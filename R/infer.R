@@ -156,6 +156,7 @@ infer_units_one_column <- function(data, date_column, date_units) {
 #' @return Whether the data's date_units are `days` or `weeks`.
 #'
 #' @keywords internal
+#' @noRd
 infer_units <- function(data, date_column, date_units) {
   infer_units_one_column(data, date_units = date_units, date_column = date_column)
 }
@@ -170,6 +171,7 @@ infer_units <- function(data, date_column, date_units) {
 #' @return Whether the data is `count` or `linelist`
 #'
 #' @keywords internal
+#' @noRd
 infer_data_type <- function(data, data_type, event_date, report_date, strata = NULL,
                             is_censored = NULL, case_count = NULL, verbose = FALSE) {
   if (!is.null(case_count) && length(case_count) != 1) {

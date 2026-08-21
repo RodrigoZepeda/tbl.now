@@ -839,3 +839,32 @@ test_that("temporal_effects with holidays integrates correctly", {
   cols <- get_temporal_effect_cols(result)
   expect_true(any(grepl("holiday", cols)))
 })
+
+# The S7 print method is @noRd (documenting it created an Rd page aliased to the
+# bare name `print`, which tripped CRAN's unexported-examples check), so these
+# tests are its only executable coverage. Note cli writes to the *message*
+# stream, so capture with type = "message" rather than expect_output().
+print_lines <- function(x) {
+  paste(utils::capture.output(print(x), type = "message"), collapse = "\n")
+}
+
+test_that("print method for temporal_effects reports the active effects", {
+  txt <- print_lines(temporal_effects(day_of_week = TRUE, week_of_year = TRUE))
+  expect_match(txt, "Temporal Effects")
+  expect_match(txt, "day_of_week")
+  expect_match(txt, "week_of_year")
+
+  expect_match(print_lines(temporal_effects(seasons = 52)), "52")
+})
+
+test_that("print method reports when no effects are switched on", {
+  txt <- print_lines(temporal_effects(day_of_week = FALSE, week_of_year = FALSE))
+  expect_match(txt, "No temporal effects")
+})
+
+test_that("print method returns its input invisibly", {
+  te <- temporal_effects(day_of_week = TRUE)
+  res <- withVisible(print(te))
+  expect_false(res$visible)
+  expect_identical(res$value, te)
+})

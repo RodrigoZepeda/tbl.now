@@ -7,6 +7,7 @@
 #' all observations. Called for its side effects
 #'
 #' @keywords internal
+#' @noRd
 check_date_columns <- function(data, event_date, report_date) {
   # Force to data.frame to avoid dplyr_reconstruct issues
   data <- as.data.frame(data)
@@ -81,6 +82,7 @@ check_date_columns <- function(data, event_date, report_date) {
 #' are character, integers, or factors in the tibble `data`.
 #'
 #' @keywords internal
+#' @noRd
 check_strata <- function(data, strata) {
   # Check that the column is not null and exists in data
   if (!is.null(strata)) {
@@ -137,6 +139,7 @@ check_strata <- function(data, strata) {
 #' has valid values and is in the tibble `data`.
 #'
 #' @keywords internal
+#' @noRd
 check_delay_is_censored <- function(data, delay_is_censored) {
   # Check that the column is not null and exists in data
   if (!is.null(delay_is_censored)) {
@@ -203,6 +206,7 @@ check_delay_is_censored <- function(data, delay_is_censored) {
 #' `report_date`
 #'
 #' @keywords internal
+#' @noRd
 check_now <- function(data, event_date, report_date, now) {
   if (!is.null(now)) {
     # Check that now is a date
@@ -251,6 +255,7 @@ check_now <- function(data, event_date, report_date, now) {
 #' @return (invisible) `TRUE` if the date_units are valid or NULL
 #'
 #' @keywords internal
+#' @noRd
 check_units <- function(data, date_units) {
   valid_units <- c("days", "weeks", "numeric", "months", "years")
 
@@ -278,6 +283,7 @@ check_units <- function(data, date_units) {
 #' @return (invisible) `TRUE` if the verbose argument is valid
 #'
 #' @keywords internal
+#' @noRd
 check_verbose <- function(verbose) {
   # Check verbose is boolean
   if (!rlang::is_bool(verbose)) {
@@ -298,6 +304,7 @@ check_verbose <- function(verbose) {
 #' types for the model's inference.
 #'
 #' @keywords internal
+#' @noRd
 check_data_type <- function(data_type) {
   valid_types <- c("auto", "linelist", "count")
   if (!(data_type %in% valid_types)) {

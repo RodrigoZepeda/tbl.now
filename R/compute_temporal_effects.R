@@ -176,7 +176,7 @@ compute_temporal_effects <- function(x, overwrite = FALSE) {
 #' as_tibble(df_now, compute_temporal_effects = TRUE)
 #' as.data.frame(df_now, compute_temporal_effects = TRUE)
 #'
-#' @name tbl_now_coerce
+#' @name as_tibble.tbl_now
 NULL
 
 # Re-export tibble's `as_tibble()` generic so `as_tibble(<tbl_now>)` works after
@@ -186,25 +186,25 @@ NULL
 #' @export
 tibble::as_tibble
 
-#' @rdname tbl_now_coerce
+#' @rdname as_tibble.tbl_now
 #' @exportS3Method tibble::as_tibble
 as_tibble.tbl_now <- function(x, ..., compute_temporal_effects = FALSE) {
   tibble::as_tibble(.coerce_prep_tbl_now(x, compute_temporal_effects), ...)
 }
 
-#' @rdname tbl_now_coerce
+#' @rdname as_tibble.tbl_now
 #' @exportS3Method tibble::as_tibble
 as_tibble.grouped_tbl_now <- function(x, ..., compute_temporal_effects = FALSE) {
   tibble::as_tibble(.coerce_prep_tbl_now(x, compute_temporal_effects), ...)
 }
 
-#' @rdname tbl_now_coerce
+#' @rdname as_tibble.tbl_now
 #' @exportS3Method base::as.data.frame
 as.data.frame.tbl_now <- function(x, ..., compute_temporal_effects = FALSE) {
   as.data.frame(.coerce_prep_tbl_now(x, compute_temporal_effects), ...)
 }
 
-#' @rdname tbl_now_coerce
+#' @rdname as_tibble.tbl_now
 #' @exportS3Method base::as.data.frame
 as.data.frame.grouped_tbl_now <- function(x, ..., compute_temporal_effects = FALSE) {
   as.data.frame(.coerce_prep_tbl_now(x, compute_temporal_effects), ...)
