@@ -22,53 +22,8 @@ These examples have been omitted from the documentation using the `@noRd` tag
 ### Second round: `censor_delays_above()` in `compute_temporal_effects.Rd`,
 ### `tbl_now_attributes.Rd`, `tbl_now_coerce.Rd`
 
-Thank you — this one took some digging, because the named function was a red
-herring. `censor_delays_above()` *is* exported (`NAMESPACE` line 65) and is
-documented on its own `censor_delays_above.Rd`, not on any of the three pages
-listed. The same mismatch occurred in the previous round, where
-`as_tbl_now.tbl_now()` was reported "in `check_bool.Rd`" although that page's
-example only ever called `check_bool()`. We therefore treated the **file list**
-as the signal and audited it directly.
-
-Of the three pages, exactly one was genuinely at fault: **`tbl_now_coerce.Rd`**.
-It was generated from a roxygen `@name tbl_now_coerce` topic on a `NULL` block,
-so the page's `\name` referred to **no object at all**, and its only aliases were
-four S3 methods registered with `S3method()` and therefore unexported. The page
-carried `\examples` while nothing on it was exported. The other two pages
-(`compute_temporal_effects.Rd`, `tbl_now_attributes.Rd`) each document a single
-exported function and needed no change.
-
-Fixes applied:
-
-* The coercion page is now named after a real object (`@name as_tibble.tbl_now`
-  instead of the phantom `tbl_now_coerce`), making it structurally identical to
-  `autoplot.tbl_now.Rd` / `update.tbl_now.Rd` / `print.Rd` — S3-method pages that
-  passed both previous reviews. No exports changed.
-* We then audited **all 308 functions** in `R/`. 133 carry `@export` /
-  `@exportS3Method`, 158 carry `@noRd`, and 3 dot-prefixed helpers have no
-  roxygen block (so generate no page). The remaining **15** had only
-  `@keywords internal` — they generated Rd pages for unexported functions — and
-  have now been given an explicit `@noRd`, removing those 15 pages. None of them
-  had examples, and we verified no surviving page cross-references them.
-* Result: **no Rd page in the package now has `\examples` while nothing on the
-  page is exported.**
-
-A second page had the same defect and is fixed too: **`print.Rd`**. It came from
-`@name print` on a `NULL` block documenting an S7 method, so it produced a page
-aliased to the bare name **`print`** — squatting the base generic's `?print`
-topic — with examples and nothing exported. (The `@export` on an
-`S7::method()<-` assignment produces no NAMESPACE entry at all; registration is
-done by `S7::methods_register()` in `.onLoad()`.) That method is now `@noRd`,
-and its examples were replaced by unit tests so the behaviour stays covered.
-
-To keep this from recurring we added a maintainer script,
-`devel/check_unexported_examples.R` (not shipped; `devel/` is in
-`.Rbuildignore`). A page is treated as safe only if it *both* carries
-`\method{generic}{class}` markup *and* has a `\name` that resolves to a real
-object; either criterion alone was insufficient. We validated the script by
-running it against the two previously rejected states: it reproduces the genuine
-findings (`check_bool.Rd`, `infer_now.Rd`, `infer_units_one_column.Rd`,
-`tbl_now_coerce.Rd`) and is clean on the current tree.
+Thank you. We have fixed the missing examples checking one by one we
+are correctly exporting all of them. 
 
 ## 3. `\dontrun{}` used where not necessary
 
