@@ -330,6 +330,34 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 4 more variables: new_report_week &lt;date&gt;, age_group &lt;chr&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   temperature &lt;dbl&gt;, humidity &lt;dbl&gt;</span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Bring `now` back to the latest date actually observed</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">update_now</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  52,987 × 11</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    onset_week report_week gender   .event_num .report_num .delay new_onset_week</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[...]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[strata]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span> <span style="color: #949494;">[event_date]</span>  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 1990-01-01 1990-01-01  Male              0           0      0 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 1990-01-01 1990-01-01  Female            0           0      0 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 1990-01-01 1990-01-01  Female            0           0      0 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 1990-01-01 1990-01-08  Male              0           1      1 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 1990-01-01 1990-01-15  Female            0           2      2 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 1990-01-01 1990-01-15  Female            0           2      2 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 1990-01-01 1990-01-15  Female            0           2      2 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-19</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span> and <span style="color: #0000BB;">"age_group"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Covariates: <span style="color: #0000BB;">"temperature"</span> and <span style="color: #0000BB;">"humidity"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 52,977 more rows</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 4 more variables: new_report_week &lt;date&gt;, age_group &lt;chr&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   temperature &lt;dbl&gt;, humidity &lt;dbl&gt;</span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Change case count column</span></span></span>
 <span class="r-in"><span><span class="va">count_data</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="to_count.html">to_count</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"count-incidence"</span><span class="op">)</span></span></span>
@@ -354,7 +382,7 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1989-12-31     1990-01-07               0           1 Female   20-60    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1989-12-31     1990-01-07               0           1 Female   20-60    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2025-01-01</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-19</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span> and <span style="color: #0000BB;">"age_group"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Covariates: <span style="color: #0000BB;">"temperature"</span> and <span style="color: #0000BB;">"humidity"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
@@ -384,7 +412,7 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2025-01-01</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-19</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Right-censored indicator: <span style="color: #0000BB;">"is_censored"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span> and <span style="color: #0000BB;">"age_group"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Covariates: <span style="color: #0000BB;">"temperature"</span> and <span style="color: #0000BB;">"humidity"</span></span>
@@ -415,7 +443,7 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2025-01-01</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-19</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Right-censored indicator: <span style="color: #0000BB;">"is_censored"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span> and <span style="color: #0000BB;">"age_group"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Covariates: <span style="color: #0000BB;">"temperature"</span> and <span style="color: #0000BB;">"humidity"</span></span>
@@ -449,7 +477,7 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2025-01-01</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-19</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Right-censored indicator: <span style="color: #0000BB;">"is_censored"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span> and <span style="color: #0000BB;">"age_group"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Covariates: <span style="color: #0000BB;">"temperature"</span> and <span style="color: #0000BB;">"humidity"</span></span>
@@ -480,7 +508,7 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2025-01-01</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-19</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Right-censored indicator: <span style="color: #0000BB;">"is_censored"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span> and <span style="color: #0000BB;">"age_group"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Covariates: <span style="color: #0000BB;">"temperature"</span> and <span style="color: #0000BB;">"humidity"</span></span>
@@ -509,7 +537,7 @@ a tibble. For example:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2025-01-01</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2010-12-19</span> | Event date: <span style="color: #0000BB;">"new_onset_week"</span> | Report date: <span style="color: #0000BB;">"new_report_week"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Right-censored indicator: <span style="color: #0000BB;">"is_censored"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"gender"</span> and <span style="color: #0000BB;">"age_group"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Covariates: <span style="color: #0000BB;">"temperature"</span> and <span style="color: #0000BB;">"humidity"</span></span>

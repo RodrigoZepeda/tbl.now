@@ -22,6 +22,14 @@
 
   Transform an object into a `tbl_now`
 
+- [`as_tibble(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/as_tibble.tbl_now.md)
+  [`as_tibble(`*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/as_tibble.tbl_now.md)
+  [`as.data.frame(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/as_tibble.tbl_now.md)
+  [`as.data.frame(`*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/as_tibble.tbl_now.md)
+  **\[experimental\]** :
+
+  Coerce a `tbl_now` to a tibble or a data frame
+
 - [`` `[`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
   [`` `[`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/assign_tbl.md)
   **\[stable\]** :
@@ -172,9 +180,6 @@
 - [`plot_transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_transport_discriminant.md)
   **\[experimental\]** : Plot the transport-discriminant plane
 
-- [`print()`](https://rodrigozepeda.github.io/tbl.now/reference/print.md)
-  **\[stable\]** : Print temporal effects
-
 - [`remove_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
   [`remove_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
   [`remove_all_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
@@ -207,14 +212,6 @@
   **\[experimental\]** :
 
   Convert between `tbl_now` and baselinenowcast
-
-- [`as_tibble(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coerce.md)
-  [`as_tibble(`*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coerce.md)
-  [`as.data.frame(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coerce.md)
-  [`as.data.frame(`*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coerce.md)
-  **\[experimental\]** :
-
-  Coerce a `tbl_now` to a tibble or a data frame
 
 - [`as_epidist_linelist_data(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)
   [`as_epidist_aggregate_data(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md)

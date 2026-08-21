@@ -124,6 +124,30 @@ dengue_now <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
 plot_week_of_year_effects(dengue_now)
 
 
+# By day type (weekday / weekend / holiday), once a holiday calendar is attached
+holiday_now <- dengue_now |>
+  add_temporal_effects(temporal_effects(weekend = TRUE, holidays = almanac::cal_us_federal()))
+plot_holiday_effects(holiday_now)
+
+
+# By position relative to the nearest holiday
+holiday_lag_now <- dengue_now |>
+  add_temporal_effects(temporal_effects(holidays = almanac::cal_us_federal(), holiday_lags = 2))
+plot_holiday_lag_effects(holiday_lag_now)
+
+
+# By month, on monthly-unit data
+monthly_now <- tbl_now(
+  data.frame(
+    event_date  = seq(as.Date("2018-01-01"), as.Date("2021-12-01"), by = "month"),
+    report_date = seq(as.Date("2018-02-01"), as.Date("2022-01-01"), by = "month")
+  ),
+  event_date, report_date,
+  event_units = "months", report_units = "months", verbose = FALSE
+)
+plot_month_of_year_effects(monthly_now)
+
+
 # \donttest{
 # ... and how the reporting does
 plot_week_of_year_effects(dengue_now, type = "report")

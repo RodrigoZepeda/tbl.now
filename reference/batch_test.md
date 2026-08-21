@@ -75,9 +75,8 @@ batch_test(
 ## Value
 
 A tibble of class `batch_test`, one row per (report date, stratum), with
-a
-[`print()`](https://rodrigozepeda.github.io/tbl.now/reference/print.md)
-method that summarises the flagged dates. Columns:
+a [`print()`](https://rdrr.io/r/base/print.html) method that summarises
+the flagged dates. Columns:
 
 - `report_date`:
 

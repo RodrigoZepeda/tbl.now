@@ -284,6 +284,34 @@ ndata
 #> # ℹ 4 more variables: new_report_week <date>, age_group <chr>,
 #> #   temperature <dbl>, humidity <dbl>
 
+# Bring `now` back to the latest date actually observed
+ndata <- ndata |> update_now()
+ndata
+#> # A tibble:  52,987 × 11
+#> # Data type: "linelist"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>    onset_week report_week gender   .event_num .report_num .delay new_onset_week
+#>    <date>     <date>      <chr>         <dbl>       <dbl>  <dbl> <date>        
+#>    [...]      [...]       [strata]      [...]       [...]  [...] [event_date]  
+#>  1 1990-01-01 1990-01-01  Male              0           0      0 1989-12-31    
+#>  2 1990-01-01 1990-01-01  Female            0           0      0 1989-12-31    
+#>  3 1990-01-01 1990-01-01  Female            0           0      0 1989-12-31    
+#>  4 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
+#>  5 1990-01-01 1990-01-08  Male              0           1      1 1989-12-31    
+#>  6 1990-01-01 1990-01-15  Female            0           2      2 1989-12-31    
+#>  7 1990-01-01 1990-01-15  Female            0           2      2 1989-12-31    
+#>  8 1990-01-01 1990-01-15  Female            0           2      2 1989-12-31    
+#>  9 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    
+#> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2010-12-19 | Event date: "new_onset_week" | Report date: "new_report_week"
+#> # Strata: "gender" and "age_group"
+#> # Covariates: "temperature" and "humidity"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 52,977 more rows
+#> # ℹ 4 more variables: new_report_week <date>, age_group <chr>,
+#> #   temperature <dbl>, humidity <dbl>
+
 # Change case count column
 count_data <- ndata |>
   to_count(to = "count-incidence")
@@ -308,7 +336,7 @@ count_data |>
 #>  9 1989-12-31     1990-01-07               0           1 Female   20-60    
 #> 10 1989-12-31     1990-01-07               0           1 Female   20-60    
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
+#> # Now: 2010-12-19 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # Strata: "gender" and "age_group"
 #> # Covariates: "temperature" and "humidity"
 #> # ────────────────────────────────────────────────────────────────────────────────
@@ -338,7 +366,7 @@ ndata
 #>  9 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
+#> # Now: 2010-12-19 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # Right-censored indicator: "is_censored"
 #> # Strata: "gender" and "age_group"
 #> # Covariates: "temperature" and "humidity"
@@ -369,7 +397,7 @@ ndata
 #>  9 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
+#> # Now: 2010-12-19 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # Right-censored indicator: "is_censored"
 #> # Strata: "gender" and "age_group"
 #> # Covariates: "temperature" and "humidity"
@@ -403,7 +431,7 @@ ndata |> compute_temporal_effects()
 #>  9 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
+#> # Now: 2010-12-19 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # Right-censored indicator: "is_censored"
 #> # Strata: "gender" and "age_group"
 #> # Covariates: "temperature" and "humidity"
@@ -434,7 +462,7 @@ ndata |> replace_temporal_effects(t_effects = temporal_effects(seasons = 52))
 #>  9 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
+#> # Now: 2010-12-19 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # Right-censored indicator: "is_censored"
 #> # Strata: "gender" and "age_group"
 #> # Covariates: "temperature" and "humidity"
@@ -463,7 +491,7 @@ ndata |> remove_temporal_effects()
 #>  9 1990-01-01 1990-01-22  Female            0           3      3 1989-12-31    
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2025-01-01 | Event date: "new_onset_week" | Report date: "new_report_week"
+#> # Now: 2010-12-19 | Event date: "new_onset_week" | Report date: "new_report_week"
 #> # Right-censored indicator: "is_censored"
 #> # Strata: "gender" and "age_group"
 #> # Covariates: "temperature" and "humidity"
