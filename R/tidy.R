@@ -253,13 +253,62 @@ tidy.stsNC <- function(x, probs = NULL, ...) {
   .reject_probs(probs, "surveillance")
   estimate <- as.numeric(surveillance::upperbound(x))
   keep <- !is.na(estimate)
+
+  # An `stsNC` carries its prediction interval in the `pi` slot: a
+  # (time x unit x 2) array of lower/upper bounds. The Bayesian methods fill it,
+  # `lawless` and `unif` may not, so fall back to NA rather than assume.
+  bounds <- .stsNC_interval(x, keep)
+
   .tidy_nowcast_frame(
     event_date = as.Date(surveillance::epoch(x))[keep],
     estimate   = estimate[keep],
-    conf.low   = NA_real_,
-    conf.high  = NA_real_,
-    level      = NA_real_,
+    conf.low   = bounds$conf.low,
+    conf.high  = bounds$conf.high,
+    level      = bounds$level,
     engine     = "surveillance"
+  )
+}
+
+#' Pull the prediction interval off an `stsNC` object
+#'
+#' The width is whatever `nowcast()` was given as `control$alpha` (0.05 by
+#' default, i.e. a 95% interval); the slot's third dimension is named with the
+#' two quantiles, so it can be recovered from there when `alpha` is missing.
+#'
+#' @param x An `stsNC` object.
+#' @param keep Logical vector selecting the rows with a non-`NA` estimate.
+#'
+#' @returns A list with `conf.low`, `conf.high` and `level`, all `NA` when the
+#'   method produced no interval.
+#'
+#' @noRd
+.stsNC_interval <- function(x, keep) {
+  empty <- list(
+    conf.low  = rep(NA_real_, sum(keep)),
+    conf.high = rep(NA_real_, sum(keep)),
+    level     = NA_real_
+  )
+
+  pi <- methods::slot(x, "pi")
+  if (is.null(pi) || length(dim(pi)) != 3L || all(is.na(pi))) {
+    return(empty)
+  }
+
+  alpha <- x@control$alpha
+  level <- if (is.numeric(alpha) && length(alpha) == 1L) {
+    1 - alpha
+  } else {
+    # e.g. c("2.5%", "97.5%") -> 0.95.
+    tails <- suppressWarnings(
+      as.numeric(sub("%$", "", dimnames(pi)[[3]])) / 100
+    )
+    if (length(tails) == 2L && !anyNA(tails)) diff(tails) else NA_real_
+  }
+
+  list(
+    conf.low  = as.numeric(pi[keep, 1L, 1L]),
+    conf.high = as.numeric(pi[keep, 1L, 2L]),
+    level     = level
   )
 }
 
@@ -277,16 +326,34 @@ tidy.stsNC <- function(x, probs = NULL, ...) {
 #' @keywords internal
 #' @noRd
 tidy_nowcast_prediction <- function(x, probs = NULL, ...) {
-  draws <- S7::prop(x, "draws")
-  .tidy_nowcast_frame(
-    event_date = S7::prop(x, "event_dates"),
-    estimate   = apply(draws, 2, stats::median),
-    conf.low   = apply(draws, 2, stats::quantile, probs = 0.025),
-    conf.high  = apply(draws, 2, stats::quantile, probs = 0.975),
-    level      = 0.95,
-    engine     = "diseasenowcasting",
-    quantiles  = .tidy_quantiles_from_draws(draws, probs)
-  )
+  event_dates   <- S7::prop(x, "event_dates")
+  strata_draws  <- S7::prop(x, "strata_draws")
+  strata_levels <- S7::prop(x, "strata_levels")
+
+  summarise_draws <- function(draws, stratum) {
+    .tidy_nowcast_frame(
+      event_date = event_dates,
+      estimate   = apply(draws, 2, stats::median),
+      conf.low   = apply(draws, 2, stats::quantile, probs = 0.025),
+      conf.high  = apply(draws, 2, stats::quantile, probs = 0.975),
+      level      = 0.95,
+      engine     = "diseasenowcasting",
+      stratum    = stratum,
+      quantiles  = .tidy_quantiles_from_draws(draws, probs)
+    )
+  }
+
+  # A stratified fit carries `strata_draws`: draws x event times x stratum.
+  # Report one block per stratum, matching what the other engines do; the
+  # pooled `draws` slot is only used when there are no strata.
+  if (!is.null(strata_draws) && length(strata_levels) > 0L) {
+    per_stratum <- lapply(seq_along(strata_levels), function(k) {
+      summarise_draws(strata_draws[, , k, drop = TRUE], strata_levels[k])
+    })
+    return(dplyr::bind_rows(per_stratum))
+  }
+
+  summarise_draws(S7::prop(x, "draws"), "all")
 }
 
 #' @rdname tidy.nowcast

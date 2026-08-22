@@ -274,12 +274,21 @@ code {
 }
 
 /* --------------------------------------------------------------------------
-   Code blocks must SCROLL sideways, never wrap. pkgdown/Bootstrap set
-   `white-space: pre-wrap` (and `word-break`) on `code` inside `pre`, which wins
-   over a bare `pre` rule and folds long lines onto a second line. Pin every
-   layer that can wrap, and put the scrollbar on the wrapper pandoc actually
-   emits (`div.sourceCode`) as well as on `pre`.
+   Code blocks must SCROLL sideways, never wrap.
+
+   Two separate jobs, and mixing them is what produced a stray empty scrollbar
+   track ("a rectangle") under every chunk:
+
+     1. NO WRAPPING -- pkgdown/Bootstrap set `white-space: pre-wrap` on `code`
+        inside `pre`, which beats a bare `pre` rule and folds long lines. That
+        has to be pinned on every layer, `code` included.
+     2. SCROLLING -- must be set ONLY on the container (`div.sourceCode`, `pre`).
+        Putting `overflow-x` on the inner `<code>` as well makes it a second
+        scroll container, and each one reserves a horizontal scrollbar gutter
+        even when there is nothing to scroll.
    -------------------------------------------------------------------------- */
+
+/* 1. Nothing wraps, at any level. */
 div.sourceCode,
 div.sourceCode pre,
 pre.sourceCode,
@@ -292,14 +301,20 @@ pre code.hljs,
   word-wrap: normal !important;
   word-break: normal !important;
   overflow-wrap: normal !important;
+}
+
+/* 2. Only the container scrolls. */
+div.sourceCode,
+pre.sourceCode,
+.section pre {
   overflow-x: auto !important;
 }
 
-/* The inner <code> must not create its own scroll context, or the wrapper's
-   scrollbar never appears. */
-div.sourceCode pre code {
-  overflow-x: visible !important;
-  display: block;
+/* The inner <code> stays inline and never scrolls, so no second gutter. */
+div.sourceCode pre code,
+pre.sourceCode code,
+.section pre code {
+  overflow: visible !important;
 }
 
 pre, pre code {
@@ -327,4 +342,26 @@ pre, .markdown-body pre, pre code, .output pre {
 /* Ensure the container background matches seamlessly */
 div.pre {
   background-color: #ebefeb !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   Figure captions: centred, smaller and grey, so they read as a caption rather
+   than as body text.
+   -------------------------------------------------------------------------- */
+.figure > .caption,
+.figure figcaption,
+p.caption,
+figcaption {
+  text-align: center !important;
+  font-size: 0.875rem !important;
+  color: #6b7280 !important;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+/* Keep the figure itself centred with its caption. */
+.figure,
+figure {
+  text-align: center;
 }

@@ -21,6 +21,8 @@ tbl_now_to_baselinenowcast(
   ...,
   format = c("matrix", "long", "triangle_list"),
   delays_unit = NULL,
+  complete = "auto",
+  negatives = c("redistribute", "error"),
   verbose = TRUE
 )
 }
@@ -60,6 +62,22 @@ whether strata happen to be present. Unlike splitting the long format
 yourself, the delay unit and the strata are taken from the object, and
 \code{\link[=as_tbl_now]{as_tbl_now()}} can rebuild a \code{tbl_now} from the result.
 }}
+
+\item{complete}{For \code{to} with a triangle format: fill event periods that have
+no reports at all with zeroes, out to the object's \code{\link[=get_now]{get_now()}}, via
+\code{\link[=complete_zeroes]{complete_zeroes()}}. \code{"auto"} (the default) does this for \strong{line-list}
+input only, so you do not have to remember
+\code{to_count() |> complete_zeroes()} first. Count data is left exactly as
+supplied, because it \emph{can} distinguish an observed zero from a cell that
+could not be observed yet (\code{NA}) and filling those would claim reporting was
+complete when it was not. \code{TRUE} / \code{FALSE} force either behaviour. Ignored
+for \code{format = "long"}.}
+
+\item{negatives}{How to handle the negative increments that appear when
+\code{count-cumulative} data is de-accumulated (a downward revision).
+\code{"redistribute"} (default) absorbs each negative into earlier delays with
+\code{\link[baselinenowcast:preprocess_negative_values]{baselinenowcast::preprocess_negative_values()}}, which is what that
+function exists for; \code{"error"} refuses cumulative input instead.}
 }
 \value{
 A \code{tbl_now} (\code{from}), or a \code{data.frame}, \code{reporting_triangle} or
@@ -100,6 +118,25 @@ the \code{tbl_now()}.
 
 On the way back, \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}} fills the
 in-triangle cells with \code{0} unless they are marked in the tibble as \code{NA}.
+}
+
+\section{Censored delays}{
+
+
+A censoring indicator that is a property of the \strong{case} rather than of the
+delay -- an administrative "this date is only an upper bound" mark, say --
+puts a censored and an uncensored row in the same
+\verb{(event_date, report_date)} cell. A reporting triangle has one slot per cell,
+so the extra dimension has to go before the conversion. It is removed
+automatically, with a warning either way:
+\itemize{
+\item \strong{count data}: the counts are summed over the flag, leaving case totals
+unchanged;
+\item \strong{line lists}: the column is dropped, leaving one row per case.
+}
+
+\code{\link[=tbl_now_to_epidist]{tbl_now_to_epidist()}} is the exception and keeps the flag: estimating a
+delay distribution is the one job that can use it.
 }
 
 \examples{

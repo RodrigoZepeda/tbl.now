@@ -94,3 +94,72 @@ test_that("tidy() records the interval width each engine actually returns", {
   ))
   expect_equal(unique(tidy(fake_nowcaster)$level), 0.95)
 })
+
+# --- surveillance -------------------------------------------------------------
+# `nowcast()` already reports a prediction interval in the object's `pi` slot,
+# so `tidy()` must not blank it out (it used to return NA bounds and NA level).
+
+surveillance_fit <- function() {
+  data(denguedat, envir = environment())
+  cut <- as.Date("2002-07-22")
+  dengue <- denguedat |>
+    dplyr::filter(onset_week < cut, report_week < cut)
+  x <- tbl_now(
+    dengue,
+    event_date = "onset_week", report_date = "report_week",
+    data_type = "linelist", verbose = FALSE
+  )
+  linelist <- suppressWarnings(suppressMessages(
+    tbl_now_to_surveillance(x, verbose = FALSE)
+  ))
+  now <- get_now(x)
+
+  suppressWarnings(suppressMessages(surveillance::nowcast(
+    now = now,
+    when = seq(now - 7 * 5, now, by = "1 week"),
+    data = linelist,
+    dEventCol = "dHospital", dReportCol = "dReport",
+    aggregate.by = "1 week", D = 10L,
+    method = "bayes.notrunc.bnb",
+    control = list(
+      dRange = seq(min(linelist$dHospital), now, by = "1 week"),
+      N.tInf.max = 500, nSamples = 500
+    )
+  )))
+}
+
+test_that("tidy() reads surveillance's prediction interval", {
+  skip_if_not_installed("surveillance")
+  tidied <- generics::tidy(surveillance_fit())
+
+  expect_s3_class(tidied, "tbl_df")
+  expect_gt(nrow(tidied), 0L)
+  expect_false(anyNA(tidied$conf.low))
+  expect_false(anyNA(tidied$conf.high))
+  expect_true(all(tidied$conf.low <= tidied$estimate))
+  expect_true(all(tidied$estimate <= tidied$conf.high))
+})
+
+test_that("tidy() reports surveillance's interval width from control$alpha", {
+  skip_if_not_installed("surveillance")
+  tidied <- generics::tidy(surveillance_fit())
+
+  # `alpha = 0.05` is nowcast()'s default, i.e. a 95% band.
+  expect_equal(unique(tidied$level), 0.95)
+  expect_equal(unique(tidied$engine), "surveillance")
+})
+
+test_that("tidy() falls back to NA bounds when there is no pi slot", {
+  skip_if_not_installed("surveillance")
+  fit <- surveillance_fit()
+
+  # `lawless` and `unif` can leave the slot empty; emulate that rather than
+  # paying for a second fit.
+  methods::slot(fit, "pi")[] <- NA_real_
+  tidied <- generics::tidy(fit)
+
+  expect_true(all(is.na(tidied$conf.low)))
+  expect_true(all(is.na(tidied$conf.high)))
+  expect_true(all(is.na(tidied$level)))
+  expect_false(anyNA(tidied$estimate))
+})

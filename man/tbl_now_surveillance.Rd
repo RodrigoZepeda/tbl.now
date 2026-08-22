@@ -55,6 +55,25 @@ With \code{format = "sts"} it instead returns the observed epidemic curve as an
 \code{now} and the delay unit are \emph{not} baked into the result: pass them from the
 object with \code{\link[=get_now]{get_now()}} and \code{\link[=get_event_units]{get_event_units()}}, as in the example below.
 }
+\section{Censored delays}{
+
+
+A censoring indicator that is a property of the \strong{case} rather than of the
+delay -- an administrative "this date is only an upper bound" mark, say --
+puts a censored and an uncensored row in the same
+\verb{(event_date, report_date)} cell. A reporting triangle has one slot per cell,
+so the extra dimension has to go before the conversion. It is removed
+automatically, with a warning either way:
+\itemize{
+\item \strong{count data}: the counts are summed over the flag, leaving case totals
+unchanged;
+\item \strong{line lists}: the column is dropped, leaving one row per case.
+}
+
+\code{\link[=tbl_now_to_epidist]{tbl_now_to_epidist()}} is the exception and keeps the flag: estimating a
+delay distribution is the one job that can use it.
+}
+
 \examples{
 \dontshow{if (requireNamespace("surveillance", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)

@@ -989,15 +989,29 @@ test_that("tbl_now_to_baselinenowcast warns + coerces linelist input", {
   )
 })
 
-test_that("tbl_now_to_baselinenowcast errors on count-cumulative input", {
+test_that("tbl_now_to_baselinenowcast de-accumulates count-cumulative input", {
   skip_on_cran()
   skip_if_not_installed("baselinenowcast")
-  # Cumulative totals can be revised downward, so de-accumulating them would give
-  # negative incidence; the converter must refuse rather than produce nonsense.
+  # Cumulative totals get revised downward, so de-accumulating them gives
+  # NEGATIVE increments. That is not a reason to refuse: baselinenowcast's
+  # `preprocess_negative_values()` exists to absorb them into earlier delays.
+  cumul <- to_count(make_incidence_now(), to = "count-cumulative")
+  expect_warning(
+    long <- tbl_now_to_baselinenowcast(cumul, format = "long", verbose = FALSE,
+                                       quiet = TRUE),
+    "De-accumulating"
+  )
+  expect_s3_class(long, "data.frame")
+  expect_true(all(c("reference_date", "report_date", "count") %in% names(long)))
+})
+
+test_that("tbl_now_to_baselinenowcast can still refuse cumulative input", {
+  skip_on_cran()
+  skip_if_not_installed("baselinenowcast")
   cumul <- to_count(make_incidence_now(), to = "count-cumulative")
   expect_error(
-    tbl_now_to_baselinenowcast(cumul, format = "long", verbose = FALSE,
-                               quiet = TRUE),
+    tbl_now_to_baselinenowcast(cumul, negatives = "error", format = "long",
+                               verbose = FALSE, quiet = TRUE),
     "count-cumulative"
   )
 })
@@ -1259,12 +1273,30 @@ make_rich_now <- function() {
           event_units = "weeks", report_units = "weeks", verbose = FALSE)
 }
 
-test_that("tbl_now_to_baselinenowcast long keeps covariates and is_censored", {
+test_that("tbl_now_to_baselinenowcast long keeps covariates", {
   skip_on_cran()
   skip_if_not_installed("baselinenowcast")
-  long <- tbl_now_to_baselinenowcast(make_rich_now(), format = "long",
-                                     verbose = FALSE, quiet = TRUE)
-  expect_true(all(c("temp", "flag") %in% names(long)))
+  long <- suppressWarnings(
+    tbl_now_to_baselinenowcast(make_rich_now(), format = "long",
+                               verbose = FALSE, quiet = TRUE)
+  )
+  expect_true("temp" %in% names(long))
+  # Every baselinenowcast format ends in a triangle, which has one slot per
+  # cell and nowhere to record a delay that is only an upper bound, so the
+  # censoring indicator is collapsed away first.
+  expect_false("flag" %in% names(long))
+})
+
+test_that("tbl_now_to_baselinenowcast warns when it collapses censoring", {
+  skip_on_cran()
+  skip_if_not_installed("baselinenowcast")
+  expect_warning(
+    suppressMessages(
+      tbl_now_to_baselinenowcast(make_rich_now(), format = "long",
+                                 verbose = FALSE, quiet = TRUE)
+    ),
+    "summing counts over"
+  )
 })
 
 test_that("tbl_now_to_baselinenowcast matrix keeps only the core columns", {
@@ -1278,13 +1310,16 @@ test_that("tbl_now_to_baselinenowcast matrix keeps only the core columns", {
   expect_s3_class(mx, "reporting_triangle")
 })
 
-test_that("tbl_now_to_tsibble keeps covariates/is_censored as measurements", {
+test_that("tbl_now_to_tsibble keeps covariates as measurements", {
   skip_on_cran()
   skip_if_not_installed("tsibble")
-  ts <- tbl_now_to_tsibble(make_rich_now(), verbose = FALSE)
-  expect_true(all(c("temp", "flag") %in% names(ts)))
-  # they are measurement columns, NOT part of the key
-  expect_false(any(c("temp", "flag") %in% tsibble::key_vars(ts)))
+  ts <- suppressWarnings(tbl_now_to_tsibble(make_rich_now(), verbose = FALSE))
+  expect_true("temp" %in% names(ts))
+  # a measurement column, NOT part of the key
+  expect_false("temp" %in% tsibble::key_vars(ts))
+  # A tsibble needs a unique index/key combination, which is exactly what a
+  # censoring indicator breaks, so it is collapsed away first.
+  expect_false("flag" %in% names(ts))
 })
 
 test_that("tbl_now_to_data_table keeps every column", {
@@ -1837,4 +1872,54 @@ test_that("a weekly reporting triangle survives the round-trip through as_tbl_no
     max(as.numeric(back$report_date - back$reference_date)),
     max(as.numeric(x$report_week - x$onset_week))
   )
+})
+
+# get_nowcaster_strata() --------------------------------------------------------
+
+test_that("get_nowcaster_strata() returns the encoding nowcaster needs", {
+  skip_if_not_installed("nowcaster")
+  x <- make_strata_tbl_now()
+  linelist <- tbl_now_to_nowcaster(x, verbose = FALSE)
+  info <- get_nowcaster_strata(linelist)
+
+  expect_type(info, "list")
+  expect_named(info, c("column", "bins", "levels"))
+
+  # The code column must exist and be NUMERIC: `nowcasting_inla()` cuts it, so a
+  # character column errors inside cut().
+  expect_true(info$column %in% names(linelist))
+  expect_true(is.numeric(linelist[[info$column]]))
+
+  # Labels, in code order, matching the object's strata.
+  expect_setequal(info$levels, unique(as.character(x$gender)))
+
+  # Breaks must put each level in its own bin: one more break than levels, and
+  # cutting the codes must recover every level exactly once.
+  expect_length(info$bins, length(info$levels) + 1L)
+  binned <- cut(sort(unique(linelist[[info$column]])), breaks = info$bins)
+  expect_length(unique(binned), length(info$levels))
+
+  # Codes map back to labels positionally.
+  expect_equal(
+    info$levels[linelist[[info$column]]],
+    as.character(linelist[["gender"]])
+  )
+})
+
+test_that("get_nowcaster_strata() is NULL when there are no strata", {
+  skip_if_not_installed("nowcaster")
+  x <- remove_all_strata(make_strata_tbl_now())
+  expect_null(get_nowcaster_strata(tbl_now_to_nowcaster(x, verbose = FALSE)))
+})
+
+test_that("get_nowcaster_strata() handles several strata columns", {
+  skip_if_not_installed("nowcaster")
+  x <- make_strata_tbl_now() |>
+    dplyr::mutate(site = rep(c("A", "B"), length.out = dplyr::n())) |>
+    add_strata("site")
+  info <- get_nowcaster_strata(tbl_now_to_nowcaster(x, verbose = FALSE))
+
+  # Several strata collapse into ONE label per observed combination.
+  expect_equal(length(info$levels), length(unique(interaction(x$gender, x$site))))
+  expect_length(info$bins, length(info$levels) + 1L)
 })

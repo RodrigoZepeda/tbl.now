@@ -1,5 +1,85 @@
 # tbl.now 0.16.0
 
+* **`tidy()` now returns \pkg{surveillance}'s credible interval**, which it
+  previously discarded. `surveillance::nowcast()` stores a prediction interval
+  in the returned object's `pi` slot at the width `control$alpha` names (95% by
+  default), but the method hard-coded `conf.low`, `conf.high` and `level` to
+  `NA`, so surveillance was the one engine that appeared to report no
+  uncertainty. Reaching for the JAGS-backed `bayes.trunc`/`bayes.trunc.ddcp`
+  methods was never needed to get an interval.
+* **Censored delays no longer break the converters.** A censoring indicator that
+  is a property of the *case* rather than of the delay -- an administrative
+  "this date is only an upper bound" mark, say -- splits one
+  `(event_date, report_date)` cell into a censored and an uncensored row. A
+  reporting triangle has one slot per cell, so `tbl_now_to_baselinenowcast()`
+  and `tbl_now_to_epinowcast()` aborted on duplicate cells, and the converters
+  that expand back to a line list picked the flag up as an unrequested
+  stratifier. The censoring dimension is now collapsed before the conversion,
+  and each route warns:
+  * **count data**: counts are summed over the flag, so case totals are
+    unchanged;
+  * **line lists**: the column is dropped, leaving one row per case.
+
+  `tbl_now_to_epidist()` is deliberately exempt: estimating a delay
+  distribution is the one job that can use the flag.
+
+* `tbl_now_to_baselinenowcast()` now handles a **line list on its own**. It
+  already aggregated to incidence; it now also completes the zero periods out to
+  the `now` (new `complete = TRUE` argument). A reporting triangle is a
+  rectangular grid, and an event period with no reports has no rows, so the
+  triangle used to stop short unless you remembered
+  `to_count() |> complete_zeroes()` first. Linelist and count-incidence input now
+  produce an **identical** triangle.
+* `tbl_now_to_baselinenowcast()` also accepts **`count-cumulative`** data, which
+  it used to refuse. De-accumulating produces negative increments wherever a
+  total was revised downward, and \pkg{baselinenowcast} ships
+  `preprocess_negative_values()` for exactly that; the converter applies it and
+  warns. `negatives = "error"` restores the old refusal.
+* **Bug fix: `tidy()` ignored the strata of a `diseasenowcasting` fit.** A
+  stratified fit reports `strata_draws` (draws x event times x stratum), but the
+  method read only the pooled `draws`, so every row came back with
+  `stratum = "all"` even when the fit itself said "2 strata". It now returns one
+  block per stratum, matching what the other engines do.
+* New `get_nowcaster_strata()`: returns the `column`, `bins` and `levels`
+  `nowcasting_inla()` needs, instead of reaching for the object's attributes by
+  hand. `NULL` when there are no strata.
+* Two new test files worth naming, because they exist to stop silent
+  regressions:
+  * `test-converter-equivalence.R` -- every converter accepts line-list input,
+    and the triangle/preprocessing targets give the *same* result from a line
+    list as from the equivalent count-incidence object.
+  * `test-converter-datasets.R` -- every converter against every dataset the
+    package ships. This is the testthat counterpart of the article's matrix: the
+    article documents, this one fails.
+* Website: fixed a regression that drew an empty scrollbar track ("a rectangle")
+  under every code chunk. The no-wrap rules have to apply to `code` as well as
+  its container, but `overflow-x` must apply ONLY to the container -- setting it
+  on the inner `<code>` too made each one a second scroll context that reserved
+  a gutter. Figure captions are now centred, smaller and grey.
+
+* The nowcasting-models article now **shows the real output of every fit and
+  every `tidy()` call**. The fits are far too slow to run on each build, so
+  `data-raw/nowcast_comparison.R` captures what each one prints and what
+  `tidy()` returns for it, and the article replays that. Each section pairs a
+  copy-pasteable `tidy(fit)` (shown, not run) with a hidden `head(5)` whose
+  output appears beneath it, so nothing in the visible code has to be trimmed for
+  display. The ad-hoc result extraction each section used to do -- pulling
+  `$estimates` out of NobBS, building a `data.frame()` from `epoch()` and
+  `upperbound()` for surveillance -- is gone; every section now uses `tidy()`.
+* New article section running **every converter, plus a nowcast, against every
+  dataset the package ships** (`data-raw/converter_matrix.R`), recording which
+  combinations work and explaining the ones that do not: `count-cumulative`
+  cannot become a reporting triangle without inventing negative increments,
+  `epidist` has no individual delays to censor in a cumulative series, and a
+  `tsibble` needs a unique index/key. Each attempt is time-limited so the matrix
+  is reproducible.
+* The article states plainly that each modelling package is a **separate
+  install** that `tbl.now` does not pull in, with the commands for the ones that
+  are not on CRAN and the note that Stan, JAGS and R-INLA are software outside R.
+* `SKILL.md` documents `tidy()`, the `surveillance` and `nowcaster` converters,
+  `format = "triangle_list"`, the new `complete_zeroes()` behaviour, and the
+  zero-period and `nowcaster` `Tmax` pitfalls.
+
 * **\pkg{nowcaster} now nowcasts correctly on this data.** It had been estimating
   *below* the counts already observed, which is impossible for a nowcast. The
   cause is in `nowcasting_inla()`, which takes its last observable week from the

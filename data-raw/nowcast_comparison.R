@@ -115,12 +115,17 @@ fit_diseasenowcasting <- function(x) {
   fit <- diseasenowcasting::nowcast(x)
   prediction <- stats::predict(fit)
   draws <- S7::prop(prediction, "draws")
-  tibble(
+  out <- tibble(
     event_date = S7::prop(prediction, "event_dates"),
     estimate   = apply(draws, 2, stats::median),
     lower      = apply(draws, 2, stats::quantile, probs = 0.025),
     upper      = apply(draws, 2, stats::quantile, probs = 0.975)
   )
+  # The article prints `dnc_fit` itself, so carry the fit along; `prediction` is
+  # what tidy() dispatches on.
+  attr(out, "fit")     <- fit
+  attr(out, "tidy_on") <- prediction
+  out
 }
 
 fit_baselinenowcast <- function(x) {
@@ -134,13 +139,41 @@ fit_baselinenowcast <- function(x) {
   # week even though the pooled series does. Fall back to completing only as far
   # as the last week that actually holds a case, which costs that stratum one
   # week rather than the whole nowcast.
+  # Drop trailing reference times that are FORECASTS, not nowcasts.
+  #
+  # baselinenowcast divides an observed row by the share of the delay
+  # distribution that should have arrived by now. Here P(delay = 0) is only
+  # about 0.05 -- almost nothing is reported in the same week -- so the newest
+  # week, seen only at delay 0, gets divided by 0.05 and explodes: a single case
+  # became an estimate of 257 with an upper bound of 1584, against a truth of 15.
+  # baselinenowcast's own error text recommends the remedy ("truncating to an
+  # earlier reference time to ensure a nowcast, not a forecast, is being
+  # produced"), so drop rows whose expected observed share is below
+  # MIN_OBSERVED_SHARE.
+  MIN_OBSERVED_SHARE <- 0.10
+
+  trim_forecast_rows <- function(triangle) {
+    pmf <- as.numeric(baselinenowcast::estimate_delay(triangle))
+    repeat {
+      n_rows <- nrow(triangle)
+      if (n_rows < 10) break
+      # delays already observable for the last row
+      observed_delays <- sum(!is.na(triangle[n_rows, ]))
+      share <- sum(utils::head(pmf, max(observed_delays, 1L)))
+      if (share >= MIN_OBSERVED_SHARE) break
+      triangle <- triangle[seq_len(n_rows - 1L), , drop = FALSE]
+    }
+    triangle
+  }
+
   draw_from <- function(triangle) {
     baselinenowcast::baselinenowcast(
-      triangle, output_type = "samples", draws = 1000
+      trim_forecast_rows(triangle), output_type = "samples", draws = 1000
     )
   }
+  # The converter aggregates and completes a line list on its own now.
   samples <- tryCatch(
-    draw_from(tbl_now_to_baselinenowcast(complete_to_now(x), verbose = FALSE)),
+    draw_from(tbl_now_to_baselinenowcast(x, verbose = FALSE)),
     error = function(e) NULL
   )
   if (is.null(samples)) {
@@ -152,7 +185,7 @@ fit_baselinenowcast <- function(x) {
       verbose = FALSE
     ))
   }
-  as_tibble(samples) |>
+  out <- as_tibble(samples) |>
     group_by(event_date = as.Date(.data$reference_date)) |>
     summarise(
       estimate = stats::median(.data$pred_count),
@@ -160,6 +193,8 @@ fit_baselinenowcast <- function(x) {
       upper    = stats::quantile(.data$pred_count, 0.975),
       .groups  = "drop"
     )
+  attr(out, "tidy_on") <- samples
+  out
 }
 
 fit_epinowcast <- function(x) {
@@ -181,17 +216,20 @@ fit_epinowcast <- function(x) {
     )
   )
   nowcast <- summary(fit, type = "nowcast")
-  tibble(
+  out <- tibble(
     event_date = as.Date(nowcast$reference_date),
     estimate   = nowcast$median,
     lower      = nowcast$q5,
     upper      = nowcast$q95
   )
+  attr(out, "fit")     <- fit
+  attr(out, "tidy_on") <- fit
+  out
 }
 
 fit_nobbs <- function(x) {
   # Trimmed with NobBS's own `moving_window`.
-  est <- NobBS::NobBS(
+  fit <- NobBS::NobBS(
     data          = as.data.frame(x),
     now           = get_now(x),
     units         = "1 week",
@@ -199,13 +237,17 @@ fit_nobbs <- function(x) {
     report_date   = get_report_date(x),
     max_D         = MAX_DELAY,
     moving_window = TRIM
-  )$estimates
-  tibble(
+  )
+  est <- fit$estimates
+  out <- tibble(
     event_date = as.Date(est$onset_date),
     estimate   = est$estimate,
     lower      = est$lower,
     upper      = est$upper
   )
+  attr(out, "fit")     <- fit
+  attr(out, "tidy_on") <- fit
+  out
 }
 
 fit_surveillance <- function(x) {
@@ -221,13 +263,19 @@ fit_surveillance <- function(x) {
     method = "bayes.notrunc.bnb",
     control = list(dRange = drange, N.tInf.max = 1000, nSamples = 1000)
   )
-  tibble(
-    event_date = as.Date(surveillance::epoch(fit)),
-    estimate   = as.numeric(surveillance::upperbound(fit)),
-    lower      = NA_real_,
-    upper      = NA_real_
-  ) |>
-    filter(!is.na(.data$estimate))
+  # `nowcast()` stores a 95% prediction interval in the object's `pi` slot
+  # (`control$alpha = 0.05`), so surveillance does not need the JAGS-backed
+  # `bayes.trunc*` methods to report uncertainty. `tidy()` reads that slot.
+  tidied <- generics::tidy(fit)
+  out <- tibble(
+    event_date = tidied$event_date,
+    estimate   = tidied$estimate,
+    lower      = tidied$conf.low,
+    upper      = tidied$conf.high
+  )
+  attr(out, "fit")     <- fit
+  attr(out, "tidy_on") <- fit
+  out
 }
 
 # nowcaster is the one engine fitted ONCE for all three panels: it stratifies
@@ -270,7 +318,10 @@ fit_nowcaster_all <- function(x_stratified) {
     upper      = by_stratum$LS,
     stratum    = levels_map[as.integer(as.character(by_stratum$fx_etaria))]
   )
-  dplyr::bind_rows(pooled, per)
+  out <- dplyr::bind_rows(pooled, per)
+  attr(out, "fit")     <- fit
+  attr(out, "tidy_on") <- fit
+  out
 }
 
 ENGINES <- list(
@@ -295,6 +346,31 @@ snap_to_grid <- function(dates, grid) {
   out
 }
 
+# The article shows `dnc_fit` and `tidy(dnc_fit)` and must display their real
+# output, but the fits are far too slow to run on every build. Rather than ship
+# the fitted objects (Stan and INLA fits are large and version-fragile), capture
+# exactly what the article prints: the fit's own print output, and its tidy()
+# table. `display` below is what the article reads back.
+display <- list()
+
+capture_display <- function(fit, tidy_on) {
+  # Capture BOTH streams. Several packages' print methods emit their output as
+  # *messages* rather than to stdout (diseasenowcasting is one), so capturing
+  # stdout alone silently returns nothing.
+  printed <- if (is.null(fit)) NULL else tryCatch({
+    from_message <- NULL
+    from_stdout <- utils::capture.output(
+      from_message <- utils::capture.output(print(fit), type = "message")
+    )
+    if (length(from_stdout)) c(from_stdout, from_message) else from_message
+  }, error = function(e) paste("<print failed:", conditionMessage(e), ">"))
+  tidied <- if (is.null(tidy_on)) NULL else tryCatch(
+    suppressWarnings(suppressMessages(tbl.now::tidy(tidy_on))),
+    error = function(e) NULL
+  )
+  list(printed = printed, tidy = tidied)
+}
+
 run_engine <- function(name, fun, x, stratum) {
   message("  - ", name, " [", stratum, "] ...", appendLF = FALSE)
   started <- Sys.time()
@@ -308,6 +384,12 @@ run_engine <- function(name, fun, x, stratum) {
   if (is.null(out)) return(NULL)
   secs <- round(as.numeric(difftime(Sys.time(), started, units = "secs")), 1)
   message(" ok (", secs, "s)")
+
+  # Only the pooled fit is displayed in the article.
+  if (identical(stratum, "Total")) {
+    display[[name]] <<- capture_display(attr(out, "fit"), attr(out, "tidy_on"))
+  }
+
   out |>
     mutate(
       event_date = snap_to_grid(.data$event_date, grid),
@@ -343,6 +425,9 @@ nowcaster_rows <- tryCatch(
 )
 if (!is.null(nowcaster_rows)) {
   message("  - nowcaster ok (", nrow(nowcaster_rows), " rows)")
+  display[["nowcaster"]] <- capture_display(
+    attr(nowcaster_rows, "fit"), attr(nowcaster_rows, "tidy_on")
+  )
   results[[length(results) + 1L]] <- nowcaster_rows |>
     mutate(
       event_date = snap_to_grid(.data$event_date, grid),
@@ -356,9 +441,29 @@ nowcasts <- bind_rows(results) |>
   select(package, stratum, event_date, estimate, lower, upper, seconds) |>
   arrange(package, stratum, event_date)
 
+# The article also shows `nowcast(dengue_seasonal)`, so capture that fit too.
+message("== diseasenowcasting (seasonal, for display) ==")
+seasonal_obj <- objects[["Total"]] |>
+  add_strata(gender) |>
+  add_temporal_effects(temporal_effects(week_of_year = TRUE, seasons = 52))
+seasonal_fit <- tryCatch(
+  suppressWarnings(suppressMessages(diseasenowcasting::nowcast(seasonal_obj))),
+  error = function(e) {
+    message("  FAILED: ", conditionMessage(e))
+    NULL
+  }
+)
+if (!is.null(seasonal_fit)) {
+  display[["diseasenowcasting_seasonal"]] <- capture_display(
+    seasonal_fit, stats::predict(seasonal_fit)
+  )
+  message("  ok")
+}
+
 comparison <- list(
   nowcasts = nowcasts,
   truth    = truth,
+  display  = display,
   meta = list(
     now           = NOW,
     cut           = CUT,

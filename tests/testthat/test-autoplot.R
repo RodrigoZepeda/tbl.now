@@ -837,11 +837,47 @@ test_that("measure = 'percent' switches the panels to percentage shares", {
   reports <- ggplot2::autoplot(object, panels = "delay_weekday", measure = "percent")
   expect_equal(reports$labels$y, "Percent of reported cases (%)")
   expect_equal(reports$labels$title, "Day-of-week reporting effect")
+})
 
-  # ... and the default is still the normalized view.
+test_that("measure = 'normalized' gives the mean-relative view", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+  object <- make_daily_now()
+
+  expect_equal(
+    ggplot2::autoplot(
+      object, panels = "calendar_weekday", measure = "normalized"
+    )$labels$y,
+    "Normalized effect (1 = average)"
+  )
+  # The delay twin normalizes the mean delay rather than the case count.
+  expect_equal(
+    ggplot2::autoplot(
+      object, panels = "delay_weekday", measure = "normalized"
+    )$labels$y,
+    "Normalized mean delay (1 = average)"
+  )
+})
+
+test_that("the default calendar measure is 'percent'", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+  object <- make_daily_now()
+
+  # `autoplot()` and the `plot_*` twins all default to `measure = "percent"`.
+  # Guard the default explicitly: it used to be "normalized", and this test
+  # file kept asserting the old value long after the switch.
   expect_equal(
     ggplot2::autoplot(object, panels = "calendar_weekday")$labels$y,
-    "Normalized effect (1 = average)"
+    "Percent of cases (%)"
+  )
+  expect_equal(
+    plot_day_of_week_effects(object)$labels$y,
+    "Percent of cases (%)"
+  )
+  expect_equal(
+    eval(formals(autoplot.tbl_now)$measure)[1],
+    "percent"
   )
 })
 

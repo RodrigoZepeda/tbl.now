@@ -143,6 +143,25 @@ delay 74, so its \code{max_confirm} is 11 in \code{pobs} and 7 after the round-t
 }
 }
 
+\section{Censored delays}{
+
+
+A censoring indicator that is a property of the \strong{case} rather than of the
+delay -- an administrative "this date is only an upper bound" mark, say --
+puts a censored and an uncensored row in the same
+\verb{(event_date, report_date)} cell. A reporting triangle has one slot per cell,
+so the extra dimension has to go before the conversion. It is removed
+automatically, with a warning either way:
+\itemize{
+\item \strong{count data}: the counts are summed over the flag, leaving case totals
+unchanged;
+\item \strong{line lists}: the column is dropped, leaving one row per case.
+}
+
+\code{\link[=tbl_now_to_epidist]{tbl_now_to_epidist()}} is the exception and keeps the flag: estimating a
+delay distribution is the one job that can use it.
+}
+
 \examples{
 \dontshow{if (requireNamespace("epinowcast", quietly = TRUE) & requireNamespace("data.table", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 # Preprocessing epinowcast data is slow, so this is wrapped in \donttest{}.

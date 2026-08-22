@@ -857,9 +857,10 @@
 
 #' Panel: case-count calendar effect (boxplots)
 #'
-#' With `measure = "normalized"` (the default) the boxes show each event date's
-#' reported cases divided by the overall mean, so 1 marks an average level. With
-#' `measure = "percent"` they show the **share of cases** falling in each calendar
+#' With `measure = "normalized"` the boxes show each event date's reported cases
+#' divided by the overall mean, so 1 marks an average level. With
+#' `measure = "percent"` (what `autoplot()` defaults to) they show the
+#' **share of cases** falling in each calendar
 #' group, one observation per calendar block (a week for the day-of-week panel, a
 #' year for the week-of-year one), so the median and IQR read directly as "x% of
 #' the cases happen at the weekend".
@@ -944,7 +945,7 @@
 
 #' Panel: reporting-delay calendar effect (boxplots)
 #'
-#' With `measure = "normalized"` (the default) the boxes show the case-count
+#' With `measure = "normalized"` the boxes show the case-count
 #' weighted **mean reporting delay** per event date, divided by the overall mean
 #' delay, grouped by calendar unit: this reveals whether the delay itself has a
 #' day-of-week, week-of-year or month-of-year pattern (a "delay effect"). With

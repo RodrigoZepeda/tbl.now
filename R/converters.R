@@ -445,6 +445,77 @@
   )
 }
 
+
+#' Collapse the censoring indicator before a conversion
+#'
+#' A censoring flag that is a per-case property rather than a function of the
+#' delay -- an administrative "this date is only an upper bound" mark, say --
+#' splits a single `(event_date, report_date)` cell into a censored and an
+#' uncensored row. A reporting triangle has one slot per cell, so the extra
+#' dimension makes the cell non-unique and the target package errors out; the
+#' packages that expand back to a line list instead pick the flag up as an
+#' unrequested stratifier.
+#'
+#' Neither resolution loses cases, but both discard the censoring information,
+#' so each one warns. [tbl_now_to_epidist()] does *not* call this: estimating a
+#' delay distribution is the one job that can use the flag.
+#'
+#' @param x A `tbl_now`.
+#' @param fn Name of the calling converter, used in the warning.
+#'
+#' @returns `x` with no censoring indicator: counts summed over the flag for
+#'   count data, the column dropped for a line list.
+#'
+#' @noRd
+.tbl_now_collapse_censoring <- function(x, fn) {
+  censored_col <- get_is_censored(x)
+  if (length(censored_col) == 0L || !all(censored_col %in% names(x))) {
+    return(x)
+  }
+
+  # A line list is one row per case, so the flag never makes a cell non-unique
+  # -- it only rides along as an extra column. Dropping it is enough.
+  if (get_data_type(x) == "linelist") {
+    cli::cli_warn(
+      "{.fn {fn}} cannot represent censored delays; dropping the \\
+       {.field {censored_col}} column. Cases are unaffected."
+    )
+    x <- remove_is_censored(x)
+    x[[censored_col]] <- NULL
+    return(x)
+  }
+
+  # Counts: collapse the censoring dimension by summing within the cell. Every
+  # other column is a grouping key, so nothing but the flag is pooled.
+  count_col  <- get_case_count(x)
+  group_cols <- setdiff(names(x), c(censored_col, count_col))
+  n_before   <- nrow(x)
+
+  collapsed <- .strip_tbl_now(x)
+  collapsed[[censored_col]] <- NULL
+  collapsed <- collapsed |>
+    dplyr::summarise(
+      dplyr::across(dplyr::all_of(count_col), \(v) sum(v, na.rm = TRUE)),
+      .by = dplyr::all_of(group_cols)
+    )
+
+  cli::cli_warn(
+    "{.fn {fn}} cannot represent censored delays; summing counts over \\
+     {.field {censored_col}} ({n_before} row{?s} -> {nrow(collapsed)}). \\
+     Case totals are unchanged."
+  )
+
+  # Rebuild the tbl_now around the collapsed data. Going through dplyr verbs
+  # would drop the protected columns and demote it to a tibble, so the
+  # attributes are carried over directly; they name columns rather than
+  # positions, so the reordering `.by` introduces does not matter.
+  rebuilt <- attributes(x)
+  rebuilt$names     <- names(collapsed)
+  rebuilt$row.names <- attr(collapsed, "row.names", exact = TRUE)
+  attributes(collapsed) <- rebuilt
+
+  remove_is_censored(collapsed)
+}
 #' Expand a reporting-triangle matrix into a long incremental data frame
 #'
 #' Row names are taken as reference dates and column names as integer delays
@@ -651,6 +722,7 @@
 #' preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
 #' }
 #'
+#' @inheritSection tbl_now_baselinenowcast Censored delays
 #' @name tbl_now_epinowcast
 #' @export
 tbl_now_from_epinowcast <- function(data, ...,
@@ -736,6 +808,20 @@ tbl_now_from_epinowcast <- function(data, ...,
 #'     whether strata happen to be present. Unlike splitting the long format
 #'     yourself, the delay unit and the strata are taken from the object, and
 #'     [as_tbl_now()] can rebuild a `tbl_now` from the result.
+#' @param complete For `to` with a triangle format: fill event periods that have
+#'   no reports at all with zeroes, out to the object's [get_now()], via
+#'   [complete_zeroes()]. `"auto"` (the default) does this for **line-list**
+#'   input only, so you do not have to remember
+#'   `to_count() |> complete_zeroes()` first. Count data is left exactly as
+#'   supplied, because it *can* distinguish an observed zero from a cell that
+#'   could not be observed yet (`NA`) and filling those would claim reporting was
+#'   complete when it was not. `TRUE` / `FALSE` force either behaviour. Ignored
+#'   for `format = "long"`.
+#' @param negatives How to handle the negative increments that appear when
+#'   `count-cumulative` data is de-accumulated (a downward revision).
+#'   `"redistribute"` (default) absorbs each negative into earlier delays with
+#'   [baselinenowcast::preprocess_negative_values()], which is what that
+#'   function exists for; `"error"` refuses cumulative input instead.
 #' @param verbose Logical. Print the choices that were made.
 #' @param ... Forwarded to [as_tbl_now()] (`from`) or
 #'   [baselinenowcast::as_reporting_triangle()] (`to`, triangle formats).
@@ -767,6 +853,22 @@ tbl_now_from_epinowcast <- function(data, ...,
 #'
 #' # The matrix round-trip is faithful (not-yet-observed `NA` cells are kept).
 #' identical(rt, tbl_now_to_baselinenowcast(nowobj))
+#' @section Censored delays:
+#'
+#' A censoring indicator that is a property of the **case** rather than of the
+#' delay -- an administrative "this date is only an upper bound" mark, say --
+#' puts a censored and an uncensored row in the same
+#' `(event_date, report_date)` cell. A reporting triangle has one slot per cell,
+#' so the extra dimension has to go before the conversion. It is removed
+#' automatically, with a warning either way:
+#'
+#' * **count data**: the counts are summed over the flag, leaving case totals
+#'   unchanged;
+#' * **line lists**: the column is dropped, leaving one row per case.
+#'
+#' [tbl_now_to_epidist()] is the exception and keeps the flag: estimating a
+#' delay distribution is the one job that can use it.
+#'
 #' @name tbl_now_baselinenowcast
 #' @export
 tbl_now_from_baselinenowcast <- function(data, ...,
@@ -1107,6 +1209,7 @@ tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
 #' # The tsibble is indexed by the event date; the report date is in the key.
 #' ts   <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
 #' back <- tbl_now_from_tsibble(ts, report_date = "report_week", verbose = FALSE)
+#' @inheritSection tbl_now_baselinenowcast Censored delays
 #' @name tbl_now_tsibble
 #' @export
 tbl_now_from_tsibble <- function(data, report_date, event_date = NULL,
@@ -1263,6 +1366,7 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
                                   preprocess = TRUE, verbose = TRUE,
                                   quiet = FALSE) {
   .assert_tbl_now(x, "tbl_now_to_epinowcast")
+  x <- .tbl_now_collapse_censoring(x, "tbl_now_to_epinowcast")
   .need_pkg("epinowcast")
   .warn_lossy_conversion("epinowcast", quiet)
 
@@ -1383,9 +1487,13 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
 #' @export
 tbl_now_to_baselinenowcast <- function(x, ...,
                                        format = c("matrix", "long", "triangle_list"),
-                                       delays_unit = NULL, verbose = TRUE) {
+                                       delays_unit = NULL, complete = "auto",
+                                       negatives = c("redistribute", "error"),
+                                       verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_baselinenowcast")
+  x <- .tbl_now_collapse_censoring(x, "tbl_now_to_baselinenowcast")
   format <- match.arg(format)
+  negatives <- match.arg(negatives)
 
   # baselinenowcast needs incremental (count-incidence) counts.
   #  - count-incidence: use as-is.
@@ -1395,19 +1503,68 @@ tbl_now_to_baselinenowcast <- function(x, ...,
   #    "incidence". Refuse rather than produce nonsense.
   data_type <- get_data_type(x)
   if (data_type == "count-cumulative") {
-    cli::cli_abort(c(
-      "Cannot convert {.val count-cumulative} data to the incremental counts \\
-       {.pkg baselinenowcast} requires.",
-      "i" = "Cumulative totals can be revised downward, so de-accumulating \\
-             them may give negative incidence.",
-      "i" = "Supply {.val count-incidence} or {.val linelist} data instead."
+    # Cumulative totals get revised downward, so de-accumulating them yields
+    # NEGATIVE increments. That is not a reason to refuse: baselinenowcast ships
+    # `preprocess_negative_values()` for exactly this case ("reporting
+    # corrections that can result in negative incremental counts"), which
+    # redistributes a negative back into earlier delays. Do that, and say so.
+    if (identical(negatives, "error")) {
+      cli::cli_abort(c(
+        "Cannot convert {.val count-cumulative} data with \\
+         {.code negatives = \"error\"}.",
+        "i" = "De-accumulating cumulative totals can give negative incidence.",
+        "i" = "Use {.code negatives = \"redistribute\"} to let \\
+               {.fn baselinenowcast::preprocess_negative_values} absorb them."
+      ))
+    }
+    cli::cli_warn(c(
+      "De-accumulating {.val count-cumulative} data into the increments \\
+       {.pkg baselinenowcast} needs.",
+      "i" = "Downward revisions become negative increments; they are \\
+             redistributed into earlier delays with \\
+             {.fn baselinenowcast::preprocess_negative_values}."
     ))
+    x <- to_count(x, to = "count-incidence")
   } else if (data_type != "count-incidence") {
     cli::cli_warn(
       "baselinenowcast expects incremental counts; converting {.arg x} to \\
        {.val count-incidence} with {.fn to_count}."
     )
     x <- to_count(x, to = "count-incidence")
+  }
+
+  # A reporting triangle is a RECTANGULAR grid, so every event period up to the
+  # `now` has to exist -- including periods with no reports at all, which have no
+  # rows and so would silently shorten the triangle.
+  #
+  # Complete those ONLY for line-list input. A line list cannot express the
+  # difference between "observed zero" and "not observed": absence of a row means
+  # both. Count data CAN -- an explicit NA is a cell that could not be observed
+  # yet -- and filling those with 0 would tell the model reporting was complete
+  # when it was not. So `"auto"` (the default) completes a line list and leaves
+  # counts exactly as supplied; `TRUE`/`FALSE` force either way. The long format
+  # is a tidy data frame with no grid to complete, so it is never touched.
+  should_complete <- switch(as.character(complete),
+    "auto"  = identical(data_type, "linelist"),
+    "TRUE"  = TRUE,
+    "FALSE" = FALSE,
+    identical(data_type, "linelist")
+  )
+  if (should_complete && format %in% c("matrix", "triangle_list")) {
+    # `complete_zeroes()` only knows how to step days, weeks and numeric time.
+    # On other units, leave the grid alone rather than abort a conversion that
+    # would otherwise succeed.
+    x <- tryCatch(
+      suppressWarnings(complete_zeroes(x)),
+      error = function(e) {
+        cli::cli_warn(c(
+          "Could not complete missing event periods with zeroes.",
+          "i" = conditionMessage(e),
+          "i" = "The triangle may stop before the {.field now}."
+        ))
+        x
+      }
+    )
   }
 
   # Materialise the lazy temporal-effect columns so the long format can carry
@@ -1420,16 +1577,18 @@ tbl_now_to_baselinenowcast <- function(x, ...,
   report_col     <- get_report_date(x)
   count_col      <- get_case_count(x)
   covariate_cols <- get_covariates(x)
-  censored_col   <- get_is_censored(x)
   strata_cols    <- get_strata(x)
 
   # The long format is a tidy data frame, so it can also carry the strata, the
-  # covariates, the temporal-effect columns and the censoring indicator (a user
-  # can then build one triangle per stratum). The reporting-triangle *matrix* has
-  # no strata dimension, so only the three core columns are kept for it and the
-  # strata are pooled below.
+  # covariates and the temporal-effect columns (a user can then build one
+  # triangle per stratum). The reporting-triangle *matrix* has no strata
+  # dimension, so only the three core columns are kept for it and the strata are
+  # pooled below. No censoring indicator reaches here: every format ends up in a
+  # triangle, which has one slot per cell and nowhere to record a delay that is
+  # only an upper bound, so `.tbl_now_collapse_censoring()` has already summed
+  # the counts over it.
   extra_cols <- if (format == "long") {
-    c(strata_cols, covariate_cols, temporal_cols, censored_col)
+    c(strata_cols, covariate_cols, temporal_cols)
   } else if (format == "triangle_list") {
     # Only the strata are needed: they say how to split. Everything else is
     # dropped, because a triangle has nowhere to put it.
@@ -1573,7 +1732,17 @@ tbl_now_to_baselinenowcast <- function(x, ...,
     days = 1, weeks = 7, months = 30, years = 365, 1
   )
   na_long <- core[is.na(core$count), c("reference_date", "report_date")]
-  .restore_reporting_triangle_na(triangle, as.data.frame(na_long), days_per_unit)
+  triangle <- .restore_reporting_triangle_na(
+    triangle, as.data.frame(na_long), days_per_unit
+  )
+
+  # De-accumulated cumulative data can carry negative increments; absorb them
+  # into earlier delays rather than handing baselinenowcast a triangle it will
+  # reject.
+  if (any(triangle < 0, na.rm = TRUE)) {
+    triangle <- baselinenowcast::preprocess_negative_values(triangle)
+  }
+  triangle
 }
 
 # #' Convert a `tbl_now` into \pkg{EpiNow2} input
@@ -1910,6 +2079,7 @@ tbl_now_to_epidist <- function(x, ...,
 tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
                                verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_tsibble")
+  x <- .tbl_now_collapse_censoring(x, "tbl_now_to_tsibble")
   .need_pkg("tsibble")
   index <- match.arg(index)
 
@@ -1933,21 +2103,21 @@ tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
   report_col     <- get_report_date(x)
   strata_cols    <- get_strata(x)
   covariate_cols <- get_covariates(x)
-  censored_col   <- get_is_censored(x)
   count_col      <- get_case_count(x)
 
   # The chosen date is the tsibble index; the other date plus the strata form
-  # the key (so the index/key combination is unique).
+  # the key (so the index/key combination is unique). A censoring indicator
+  # would break exactly that uniqueness, which is why
+  # `.tbl_now_collapse_censoring()` has already removed it above.
   index_col <- if (index == "report_date") report_col else event_col
   other_col <- if (index == "report_date") event_col else report_col
   key_cols  <- c(other_col, strata_cols)
 
-  # Covariates, the temporal-effect columns, the censoring indicator and the
-  # case count ride along as measurement columns; the tbl_now internals are
-  # dropped.
+  # Covariates, the temporal-effect columns and the case count ride along as
+  # measurement columns; the tbl_now internals are dropped.
   kept_cols <- c(
     index_col, other_col, strata_cols, covariate_cols, temporal_cols,
-    censored_col, count_col
+    count_col
   )
   # Strip the tbl_now metadata before building the tsibble (the package's dplyr
   # methods would otherwise propagate it onto the result).
@@ -2071,6 +2241,7 @@ tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
 #' # `now` and the aggregation unit come from the object itself:
 #' get_now(nowobj)
 #'
+#' @inheritSection tbl_now_baselinenowcast Censored delays
 #' @name tbl_now_surveillance
 #' @export
 tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
@@ -2078,6 +2249,7 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
                                     format = c("linelist", "sts"),
                                     aggregate_by = NULL, verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_surveillance")
+  x <- .tbl_now_collapse_censoring(x, "tbl_now_to_surveillance")
   .need_pkg("surveillance")
   format <- match.arg(format)
 
@@ -2185,12 +2357,14 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
 #' nc <- tbl_now_to_nowcaster(nowobj, verbose = FALSE)
 #' head(nc)
 #'
+#' @inheritSection tbl_now_baselinenowcast Censored delays
 #' @name tbl_now_nowcaster
 #' @export
 tbl_now_to_nowcaster <- function(x, ..., event_col = "date_onset",
                                  report_col = "date_report",
                                  stratum_col = "stratum_code", verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_nowcaster")
+  x <- .tbl_now_collapse_censoring(x, "tbl_now_to_nowcaster")
   # nowcaster is GitHub-only (no CRAN-style repository serves it), so point at
   # the source directly rather than at a `repos =` entry.
   .need_pkg(
@@ -2234,6 +2408,7 @@ tbl_now_to_nowcaster <- function(x, ..., event_col = "date_onset",
     strata_levels <- sort(unique(labels))
     linelist[[stratum_col]] <- as.numeric(factor(labels, levels = strata_levels))
     attr(linelist, "nowcaster_levels") <- strata_levels
+    attr(linelist, "nowcaster_stratum_col") <- stratum_col
     # Breaks are half-integers so bin k holds exactly code k.
     attr(linelist, "nowcaster_bins") <- c(0, seq_along(strata_levels) + 0.5)
   }
@@ -2247,7 +2422,7 @@ tbl_now_to_nowcaster <- function(x, ..., event_col = "date_onset",
       cli::cli_li(
         "strata {.val {strata_cols}} pooled into {.val {stratum_col}} \\
          ({length(strata_levels)} level{?s}); pass it as {.arg age_col} with \\
-         {.code bins_age = attr(x, \"nowcaster_bins\")}"
+         {.code bins_age = get_nowcaster_strata(x)$bins}"
       )
     }
     cli::cli_end()
@@ -2377,6 +2552,51 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
 
   .drop_zero_counts(result)
 }
+
+#' Strata metadata for a \pkg{nowcaster} line list
+#'
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' [tbl_now_to_nowcaster()] encodes the strata into a numeric column, because
+#' `nowcasting_inla()`'s `age_col` must be numeric even though its help calls it
+#' a "stratum column". `get_nowcaster_strata()` returns what you need to pass
+#' alongside it, instead of reaching for the attributes by hand.
+#'
+#' @param x A line list produced by [tbl_now_to_nowcaster()].
+#'
+#' @return A list with:
+#' \describe{
+#'   \item{`column`}{Name of the numeric code column (`age_col`).}
+#'   \item{`bins`}{Breaks that put each level in its own bin (`bins_age`).}
+#'   \item{`levels`}{Labels in code order, to map results back.}
+#' }
+#' `NULL` when the object carries no strata.
+#'
+#' @seealso [tbl_now_to_nowcaster()]
+#'
+#' @examplesIf requireNamespace("nowcaster", quietly = TRUE)
+#' data(denguedat)
+#' nowobj <- tbl_now(denguedat,
+#'   event_date = "onset_week", report_date = "report_week",
+#'   strata = "gender", verbose = FALSE
+#' )
+#' nc <- tbl_now_to_nowcaster(nowobj, verbose = FALSE)
+#' strata_info <- get_nowcaster_strata(nc)
+#' strata_info$levels
+#'
+#' @export
+get_nowcaster_strata <- function(x) {
+  levels_map <- attr(x, "nowcaster_levels")
+  if (is.null(levels_map)) {
+    return(NULL)
+  }
+  list(
+    column = attr(x, "nowcaster_stratum_col") %||% "stratum_code",
+    bins   = attr(x, "nowcaster_bins"),
+    levels = levels_map
+  )
+}
+
 
 # 4. S3 methods on other packages' coercion generics------
 #

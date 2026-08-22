@@ -59,6 +59,25 @@ returns it as \code{stratum_col} (default \code{"stratum_code"}), with two attri
 The stratified fit then returns an extra \verb{$age} component, one row per
 stratum per week, alongside the pooled \verb{$total}.
 }
+\section{Censored delays}{
+
+
+A censoring indicator that is a property of the \strong{case} rather than of the
+delay -- an administrative "this date is only an upper bound" mark, say --
+puts a censored and an uncensored row in the same
+\verb{(event_date, report_date)} cell. A reporting triangle has one slot per cell,
+so the extra dimension has to go before the conversion. It is removed
+automatically, with a warning either way:
+\itemize{
+\item \strong{count data}: the counts are summed over the flag, leaving case totals
+unchanged;
+\item \strong{line lists}: the column is dropped, leaving one row per case.
+}
+
+\code{\link[=tbl_now_to_epidist]{tbl_now_to_epidist()}} is the exception and keeps the flag: estimating a
+delay distribution is the one job that can use it.
+}
+
 \examples{
 \dontshow{if (requireNamespace("nowcaster", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
