@@ -71,14 +71,15 @@
 #'
 #' @examplesIf requireNamespace("baselinenowcast", quietly = TRUE)
 #' data(denguedat)
-#' dengue <- tbl_now(denguedat,
+#' # A few years of data and a small number of draws, to keep the example quick.
+#' dengue <- tbl_now(denguedat[1:10000, ],
 #'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 #' )
 #' triangle <- suppressWarnings(
 #'   tbl_now_to_baselinenowcast(dengue, verbose = FALSE)
 #' )
 #' fit <- baselinenowcast::baselinenowcast(
-#'   triangle, output_type = "samples", draws = 100
+#'   triangle, output_type = "samples", draws = 25
 #' )
 #' tidy(fit)
 #'

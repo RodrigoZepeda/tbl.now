@@ -842,10 +842,14 @@ test_that("temporal_effects with holidays integrates correctly", {
 
 # The S7 print method is @noRd (documenting it created an Rd page aliased to the
 # bare name `print`, which tripped CRAN's unexported-examples check), so these
-# tests are its only executable coverage. Note cli writes to the *message*
-# stream, so capture with type = "message" rather than expect_output().
+# tests are its only executable coverage.
+#
+# The method prints with cli's cat_*() family, which writes to *stdout* via
+# cat() and signals no conditions -- so capture it with capture.output() /
+# expect_output(), not capture.output(type = "message") and not by catching
+# message conditions.
 print_lines <- function(x) {
-  paste(utils::capture.output(print(x), type = "message"), collapse = "\n")
+  paste(utils::capture.output(print(x)), collapse = "\n")
 }
 
 test_that("print method for temporal_effects reports the active effects", {
@@ -858,8 +862,10 @@ test_that("print method for temporal_effects reports the active effects", {
 })
 
 test_that("print method reports when no effects are switched on", {
-  txt <- print_lines(temporal_effects(day_of_week = FALSE, week_of_year = FALSE))
-  expect_match(txt, "No temporal effects")
+  expect_match(
+    print_lines(temporal_effects(day_of_week = FALSE, week_of_year = FALSE)),
+    "No temporal effects"
+  )
 })
 
 test_that("print method returns its input invisibly", {

@@ -75,9 +75,10 @@
 #' @seealso [autoplot.tbl_now()], [plot_cycles()], [plot_delay_distribution()],
 #'   [plot_observed_cases()].
 #'
-#' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
+#' @examplesIf requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("almanac", quietly = TRUE)
 #' data(denguedat)
-#' dengue_now <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+#' # First few years only, to keep the example quick; the full data works the same.
+#' dengue_now <- tbl_now(denguedat[1:10000, ], onset_week, report_week, verbose = FALSE)
 #'
 #' # How the cases vary by epidemiological week
 #' plot_week_of_year_effects(dengue_now)

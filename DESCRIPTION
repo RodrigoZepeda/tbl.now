@@ -38,8 +38,7 @@ Suggests:
     wavScalogram,
     WaveletComp
 Additional_repositories:
-    https://epinowcast.r-universe.dev,
-    https://covid19br.r-universe.dev
+    https://epinowcast.r-universe.dev
 Config/testthat/edition: 3
 Config/testthat/parallel: false
 Imports:
@@ -61,7 +60,7 @@ Imports:
     utils
 URL: https://rodrigozepeda.github.io/tbl.now/
 VignetteBuilder: knitr
-Config/Needs/website: rmarkdown
+Config/Needs/website: rmarkdown, covid19br/nowcaster
 Roxygen: list(markdown = TRUE)
 Config/roxygen2/version: 8.0.0
 RoxygenNote: 8.0.0

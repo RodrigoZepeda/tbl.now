@@ -2,6 +2,8 @@
 ^.*\.Renviron$
 ^\.Rproj\.user$
 ^LICENSE\.md$
+^Rplots\.pdf$
+^tests/testthat/_problems$
 ^cran-comments\.md$
 ^README\.Rmd$
 ^\.DS_Store$

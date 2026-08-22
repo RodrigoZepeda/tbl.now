@@ -1,4 +1,4 @@
-#v 0.15.0 
+# v0.16.0
 
 This is a resubmission. It addresses the following comments from the CRAN
 reviewer:
@@ -62,7 +62,7 @@ checktime 14 min > 10 min", driven mostly by `testthat.R` (531s). We added
 `skip_on_cran()` to the slower, more exhaustive/edge-case tests, while keeping
 at least one CRAN-visible test or example exercising every exported function
 (verified programmatically against `NAMESPACE`). `testthat.R` now runs in
-**171s** under real CRAN conditions.
+**162s** under real CRAN conditions.
 
 ## R CMD check results
 
@@ -76,6 +76,19 @@ internally, which disables `skip_on_cran()` and hides the real check time.)
 The remaining NOTE is the routine new-submission one:
 
 * "New submission"
-* "Suggests or Enhances not in mainstream repositories: epidist, epinowcast",
-  where the same NOTE confirms both resolve via the declared
-  `Additional_repositories`.
+* "Suggests or Enhances not in mainstream repositories: epidist, epinowcast,
+  nowcaster".
+
+`epidist` and `epinowcast` resolve via the declared `Additional_repositories`
+(the same NOTE confirms both as available).
+
+`nowcaster` is distributed only from GitHub
+(<https://github.com/covid19br/nowcaster>); no CRAN-style repository serves it,
+so it cannot be listed in `Additional_repositories`. It is therefore used
+strictly conditionally, and the package builds, checks and works fully without
+it: it is never called at load time or in any code path reached by the tests or
+the vignettes; `tbl_now_to_nowcaster()` guards on `requireNamespace()` and
+aborts with an install hint if it is absent; its example is wrapped in
+`@examplesIf requireNamespace("nowcaster", quietly = TRUE)`; and `tidy()`
+recognises nowcaster *output* by its structure without ever calling the
+package.

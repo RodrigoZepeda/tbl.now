@@ -87,9 +87,10 @@ the same: \code{autoplot(x, panels = "calendar_weekday")} and
 \code{plot_day_of_week_effects(x)} return the identical plot.
 }
 \examples{
-\dontshow{if (requireNamespace("ggplot2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+\dontshow{if (requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("almanac", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
-dengue_now <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+# First few years only, to keep the example quick; the full data works the same.
+dengue_now <- tbl_now(denguedat[1:10000, ], onset_week, report_week, verbose = FALSE)
 
 # How the cases vary by epidemiological week
 plot_week_of_year_effects(dengue_now)

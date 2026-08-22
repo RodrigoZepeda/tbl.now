@@ -23,3 +23,5 @@ repomix-output.xml
 cache
 inst/doc
 .positai
+# testthat writes these after a failing run; never commit or ship them
+tests/testthat/_problems/

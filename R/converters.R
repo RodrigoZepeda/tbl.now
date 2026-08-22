@@ -105,27 +105,34 @@
 #' Abort if a Suggested package is not installed
 #'
 #' @param pkg Name of the package required for a conversion.
+#' @param repo Optional named repository to add to `repos` in the suggested
+#'   `install.packages()` call. Defaults to the epinowcast r-universe.
+#' @param install Optional literal install instruction, used verbatim instead of
+#'   building an `install.packages()` call. Use this for back-ends that are not
+#'   served by any CRAN-style repository (e.g. nowcaster, which is GitHub-only).
 #'
 #' @return `NULL`, invisibly (called for its side effect of aborting when the
 #'   package is missing).
 #'
 #' @keywords internal
 #' @noRd
-.need_pkg <- function(pkg, repo = NULL) {
+.need_pkg <- function(pkg, repo = NULL, install = NULL) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
-    # Most optional back-ends live on the epinowcast r-universe; `repo` lets a
-    # caller point at a different one (e.g. nowcaster on covid19br).
-    if (is.null(repo)) {
-      repo <- c(epinowcast = "https://epinowcast.r-universe.dev")
+    if (is.null(install)) {
+      # Most optional back-ends live on the epinowcast r-universe; `repo` lets a
+      # caller point at a different one.
+      if (is.null(repo)) {
+        repo <- c(epinowcast = "https://epinowcast.r-universe.dev")
+      }
+      install <- paste0(
+        "install.packages(\"", pkg, "\", ",
+        "repos = c(options('repos'), ",
+        names(repo)[1], " = '", unname(repo)[1], "'))"
+      )
     }
-    install_call <- paste0(
-      "install.packages(\"", pkg, "\", ",
-      "repos = c(options('repos'), ",
-      names(repo)[1], " = '", unname(repo)[1], "'))"
-    )
     cli::cli_abort(c(
       "Package {.pkg {pkg}} is required for this conversion.",
-      "i" = paste0("Install it with: ", install_call)
+      "i" = paste0("Install it with: ", install)
     ))
   }
 }
@@ -2184,7 +2191,12 @@ tbl_now_to_nowcaster <- function(x, ..., event_col = "date_onset",
                                  report_col = "date_report",
                                  stratum_col = "stratum_code", verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_nowcaster")
-  .need_pkg("nowcaster", c(covid19br = "https://covid19br.r-universe.dev"))
+  # nowcaster is GitHub-only (no CRAN-style repository serves it), so point at
+  # the source directly rather than at a `repos =` entry.
+  .need_pkg(
+    "nowcaster",
+    install = "remotes::install_github(\"covid19br/nowcaster\")"
+  )
 
   event_date_col  <- get_event_date(x)
   report_date_col <- get_report_date(x)
