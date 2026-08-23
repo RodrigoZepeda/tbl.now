@@ -121,10 +121,12 @@ fit_diseasenowcasting <- function(x) {
     lower      = apply(draws, 2, stats::quantile, probs = 0.025),
     upper      = apply(draws, 2, stats::quantile, probs = 0.975)
   )
-  # The article prints `dnc_fit` itself, so carry the fit along; `prediction` is
-  # what tidy() dispatches on.
+  # The article prints `dnc_fit` and then calls `tidy(dnc_fit)`, so tidy the FIT
+  # -- that is the call on the page. From diseasenowcasting 2.1.0 the fit has its
+  # own method, which delegates to `predict()`; the resulting table is the same
+  # one `tidy(predict(fit))` gives, bar the sampling noise in `predict()`.
   attr(out, "fit")     <- fit
-  attr(out, "tidy_on") <- prediction
+  attr(out, "tidy_on") <- fit
   out
 }
 
@@ -425,9 +427,34 @@ nowcaster_rows <- tryCatch(
 )
 if (!is.null(nowcaster_rows)) {
   message("  - nowcaster ok (", nrow(nowcaster_rows), " rows)")
-  display[["nowcaster"]] <- capture_display(
-    attr(nowcaster_rows, "fit"), attr(nowcaster_rows, "tidy_on")
+
+  # The article's nowcaster section shows an UNSTRATIFIED fit and then prints
+  # `tidy(nowcaster_fit)`. Displaying the stratified fit's tidy there would show
+  # a table the reader's own code cannot produce (one row per stratum, labelled
+  # with the numeric codes the converter assigned), so the display comes from a
+  # second, unstratified fit matching the code on the page. The stratified fit
+  # above still supplies the per-stratum panels.
+  message("  - nowcaster (unstratified, for display) ...", appendLF = FALSE)
+  nowcaster_plain <- tryCatch(
+    suppressWarnings(suppressMessages(nowcaster::nowcasting_inla(
+      dataset      = tbl_now_to_nowcaster(objects[["Total"]], verbose = FALSE),
+      date_onset   = date_onset,
+      date_report  = date_report,
+      data.by.week = TRUE,
+      use.epiweek  = FALSE,
+      Dmax         = N_HORIZON,
+      wdw          = TRIM,
+      silent       = TRUE
+    ))),
+    error = function(e) {
+      message(" FAILED: ", conditionMessage(e))
+      NULL
+    }
   )
+  if (!is.null(nowcaster_plain)) {
+    message(" ok")
+    display[["nowcaster"]] <- capture_display(nowcaster_plain, nowcaster_plain)
+  }
   results[[length(results) + 1L]] <- nowcaster_rows |>
     mutate(
       event_date = snap_to_grid(.data$event_date, grid),
@@ -455,7 +482,202 @@ seasonal_fit <- tryCatch(
 )
 if (!is.null(seasonal_fit)) {
   display[["diseasenowcasting_seasonal"]] <- capture_display(
-    seasonal_fit, stats::predict(seasonal_fit)
+    seasonal_fit, seasonal_fit
+  )
+  message("  ok")
+}
+
+# -- epidist: the delay distribution, fitted vs observed ------------------------
+# epidist does not nowcast, so there is no per-date estimate to compare. What it
+# DOES produce is a reporting-delay distribution, and that can be checked against
+# the delays actually seen in the data.
+#
+# The LATENT model is used, not the marginal one: with epidist 0.4.0 and
+# primarycensored 1.5.1 the marginal model fails to compile (its generated Stan
+# code calls `primarycensored_lpmf` with 8 arguments against a 9-argument
+# signature -- the `L` lower-truncation argument is missing). The latent model
+# has no such problem and estimates the same quantity, so the article uses it.
+#
+# The latent model carries one latent variable per observation, so it is trimmed
+# to the last `TRIM` weeks; a delay distribution does not need twelve years of
+# data to be characterised.
+EPIDIST_ITER <- 1000L
+EPIDIST_MAX_WEEKS <- 8L
+
+epidist_window <- dengue |> filter(onset_week >= CUT - 7 * TRIM)
+
+fit_epidist_latent <- function(data, formula) {
+  obj <- make_now(data)
+  if (!is.null(formula) && "gender" %in% names(data)) {
+    obj <- add_strata(obj, "gender")
+  }
+  converted <- suppressWarnings(suppressMessages(
+    tbl_now_to_epidist(obj, verbose = FALSE)
+  ))
+  fit <- suppressWarnings(suppressMessages(epidist::epidist(
+    epidist::as_epidist_latent_model(converted),
+    formula = formula %||% (mu ~ 1),
+    chains = 2, iter = EPIDIST_ITER, refresh = 0, silent = 2, seed = 1
+  )))
+
+  # brms swallows a Stan data-initialisation failure and hands back a fit with
+  # no draws, so an unchecked call reports "ok" for a model that never ran.
+  if (length(brms::as_draws(fit)) == 0L || brms::ndraws(fit) == 0L) {
+    stop("epidist fit produced no posterior draws", call. = FALSE)
+  }
+  fit
+}
+
+# Fitted P(delay falls in week w), integrating the lognormal over each week.
+# Weekly data means a delay of "0 weeks" covers [0, 7) days, so the comparison
+# has to be made on bins, not on a continuous density.
+#
+# `predict_delay_parameters()` needs `newdata` to carry every model variable,
+# the response included -- a bare `data.frame(gender = "Male")` is rejected with
+# "Response variables must be specified in 'newdata'". Passing representative
+# ROWS OF THE FIT'S OWN DATA satisfies that; the returned `index` column says
+# which row each draw belongs to.
+epidist_representative_rows <- function(fit, by = NULL) {
+  model_data <- fit$data
+  if (is.null(by)) {
+    return(model_data[1L, , drop = FALSE])
+  }
+  model_data[!duplicated(model_data[[by]]), , drop = FALSE]
+}
+
+# The observed quantity is a WEEK-INDEX DIFFERENCE, week(report) - week(onset),
+# not the delay in days binned into weeks. Those are different things: the onset
+# time is uniform inside its week, so a case whose true delay is D lands in week
+# `floor((p + D) / 7)` with `p ~ U(0, 7)`. Comparing the fitted lognormal
+# directly against the week counts overstates week 0 badly (0.24 against an
+# observed 0.03) -- it credits week 0 with every delay under seven days, when
+# only those from a case whose onset fell early in the week can land there.
+#
+# So push the fitted distribution through that same mapping before comparing,
+# integrating over the onset position rather than sampling it.
+epidist_week_probs <- function(mu, sigma, weeks, n_grid = 101L) {
+  onset_grid <- seq(0, 7, length.out = n_grid)
+  vapply(weeks, function(w) {
+    per_position <- vapply(onset_grid, function(p) {
+      upper <- 7 * (w + 1) - p
+      lower <- 7 * w - p
+      hi <- ifelse(upper > 0, stats::plnorm(upper, mu, sigma), 0)
+      lo <- ifelse(lower > 0, stats::plnorm(lower, mu, sigma), 0)
+      mean(hi - lo)
+    }, numeric(1))
+    mean(per_position)
+  }, numeric(1))
+}
+
+epidist_fitted_bins <- function(fit, rows, labels) {
+  draws <- epidist::predict_delay_parameters(fit, newdata = rows)
+  weeks <- 0:EPIDIST_MAX_WEEKS
+
+  per_stratum <- lapply(seq_along(labels), function(i) {
+    dd <- draws[draws$index == i, , drop = FALSE]
+
+    # One row per posterior draw, so the interval reflects the posterior rather
+    # than the Monte Carlo noise of a single simulation.
+    by_draw <- vapply(
+      seq_len(nrow(dd)),
+      function(j) epidist_week_probs(dd$mu[j], dd$sigma[j], weeks),
+      numeric(length(weeks))
+    )
+
+    tibble(
+      stratum = labels[i],
+      delay   = weeks,
+      fitted  = apply(by_draw, 1, stats::median),
+      lower   = apply(by_draw, 1, stats::quantile, probs = 0.025),
+      upper   = apply(by_draw, 1, stats::quantile, probs = 0.975)
+    )
+  })
+  bind_rows(per_stratum)
+}
+
+# The delays actually observed, on the same bins.
+epidist_observed_bins <- function(data, label) {
+  delays <- as.numeric(difftime(data$report_week, data$onset_week, units = "days")) / 7
+  delays <- delays[delays >= 0 & delays <= EPIDIST_MAX_WEEKS]
+  counts <- table(factor(round(delays), levels = 0:EPIDIST_MAX_WEEKS))
+  tibble(
+    stratum  = label,
+    delay    = 0:EPIDIST_MAX_WEEKS,
+    observed = as.numeric(counts) / sum(counts)
+  )
+}
+
+message("== epidist (delay distribution) ==")
+epidist_result <- tryCatch({
+  message("  - total ...", appendLF = FALSE)
+  fit_total <- fit_epidist_latent(epidist_window, NULL)
+  message(" ok")
+
+  message("  - by gender ...", appendLF = FALSE)
+  fit_gender <- fit_epidist_latent(epidist_window, mu ~ 1 + gender)
+  message(" ok")
+
+  gender_rows <- epidist_representative_rows(fit_gender, by = "gender")
+  levels_gender <- as.character(gender_rows$gender)
+
+  fitted <- bind_rows(
+    epidist_fitted_bins(
+      fit_total, epidist_representative_rows(fit_total), "Total"
+    ),
+    epidist_fitted_bins(fit_gender, gender_rows, levels_gender)
+  )
+  observed <- bind_rows(
+    epidist_observed_bins(epidist_window, "Total"),
+    bind_rows(lapply(levels_gender, function(g) {
+      epidist_observed_bins(epidist_window |> filter(gender == g), g)
+    }))
+  )
+
+  stopifnot(setequal(unique(fitted$stratum), unique(observed$stratum)))
+
+  list(
+    tidy_total  = suppressWarnings(suppressMessages(tbl.now::tidy(fit_total))),
+    tidy_gender = suppressWarnings(suppressMessages(tbl.now::tidy(fit_gender))),
+    fitted      = fitted,
+    observed    = observed,
+    n_cases     = nrow(epidist_window),
+    trim_weeks  = TRIM
+  )
+}, error = function(e) {
+  message("  FAILED: ", conditionMessage(e))
+  NULL
+})
+if (!is.null(epidist_result)) {
+  display[["epidist"]] <- epidist_result
+  message("  ok")
+}
+
+# -- NobBS with user-chosen quantiles ------------------------------------------
+# `tidy(probs =)` is refused for NobBS because the fit keeps no draws to
+# re-summarise. NobBS can compute any quantiles you like, but they have to be
+# ASKED FOR at fit time, via `specs$quantiles`; the article shows how.
+message("== NobBS (custom quantiles, for display) ==")
+nobbs_q <- tryCatch(
+  suppressWarnings(suppressMessages(NobBS::NobBS(
+    data          = as.data.frame(objects[["Total"]]),
+    now           = get_now(objects[["Total"]]),
+    units         = "1 week",
+    onset_date    = get_event_date(objects[["Total"]]),
+    report_date   = get_report_date(objects[["Total"]]),
+    max_D         = MAX_DELAY,
+    moving_window = TRIM,
+    specs         = list(quantiles = c(0.1, 0.5, 0.9))
+  ))),
+  error = function(e) {
+    message("  FAILED: ", conditionMessage(e))
+    NULL
+  }
+)
+if (!is.null(nobbs_q)) {
+  display[["NobBS_quantiles"]] <- list(
+    printed   = NULL,
+    tidy      = suppressWarnings(suppressMessages(tbl.now::tidy(nobbs_q))),
+    estimates = utils::tail(nobbs_q$estimates, 5)
   )
   message("  ok")
 }

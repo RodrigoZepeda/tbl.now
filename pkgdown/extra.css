@@ -225,8 +225,12 @@
   text-decoration: underline;
 }
 
+/* Inline code keeps the page-wide sage green here. The callout's own tint is
+   red, and a red-on-red chip read as a coloured square rather than as code, so
+   this deliberately does NOT follow the callout the way `.alert-info code`
+   does (there the lift stays within the same green family). */
 .alert-warning code {
-  background-color: #f2d3ce !important;
+  background-color: #ebefeb !important;
   color: #262626 !important;
 }
 

@@ -10,21 +10,18 @@ get_nowcaster_strata(x)
 \item{x}{A line list produced by \code{\link[=tbl_now_to_nowcaster]{tbl_now_to_nowcaster()}}.}
 }
 \value{
-A list with:
-\describe{
-\item{\code{column}}{Name of the numeric code column (\code{age_col}).}
-\item{\code{bins}}{Breaks that put each level in its own bin (\code{bins_age}).}
-\item{\code{levels}}{Labels in code order, to map results back.}
-}
-\code{NULL} when the object carries no strata.
+A numeric vector of breaks putting each stratum in its own bin, ready
+for \code{nowcasting_inla(bins_age = )}. \code{NULL} when the object carries no
+strata.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 \code{\link[=tbl_now_to_nowcaster]{tbl_now_to_nowcaster()}} encodes the strata into a numeric column, because
 \code{nowcasting_inla()}'s \code{age_col} must be numeric even though its help calls it
-a "stratum column". \code{get_nowcaster_strata()} returns what you need to pass
-alongside it, instead of reaching for the attributes by hand.
+a "stratum column". \code{get_nowcaster_strata()} returns the breaks that go with
+that column, so they can be passed straight to \code{bins_age} instead of reaching
+for the object's attributes by hand.
 }
 \examples{
 \dontshow{if (requireNamespace("nowcaster", quietly = TRUE)) withAutoprint(\{ # examplesIf}
@@ -34,8 +31,7 @@ nowobj <- tbl_now(denguedat,
   strata = "gender", verbose = FALSE
 )
 nc <- tbl_now_to_nowcaster(nowobj, verbose = FALSE)
-strata_info <- get_nowcaster_strata(nc)
-strata_info$levels
+get_nowcaster_strata(nc)
 \dontshow{\}) # examplesIf}
 }
 \seealso{

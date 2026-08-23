@@ -439,3 +439,118 @@ tidy.list <- function(x, probs = NULL, engine = NULL, strata_levels = NULL, ...)
   }
   NULL
 }
+
+#' Tidy the delay distribution from an \pkg{epidist} fit
+#'
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' \pkg{epidist} is the one supported package that does **not** produce a
+#' nowcast. It estimates the **reporting-delay distribution**, so there are no
+#' per-event-date case estimates to tidy and the columns
+#' [tidy.nowcast()] promises (`event_date`, `stratum`, ...) would all be
+#' meaningless. This method therefore returns a different, delay-shaped table --
+#' one row per distribution parameter rather than one row per date.
+#'
+#' @section Value:
+#'
+#' A [tibble][tibble::tibble] with one row per parameter of the fitted delay
+#' distribution and these columns:
+#'
+#' \describe{
+#'   \item{`term`}{`character`. The parameter: the distribution's own parameters
+#'     (`mu`, `sigma`, ... -- whichever the `family` has) plus the derived
+#'     `mean` and `sd`, which are the numbers most people actually want.}
+#'   \item{`estimate`}{`numeric`. Posterior median.}
+#'   \item{`conf.low`, `conf.high`}{`numeric`. Interval bounds, following
+#'     \pkg{broom}'s naming.}
+#'   \item{`level`}{`numeric`. The width of that interval.}
+#'   \item{`engine`}{`character`. Always `"epidist"`.}
+#' }
+#'
+#' `probs` appends one `q*` column per requested probability, exactly as it does
+#' for the nowcast methods -- the fit exposes draws, so any quantile is real
+#' rather than an approximation.
+#'
+#' @section Dispatch:
+#'
+#' `epidist()` returns an object of class `c("brmsfit", "epidist_fit")`, in that
+#' order, so if \pkg{broom.mixed} is loaded its `tidy.brmsfit()` method matches
+#' **first** and you get raw \pkg{brms} parameters instead of this table. Call
+#' `tidy.epidist_fit(fit)` explicitly when you want the delay distribution and
+#' cannot be sure which method will win.
+#'
+#' @param x A fit from [epidist::epidist()].
+#' @param probs Optional numeric vector of probabilities in `[0, 1]`, adding one
+#'   `q*` column each.
+#' @param level Width of the reported interval. Defaults to `0.95`.
+#' @param newdata Optional data frame passed to
+#'   [epidist::predict_delay_parameters()], for a fit with covariates in the
+#'   delay model (`formula = mu ~ 1 + gender`, say). `NULL` uses the fit's own
+#'   data.
+#' @param ... Unused, for generic consistency.
+#'
+#' @returns A tibble, as described in *Value*.
+#'
+#' @seealso [tidy.nowcast()] for the case-count nowcast engines,
+#'   [tbl_now_to_epidist()] for the conversion.
+#'
+#' @examplesIf FALSE
+#' # Fitting needs Stan, so this is not run.
+#' data(denguedat)
+#' nowobj <- tbl_now(denguedat,
+#'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
+#' )
+#' fit <- tbl_now_to_epidist(nowobj) |>
+#'   epidist::as_epidist_marginal_model() |>
+#'   epidist::epidist()
+#'
+#' tidy(fit)
+#' tidy(fit, probs = c(0.05, 0.95))
+#'
+#' @rdname tidy.epidist_fit
+#' @exportS3Method generics::tidy
+tidy.epidist_fit <- function(x, probs = NULL, level = 0.95, newdata = NULL,
+                             ...) {
+  .need_pkg("epidist")
+  if (!is.numeric(level) || length(level) != 1L || level <= 0 || level >= 1) {
+    cli::cli_abort("{.arg level} must be a single number strictly between 0 and 1.")
+  }
+
+  # Draws of the delay parameters, one row per draw per observation.
+  # `add_mean_sd()` appends the summaries of the distribution those parameters
+  # imply, which is what a reader actually wants to read off a delay fit.
+  draws <- epidist::predict_delay_parameters(x, newdata = newdata)
+  draws <- epidist::add_mean_sd(draws)
+
+  # Everything except the bookkeeping columns is a parameter worth reporting.
+  bookkeeping <- c("draw", "index", ".draw", ".chain", ".iteration", "obs")
+  terms <- setdiff(names(draws), bookkeeping)
+  terms <- terms[vapply(draws[terms], is.numeric, logical(1))]
+
+  tail_probs <- c((1 - level) / 2, 1 - (1 - level) / 2)
+
+  summaries <- lapply(terms, function(term) {
+    values <- draws[[term]]
+    bounds <- stats::quantile(values, probs = tail_probs, na.rm = TRUE)
+    row <- tibble::tibble(
+      term      = term,
+      estimate  = stats::median(values, na.rm = TRUE),
+      conf.low  = unname(bounds[1]),
+      conf.high = unname(bounds[2]),
+      level     = level,
+      engine    = "epidist"
+    )
+    if (!is.null(probs) && length(probs) > 0L) {
+      .assert_probs(probs)
+      extra <- lapply(probs, function(p) {
+        unname(stats::quantile(values, probs = p, na.rm = TRUE))
+      })
+      row <- dplyr::bind_cols(
+        row, tibble::as_tibble(stats::setNames(extra, .tidy_quantile_names(probs)))
+      )
+    }
+    row
+  })
+
+  dplyr::bind_rows(summaries)
+}

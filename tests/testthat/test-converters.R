@@ -1876,34 +1876,27 @@ test_that("a weekly reporting triangle survives the round-trip through as_tbl_no
 
 # get_nowcaster_strata() --------------------------------------------------------
 
-test_that("get_nowcaster_strata() returns the encoding nowcaster needs", {
+test_that("get_nowcaster_strata() returns the breaks nowcaster needs", {
   skip_if_not_installed("nowcaster")
   x <- make_strata_tbl_now()
   linelist <- tbl_now_to_nowcaster(x, verbose = FALSE)
-  info <- get_nowcaster_strata(linelist)
+  bins <- get_nowcaster_strata(linelist)
 
-  expect_type(info, "list")
-  expect_named(info, c("column", "bins", "levels"))
+  # It returns `bins_age` itself, not a list to dig through.
+  expect_true(is.numeric(bins))
+  expect_null(names(bins))
 
-  # The code column must exist and be NUMERIC: `nowcasting_inla()` cuts it, so a
-  # character column errors inside cut().
-  expect_true(info$column %in% names(linelist))
-  expect_true(is.numeric(linelist[[info$column]]))
-
-  # Labels, in code order, matching the object's strata.
-  expect_setequal(info$levels, unique(as.character(x$gender)))
+  levels_map <- attr(linelist, "nowcaster_levels")
 
   # Breaks must put each level in its own bin: one more break than levels, and
   # cutting the codes must recover every level exactly once.
-  expect_length(info$bins, length(info$levels) + 1L)
-  binned <- cut(sort(unique(linelist[[info$column]])), breaks = info$bins)
-  expect_length(unique(binned), length(info$levels))
+  expect_length(bins, length(levels_map) + 1L)
+  binned <- cut(sort(unique(linelist[["stratum_code"]])), breaks = bins)
+  expect_length(unique(binned), length(levels_map))
 
-  # Codes map back to labels positionally.
-  expect_equal(
-    info$levels[linelist[[info$column]]],
-    as.character(linelist[["gender"]])
-  )
+  # The code column must be NUMERIC: `nowcasting_inla()` cuts it, so a character
+  # column errors inside cut().
+  expect_true(is.numeric(linelist[["stratum_code"]]))
 })
 
 test_that("get_nowcaster_strata() is NULL when there are no strata", {
@@ -1917,9 +1910,11 @@ test_that("get_nowcaster_strata() handles several strata columns", {
   x <- make_strata_tbl_now() |>
     dplyr::mutate(site = rep(c("A", "B"), length.out = dplyr::n())) |>
     add_strata("site")
-  info <- get_nowcaster_strata(tbl_now_to_nowcaster(x, verbose = FALSE))
+  linelist <- tbl_now_to_nowcaster(x, verbose = FALSE)
+  bins <- get_nowcaster_strata(linelist)
 
   # Several strata collapse into ONE label per observed combination.
-  expect_equal(length(info$levels), length(unique(interaction(x$gender, x$site))))
-  expect_length(info$bins, length(info$levels) + 1L)
+  n_levels <- length(attr(linelist, "nowcaster_levels"))
+  expect_equal(n_levels, length(unique(interaction(x$gender, x$site))))
+  expect_length(bins, n_levels + 1L)
 })

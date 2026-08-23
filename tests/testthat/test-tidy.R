@@ -163,3 +163,100 @@ test_that("tidy() falls back to NA bounds when there is no pi slot", {
   expect_true(all(is.na(tidied$level)))
   expect_false(anyNA(tidied$estimate))
 })
+
+# --- epidist ------------------------------------------------------------------
+# epidist is the one supported package that does NOT nowcast: it estimates the
+# reporting-delay distribution, so `tidy()` returns a delay-shaped table (one row
+# per parameter) rather than the per-event-date nowcast frame.
+#
+# The bindings are mocked so the test does not have to compile a Stan model; the
+# method was verified against a real fit separately.
+
+fake_delay_draws <- function() {
+  set.seed(1)
+  data.frame(
+    draw  = seq_len(400),
+    index = rep(1:4, each = 100),
+    mu    = stats::rnorm(400, 1.6, 0.05),
+    sigma = stats::rnorm(400, 0.61, 0.02)
+  )
+}
+
+with_mocked_epidist <- function(code) {
+  testthat::local_mocked_bindings(
+    predict_delay_parameters = function(fit, newdata = NULL, ...) {
+      fake_delay_draws()
+    },
+    add_mean_sd = function(data, ...) {
+      data$mean <- exp(data$mu + data$sigma^2 / 2)
+      data$sd <- data$mean * sqrt(exp(data$sigma^2) - 1)
+      data
+    },
+    .package = "epidist"
+  )
+  force(code)
+}
+
+fake_epidist_fit <- function() structure(list(), class = c("brmsfit", "epidist_fit"))
+
+test_that("tidy() on an epidist fit returns the delay distribution", {
+  skip_if_not_installed("epidist")
+
+  with_mocked_epidist({
+    out <- generics::tidy(fake_epidist_fit())
+
+    expect_s3_class(out, "tbl_df")
+    # One row per distribution parameter, NOT per event date.
+    expect_named(
+      out, c("term", "estimate", "conf.low", "conf.high", "level", "engine")
+    )
+    expect_setequal(out$term, c("mu", "sigma", "mean", "sd"))
+    expect_equal(unique(out$engine), "epidist")
+    expect_equal(unique(out$level), 0.95)
+
+    # None of the nowcast columns belong here.
+    expect_false(any(c("event_date", "stratum") %in% names(out)))
+
+    expect_true(all(out$conf.low <= out$estimate))
+    expect_true(all(out$estimate <= out$conf.high))
+  })
+})
+
+test_that("tidy() drops epidist's bookkeeping columns", {
+  skip_if_not_installed("epidist")
+
+  with_mocked_epidist({
+    out <- generics::tidy(fake_epidist_fit())
+    # `draw` and `index` identify the draw, they are not delay parameters.
+    expect_false(any(c("draw", "index") %in% out$term))
+  })
+})
+
+test_that("tidy() honours probs and level on an epidist fit", {
+  skip_if_not_installed("epidist")
+
+  with_mocked_epidist({
+    out <- generics::tidy(fake_epidist_fit(), probs = c(0.05, 0.95))
+    expect_true(all(c("q5", "q95") %in% names(out)))
+    expect_true(all(out$q5 <= out$q95))
+
+    narrow <- generics::tidy(fake_epidist_fit(), level = 0.5)
+    wide <- generics::tidy(fake_epidist_fit(), level = 0.95)
+    expect_equal(unique(narrow$level), 0.5)
+    # A 50% interval must sit inside the 95% one.
+    expect_true(all(narrow$conf.low >= wide$conf.low))
+    expect_true(all(narrow$conf.high <= wide$conf.high))
+  })
+})
+
+test_that("tidy() rejects an impossible level for an epidist fit", {
+  skip_if_not_installed("epidist")
+
+  with_mocked_epidist({
+    expect_error(generics::tidy(fake_epidist_fit(), level = 1), "strictly between")
+    expect_error(generics::tidy(fake_epidist_fit(), level = 0), "strictly between")
+    expect_error(
+      generics::tidy(fake_epidist_fit(), level = c(0.5, 0.9)), "strictly between"
+    )
+  })
+})

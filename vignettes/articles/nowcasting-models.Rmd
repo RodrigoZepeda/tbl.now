@@ -53,12 +53,18 @@ requirements* column above): **Stan** via `cmdstanr`, **JAGS** as a standalone
 program, and **R-INLA**, which is not on CRAN.
 
 ```r
+# CRAN packges
 install.packages(c("baselinenowcast", "NobBS", "surveillance"))
 
 # Not on CRAN:
+install.packages("cmdstanr",   repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
+install.packages("epidist",    repos = "https://epinowcast.r-universe.dev")
 install.packages("epinowcast", repos = "https://epinowcast.r-universe.dev")
-install.packages("nowcaster",  repos = "https://covid19br.r-universe.dev")
 install.packages("INLA",       repos = "https://inla.r-inla-download.org/R/stable")
+
+# Packages from Github:
+install.packages("pak") 
+pak::pkg_install("covid19br/nowcaster")
 pak::pkg_install("RodrigoZepeda/diseasenowcasting")
 ```
 
@@ -154,8 +160,7 @@ with `panels = "delay_seasonality"` or `"delay_calendar"` first to *see* whether
 such effects are present before modelling them.
 :::
 
-## Checking each nowcast
-
+> **Checking each nowcast**
 Every section below ends with the same figure: three panels — the **total**
 series and the two **gender** strata — each showing what had been reported by
 `now` (grey bars), what those weeks eventually reached (the dark **truth** line),
@@ -290,7 +295,7 @@ nowcast(dengue_seasonal)   # the strata and temporal effects are used automatica
 show_fit("diseasenowcasting_seasonal")
 ```
 
-Its predictions tidy the same way, now carrying the stratum:
+Predictions can be obtained via `tidy`:
 
 ```{r dnc-teff-tidy-1, eval=FALSE}
 tidy(nowcast(dengue_seasonal))
@@ -300,15 +305,30 @@ tidy(nowcast(dengue_seasonal))
 show_tidy("diseasenowcasting_seasonal")
 ```
 
-In both stratified and unstratified cases the predictions can be recovered with `tidy`:
+In both stratified and unstratified cases:
 
 ```{r dnc-tidy-1, eval=FALSE}
-tidy(dnc_fit) 
+tidy(dnc_fit)
 ```
 
 ```{r dnc-tidy, echo=FALSE}
 show_tidy("diseasenowcasting")
 ```
+
+::: {.alert .alert-info}
+**NOTE**: this needs **diseasenowcasting >= 2.1.0**. Earlier versions declared
+their own `tidy()` generic rather than re-exporting the shared one, so a bare
+`tidy(dnc_fit)` returned that package's *model-parameter* table (`term`,
+`std.error`, ...) instead of a nowcast — no error, just a different table. On
+2.1.0 and later, `tidy()` returns the nowcast and the parameter table moved to
+`model_parameters()`. On an older version, use
+`tbl.now::tidy(predict(dnc_fit))`.
+
+A related hazard remains with \pkg{broom}: loading it overwrites `tbl.now`'s
+`tidy.list()` method, which is what \pkg{NobBS} and \pkg{nowcaster} fits
+dispatch on. Qualify the call as `tbl.now::tidy()` there if \pkg{broom} is
+attached.
+:::
 
 ```{r dnc-panels, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=3.6, out.width="100%", fig.cap="Nowcast both stratified and total using the diseasenowcasting package", fig.alt="Three panels (Total, Female, Male) comparing the diseasenowcasting nowcast against the counts reported by now and the counts those weeks eventually reached."}
 nowcast_panels("diseasenowcasting")
@@ -329,10 +349,10 @@ line-list to weekly incidence on the way):
 ```{r bln-convert, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
 library(baselinenowcast)
 
-# A line list is all you need: the converter aggregates to incidence and fills
-# the event weeks that have no reports yet, so the triangle reaches the `now`.
+# The converter transforms into the required reporting triangle.
 dengue_triangle <- tbl_now_to_baselinenowcast(dengue_now, verbose = FALSE)
 
+# You can see some entries of the triangle where
 # rows = onset weeks, columns = delay in weeks
 dengue_triangle[1:5, 1:6]
 ```
@@ -341,10 +361,42 @@ From here you can follow `baselinenowcast`'s own workflow. For example calling
 `baselinenowcast()` to estimate the delay from the triangle, apply it, and
 draw nowcast samples:
 
+::: {.alert .alert-warning}
+**Trim the rows that are forecasts, not nowcasts.** `baselinenowcast` divides
+each observed row by the share of the delay distribution that should have
+arrived by now. In `denguedat` almost nothing is reported in the same week —
+`P(delay = 0)` is about **0.05** — so the newest event week, observable only at
+delay 0, gets divided by 0.05 and explodes: a single case became an estimate of
+**257 with an upper bound of 1584**, against a truth of 15.
+
+This is not a week you can choose your way out of: completing the triangle to
+the `now` *always* leaves a final row seen only at delay 0. `baselinenowcast`'s
+own error text names the remedy — truncate "to an earlier reference time to
+ensure a nowcast, not a forecast, is being produced" — so drop trailing rows
+whose expected observed share is too small:
+
+```{r bln-trim, eval=has("baselinenowcast")}
+# Drop trailing reference times whose expected observed share is below 10%:
+# those are forecasts, not nowcasts.
+trim_forecast_rows <- function(triangle, min_observed_share = 0.10) {
+  pmf <- as.numeric(estimate_delay(triangle))
+  repeat {
+    n_rows <- nrow(triangle)
+    if (n_rows < 10) break
+    observed_delays <- sum(!is.na(triangle[n_rows, ]))
+    share <- sum(head(pmf, max(observed_delays, 1L)))
+    if (share >= min_observed_share) break
+    triangle <- triangle[seq_len(n_rows - 1L), , drop = FALSE]
+  }
+  triangle
+}
+```
+:::
+
 ```{r bln-fit, eval=run_models && has("baselinenowcast"), message=FALSE}
 # One-call workflow: estimate the delay, apply it, and draw nowcast samples.
 nowcast_samples <- baselinenowcast(
-  dengue_triangle,
+  trim_forecast_rows(dengue_triangle),
   output_type = "samples",
   draws       = 1000
 )
@@ -353,11 +405,10 @@ nowcast_samples <- baselinenowcast(
 
 ### With strata and effects.
 
-
 A reporting-triangle *matrix* is a single table with no room for strata or
 covariates, so `format = "matrix"` pools the strata (with a warning) and drops
-the effect columns. To nowcast each stratum separately we require a 
-`format = "triangle_list"` instead which creates one reporting-triangle per stratum. 
+the effect columns. To nowcast each stratum we need to do it separately via a
+`format = "triangle_list"`. This creates one reporting-triangle per stratum.
 
 ```{r bln-strata, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
 # One reporting triangle per stratum, straight from the object.
@@ -372,12 +423,16 @@ triangles_by_stratum <- tbl_now_to_baselinenowcast(
 triangles_by_stratum
 ```
 
-This can be used as a list:
+This can be used to nowcast each stratum via `lapply`:
 
 ```{r bln-strata-fit, eval=run_models && has("baselinenowcast"), message=FALSE}
-# One nowcast per triangle
+# One nowcast per triangle, each trimmed the same way.
 nowcasts_by_stratum <- triangles_by_stratum |>
-  lapply(\(tri) baselinenowcast(tri, output_type = "samples", draws = 1000))
+  lapply(\(tri) baselinenowcast(
+    trim_forecast_rows(tri),
+    output_type = "samples",
+    draws       = 1000
+  ))
 ```
 
 In both stratified and unstratified cases the predictions can be recovered with `tidy`:
@@ -422,7 +477,7 @@ library(epinowcast)
 # fit tractable.
 dengue_enw_recent <- dengue_now |>
   filter(onset_week >= cutoff - 7 * 104) |>
-  tbl_now_to_epinowcast(verbose = FALSE, quiet = TRUE)
+  tbl_now_to_epinowcast(max_delay = 10, verbose = FALSE, quiet = TRUE)
 
 dengue_enw_recent
 ```
@@ -436,9 +491,17 @@ This can then be passed to `epinowcast()`:
 # A minimal epinowcast fit from the preprocessed object
 fit <- epinowcast(
   dengue_enw_recent,   # the trimmed object, not the full series
-  fit = enw_fit_opts(pp = TRUE, chains = 2, iter_sampling = 500)
+  fit = enw_fit_opts(
+    pp = TRUE, chains = 2, iter_sampling = 500, iter_warmup = 500
+  )
 )
 ```
+
+`max_delay` above is a **modelling choice, not a detail**: left unset, the
+converter infers it from the longest delay present (15 weeks here), and the
+nowcast then carries one reference date per delay. Setting it to 10 matches the
+maximum delay every other engine on this page is given, so the comparison at the
+end is like for like.
 
 ### With strata and effects.
 
@@ -451,7 +514,7 @@ the `metareference` / `metareport` tables so that they can be used in a module f
 # Same trim, from the enriched object.
 enw_seasonal <- dengue_seasonal |>
   filter(onset_week >= cutoff - 7 * 104) |>
-  tbl_now_to_epinowcast(verbose = FALSE, quiet = TRUE)
+  tbl_now_to_epinowcast(max_delay = 10, verbose = FALSE, quiet = TRUE)
 
 # Drop the seasonal terms into a reference-module formula and fit as usual: the
 # covariates now enter the reference model.
@@ -462,9 +525,12 @@ epinowcast(
     distribution = "lognormal",
     data         = enw_seasonal
   ),
-  fit = enw_fit_opts(pp = TRUE, chains = 2, iter_sampling = 500)
+  fit = enw_fit_opts(
+    pp = TRUE, chains = 2, iter_sampling = 500, iter_warmup = 500
+  )
 )
 ```
+
 In both stratified and unstratified cases the predictions can be recovered with `tidy`:
 
 ```{r enw-tidy-1, eval=FALSE}
@@ -494,7 +560,7 @@ whole week automatically:
 **Warning: requires Stan.** This package fits its model with **Stan**, so it needs a working `cmdstanr` (or `rstan`) toolchain installed before any of the code below will run.
 :::
 
-### Simple nowcast
+### Simple delay fit
 
 ```{r epidist-convert, eval=has("epidist"), message=FALSE, warning=FALSE}
 library(epidist)
@@ -503,12 +569,31 @@ dengue_epidist <- tbl_now_to_epidist(dengue_now, verbose = FALSE)
 
 ```
 
+`epidist` offers several model types. The **latent** model is used here; it
+carries one latent variable per observation, so it is given the last two years
+rather than the whole twelve-year series — a delay distribution does not need
+more than that to be pinned down.
+
 ```{r epidist-fit, eval=FALSE}
 # Fit the delay distribution (see the epidist documentation for model choices)
-delay_model <- dengue_epidist |>
-  as_epidist_marginal_model() |>
+delay_model <- dengue_now |>
+  filter(onset_week >= cutoff - 7 * 104) |>
+  tbl_now_to_epidist(verbose = FALSE) |>
+  as_epidist_latent_model() |>
   epidist()
 ```
+
+::: {.alert .alert-warning}
+**The `marginal` model does not currently fit.** With **epidist 0.4.0** and
+**primarycensored 1.5.1**, `as_epidist_marginal_model()` fails at Stan
+compilation: the generated code calls `primarycensored_lpmf()` with 8 arguments
+against a 9-argument signature (primarycensored gained an `L` lower-truncation
+argument that the generated call does not supply). The
+[latent model](https://epidist.epinowcast.org/) is unaffected and estimates the
+same quantity, so it is what this article uses. Reported upstream; check the
+[epidist issue tracker](https://github.com/epinowcast/epidist/issues/) for the
+current status before reaching for `as_epidist_marginal_model()`.
+:::
 
 The fitted delay distribution can then feed back into a nowcast for example as
 a data-informed prior in `epinowcast`.
@@ -524,23 +609,171 @@ dengue_epidist_eff <- tbl_now_to_epidist(dengue_seasonal, verbose = FALSE)
 ```
 
 ```{r epidist-strata-fit, eval=FALSE}
-# A sex-varying mean delay with the fourier terms.
-delay_by_sex <- dengue_epidist_eff |>
-  as_epidist_marginal_model() |>
-  epidist(formula = mu ~ 1 + gender + .event_season_52_sin + .event_season_52_cos)
+# A sex-varying mean delay.
+delay_by_sex <- dengue_seasonal |>
+  filter(onset_week >= cutoff - 7 * 104) |>
+  tbl_now_to_epidist(verbose = FALSE) |>
+  as_epidist_latent_model() |>
+  epidist(formula = mu ~ 1 + gender)
 ```
 
-::: {.alert .alert-warning}
-**`tidy()` does not apply here.** Every other section ends with `tidy(fit)`,
-because every other package returns a nowcast — an estimate of cases per event
-date. `epidist` returns something different: the **reporting-delay
-distribution**, a handful of parameters with no per-date estimates to tidy. The
-`tidy()` methods in `tbl.now` deliberately cover only case-count nowcasts.
+`tidy()` works here too, but it returns a **different table**, because
+`epidist` estimates a different thing. There are no per-date case estimates to
+report, so instead of one row per event date you get one row per parameter of
+the fitted delay distribution:
 
-An `epidist` fit is a `brms` model, so `broom.mixed::tidy()` will summarise its
-parameters if that is what you want. The natural use of the result here is as a
-**data-informed delay prior** for one of the other engines.
+```{r epidist-tidy, eval=FALSE}
+tidy(delay_model)
+```
+
+| column | meaning |
+|---|---|
+| `term` | a parameter of the fitted delay distribution |
+| `estimate` | posterior median |
+| `conf.low`, `conf.high` | interval bounds, using \pkg{broom}'s names |
+| `level` | the width of that interval |
+| `engine` | always `"epidist"` |
+
+The `term` values are the distribution's own parameters (`mu`, `sigma`, or
+whichever the `family` has) **plus** the derived `mean` and `sd` — the delay
+summaries those parameters imply, which are usually the numbers you actually
+want to quote. The fit keeps its draws, so `probs` works as it does elsewhere:
+`tidy(delay_model, probs = c(0.05, 0.95))` adds `q5` and `q95` columns.
+
+::: {.alert .alert-warning}
+**Watch the dispatch.** `epidist()` returns an object whose class is
+`c("brmsfit", "epidist_fit")`, in that order. If \pkg{broom.mixed} is loaded,
+its `tidy.brmsfit()` method matches **first** and you get raw \pkg{brms}
+parameters instead of the delay table above. Call `tidy.epidist_fit(fit)`
+explicitly when you cannot be sure which method wins.
 :::
+
+The natural use of the result here is as a **data-informed delay prior** for one
+of the other engines.
+
+### Does the fitted delay match the observed one?
+
+Every other section ends with the nowcast plotted against the truth. There is no
+nowcast here, but there is an equivalent check: the delay distribution `epidist`
+fitted, against the delays actually seen in the data.
+
+The comparison needs care, and getting it wrong is easy. `epidist` estimates a
+**continuous delay in days**. What the data record is a **week-index
+difference**: `week(report) - week(onset)`. Those are not the same quantity —
+`denguedat` is weekly, so a case whose onset fell late in its week and was
+reported early the next week has a true delay of a day or two but a week
+difference of 1.
+
+So the fitted distribution has to be pushed through that same mapping before
+being compared. With the onset time uniform inside its week, a case with true
+delay $D$ lands in week $\lfloor (p + D)/7 \rfloor$ for $p \sim U(0, 7)$:
+
+```{r epidist-delay-code, eval=FALSE}
+draws <- predict_delay_parameters(delay_model)
+
+# P(week difference = w), integrating over where in its week the onset fell.
+week_probs <- function(mu, sigma, weeks, n_grid = 101) {
+  onset_grid <- seq(0, 7, length.out = n_grid)
+  vapply(weeks, function(w) {
+    mean(vapply(onset_grid, function(p) {
+      hi <- ifelse(7 * (w + 1) - p > 0, plnorm(7 * (w + 1) - p, mu, sigma), 0)
+      lo <- ifelse(7 * w - p > 0, plnorm(7 * w - p, mu, sigma), 0)
+      mean(hi - lo)
+    }, numeric(1)))
+  }, numeric(1))
+}
+
+fitted_bins <- week_probs(median(draws$mu), median(draws$sigma), 0:8)
+
+# Observed: the share of cases at each week difference.
+observed_bins <- dengue_now |>
+  mutate(delay = as.numeric(report_week - onset_week) / 7) |>
+  filter(delay >= 0, delay <= 8) |>
+  count(delay) |>
+  mutate(observed = n / sum(n))
+```
+
+Skipping that step is not a rounding error. Comparing the fitted lognormal
+directly against the week counts credits week 0 with *every* delay under seven
+days, when only a case whose onset fell early in the week can actually land
+there — which inflates that bar roughly sixfold and makes a perfectly good fit
+look broken.
+
+```{r epidist-delay, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=3.6, out.width="100%", fig.cap="epidist's fitted reporting-delay distribution against the delays observed in the data, pooled and by sex", fig.alt="Three panels (Total, Female, Male). Pale red bars show the observed share of cases at each delay in weeks; a darker red line with a shaded credible interval shows the delay distribution epidist fitted."}
+ed <- comparison$display[["epidist"]]
+if (!is.null(ed)) {
+  strata_order <- c("Total", setdiff(unique(ed$fitted$stratum), "Total"))
+  plot_data <- ed$fitted |>
+    dplyr::left_join(ed$observed, by = c("stratum", "delay")) |>
+    dplyr::mutate(stratum = factor(stratum, levels = strata_order))
+
+  # Both series describe the REPORTING process, which the package palette draws
+  # in red: `light_red` for the observed bars, `accent_red` for the fitted curve.
+  # Distinguishing them by shape rather than by hue keeps that grammar intact.
+  light_red <- "#e78b7f"
+  accent_red <- "#B85348"
+
+  ggplot(plot_data, aes(x = delay)) +
+    geom_col(
+      aes(y = observed, fill = "Observed"),
+      width = 0.7, alpha = 0.85
+    ) +
+    geom_ribbon(
+      aes(ymin = lower, ymax = upper, fill = "epidist (95% CrI)"),
+      alpha = 0.25
+    ) +
+    geom_line(
+      aes(y = fitted, colour = "epidist (fitted)"),
+      linewidth = 0.9
+    ) +
+    geom_point(
+      aes(y = fitted, colour = "epidist (fitted)"),
+      size = 1.6
+    ) +
+    facet_wrap(~stratum, nrow = 1) +
+    scale_fill_manual(
+      NULL,
+      values = c("Observed" = light_red, "epidist (95% CrI)" = accent_red)
+    ) +
+    scale_colour_manual(
+      NULL, values = c("epidist (fitted)" = accent_red)
+    ) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    labs(
+      x = "Week difference (report week - onset week)",
+      y = "Share of cases",
+      title = "Fitted delay distribution vs. observed delays"
+    ) +
+    theme_minimal(base_size = 11) +
+    theme(legend.position = "top", panel.grid.minor = element_blank())
+}
+```
+
+The bars are what happened; the line is the same quantity implied by what
+`epidist` fitted. Three things are worth reading off it:
+
+* **The mode and the bulk should line up.** They do here: the fit puts the mass
+  in the same place the data do. If the curve missed the observed mode, the
+  family (`lognormal` by default) would be the first thing to reconsider.
+* **Do not expect the bars to be matched exactly.** A parametric delay
+  distribution is a smooth two-parameter summary being compared against a coarse
+  weekly grid; small shoulder-by-shoulder differences are the price of that
+  smoothing, not evidence of a bad fit.
+* **The tail needs the numbers, not the picture.** Beyond five weeks both series
+  are flat against the axis, but they are not equal: at seven weeks the fitted
+  mass is about **0.05%** against an observed **0.31%**, and the fit runs two to
+  eight times light across weeks 6–8. That is the more striking because the
+  observed shares come from reports that had arrived by the `now`, so long delays
+  are if anything **under**-represented in them (right-truncation, the bias
+  nowcasting exists to correct). A tail that still outruns the fit despite that
+  hints the `family` deserves attention — `epidist` also offers `Gamma()` and
+  `weibull()` — if long delays are what you care about. For the bulk of the
+  distribution, which is what a nowcast leans on, the lognormal is fine here.
+
+The credible band is drawn but barely visible: 3,239 cases pin two parameters
+down tightly, so the posterior for this curve is narrow. That is a statement
+about parameter uncertainty only — it says nothing about how well the *shape*
+matches, which is what the bars are for.
 
 ## NobBS
 
@@ -824,11 +1057,12 @@ level in its own bin.
 ```{r nowcaster-strata, eval=has("nowcaster"), message=FALSE}
 dengue_nowcaster_eff <- tbl_now_to_nowcaster(dengue_seasonal, verbose = FALSE)
 
-head(dengue_nowcaster_eff)
+# `as_tibble()` only for printing: the temporal effects ride along as extra
+# columns, and a bare data.frame would wrap them onto a second block.
+head(dengue_nowcaster_eff) |> as_tibble()
 
-# The breaks and the labels come along as attributes.
-attr(dengue_nowcaster_eff, "nowcaster_bins")
-attr(dengue_nowcaster_eff, "nowcaster_levels")
+# The breaks `bins_age` needs come from the line list itself.
+get_nowcaster_strata(dengue_nowcaster_eff)
 ```
 
 One fit then covers every stratum: `$total` holds the pooled nowcast and `$age`
@@ -840,7 +1074,7 @@ nowcaster_stratified <- nowcasting_inla(
   date_onset   = date_onset,
   date_report  = date_report,
   age_col      = stratum_code,
-  bins_age     = get_nowcaster_strata(dengue_nowcaster_eff)$bins,
+  bins_age     = get_nowcaster_strata(dengue_nowcaster_eff),
   data.by.week = TRUE,
   use.epiweek  = FALSE,
   Dmax         = 20,
@@ -856,6 +1090,9 @@ In both stratified and unstratified cases the predictions can be recovered with 
 ```{r nowcaster-panels, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=3.6, out.width="100%", fig.cap="Nowcast both stratified and total using the nowcaster package", fig.alt="Three panels (Total, Female, Male) comparing the nowcaster nowcast against the counts reported by now and the counts those weeks eventually reached."}
 nowcast_panels("nowcaster")
 ```
+
+<!-- I am ignoring this part for now until I have decided how to communicate it
+content is AI generated please review by a human  before uncommenting. 
 
 ## Does this work on *your* data?
 
@@ -934,12 +1171,13 @@ The honest summary: **every converter works on `linelist`, `count-incidence` and
 `count-cumulative` data** — provided the delays are whole periods and any
 undeclared strata are declared. Those two data problems, not the converters, are
 what you will spend your time on.
+--->
 
-## One shape of answer: `tidy()`
+## The `tidy()` function
 
-The converters normalise what goes *into* each package. `tidy()` normalises what
-comes back out. Every engine above returns something different — a matrix of
-draws, an `stsNC` object, a Stan fit, an INLA summary, a bare list — and `tidy()`
+The converters normalize what goes *into* each package. `tidy()` normalizes what
+comes out. Every engine above returns something different: a matrix of
+draws, an `stsNC` object, a Stan fit, an INLA summary, a bare list. The `tidy()`
 turns any of them into the same table:
 
 ```{r tidy-demo, message=FALSE, warning=FALSE}
@@ -965,12 +1203,9 @@ The columns are the same whatever produced the fit:
 | `conf.low`, `conf.high` | interval bounds, using \pkg{broom}'s names |
 | `level` | the width that interval **actually** has |
 | `engine` | which package produced it |
+| `qXX` | (optional) quantile columns of the prediction |
 
-`level` is not decoration. `epinowcast` reports a q5–q95 band by default, i.e.
-**90%**, while the others report 95%; without recording it you would compare the
-two as though they were the same thing.
-
-Pass `probs` for extra quantile columns, named after the probability:
+Pass `probs` for columns with other quantiles:
 
 ```{r tidy-probs, message=FALSE, warning=FALSE}
 tidy(bln_fit, probs = c(0.05, 0.5, 0.95)) |> tail(3)
@@ -983,29 +1218,73 @@ tidy(bln_fit, probs = c(0.05, 0.5, 0.95)) |> tail(3)
 they never computed is an **error** rather than a silent approximation.
 :::
 
-Two of these packages (`NobBS` and `nowcaster`) return an *unclassed* list, so
-`tidy()` identifies them by their structure. If it ever cannot tell, name the
-engine yourself:
+### Asking the other engines for the quantiles you want
 
-```{r tidy-engine, eval=FALSE}
-tidy(nobbs_fit,     engine = "NobBS")
-tidy(nowcaster_fit, engine = "nowcaster")
+That error is about *when* the quantiles are computed, not about whether you can
+have them. Several of these packages will happily compute any quantile — you
+just have to **ask at fit time**, because once the fit returns, the draws are
+gone and there is nothing left to re-summarise.
+
+`NobBS` is the clearest example. Its `specs` argument takes a `quantiles`
+element, and whatever you put there is computed alongside the default summaries:
+
+```{r nobbs-quantiles-1, eval=FALSE}
+nobbs_quantiles <- NobBS(
+  data          = dengue_linelist,
+  now           = get_now(dengue_now),
+  units         = "1 week",
+  onset_date    = get_event_date(dengue_now),
+  report_date   = get_report_date(dengue_now),
+  max_D         = 10,
+  moving_window = 104,
+  specs         = list(quantiles = c(0.1, 0.5, 0.9))   # <- ask here
+)
+
+tail(nobbs_quantiles$estimates, 5)
 ```
 
-One deliberate non-goal: `tidy()` does **not** re-grid. Packages that bin onto
-their own week starts keep them, because silently snapping the dates would hide a
-real difference between engines — as the `nowcaster` note below explains.
+```{r nobbs-quantiles, echo=FALSE}
+comparison$display[["NobBS_quantiles"]]$estimates
+```
 
-## Putting it together: every nowcast on one plot
+The requested quantiles arrive as `q_0.1`, `q_0.5` and `q_0.9` columns on
+`$estimates`, next to the usual `estimate` / `lower` / `upper`. `tidy()` still
+returns the standard six columns for such a fit — it does not invent a schema
+per engine — so join the extra columns on by date when you need them:
 
-Each engine above returns its answer in its own shape — a matrix of samples, a
-`stsNC` object, a Stan fit, an INLA summary. Here they are on one set of axes,
-built from the very same fits the sections above plotted.
+```{r nobbs-quantiles-join-1, eval=FALSE}
+tidy(nobbs_quantiles) |>
+  left_join(
+    nobbs_quantiles$estimates |>
+      select(event_date = onset_date, q_0.1, q_0.5, q_0.9),
+    by = "event_date"
+  ) |>
+  tail(5)
+```
 
-<details>
-<summary>Show the plotting code</summary>
+```{r nobbs-quantiles-join, echo=FALSE}
+qs <- comparison$display[["NobBS_quantiles"]]
+if (!is.null(qs$tidy)) {
+  qs$tidy |>
+    dplyr::left_join(
+      qs$estimates |>
+        dplyr::select(event_date = onset_date, q_0.1, q_0.5, q_0.9) |>
+        dplyr::mutate(event_date = as.Date(event_date)),
+      by = "event_date"
+    ) |>
+    tail(5)
+}
+```
 
-```{r comparison-all-code, eval=FALSE}
+The same idea applies elsewhere: `surveillance::nowcast()` takes the interval
+width through `control$alpha`, and `nowcaster::nowcasting_inla()` through its own
+INLA quantile settings. Decide what you need **before** you fit.
+
+
+## Summary
+
+
+```{r comparison-all-code, eval=FALSE, echo=FALSE}
 window <- meta$horizon
 tru <- truth[truth$event_date %in% window, ]
 est <- nowcasts[nowcasts$event_date %in% window, ]
@@ -1035,7 +1314,6 @@ ggplot(mapping = aes(x = event_date)) +
   guides(colour = guide_legend(nrow = 2, byrow = TRUE, order = 1))
 ```
 
-</details>
 
 ```{r comparison-all, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=4.4, out.width="100%", fig.alt="Three panels (Total, Female, Male). Grey bars show the counts reported by now, a dark line the counts those weeks eventually reached, and one coloured line per package its nowcast."}
 window <- meta$horizon
@@ -1067,34 +1345,6 @@ ggplot(mapping = aes(x = event_date)) +
   guides(colour = guide_legend(nrow = 2, byrow = TRUE, order = 1))
 ```
 
-The gap between the grey bars and the dark line, at the right-hand edge, is the
-whole nowcasting problem; how well each coloured line closes it is the only
-thing worth judging. Note the panels use free y-axes — splitting by gender
-roughly halves the counts, so the strata are harder for every engine.
-
-Three caveats worth carrying to your own data:
-
-* **`epidist` is absent on purpose.** It estimates the reporting-**delay
-  distribution**, not a case-count nowcast, so it has nothing to draw here.
-* **Not every engine reports the same quantity.** `diseasenowcasting` exposes
-  both a smoothed *latent* epidemic curve and a posterior prediction of the
-  eventual counts; only the latter is comparable, so `predict()` is used rather
-  than `summary()$latent`.
-* **Not every engine uses the same weeks.** `denguedat` labels a week by its
-  Monday; `nowcaster` re-bins onto its own **Tuesday**-start weeks and offers no
-  argument to change that (`use.epiweek = TRUE` moves it to Sunday, not Monday).
-  Its estimates are snapped onto the common grid for these figures, but its
-  weeks hold a slightly different set of cases from everyone else's, so its line
-  can sit a few cases below the grey bars (at most three, in these figures). That is a binning artefact, not a
-  bad nowcast: checked against **its own** aggregation, `nowcaster`'s median is
-  never below what it actually observed.
-
-`data-raw/nowcast_comparison.R` guards against the version of this that *would*
-be a bug: a nowcast should not fall below what was already reported, and any
-engine doing so across most weeks is flagged as a probable misalignment rather
-than quietly plotted.
-
-## Summary
 
 We described the dengue data once as a `tbl_now`, and then a single converter call
 (or, for `diseasenowcasting`, no call at all) handed it to each package in the
@@ -1113,8 +1363,8 @@ tbl_now_to_nowcaster(dengue_now)        # nowcaster
 as.data.frame(dengue_now)               # NobBS or others
 ```
 
-Attaching **strata** and **temporal effects** once (`dengue_seasonal`) then rides
-along the same converters: each package receives them in whatever way it can use —
+Attaching **strata** and **temporal effects** once (`dengue_seasonal`) uses the
+same converters: each package receives them in whatever way it can use
 a grouping in `epinowcast`, covariate columns in `epidist` and the
 `baselinenowcast` long format, one triangle/series per stratum where the model
 takes a single series, and automatically in `diseasenowcasting`. 

@@ -1,5 +1,40 @@
 # tbl.now 0.16.0
 
+* **`tidy()` on a \pkg{diseasenowcasting} fit now works directly.** From
+  \pkg{diseasenowcasting} 2.1.0 that package re-exports the shared `generics`
+  generic and ships its own method, so `tidy(fit)` returns the standard nowcast
+  table. `tbl.now` now registers its own method for
+  `diseasenowcasting::nowcast_prediction` **only when the package does not supply
+  one**, so older versions keep working and newer ones are not overridden. The
+  article calls plain `tidy(dnc_fit)` again.
+
+* **Article fixes so the code on the page reproduces the output shown.** Three
+  places displayed results the printed code could not produce: the
+  \pkg{diseasenowcasting} section tidied the *fit* rather than `predict(fit)`,
+  the \pkg{nowcaster} section showed a stratified fit's table under an
+  unstratified call, and the \pkg{baselinenowcast} section hid the
+  trailing-row trim that keeps the final week from exploding. All three now
+  match the precompute.
+* **Documented two `tidy()` masking hazards.** `library(diseasenowcasting)`
+  attaches its own `tidy()` generic, and `library(broom)` overwrites
+  `tbl.now`'s `tidy.list()` method (which \pkg{NobBS} and \pkg{nowcaster} fits
+  dispatch on). Neither errors; both silently return a different table.
+  `tbl.now::tidy()` disambiguates.
+
+* **New `tidy()` method for \pkg{epidist} fits.** \pkg{epidist} is the one
+  supported package that does not nowcast -- it estimates the reporting-delay
+  distribution -- so `tidy.epidist_fit()` returns a *delay-shaped* table (`term`,
+  `estimate`, `conf.low`, `conf.high`, `level`, `engine`) with one row per
+  distribution parameter, rather than forcing a delay fit into the per-event-date
+  nowcast schema. `probs` works, because the fit keeps its draws. Note that
+  `epidist()` returns `c("brmsfit", "epidist_fit")` in that order, so a loaded
+  \pkg{broom.mixed} wins dispatch; call `tidy.epidist_fit()` explicitly if that
+  matters.
+* **Breaking: `get_nowcaster_strata()` now returns the breaks themselves**, ready
+  for `nowcasting_inla(bins_age = )`, instead of a three-element list. Replace
+  `get_nowcaster_strata(x)$bins` with `get_nowcaster_strata(x)`. The labels
+  remain available as the `"nowcaster_levels"` attribute.
+
 * **`tidy()` now returns \pkg{surveillance}'s credible interval**, which it
   previously discarded. `surveillance::nowcast()` stores a prediction interval
   in the returned object's `pi` slot at the width `control$alpha` names (95% by

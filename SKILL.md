@@ -686,7 +686,7 @@ so a converted object round-trips straight back.
 | epidist | ✅ | ✅ | epidist 0.4.0 interval-censored dates; `format = "linelist"` uses lower bounds as dates, `format = "interval"` attaches upper bounds as covariates |
 | tsibble | ✅ | ✅ | `to` builds a `tbl_ts` (index defaults to `report_date`, key = other date + strata); `from` needs `event_date`, recovers strata from the key |
 | surveillance | ❌ | ✅ | `to` only. Builds the individual-level line list `surveillance::nowcast()` takes, renaming the dates to its own `dHospital`/`dReport` defaults. `format = "sts"` returns the observed curve as an `sts` object instead. Count input is expanded back to one row per case |
-| nowcaster | ❌ | ✅ | `to` only. Builds the line list `nowcaster::nowcasting_inla()` takes (`date_onset`/`date_report`). **Strata are encoded for you**: it emits a numeric `stratum_code` column plus `nowcaster_bins` / `nowcaster_levels` attributes, because `age_col` must be numeric despite the help calling it a "stratum column" |
+| nowcaster | ❌ | ✅ | `to` only. Builds the line list `nowcaster::nowcasting_inla()` takes (`date_onset`/`date_report`). **Strata are encoded for you**: it emits a numeric `stratum_code` column, and `get_nowcaster_strata()` returns the `bins_age` breaks to pass alongside it, because `age_col` must be numeric despite the help calling it a "stratum column" |
 
 ```r
 nowobj <- tbl_now_from_epinowcast(epinowcast::germany_covid19_hosp,
@@ -723,6 +723,27 @@ Supported: `diseasenowcasting` (pass `predict(fit)`), `baselinenowcast`
 - **`probs` only works where draws exist** (`diseasenowcasting`,
   `baselinenowcast`, `epinowcast`). The others report a fixed summary set and
   **error** rather than approximate.
+- **`library(broom)` overwrites `tbl.now`'s `tidy.list()` method**, which is what
+  `NobBS` and `nowcaster` fits dispatch on. Qualify as `tbl.now::tidy(...)` when
+  broom is attached.
+- **`diseasenowcasting` needs >= 2.1.0 for a bare `tidy(fit)`.** From 2.1.0 it
+  re-exports the shared generic and supplies its own method, so `tidy(fit)`
+  returns the nowcast and `model_parameters()` returns the parameter table.
+  Before 2.1.0 it declared its **own** `tidy()` generic, so `tidy(fit)` silently
+  returned parameters; on those versions use
+  `tbl.now::tidy(predict(fit))`. `tbl.now` registers its own method only when
+  the package does not supply one, so it never overrides the newer version.
+- **`epidist` has its own `tidy()`, with different columns.** It estimates a
+  delay distribution, not a nowcast, so `tidy.epidist_fit()` returns `term` /
+  `estimate` / `conf.low` / `conf.high` / `level` / `engine`, one row per
+  distribution parameter (`mu`, `sigma`, plus the derived `mean` and `sd`).
+  There is no `event_date`. Beware dispatch: the fit is
+  `c("brmsfit", "epidist_fit")`, so a loaded `broom.mixed` matches first.
+- **Engines without draws can still give you quantiles — ask at fit time.**
+  `tidy(probs =)` errors for `NobBS`, `nowcaster` and `surveillance`, but
+  `NobBS(specs = list(quantiles = c(0.1, 0.5, 0.9)))` computes them during the
+  fit and returns `q_0.1` / `q_0.5` / `q_0.9` columns on `$estimates`; join them
+  onto `tidy()` output by date.
 - **`surveillance` does report an interval**, read from the `stsNC` object's `pi`
   slot at the width `control$alpha` sets (95% by default). You do NOT need the
   JAGS-backed `bayes.trunc`/`bayes.trunc.ddcp` methods to get uncertainty;

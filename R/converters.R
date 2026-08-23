@@ -2422,7 +2422,7 @@ tbl_now_to_nowcaster <- function(x, ..., event_col = "date_onset",
       cli::cli_li(
         "strata {.val {strata_cols}} pooled into {.val {stratum_col}} \\
          ({length(strata_levels)} level{?s}); pass it as {.arg age_col} with \\
-         {.code bins_age = get_nowcaster_strata(x)$bins}"
+         {.code bins_age = get_nowcaster_strata(x)}"
       )
     }
     cli::cli_end()
@@ -2559,18 +2559,15 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
 #'
 #' [tbl_now_to_nowcaster()] encodes the strata into a numeric column, because
 #' `nowcasting_inla()`'s `age_col` must be numeric even though its help calls it
-#' a "stratum column". `get_nowcaster_strata()` returns what you need to pass
-#' alongside it, instead of reaching for the attributes by hand.
+#' a "stratum column". `get_nowcaster_strata()` returns the breaks that go with
+#' that column, so they can be passed straight to `bins_age` instead of reaching
+#' for the object's attributes by hand.
 #'
 #' @param x A line list produced by [tbl_now_to_nowcaster()].
 #'
-#' @return A list with:
-#' \describe{
-#'   \item{`column`}{Name of the numeric code column (`age_col`).}
-#'   \item{`bins`}{Breaks that put each level in its own bin (`bins_age`).}
-#'   \item{`levels`}{Labels in code order, to map results back.}
-#' }
-#' `NULL` when the object carries no strata.
+#' @return A numeric vector of breaks putting each stratum in its own bin, ready
+#'   for `nowcasting_inla(bins_age = )`. `NULL` when the object carries no
+#'   strata.
 #'
 #' @seealso [tbl_now_to_nowcaster()]
 #'
@@ -2581,20 +2578,14 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
 #'   strata = "gender", verbose = FALSE
 #' )
 #' nc <- tbl_now_to_nowcaster(nowobj, verbose = FALSE)
-#' strata_info <- get_nowcaster_strata(nc)
-#' strata_info$levels
+#' get_nowcaster_strata(nc)
 #'
 #' @export
 get_nowcaster_strata <- function(x) {
-  levels_map <- attr(x, "nowcaster_levels")
-  if (is.null(levels_map)) {
+  if (is.null(attr(x, "nowcaster_levels"))) {
     return(NULL)
   }
-  list(
-    column = attr(x, "nowcaster_stratum_col") %||% "stratum_code",
-    bins   = attr(x, "nowcaster_bins"),
-    levels = levels_map
-  )
+  attr(x, "nowcaster_bins")
 }
 
 
