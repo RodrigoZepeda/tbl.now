@@ -58,6 +58,8 @@ Imports:
     tidyr,
     tidyselect,
     utils
+Remotes:
+    DavisVaughan/almanac    
 URL: https://rodrigozepeda.github.io/tbl.now/
 VignetteBuilder: knitr
 Config/Needs/website: rmarkdown, covid19br/nowcaster
