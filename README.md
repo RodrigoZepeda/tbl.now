@@ -66,10 +66,10 @@ Convert it to a
 ``` r
 df_now <- df |>
   tbl_now(event_date = event_date, report_date = report_date, case_count = n)
-#> ℹ Identified data as <count-incidence> with counts in column "n".
+#> i Identified data as <count-incidence> with counts in column "n".
 
 df_now
-#> # A tibble:  4 × 6
+#> # A tibble:  4 x 6
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay
@@ -79,9 +79,9 @@ df_now
 #> 2 2023-12-26   2023-12-26          2          1           1      0
 #> 3 2023-12-25   2023-12-27          5          0           2      2
 #> 4 2023-12-26   2023-12-27         11          1           2      1
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
 `tbl_now()` automatically:
@@ -103,7 +103,7 @@ You can use it like any tibble:
 ``` r
 df_now |>
   filter(n > 5)
-#> # A tibble:  2 × 6
+#> # A tibble:  2 x 6
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay
@@ -111,9 +111,9 @@ df_now |>
 #>   [event_date] [report_date] [cases]      [...]       [...]  [...]
 #> 1 2023-12-25   2023-12-26         10          0           1      1
 #> 2 2023-12-26   2023-12-27         11          1           2      1
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
 > **Note** Linelist, count-incidence and count-cumulative data is
@@ -133,7 +133,7 @@ df_now <- df_now |>
   mutate(sex = c("M", "M", "F", "M"))
 
 df_now
-#> # A tibble:  4 × 7
+#> # A tibble:  4 x 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex  
@@ -143,9 +143,9 @@ df_now
 #> 2 2023-12-26   2023-12-26          2          1           1      0 M    
 #> 3 2023-12-25   2023-12-27          5          0           2      2 F    
 #> 4 2023-12-26   2023-12-27         11          1           2      1 M    
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
 Use the `add_strata` to specify the new column is a stratum:
@@ -153,7 +153,7 @@ Use the `add_strata` to specify the new column is a stratum:
 ``` r
 df_now |>
   add_strata("sex")
-#> # A tibble:  4 × 7
+#> # A tibble:  4 x 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex     
@@ -163,10 +163,10 @@ df_now |>
 #> 2 2023-12-26   2023-12-26          2          1           1      0 M       
 #> 3 2023-12-25   2023-12-27          5          0           2      2 F       
 #> 4 2023-12-26   2023-12-27         11          1           2      1 M       
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # Strata: "sex"
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
 The object now records `"sex"` as a stratification variable, preserved
@@ -185,11 +185,11 @@ t_eff <- temporal_effects(
 )
 
 t_eff
-#> ── Temporal Effects ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> -- Temporal Effects --------------------------------------------------------------------------------------------------------------------------------------------
 #> The following effects are in place:
-#> • "day_of_week"
-#> • "week_of_year"
-#> • "holidays":
+#> * "day_of_week"
+#> * "week_of_year"
+#> * "holidays":
 #>     New Year's Day, US Martin Luther King Jr. Day, US Presidents' Day, US Memorial Day, US Juneteenth, US Independence Day, US Labor Day, US Indigenous Peoples' Day, US Veterans Day, US Thanksgiving, and Christmas
 ```
 
@@ -200,7 +200,7 @@ df_now <- df_now |>
   add_temporal_effects(t_eff)
 
 df_now
-#> # A tibble:  4 × 7
+#> # A tibble:  4 x 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex  
@@ -210,10 +210,10 @@ df_now
 #> 2 2023-12-26   2023-12-26          2          1           1      0 M    
 #> 3 2023-12-25   2023-12-27          5          0           2      2 F    
 #> 4 2023-12-26   2023-12-27         11          1           2      1 M    
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # T. effects (lazy): [event_date] day_of_week, week_of_year, holidays
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
 This lazily adds to the table `day_of_week`, `week_of_year`, and
@@ -223,7 +223,7 @@ This lazily adds to the table `day_of_week`, `week_of_year`, and
 ``` r
 df_now |>
   compute_temporal_effects()
-#> # A tibble:  4 × 10
+#> # A tibble:  4 x 10
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex   .event_day_of_week .event_week_of_year .event_holiday
@@ -233,11 +233,11 @@ df_now |>
 #> 2 2023-12-26   2023-12-26          2          1           1      0 M                      3                   1              0
 #> 3 2023-12-25   2023-12-27          5          0           2      2 F                      2                   1              1
 #> 4 2023-12-26   2023-12-27         11          1           2      1 M                      3                   1              0
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # T. effects: [event_date] day_of_week, week_of_year, holidays
 #> # T. effect cols: ".event_day_of_week", ".event_week_of_year", and ".event_holiday"
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
 You can also attach effects related to the `report_date` via the
@@ -248,7 +248,7 @@ r_eff <- temporal_effects(day_of_week = TRUE)
 
 df_now |>
   add_temporal_effects(r_eff, date_type = "report_date")
-#> # A tibble:  4 × 7
+#> # A tibble:  4 x 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex  
@@ -258,10 +258,10 @@ df_now |>
 #> 2 2023-12-26   2023-12-26          2          1           1      0 M    
 #> 3 2023-12-25   2023-12-27          5          0           2      2 F    
 #> 4 2023-12-26   2023-12-27         11          1           2      1 M    
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # T. effects (lazy): [event_date] day_of_week, week_of_year, holidays | [report_date] day_of_week
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
 ### Working with the “now”
@@ -343,7 +343,7 @@ via a modified Mann-Kendall test, whether there is a drift in the delay:
 
 ``` r
 test_delay_drift(covidat_now, method = "yue-pilon")
-#> # A tibble: 2 × 9
+#> # A tibble: 2 x 9
 #>   strata stat       n    tau sens_slope statistic p_value method    drift
 #>   <chr>  <chr>  <int>  <dbl>      <dbl>     <dbl>   <dbl> <chr>     <lgl>
 #> 1 all    median   292 -0.207   -0.00905     -2.84 0.00447 yue-pilon TRUE 
@@ -356,7 +356,7 @@ in the data. It can be recovered with `test_delay_changepoint()`:
 
 ``` r
 test_delay_changepoint(covidat_now)
-#> # A tibble: 2 × 10
+#> # A tibble: 2 x 10
 #>   strata stat       n changepoint statistic  p_value before after shift changepoint_detected
 #>   <chr>  <chr>  <int> <date>          <dbl>    <dbl>  <dbl> <dbl> <dbl> <lgl>               
 #> 1 all    median   292 2020-08-17      11818 5.41e-15   5.90  3.92 -1.98 TRUE                
@@ -398,7 +398,7 @@ covidat_now |>
   batch_test(period = 7, alpha = 0.2) 
 ```
 
-    #> # A tibble: 302 × 9
+    #> # A tibble: 302 x 9
     #>    report_date reported baseline p_transport_bh batch stratum deficit  delta p_transport
     #>    <date>         <dbl>    <dbl>          <dbl> <lgl> <chr>     <dbl>  <dbl>       <dbl>
     #>  1 2020-07-19      7880    5273.          0.179 TRUE  all       2806.  -199.      0.0508
@@ -411,7 +411,7 @@ covidat_now |>
     #>  8 2020-03-10         0      NA          NA     FALSE all         NA     NA      NA     
     #>  9 2020-03-11         6      NA          NA     FALSE all         NA     NA      NA     
     #> 10 2020-03-12         4      NA          NA     FALSE all         NA     NA      NA     
-    #> # ℹ 292 more rows
+    #> # i 292 more rows
 
 Additional batch detection tools can be found in the [batch-reporting
 article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html).
@@ -435,9 +435,9 @@ tn <- tbl_now(df,
 
 # the 300-day report becomes censored (an upper bound on its delay)
 censor_delays_above(tn, max_delay = 60)
-#> ℹ Marked 1 report with delay > 60 days as censored.
-#> • This delay is now an upper bound (is_censored).
-#> # A tibble:  4 × 6
+#> i Marked 1 report with delay > 60 days as censored.
+#> * This delay is now an upper bound (is_censored).
+#> # A tibble:  4 x 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
 #>   onset        reported      .event_num .report_num .delay .is_censored 
@@ -447,21 +447,21 @@ censor_delays_above(tn, max_delay = 60)
 #> 2 2020-01-01   2020-01-06             0           5      5 FALSE        
 #> 3 2020-01-02   2020-01-03             1           2      1 FALSE        
 #> 4 2020-01-03   2020-10-27             2         300    298 TRUE         
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #> # Now: 2020-10-27 | Event date: "onset" | Report date: "reported"
 #> # left-censored indicator: ".is_censored"
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
-<!-- Single source for "Learning more"; included as a knitr child from README.Rmd and every vignette/article. Edit here only. Blank lines inside this comment would leak as &#10; into the rendered README, so keep it to one line. Paths differ by caller: README.Rmd uses man/fragments/, vignettes/ uses ../man/fragments/, vignettes/articles/ uses ../../man/fragments/. Links are absolute so they resolve on both GitHub and pkgdown. -->
+<!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit here only. Blank lines inside this comment would leak as &#10; into the rendered README, so keep it to one line. Callers locate this file with system.file("fragments", ...) rather than a relative path: rmarkdown renders into a temp intermediates directory and copies relative resources alongside, so a "../.." path escapes that directory and fails on CI. Links are absolute so they resolve on both GitHub and pkgdown. -->
 
 ## Learning more
 
 - Introduction vignette:
   <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
   the full anatomy of a `tbl_now`, data types, and temporal effects.
-- End-to-end tutorial on real, messy surveillance data — cleaning,
-  diagnostics and nowcasting:
+- End-to-end tutorial on real, messy surveillance data \<U+2014\>
+  cleaning, diagnostics and nowcasting:
   <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
 - Tutorial on detecting batches and other reporting-delay artifacts:
   <https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html>

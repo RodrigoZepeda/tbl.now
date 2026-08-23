@@ -1,5 +1,21 @@
 # tbl.now 0.16.0
 
+* **Fixed the pkgdown build on CI.** The shared "Learning more" fragment was
+  pulled in with a relative child path (`../../man/fragments/...`). \pkg{rmarkdown}
+  renders into an intermediates directory under `tempdir()` and copies relative
+  resources alongside it, so a path containing `../..` escapes that directory --
+  harmless where `tempdir()` is deep, fatal on CI where it sits two levels from
+  the filesystem root (`cannot create file '/tmp/RtmpXXXX/../../man/...'`). The
+  fragment moved to `inst/fragments/` and every caller now locates it with
+  `system.file()`, which is path-independent and also works under
+  `pkgload::load_all()`.
+* **Dependency fixes for CI.** `almanac` is used by the package but was declared
+  nowhere -- the `Remotes:` entry for it was inert, since `Remotes` only says
+  *where* to fetch an already-declared dependency. It is now in `Suggests`, with
+  its r-universe added to `Additional_repositories` (it was archived from CRAN).
+  `nowcaster` was declared but unobtainable from any configured repository, so it
+  gets a `Remotes:` entry of its own.
+
 * **`tidy()` on a \pkg{diseasenowcasting} fit now works directly.** From
   \pkg{diseasenowcasting} 2.1.0 that package re-exports the shared `generics`
   generic and ships its own method, so `tidy(fit)` returns the standard nowcast

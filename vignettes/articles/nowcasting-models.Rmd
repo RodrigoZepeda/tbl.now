@@ -1369,5 +1369,19 @@ a grouping in `epinowcast`, covariate columns in `epidist` and the
 `baselinenowcast` long format, one triangle/series per stratum where the model
 takes a single series, and automatically in `diseasenowcasting`. 
 
-```{r learning-more, child = "../../man/fragments/learning-more.Rmd"}
+```{r learning-more, echo=FALSE, results="asis"}
+# The fragment is looked up by ABSOLUTE path via system.file(), never by a
+# relative one. pkgdown/rmarkdown render into an intermediates directory under
+# tempdir() and copy relative resources alongside; a path containing "../.."
+# escapes that directory ("cannot create file '/tmp/RtmpXXX/../../man/...'"),
+# which fails wherever tempdir() sits near the filesystem root -- as it does on
+# CI. `system.file()` also works under pkgload::load_all(), which shims it to
+# find inst/ in the source tree.
+cat(
+  knitr::knit_child(
+    system.file("fragments", "learning-more.Rmd", package = "tbl.now"),
+    quiet = TRUE
+  ),
+  sep = "\n"
+)
 ``` 

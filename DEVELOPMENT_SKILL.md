@@ -342,6 +342,17 @@ against every shipped dataset.
 * **`pkgdown::build_article()` does not re-copy `pkgdown/extra.css`.** CSS edits
   need `pkgdown::init_site()` (or a full `build_site()`) or you will be looking
   at a stale stylesheet and debugging a fixed bug.
+* **Never point a knitr `child =` at a path containing `../`.** \pkg{rmarkdown}
+  renders into an intermediates directory under `tempdir()` and copies relative
+  resources alongside it, so `../..` escapes that directory. It appears to work
+  on macOS, where `tempdir()` is deep enough that the escape lands somewhere
+  writable (it silently creates stray directories there), and fails on CI, where
+  `tempdir()` is two levels from `/`. Put shared fragments in `inst/` and load
+  them with `system.file()`, which is path-independent and is shimmed by
+  `pkgload::load_all()` to find the source tree.
+* **A local render is not proof when paths are involved.** Reproduce with the
+  same `TMPDIR` CI uses (`TMPDIR=/tmp Rscript -e '...'`) before concluding a
+  path bug is fixed -- or unfixed.
 * **Weekly data with fractional `.delay`** means the two date columns are on
   different weekday grids. Use `align_weeks()`; do not round.
 * **A package that declares its own `tidy()` generic silently breaks every other
