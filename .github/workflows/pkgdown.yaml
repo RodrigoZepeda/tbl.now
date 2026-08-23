@@ -30,8 +30,12 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
-          # epidist / epinowcast (and their dep primarycensored) are not on CRAN
-          extra-repositories: https://epinowcast.r-universe.dev
+          # Neither epidist/epinowcast (nor their dep primarycensored) nor
+          # almanac are on CRAN; almanac was archived, so it comes from the
+          # author's r-universe.
+          extra-repositories: |
+            https://epinowcast.r-universe.dev
+            https://davisvaughan.r-universe.dev
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:

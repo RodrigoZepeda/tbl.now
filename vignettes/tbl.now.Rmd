@@ -702,16 +702,18 @@ df_updated
 
 ## Visualizing a `tbl_now`
 
-```{r autoplot-available, include=FALSE}
-plotting_available <- requireNamespace("ggplot2", quietly = TRUE) &&
-  requireNamespace("patchwork", quietly = TRUE)
-```
+<!-- The `eval=` conditions on the plotting chunks below spell the
+requireNamespace() test out in full rather than reusing a helper variable. `R CMD
+check` tangles this vignette with knitr::purl(), which evaluates chunk options in
+a fresh environment: a variable defined by an earlier chunk's *code* does not
+exist yet, so `eval=some_variable` silently drops the chunk, and a later chunk
+relying on what it defined then fails with "object not found". -->
 
 
 The [autoplot()](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html) method gives a quick diagnostic overview of a `tbl_now`:
 
 
-```{r autoplot, eval=plotting_available, fig.width=9, fig.height=10, message=FALSE, warning=FALSE}
+```{r autoplot, eval=requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("patchwork", quietly = TRUE), fig.width=9, fig.height=10, message=FALSE, warning=FALSE}
 library(ggplot2)
 library(patchwork)
 
@@ -728,7 +730,7 @@ We explore each of the panels below
 
 ### The delay distribution
 
-```{r, fig.cap="Empirical delay distribution", echo = FALSE, eval=plotting_available}
+```{r, fig.cap="Empirical delay distribution", echo = FALSE, eval=requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("patchwork", quietly = TRUE)}
 plot_delay_distribution(dengue_now)
 ```
 
@@ -736,7 +738,7 @@ The **empirical delay distribution** represents a case-count weighted histogram 
 
 ### The observed epidemic process
 
-```{r, fig.cap="Observed epidemic process", echo = FALSE, eval=plotting_available}
+```{r, fig.cap="Observed epidemic process", echo = FALSE, eval=requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("patchwork", quietly = TRUE)}
 plot_epidemic_process(dengue_now)
 ```
 
@@ -744,7 +746,7 @@ The **observed epidemic process** represents the latest reported counts per `eve
 
 ### The calendar effects
 
-```{r, fig.cap="Day of the week and week of the year effects", echo = FALSE, eval=plotting_available}
+```{r, fig.cap="Day of the week and week of the year effects", echo = FALSE, eval=requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("patchwork", quietly = TRUE)}
 plot_week_of_year_effects(dengue_now)
 ```
 
@@ -756,7 +758,7 @@ If holidays are included in the `tbl_now()` they show the percent effects by *da
 
 ### The cycles
 
-```{r, fig.cap="Periodogram showing the Fourier season's dominant peak", echo = FALSE, eval=plotting_available}
+```{r, fig.cap="Periodogram showing the Fourier season's dominant peak", echo = FALSE, eval=requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("patchwork", quietly = TRUE)}
 plot_cycles(dengue_now)
 ```
 
@@ -770,7 +772,7 @@ The periodogram shows the dominant peak. This suggests a Fourier season length t
 
 Set `by_strata = TRUE` to split every panel by stratum: the boxplots become dodged boxes (one per stratum, side by side), the epidemic process and periodograms become one coloured line per stratum, and the delay distribution becomes dodged bars. The boxplots are then normalized *per stratum* (1 = that stratum's own average) so the calendar pattern is comparable across strata. By default the object's `strata` are used; pass `strata = "gender"` to group on a subset.
 
-```{r, eval=plotting_available, fig.width=9, fig.height=10, message=FALSE, warning=FALSE}
+```{r, eval=requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("patchwork", quietly = TRUE), fig.width=9, fig.height=10, message=FALSE, warning=FALSE}
 autoplot(dengue_now, strata = "gender", by_strata = TRUE)
 ```
 
@@ -826,7 +828,7 @@ reports <- lapply(event_days, function(day) {
 reports <- do.call(rbind, reports)
 ```
 
-```{r holiday-panels-build, eval=plotting_available && requireNamespace("almanac", quietly = TRUE), message=FALSE}
+```{r holiday-panels-build, eval=requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("patchwork", quietly = TRUE) && requireNamespace("almanac", quietly = TRUE), message=FALSE}
 holiday_now <- tbl_now(reports,
     event_date = onset, report_date = reported, case_count = n,
     data_type = "count-incidence", verbose = FALSE
@@ -836,7 +838,7 @@ holiday_now <- tbl_now(reports,
   )
 ```
 
-```{r holiday-panels, eval=plotting_available && requireNamespace("almanac", quietly = TRUE), fig.width=9, fig.height=7, message=FALSE, warning=FALSE}
+```{r holiday-panels, eval=requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("patchwork", quietly = TRUE) && requireNamespace("almanac", quietly = TRUE), fig.width=9, fig.height=7, message=FALSE, warning=FALSE}
 autoplot(holiday_now, panels = c("calendar_holiday", "calendar_holiday_lag",
                                  "delay_holiday", "delay_holiday_lag"))
 ```
@@ -851,7 +853,7 @@ The **holiday lag effect** panel splits them by *position relative to the neares
 
 Reporting delays are not always stable: a surveillance system may speed up or slow down over a season or across years. [plot_delay_drift()](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.html) draws a rolling *fan chart* of the delay distribution indexed by event date — a solid rolling median, a dashed rolling mean, and 25–75% / 10–90% quantile bands. A rising or falling centre line signals *location* drift; widening or narrowing bands signal *spread* drift.
 
-```{r delay-drift, eval=plotting_available, fig.width=9, fig.height=4.5, message=FALSE, warning=FALSE}
+```{r delay-drift, eval=requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("patchwork", quietly = TRUE), fig.width=9, fig.height=4.5, message=FALSE, warning=FALSE}
 plot_delay_drift(dengue_now)
 ```
 

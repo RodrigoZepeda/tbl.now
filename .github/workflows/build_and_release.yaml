@@ -26,7 +26,10 @@ jobs:
         uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
-          extra-repositories: 'https://epinowcast.r-universe.dev'
+          # almanac was archived from CRAN; it comes from the author's r-universe.
+          extra-repositories: |
+            https://epinowcast.r-universe.dev
+            https://davisvaughan.r-universe.dev
 
       - name: Setup pandoc
         uses: r-lib/actions/setup-pandoc@v2
