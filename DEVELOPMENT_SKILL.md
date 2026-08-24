@@ -40,8 +40,12 @@ Rules that follow from this, and that you must not break:
 * **A line list cannot represent a zero.** An event date with no reports has no
   rows at all. Any code that builds a time grid from the rows it was handed will
   silently stop short of the `now`. `complete_zeroes()` fixes this for count
-  data; for line-list engines you must pass the grid explicitly (this is why
-  `tbl_now_to_surveillance()` sets `control$dRange`).
+  data. For the line-list engines the grid is the **caller's** job:
+  `tbl_now_to_surveillance()` deliberately does *not* bake it in — it returns a
+  line list and leaves `now` and `control$dRange` to you, because the object
+  already carries them (`get_now()`, `get_event_units()`) and the converter
+  cannot know which window you mean to fit. Pass them at the call site, as the
+  `surveillance` section of `vignettes/articles/nowcasting-models.Rmd` does.
 * **`count-cumulative` is not additive.** Never `sum()` it across delays. To get
   increments use `to_count(x, to = "count-incidence")`, which de-accumulates —
   and can produce **negative** values when a total was revised downward.

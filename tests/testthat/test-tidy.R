@@ -69,30 +69,29 @@ test_that("tidy() refuses `probs` for engines that keep no draws", {
   expect_error(tidy(fake_nobbs, probs = 0.5), "does not keep posterior draws")
 })
 
-test_that("tidy() tells NobBS and nowcaster apart by structure", {
+test_that("tidy() recognises a NobBS fit by structure", {
   fake_nobbs <- list(estimates = data.frame(
-    onset_date = as.Date("2002-07-01"),
-    estimate = 10, lower = 6, upper = 15
-  ))
-  fake_nowcaster <- list(total = data.frame(
-    dt_event = as.Date("2002-07-01"), Median = 10, LI = 6, LS = 15
+    onset_date = as.Date("2020-01-01") + 0:2,
+    estimate = c(3, 4, 5), lower = c(2, 3, 4), upper = c(4, 5, 6)
   ))
   expect_equal(unique(tidy(fake_nobbs)$engine), "NobBS")
-  expect_equal(unique(tidy(fake_nowcaster)$engine), "nowcaster")
-
-  # An unrecognisable list must say so, and point at the way out.
-  expect_error(tidy(list(a = 1)), "Supply")
-  # ... and an explicit `engine` overrides the sniffing.
-  expect_equal(unique(tidy(fake_nowcaster, engine = "nowcaster")$engine), "nowcaster")
+  expect_equal(unique(tidy(fake_nobbs, engine = "NobBS")$engine), "NobBS")
 })
 
 test_that("tidy() records the interval width each engine actually returns", {
   # epinowcast's default band is q5-q95, i.e. 90% -- not the 95% the others use.
   # Recording it is what stops a 90% band being compared with a 95% one.
-  fake_nowcaster <- list(total = data.frame(
-    dt_event = as.Date("2002-07-01"), Median = 10, LI = 6, LS = 15
+  #
+  # BEHAVIOUR CHANGE (0.16.0): NobBS used to be reported as 0.95, its `conf`
+  # default. `NobBS()` does not return `specs`, so the width is unrecoverable
+  # from the fit and is now `NA` unless the caller supplies it -- a guess in this
+  # column defeats the column's whole purpose. See `test-tidy-strata.R` for the
+  # `level` argument.
+  fake_nobbs <- list(estimates = data.frame(
+    onset_date = as.Date("2020-01-01"), estimate = 10, lower = 6, upper = 15
   ))
-  expect_equal(unique(tidy(fake_nowcaster)$level), 0.95)
+  expect_true(is.na(unique(tidy(fake_nobbs)$level)))
+  expect_equal(unique(tidy(fake_nobbs, level = 0.95)$level), 0.95)
 })
 
 # --- surveillance -------------------------------------------------------------

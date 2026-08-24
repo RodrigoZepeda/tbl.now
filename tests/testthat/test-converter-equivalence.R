@@ -153,22 +153,6 @@ test_that("surveillance: a linelist round-trips to one row per case", {
   )
 })
 
-test_that("nowcaster: a linelist round-trips to one row per case", {
-  skip_if_not_installed("nowcaster")
-  pair <- equivalence_pair()
-
-  from_linelist <- tbl_now_to_nowcaster(pair$linelist, verbose = FALSE)
-  from_counts <- suppressWarnings(
-    tbl_now_to_nowcaster(pair$counts, verbose = FALSE)
-  )
-
-  expect_equal(nrow(from_linelist), nrow(pair$linelist))
-  expect_equal(nrow(from_counts), nrow(from_linelist))
-  expect_equal(
-    sort(as.numeric(from_counts$date_report - from_counts$date_onset)),
-    sort(as.numeric(from_linelist$date_report - from_linelist$date_onset))
-  )
-})
 
 test_that("every converter accepts LINELIST input without erroring", {
   linelist <- equivalence_linelist()
@@ -178,7 +162,6 @@ test_that("every converter accepts LINELIST input without erroring", {
     epinowcast      = function(x) tbl_now_to_epinowcast(x, verbose = FALSE, quiet = TRUE),
     epidist         = function(x) tbl_now_to_epidist(x, verbose = FALSE),
     surveillance    = function(x) tbl_now_to_surveillance(x, verbose = FALSE),
-    nowcaster       = function(x) tbl_now_to_nowcaster(x, verbose = FALSE),
     data.table      = function(x) tbl_now_to_data_table(x, verbose = FALSE),
     tsibble         = function(x) tbl_now_to_tsibble(x, verbose = FALSE)
   )
@@ -200,7 +183,6 @@ test_that("every converter accepts COUNT-INCIDENCE input without erroring", {
     epinowcast      = function(x) tbl_now_to_epinowcast(x, verbose = FALSE, quiet = TRUE),
     epidist         = function(x) tbl_now_to_epidist(x, verbose = FALSE),
     surveillance    = function(x) tbl_now_to_surveillance(x, verbose = FALSE),
-    nowcaster       = function(x) tbl_now_to_nowcaster(x, verbose = FALSE),
     data.table      = function(x) tbl_now_to_data_table(x, verbose = FALSE),
     tsibble         = function(x) tbl_now_to_tsibble(x, verbose = FALSE)
   )

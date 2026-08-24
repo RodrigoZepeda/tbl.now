@@ -109,6 +109,61 @@ are carried onto the epidist data unchanged, so the strata are available as
 covariates in an epidist model formula (epidist has no separate grouping
 argument).
 }
+\section{Delays of zero, and the lognormal}{
+
+
+A delay distribution with a \strong{point mass at zero} cannot be fitted with a
+lognormal (or a gamma, or a Weibull): all have zero density at zero. If a
+large share of your cases are reported the same period they occur, the fit
+does not fail loudly -- it inflates the variance until the density piles up
+near zero. On a daily COVID series where \strong{57\%} of cases carried a delay of
+exactly 0, \code{epidist} returned \code{sigma = 17.9} and an implied mean delay of
+\code{1.5e73} days.
+
+Check before fitting:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{mean(as.numeric(x[[get_report_date(x)]] - x[[get_event_date(x)]]) == 0)
+}\if{html}{\out{</div>}}
+
+If that share is large, model the delay as \strong{discrete}, use a
+\strong{zero-inflated}/hurdle form, or fit the continuous distribution to the
+non-zero delays and report the zero share separately.
+}
+
+\section{Counts \pkg{epidist} cannot use}{
+
+
+\code{epidist_aggregate_data} requires \code{n >= 1}, and so does
+\code{\link[EpiNow2:estimate_dist]{EpiNow2::estimate_dist()}} -- with the identical assertion message. Count data
+routinely holds rows that violate it:
+\itemize{
+\item \strong{zeros} -- an \verb{(event, report)} cell where the report added nothing, which
+is most cells once \code{\link[=complete_zeroes]{complete_zeroes()}} has run, and which de-accumulating a
+\code{count-cumulative} series produces wherever a cumulative total was
+unchanged;
+\item \strong{negatives} -- a cumulative total revised \emph{downward}, which de-accumulates
+to a negative increment.
+}
+
+Both are dropped before the epidist object is built. A zero contributes no
+case to a delay distribution, so dropping it is lossless and is only reported
+when \code{verbose = TRUE}. A negative is not a number of cases at all, so dropping
+it discards the revision and \strong{warns}. If nothing usable is left the
+conversion aborts saying so, rather than letting \pkg{epidist}'s own
+\verb{Assertion on 'data$n' failed} through.
+}
+
+\section{Model choice for count data}{
+
+
+\code{\link[epidist:as_epidist_marginal_model]{epidist::as_epidist_marginal_model()}} is the one built for aggregated counts,
+but with \strong{epidist 0.4.0} and \strong{primarycensored 1.5.1} it fails at Stan
+compilation (its generated code calls \code{primarycensored_lpmf()} with 8
+arguments against a 9-argument signature). The latent model is unaffected but
+expands counts to \strong{one row per case}, so it is only practical on a short
+window. Check the epidist issue tracker for the current status.
+}
+
 \examples{
 \dontshow{if (requireNamespace("epidist", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 # --- Linelist epidist data (one row per case) ---

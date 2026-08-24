@@ -6,6 +6,9 @@
 \alias{tidy.baselinenowcast_df}
 \alias{tidy.epinowcast}
 \alias{tidy.stsNC}
+\alias{tidy.estimate_infections}
+\alias{tidy.epinow}
+\alias{tidy.estimate_truncation}
 \alias{tidy.list}
 \title{Tidy a fitted nowcast into one standard table}
 \usage{
@@ -17,7 +20,13 @@ tidy(x, ...)
 
 \method{tidy}{stsNC}(x, probs = NULL, ...)
 
-\method{tidy}{list}(x, probs = NULL, engine = NULL, strata_levels = NULL, ...)
+\method{tidy}{estimate_infections}(x, probs = NULL, ...)
+
+\method{tidy}{epinow}(x, probs = NULL, ...)
+
+\method{tidy}{estimate_truncation}(x, probs = NULL, ...)
+
+\method{tidy}{list}(x, probs = NULL, engine = NULL, level = NULL, ...)
 }
 \arguments{
 \item{x}{A fitted nowcast. See \emph{Supported objects}.}
@@ -27,15 +36,14 @@ tidy(x, ...)
 \item{probs}{Optional numeric vector of probabilities in \verb{[0, 1]}. Adds a
 \verb{q*} column per probability. Only available for engines that expose draws.}
 
-\item{engine}{Optional string naming the engine. Needed only for the two
-packages that return an \strong{unclassed list} (\pkg{NobBS} and
-\pkg{nowcaster}), which are otherwise told apart by their structure.}
+\item{engine}{Optional string naming the engine. Needed only for the shapes
+that arrive as an \strong{unclassed list} -- a \pkg{NobBS} fit, or a list of
+per-stratum \pkg{baselinenowcast} fits -- which are otherwise recognised by
+their structure.}
 
-\item{strata_levels}{Optional character vector of stratum labels, in code
-order. Only used for a stratified \pkg{nowcaster} fit, whose \verb{$age}
-component reports the numeric code the converter assigned rather than the
-label; pass the \code{"nowcaster_levels"} attribute that
-\code{\link[=tbl_now_to_nowcaster]{tbl_now_to_nowcaster()}} leaves on the line list.}
+\item{level}{Interval width to report for an engine that does not say what it
+produced. Only used by the \pkg{NobBS} branch (see \code{level} under \emph{Value});
+\code{NULL}, the default, reports \code{NA}.}
 }
 \value{
 A tibble, as described above.
@@ -59,7 +67,11 @@ fit carries strata) and these columns:
 grid}. \code{tidy()} deliberately does not re-grid: some packages bin onto
 week starts of their own choosing, and silently snapping them would hide a
 real difference. Align afterwards if you need to.}
-\item{\code{stratum}}{\code{character}. \code{"all"} when the fit is unstratified.}
+\item{\code{stratum}}{\code{character}. One label per stratum the fit reports, and
+\code{"all"} when the fit is unstratified. Several stratifying columns are
+pasted \code{" | "}-separated, matching the \code{triangle_list} naming of
+\code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast()}}. \verb{(stratum, event_date)} is therefore a
+unique key.}
 \item{\code{estimate}}{\code{numeric}. The point nowcast -- the posterior median where
 the engine provides draws or a median, otherwise its point estimate.}
 \item{\code{conf.low}, \code{conf.high}}{\code{numeric}. Interval bounds, following
@@ -67,7 +79,13 @@ the engine provides draws or a median, otherwise its point estimate.}
 \item{\code{level}}{\code{numeric}. The width the interval actually has, e.g. \code{0.95}.
 Engines differ -- \pkg{epinowcast} reports a 90\% band by default while
 others report 95\% -- and without this column those get compared as if they
-were the same thing.}
+were the same thing. \code{NA} whenever the width cannot be established:
+because the engine returned no interval (a \pkg{baselinenowcast} fit made
+with \code{output_type = "point"}), or because it returned one without saying
+how wide it is. \pkg{NobBS} is the latter case -- its \code{lower}/\code{upper}
+come from \code{specs$conf}, and \code{NobBS()} does not return \code{specs} -- so pass
+\code{level} yourself if you need it filled in. A guessed default is worse than
+\code{NA} in the one column that exists to stop widths being compared blindly.}
 \item{\code{engine}}{\code{character}. Which package produced the fit.}
 }
 
@@ -92,8 +110,12 @@ quantile they did not compute is an error rather than a silent approximation.
 \item \code{baselinenowcast_df} from \code{baselinenowcast::baselinenowcast()}
 \item \code{epinowcast} fits
 \item \code{stsNC} from \code{surveillance::nowcast()}
-\item the list returned by \code{NobBS::NobBS()}
-\item the list returned by \code{nowcaster::nowcasting_inla()}
+\item the list returned by \code{NobBS::NobBS()} or by \code{NobBS::NobBS.strat()} (the
+stratified variant is recognised by its \code{stratum} column)
+\item a \strong{list of \code{baselinenowcast_df} fits}, one per stratum -- what
+\code{lapply()}-ing over a \link{tbl_now_triangle_list} produces. Each element is
+tidied and labelled with its list name, giving the same
+one-block-per-stratum table the natively stratified engines return.
 }
 }
 

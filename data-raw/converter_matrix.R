@@ -95,11 +95,27 @@ attempts <- list(
   "epinowcast"           = function(x) tbl_now_to_epinowcast(x, verbose = FALSE, quiet = TRUE),
   "epidist"              = function(x) tbl_now_to_epidist(x, verbose = FALSE),
   "surveillance"         = function(x) tbl_now_to_surveillance(x, verbose = FALSE),
-  "nowcaster"            = function(x) tbl_now_to_nowcaster(x, verbose = FALSE),
+  "NobBS"                = function(x) tbl_now_to_nobbs(x, verbose = FALSE),
   "data.table"           = function(x) tbl_now_to_data_table(x, verbose = FALSE),
   "tsibble"              = function(x) tbl_now_to_tsibble(x, verbose = FALSE),
-  "NobBS (as.data.frame)" = function(x) as.data.frame(x),
-  "nowcast (dnc)"        = function(x) diseasenowcasting::nowcast(x)
+  # EpiNow2 has four input shapes; the two that stress the converter are the
+  # daily-grid expansion (estimate_infections) and the report dimension
+  # (estimate_truncation). estimate_dist shares its schema with epidist.
+  "EpiNow2 (infections)" = function(x) {
+    tbl_now_to_EpiNow2(x, verbose = FALSE, quiet = TRUE)
+  },
+  "EpiNow2 (truncation)" = function(x) {
+    tbl_now_to_EpiNow2(x, target = "estimate_truncation",
+                       verbose = FALSE, quiet = TRUE)
+  },
+  "EpiNow2 (dist)"       = function(x) {
+    tbl_now_to_EpiNow2(x, target = "estimate_dist", verbose = FALSE, quiet = TRUE)
+  },
+  # A FIXED seed: `nowcast()` defaults to `seed = sample.int(...)`, so without
+  # this the recorded outcome is not reproducible. (The flusight failure below is
+  # deterministic and not seed-related -- see devel/diseasenowcasting-issue.md --
+  # but the matrix should not depend on that being true.)
+  "nowcast (dnc)"        = function(x) diseasenowcasting::nowcast(x, seed = 20260824L)
 )
 
 # -- run --------------------------------------------------------------------------
@@ -122,6 +138,10 @@ for (dataset in names(build)) {
     # `diseasenowcasting` to the cumulative FluSight series ran for over 25
     # minutes without finishing, which is a result worth recording rather than
     # something to wait out.
+    #
+    # NB the cap does not actually bite on that cell: `setTimeLimit()` cannot
+    # interrupt Stan's compiled code, so the 180s limit was overrun to 2163s. The
+    # limit still protects the R-level steps.
     res <- tryCatch(
       {
         setTimeLimit(elapsed = TIME_LIMIT, transient = TRUE)

@@ -30,8 +30,13 @@ arguments.}
 \code{\link[surveillance:nowcast]{surveillance::nowcast()}} expects, or \code{"sts"} for an
 \link[surveillance:sts]{surveillance::sts} object of the observed curve.}
 
-\item{aggregate_by}{Aggregation interval for \code{format = "sts"}, e.g.
-\code{"1 week"}. \code{NULL} (default) derives it from the object's event units.}
+\item{aggregate_by}{Aggregation interval, e.g. \code{"1 week"}. \code{NULL} (default)
+derives it from the object's event units (\code{"days"} -> \code{"1 day"}, \code{"weeks"}
+-> \code{"1 week"}, \code{"months"} -> \code{"1 month"}, \code{"years"} -> \code{"1 year"}), and
+aborts on a \code{"numeric"} grid, which has integer indices rather than the
+calendar dates \code{\link[surveillance:linelist2sts]{surveillance::linelist2sts()}} needs. Pass a value
+explicitly to override, including on a numeric grid if you know what the
+index steps mean.}
 
 \item{verbose}{Logical. Print the choices that were made.}
 }
@@ -55,6 +60,15 @@ With \code{format = "sts"} it instead returns the observed epidemic curve as an
 \code{now} and the delay unit are \emph{not} baked into the result: pass them from the
 object with \code{\link[=get_now]{get_now()}} and \code{\link[=get_event_units]{get_event_units()}}, as in the example below.
 }
+\section{Cost of expanding counts}{
+
+
+\pkg{surveillance} counts rows, so \code{count-incidence} input is expanded to one
+row per case. \strong{Trim before converting} on a large series: the package's own
+windowing arguments (\code{when}, \code{control$dRange}) limit what it \emph{fits}, not what
+it is handed, and a multi-year daily series can expand into millions of rows.
+}
+
 \section{Censored delays}{
 
 
@@ -88,5 +102,5 @@ get_now(nowobj)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=tbl_now_to_nowcaster]{tbl_now_to_nowcaster()}}, \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}
+\code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}
 }

@@ -30,7 +30,7 @@ censored_fixture <- function(type = c("linelist", "count-incidence")) {
 
 converters <- c(
   "tbl_now_to_baselinenowcast", "tbl_now_to_epinowcast",
-  "tbl_now_to_tsibble", "tbl_now_to_surveillance", "tbl_now_to_nowcaster"
+  "tbl_now_to_tsibble", "tbl_now_to_surveillance"
 )
 
 # Every converter also warns about unrelated things (lossy conversion, counts
@@ -173,5 +173,35 @@ test_that("tbl_now_to_epidist() keeps the censoring indicator", {
   expect_length(
     censoring_warnings(tbl_now_to_epidist(ll, verbose = FALSE)),
     0L
+  )
+})
+
+test_that("tbl_now_to_nobbs() collapses censoring without losing a case", {
+  skip_if_not_installed("NobBS")
+  # NobBS is absent from the `converters` loop above because its package name
+  # ("NobBS") is not the converter's suffix ("nobbs"), so it needs its own test.
+  # It is also the converter where a lossy collapse is easiest to SEE: NobBS
+  # counts rows, so the expansion has to come back with exactly one row per case.
+  counts <- censored_fixture("count-incidence")
+
+  seen <- censoring_warnings(tbl_now_to_nobbs(counts, verbose = FALSE))
+  expect_length(seen, 1L)
+  expect_match(seen, "summing counts over")
+
+  linelist <- suppressWarnings(suppressMessages(
+    tbl_now_to_nobbs(counts, verbose = FALSE)
+  ))
+  expect_equal(nrow(linelist), sum(counts$n))
+  expect_false("upper_bound_only" %in% names(linelist))
+
+  ll <- censored_fixture("linelist")
+  seen_ll <- censoring_warnings(tbl_now_to_nobbs(ll, verbose = FALSE))
+  expect_length(seen_ll, 1L)
+  expect_match(seen_ll, "dropping the")
+  expect_equal(
+    nrow(suppressWarnings(suppressMessages(
+      tbl_now_to_nobbs(ll, verbose = FALSE)
+    ))),
+    nrow(ll)
   )
 })

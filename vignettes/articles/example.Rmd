@@ -225,11 +225,10 @@ still thin but workable.
 
 Monthly would be denser still, and statistically it is the better fit for this
 data — but it is worth knowing that **your time unit constrains your choice of
-engine**. Of the six nowcasting packages used at the end of this article, only
+engine**. Of the five nowcasting packages used at the end of this article, only
 `diseasenowcasting` and `baselinenowcast` accept monthly data: `NobBS` supports
-only daily and weekly units, `nowcaster` re-bins everything to weeks, and
-`epinowcast` accepts only `"day"` and `"week"` timesteps. Weeks are the finest
-unit every engine agrees on, so weeks it is.
+only daily and weekly units, and `epinowcast` accepts only `"day"` and `"week"`
+timesteps. Weeks are the finest unit every engine agrees on, so weeks it is.
 
 ```{r aggregate-weeks}
 hai_weekly <- hai |>
@@ -634,27 +633,6 @@ nobbs_fit <- NobBS(
 nobbs_fit$estimates |> tail(4)
 ```
 
-### nowcaster — an INLA nowcast
-
-```{r nowcaster, eval=has("nowcaster") && has("INLA"), message=FALSE, warning=FALSE}
-library(nowcaster)
-
-hai_nowcaster <- tbl_now_to_nowcaster(hai_model, verbose = FALSE)
-
-# `date_onset` / `date_report` are BARE column names, not strings.
-nowcaster_fit <- nowcasting_inla(
-  dataset      = hai_nowcaster,
-  date_onset   = date_onset,
-  date_report  = date_report,
-  data.by.week = TRUE,
-  Dmax         = 20,
-  wdw          = 52,
-  silent       = TRUE
-)
-
-tail(nowcaster_fit$total, 4)
-```
-
 ### epinowcast — a Bayesian model with delay and reference modules
 
 `epinowcast` compiles a Stan model, so the fit below is not run when this page
@@ -712,7 +690,6 @@ nowcast(hai_model)                            # diseasenowcasting
 tbl_now_to_baselinenowcast(hai_model)         # baselinenowcast
 tbl_now_to_epinowcast(hai_model)              # epinowcast
 tbl_now_to_surveillance(hai_model)            # surveillance
-tbl_now_to_nowcaster(hai_model)               # nowcaster
 as.data.frame(hai_model)                      # NobBS
 ```
 

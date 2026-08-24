@@ -10,6 +10,7 @@
 \alias{as_tbl_now.epidist_aggregate_data}
 \alias{as_tbl_now.tbl_ts}
 \alias{as_tbl_now.data.table}
+\alias{as_tbl_now.tbl_now_epinow2_snapshots}
 \alias{as_tbl_now.tbl_now_triangle_list}
 \title{Transform an object into a \code{tbl_now}}
 \usage{
@@ -30,6 +31,8 @@ as_tbl_now(object, ...)
 \method{as_tbl_now}{tbl_ts}(object, report_date, event_date = NULL, ...)
 
 \method{as_tbl_now}{data.table}(object, event_date, report_date, ...)
+
+\method{as_tbl_now}{tbl_now_epinow2_snapshots}(object, ...)
 
 \method{as_tbl_now}{tbl_now_triangle_list}(object, ...)
 }

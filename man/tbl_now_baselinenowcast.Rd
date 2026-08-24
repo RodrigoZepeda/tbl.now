@@ -120,6 +120,62 @@ On the way back, \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowc
 in-triangle cells with \code{0} unless they are marked in the tibble as \code{NA}.
 }
 
+\section{Sparse same-period reporting (weekly data especially)}{
+
+
+\code{baselinenowcast} divides each observed row by the share of the delay
+distribution that should have arrived by now. When almost nothing is reported
+in the same period as the event, that share is tiny for the most recent row
+and the estimate explodes: on a weekly line list where \code{P(delay = 0)} is about
+\strong{0.05}, a final row holding a single case became an estimate of \strong{257 with
+an upper bound of 1584} against a truth of 15.
+
+Completing the triangle to the \code{now} \emph{always} leaves a final row observable
+only at delay 0, so no choice of cut-off avoids it. Check the delay PMF before
+trusting the newest rows:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{pmf <- baselinenowcast::estimate_delay(triangle)
+pmf[1]   # share expected to arrive in the same period
+}\if{html}{\out{</div>}}
+
+If it is small, follow \code{baselinenowcast}'s own advice and truncate "to an
+earlier reference time to ensure a nowcast, not a forecast, is being
+produced" -- drop trailing rows whose expected observed share is below, say,
+10\%. Daily data with substantial same-day reporting does not have this
+problem.
+}
+
+\section{Capping the delay axis}{
+
+
+The triangle gets one column per delay, so a single long straggler makes it
+very wide and the fit very slow: capping delays at 30 days on a daily series
+took a fit from \strong{314s to 50s} for a tail carrying under 1\% of cases. Unlike
+\code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}} there is no \code{max_delay} argument here, so cap with a
+filter before converting:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{x |> dplyr::filter(.delay <= 30) |> tbl_now_to_baselinenowcast()
+}\if{html}{\out{</div>}}
+}
+
+\section{Negative delays}{
+
+
+A reporting triangle is indexed by delay from \strong{0}, so a report that arrived
+\emph{before} its event has no cell to go in.
+\code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}} drops it, and the cell then reads
+\code{0} -- indistinguishable from an observed zero. Both triangle formats
+therefore \strong{warn}, naming how many rows and cases go, so the loss is not
+silent; \code{format = "long"} is a tidy data frame with no delay axis and keeps
+them. \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}} drops them the same way, and warns the same
+way.
+
+Filter first if you want to decide what happens:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{x |> dplyr::filter(.delay >= 0) |> tbl_now_to_baselinenowcast()
+}\if{html}{\out{</div>}}
+}
+
 \section{Censored delays}{
 
 

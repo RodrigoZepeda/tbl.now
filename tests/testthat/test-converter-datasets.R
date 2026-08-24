@@ -78,7 +78,6 @@ CONVERTERS <- list(
   epinowcast      = function(x) tbl_now_to_epinowcast(x, verbose = FALSE, quiet = TRUE),
   epidist         = function(x) tbl_now_to_epidist(x, verbose = FALSE),
   surveillance    = function(x) tbl_now_to_surveillance(x, verbose = FALSE),
-  nowcaster       = function(x) tbl_now_to_nowcaster(x, verbose = FALSE),
   data.table      = function(x) tbl_now_to_data_table(x, verbose = FALSE),
   tsibble         = function(x) tbl_now_to_tsibble(x, verbose = FALSE)
 )
@@ -150,7 +149,7 @@ test_that("`negatives = 'error'` refuses cumulative input outright", {
 test_that("count-cumulative converts for the other targets too", {
   skip_on_cran()
   flusight_now <- dataset_tbl_now("flusight")
-  for (nm in c("epinowcast", "surveillance", "nowcaster", "data.table", "tsibble")) {
+  for (nm in c("epinowcast", "surveillance", "data.table", "tsibble")) {
     skip_if_not_installed(nm)
     expect_no_error(
       suppressWarnings(suppressMessages(CONVERTERS[[nm]](flusight_now))),

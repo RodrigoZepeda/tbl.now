@@ -24,11 +24,10 @@ Suggests:
     baselinenowcast,
     data.table,
     epidist,
-    EpiNow2,
+    EpiNow2 (>= 1.9.0),
     epinowcast,
     knitr,
     modifiedmk,
-    nowcaster,
     patchwork,
     plotly,
     rmarkdown,
@@ -40,8 +39,6 @@ Suggests:
 Additional_repositories:
     https://epinowcast.r-universe.dev,
     https://davisvaughan.r-universe.dev
-Remotes:
-    covid19br/nowcaster
 Config/testthat/edition: 3
 Config/testthat/parallel: false
 Imports:
@@ -63,7 +60,7 @@ Imports:
     utils
 URL: https://rodrigozepeda.github.io/tbl.now/
 VignetteBuilder: knitr
-Config/Needs/website: rmarkdown, covid19br/nowcaster
+Config/Needs/website: rmarkdown
 Roxygen: list(markdown = TRUE)
 Config/roxygen2/version: 8.0.0
 RoxygenNote: 8.0.0

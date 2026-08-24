@@ -1874,47 +1874,61 @@ test_that("a weekly reporting triangle survives the round-trip through as_tbl_no
   )
 })
 
-# get_nowcaster_strata() --------------------------------------------------------
 
-test_that("get_nowcaster_strata() returns the breaks nowcaster needs", {
-  skip_if_not_installed("nowcaster")
+# tbl_now_to_nobbs() -----------------------------------------------------------
+# NobBS counts ROWS, so count data must be expanded to one row per case. Handing
+# it counts directly is silently wrong rather than an error, which is exactly why
+# the converter exists.
+
+test_that("tbl_now_to_nobbs() expands counts to one row per case", {
+  skip_if_not_installed("NobBS")
+  data(denguedat, envir = environment())
+  ll <- tbl_now(
+    denguedat,
+    event_date = "onset_week", report_date = "report_week",
+    data_type = "linelist", verbose = FALSE
+  )
+  counts <- to_count(ll, to = "count-incidence")
+
+  out <- suppressWarnings(suppressMessages(
+    tbl_now_to_nobbs(counts, verbose = FALSE)
+  ))
+
+  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(out), sum(counts[[get_case_count(counts)]]))
+  expect_named(out, c("onset_date", "report_date"))
+  expect_s3_class(out$onset_date, "Date")
+  expect_s3_class(out$report_date, "Date")
+})
+
+test_that("tbl_now_to_nobbs() leaves a line list at one row per case", {
+  skip_if_not_installed("NobBS")
+  data(denguedat, envir = environment())
+  ll <- tbl_now(
+    denguedat,
+    event_date = "onset_week", report_date = "report_week",
+    data_type = "linelist", verbose = FALSE
+  )
+  out <- suppressWarnings(suppressMessages(
+    tbl_now_to_nobbs(ll, verbose = FALSE)
+  ))
+  expect_equal(nrow(out), nrow(denguedat))
+})
+
+test_that("tbl_now_to_nobbs() carries strata for a per-stratum loop", {
+  skip_if_not_installed("NobBS")
   x <- make_strata_tbl_now()
-  linelist <- tbl_now_to_nowcaster(x, verbose = FALSE)
-  bins <- get_nowcaster_strata(linelist)
-
-  # It returns `bins_age` itself, not a list to dig through.
-  expect_true(is.numeric(bins))
-  expect_null(names(bins))
-
-  levels_map <- attr(linelist, "nowcaster_levels")
-
-  # Breaks must put each level in its own bin: one more break than levels, and
-  # cutting the codes must recover every level exactly once.
-  expect_length(bins, length(levels_map) + 1L)
-  binned <- cut(sort(unique(linelist[["stratum_code"]])), breaks = bins)
-  expect_length(unique(binned), length(levels_map))
-
-  # The code column must be NUMERIC: `nowcasting_inla()` cuts it, so a character
-  # column errors inside cut().
-  expect_true(is.numeric(linelist[["stratum_code"]]))
+  out <- suppressWarnings(suppressMessages(
+    tbl_now_to_nobbs(x, verbose = FALSE)
+  ))
+  expect_true(all(get_strata(x) %in% names(out)))
 })
 
-test_that("get_nowcaster_strata() is NULL when there are no strata", {
-  skip_if_not_installed("nowcaster")
-  x <- remove_all_strata(make_strata_tbl_now())
-  expect_null(get_nowcaster_strata(tbl_now_to_nowcaster(x, verbose = FALSE)))
-})
-
-test_that("get_nowcaster_strata() handles several strata columns", {
-  skip_if_not_installed("nowcaster")
-  x <- make_strata_tbl_now() |>
-    dplyr::mutate(site = rep(c("A", "B"), length.out = dplyr::n())) |>
-    add_strata("site")
-  linelist <- tbl_now_to_nowcaster(x, verbose = FALSE)
-  bins <- get_nowcaster_strata(linelist)
-
-  # Several strata collapse into ONE label per observed combination.
-  n_levels <- length(attr(linelist, "nowcaster_levels"))
-  expect_equal(n_levels, length(unique(interaction(x$gender, x$site))))
-  expect_length(bins, n_levels + 1L)
+test_that("tbl_now_to_nobbs() honours custom column names", {
+  skip_if_not_installed("NobBS")
+  x <- make_strata_tbl_now()
+  out <- suppressWarnings(suppressMessages(
+    tbl_now_to_nobbs(x, event_col = "onset", report_col = "rep", verbose = FALSE)
+  ))
+  expect_true(all(c("onset", "rep") %in% names(out)))
 })

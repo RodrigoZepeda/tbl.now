@@ -143,6 +143,24 @@ delay 74, so its \code{max_confirm} is 11 in \code{pobs} and 7 after the round-t
 }
 }
 
+\section{Negative delays}{
+
+
+A reporting triangle is indexed by delay from \strong{0}, so a report that arrived
+\emph{before} its event has no cell to go in.
+\code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}} drops it, and the cell then reads
+\code{0} -- indistinguishable from an observed zero. Both triangle formats
+therefore \strong{warn}, naming how many rows and cases go, so the loss is not
+silent; \code{format = "long"} is a tidy data frame with no delay axis and keeps
+them. \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}} drops them the same way, and warns the same
+way.
+
+Filter first if you want to decide what happens:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{x |> dplyr::filter(.delay >= 0) |> tbl_now_to_baselinenowcast()
+}\if{html}{\out{</div>}}
+}
+
 \section{Censored delays}{
 
 
