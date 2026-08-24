@@ -387,11 +387,17 @@ against every shipped dataset.
   caught it until the numbers were read. Look at the numbers, and keep a
   plausibility guard on anything written to a cache.
 * **One `set.seed()` at the top of a precompute script is not reproducibility.**
-  rstan draws its own seed from R's RNG, so the seed a fit gets depends on how
-  many random numbers every engine before it happened to consume. Re-running one
-  engine on its own therefore lands somewhere different from a full run -- which
-  is exactly how the `1e8` fit above appeared and then refused to reappear. Seed
-  **inside** the fitting function, immediately before the fit.
+  It only pins anything if every engine consumes the same random numbers in the
+  same order, so refitting a SUBSET lands somewhere different from a full run.
+  This bit twice: it is how the `1e8` EpiNow2 fit above appeared and then refused
+  to reappear, and refitting `baselinenowcast` alone silently changed its
+  estimates, because its bootstrap resamples off the same RNG. It is not a Stan
+  problem -- it is every stochastic engine.
+
+  Seed per `(engine, stratum)` **immediately before each fit**, so a fit depends
+  only on which fit it is, not on what ran before it or whether anything did.
+  `nowcast_comparison.R` does this in `run_engine()`; both engines then reproduce
+  to `max abs diff == 0` with the RNG deliberately perturbed in between.
 
 ---
 

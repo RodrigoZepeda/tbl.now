@@ -67,13 +67,22 @@ engine. Two caveats are stated in the article itself: the delay distributions ar
 Colombian data, and sampling is lighter than the default (500 draws, 250 warmup,
 2 chains) because it is much the slowest engine in the comparison.
 
-The fit is seeded per call rather than relying on a single `set.seed()` at the
-top of the precompute script. rstan draws its seed from R's RNG, so the seed a
-fit receives depends on what every earlier engine consumed -- rebuilding EpiNow2
-alone landed on a different seed and produced a stratum whose upper credible
-bound sat at `1e8` for all 181 days. The precompute now also refuses to cache any
-fit whose scale is more than 100x the observed maximum, since an unconverged Stan
-fit returns numbers rather than an error.
+`data-raw/nowcast_comparison.R` now takes engine names
+(`Rscript data-raw/nowcast_comparison.R EpiNow2`) and merges them into the
+existing file, leaving every other engine's rows and recorded timings alone; with
+no arguments it rebuilds everything as before. This replaces a second script that
+re-created the setup by parsing the first one.
+
+Two correctness fixes came out of that. Every engine is now seeded per
+`(engine, stratum)` immediately before its fit, rather than relying on a single
+`set.seed()` at the top of the script -- which only pins results if every engine
+consumes the same random numbers in the same order, and so does not survive
+refitting a subset. Refitting `baselinenowcast` alone had been silently changing
+its estimates, and one EpiNow2 fit produced a stratum whose upper credible bound
+sat at `1e8` for all 181 days and would not reproduce. Both now refit to
+`max abs diff == 0`. The script also refuses to cache any fit whose scale exceeds
+100x the observed maximum for its stratum, since an unconverged Stan or INLA fit
+returns numbers rather than an error.
 
 `tidy()` gained methods for `estimate_infections`, `epinow`, `estimate_truncation`
 and `estimate_dist`, plus a `regional_epinow` branch in `tidy.list()` giving one

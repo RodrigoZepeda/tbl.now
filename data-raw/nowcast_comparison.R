@@ -275,20 +275,14 @@ fit_surveillance <- function(x) {
 # comparison, not a published estimate. The article says that too.
 EPINOW2_STAN <- EpiNow2::stan_opts(samples = 500, warmup = 250, chains = 2)
 
-# Seeded per fit, not once at the top of the script. `set.seed()` on line 44
-# only makes this reproducible if every engine before it consumes exactly the
-# same random numbers in exactly the same order -- so re-running EpiNow2 ALONE
-# lands on a different Stan seed than a full run does. That is not theoretical:
-# it produced a Female fit whose upper credible bound sat at 1e8 for all 181
-# days while the same settings run standalone gave a maximum of 975.
-#
-# This model is marginal on these data (every run reports a divergent transition
-# and low bulk/tail ESS), so an unlucky chain is a real possibility rather than a
-# remote one. Seeding here makes the cache reproducible however it is rebuilt.
+# This model is marginal on these data -- every run reports a divergent
+# transition and low bulk/tail ESS -- so an unlucky chain is a real possibility
+# rather than a remote one. `run_engine()` seeds before every fit, which is what
+# makes that reproducible; `EPINOW2_SEED` covers the `estimate_dist()` fit
+# further down, which does not go through `run_engine()`.
 EPINOW2_SEED <- 20260824L
 
 fit_epinow2 <- function(x) {
-  set.seed(EPINOW2_SEED)
   series <- tbl_now_to_EpiNow2(recent(x), verbose = FALSE, quiet = TRUE)
   fit <- EpiNow2::estimate_infections(
     series,
@@ -381,9 +375,29 @@ capture_display <- function(fit, tidy_on) {
   list(printed = printed, tidy = tidied)
 }
 
+# Every stochastic engine here draws from R's RNG, and `set.seed()` once at the
+# top of the script only pins those draws if every engine consumes the same
+# numbers in the same order. It does not survive refitting a SUBSET: running one
+# engine on its own leaves the RNG somewhere different, so it silently produces
+# different results. That is not hypothetical -- it was found twice:
+#
+#   * an EpiNow2 fit came back with its upper bound at 1e8 for all 181 days of a
+#     stratum whose observed maximum was 842, and would not reproduce;
+#   * refitting `baselinenowcast` alone changed its estimates, because its
+#     bootstrap resamples off the same RNG.
+#
+# Seeding per (engine, stratum) here makes each fit depend only on WHICH fit it
+# is -- not on what ran before it, or on whether anything ran before it at all.
+ENGINE_SEED <- 20260824L
+
+engine_seed <- function(name, stratum) {
+  ENGINE_SEED + sum(utf8ToInt(paste0(name, "|", stratum)))
+}
+
 run_engine <- function(name, fun, x, stratum) {
   message("  - ", name, " [", stratum, "] ...", appendLF = FALSE)
   started <- Sys.time()
+  set.seed(engine_seed(name, stratum))
   out <- tryCatch(
     suppressWarnings(suppressMessages(fun(x))),
     error = function(e) {
