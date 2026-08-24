@@ -77,7 +77,14 @@ nowcast_fit.diseasenowcasting <- function(method, x, ...,
   .need_pkg("diseasenowcasting")
   # diseasenowcasting was built around `tbl_now`, so it reads the strata,
   # covariates and temporal effects straight off the object: no conversion.
-  .quietly_if(diseasenowcasting::nowcast(x, ...), verbose)
+  #
+  # Looked up at run time rather than written `diseasenowcasting::nowcast()`.
+  # The package is GitHub-only and sits in no repository CRAN can resolve, so
+  # declaring it in `Suggests` makes `R CMD check --as-cran` report a dependency
+  # it cannot find, while NOT declaring it makes a literal `::` an undeclared
+  # import. `.need_pkg()` above has already established that it is installed.
+  nowcast <- getExportedValue("diseasenowcasting", "nowcast")
+  .quietly_if(nowcast(x, ...), verbose)
 }
 
 #' @rdname nowcast_tidy

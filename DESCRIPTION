@@ -23,7 +23,6 @@ Suggests:
     almanac,
     baselinenowcast,
     data.table,
-    diseasenowcasting,
     epidist,
     EpiNow2 (>= 1.9.0),
     epinowcast,
@@ -41,7 +40,6 @@ Suggests:
     WaveletComp
 Additional_repositories:
     https://epinowcast.r-universe.dev,
-    https://rodrigozepeda.r-universe.dev,
     https://davisvaughan.r-universe.dev
 Config/testthat/edition: 3
 Config/testthat/parallel: false

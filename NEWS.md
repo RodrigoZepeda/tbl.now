@@ -84,7 +84,14 @@ Neither `nowcaster` nor `INLA` is reintroduced to `DESCRIPTION`.
 ## Other
 
 * `scoringutils` added to `Suggests` (CRAN, so no `Additional_repositories`
-  entry is needed). The hand-rolled `.wis()` is now cross-checked against it in
+  entry is needed). \pkg{diseasenowcasting} is deliberately **not** added: it is
+  GitHub-only and sits in no repository `R CMD check --as-cran` can resolve, so
+  declaring it would trade an undeclared-import warning for a CRAN-incoming NOTE
+  about a dependency that cannot be found. `nowcast_fit.diseasenowcasting()`
+  therefore looks its entry point up with `getExportedValue()` after
+  `.need_pkg()` has confirmed the package is installed, rather than writing a
+  literal `diseasenowcasting::`.
+* `LICENSE` / `LICENSE.md` copyright year updated to 2026. The hand-rolled `.wis()` is now cross-checked against it in
   the test suite: two implementations agreeing is worth more than either alone.
 * New article, `vignette("ensemble-nowcasting")`, with the fits precomputed by
   `data-raw/ensemble_comparison.R` so the build never fits anything. It reports
