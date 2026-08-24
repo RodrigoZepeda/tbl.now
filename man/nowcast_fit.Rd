@@ -4,8 +4,9 @@
 \alias{nowcast_fit.diseasenowcasting}
 \alias{nowcast_fit.baselinenowcast}
 \alias{nowcast_fit.epinowcast}
-\alias{nowcast_fit.nowcaster}
 \alias{nowcast_fit.NobBS}
+\alias{nowcast_fit.surveillance}
+\alias{nowcast_fit.EpiNow2}
 \alias{nowcast_fit}
 \alias{nowcast_fit.default}
 \title{Fit a nowcast with one modelling package}
@@ -37,20 +38,32 @@
   verbose = TRUE
 )
 
-\method{nowcast_fit}{nowcaster}(
-  method,
-  x,
-  ...,
-  trajectories = TRUE,
-  quantile_levels = nowcast_quantile_levels(),
-  verbose = TRUE
-)
-
 \method{nowcast_fit}{NobBS}(
   method,
   x,
   ...,
   specs = list(),
+  quantile_levels = nowcast_quantile_levels(),
+  verbose = TRUE
+)
+
+\method{nowcast_fit}{surveillance}(
+  method,
+  x,
+  ...,
+  when = NULL,
+  D = NULL,
+  fit_method = "bayes.notrunc.bnb",
+  control = list(),
+  quantile_levels = nowcast_quantile_levels(),
+  verbose = TRUE
+)
+
+\method{nowcast_fit}{EpiNow2}(
+  method,
+  x,
+  ...,
+  convert_args = list(),
   quantile_levels = nowcast_quantile_levels(),
   verbose = TRUE
 )
@@ -93,11 +106,19 @@ triangle's delay axis; inferred from the object's time units when \code{NULL}.}
 \item{preprocess_args}{(\code{"epinowcast"} only) A list of arguments for
 \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}, e.g. \code{list(max_delay = 20)}.}
 
-\item{trajectories}{(\code{"nowcaster"} only) Whether to keep the posterior
-trajectories. \code{TRUE} by default, because they are what supplies the draws.}
-
 \item{specs}{(\code{"NobBS"} only) The \code{specs} list of \code{NobBS::NobBS()}. The
 \code{quantiles} element is filled from \code{quantile_levels} unless you set it.}
+
+\item{when, D, fit_method, control}{(\code{"surveillance"} only) The \code{when}, \code{D},
+\code{method} and \code{control} arguments of \code{\link[surveillance:nowcast]{surveillance::nowcast()}}. \code{when}
+defaults to the last \code{D + 1} points of the object's grid, \code{D} to the
+largest delay in the data, and \code{control$dRange} to the grid running to
+\code{\link[=get_now]{get_now()}}, which a line list cannot express on its own. \code{fit_method} is
+\pkg{surveillance}'s \code{method} argument, renamed so it cannot collide with
+\code{\link[=run_nowcast]{run_nowcast()}}'s own \code{method}.}
+
+\item{convert_args}{(\code{"EpiNow2"} only) A list of arguments for
+\code{\link[=tbl_now_to_EpiNow2]{tbl_now_to_EpiNow2()}}, e.g. \code{list(accumulate = FALSE)}.}
 }
 \value{
 \code{nowcast_fit()} returns the modelling package's own object, verbatim.

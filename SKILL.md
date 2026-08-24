@@ -681,12 +681,12 @@ so a converted object round-trips straight back.
 |---------|:---:|:---:|---------|
 | epinowcast | ✅ | ✅ | `reference_date`/`report_date`/`confirm` ↔ count-cumulative. `from` accepts the raw long input, a preprocessed `enw_preprocess_data` object, **or** a fitted `epinowcast` object (grouping auto-detected). `to` builds the preprocessed `enw_preprocess_data` object (or the completed-input `data.table` with `preprocess = FALSE`) |
 | baselinenowcast | ✅ | ✅ | long df **or** reporting-triangle matrix ↔ count-incidence; `to` has `format = c("matrix","long","triangle_list")` — **`"matrix"` is the default**; `"triangle_list"` returns ONE TRIANGLE PER STRATUM as a thin `tbl_now_triangle_list` (still a plain list, so `lapply()` works), length-1 and named `"all"` when there are no strata, and `as_tbl_now()` rebuilds a `tbl_now` from it with the strata recoded. `to`'s `delays_unit` defaults to `NULL` and is **inferred** from the object units (equal event/report units of `"days"`/`"weeks"`) for the matrix format, else supply it. Refuses `count-cumulative` input (would need to de-accumulate to possibly-negative increments) |
-| EpiNow2 | ❌ | ✅ | `to` only. `model = "estimate_infections"` (default) → a single `date`/`confirm` series for `estimate_infections()`/`epinow()`. `model = "estimate_truncation"` → a list of `date`/`confirm` snapshots (one per report date) for `estimate_truncation()`, which *does* use the report dimension |
+| EpiNow2 | ✅ | ✅ | `to` takes `target =`, named for the EpiNow2 function the result is passed to: `"estimate_infections"` (default, a `date`/`confirm` series, also what `epinow()` takes), `"regional_epinow"` (the same plus a `region` column from the strata), `"estimate_truncation"` (a list of `date`/`confirm` snapshots, one per report date — the one model that uses the report dimension), `"estimate_dist"` (the interval-censored delay frame). `from` inverts the snapshot form only. **EpiNow2 models a DAILY process and has no `timestep`**, so `accumulate = "auto"` lays non-daily data on its grid |
 | data.table | ✅ | ✅ | `tbl_now_from_data_table()` / `tbl_now_to_data_table()` (underscores) |
 | epidist | ✅ | ✅ | epidist 0.4.0 interval-censored dates; `format = "linelist"` uses lower bounds as dates, `format = "interval"` attaches upper bounds as covariates |
 | tsibble | ✅ | ✅ | `to` builds a `tbl_ts` (index defaults to `report_date`, key = other date + strata); `from` needs `event_date`, recovers strata from the key |
+| NobBS | ❌ | ✅ | `to` only. Builds the line list `NobBS::NobBS()` takes (`onset_date`/`report_date`). **NobBS counts ROWS**, so count input is expanded to one row per case — handing it counts directly nowcasts 1,174 rows as 1,174 cases when they carry 50,160. Daily or weekly grids only |
 | surveillance | ❌ | ✅ | `to` only. Builds the individual-level line list `surveillance::nowcast()` takes, renaming the dates to its own `dHospital`/`dReport` defaults. `format = "sts"` returns the observed curve as an `sts` object instead. Count input is expanded back to one row per case |
-| nowcaster | ❌ | ✅ | `to` only. Builds the line list `nowcaster::nowcasting_inla()` takes (`date_onset`/`date_report`). **Strata are encoded for you**: it emits a numeric `stratum_code` column, and `get_nowcaster_strata()` returns the `bins_age` breaks to pass alongside it, because `age_col` must be numeric despite the help calling it a "stratum column" |
 
 ```r
 nowobj <- tbl_now_from_epinowcast(epinowcast::germany_covid19_hosp,
@@ -694,6 +694,109 @@ nowobj <- tbl_now_from_epinowcast(epinowcast::germany_covid19_hosp,
 ts     <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
 back   <- as_tbl_now(ts, event_date = "reference_date")   # round-trip
 ```
+
+---
+
+## Skill: fit several models at once and ensemble them (`run_nowcast`)
+
+The converters are one front door: convert, fit, `tidy()`. `run_nowcast()` is the
+other: it does all three in one call and always returns a **`tbl_nowcast`**, the
+shape `nowcast_ensemble()` and `score_nowcast()` need in order to compare models
+at all. Both stay supported — reach for the converter when you want to pass that
+package's own arguments or inspect what it was handed.
+
+```r
+nc <- run_nowcast(x, method = "baselinenowcast", draws = 1000)
+
+list_nowcast_methods()          # what is available in this session
+list_nowcast_methods(installed_only = FALSE)
+```
+
+Built-in methods (names matched case-insensitively), each routed through the
+matching converter:
+
+| `method` | fits | needs |
+|---|---|---|
+| `"diseasenowcasting"` | `diseasenowcasting::nowcast()`, straight off the `tbl_now` | — |
+| `"baselinenowcast"` | one reporting triangle, or one **per stratum** | — |
+| `"epinowcast"` | `epinowcast::epinowcast()`; `preprocess_args =` controls the converter | Stan |
+| `"NobBS"` | `NobBS()`, or `NobBS.strat()` for exactly one stratum | JAGS |
+| `"surveillance"` | `surveillance::nowcast()`, **one fit per stratum** | — |
+| `"EpiNow2"` | `estimate_infections()`, or `regional_epinow()` when strata are declared | Stan |
+
+What comes back:
+
+```r
+nc                          # print: method, now, dates, strata, quantile levels
+as_tibble(nc)               # the quantile predictions (long)
+as_tibble(nc, type = "draws")  # the draws, where the backend has them
+tidy(nc)                    # the standard event_date/stratum/estimate/... table
+autoplot(nc)                # green fan chart (a nowcast is the epidemic process)
+nc@fit                      # the backend's OWN object, untouched
+```
+
+### Scoring
+
+```r
+truth <- nowcast_truth(x_full)          # what those dates EVENTUALLY reached
+score_nowcast(nc, truth = truth)        # wis, ae_median, coverage_50, coverage_90
+as_scoringutils(nc, truth = truth)      # hand it to scoringutils instead
+```
+
+Score against data the model had not seen: snapshot at a past `now`, fit there,
+score against the full series.
+
+### Ensembles
+
+```r
+members <- list(a = run_nowcast(x, "baselinenowcast"),
+                b = run_nowcast(x, "diseasenowcasting"))
+
+nowcast_ensemble(members)                              # quantile average
+nowcast_ensemble(members, type = "linear_pool")        # pool the draws
+nowcast_ensemble(members, weights = c(a = 0.7, b = 0.3))
+```
+
+- **`type = "quantile"`** (default) averages the members' values level by level.
+  Always applies, and tends to be **narrower** than the members.
+- **`type = "linear_pool"`** pools their draws into a mixture. Usually **wider**
+  and better calibrated, and it **errors** if any member has no draws (`NobBS`
+  and `surveillance` do not) rather than quietly dropping it.
+- Members must share the event-date column and the strata. Levels not shared by
+  every member are dropped, with a warning — no member is silently discarded.
+
+### Learning the weights
+
+```r
+bt <- nowcast_backtest(x_full, methods = c("baselinenowcast", "NobBS"),
+                       now_dates = as.Date(c("2010-08-01", "2010-09-01")),
+                       seed = 20260824)
+tidy(bt)                                   # one row per (method, now, target)
+nowcast_weights(bt, type = "inverse_score")  # w proportional to 1 / mean WIS
+nowcast_ensemble(members, weights = "inverse_score", backtest = bt)
+```
+
+`nowcast_backtest()` is `length(methods) x length(now_dates)` model fits — keep
+`now_dates` short with Bayesian members. **Pass `seed`**: it seeds immediately
+before each fit, so a fit depends only on which fit it is. One `set.seed()`
+before the whole backtest silently moves every other fit the moment you drop a
+method or refit one date.
+
+### Adding your own model
+
+Two S3 methods, in any package:
+
+```r
+nowcast_fit.mymodel  <- function(method, x, ..., quantile_levels, verbose = TRUE) { ... }
+nowcast_tidy.mymodel <- function(method, fit, x, ..., quantile_levels) {
+  list(predictions = NULL, draws = <event_date, strata, .draw, .value>)
+}
+```
+
+Return `draws` where you can — the quantiles are derived for you, and it is what
+`type = "linear_pool"` needs. Return `predictions` (`<event_date>`, strata,
+`.quantile_level`, `.value`) otherwise. One of the two may be `NULL`, not both.
+See `vignette("ensemble-nowcasting")`.
 
 ---
 
@@ -715,7 +818,9 @@ entry (named after the probability: `0.025` → `q2.5`).
 
 Supported: `diseasenowcasting` (pass `predict(fit)`), `baselinenowcast`
 (`output_type = "samples"`), `epinowcast`, `NobBS`, `surveillance` (`stsNC`),
-`nowcaster`.
+`EpiNow2` — **and the `tbl_nowcast` that `run_nowcast()` / `nowcast_ensemble()`
+return**, so a nowcast fitted through the one-call front door reads exactly like
+one fitted by hand.
 
 - **`level` is not decoration.** It records the width each engine's interval
   actually has. `epinowcast` reports a q5–q95 band (**90%**) by default while the
@@ -723,9 +828,17 @@ Supported: `diseasenowcasting` (pass `predict(fit)`), `baselinenowcast`
 - **`probs` only works where draws exist** (`diseasenowcasting`,
   `baselinenowcast`, `epinowcast`). The others report a fixed summary set and
   **error** rather than approximate.
+- **On a `tbl_nowcast`, `level` is read off the object.** It is the width of the
+  widest **symmetric** pair of quantile levels the nowcast actually carries:
+  `0.95` for the default `nowcast_quantile_levels()`, `0.8` for
+  `c(0.1, 0.5, 0.9)`, and `NA` (with `NA` bounds) when no symmetric pair exists.
+  `engine` is the method, or the ensemble's name.
+- **`tidy()` also works on a `nowcast_backtest`**, giving one row per (method,
+  `now` date, target) with `wis`, `ae_median` and the coverage flags — ready for
+  `dplyr` or `ggplot2`.
 - **`library(broom)` overwrites `tbl.now`'s `tidy.list()` method**, which is what
-  `NobBS` and `nowcaster` fits dispatch on. Qualify as `tbl.now::tidy(...)` when
-  broom is attached.
+  `NobBS` fits and per-stratum `baselinenowcast` lists dispatch on. Qualify as
+  `tbl.now::tidy(...)` when broom is attached.
 - **`diseasenowcasting` needs >= 2.1.0 for a bare `tidy(fit)`.** From 2.1.0 it
   re-exports the shared generic and supplies its own method, so `tidy(fit)`
   returns the nowcast and `model_parameters()` returns the parameter table.
@@ -740,7 +853,7 @@ Supported: `diseasenowcasting` (pass `predict(fit)`), `baselinenowcast`
   There is no `event_date`. Beware dispatch: the fit is
   `c("brmsfit", "epidist_fit")`, so a loaded `broom.mixed` matches first.
 - **Engines without draws can still give you quantiles — ask at fit time.**
-  `tidy(probs =)` errors for `NobBS`, `nowcaster` and `surveillance`, but
+  `tidy(probs =)` errors for `NobBS` and `surveillance`, but
   `NobBS(specs = list(quantiles = c(0.1, 0.5, 0.9)))` computes them during the
   fit and returns `q_0.1` / `q_0.5` / `q_0.9` columns on `$estimates`; join them
   onto `tidy()` output by date.
@@ -748,8 +861,9 @@ Supported: `diseasenowcasting` (pass `predict(fit)`), `baselinenowcast`
   slot at the width `control$alpha` sets (95% by default). You do NOT need the
   JAGS-backed `bayes.trunc`/`bayes.trunc.ddcp` methods to get uncertainty;
   `lawless` and `unif` may leave the slot empty, and then the bounds are `NA`.
-- **`NobBS` and `nowcaster` return unclassed lists**, so they are told apart by
-  structure; pass `engine =` if that ever fails.
+- **`NobBS`, `regional_epinow()` and a per-stratum `baselinenowcast` list all
+  arrive as unclassed lists**, so they are told apart by structure; pass
+  `engine =` if that ever fails.
 - **`tidy()` does NOT re-grid.** Engines that bin onto their own week starts keep
   them. Snapping silently would hide a real difference between packages.
 - The generic comes from `generics`, so it composes with `broom` rather than
@@ -822,6 +936,23 @@ get_initial_reported_cases(x) / get_latest_reported_cases(x)
 get_nth_reported_cases(x, delay)          # cumulative count within a given delay
 ```
 
+## Reference: nowcasting & ensembles (all experimental)
+
+```r
+run_nowcast(x, method, ..., quantile_levels =)  # -> tbl_nowcast
+list_nowcast_methods(installed_only = TRUE)
+nowcast_quantile_levels()                       # the hub levels, the default
+tbl_nowcast(predictions =, draws =, ...)        # the constructor (for backends/tests)
+is_tbl_nowcast(x)
+
+nowcast_ensemble(..., type =, weights =, backtest =, n_draws =, name =)
+nowcast_truth(x) / score_nowcast(nc, truth =) / as_scoringutils(nc, truth =)
+nowcast_backtest(x, methods, now_dates =, seed =) / nowcast_weights(bt, type =)
+
+nowcast_fit(method, x, ...) / nowcast_tidy(method, fit, x, ...)  # extension points
+nowcast_method("nobbs")                         # -> the dispatch object
+```
+
 ## Reference: diagnostics & batches (all experimental)
 
 ```r
@@ -868,11 +999,13 @@ data(mpoxdat)     # mpox count-incidence data (has a `race` stratum + `n` counts
   converters (`baselinenowcast`, `epinowcast`); for line-list engines the padding
   evaporates (a zero-count row expands to zero rows) and you must give the grid
   another way — `control$dRange` in `surveillance`.
-- **`nowcaster` takes its last observable week from the last EVENT, not the last
-  report** (`Tmax <- max(date_onset)`, then `Y <- ifelse(Time + delay > Tmax.id,
-  NA, Y)`). If your final event period has no same-period report then
-  `max(event) < max(report)` and it silently discards a whole diagonal of real
-  reports — the symptom is a nowcast **below** counts you have already observed.
-  Check `max(event_date) == max(report_date)` after aggregating to your time unit.
-- `tidy(fit, probs =)` **errors** for `NobBS`, `nowcaster` and `surveillance`:
-  they keep no draws, so an arbitrary quantile would be an approximation.
+- `tidy(fit, probs =)` **errors** for `NobBS` and `surveillance`: they keep no
+  draws, so an arbitrary quantile would be an approximation. The same is true of
+  a quantile-only `tbl_nowcast`.
+- **`nowcaster` is no longer supported** (dropped in 0.16.0, and its
+  `run_nowcast()` backend in 0.18.0). `tbl_now_to_nowcaster()`,
+  `get_nowcaster_strata()` and `run_nowcast(x, "nowcaster")` do not exist.
+- **A `run_nowcast()` backend that reports only a point estimate and one
+  interval cannot honour arbitrary `quantile_levels`.** `"surveillance"` and
+  `"EpiNow2"` warn and return the three levels they do have (the median and the
+  two tails of their own interval) rather than interpolating the rest.

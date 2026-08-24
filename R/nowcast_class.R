@@ -1,7 +1,7 @@
 # The `tbl_nowcast` class: the common currency of `run_nowcast()`.
 #
-# Every backend (diseasenowcasting, epinowcast, baselinenowcast, nowcaster,
-# NobBS, ...) returns something different -- a Stan fit, a matrix, a list of
+# Every backend (diseasenowcasting, epinowcast, baselinenowcast, NobBS,
+# surveillance, EpiNow2) returns something different -- a Stan fit, a matrix, a list of
 # data frames. `run_nowcast()` wraps whatever the backend produced into a
 # `tbl_nowcast`, which always carries the predictions in the *same* tidy shape
 # so that they can be plotted, scored and ensembled without knowing which
@@ -13,10 +13,26 @@
 #'
 #' @description `r lifecycle::badge('experimental')`
 #'
-#' The quantile levels [run_nowcast()] summarises a nowcast at by default.
-#' These are the levels used by the US and European forecast hubs, which makes
-#' the output directly comparable with hub submissions and with
-#' \pkg{scoringutils}.
+#' The quantile levels [run_nowcast()] summarises a nowcast at by default: nine
+#' probabilities, symmetric about the median, spanning the 50%, 80%, 90% and 95%
+#' central intervals.
+#'
+#' They are a **subset** of the 23 levels the US and European COVID-19 forecast
+#' hubs and FluSight ask for (0.01, 0.025, 0.05, then 0.10 to 0.90 in steps of
+#' 0.05, then 0.975 and 0.99). Nine cover the intervals people actually read at a
+#' fraction of the storage, and every one of them is a hub level, so the output
+#' still scores against hub submissions in \pkg{scoringutils} without
+#' interpolation. Pass `quantile_levels` explicitly when you need the full hub
+#' set:
+#'
+#' ```r
+#' hub_levels <- c(0.01, 0.025, seq(0.05, 0.95, by = 0.05), 0.975, 0.99)
+#' run_nowcast(x, "baselinenowcast", quantile_levels = hub_levels)
+#' ```
+#'
+#' Backends that expose draws can honour any levels you ask for. Ones that report
+#' a point estimate and a single interval (`"surveillance"`, `"EpiNow2"`) cannot,
+#' and say so rather than interpolating.
 #'
 #' @return A numeric vector of probabilities in `(0, 1)`, sorted increasingly.
 #'
@@ -57,8 +73,8 @@ nowcast_quantile_levels <- function() {
 #' @seealso [run_nowcast()], [nowcast_ensemble()], [score_nowcast()]
 #'
 #' @examples
-#' # `tbl_nowcast` objects are normally built by `run_nowcast()`, but the
-#' # constructor can be called directly when writing a new backend.
+#' # Normally built for you by the one-call front door, but the constructor is
+#' # exported because a new backend -- or a test -- needs to build one directly.
 #' predictions <- data.frame(
 #'   onset_week = as.Date("2020-01-05") + c(0, 0, 7, 7),
 #'   .quantile_level = c(0.5, 0.9, 0.5, 0.9),
@@ -158,28 +174,42 @@ is_tbl_nowcast <- function(x) {
 
 #' @export
 S7::method(print, tbl_nowcast) <- function(x, ..., n = 6) {
+  # NOTE: a print method must write to STDOUT. The `cli_*()` family emits
+  # *messages*, so its output disappears under `message = FALSE`, `sink()` or
+  # `capture.output()` -- which is exactly where a print method is expected to
+  # work. The `cat_*()` family is the stdout counterpart.
   n_dates <- length(unique(x@predictions[[x@event_date]]))
-  cli::cli_h3("A {.cls tbl_nowcast} from method {.val {x@method}}")
-  cli::cli_ul()
-  cli::cli_li("now: {.val {x@now}}")
-  cli::cli_li("event dates: {.val {n_dates}}")
-  if (length(x@strata) > 0) {
-    cli::cli_li("strata: {.val {x@strata}}")
-  }
-  cli::cli_li("quantile levels: {.val {sort(unique(x@predictions$.quantile_level))}}")
-  if (is.null(x@draws)) {
-    cli::cli_li("draws: {.emph none} (quantiles only)")
-  } else {
-    cli::cli_li("draws: {.val {length(unique(x@draws$.draw))}}")
-  }
-  cli::cli_end()
+
+  cli::cat_rule(
+    left = cli::format_inline(
+      "A {.cls tbl_nowcast} from method {.val {x@method}}"
+    )
+  )
+  cli::cat_bullet(c(
+    cli::format_inline("now: {.val {as.character(x@now)}}"),
+    cli::format_inline("event dates: {.val {n_dates}}"),
+    if (length(x@strata) > 0) {
+      cli::format_inline("strata: {.val {x@strata}}")
+    },
+    cli::format_inline(
+      "quantile levels: {.val {sort(unique(x@predictions$.quantile_level))}}"
+    ),
+    if (is.null(x@draws)) {
+      cli::format_inline("draws: {.emph none} (quantiles only)")
+    } else {
+      cli::format_inline("draws: {.val {length(unique(x@draws$.draw))}}")
+    }
+  ))
 
   if (nrow(x@predictions) > 0) {
-    print(utils::head(dplyr::as_tibble(x@predictions), n))
+    # `format()` on a tibble returns its printed lines, so the table reaches
+    # stdout without a bare `print()` call inside package code.
+    cli::cat_line(format(utils::head(dplyr::as_tibble(x@predictions), n)))
     if (nrow(x@predictions) > n) {
-      cli::cli_alert_info(
-        "{nrow(x@predictions) - n} more row{?s}. Use {.code as_tibble()} for all of them."
-      )
+      cli::cat_line(cli::format_inline(paste0(
+        "{cli::symbol$info} {nrow(x@predictions) - n} more row{?s}. ",
+        "Use {.code as_tibble()} for all of them."
+      )))
     }
   }
 
@@ -189,6 +219,17 @@ S7::method(print, tbl_nowcast) <- function(x, ..., n = 6) {
 #' Coerce a `tbl_nowcast` into a `tibble`
 #'
 #' @description `r lifecycle::badge('experimental')`
+#'
+#' @details
+#' Registered in `.onLoad()` rather than assigned with
+#' `S7::method(as_tibble, tbl_nowcast) <- `, which is what the neighbouring
+#' `print()` and `as.data.frame()` methods use. Assigning an S7 method onto an
+#' *imported* generic copies that generic into this namespace, and
+#' `tibble::as_tibble()` carries `rownames = pkgconfig::get_config(...)` as a
+#' default argument -- so the copy makes `R CMD check` report \pkg{pkgconfig} as
+#' an undeclared `::` import of a package this one never uses. Plain S3
+#' registration dispatches on `class(x)`, which for an S7 object is
+#' `"tbl.now::tbl_nowcast"`, and copies nothing.
 #'
 #' Returns the tidy quantile predictions (the `predictions` property), or the
 #' posterior draws when `type = "draws"`.
@@ -209,10 +250,7 @@ S7::method(print, tbl_nowcast) <- function(x, ..., n = 6) {
 #'
 #' @name as_tibble.tbl_nowcast
 #' @usage NULL
-#' @importFrom tibble as_tibble
-#' @export
-S7::method(as_tibble, tbl_nowcast) <- function(x, ...,
-                                               type = c("quantiles", "draws")) {
+as_tibble_tbl_nowcast <- function(x, ..., type = c("quantiles", "draws")) {
   type <- match.arg(type)
   if (type == "draws") {
     if (is.null(x@draws)) {
@@ -259,7 +297,7 @@ S7::method(as.data.frame, tbl_nowcast) <- function(x, ...) {
 
 #' Reshape a wide quantile table into the tidy quantile format
 #'
-#' Backends that only return quantiles (NobBS, nowcaster) hand them over as
+#' Backends that only return quantiles (NobBS, say) hand them over as
 #' one column per level. This pivots those columns into `.quantile_level` /
 #' `.value`.
 #'

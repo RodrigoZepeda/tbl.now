@@ -32,18 +32,28 @@ is the report date, whether your data is linelist or has counts (and what _those
 
 > In this vignette we take a single dataset (`covid_colombia`), and from that one object, use several different nowcasting / delay-estimation tools:
 
-| Package | What it does | Additional requirements | `tbl.now` converter |
-|---|---|---|---|
-| [diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/) | flexible Bayesian nowcast (delay + epidemic processes) | none (uses `RTMB`) | consumes a `tbl_now` **directly** |
-| [baselinenowcast](https://baselinenowcast.epinowcast.org/) | fast, assumption-light baseline nowcast | none | `tbl_now_to_baselinenowcast()` |
-| [epinowcast](https://package.epinowcast.org/) | flexible Bayesian nowcast (delay + reference modules) | **Stan** | `tbl_now_to_epinowcast()` |
-| [epidist](https://epidist.epinowcast.org/) | estimates only the reporting **delay distribution** | **Stan** | `tbl_now_to_epidist()` |
-| [NobBS](https://cran.r-project.org/package=NobBS) | Nowcasting by Bayesian Smoothing | **JAGS** | `tbl_now_to_nobbs()` |
-| [surveillance](https://cran.r-project.org/package=surveillance) | the classic Höhle & an der Heiden nowcast | none for the method used here (**JAGS** for `bayes.trunc.ddcp`) | `tbl_now_to_surveillance()` |
-| [EpiNow2](https://epiforecasts.io/EpiNow2/) | renewal-equation $R_t$, reporting truncation, and delay distributions | **Stan** (`cmdstanr`) | `tbl_now_to_EpiNow2()` |
+| Package | What it does | Additional requirements | `tbl.now` converter | `run_nowcast()` method |
+|---|---|---|---|---|
+| [diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/) | flexible Bayesian nowcast (delay + epidemic processes) | none (uses `RTMB`) | consumes a `tbl_now` **directly** | `"diseasenowcasting"` |
+| [baselinenowcast](https://baselinenowcast.epinowcast.org/) | fast, assumption-light baseline nowcast | none | `tbl_now_to_baselinenowcast()` | `"baselinenowcast"` |
+| [epinowcast](https://package.epinowcast.org/) | flexible Bayesian nowcast (delay + reference modules) | **Stan** | `tbl_now_to_epinowcast()` | `"epinowcast"` |
+| [epidist](https://epidist.epinowcast.org/) | estimates only the reporting **delay distribution** | **Stan** | `tbl_now_to_epidist()` | — (not a nowcast) |
+| [NobBS](https://cran.r-project.org/package=NobBS) | Nowcasting by Bayesian Smoothing | **JAGS** | `tbl_now_to_nobbs()` | `"NobBS"` |
+| [surveillance](https://cran.r-project.org/package=surveillance) | the classic Höhle & an der Heiden nowcast | none for the method used here (**JAGS** for `bayes.trunc.ddcp`) | `tbl_now_to_surveillance()` | `"surveillance"` |
+| [EpiNow2](https://epiforecasts.io/EpiNow2/) | renewal-equation $R_t$, reporting truncation, and delay distributions | **Stan** (`cmdstanr`) | `tbl_now_to_EpiNow2()` | `"EpiNow2"` |
 
 You do not need to be an expert in any of them to follow along, the point is to show
 how little changes on *your* side when you switch models.
+
+::: {.alert .alert-info}
+**The last column is a second front door.** This article drives each package by
+hand: convert, fit, `tidy()`. `run_nowcast(x, method = "epinowcast")` does the
+same three steps in one call and returns a `tbl_nowcast`, which is what
+`nowcast_ensemble()` and `score_nowcast()` need in order to compare models at
+all. Read this article to understand what each package is being handed; read
+[**One call, many models**](ensemble-nowcasting.html) when you want to run
+several of them and combine them.
+:::
 
 ::: {.alert .alert-warning}
 **Each of these is a separate package, and `tbl.now` does not install any of

@@ -1,3 +1,99 @@
+# tbl.now 0.18.0
+
+## New: one call per model, and ensembles
+
+Until now `tbl.now` prepared data for six nowcasting packages and normalised what
+they returned, but running several of them still meant six different calls and
+six different result shapes to reconcile by hand. This release adds the layer
+that removes that bookkeeping.
+
+* **`run_nowcast(x, method)`** fits any supported package and always returns a
+  **`tbl_nowcast`**: an S7 object holding the predictions as one row per (event
+  date, stratum, quantile level), plus the draws where the backend has them, plus
+  the backend's own untouched fit. Backends ship for `"diseasenowcasting"`,
+  `"baselinenowcast"`, `"epinowcast"`, `"NobBS"`, `"surveillance"` and
+  `"EpiNow2"`, each feeding its package through the matching `tbl_now_to_*()`
+  converter rather than building the input by hand.
+
+  It is called `run_nowcast()` and not `nowcast()` because \pkg{diseasenowcasting}
+  exports `nowcast()`; keeping the names distinct means both can be attached at
+  once.
+
+* **`nowcast_ensemble()`** combines several of them, either by averaging their
+  quantiles level by level (`type = "quantile"`, vincentization -- narrower) or
+  by pooling their draws into a mixture (`type = "linear_pool"` -- wider, and
+  refused outright when a member has no draws, rather than silently dropping it).
+
+* **`nowcast_backtest()`**, **`score_nowcast()`** and **`nowcast_weights()`**
+  score models retrospectively and turn those scores into ensemble weights
+  (`"inverse_score"`, `"optim"` or `"equal"`). `as_scoringutils()` hands the same
+  object to \pkg{scoringutils} for its full score suite.
+
+* **`nowcast_fit()` / `nowcast_tidy()`** are the extension point: two S3 methods,
+  in any package, and `run_nowcast()` knows about your model. See
+  `vignette("ensemble-nowcasting")`.
+
+* **`autoplot()`** for a `tbl_nowcast` draws a fan chart, in the palette's green
+  -- a nowcast estimates the epidemic process, not the reporting one.
+
+## New: `tidy()` for a nowcast and for a backtest
+
+`tidy()` already worked on every raw engine fit. It now also works on what
+`run_nowcast()` and `nowcast_ensemble()` return, which is the way round it should
+always have been.
+
+* **`tidy()` on a `tbl_nowcast`** returns the package's standard frame --
+  `event_date`, `stratum`, `estimate`, `conf.low`, `conf.high`, `level`,
+  `engine`, plus `q*` columns for `probs`. `engine` is the method (or the
+  ensemble's name); `level` is the width of the **widest symmetric pair of
+  quantile levels the object actually carries**, and is `NA`, with `NA` bounds,
+  when no symmetric pair exists. A guessed 0.95 there would defeat the one column
+  that exists to stop a 90% band being compared with a 95% one.
+
+  `probs` is honoured only when the nowcast carries draws, and errors otherwise:
+  a quantile-only nowcast cannot produce a level it was not summarised at.
+
+  Registered in `.onLoad()`, because `tbl_nowcast` is S7 and
+  `tidy.tbl.now::tbl_nowcast` is not a writable S3 method name.
+
+* **`tidy()` on a `nowcast_backtest`** gives one row per (method, `now` date,
+  target), with the internal dot-prefixed columns traded for ordinary ones.
+
+## New: reproducible backtests
+
+`nowcast_backtest()` gains a **`seed`** argument. When given, the RNG is seeded
+immediately before each fit, from the seed and the method and date that fit is
+for. One `set.seed()` before the whole backtest only pins anything if every
+method draws the same random numbers in the same order -- which stops being true
+the moment a method is dropped or one date is refitted. This is the same lesson
+`data-raw/nowcast_comparison.R` already records.
+
+`nowcast_weights(type = "optim")` now falls back to equal weights, with a
+warning, when the optimiser does not converge on a usable point. It used to
+return `NA` weights, which do not fail until much later inside
+`nowcast_ensemble()`, as an all-`NA` nowcast that reads like a modelling problem
+rather than an optimisation one.
+
+## Removed: the `nowcaster` backend
+
+`nowcaster` was dropped in 0.16.0 along with its converters, for the reasons
+recorded there. The `run_nowcast()` backend for it is not shipped: it called
+`tbl_now_to_nowcaster()` and `get_nowcaster_strata()`, which no longer exist.
+Neither `nowcaster` nor `INLA` is reintroduced to `DESCRIPTION`.
+
+## Other
+
+* `scoringutils` added to `Suggests` (CRAN, so no `Additional_repositories`
+  entry is needed). The hand-rolled `.wis()` is now cross-checked against it in
+  the test suite: two implementations agreeing is worth more than either alone.
+* New article, `vignette("ensemble-nowcasting")`, with the fits precomputed by
+  `data-raw/ensemble_comparison.R` so the build never fits anything. It reports
+  WIS per model and per ensemble across three epidemics, and answers "does the
+  ensemble beat its best member?" and "does performance weighting beat equal
+  weighting?" from the cached numbers rather than by assertion.
+* `vignette("nowcasting-models")` gains a `run_nowcast()` column in its package
+  table, and a pointer to the new article.
+
 # tbl.now 0.17.0
 
 ## New: \pkg{EpiNow2} support

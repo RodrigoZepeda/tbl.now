@@ -40,4 +40,22 @@
       envir = asNamespace("generics")
     )
   }
+
+  # Same problem, our own class this time: `tbl_nowcast` is S7, so `class()` is
+  # "tbl.now::tbl_nowcast" and `tidy.tbl.now::tbl_nowcast` is not a writable S3
+  # method name. Nothing else can own this one, so it is registered
+  # unconditionally.
+  registerS3method(
+    "tidy", "tbl.now::tbl_nowcast", tidy_tbl_nowcast,
+    envir = asNamespace("generics")
+  )
+
+  # Same `::`-in-the-class-name problem, and one more reason besides: assigning
+  # an S7 method onto the imported `as_tibble` copies tibble's generic into this
+  # namespace, and its `rownames = pkgconfig::get_config(...)` default then reads
+  # to `R CMD check` as an undeclared dependency on a package we never use.
+  registerS3method(
+    "as_tibble", "tbl.now::tbl_nowcast", as_tibble_tbl_nowcast,
+    envir = asNamespace("tibble")
+  )
 }

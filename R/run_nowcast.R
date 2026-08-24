@@ -28,7 +28,8 @@
     diseasenowcasting = "diseasenowcasting",
     baselinenowcast   = "baselinenowcast",
     epinowcast        = "epinowcast",
-    nowcaster         = "nowcaster",
+    surveillance      = "surveillance",
+    epinow2           = "EpiNow2",
     nobbs             = "NobBS"
   )
   hit <- builtin[tolower(method)]
@@ -96,10 +97,17 @@ print.nowcast_method <- function(x, ...) {
 #'   triangle's delay axis; inferred from the object's time units when `NULL`.
 #' @param preprocess_args (`"epinowcast"` only) A list of arguments for
 #'   [tbl_now_to_epinowcast()], e.g. `list(max_delay = 20)`.
-#' @param trajectories (`"nowcaster"` only) Whether to keep the posterior
-#'   trajectories. `TRUE` by default, because they are what supplies the draws.
 #' @param specs (`"NobBS"` only) The `specs` list of `NobBS::NobBS()`. The
 #'   `quantiles` element is filled from `quantile_levels` unless you set it.
+#' @param when,D,fit_method,control (`"surveillance"` only) The `when`, `D`,
+#'   `method` and `control` arguments of [surveillance::nowcast()]. `when`
+#'   defaults to the last `D + 1` points of the object's grid, `D` to the
+#'   largest delay in the data, and `control$dRange` to the grid running to
+#'   [get_now()], which a line list cannot express on its own. `fit_method` is
+#'   \pkg{surveillance}'s `method` argument, renamed so it cannot collide with
+#'   [run_nowcast()]'s own `method`.
+#' @param convert_args (`"EpiNow2"` only) A list of arguments for
+#'   [tbl_now_to_EpiNow2()], e.g. `list(accumulate = FALSE)`.
 #'
 #' @return `nowcast_fit()` returns the modelling package's own object, verbatim.
 #'   It is stored in the `fit` property of the resulting [tbl_nowcast].
@@ -241,7 +249,10 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #' @keywords internal
 #' @noRd
 .known_backend_packages <- function() {
-  c("diseasenowcasting", "baselinenowcast", "epinowcast", "nowcaster", "NobBS")
+  c(
+    "diseasenowcasting", "baselinenowcast", "epinowcast", "surveillance",
+    "EpiNow2", "NobBS"
+  )
 }
 
 #' Nowcast a `tbl_now` with any supported modelling package
@@ -279,11 +290,17 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #'   \item{`"epinowcast"`}{Bayesian model with separate delay and reference
 #'     modules. `...` goes to `epinowcast::epinowcast()`; use `preprocess_args`
 #'     to control [tbl_now_to_epinowcast()].}
-#'   \item{`"nowcaster"`}{INLA-based nowcast. `...` goes to
-#'     `nowcaster::nowcasting_inla()`. Requires \pkg{INLA}.}
+#'   \item{`"surveillance"`}{Höhle & an der Heiden's nowcast. `...` goes to
+#'     [surveillance::nowcast()], fed by [tbl_now_to_surveillance()]. The
+#'     package models one series, so a stratified object is fitted one stratum
+#'     at a time.}
+#'   \item{`"EpiNow2"`}{`EpiNow2::estimate_infections()`, fed by
+#'     [tbl_now_to_EpiNow2()]; `EpiNow2::regional_epinow()` when the object
+#'     declares strata. `...` goes to whichever of the two is used.}
 #'   \item{`"NobBS"`}{Nowcasting by Bayesian Smoothing. `...` goes to
 #'     `NobBS::NobBS()` (or `NobBS::NobBS.strat()` when the object declares
-#'     exactly one stratum).}
+#'     exactly one stratum), fed by [tbl_now_to_nobbs()], which expands counts
+#'     to the one row per case \pkg{NobBS} counts.}
 #' }
 #'
 #' Every modelling package is an optional dependency: it is only needed when you

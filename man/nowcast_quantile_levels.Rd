@@ -12,10 +12,25 @@ A numeric vector of probabilities in \verb{(0, 1)}, sorted increasingly.
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-The quantile levels \code{\link[=run_nowcast]{run_nowcast()}} summarises a nowcast at by default.
-These are the levels used by the US and European forecast hubs, which makes
-the output directly comparable with hub submissions and with
-\pkg{scoringutils}.
+The quantile levels \code{\link[=run_nowcast]{run_nowcast()}} summarises a nowcast at by default: nine
+probabilities, symmetric about the median, spanning the 50\%, 80\%, 90\% and 95\%
+central intervals.
+
+They are a \strong{subset} of the 23 levels the US and European COVID-19 forecast
+hubs and FluSight ask for (0.01, 0.025, 0.05, then 0.10 to 0.90 in steps of
+0.05, then 0.975 and 0.99). Nine cover the intervals people actually read at a
+fraction of the storage, and every one of them is a hub level, so the output
+still scores against hub submissions in \pkg{scoringutils} without
+interpolation. Pass \code{quantile_levels} explicitly when you need the full hub
+set:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{hub_levels <- c(0.01, 0.025, seq(0.05, 0.95, by = 0.05), 0.975, 0.99)
+run_nowcast(x, "baselinenowcast", quantile_levels = hub_levels)
+}\if{html}{\out{</div>}}
+
+Backends that expose draws can honour any levels you ask for. Ones that report
+a point estimate and a single interval (\code{"surveillance"}, \code{"EpiNow2"}) cannot,
+and say so rather than interpolating.
 }
 \examples{
 nowcast_quantile_levels()

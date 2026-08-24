@@ -54,8 +54,8 @@ An S7 object holding a nowcast in a package-agnostic shape. It is what
 consume.
 }
 \examples{
-# `tbl_nowcast` objects are normally built by `run_nowcast()`, but the
-# constructor can be called directly when writing a new backend.
+# Normally built for you by the one-call front door, but the constructor is
+# exported because a new backend -- or a test -- needs to build one directly.
 predictions <- data.frame(
   onset_week = as.Date("2020-01-05") + c(0, 0, 7, 7),
   .quantile_level = c(0.5, 0.9, 0.5, 0.9),

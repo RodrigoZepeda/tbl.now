@@ -55,11 +55,17 @@ Stratified objects are nowcast one triangle per stratum.}
 \item{\code{"epinowcast"}}{Bayesian model with separate delay and reference
 modules. \code{...} goes to \code{epinowcast::epinowcast()}; use \code{preprocess_args}
 to control \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}.}
-\item{\code{"nowcaster"}}{INLA-based nowcast. \code{...} goes to
-\code{nowcaster::nowcasting_inla()}. Requires \pkg{INLA}.}
+\item{\code{"surveillance"}}{Höhle & an der Heiden's nowcast. \code{...} goes to
+\code{\link[surveillance:nowcast]{surveillance::nowcast()}}, fed by \code{\link[=tbl_now_to_surveillance]{tbl_now_to_surveillance()}}. The
+package models one series, so a stratified object is fitted one stratum
+at a time.}
+\item{\code{"EpiNow2"}}{\code{EpiNow2::estimate_infections()}, fed by
+\code{\link[=tbl_now_to_EpiNow2]{tbl_now_to_EpiNow2()}}; \code{EpiNow2::regional_epinow()} when the object
+declares strata. \code{...} goes to whichever of the two is used.}
 \item{\code{"NobBS"}}{Nowcasting by Bayesian Smoothing. \code{...} goes to
 \code{NobBS::NobBS()} (or \code{NobBS::NobBS.strat()} when the object declares
-exactly one stratum).}
+exactly one stratum), fed by \code{\link[=tbl_now_to_nobbs]{tbl_now_to_nobbs()}}, which expands counts
+to the one row per case \pkg{NobBS} counts.}
 }
 
 Every modelling package is an optional dependency: it is only needed when you

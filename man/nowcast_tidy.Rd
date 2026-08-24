@@ -4,8 +4,9 @@
 \alias{nowcast_tidy.diseasenowcasting}
 \alias{nowcast_tidy.baselinenowcast}
 \alias{nowcast_tidy.epinowcast}
-\alias{nowcast_tidy.nowcaster}
 \alias{nowcast_tidy.NobBS}
+\alias{nowcast_tidy.surveillance}
+\alias{nowcast_tidy.EpiNow2}
 \alias{nowcast_tidy}
 \alias{nowcast_tidy.default}
 \title{Standardise a fitted nowcast}
@@ -16,9 +17,11 @@
 
 \method{nowcast_tidy}{epinowcast}(method, fit, x, ..., quantile_levels)
 
-\method{nowcast_tidy}{nowcaster}(method, fit, x, ..., quantile_levels)
-
 \method{nowcast_tidy}{NobBS}(method, fit, x, ..., quantile_levels)
+
+\method{nowcast_tidy}{surveillance}(method, fit, x, ..., quantile_levels)
+
+\method{nowcast_tidy}{EpiNow2}(method, fit, x, ..., quantile_levels)
 
 nowcast_tidy(method, fit, x, ..., quantile_levels)
 

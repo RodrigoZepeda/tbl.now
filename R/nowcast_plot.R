@@ -15,7 +15,10 @@
 #'   the widest intervals available in the object.
 #' @param show_reported Logical. Whether to overlay the cases reported up to
 #'   `now`. Requires the nowcast to carry its source data.
-#' @param colour Colour of the fan.
+#' @param colour Colour of the fan. Defaults to the `tbl.now` palette's green:
+#'   a nowcast is an estimate of the **epidemic** process (cases by event date),
+#'   which the package always draws in green, with red reserved for the
+#'   reporting process.
 #'
 #' @return A `ggplot` object.
 #'
@@ -37,10 +40,13 @@
 #' @export
 S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
                                               show_reported = TRUE,
-                                              colour = "#0072B2") {
+                                              colour = NULL) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg ggplot2} is required for {.fn autoplot}.")
   }
+
+  palette <- .tbl_now_palette()
+  colour <- colour %||% palette[["primary_green"]]
 
   event_col <- object@event_date
   strata <- object@strata
@@ -110,7 +116,7 @@ S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
       ggplot2::geom_point(
         data = reported,
         ggplot2::aes(x = .data[[event_col]], y = .data$.observed),
-        colour = "black", size = 0.8
+        colour = palette[["near_black"]], size = 0.8
       )
   }
 

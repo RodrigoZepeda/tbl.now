@@ -14,7 +14,10 @@ the widest intervals available in the object.}
 \item{show_reported}{Logical. Whether to overlay the cases reported up to
 \code{now}. Requires the nowcast to carry its source data.}
 
-\item{colour}{Colour of the fan.}
+\item{colour}{Colour of the fan. Defaults to the \code{tbl.now} palette's green:
+a nowcast is an estimate of the \strong{epidemic} process (cases by event date),
+which the package always draws in green, with red reserved for the
+reporting process.}
 }
 \value{
 A \code{ggplot} object.

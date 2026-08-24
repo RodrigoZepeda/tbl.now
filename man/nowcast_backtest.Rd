@@ -12,6 +12,7 @@ nowcast_backtest(
   method_args = list(),
   horizon = 4,
   quantile_levels = nowcast_quantile_levels(),
+  seed = NULL,
   on_error = c("warn", "abort"),
   verbose = TRUE
 )
@@ -36,6 +37,13 @@ only to the \code{"epinowcast"} method. Overrides \code{...} on name clashes.}
 chosen automatically. Default \code{4}.}
 
 \item{quantile_levels}{Quantile levels to score at, see \code{\link[=run_nowcast]{run_nowcast()}}.}
+
+\item{seed}{Optional integer. When given, the RNG is seeded \strong{immediately
+before each fit}, from \code{seed} and the method and date that fit is for. One
+\code{set.seed()} before the whole backtest is not enough: it only pins anything
+if every method consumes the same random numbers in the same order, so
+dropping a method, or refitting one date, silently moves every other fit.
+Seeding per (method, date) makes a fit depend only on which fit it is.}
 
 \item{on_error}{Either \code{"warn"} (default) to skip a model/date that fails
 with a warning, or \code{"abort"} to stop.}

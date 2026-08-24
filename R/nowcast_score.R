@@ -232,6 +232,12 @@ score_nowcast <- function(x, truth = NULL, observed_col = NULL) {
 #' @param horizon Number of time units of hindsight required when `now_dates` is
 #'   chosen automatically. Default `4`.
 #' @param quantile_levels Quantile levels to score at, see [run_nowcast()].
+#' @param seed Optional integer. When given, the RNG is seeded **immediately
+#'   before each fit**, from `seed` and the method and date that fit is for. One
+#'   `set.seed()` before the whole backtest is not enough: it only pins anything
+#'   if every method consumes the same random numbers in the same order, so
+#'   dropping a method, or refitting one date, silently moves every other fit.
+#'   Seeding per (method, date) makes a fit depend only on which fit it is.
 #' @param on_error Either `"warn"` (default) to skip a model/date that fails
 #'   with a warning, or `"abort"` to stop.
 #' @param verbose Logical. Whether to report progress.
@@ -271,6 +277,7 @@ score_nowcast <- function(x, truth = NULL, observed_col = NULL) {
 nowcast_backtest <- function(x, methods, now_dates = NULL, ...,
                              method_args = list(), horizon = 4,
                              quantile_levels = nowcast_quantile_levels(),
+                             seed = NULL,
                              on_error = c("warn", "abort"), verbose = TRUE) {
   .assert_tbl_now(x, "nowcast_backtest")
   on_error <- match.arg(on_error)
@@ -305,6 +312,10 @@ nowcast_backtest <- function(x, methods, now_dates = NULL, ...,
         list(x = snapshot, method = method, quantile_levels = quantile_levels, verbose = FALSE),
         arguments
       )
+
+      if (!is.null(seed)) {
+        set.seed(.backtest_seed(seed, method, now_date))
+      }
 
       nowcast <- tryCatch(
         do.call(run_nowcast, arguments),
@@ -354,6 +365,20 @@ nowcast_backtest <- function(x, methods, now_dates = NULL, ...,
   )
 }
 
+#' A seed that depends only on which fit it is
+#'
+#' @param seed The user's base seed.
+#' @param method Method name.
+#' @param now_date The retrospective date.
+#'
+#' @return A single integer.
+#'
+#' @keywords internal
+#' @noRd
+.backtest_seed <- function(seed, method, now_date) {
+  as.integer(seed) + sum(utf8ToInt(paste0(method, "|", as.character(now_date))))
+}
+
 #' Pick sensible retrospective `now` dates
 #'
 #' @param x A `tbl_now` object.
@@ -379,11 +404,14 @@ nowcast_backtest <- function(x, methods, now_dates = NULL, ...,
 
 #' @exportS3Method base::print
 print.nowcast_backtest <- function(x, ...) {
-  cli::cli_h3("A {.cls nowcast_backtest}")
-  cli::cli_ul()
-  cli::cli_li("methods: {.val {x$methods}}")
-  cli::cli_li("now dates: {.val {x$now_dates}}")
-  cli::cli_end()
+  # `cat_*()` rather than `cli_*()`: the latter writes to the MESSAGE stream, so
+  # a print method built on it vanishes under `message = FALSE`, `sink()` or
+  # `capture.output()`.
+  cli::cat_rule(left = cli::format_inline("A {.cls nowcast_backtest}"))
+  cli::cat_bullet(c(
+    cli::format_inline("methods: {.val {x$methods}}"),
+    cli::format_inline("now dates: {.val {as.character(x$now_dates)}}")
+  ))
 
   summary <- x$scores |>
     dplyr::group_by(.data$.method) |>
@@ -394,7 +422,9 @@ print.nowcast_backtest <- function(x, ...) {
       .groups = "drop"
     ) |>
     dplyr::arrange(.data$mean_wis)
-  print(summary)
+  # `format()` gives the tibble's printed lines, so the table goes to stdout
+  # without a bare `print()` call in package code.
+  cli::cat_line(format(summary))
 
   invisible(x)
 }
@@ -525,12 +555,31 @@ nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"
     mean(2 * ((observed <= ensemble) - levels) * (ensemble - observed))
   }
 
-  optimum <- stats::optim(
-    par = rep(0, length(methods)), fn = objective,
-    method = "Nelder-Mead", control = list(maxit = 2000)
+  optimum <- tryCatch(
+    stats::optim(
+      par = rep(0, length(methods)), fn = objective,
+      method = "Nelder-Mead", control = list(maxit = 2000)
+    ),
+    error = function(e) NULL
   )
 
-  weights <- exp(optimum$par - max(optimum$par))
+  weights <- if (is.null(optimum)) NULL else exp(optimum$par - max(optimum$par))
+
+  # An optimiser that did not converge on a usable point must fall back to equal
+  # weights, not hand back `NA`s. A vector of `NA` weights does not fail here --
+  # it fails much later, inside `nowcast_ensemble()`, as an all-`NA` nowcast that
+  # looks like a modelling problem rather than an optimisation one.
+  usable <- !is.null(weights) && !anyNA(weights) && all(is.finite(weights)) &&
+    sum(weights) > 0
+  if (!usable) {
+    cli::cli_warn(c(
+      "The weight optimiser did not converge; falling back to equal weights.",
+      "i" = "Use {.code type = \"inverse_score\"} for a weighting that cannot fail \\
+             this way."
+    ))
+    return(stats::setNames(rep(1 / length(methods), length(methods)), methods))
+  }
+
   stats::setNames(weights / sum(weights), methods)
 }
 

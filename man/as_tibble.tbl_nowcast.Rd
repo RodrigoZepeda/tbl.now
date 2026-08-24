@@ -2,6 +2,7 @@
 % Please edit documentation in R/nowcast_class.R
 \name{as_tibble.tbl_nowcast}
 \alias{as_tibble.tbl_nowcast}
+\alias{as_tibble_tbl_nowcast}
 \title{Coerce a \code{tbl_nowcast} into a \code{tibble}}
 \arguments{
 \item{x}{A \link{tbl_nowcast}.}
@@ -15,6 +16,17 @@ A \code{tibble}.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
+\details{
+Registered in \code{.onLoad()} rather than assigned with
+\verb{S7::method(as_tibble, tbl_nowcast) <- }, which is what the neighbouring
+\code{print()} and \code{as.data.frame()} methods use. Assigning an S7 method onto an
+\emph{imported} generic copies that generic into this namespace, and
+\code{tibble::as_tibble()} carries \code{rownames = pkgconfig::get_config(...)} as a
+default argument -- so the copy makes \verb{R CMD check} report \pkg{pkgconfig} as
+an undeclared \code{::} import of a package this one never uses. Plain S3
+registration dispatches on \code{class(x)}, which for an S7 object is
+\code{"tbl.now::tbl_nowcast"}, and copies nothing.
 
 Returns the tidy quantile predictions (the \code{predictions} property), or the
 posterior draws when \code{type = "draws"}.
