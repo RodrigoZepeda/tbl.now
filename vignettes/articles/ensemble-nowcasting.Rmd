@@ -1,0 +1,541 @@
+---
+title: "One call, many models: `run_nowcast()`, custom backends and ensembles"
+output: rmarkdown::html_vignette
+bibliography: ../references.bib
+link-citations: true
+vignette: >
+  %\VignetteIndexEntry{One call, many models: run_nowcast(), custom backends and ensembles}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+# The Bayesian fits (Stan / JAGS / INLA) are shown as illustrative code but are
+# not run when the vignette is built. Flip `run_models` to TRUE (and make sure
+# the corresponding packages are installed) to actually fit them.
+run_models <- FALSE
+
+has <- function(pkg) requireNamespace(pkg, quietly = TRUE)
+
+# Several of the modelling packages route their data through data.table; pinning
+# it to a single thread avoids an OpenMP crash seen when knitr forks the build.
+if (has("data.table")) data.table::setDTthreads(1)
+```
+
+> This was written automatically by an AI model. A human has yet to review.
+
+## Why this vignette?
+
+`vignette("nowcasting-models")` shows how one `tbl_now` can be handed to five
+different modelling packages. That still leaves you writing five different
+calls, reading five different output formats, and doing the bookkeeping yourself
+if you want to compare or combine them.
+
+This vignette is about the layer that removes that bookkeeping:
+
+* **`run_nowcast(x, method = ...)`** fits *any* supported package and always
+  returns the same kind of object,
+* **`nowcast_ensemble()`** combines several of those objects into an ensemble,
+* **`nowcast_backtest()`** and **`nowcast_weights()`** decide, from data, how
+  much each member should count,
+* and **`nowcast_fit()` / `nowcast_tidy()`** let you plug in a model that
+  `tbl.now` has never heard of.
+
+```{r setup, message=FALSE}
+library(dplyr)
+library(tbl.now)
+
+data(denguedat)
+
+dengue <- tbl_now(denguedat,
+  event_date  = onset_week,
+  report_date = report_week,
+  verbose     = FALSE
+)
+```
+
+A compact recent window keeps everything on this page fast:
+
+```{r window}
+dengue <- dengue |>
+  filter(onset_week >= as.Date("2009-01-01"))
+
+get_now(dengue)
+```
+
+## 1. One call per model
+
+`run_nowcast()` takes the `tbl_now`, the name of a modelling package, and
+anything that package accepts:
+
+```{r bln-run, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
+baseline <- run_nowcast(dengue, method = "baselinenowcast", draws = 1000, verbose = FALSE)
+
+baseline
+```
+
+The `...` goes straight through to the backend, so switching models mostly means
+switching the arguments you already know:
+
+```{r other-methods, eval=FALSE}
+# Bayesian structural time series (diseasenowcasting)
+dnc <- run_nowcast(dengue, "diseasenowcasting", type = "one_stage", n_draws = 2000)
+
+# Bayesian delay + reference modules (epinowcast)
+enw <- run_nowcast(dengue, "epinowcast",
+  preprocess_args = list(max_delay = 10),
+  fit = epinowcast::enw_fit_opts(chains = 2, iter_sampling = 500)
+)
+
+# Nowcasting by Bayesian Smoothing (NobBS)
+nobbs <- run_nowcast(dengue, "NobBS", max_D = 8, moving_window = 30)
+
+# INLA-based nowcast (nowcaster); needs the INLA package
+inla <- run_nowcast(dengue, "nowcaster", Dmax = 10)
+```
+
+`list_nowcast_methods()` tells you what is available in your session:
+
+```{r methods}
+list_nowcast_methods()
+```
+
+### What you get back
+
+Every method returns a `tbl_nowcast`. Whatever the package produced — a Stan
+fit, a matrix of samples, a data frame of quantiles — the predictions are always
+in the same tidy shape:
+
+```{r bln-tidy, eval=has("baselinenowcast")}
+as_tibble(baseline)
+```
+
+and, when the backend is sample-based, the draws are there too:
+
+```{r bln-draws, eval=has("baselinenowcast")}
+as_tibble(baseline, type = "draws")
+```
+
+Nothing is thrown away. The `fit` property still holds the backend's own object,
+so you can keep using that package's diagnostics:
+
+```{r bln-fit, eval=has("baselinenowcast")}
+class(baseline@fit)
+```
+
+There is an `autoplot()` method for a quick look:
+
+```{r bln-plot, eval=has("baselinenowcast") && has("ggplot2"), fig.width=7, fig.height=4}
+autoplot(baseline)
+```
+
+### Strata are handled for you
+
+When the `tbl_now` declares strata, `run_nowcast()` does whatever that backend
+needs to honour them — one reporting triangle per stratum for `baselinenowcast`,
+`NobBS.strat()` instead of `NobBS()`, the grouping variable for `epinowcast` —
+and the stratum ends up as an ordinary column of the output:
+
+```{r strata, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
+dengue_by_sex <- dengue |>
+  add_strata(gender)
+
+by_sex <- run_nowcast(dengue_by_sex, "baselinenowcast", draws = 500, verbose = FALSE)
+
+as_tibble(by_sex)
+```
+
+If a backend genuinely cannot stratify, it warns and pools rather than
+pretending.
+
+## 2. Scoring a nowcast
+
+`score_nowcast()` compares the predictive quantiles with what was eventually
+observed, using the weighted interval score (WIS) of @bracher2021.
+
+Scoring only makes sense against data the model had not seen, so the usual
+pattern is to nowcast at a date in the past and score against the full series:
+
+```{r score, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
+retrospective <- dengue |>
+  filter(report_week <= as.Date("2010-09-01")) |>
+  change_now(now = as.Date("2010-09-01"))
+
+past_nowcast <- run_nowcast(retrospective, "baselinenowcast", draws = 500, verbose = FALSE)
+
+# Scored against everything that was eventually reported
+score_nowcast(past_nowcast, truth = nowcast_truth(dengue)) |>
+  tail()
+```
+
+If you would rather use the full \pkg{scoringutils} score suite,
+`as_scoringutils()` reshapes the same object into the format it expects:
+
+```{r scoringutils, eval=has("baselinenowcast") && has("scoringutils"), message=FALSE}
+past_nowcast |>
+  as_scoringutils(truth = nowcast_truth(dengue)) |>
+  as.data.frame() |>
+  scoringutils::as_forecast_quantile() |>
+  scoringutils::score() |>
+  head()
+```
+
+## 3. Ensembles
+
+An ensemble of several nowcasts is usually better calibrated than any of its
+members: models fail in different directions, and averaging them cancels part of
+that. Because every `run_nowcast()` result has the same shape, combining them is
+one call.
+
+```{r members, eval=FALSE}
+members <- list(
+  baseline = run_nowcast(dengue, "baselinenowcast", draws = 1000),
+  dnc      = run_nowcast(dengue, "diseasenowcasting", type = "one_stage"),
+  nobbs    = run_nowcast(dengue, "NobBS", max_D = 8, moving_window = 30)
+)
+
+ensemble <- nowcast_ensemble(members)
+```
+
+### Two ways of combining
+
+`type = "quantile"` (the default) averages the members' quantiles level by
+level. It is the workhorse of the forecast hubs, it always applies, and it tends
+to produce *narrower* intervals than the members.
+
+`type = "linear_pool"` instead pools the members' draws into a mixture
+distribution. It needs draws from every member and generally produces *wider*
+intervals, because disagreement between models becomes extra spread rather than
+being averaged away.
+
+```{r pool, eval=FALSE}
+sharp <- nowcast_ensemble(members, type = "quantile")
+wide  <- nowcast_ensemble(members, type = "linear_pool", n_draws = 4000)
+```
+
+Which one you want depends on whether you read between-model disagreement as
+noise to be averaged out (quantile) or as genuine uncertainty to be propagated
+(linear pool).
+
+### Weights
+
+By default every member counts the same. You can also give weights directly:
+
+```{r weights-manual, eval=FALSE}
+nowcast_ensemble(members, weights = c(baseline = 0.5, dnc = 0.3, nobbs = 0.2))
+```
+
+or *learn* them from how the members actually performed. `nowcast_backtest()`
+walks back through time: at each retrospective date it truncates the data to the
+reports available then, refits every method, and scores the result against what
+was eventually observed.
+
+```{r backtest, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
+backtest <- nowcast_backtest(
+  dengue,
+  methods   = "baselinenowcast",
+  now_dates = as.Date(c("2010-08-01", "2010-09-01", "2010-10-01")),
+  draws     = 500,
+  verbose   = FALSE
+)
+
+backtest$scores |>
+  group_by(.method, .now) |>
+  summarise(mean_wis = mean(wis, na.rm = TRUE), .groups = "drop")
+```
+
+This is the expensive part of the workflow — it is `length(methods) ×
+length(now_dates)` model fits — so keep `now_dates` short when the members are
+Bayesian.
+
+From the backtest, `nowcast_weights()` offers two rules:
+
+```{r weights-fitted, eval=FALSE}
+nowcast_weights(backtest, type = "inverse_score") # w proportional to 1 / mean WIS
+nowcast_weights(backtest, type = "optim")         # w minimising the ensemble's WIS
+```
+
+`"inverse_score"` is the safe default: it is monotone in performance, never
+collapses onto a single model, and cannot overfit. `"optim"` searches the
+simplex for the weights that would have minimised the ensemble's WIS over the
+training window; it is better in principle, but with only a handful of
+retrospective dates it happily overfits, so prefer it when the training window
+is long.
+
+Either rule plugs straight into the ensemble:
+
+```{r ensemble-weighted, eval=FALSE}
+nowcast_ensemble(members, weights = "inverse_score", backtest = backtest)
+```
+
+## 4. Does the ensemble help? Three epidemics
+
+> This was written automatically by an AI model. A human has yet to review.
+
+Talk of robustness is cheap; let us measure it. We take three very different
+outbreaks that ship with `tbl.now` — **dengue** (weekly, Puerto Rico),
+**mpox** (daily, US) and **covid** (weekly, Colombia) — and on each one we
+nowcast at a fixed `now`, then score every model, and the ensemble, against the
+counts that were *eventually* reported.
+
+The recipe is the same for all three:
+
+```{r comparison-recipe, eval=FALSE}
+# For one epidemic (see below for how each dataset is prepared):
+#   1. snapshot the data to the reports available at `now`
+#   2. fit each member on that snapshot
+#   3. build the ensemble
+#   4. score every model AND the ensemble against the eventual truth
+
+evaluate <- function(x_full, now, members, eval_dates, method_args = list()) {
+  snapshot <- x_full |>
+    filter(.data[[get_report_date(x_full)]] <= now) |>
+    change_now(now = now)
+
+  fits <- lapply(members, function(m) {
+    do.call(run_nowcast, c(list(snapshot, m, verbose = FALSE), method_args[[m]]))
+  })
+  names(fits) <- members
+
+  ensemble <- nowcast_ensemble(fits, type = "quantile", verbose = FALSE)
+
+  # scoringutils scores the members and the ensemble side by side
+  truth <- nowcast_truth(x_full)
+  c(fits, list(ensemble = ensemble)) |>
+    lapply(as_scoringutils, truth = truth) |>
+    bind_rows(.id = "model")
+}
+```
+
+The members are the three methods that nowcast on the object's **own**
+event-date grid, so their predictions line up with the truth date for date: the
+baseline reporting-triangle model, `diseasenowcasting` and `NobBS`. (The counts
+for mpox and covid are expanded to a line list first so `NobBS` can read them,
+and covid — with its long, heavy reporting tail — is nowcast weekly with delays
+capped at eight weeks.) `nowcaster` and `epinowcast` plug in exactly the same
+way; `nowcaster` is left out of the *scoring* only because it rebins to
+epiweeks, which would not share the daily grid the other members use.
+
+Running all of this takes a few minutes of Bayesian fitting, so the results are
+pre-computed and shipped with the article; the block above is the shape of what
+produced them. Here we just load them and let \pkg{scoringutils} do the scoring:
+
+```{r comparison-score, eval=has("scoringutils"), message=FALSE, warning=FALSE}
+library(scoringutils)
+
+forecasts <- readRDS("ensemble-comparison.rds")
+
+wis <- forecasts |>
+  split(~epidemic) |>
+  lapply(function(df) {
+    df |>
+      as.data.frame() |>
+      as_forecast_quantile(forecast_unit = c("target_date", "model", "epidemic")) |>
+      score() |>
+      summarise(mean_wis = mean(wis), .by = c(model, epidemic))
+  }) |>
+  bind_rows()
+
+wis |>
+  mutate(mean_wis = round(mean_wis, 1)) |>
+  tidyr::pivot_wider(names_from = epidemic, values_from = mean_wis) |>
+  arrange(model)
+```
+
+Lower WIS is better. Two things stand out.
+
+**No single model wins everywhere.** `diseasenowcasting` is best on dengue and
+mpox but *worst* on covid; `baselinenowcast` is the reverse. If you had to commit
+to one model up front, you would have to be right about which epidemic you were
+about to face.
+
+**The ensemble is never best, but never worst.** It sits in the upper middle of
+every column — on mpox it is within a whisker of the best model, on covid and
+dengue it comfortably beats the weaker members. That is the whole point: the
+ensemble buys you insurance against picking the wrong model, at the cost of
+rarely being the single best.
+
+```{r comparison-plot, eval=has("scoringutils") && has("ggplot2"), message=FALSE, warning=FALSE, fig.width=7, fig.height=3.2}
+library(ggplot2)
+
+wis |>
+  mutate(
+    is_ensemble = grepl("ensemble", model),
+    model = reorder(model, mean_wis)
+  ) |>
+  ggplot(aes(mean_wis, model, fill = is_ensemble)) +
+  geom_col() +
+  facet_wrap(~epidemic, scales = "free") +
+  scale_fill_manual(
+    values = c(`TRUE` = "#0072B2", `FALSE` = "grey70"),
+    labels = c(`TRUE` = "ensemble", `FALSE` = "single model"),
+    name = NULL
+  ) +
+  labs(x = "Mean WIS (lower is better)", y = NULL) +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+Where one member is much weaker than the others — `diseasenowcasting` on covid,
+`NobBS` on dengue — the equal-weight ensemble is dragged towards it. That is
+exactly what the performance weighting of the previous section is for: feeding a
+`nowcast_backtest()` into `nowcast_ensemble(weights = "inverse_score")` down-
+weights the members that have been missing, and pulls the ensemble back towards
+the leaders.
+
+## 5. Adding your own model
+
+This is the part that makes the whole thing worth building. A backend is
+**two S3 methods**, and they can live in your own package, your analysis script,
+or a one-off chunk like this one. Nothing inside `tbl.now` needs to change.
+
+The dispatch works like this: `run_nowcast(x, method = "mymodel")` builds a
+little object of class `c("mymodel", "nowcast_method")` and calls
+
+* `nowcast_fit(method, x, ...)` — run the model, return whatever it returns;
+* `nowcast_tidy(method, fit, x, ..., quantile_levels)` — describe the result in
+  the tidy format.
+
+### A worked example
+
+Let us register a genuinely simple model: multiply the counts reported so far by
+a fixed inflation factor, with lognormal noise around it. It is not a good
+nowcast, but it is a complete one.
+
+```{r custom-fit}
+nowcast_fit.inflate <- function(method, x, ..., factor = 1.2, sigma = 0.15,
+                                quantile_levels, verbose = TRUE) {
+  reported <- nowcast_truth(x)
+
+  list(
+    dates  = reported[[get_event_date(x)]],
+    counts = reported[[".observed"]],
+    factor = factor,
+    sigma  = sigma
+  )
+}
+```
+
+`nowcast_fit()` returns whatever is convenient — here a plain list, elsewhere a
+Stan fit. It is stored verbatim in the result's `fit` property.
+
+The second method turns that into predictions. You may return **draws**
+(`tbl.now` derives the quantiles for you), **quantiles**, or both:
+
+```{r custom-tidy}
+nowcast_tidy.inflate <- function(method, fit, x, ..., quantile_levels) {
+  n_draws <- 1000
+
+  draws <- tidyr::expand_grid(
+    .index = seq_along(fit$dates),
+    .draw  = seq_len(n_draws)
+  ) |>
+    dplyr::mutate(
+      !!get_event_date(x) := fit$dates[.index],
+      .value = fit$counts[.index] * fit$factor *
+        stats::rlnorm(dplyr::n(), meanlog = 0, sdlog = fit$sigma)
+    ) |>
+    dplyr::select(-".index")
+
+  list(predictions = NULL, draws = draws)
+}
+```
+
+The contract for `nowcast_tidy()` is short:
+
+| element | shape |
+|---|---|
+| `predictions` | one row per (event date, stratum, quantile level), columns `<event_date>`, the strata, `.quantile_level`, `.value` |
+| `draws` | one row per (event date, stratum, draw), columns `<event_date>`, the strata, `.draw`, `.value` |
+
+Either may be `NULL`, but not both. Returning draws is preferable: it is what
+`type = "linear_pool"` needs, and the quantiles follow from them automatically.
+
+That is the whole backend. It now behaves like any other method:
+
+```{r custom-use}
+inflated <- run_nowcast(dengue, method = "inflate", factor = 1.15, verbose = FALSE)
+
+inflated
+
+as_tibble(inflated)
+```
+
+It shows up in the catalogue,
+
+```{r custom-list}
+list_nowcast_methods(installed_only = FALSE)
+```
+
+it can be scored (here against the same data it was fitted on, which flatters
+it enormously — see the backtest below for the honest version),
+
+```{r custom-score}
+score_nowcast(inflated) |> tail(3)
+```
+
+it can be backtested,
+
+```{r custom-backtest}
+custom_backtest <- nowcast_backtest(
+  dengue,
+  methods   = "inflate",
+  now_dates = as.Date(c("2010-09-01", "2010-10-01")),
+  verbose   = FALSE
+)
+
+custom_backtest$scores |>
+  group_by(.now) |>
+  summarise(mean_wis = mean(wis, na.rm = TRUE), .groups = "drop")
+```
+
+and it can be ensembled with the packaged methods:
+
+```{r custom-ensemble, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
+mixed <- nowcast_ensemble(
+  baselinenowcast = baseline,
+  inflate         = inflated,
+  weights         = c(baselinenowcast = 0.7, inflate = 0.3),
+  verbose         = FALSE
+)
+
+as_tibble(mixed)
+```
+
+### Notes for backend authors
+
+A few things worth knowing when the backend lives in a package rather than a
+chunk:
+
+* **Register the methods in your `NAMESPACE`** with
+  `S3method(nowcast_fit, mymodel)` and `S3method(nowcast_tidy, mymodel)` (or
+  `@export` on `nowcast_fit.mymodel` if you use roxygen), and put `tbl.now` in
+  `Imports`. Because dispatch is ordinary S3, the methods are found as soon as
+  your package is loaded.
+* **Use the event-date column name from the object**, `get_event_date(x)`, not a
+  hard-coded `"event_date"`. The same goes for `get_strata(x)`,
+  `get_case_count(x)` and `get_now(x)`.
+* **Honour the strata if you can**, and warn and pool if you cannot. Whatever
+  strata columns you put on the output are what the result reports as its
+  strata.
+* **Convert the data with the existing bridges** where one fits your model's
+  input: `tbl_now_to_baselinenowcast()`, `tbl_now_to_epinowcast()`,
+  `tbl_now_to_epidist()`, `tbl_now_to_tsibble()`, `tbl_now_to_data_table()`.
+* **`quantile_levels` reaches both methods.** Most backends can ignore it at fit
+  time; the ones that must be told up front which quantiles to report (as
+  `NobBS` is) use it in `nowcast_fit()`.
+* **Declare the modelling package in `Suggests`**, and check for it at fit time,
+  so that installing your package does not drag in a Stan toolchain.
+
+## See also
+
+* `vignette("nowcasting-models")` — the same five packages, driven by hand.
+* `?run_nowcast`, `?nowcast_ensemble`, `?nowcast_backtest`.
+* `?nowcast_fit` and `?nowcast_tidy` — the extension contract in reference form.
+
+## References
