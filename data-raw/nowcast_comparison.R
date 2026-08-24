@@ -4,8 +4,15 @@
 # a tidy table of their nowcasts, the data each engine actually saw, and the
 # counts those weeks eventually reached.
 #
-# Run with:  source("data-raw/nowcast_comparison.R")
+# Run with:  Rscript data-raw/nowcast_comparison.R            # every engine
+#            Rscript data-raw/nowcast_comparison.R EpiNow2    # just one, merged
+#            source("data-raw/nowcast_comparison.R")          # every engine
 # Output:    vignettes/articles/nowcast-comparison.rds
+#
+# Naming engines on the command line refits ONLY those and merges them into the
+# existing file, leaving every other engine's rows and recorded timings alone.
+# That matters for more than speed: re-running everything rewrites the other
+# engines' `seconds` with timings from a differently loaded machine.
 #
 # IMPORTANT -- keep this file and the article in step. The calls below are the
 # calls the article shows. The article displays them with `eval = FALSE` and
@@ -250,13 +257,90 @@ fit_surveillance <- function(x) {
   out
 }
 
+# EpiNow2 models a DAILY process and has no `timestep`, so the converter lays
+# non-daily data on its grid with an `accumulate` column. `covid_colombia` is
+# already daily, so nothing is accumulated here -- but the trim still matters,
+# because `estimate_infections()` fits every day it is handed.
+# NOTE: this call must stay identical to the `epinow2-fit` chunk in
+# `vignettes/articles/nowcasting-models.Rmd`. The article shows the code and
+# prints THIS fit's cached output, so a reader running what they see must get
+# what they read.
+#
+# The delay distributions are EpiNow2's own shipped examples -- COVID-in-the-UK
+# priors -- not distributions fitted to `covid_colombia`. That is the usual
+# footing for a machinery comparison, and the article says so.
+#
+# Sampling is deliberately lighter than EpiNow2's default (500/250, 2 chains):
+# it is the slowest engine here by a wide margin, and this is a shape-and-API
+# comparison, not a published estimate. The article says that too.
+EPINOW2_STAN <- EpiNow2::stan_opts(samples = 500, warmup = 250, chains = 2)
+
+# Seeded per fit, not once at the top of the script. `set.seed()` on line 44
+# only makes this reproducible if every engine before it consumes exactly the
+# same random numbers in exactly the same order -- so re-running EpiNow2 ALONE
+# lands on a different Stan seed than a full run does. That is not theoretical:
+# it produced a Female fit whose upper credible bound sat at 1e8 for all 181
+# days while the same settings run standalone gave a maximum of 975.
+#
+# This model is marginal on these data (every run reports a divergent transition
+# and low bulk/tail ESS), so an unlucky chain is a real possibility rather than a
+# remote one. Seeding here makes the cache reproducible however it is rebuilt.
+EPINOW2_SEED <- 20260824L
+
+fit_epinow2 <- function(x) {
+  set.seed(EPINOW2_SEED)
+  series <- tbl_now_to_EpiNow2(recent(x), verbose = FALSE, quiet = TRUE)
+  fit <- EpiNow2::estimate_infections(
+    series,
+    generation_time = EpiNow2::gt_opts(EpiNow2::example_generation_time),
+    delays          = EpiNow2::delay_opts(
+      EpiNow2::example_incubation_period + EpiNow2::example_reporting_delay
+    ),
+    rt   = EpiNow2::rt_opts(prior = EpiNow2::LogNormal(mean = 2, sd = 0.1)),
+    stan = EPINOW2_STAN
+  )
+  # `tidy()` reads the interval width off the `lower_<pct>`/`upper_<pct>` column
+  # names rather than assuming one, because `CrIs` is a user argument.
+  tidied <- generics::tidy(fit)
+  out <- tibble(
+    event_date = tidied$event_date,
+    estimate   = tidied$estimate,
+    lower      = tidied$conf.low,
+    upper      = tidied$conf.high
+  )
+  attr(out, "fit")     <- fit
+  attr(out, "tidy_on") <- fit
+  out
+}
+
 ENGINES <- list(
   diseasenowcasting = fit_diseasenowcasting,
   baselinenowcast   = fit_baselinenowcast,
   epinowcast        = fit_epinowcast,
   NobBS             = fit_nobbs,
-  surveillance      = fit_surveillance
+  surveillance      = fit_surveillance,
+  EpiNow2           = fit_epinow2
 )
+
+OUT <- "vignettes/articles/nowcast-comparison.rds"
+
+# -- which engines to run ------------------------------------------------------
+selected <- commandArgs(trailingOnly = TRUE)
+selected <- selected[nzchar(selected)]
+if (!length(selected)) selected <- names(ENGINES)
+unknown <- setdiff(selected, names(ENGINES))
+if (length(unknown)) {
+  stop("unknown engine(s): ", paste(unknown, collapse = ", "),
+       "\nknown: ", paste(names(ENGINES), collapse = ", "))
+}
+incremental <- !identical(sort(selected), sort(names(ENGINES)))
+previous <- if (incremental && file.exists(OUT)) readRDS(OUT) else NULL
+if (incremental && is.null(previous)) {
+  stop("cannot merge ", paste(selected, collapse = ", "), " into a file that ",
+       "does not exist yet -- run every engine once first")
+}
+message("engines: ", paste(selected, collapse = ", "),
+        if (incremental) "  (merging into the existing file)" else "  (full rebuild)")
 
 # Engines report on their own grids; snap onto the data's daily grid. CEILING,
 # not floor: a label carries the cases that fall on or before it.
@@ -275,8 +359,9 @@ snap_to_grid <- function(dates, grid) {
 # output, but the fits are far too slow to run on every build. Rather than ship
 # the fitted objects (Stan and INLA fits are large and version-fragile), capture
 # exactly what the article prints: the fit's own print output, and its tidy()
-# table. `display` below is what the article reads back.
-display <- list()
+# table. `display` below is what the article reads back. When merging, start from
+# what is already cached so the engines we are not refitting keep their output.
+display <- if (incremental) previous$display else list()
 
 capture_display <- function(fit, tidy_on) {
   # Capture BOTH streams. Several packages' print methods emit their output as
@@ -325,20 +410,60 @@ run_engine <- function(name, fun, x, stratum) {
     filter(!is.na(.data$event_date))
 }
 
+# A Stan or INLA fit that does not converge does not error -- it returns numbers.
+# `run_engine()` suppresses every warning, so the divergence and low-ESS messages
+# never reach this log and a broken fit records as `ok`. One EpiNow2 fit was
+# cached with its upper bound at 1e8 for all 181 days of a stratum whose observed
+# maximum was 842. Nothing caught it until somebody read the numbers. So read the
+# numbers: refuse anything whose scale is nowhere near the data it nowcasts.
+IMPLAUSIBLE_FACTOR <- 100
+
+check_plausible <- function(rows, name, stratum) {
+  if (is.null(rows) || !nrow(rows)) return(rows)
+  observed <- truth$truth[truth$stratum == stratum]
+  if (!length(observed) || all(is.na(observed))) return(rows)
+  ceiling_ <- IMPLAUSIBLE_FACTOR * max(observed, na.rm = TRUE)
+  worst <- max(c(rows$estimate, rows$upper), na.rm = TRUE)
+  if (worst > ceiling_) {
+    stop(sprintf(
+      paste0("%s [%s] did not converge: largest estimate/upper bound is %s ",
+             "against an observed maximum of %s (>%dx). Refusing to cache it. ",
+             "Re-run; if it persists, change the engine's seed or its priors."),
+      name, stratum, format(round(worst), big.mark = ","),
+      format(max(observed, na.rm = TRUE), big.mark = ","), IMPLAUSIBLE_FACTOR
+    ))
+  }
+  rows
+}
+
 results <- list()
 for (stratum in names(objects)) {
   message("== stratum: ", stratum, " ==")
-  for (name in names(ENGINES)) {
-    results[[length(results) + 1L]] <-
-      run_engine(name, ENGINES[[name]], objects[[stratum]], stratum)
+  for (name in selected) {
+    results[[length(results) + 1L]] <- check_plausible(
+      run_engine(name, ENGINES[[name]], objects[[stratum]], stratum), name, stratum
+    )
   }
 }
 
 nowcasts <- bind_rows(results) |>
-  select(package, stratum, event_date, estimate, lower, upper, seconds) |>
-  arrange(package, stratum, event_date)
+  select(package, stratum, event_date, estimate, lower, upper, seconds)
+
+if (incremental) {
+  # Drop any earlier rows for the engines we just refitted, so re-running is
+  # idempotent, and keep everyone else's untouched.
+  nowcasts <- previous$nowcasts |>
+    filter(!.data$package %in% selected) |>
+    bind_rows(nowcasts)
+}
+nowcasts <- arrange(nowcasts, package, stratum, event_date)
+
+# -- extra fits the article displays -------------------------------------------
+# Each belongs to one engine, so each only runs when that engine is selected --
+# otherwise a `Rscript ... EpiNow2` would refit diseasenowcasting for nothing.
 
 # The article also shows `nowcast(covid_seasonal)`, so capture that fit too.
+if ("diseasenowcasting" %in% selected) {
 message("== diseasenowcasting (seasonal, for display) ==")
 seasonal_obj <- tbl_now(
   covid,
@@ -359,11 +484,13 @@ if (!is.null(seasonal_fit)) {
   )
   message("  ok")
 }
+}
 
 # -- NobBS with user-chosen quantiles ------------------------------------------
 # `tidy(probs =)` is refused for NobBS because the fit keeps no draws to
 # re-summarise. NobBS can compute any quantiles you like, but they have to be
 # ASKED FOR at fit time, via `specs$quantiles`; the article shows how.
+if ("NobBS" %in% selected) {
 message("== NobBS (custom quantiles, for display) ==")
 nobbs_q <- tryCatch(
   suppressWarnings(suppressMessages(NobBS::NobBS(
@@ -389,6 +516,32 @@ if (!is.null(nobbs_q)) {
   )
   message("  ok")
 }
+}
+
+# -- EpiNow2's delay fit, which the article shows next to epidist's -------------
+# `estimate_dist()` is a different EpiNow2 entry point from the one fitted above,
+# and returns a DELAY-shaped tidy table rather than a nowcast, so it gets its own
+# display slot.
+if ("EpiNow2" %in% selected) {
+message("== EpiNow2 estimate_dist (for display) ==")
+dist_fit <- tryCatch({
+  set.seed(EPINOW2_SEED)
+  dat <- tbl_now_to_EpiNow2(
+    recent(objects[["Total"]]), target = "estimate_dist",
+    verbose = FALSE, quiet = TRUE
+  )
+  suppressWarnings(suppressMessages(
+    EpiNow2::estimate_dist(dat, dist = "lognormal", stan = EPINOW2_STAN)
+  ))
+}, error = function(e) {
+  message("  FAILED: ", conditionMessage(e))
+  NULL
+})
+if (!is.null(dist_fit)) {
+  display[["EpiNow2_dist"]] <- capture_display(dist_fit, dist_fit)
+  message("  ok")
+}
+}
 
 comparison <- list(
   nowcasts = nowcasts,
@@ -404,11 +557,15 @@ comparison <- list(
     n_days        = length(grid),
     n_cases       = sum(covid$n),
     built_on      = Sys.Date(),
-    package_order = names(ENGINES)
+    package_order = names(ENGINES),
+    epinow2_note  = paste(
+      "EpiNow2 uses the package's shipped example delay distributions (not",
+      "fitted to these data) and lighter sampling than the other engines."
+    )
   )
 )
 
-saveRDS(comparison, "vignettes/articles/nowcast-comparison.rds")
+saveRDS(comparison, OUT, compress = "xz")
 
 message(
   "\nSaved ", nrow(nowcasts), " rows from ",

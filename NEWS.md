@@ -1,4 +1,4 @@
-# tbl.now 0.16.0
+# tbl.now 0.17.0
 
 ## New: \pkg{EpiNow2} support
 
@@ -59,6 +59,21 @@ instant observation stopped is the end of it: `obs_date = now + w`. That makes t
 assertion hold by construction, and nothing is observed after it. Clamping the
 windows at `now` instead was tried and rejected -- it moves reports in the final
 period into an earlier one, which the epidist round-trip test caught.
+
+The `nowcasting-models` article now covers \pkg{EpiNow2} across all three strata,
+with its results precomputed into `nowcast-comparison.rds` like every other
+engine. Two caveats are stated in the article itself: the delay distributions are
+\pkg{EpiNow2}'s shipped examples rather than distributions fitted to the
+Colombian data, and sampling is lighter than the default (500 draws, 250 warmup,
+2 chains) because it is much the slowest engine in the comparison.
+
+The fit is seeded per call rather than relying on a single `set.seed()` at the
+top of the precompute script. rstan draws its seed from R's RNG, so the seed a
+fit receives depends on what every earlier engine consumed -- rebuilding EpiNow2
+alone landed on a different seed and produced a stratum whose upper credible
+bound sat at `1e8` for all 181 days. The precompute now also refuses to cache any
+fit whose scale is more than 100x the observed maximum, since an unconverged Stan
+fit returns numbers rather than an error.
 
 `tidy()` gained methods for `estimate_infections`, `epinow`, `estimate_truncation`
 and `estimate_dist`, plus a `regional_epinow` branch in `tidy.list()` giving one

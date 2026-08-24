@@ -403,24 +403,69 @@ tidy.stsNC <- function(x, probs = NULL, ...) {
 #' and a `::` cannot appear in an S3 method NAME, so the usual
 #' `tidy.<class>` convention cannot express it.
 #'
+#' \pkg{diseasenowcasting} 2.1.0 ships an equivalent method itself, and
+#' `.onLoad()` stands down when it finds one. From 2.2.0 that method is removed
+#' and this becomes the only one, so the two were reconciled first: everything
+#' \pkg{diseasenowcasting}'s version did that this one did not -- the `level`
+#' argument, the guard for a prediction with no calendar grid, `na.rm` on the
+#' quantiles, and sorting the result -- is here now, so the handover is not a
+#' behaviour change for anyone.
+#'
+#' The one deliberate difference is the argument name. \pkg{diseasenowcasting}
+#' called it `conf.level`; every `tidy()` method in this package calls it
+#' `level`, so that is the name here. Passing `conf.level` is an **error**
+#' rather than being silently swallowed by `...` and ignored.
+#'
 #' @inheritParams tidy.nowcast
+#' @param level Width of the reported interval. Defaults to `0.95`.
 #'
 #' @return A tibble, as for the other `tidy()` methods.
 #'
 #' @keywords internal
 #' @noRd
-tidy_nowcast_prediction <- function(x, probs = NULL, ...) {
+tidy_nowcast_prediction <- function(x, probs = NULL, level = 0.95, ...) {
+  dots <- list(...)
+  if ("conf.level" %in% names(dots)) {
+    cli::cli_abort(c(
+      "{.arg conf.level} is not an argument of this method.",
+      "i" = "It is called {.arg level} here, matching every other \\
+             {.fn tidy} method in {.pkg tbl.now}.",
+      "i" = "Use {.code tidy(x, level = {dots$conf.level})}."
+    ))
+  }
+  if (!is.numeric(level) || length(level) != 1L || is.na(level) ||
+        level <= 0 || level >= 1) {
+    cli::cli_abort("{.arg level} must be a single number strictly between 0 and 1.")
+  }
+  if (!is.null(probs) && length(probs) > 0L) .assert_probs(probs)
+
   event_dates   <- S7::prop(x, "event_dates")
   strata_draws  <- S7::prop(x, "strata_draws")
   strata_levels <- S7::prop(x, "strata_levels")
 
+  # A prediction fitted from something other than a `tbl_now` may carry no
+  # calendar grid at all, and `event_date` is not inventable.
+  if (is.null(event_dates)) {
+    cli::cli_abort(c(
+      "This prediction carries no calendar grid, so {.fn tidy} cannot build \\
+       {.field event_date}.",
+      "i" = "Fit with a {.cls tbl_now} so the event dates are known."
+    ))
+  }
+  event_dates <- as.Date(event_dates)
+  tail_probs  <- c((1 - level) / 2, 1 - (1 - level) / 2)
+
+  column_quantile <- function(draws, p) {
+    unname(apply(draws, 2L, stats::quantile, probs = p, na.rm = TRUE, names = FALSE))
+  }
+
   summarise_draws <- function(draws, stratum) {
     .tidy_nowcast_frame(
       event_date = event_dates,
-      estimate   = apply(draws, 2, stats::median),
-      conf.low   = apply(draws, 2, stats::quantile, probs = 0.025),
-      conf.high  = apply(draws, 2, stats::quantile, probs = 0.975),
-      level      = 0.95,
+      estimate   = column_quantile(draws, 0.5),
+      conf.low   = column_quantile(draws, tail_probs[1]),
+      conf.high  = column_quantile(draws, tail_probs[2]),
+      level      = level,
       engine     = "diseasenowcasting",
       stratum    = stratum,
       quantiles  = .tidy_quantiles_from_draws(draws, probs)
@@ -428,18 +473,20 @@ tidy_nowcast_prediction <- function(x, probs = NULL, ...) {
   }
 
   # A stratified fit carries `strata_draws`: draws x event times x stratum.
-  # Report one block per stratum, matching what the other engines do; the
-  # pooled `draws` slot is only used when there are no strata.
-  if (!is.null(strata_draws) && length(strata_levels) > 0L) {
-    per_stratum <- lapply(seq_along(strata_levels), function(k) {
+  # Report one block per stratum, matching what the other engines do. Branch on
+  # `strata_draws` and NOT on `strata_levels` alone: an unstratified fit labels
+  # its single cell "all" rather than leaving the levels NULL, so reading the
+  # levels by themselves would silently pool a stratified fit.
+  out <- if (!is.null(strata_draws) && length(strata_levels) > 0L) {
+    dplyr::bind_rows(lapply(seq_along(strata_levels), function(k) {
       summarise_draws(strata_draws[, , k, drop = TRUE], strata_levels[k])
-    })
-    return(dplyr::bind_rows(per_stratum))
+    }))
+  } else {
+    summarise_draws(S7::prop(x, "draws"), "all")
   }
 
-  summarise_draws(S7::prop(x, "draws"), "all")
+  dplyr::arrange(out, .data$stratum, .data$event_date)
 }
-
 
 # -- EpiNow2 --------------------------------------------------------------------
 #

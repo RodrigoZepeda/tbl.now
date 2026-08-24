@@ -379,6 +379,19 @@ against every shipped dataset.
   on the page and the script that produced the cache must agree, or the reader
   cannot reproduce what they see. Whenever you change a fitting call in one,
   change it in the other, and re-run the precompute.
+* **A Stan fit that does not converge does not error -- it returns numbers.**
+  `run_engine()` wraps every fit in `suppressWarnings(suppressMessages(...))`, so
+  divergent-transition and low-ESS warnings never reach the log and a broken fit
+  records as `ok`. One EpiNow2 fit was cached with its upper credible bound at
+  `1e8` for all 181 days of a stratum whose observed maximum was 842. Nothing
+  caught it until the numbers were read. Look at the numbers, and keep a
+  plausibility guard on anything written to a cache.
+* **One `set.seed()` at the top of a precompute script is not reproducibility.**
+  rstan draws its own seed from R's RNG, so the seed a fit gets depends on how
+  many random numbers every engine before it happened to consume. Re-running one
+  engine on its own therefore lands somewhere different from a full run -- which
+  is exactly how the `1e8` fit above appeared and then refused to reappear. Seed
+  **inside** the fitting function, immediately before the fit.
 
 ---
 
@@ -397,3 +410,31 @@ Before calling a change finished:
       behaviour changes.
 - [ ] `SKILL.md` updated if the *user-facing* API changed.
 - [ ] Plots use `.tbl_now_palette()` and the red/green grammar.
+- [ ] **`R CMD check` clean** — the test suite passing is not the same check.
+- [ ] **`checktor::checkup()` clean** — the extra CRAN-submission checks.
+
+### The two checks, and why the suite does not cover them
+
+`testthat` runs your code. `R CMD check` checks the *package*: the things that
+only break for someone installing it fresh.
+
+```r
+devtools::check()                 # or: R CMD check tbl.now_*.tar.gz
+checktor::checkup()               # extra CRAN-submission checks
+```
+
+The one that keeps recurring here is **undeclared packages**:
+
+```
+'library' or 'require' call not declared from: 'NobBS'
+```
+
+Every package `library()`d in a vignette must be in `DESCRIPTION`, even when the
+chunk is `eval = FALSE` — the check reads the source, not the evaluated output.
+The suite never sees this, because the vignettes do not run under `testthat`.
+
+For a package **not on CRAN**, adding it to `Suggests` alone is not enough:
+`Suggests` is resolved against the configured repositories, so it also needs an
+entry under `Additional_repositories` (this is how `epinowcast` is handled) or
+the vignette must stop attaching it and use `pkg::fun()` behind
+`requireNamespace()` instead.

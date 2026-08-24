@@ -273,3 +273,80 @@ test_that("tidy() reports NA level for NobBS and lets the caller set it", {
   expect_error(tidy(fit, level = 1.5), "strictly between 0 and 1")
   expect_error(tidy(fit, level = c(0.5, 0.9)), "strictly between 0 and 1")
 })
+
+# --- diseasenowcasting: the method tbl.now is taking over ---------------------
+
+test_that("tbl.now's diseasenowcasting tidy matches the one it replaces", {
+  skip_on_cran()
+  skip_if_not_installed("diseasenowcasting")
+  # diseasenowcasting 2.1.0 still owns the registered method, so `tidy()`
+  # dispatches to theirs; 2.2.0 removes it and `.onLoad()` then registers this
+  # one. Call ours directly and check the handover is not a behaviour change.
+  data(denguedat, envir = environment())
+  d <- denguedat |>
+    dplyr::filter(
+      onset_week  >= as.Date("2009-06-01"),
+      onset_week  <  as.Date("2010-01-01"),
+      report_week <  as.Date("2010-01-01")
+    )
+  d$sex <- ifelse(seq_len(nrow(d)) %% 3 == 0, "F", "M")
+  x <- tbl_now(
+    d, event_date = "onset_week", report_date = "report_week",
+    strata = "sex", data_type = "linelist", verbose = FALSE
+  )
+  fit <- suppressWarnings(suppressMessages(
+    diseasenowcasting::nowcast(x, seed = 42L)
+  ))
+  prediction <- suppressWarnings(suppressMessages(stats::predict(fit)))
+
+  ours <- tbl.now:::tidy_nowcast_prediction(prediction)
+  expect_equal(
+    names(ours),
+    c("event_date", "stratum", "estimate", "conf.low", "conf.high", "level",
+      "engine")
+  )
+  expect_s3_class(ours$event_date, "Date")
+  expect_equal(unique(ours$engine), "diseasenowcasting")
+  # A stratified fit reports one block per stratum, never one pooled "all".
+  expect_setequal(unique(ours$stratum), c("F", "M"))
+  expect_unique_stratum_key(ours)
+
+  theirs <- suppressWarnings(suppressMessages(generics::tidy(prediction)))
+  expect_equal(dim(ours), dim(theirs))
+  expect_equal(ours$estimate, theirs$estimate)
+  expect_equal(ours$conf.low, theirs$conf.low)
+  expect_setequal(unique(ours$stratum), unique(theirs$stratum))
+})
+
+test_that("the diseasenowcasting tidy takes `level`, and refuses `conf.level`", {
+  skip_on_cran()
+  skip_if_not_installed("diseasenowcasting")
+  data(denguedat, envir = environment())
+  d <- denguedat |>
+    dplyr::filter(
+      onset_week  >= as.Date("2009-09-01"),
+      onset_week  <  as.Date("2010-01-01"),
+      report_week <  as.Date("2010-01-01")
+    )
+  x <- tbl_now(
+    d, event_date = "onset_week", report_date = "report_week",
+    data_type = "linelist", verbose = FALSE
+  )
+  prediction <- suppressWarnings(suppressMessages(
+    stats::predict(diseasenowcasting::nowcast(x, seed = 42L))
+  ))
+
+  expect_equal(
+    unique(tbl.now:::tidy_nowcast_prediction(prediction, level = 0.5)$level), 0.5
+  )
+  # diseasenowcasting called it `conf.level`. Letting that fall into `...` would
+  # silently ignore it and report a 95% interval, so it is an error instead.
+  expect_error(
+    tbl.now:::tidy_nowcast_prediction(prediction, conf.level = 0.9),
+    "not an argument"
+  )
+  expect_true(all(
+    c("q5", "q95") %in%
+      names(tbl.now:::tidy_nowcast_prediction(prediction, probs = c(0.05, 0.95)))
+  ))
+})

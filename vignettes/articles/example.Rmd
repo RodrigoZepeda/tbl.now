@@ -479,9 +479,9 @@ a handful of times in the whole series.
 restating of which column is which:
 
 ```{r dnc-fit, eval=has("diseasenowcasting"), message=FALSE, warning=FALSE}
-library(diseasenowcasting)
-
-hai_fit <- nowcast(hai_model, type = "one_stage", n_draws = 2000)
+# `diseasenowcasting::` rather than `library()` -- it is not on CRAN, and
+# attaching it would leave `R CMD check` with an undeclared dependency.
+hai_fit <- diseasenowcasting::nowcast(hai_model, type = "one_stage", n_draws = 2000)
 
 hai_fit
 ```
@@ -559,7 +559,7 @@ The enriched object needs no extra arguments: `diseasenowcasting` reads the
 hai_model_seasonal <- hai_model |>
   add_temporal_effects(hai_effects, date_type = "report_date")
 
-nowcast(hai_model_seasonal, type = "one_stage", n_draws = 2000)
+diseasenowcasting::nowcast(hai_model_seasonal, type = "one_stage", n_draws = 2000)
 ```
 
 ## 8. The same data, other engines
@@ -686,7 +686,7 @@ test_delay_changepoint(hai_now)
 hai_model <- hai_now |> censor_delays_above(max_delay = 20)
 
 # 6. Hand it to whichever engine you like.
-nowcast(hai_model)                            # diseasenowcasting
+diseasenowcasting::nowcast(hai_model)         # diseasenowcasting
 tbl_now_to_baselinenowcast(hai_model)         # baselinenowcast
 tbl_now_to_epinowcast(hai_model)              # epinowcast
 tbl_now_to_surveillance(hai_model)            # surveillance

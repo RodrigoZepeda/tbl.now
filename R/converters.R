@@ -2740,8 +2740,13 @@ tbl_now_from_EpiNow2 <- function(data, ..., report_dates = NULL, # nolint: objec
   data         <- data[ord]
   report_dates <- report_dates[ord]
 
+  # Each snapshot is CUMULATIVE-to-date, so the rows a report date contributes
+  # are its snapshot minus the one before it. Written as a loop rather than
+  # `lapply()` with `<<-`: the superassignment worked, but it reads as a global
+  # write and `checktor` flags it as one.
+  pieces   <- vector("list", length(data))
   previous <- NULL
-  pieces <- lapply(seq_along(data), function(k) {
+  for (k in seq_along(data)) {
     current <- as.data.frame(data[[k]])
     # Undo the daily expansion, where there was one. `EpiNow2::fill_missing()`
     # leaves each observation on the date it was given and marks the filler days
@@ -2758,10 +2763,10 @@ tbl_now_from_EpiNow2 <- function(data, ..., report_dates = NULL, # nolint: objec
       before[is.na(before)] <- 0
       increment$confirm <- current$confirm - before
     }
-    previous <<- current
+    previous <- current
     increment$report_date <- report_dates[k]
-    increment
-  })
+    pieces[[k]] <- increment
+  }
   long <- do.call(rbind, pieces)
   names(long)[names(long) == "date"]    <- "reference_date"
   names(long)[names(long) == "confirm"] <- "count"
