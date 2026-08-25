@@ -219,6 +219,9 @@ tbl_now <- function(data,
                     covariates = NULL,
                     case_count = NULL,
                     is_censored = NULL,
+                    confirmation_date = NULL,
+                    confirmation_type = NULL,
+                    confirmation_units = "auto",
                     now = NULL,
                     event_units = "auto",
                     report_units = "auto",
@@ -249,6 +252,8 @@ tbl_now <- function(data,
   covariates_quo <- rlang::enquo(covariates)
   case_count_quo <- rlang::enquo(case_count)
   is_censored_quo <- rlang::enquo(is_censored)
+  confirmation_date_quo <- rlang::enquo(confirmation_date)
+  confirmation_type_quo <- rlang::enquo(confirmation_type)
 
   # Get event date column
   if (!rlang::quo_is_null(event_date_quo)) {
@@ -341,6 +346,28 @@ tbl_now <- function(data,
 
   is_censored_select <- .tbl_now_eval_select(is_censored_quo, data)
   is_censored <- colnames(data)[is_censored_select]
+
+  confirmation_date_select <- .tbl_now_eval_select(confirmation_date_quo, data)
+  confirmation_date <- colnames(data)[confirmation_date_select]
+  if (length(confirmation_date) == 0) confirmation_date <- NULL
+
+  confirmation_type_select <- .tbl_now_eval_select(confirmation_type_quo, data)
+  confirmation_type <- colnames(data)[confirmation_type_select]
+  if (length(confirmation_type) == 0) confirmation_type <- NULL
+
+  if (is.null(confirmation_date) && !is.null(confirmation_type)) {
+    cli::cli_abort(c(
+      "{.arg confirmation_type} was given without a {.arg confirmation_date}.",
+      "i" = "An outcome needs a date to sit on. Supply both, or neither."
+    ))
+  }
+
+  # Fill in / validate the outcome column, and check the timeline.
+  resolved_confirmation <- .resolve_confirmation_type(
+    data, confirmation_date, confirmation_type, verbose = verbose
+  )
+  data <- resolved_confirmation$data
+  confirmation_type <- resolved_confirmation$confirmation_type
   if (length(is_censored) == 0) is_censored <- NULL
 
   strata_select <- .tbl_now_eval_select(strata_quo, data)
@@ -392,11 +419,30 @@ tbl_now <- function(data,
   # Infer automatic variables------
 
   # Infer the now
-  now <- infer_now(data, now = now, event_date = event_date, report_date = report_date)
+  .check_confirmation_ordering(data, event_date, report_date, confirmation_date)
+
+  # A confirmation is an OBSERVATION, so it moves the `now` forward exactly as a
+  # report does: the as-of moment is the last thing anybody knew.
+  now <- infer_now(data,
+    now = now, event_date = event_date, report_date = report_date,
+    confirmation_date = confirmation_date
+  )
 
   # Infer the date_units whether it is daily, weekly, monthly or yearly
   event_units <- infer_units(data, date_column = event_date, date_units = event_units)
   report_units <- infer_units(data, date_column = report_date, date_units = report_units)
+  confirmation_units <- if (is.null(confirmation_date)) {
+    NULL
+  } else {
+    # Early in an outbreak there may be only one confirmation, or none, and a
+    # single date has no spacing to infer a grid from. Fall back to the REPORT
+    # units rather than refusing the object: the confirmation lives on the same
+    # calendar as the report it resolves.
+    tryCatch(
+      infer_units(data, date_column = confirmation_date, date_units = confirmation_units),
+      error = function(e) report_units
+    )
+  }
 
   # Get whether data is count or line data
   data_type <- infer_data_type(data,
@@ -424,6 +470,9 @@ tbl_now <- function(data,
   attr(data, "report_units") <- report_units
   attr(data, "data_type") <- data_type
   attr(data, "is_censored") <- is_censored
+  attr(data, "confirmation_date") <- confirmation_date
+  attr(data, "confirmation_type") <- confirmation_type
+  attr(data, "confirmation_units") <- confirmation_units
 
   # Add all other attributes from ...
   for (attr_name in names(other_attrs)) {
@@ -448,6 +497,17 @@ tbl_now <- function(data,
     event_units = event_units, report_units = report_units,
     force = force
   )
+
+  # `.confirmation_num` sits on the SAME anchor as `.event_num`/`.report_num`
+  # (the earliest event date), so the three are directly comparable, and
+  # `.confirmation_delay` is the report-to-resolution time.
+  if (!is.null(confirmation_date)) {
+    data <- .add_confirmation_num(
+      data,
+      event_date = event_date, confirmation_date = confirmation_date,
+      confirmation_units = confirmation_units, force = force
+    )
+  }
 
 
   # === 4. Class Assignment ===

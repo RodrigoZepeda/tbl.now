@@ -10,6 +10,7 @@ batch_test(
   baseline_window = NULL,
   period = NULL,
   null_model = c("auto", "poisson", "robust"),
+  axis = c("report", "confirmation"),
   alpha = 0.05
 )
 }
@@ -40,6 +41,14 @@ counts \code{auto} uses the exact null only when no overdispersion is detected
 robust normal approximation. Signed (count-cumulative) increments always use
 the robust null. \code{"poisson"} and \code{"robust"} force the choice; note that
 \code{"poisson"} is anti-conservative (over-flags) on overdispersed counts.}
+
+\item{axis}{Which time axis to scan for arrivals: \code{"report"} (default) or
+\code{"confirmation"}. The question is the same either way -- did an unusual
+number of records land on this date? -- so a laboratory clearing its
+backlog is found exactly as a surveillance system clearing its inbox is.
+\code{"confirmation"} needs a confirmation process (see \code{\link[=add_confirmation]{add_confirmation()}})
+and ignores cases that are still \code{"pending"}, which have no confirmation
+date to arrive on.}
 
 \item{alpha}{Significance level for the Benjamini-Hochberg \code{batch} flag.
 Default \code{0.05}.}

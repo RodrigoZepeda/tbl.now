@@ -154,18 +154,20 @@ test_that("temporal effects count as covariates", {
   expect_true(any(grepl("day_of_week", colnames(long))))
 })
 
-test_that("calendar effects are integer indices, Fourier terms are continuous", {
-  # This test RECORDS the encoding rather than endorsing it, because the
-  # distinction matters downstream and is easy to get wrong in both directions:
+test_that("calendar effects are categorical, Fourier terms are continuous", {
+  # The distinction that matters downstream:
   #
-  #   day_of_week / week_of_year / month_of_year  ->  integer calendar INDEX
-  #   seasons (Fourier sin/cos)                   ->  numeric, and correctly so
+  #   day_of_week / day_of_month / month_of_year / week_of_year  ->  FACTOR
+  #   weekend                                                    ->  0/1 dummy
+  #   seasons (Fourier sin/cos)                                  ->  numeric
   #
-  # A calendar index handed to a model as a numeric covariate says "Sunday is
-  # seven times Monday". Anything consuming these columns as model covariates
-  # must therefore code them categorically ITSELF -- `factor()`, or a set of
-  # dummies -- and the engines that cannot do that are exactly the ones that now
-  # warn the columns were dropped (see the tests above).
+  # A calendar position handed to a model as a NUMBER says "Saturday is seven
+  # times Sunday". Since 0.21.0 they are unordered factors, so a model formula
+  # gives them dummy (treatment) contrasts -- the same encoding
+  # `epinowcast`'s own `metareference` uses for `day_of_week`.
+  #
+  # Unordered matters: R gives ORDERED factors polynomial contrasts, which would
+  # fit a trend across weekdays and reintroduce the problem.
   #
   # `temporal_effects` is lazy: the columns do not exist until
   # `compute_temporal_effects()` runs, which the converters do internally.
@@ -184,10 +186,15 @@ test_that("calendar effects are integer indices, Fourier terms are continuous", 
 
   for (column in calendar) {
     values <- materialised[[column]]
-    # A bounded set of whole numbers: an index, not a measurement.
-    expect_true(is.numeric(values), label = paste0(column, " is numeric"))
-    expect_equal(values, round(values), label = paste0(column, " is whole"))
-    expect_lte(length(unique(values)), 53L)
+    expect_s3_class(values, "factor")
+    expect_false(
+      is.ordered(values),
+      label = paste0(column, " is UNORDERED (ordered would give polynomial contrasts)")
+    )
+    expect_lte(nlevels(values), 53L)
+    # Dummy contrasts: one column per level after the first, all 0/1.
+    dummies <- contrasts(values)
+    expect_true(all(dummies %in% c(0, 1)), label = paste0(column, " uses dummy contrasts"))
   }
   for (column in fourier) {
     values <- materialised[[column]]

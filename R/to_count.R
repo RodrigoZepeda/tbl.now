@@ -77,6 +77,9 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
     ".event_num",
     ".report_num",
     get_is_censored(x),
+    # A confirmed case and its own retraction share an (event, report) pair;
+    # summing over them would net one against the other silently.
+    .confirmation_group_cols(x),
     get_strata(x),
     get_temporal_effect_cols(x),
     get_covariates(x)
@@ -111,7 +114,7 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
     # Summarise
     x <- x |>
       to_count(to = "count-incidence") |> # Just to make sure 1 obs per
-      dplyr::group_by(dplyr::across(dplyr::all_of(c(get_event_date(x), get_is_censored(x), get_strata(x), get_temporal_effect_cols(x), get_covariates(x))))) |>
+      dplyr::group_by(dplyr::across(dplyr::all_of(c(get_event_date(x), get_is_censored(x), .confirmation_group_cols(x), get_strata(x), get_temporal_effect_cols(x), get_covariates(x))))) |>
       dplyr::arrange(dplyr::across(dplyr::all_of(get_report_date(x))), .by_group = TRUE) |>
       dplyr::mutate(!!as.symbol(case_count) := cumsum(!!as.symbol(case_count))) |>
       ungroup()
@@ -127,7 +130,7 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
     # negative; callers that need non-negative increments must handle that.
     x <- x |>
       to_count(to = "count-cumulative") |> # collapse any duplicate cells first
-      dplyr::group_by(dplyr::across(dplyr::all_of(c(get_event_date(x), get_is_censored(x), get_strata(x), get_temporal_effect_cols(x), get_covariates(x))))) |>
+      dplyr::group_by(dplyr::across(dplyr::all_of(c(get_event_date(x), get_is_censored(x), .confirmation_group_cols(x), get_strata(x), get_temporal_effect_cols(x), get_covariates(x))))) |>
       dplyr::arrange(dplyr::across(dplyr::all_of(get_report_date(x))), .by_group = TRUE) |>
       dplyr::mutate(!!as.symbol(case_count) := !!as.symbol(case_count) - dplyr::lag(!!as.symbol(case_count), default = 0)) |>
       ungroup()
@@ -141,7 +144,7 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
   }
 
   x <- x |>
-    dplyr::arrange(dplyr::across(dplyr::all_of(c(get_event_date(x), get_strata(x), get_is_censored(x), get_covariates(x), get_temporal_effect_cols(x)))))
+    dplyr::arrange(dplyr::across(dplyr::all_of(c(get_event_date(x), get_strata(x), get_is_censored(x), .confirmation_group_cols(x), get_covariates(x), get_temporal_effect_cols(x)))))
 
   # Return the count
   return(x)

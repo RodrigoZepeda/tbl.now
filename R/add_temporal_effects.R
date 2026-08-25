@@ -255,9 +255,26 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
         )
       }
 
+      # A FACTOR, not an integer. A weekday coded 1..7 and handed to a model as
+      # a numeric covariate says "Saturday is seven times Sunday". Labels are
+      # the weekday names, matching `epinowcast`'s own `metareference`, so a
+      # model formula reads the same in both.
+      # UNORDERED. `lubridate::wday(label = TRUE)` returns an ORDERED factor,
+      # and R gives ordered factors polynomial contrasts -- so `~ day_of_week`
+      # would fit a linear-plus-quadratic trend ACROSS weekdays, which is the
+      # continuous problem in disguise. `epinowcast`'s own `metareference` uses
+      # a plain factor; match it.
       x <- x |>
         dplyr::mutate(!!as.symbol(paste0(name_prefix, "_day_of_week")) :=
-          as.integer(lubridate::wday(!!as.symbol(date_col))))
+          factor(
+            as.character(lubridate::wday(
+              !!as.symbol(date_col), label = TRUE, abbr = FALSE
+            )),
+            levels = c(
+              "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday",
+              "Friday", "Saturday"
+            )
+          ))
     }
 
     # Add weekend effect-----
@@ -283,7 +300,7 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
 
       x <- x |>
         dplyr::mutate(!!as.symbol(paste0(name_prefix, "_day_of_month")) :=
-          as.integer(lubridate::day(!!as.symbol(date_col))))
+          factor(as.integer(lubridate::day(!!as.symbol(date_col))), levels = 1:31))
     }
 
     # Add month effect (centered at current month = 1)-----
@@ -294,10 +311,15 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
         )
       }
 
+      # Relative to the object's first month, so the LABELS are the offsets
+      # rather than month names -- level 1 is whatever month the data starts in.
       x <- x |>
         dplyr::mutate(!!as.symbol(paste0(name_prefix, "_month_of_year")) :=
-          as.integer(1 +
-            ((lubridate::month(!!as.symbol(date_col)) - lubridate::month(init_date)) %% 12)))
+          factor(
+            as.integer(1 +
+              ((lubridate::month(!!as.symbol(date_col)) - lubridate::month(init_date)) %% 12)),
+            levels = 1:12
+          ))
     }
 
     # Add epiweek effect (centered at current week = 1 | week 53 that almost never happens is collapsed to January)-----
@@ -308,10 +330,16 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
         )
       }
 
+      # 52 levels is a lot of parameters. For within-year seasonality the
+      # Fourier `seasons` terms below are almost always the better tool; this is
+      # here for the case where you genuinely want a free effect per epiweek.
       x <- x |>
         dplyr::mutate(!!as.symbol(paste0(name_prefix, "_week_of_year")) :=
-          as.integer(1 +
-            ((lubridate::epiweek(!!as.symbol(date_col)) - lubridate::epiweek(init_date)) %% 52)))
+          factor(
+            as.integer(1 +
+              ((lubridate::epiweek(!!as.symbol(date_col)) - lubridate::epiweek(init_date)) %% 52)),
+            levels = 1:52
+          ))
     }
 
     # Add seasons-----

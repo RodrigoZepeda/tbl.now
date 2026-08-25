@@ -9,7 +9,8 @@ transport_discriminant(
   lookback = 7L,
   baseline_window = NULL,
   period = NULL,
-  alpha = 0.05
+  alpha = 0.05,
+  axis = c("report", "confirmation")
 )
 }
 \arguments{
@@ -23,6 +24,10 @@ machinery as \code{\link[=batch_test]{batch_test()}}. \code{period} (e.g. \code{
 reporting cadence.}
 
 \item{alpha}{Level for the \code{classification} labels. Default \code{0.05}.}
+
+\item{axis}{Which time axis to scan for arrivals: \code{"report"} (default) or
+\code{"confirmation"}. Needs a confirmation process (see \code{\link[=add_confirmation]{add_confirmation()}});
+cases still \code{"pending"} are left out.}
 }
 \value{
 A tibble of class \code{transport_discriminant}, one row per (report date,

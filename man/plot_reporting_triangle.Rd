@@ -10,6 +10,7 @@ plot_reporting_triangle(
   report_ticks = 6L,
   mark_batches = 0L,
   plotly = FALSE,
+  axis = c("report", "confirmation"),
   palette = .tbl_now_palette()
 )
 }
@@ -28,6 +29,12 @@ batch stripes with a stronger dashed diagonal labelled by report date. \code{0}
 
 \item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget instead of a
 static plot. Default \code{FALSE}.}
+
+\item{axis}{Which time axis to draw: \code{"report"} (default) or
+\code{"confirmation"}. On the confirmation axis the picture answers the
+laboratory's version of the question -- when results arrived, rather than
+when reports did. Needs a confirmation process (see \code{\link[=add_confirmation]{add_confirmation()}});
+cases still \code{"pending"} have no confirmation date and are left out.}
 
 \item{palette}{A named colour palette. Defaults to the package palette.}
 }

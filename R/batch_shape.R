@@ -74,6 +74,13 @@
 #'   Poisson counts) or `"blocks"` (permutes whole report dates; valid under
 #'   overdispersion).
 #' @param n_permutations Number of permutations. Default `999`.
+#' @param axis Which time axis to scan for arrivals: `"report"` (default) or
+#'   `"confirmation"`. The question is the same either way -- did an unusual
+#'   number of records land on this date? -- so a laboratory clearing its
+#'   backlog is found exactly as a surveillance system clearing its inbox is.
+#'   `"confirmation"` needs a confirmation process (see [add_confirmation()])
+#'   and ignores cases that are still `"pending"`, which have no confirmation
+#'   date to arrive on.
 #' @param seed Optional RNG seed.
 #'
 #' @returns A tibble, one row per stratum, with `stratum`, `n_at`,
@@ -103,8 +110,10 @@ batch_shape_test <- function(data,
                              guard          = 1L,
                              permute        = c("items", "blocks"),
                              n_permutations = 999L,
+                             axis           = c("report", "confirmation"),
                              seed           = NULL) {
   permute <- match.arg(permute)
+  axis    <- match.arg(axis)
   .batch_experimental_warning("batch_shape_test")
   .batch_check_tbl_now(data)
   if (!is.null(seed)) set.seed(seed)
@@ -114,7 +123,7 @@ batch_shape_test <- function(data,
   if (neighbours < 1L) cli::cli_abort("`neighbours` must be at least 1. Got {neighbours}.")
   if (guard < 0L)      cli::cli_abort("`guard` must be non-negative. Got {guard}.")
 
-  increments <- .batch_report_increments(data)
+  increments <- .batch_report_increments(data, axis = axis)
 
   # Only appearing reports carry a delay; down-revisions do not.
   if (any(increments$.count < 0)) {

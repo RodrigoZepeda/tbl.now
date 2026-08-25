@@ -12,7 +12,8 @@ test_delay_changepoint(
   strata = NULL,
   mature_only = TRUE,
   level = 0.95,
-  alpha = 0.05
+  alpha = 0.05,
+  axis = c("report", "confirmation")
 )
 }
 \arguments{
@@ -38,6 +39,14 @@ separately per stratum.}
 
 \item{alpha}{Significance level for the \code{drift} verdict column (default
 \code{0.05}).}
+
+\item{axis}{Which time axis the delay is measured to: \code{"report"} (default)
+or \code{"confirmation"}. Both are measured \emph{from the event}, so the two are
+directly comparable -- run each in turn and the gap between them is the
+time the laboratory adds. (This is not the same quantity as the
+\code{.confirmation_delay} column, which is the laboratory's own turnaround,
+measured from the report.) Needs a confirmation process (see
+\code{\link[=add_confirmation]{add_confirmation()}}); cases still \code{"pending"} are left out.}
 }
 \value{
 A \link[tibble:tibble]{tibble} with \strong{one row per requested \code{stat} per

@@ -132,10 +132,22 @@ align_weeks.data.frame <- function(.data,
 align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
   event_col <- get_event_date(.data)
   report_col <- get_report_date(.data)
+  # The THIRD date has to be aligned too. Left on its own weekday grid the
+  # confirmation delay comes out fractional -- the same trap `.delay` has, and
+  # the reason this function exists.
+  confirmation_col <- get_confirmation_date(.data)
 
   .data <- .data |>
     align_weeks.data.frame(date_col = event_col, align_on_day = align_on_day, type = type, new_date_col = paste0("temp_", event_col)) |>
     align_weeks.data.frame(date_col = report_col, align_on_day = align_on_day, type = type, new_date_col = paste0("temp_", report_col))
+
+  if (!is.null(confirmation_col)) {
+    .data <- align_weeks.data.frame(
+      .data,
+      date_col = confirmation_col, align_on_day = align_on_day, type = type,
+      new_date_col = paste0("temp_", confirmation_col)
+    )
+  }
 
   # Throws the warning that its forcing conversion to tibble which we don't need
   suppressWarnings({
@@ -143,7 +155,10 @@ align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
       dplyr::select(
         -!!as.symbol(event_col), -!!as.symbol(report_col), -!!as.symbol(".delay"),
         -!!as.symbol(".event_num"), -!!as.symbol(".report_num")
-      )
+      ) |>
+      dplyr::select(-dplyr::any_of(c(
+        confirmation_col, ".confirmation_num", ".confirmation_delay"
+      )))
   })
 
   # Recalculate the now:
@@ -154,10 +169,34 @@ align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
   ) |>
     dplyr::pull(!!as.symbol("new_now"))
 
-  result <- .data |>
+  renamed <- .data |>
     dplyr::rename(!!as.symbol(event_col) := !!as.symbol(paste0("temp_", event_col))) |>
-    dplyr::rename(!!as.symbol(report_col) := !!as.symbol(paste0("temp_", report_col))) |>
-    as_tbl_now(
+    dplyr::rename(!!as.symbol(report_col) := !!as.symbol(paste0("temp_", report_col)))
+  if (!is.null(confirmation_col)) {
+    renamed <- dplyr::rename(
+      renamed,
+      !!as.symbol(confirmation_col) := !!as.symbol(paste0("temp_", confirmation_col))
+    )
+  }
+
+  confirmation_args <- if (is.null(confirmation_col)) {
+    list()
+  } else {
+    type_col <- get_confirmation_type(.data)
+    list(
+      confirmation_date = confirmation_col,
+      confirmation_type = if (!is.null(type_col) && type_col %in% colnames(renamed)) {
+        type_col
+      } else {
+        NULL
+      },
+      confirmation_units = get_confirmation_units(.data) %||% "auto"
+    )
+  }
+
+  result <- do.call(as_tbl_now, c(
+    list(
+      renamed,
       event_date = event_col, report_date = report_col, align_weeks = FALSE,
       verbose = FALSE,
       data_type = get_data_type(.data),
@@ -168,7 +207,9 @@ align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
       event_units = get_event_units(.data),
       report_units = get_report_units(.data),
       now = new_now
-    )
+    ),
+    confirmation_args
+  ))
 
   # Preserve the lazy temporal-effects spec (computed cols are invalidated by
   # the date-realignment so they are intentionally dropped)

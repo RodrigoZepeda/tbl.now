@@ -26,7 +26,12 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_delay_long <- function(object, strata_cols = NULL) {
+.tbl_now_delay_long <- function(object, strata_cols = NULL,
+                                axis = c("report", "confirmation")) {
+  axis <- match.arg(axis)
+  if (identical(axis, "confirmation")) {
+    .batch_confirmation_axis(object)
+  }
   incidence <- object |>
     ungroup() |>
     to_count(to = "count-incidence")
@@ -34,9 +39,21 @@
   event_date_column <- get_event_date(object)
   observations <- as.data.frame(incidence)
 
+  # On the confirmation axis the delay is still measured FROM THE EVENT, exactly
+  # as on the report axis, so the two are directly comparable: plot both and the
+  # gap between them is the time the laboratory adds. (That is a different
+  # quantity from the `.confirmation_delay` column, which is the laboratory's
+  # own turnaround, measured from the report.) Pending rows have no confirmation
+  # date and drop out.
+  delay <- if (identical(axis, "confirmation")) {
+    observations[[".confirmation_num"]] - observations[[".event_num"]]
+  } else {
+    observations[[".delay"]]
+  }
+
   out <- dplyr::tibble(
     event_date = observations[[event_date_column]],
-    delay      = observations[[".delay"]],
+    delay      = delay,
     weight     = observations[[case_count_column]]
   )
   if (!is.null(strata_cols)) {
@@ -221,6 +238,13 @@
 #' @param palette A named colour palette (defaults to the package palette).
 #' @param ... Unused.
 #'
+#' @param axis Which time axis the delay is measured to: `"report"` (default)
+#'   or `"confirmation"`. Both are measured *from the event*, so the two are
+#'   directly comparable -- run each in turn and the gap between them is the
+#'   time the laboratory adds. (This is not the same quantity as the
+#'   `.confirmation_delay` column, which is the laboratory's own turnaround,
+#'   measured from the report.) Needs a confirmation process (see
+#'   [add_confirmation()]); cases still `"pending"` are left out.
 #' @return A \pkg{ggplot2} object.
 #'
 #' @seealso [test_delay_drift()], [test_delay_changepoint()], [autoplot.tbl_now()]
@@ -235,7 +259,10 @@
 #' @export
 plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
                              by_strata = FALSE, strata = NULL, changepoint = FALSE,
-                             level = 0.95, plotly = FALSE, palette = .tbl_now_palette()) {
+                             level = 0.95, plotly = FALSE,
+                             axis = c("report", "confirmation"),
+                             palette = .tbl_now_palette()) {
+  axis <- match.arg(axis)
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_delay_drift}.")
   }
@@ -256,7 +283,7 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
     NULL
   }
 
-  delay_long <- .tbl_now_delay_long(x, strata_cols)
+  delay_long <- .tbl_now_delay_long(x, strata_cols, axis = axis)
   if (nrow(delay_long) == 0) {
     cli::cli_abort("No reporting delays available to plot.")
   }
@@ -470,6 +497,13 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
 #' @param ... Passed to the underlying \pkg{modifiedmk} function (e.g. `nsim`
 #'   for `"block-bootstrap"`).
 #'
+#' @param axis Which time axis the delay is measured to: `"report"` (default)
+#'   or `"confirmation"`. Both are measured *from the event*, so the two are
+#'   directly comparable -- run each in turn and the gap between them is the
+#'   time the laboratory adds. (This is not the same quantity as the
+#'   `.confirmation_delay` column, which is the laboratory's own turnaround,
+#'   measured from the report.) Needs a confirmation process (see
+#'   [add_confirmation()]); cases still `"pending"` are left out.
 #' @return A [tibble][tibble::tibble] with **one row per requested `stat` per
 #'   stratum**, and the following columns:
 #'
@@ -581,7 +615,9 @@ test_delay_drift <- function(x, ...,
                              stat = c("median", "spread"),
                              method = c("hamed-rao", "yue-pilon", "block-bootstrap"),
                              by_strata = FALSE, strata = NULL,
-                             mature_only = TRUE, level = 0.95, alpha = 0.05) {
+                             mature_only = TRUE, level = 0.95, alpha = 0.05,
+                             axis = c("report", "confirmation")) {
+  axis <- match.arg(axis)
   if (!is_tbl_now(x)) {
     cli::cli_abort("{.arg x} must be a {.cls tbl_now}.")
   }
@@ -613,7 +649,7 @@ test_delay_drift <- function(x, ...,
     NULL
   }
 
-  delay_long <- .tbl_now_delay_long(x, strata_cols)
+  delay_long <- .tbl_now_delay_long(x, strata_cols, axis = axis)
   if (isTRUE(mature_only)) {
     maturity_threshold <- .tbl_now_maturity_threshold(x, delay_long, level)
     if (!is.na(maturity_threshold)) {
@@ -714,6 +750,13 @@ test_delay_drift <- function(x, ...,
 #'
 #' @inheritParams test_delay_drift
 #'
+#' @param axis Which time axis the delay is measured to: `"report"` (default)
+#'   or `"confirmation"`. Both are measured *from the event*, so the two are
+#'   directly comparable -- run each in turn and the gap between them is the
+#'   time the laboratory adds. (This is not the same quantity as the
+#'   `.confirmation_delay` column, which is the laboratory's own turnaround,
+#'   measured from the report.) Needs a confirmation process (see
+#'   [add_confirmation()]); cases still `"pending"` are left out.
 #' @return A [tibble][tibble::tibble] with **one row per requested `stat` per
 #'   stratum**, and the following columns:
 #'
@@ -794,7 +837,9 @@ test_delay_drift <- function(x, ...,
 test_delay_changepoint <- function(x, ...,
                                    stat = c("median", "spread"),
                                    by_strata = FALSE, strata = NULL,
-                                   mature_only = TRUE, level = 0.95, alpha = 0.05) {
+                                   mature_only = TRUE, level = 0.95, alpha = 0.05,
+                                   axis = c("report", "confirmation")) {
+  axis <- match.arg(axis)
   if (!is_tbl_now(x)) {
     cli::cli_abort("{.arg x} must be a {.cls tbl_now}.")
   }
@@ -818,7 +863,7 @@ test_delay_changepoint <- function(x, ...,
     NULL
   }
 
-  delay_long <- .tbl_now_delay_long(x, strata_cols)
+  delay_long <- .tbl_now_delay_long(x, strata_cols, axis = axis)
   if (isTRUE(mature_only)) {
     maturity_threshold <- .tbl_now_maturity_threshold(x, delay_long, level)
     if (!is.na(maturity_threshold)) {

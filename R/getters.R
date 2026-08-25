@@ -171,9 +171,17 @@ get_protected_cols <- function(x) {
 #'
 #' @keywords internal
 #' @noRd
-get_protected_generated_cols <- function(x) {
-  # Return the protected columns from x
-  c(".event_num", ".report_num", ".delay")
+get_protected_generated_cols <- function(x = NULL) {
+  # Return the protected columns from x. The confirmation pair only exists when
+  # the object was told about a confirmation date, so `x` is needed to know
+  # whether to include it -- but the argument stays OPTIONAL, because this used
+  # to take none and a caller that does not have the object in hand should get
+  # the three columns every `tbl_now` has.
+  base_columns <- c(".event_num", ".report_num", ".delay")
+  if (is.null(x)) {
+    return(base_columns)
+  }
+  c(base_columns, .confirmation_generated_cols(x))
 }
 
 #' Protected columns supplied by the user
@@ -190,7 +198,12 @@ get_protected_generated_cols <- function(x) {
 #' @noRd
 get_protected_given_cols <- function(x) {
   # Return the protected columns from x
-  protected_cols <- c("event_date" = get_event_date(x), "report_date" = get_report_date(x), "is_censored" = get_is_censored(x))
+  protected_cols <- c(
+    "event_date" = get_event_date(x), "report_date" = get_report_date(x),
+    "is_censored" = get_is_censored(x),
+    "confirmation_date" = get_confirmation_date(x),
+    "confirmation_type" = get_confirmation_type(x)
+  )
 
   if (!is.null(get_data_type(x)) && grepl("count", get_data_type(x))) {
     protected_cols <- c(protected_cols, "case_count" = get_case_count(x))

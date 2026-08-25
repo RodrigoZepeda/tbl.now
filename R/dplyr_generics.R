@@ -289,12 +289,53 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
   }
 
 
+  # === Confirmation process ===
+  # A confirmation is an OBSERVATION, so nothing can have been confirmed after
+  # the as-of moment. This is the same rule `now` already obeys for reports;
+  # breaking it means the object claims to know something it could not have.
+  confirmation_date <- get_confirmation_date(x)
+  if (!is.null(confirmation_date) && confirmation_date %in% colnames(x)) {
+    latest_confirmation <- suppressWarnings(
+      max(x[[confirmation_date]], na.rm = TRUE)
+    )
+    current_now <- attr(x, "now", exact = TRUE)
+    if (is.finite(latest_confirmation) && !is.null(current_now) &&
+          latest_confirmation > current_now) {
+      errors <- c(
+        errors,
+        sprintf(
+          paste0(
+            "The latest confirmation ({.val %s}) is AFTER {.field now} ",
+            "({.val %s}). Nothing can be confirmed after the as-of moment."
+          ),
+          as.character(latest_confirmation), as.character(current_now)
+        )
+      )
+    }
+
+    allowed <- .confirmation_levels()
+    type_col <- get_confirmation_type(x)
+    if (!is.null(type_col) && type_col %in% colnames(x)) {
+      unknown <- setdiff(stats::na.omit(unique(as.character(x[[type_col]]))), allowed)
+      if (length(unknown) > 0) {
+        errors <- c(errors, sprintf(
+          "{.field confirmation_type} has unrecognised value(s): {.val %s}.",
+          paste(unknown, collapse = ", ")
+        ))
+      }
+    }
+  }
+
   # Validate that event_date and report_date don't have repeated values for same strata/covariates----
   if (warn_non_uniqueness) {
     current_rows <- nrow(x)
+    # The confirmation columns belong in the key: a case and its own retraction
+    # share an (event, report) pair and are still two different rows. Left out,
+    # every confirmed/retracted pair looked like a duplicate.
+    confirmation_cols <- intersect(.confirmation_group_cols(x), colnames(x))
     distinct_rows <- x |>
       dplyr::as_tibble() |>
-      dplyr::distinct(dplyr::across(dplyr::all_of(c(get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x), get_is_censored(x), get_temporal_effect_cols(x))))) |>
+      dplyr::distinct(dplyr::across(dplyr::all_of(c(get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x), get_is_censored(x), get_temporal_effect_cols(x), confirmation_cols)))) |>
       nrow()
 
     if (current_rows > distinct_rows) {
@@ -617,22 +658,25 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
     x <- new_grouped_tbl_now(.data, groups = grouping_structure)
   } else {
     # Edge case: no groups were actually provided — reconstruct without losing temporal-effects spec
-    x <- tbl_now(
-      data = .data,
-      event_date = get_event_date(.data),
-      report_date = get_report_date(.data),
-      strata = get_strata(.data),
-      covariates = get_covariates(.data),
-      is_censored = get_is_censored(.data),
-      now = get_now(.data),
-      event_units = get_event_units(.data),
-      report_units = get_event_units(.data),
-      data_type = get_data_type(.data),
-      case_count = get_case_count(.data),
-      verbose = FALSE,
-      force = TRUE,
-      warn_non_uniqueness = FALSE
-    )
+    x <- do.call(tbl_now, c(
+      list(
+        data = .data,
+        event_date = get_event_date(.data),
+        report_date = get_report_date(.data),
+        strata = get_strata(.data),
+        covariates = get_covariates(.data),
+        is_censored = get_is_censored(.data),
+        now = get_now(.data),
+        event_units = get_event_units(.data),
+        report_units = get_event_units(.data),
+        data_type = get_data_type(.data),
+        case_count = get_case_count(.data),
+        verbose = FALSE,
+        force = TRUE,
+        warn_non_uniqueness = FALSE
+      ),
+      .confirmation_rebuild_args(.data, .data)
+    ))
     attr(x, "temporal_effects") <- get_temporal_effects(.data)
     attr(x, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(x))
   }
@@ -748,22 +792,25 @@ ungroup.grouped_tbl_now <- function(x, ...) {
     # This is most simplest done by simply creating a new tibble subclass
     # This is an edge case if no groups are actually provided. Then simply return a regular subclass
     old_x <- x
-    x <- tbl_now(
-      data = tbl,
-      event_date = get_event_date(old_x),
-      report_date = get_report_date(old_x),
-      strata = get_strata(old_x),
-      covariates = get_covariates(old_x),
-      is_censored = get_is_censored(old_x),
-      now = get_now(old_x),
-      event_units = get_event_units(old_x),
-      report_units = get_report_units(old_x),
-      data_type = get_data_type(old_x),
-      case_count = get_case_count(old_x),
-      verbose = FALSE,
-      force = TRUE,
-      warn_non_uniqueness = FALSE
-    )
+    x <- do.call(tbl_now, c(
+      list(
+        data = tbl,
+        event_date = get_event_date(old_x),
+        report_date = get_report_date(old_x),
+        strata = get_strata(old_x),
+        covariates = get_covariates(old_x),
+        is_censored = get_is_censored(old_x),
+        now = get_now(old_x),
+        event_units = get_event_units(old_x),
+        report_units = get_report_units(old_x),
+        data_type = get_data_type(old_x),
+        case_count = get_case_count(old_x),
+        verbose = FALSE,
+        force = TRUE,
+        warn_non_uniqueness = FALSE
+      ),
+      .confirmation_rebuild_args(old_x, tbl)
+    ))
     attr(x, "temporal_effects") <- get_temporal_effects(old_x)
     attr(x, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(old_x), names(x))
   }
@@ -790,23 +837,29 @@ summarise.tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
 
   result <- tryCatch(
     {
-      tmp <- tbl_now(
-        data = ungroup(summarised_tbl),
-        event_date = get_event_date(.data),
-        report_date = get_report_date(.data),
-        strata = get_strata(.data),
-        covariates = get_covariates(.data),
-        is_censored = get_is_censored(.data),
-        now = get_now(.data),
-        event_units = get_event_units(.data),
-        report_units = get_event_units(.data),
-        data_type = get_data_type(.data),
-        case_count = get_case_count(.data),
-        verbose = FALSE,
-        force = TRUE,
-        warn_non_uniqueness = FALSE,
-        align_weeks = FALSE
-      )
+      ungrouped <- ungroup(summarised_tbl)
+      tmp <- do.call(tbl_now, c(
+        list(
+          data = ungrouped,
+          event_date = get_event_date(.data),
+          report_date = get_report_date(.data),
+          strata = get_strata(.data),
+          covariates = get_covariates(.data),
+          is_censored = get_is_censored(.data),
+          now = get_now(.data),
+          event_units = get_event_units(.data),
+          report_units = get_event_units(.data),
+          data_type = get_data_type(.data),
+          case_count = get_case_count(.data),
+          verbose = FALSE,
+          force = TRUE,
+          warn_non_uniqueness = FALSE,
+          align_weeks = FALSE
+        ),
+        # Every fixed attribute list is a place the confirmation process can be
+        # dropped in silence.
+        .confirmation_rebuild_args(.data, ungrouped)
+      ))
       attr(tmp, "temporal_effects") <- get_temporal_effects(.data)
       attr(tmp, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(tmp))
       tmp

@@ -111,8 +111,15 @@ test_that("add_temporal_effects.data.frame overwrites when overwrite = TRUE", {
 
   # Should have overwritten with correct values
   expect_true(".date_day_of_week" %in% names(result))
-  expect_false(any(result$.date_day_of_week == 999))
-  expect_true(all(result$.date_day_of_week %in% 1:7))
+  expect_false(any(as.character(result$.date_day_of_week) == "999"))
+  # Since 0.21.0 this is an unordered FACTOR of weekday names, not 1..7 -- a
+  # numeric weekday tells a model that Saturday is seven times Sunday.
+  expect_s3_class(result$.date_day_of_week, "factor")
+  expect_false(is.ordered(result$.date_day_of_week))
+  expect_setequal(
+    levels(result$.date_day_of_week),
+    c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+  )
 })
 
 test_that("add_temporal_effects.data.frame weekend effect works with custom weekend_days", {
@@ -154,14 +161,13 @@ test_that("add_temporal_effects.data.frame month_of_year cycles correctly", {
     name_prefix = ".date"
   )
 
-  # Month effect should start at 1 for the first month
-  expect_equal(result$.date_month_of_year[1], 1)
-
-  # Should cycle through 1-12
-  expect_true(all(result$.date_month_of_year %in% 1:12))
-
-  # Should be sequential (given monthly data starting in Jan)
-  expect_equal(result$.date_month_of_year, 1:12)
+  # A factor since 0.21.0; its LABELS are the relative month offsets, because
+  # the effect is centred on the object's own first month rather than January.
+  months <- as.integer(as.character(result$.date_month_of_year))
+  expect_s3_class(result$.date_month_of_year, "factor")
+  expect_equal(months[1], 1L)
+  expect_true(all(months %in% 1:12))
+  expect_equal(months, 1:12)
 })
 
 test_that("add_temporal_effects.data.frame month_of_year handles year boundary", {
@@ -179,7 +185,7 @@ test_that("add_temporal_effects.data.frame month_of_year handles year boundary",
   )
 
   # Should cycle: starts at Nov (1), Dec (2), Jan (3), Feb (4)
-  expect_equal(result$.date_month_of_year, c(1, 2, 3, 4))
+  expect_equal(as.integer(as.character(result$.date_month_of_year)), c(1L, 2L, 3L, 4L))
 })
 
 test_that("add_temporal_effects.data.frame week_of_year cycles correctly", {
@@ -196,11 +202,11 @@ test_that("add_temporal_effects.data.frame week_of_year cycles correctly", {
     name_prefix = ".date"
   )
 
-  # Week effect should start at 1
-  expect_equal(result$.date_week_of_year[1], 1)
-
-  # Should cycle through 1-52 (week 53 is collapsed to 1)
-  expect_true(all(result$.date_week_of_year %in% 1:52))
+  # A factor since 0.21.0; labels are the relative epiweek offsets.
+  weeks <- as.integer(as.character(result$.date_week_of_year))
+  expect_s3_class(result$.date_week_of_year, "factor")
+  expect_equal(weeks[1], 1L)
+  expect_true(all(weeks %in% 1:52))
 })
 
 test_that("add_temporal_effects.data.frame week_of_year handles year boundary", {

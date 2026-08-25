@@ -540,6 +540,160 @@ df_now |>
 ```
 
 
+### The confirmation process
+
+Some surveillance systems have a **third** date. A case is not only reported --
+it is later *resolved*: a laboratory issues the result that confirms it, or
+rules it out. Influenza is the standard picture: symptoms begin (the event), the
+patient visits a doctor (the report), and days later a swab comes back positive
+(the confirmation) or negative (a *retraction* -- the case was reported but is
+not a case after all).
+
+A `tbl_now` can carry this with `confirmation_date`, an optional
+`confirmation_type`, and its own `confirmation_units`. The timeline it assumes
+is
+
+$$\text{event date} \le \text{report date} \le \text{confirmation date} \le \text{now}$$
+
+`confirmation_type` takes the values `"confirmed"`, `"retracted"`, `"pending"`
+or `NA`. **Pending** is the important one: it means the case has been reported
+and is still waiting for a result, so it has *no* confirmation date. That is a
+different thing from a case whose result you simply never recorded, which is
+`NA`.
+
+We will use `hai_bucaramanga`, an open extract of healthcare-associated
+infections from Bucaramanga, Colombia, which records all three dates: when the
+specimen was taken, when the laboratory received it, and when the laboratory
+issued the result.
+
+```{r, message=FALSE}
+data("hai_bucaramanga")
+
+hai <- hai_bucaramanga |>
+  distinct() |>
+  filter(
+    !is.na(specimen_date), !is.na(received_date),
+    received_date >= specimen_date
+  ) |>
+  mutate(
+    # A result was issued: that is the confirmation. Everything else is still
+    # waiting, and a case that is waiting has no confirmation date.
+    result_date = if_else(
+      !is.na(report_date) & report_date >= received_date,
+      report_date, as.Date(NA)
+    ),
+    result = if_else(is.na(result_date), "pending", "confirmed")
+  )
+
+table(hai$result)
+```
+
+The three dates map onto the three roles directly:
+
+```{r}
+hai_now <- hai |>
+  tbl_now(
+    event_date        = specimen_date, # the specimen was taken
+    report_date       = received_date, # the laboratory received it
+    confirmation_date = result_date, # the laboratory issued a result
+    confirmation_type = result,
+    data_type         = "linelist",
+    verbose           = FALSE
+  )
+
+hai_now
+```
+
+The footer now carries a confirmation line -- the column, its units, and how
+many cases have actually been resolved. Two derived columns appear alongside
+`.delay`: `.confirmation_num` (the confirmation date on the same numeric grid as
+the other dates) and `.confirmation_delay`, the laboratory's **turnaround** --
+the time from report to result, which is a different quantity from the reporting
+delay.
+
+```{r}
+# Reporting delay: specimen to laboratory.
+median(hai_now$.delay, na.rm = TRUE)
+
+# Turnaround: laboratory to result.
+median(hai_now$.confirmation_delay, na.rm = TRUE)
+```
+
+Confirmation also moves `now`. A result issued on a date means you were, by
+definition, still observing the system on that date, so `now` is never earlier
+than the last confirmation -- even when reporting stopped before it.
+
+```{r}
+get_now(hai_now)
+get_confirmation_units(hai_now)
+has_confirmation(hai_now)
+```
+
+#### Counting cases when some of them can be undone
+
+Once cases can be retracted, "how many cases were there?" has more than one
+answer, and the right one depends on the question:
+
+```{r}
+head(get_latest_confirmed(hai_now), 3) # cases the laboratory confirmed
+head(get_net_confirmed(hai_now), 3) # confirmed minus retracted
+```
+
+`get_nth_confirmed(x, delay)` counts only the cases resolved *within* a given
+number of periods -- what you would have known that soon after the report --
+and `get_initial_confirmed()` is the same-period case. These mirror
+`get_nth_reported_cases()` and `get_initial_reported_cases()` on the report
+axis.
+
+If your data records absurdly long confirmation delays -- a result "issued" two
+years later is usually a data-entry artefact, not a laboratory --
+`censor_confirmation_delays_above()` returns those cases to `"pending"`, which
+is what they really were.
+
+#### How much of the epidemic has been resolved?
+
+`plot_confirmation_status()` shows the share of cases confirmed, retracted and
+pending over time. A pending share that grows towards the right-hand edge is
+normal -- recent cases have not had time to come back from the laboratory -- but
+a pending share that grows in the *middle* of the series is a laboratory falling
+behind.
+
+```{r, fig.width=7, fig.height=4}
+plot_confirmation_status(hai_now)
+```
+
+#### The confirmation axis
+
+Every reporting diagnostic in the package asks one question: did an unusual
+number of records arrive on this date, and with what delay? That question is
+just as meaningful for results arriving from a laboratory, so the diagnostics
+take an `axis` argument instead of being duplicated:
+
+```{r, eval=FALSE}
+# The same picture, drawn for the laboratory instead of the surveillance desk.
+plot_reporting_triangle(hai_now, axis = "confirmation")
+plot_delay_profiles(hai_now, axis = "confirmation")
+plot_delay_drift(hai_now, axis = "confirmation")
+diagnostic_plot(hai_now, axis = "confirmation")
+
+# A laboratory clearing a backlog is a batch, exactly as a surveillance system
+# clearing its inbox is.
+batch_test(hai_now, axis = "confirmation")
+```
+
+Two notes on what `axis = "confirmation"` means. Delays are still measured
+**from the event**, so the report and confirmation axes are directly comparable
+and the gap between them is the time the laboratory adds. And cases that are
+still `"pending"` are excluded: they have no confirmation date, so counting
+them would invent an arrival on a date they do not have.
+
+Finally, when a system produces both confirmations and retractions you can ask
+whether they take equally long -- a laboratory that rules cases out faster than
+it confirms them will bias any nowcast that treats the two alike.
+`test_confirmation_delay()` tests exactly that (a Wilcoxon rank-sum test on the
+two delay distributions) and `plot_confirmation_delay()` draws it. The
+Bucaramanga extract records no retractions, so there is nothing to compare here.
+
 ### Getting, removing and changing attributes
 
 A [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html)’s attributes can be modified using the functions in [add_*](https://rodrigozepeda.github.io/tbl.now/reference/add.html), [change_*](https://rodrigozepeda.github.io/tbl.now/reference/change.html), or [remove_*](https://rodrigozepeda.github.io/tbl.now/reference/remove.html). These functions share a consistent interface that allows users to incrementally manipulate strata, covariates, and temporal effects.

@@ -216,9 +216,15 @@ change_now <- function(x, now = NULL) {
     cli::cli_abort("{.arg now} must be a Date of length 1")
   }
 
-  # Re-infer now
+  # Re-infer now. The CONFIRMATION date counts: it is an observation like any
+  # other, so leaving it out moves `now` backwards past a confirmation that has
+  # already happened -- which `validate_tbl_now()` below then rejects.
   now <- tryCatch(
-    infer_now(x, now = now, event_date = get_event_date(x), report_date = get_report_date(x)),
+    infer_now(x,
+      now = now, event_date = get_event_date(x),
+      report_date = get_report_date(x),
+      confirmation_date = get_confirmation_date(x)
+    ),
     error = function(e) get_now(x)
   )
   attr(x, "now") <- now

@@ -1,3 +1,79 @@
+# tbl.now 0.21.0
+
+## The confirmation process
+
+A `tbl_now` can now carry a **third** date. Influenza is the picture to keep in
+mind: symptoms begin (the event), the patient visits a doctor (the report), and
+days later a swab comes back positive (the confirmation) or negative (a
+*retraction* -- reported, but not a case after all). The assumed timeline is
+`event <= report <= confirmation <= now`.
+
+* `tbl_now()` gains `confirmation_date`, `confirmation_type` and
+  `confirmation_units`. `confirmation_type` takes `"confirmed"`, `"retracted"`,
+  `"pending"` or `NA`; **pending** means reported and still waiting, so it has no
+  confirmation date, which is a different thing from a result you never
+  recorded (`NA`). Two columns are derived: `.confirmation_num` (on the same
+  numeric grid as the other dates) and `.confirmation_delay`, the laboratory's
+  turnaround, measured **from the report**.
+* `add_confirmation()`, `change_confirmation()`, `remove_confirmation()`,
+  `get_confirmation_date()`, `get_confirmation_type()`,
+  `get_confirmation_units()` and `has_confirmation()`.
+* A date with no type warns rather than guessing: a date alone cannot say
+  whether the case was confirmed or retracted. A confirmation before its own
+  report warns too.
+* `now` is confirmation-aware. A result issued on a date means the system was
+  still being observed then, so `now` is never earlier than the last
+  confirmation, and setting one earlier is an error.
+* The confirmation columns survive `dplyr` verbs, `update()`, `align_weeks()`
+  (which now aligns all three dates) and `to_count()` (which groups by the
+  confirmation, so a case is never summed together with its own retraction).
+* The print footer gains a confirmation line: the column, its units, and how
+  many cases are resolved.
+
+### Counting when cases can be undone
+
+`get_latest_confirmed()`, `get_net_confirmed()` (confirmed minus retracted),
+`get_nth_confirmed(x, delay)` and `get_initial_confirmed()` -- the confirmation
+mirrors of the report-axis getters. `censor_confirmation_delays_above()` returns
+implausibly long confirmations to `"pending"`, which is what they really were.
+
+### Diagnostics on the confirmation axis
+
+A laboratory clearing a backlog looks exactly like a surveillance system
+clearing its inbox, so rather than duplicate every diagnostic, they take an
+`axis = c("report", "confirmation")` argument: `batch_test()`, `batch_screen()`,
+`batch_shape_test()`, `transport_discriminant()`, `plot_reporting_process()`,
+`plot_epidemic_process()`, `plot_reporting_triangle()`, `plot_delay_profiles()`,
+`plot_reporting_hexamap()`, `plot_scalogram()`, `plot_delay_drift()`,
+`test_delay_drift()`, `test_delay_changepoint()` and `diagnostic_plot()`.
+
+On the confirmation axis, delays are still measured **from the event**, so the
+two axes are directly comparable and the gap between them is the time the
+laboratory adds. Cases still `"pending"` are excluded -- counting them would
+invent an arrival on a date they do not have.
+
+New in their own right: `plot_confirmation_status()` (the confirmed / retracted
+/ pending shares over time), and `test_confirmation_delay()` /
+`plot_confirmation_delay()`, which ask whether retractions come back faster than
+confirmations -- a laboratory that rules cases out sooner than it confirms them
+biases any nowcast that treats the two alike.
+
+## Other changes
+
+* **Calendar temporal effects are now factors.** `day_of_week`, `day_of_month`,
+  `month_of_year` and `week_of_year` are `factor`s with their full level sets
+  (all seven weekdays, 1-31, 1-12, 1-52) rather than character or numeric
+  columns, so a model gets dummy coding rather than treating "Tuesday" as
+  twice "Monday", and a level absent from a stratum still exists. `weekend`
+  stays 0/1 and the Fourier `seasons` stay numeric, as both are already
+  correctly numeric.
+* **Fixed:** the non-uniqueness warning fired on every confirmed/retracted pair.
+  A case and its own retraction share an (event, report) combination and are
+  still two different rows; the confirmation columns are now part of the key.
+* `run_nowcast(x, "diseasenowcasting")` passes straight through to
+  `diseasenowcasting::nowcast()`. The confirmation process belongs to that
+  package's `model()`, not to `tbl.now`, so pass it there.
+
 # tbl.now 0.20.0
 
 ## Bugs found by the new engine test suite
@@ -10,9 +86,8 @@ Every one of these was found by writing the tests, not before:
   likelihood needs a `confirmation_process()` -- the retraction side of a stream
   that can revise **down** -- and `model()`'s default is `no_confirmation()`.
   Without one the fit reports "Joint fit failed to converge for all init
-  attempts". `run_nowcast()` now attaches one (with the package's own
-  data-informed prior on `p`, which reduces to the ordinary count model at
-  `p = 1`) when the data are cumulative and you passed no `model` of your own.
+  attempts". Pass one through, as
+  `run_nowcast(x, "diseasenowcasting", model = model(confirmation = confirmation_process()))`.
 
   De-accumulating to incidence first would also "work", and is wrong: it
   discards the downward revisions the cumulative likelihood exists to model.

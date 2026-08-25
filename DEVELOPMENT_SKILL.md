@@ -77,6 +77,9 @@ Rules that follow from this, and that you must not break:
 | `report_units` | same | `get_report_units()` |
 | `temporal_effects` | **lazy** effect specs | `get_temporal_effects()` |
 | `computed_temporal_effect_cols` | materialised effect column names | `get_temporal_effect_cols()` |
+| `confirmation_date` | column name of the confirmation date, or `NULL` | `get_confirmation_date()`, `has_confirmation()` |
+| `confirmation_type` | column name of the outcome, or `NULL` | `get_confirmation_type()` |
+| `confirmation_units` | same set as `report_units` | `get_confirmation_units()` |
 
 ### The rules
 
@@ -97,6 +100,32 @@ Rules that follow from this, and that you must not break:
    the columns do not exist until `compute_temporal_effects()` runs. Converters
    call `.materialize_temporal_effects()` for this. Calling
    `compute_temporal_effects()` before `add_temporal_effects()` is a no-op.
+
+### The confirmation process (the optional third date)
+
+`event <= report <= confirmation <= now`. It is **optional**: most objects have
+no confirmation, so every code path must work when `has_confirmation(x)` is
+`FALSE`, and `.confirmation_group_cols(x)` returns `character(0)` there so it can
+be spliced into a grouping unconditionally.
+
+1. **Every rebuild must carry it.** `do.call(tbl_now, c(list(...), .confirmation_rebuild_args(x, data)))`.
+   This is the same silent-drop hazard as strata: `summarise()`, `group_by()`,
+   `ungroup()`, `update()` and `align_weeks()` each rebuild by hand, and each one
+   dropped the confirmation until it was spliced in. **Grep for
+   `do.call(tbl_now` before adding an attribute** and fix every site.
+2. **`"pending"` means no date, not a missing date.** A pending case is reported
+   and still waiting. Anything that counts arrivals on the confirmation axis must
+   drop pending rows -- counting them invents an arrival on a date they do not
+   have.
+3. **Two different delays.** `.confirmation_delay` is the laboratory's turnaround,
+   measured **from the report**. The `axis = "confirmation"` diagnostics measure
+   **from the event**, so the two axes are comparable. Do not mix them up.
+4. **Do not duplicate a diagnostic for the new axis.** Add
+   `axis = c("report", "confirmation")` and forward it to
+   `.batch_report_increments()` / `.batch_registration()`, which is where the
+   axis is actually swapped. One switch point, no parallel implementations.
+5. **`now` is confirmation-aware.** `infer_now()` takes the max over both, and
+   setting `now` before the last confirmation is an error.
 
 ### Protected columns
 
@@ -463,6 +492,17 @@ against every shipped dataset.
   only on which fit it is, not on what ran before it or whether anything did.
   `nowcast_comparison.R` does this in `run_engine()`; both engines then reproduce
   to `max abs diff == 0` with the RNG deliberately perturbed in between.
+
+* **A uniqueness key that omits an attribute reports real rows as duplicates.**
+  `validate_tbl_now()`'s non-uniqueness warning built its `distinct()` key from
+  the dates, strata, covariates and effect columns. When confirmation arrived, a
+  case and its own retraction -- same event, same report, opposite outcome --
+  came out as "exact duplicates", advising `dplyr::distinct()`, which would have
+  **deleted the retraction**. Any column that legitimately distinguishes two rows
+  belongs in that key.
+* **`.quietly_if()`/`suppressWarnings()` around a backend hides the warnings that
+  matter.** Suppress messages only. (Recorded twice now: `run_engine()` and
+  `nowcast_fit()`.)
 
 ---
 

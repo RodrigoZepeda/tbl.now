@@ -5,9 +5,13 @@
 #' The series of reports or of cases, one value per time step, on a common grid.
 #' @keywords internal
 #' @noRd
-.scalo_series <- function(x, type) {
-  inc         <- .batch_report_increments(x)
-  report_unit <- get_report_units(x) %||% "days"
+.scalo_series <- function(x, type, axis = "report") {
+  inc         <- .batch_report_increments(x, axis = axis)
+  report_unit <- if (identical(axis, "confirmation")) {
+    get_confirmation_units(x) %||% get_report_units(x) %||% "days"
+  } else {
+    get_report_units(x) %||% "days"
+  }
   key         <- if (type == "reporting") ".report_date" else ".event_date"
   lo   <- min(c(inc$.event_date, inc$.report_date), na.rm = TRUE)
   hi   <- max(c(inc$.event_date, inc$.report_date), na.rm = TRUE)
@@ -50,6 +54,11 @@
 #'   static plot. Default `FALSE`.
 #' @param palette A named colour palette. Defaults to the package palette.
 #'
+#' @param axis Which time axis to draw: `"report"` (default) or
+#'   `"confirmation"`. On the confirmation axis the picture answers the
+#'   laboratory's version of the question -- when results arrived, rather than
+#'   when reports did. Needs a confirmation process (see [add_confirmation()]);
+#'   cases still `"pending"` have no confirmation date and are left out.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
 #'
 #' @seealso [plot_reporting_process()], [plot_epidemic_process()], [diagnostic_plot()].
@@ -63,8 +72,10 @@
 #' @md
 plot_scalogram <- function(x, type = c("reporting", "epidemic"), windowrad = 1,
                            wname = "PAUL", format = "%d/%b/%y",
-                           plotly = FALSE, palette = .tbl_now_palette()) {
+                           plotly = FALSE, axis = c("report", "confirmation"),
+                           palette = .tbl_now_palette()) {
   type <- match.arg(type)
+  axis <- match.arg(axis)
   .diag_check(x)
   if (!requireNamespace("wavScalogram", quietly = TRUE)) {
     cli::cli_abort(c(
@@ -73,7 +84,7 @@ plot_scalogram <- function(x, type = c("reporting", "epidemic"), windowrad = 1,
     ))
   }
 
-  s          <- .scalo_series(x, type)
+  s          <- .scalo_series(x, type, axis = axis)
   report_unit <- get_report_units(x) %||% "days"
   fill_col   <- if (type == "reporting") palette[["accent_red"]] else palette[["primary_green"]]
   title      <- if (type == "reporting") "Reporting scalogram" else "Epidemic scalogram"

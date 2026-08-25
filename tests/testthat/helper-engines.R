@@ -221,7 +221,22 @@ engine_args <- function(engine, x) {
   periods <- length(unique(x[[get_event_date(x)]]))
   switch(engine,
     baselinenowcast = list(draws = 50),
-    diseasenowcasting = list(n_draws = 100),
+    # A `count-cumulative` stream needs a CONFIRMATION PROCESS: the signed
+    # increments it models can go down, and `model()`'s default is
+    # `no_confirmation()`, under which the fit reports "Joint fit failed to
+    # converge for all init attempts".
+    #
+    # `run_nowcast()` deliberately does not inject one -- picking a model
+    # component on the caller's behalf would change what the fit answers -- so
+    # the caller supplies it, and this is what that looks like.
+    diseasenowcasting = c(
+      list(n_draws = 100),
+      if (identical(get_data_type(x), "count-cumulative")) {
+        list(model = diseasenowcasting::model(
+          confirmation = diseasenowcasting::confirmation_process()
+        ))
+      }
+    ),
     surveillance = list(D = 3),
     NobBS = list(max_D = 3, moving_window = min(20L, periods)),
     epinowcast = list(

@@ -115,6 +115,13 @@
 #'   robust normal approximation. Signed (count-cumulative) increments always use
 #'   the robust null. `"poisson"` and `"robust"` force the choice; note that
 #'   `"poisson"` is anti-conservative (over-flags) on overdispersed counts.
+#' @param axis Which time axis to scan for arrivals: `"report"` (default) or
+#'   `"confirmation"`. The question is the same either way -- did an unusual
+#'   number of records land on this date? -- so a laboratory clearing its
+#'   backlog is found exactly as a surveillance system clearing its inbox is.
+#'   `"confirmation"` needs a confirmation process (see [add_confirmation()])
+#'   and ignores cases that are still `"pending"`, which have no confirmation
+#'   date to arrive on.
 #' @param alpha Significance level for the Benjamini-Hochberg `batch` flag.
 #'   Default `0.05`.
 #'
@@ -165,8 +172,10 @@ batch_test <- function(data,
                          baseline_window = NULL,
                          period          = NULL,
                          null_model      = c("auto", "poisson", "robust"),
+                         axis            = c("report", "confirmation"),
                          alpha           = 0.05) {
   null_model      <- match.arg(null_model)
+  axis            <- match.arg(axis)
   .batch_experimental_warning("batch_test")
   .batch_check_tbl_now(data)
 
@@ -182,7 +191,7 @@ batch_test <- function(data,
   period <- .batch_resolve_period(data, period)
 
   # -- 1-4. reporting totals, baseline and the window statistics Delta and W ----
-  registration <- .batch_registration(data, lookback, baseline_window, period)
+  registration <- .batch_registration(data, lookback, baseline_window, period, axis = axis)
 
   # -- 5. p-values under the appropriate null ---------------------------------
   # The exact Poisson/Binomial null is only valid when the counts are Poisson AND
@@ -232,8 +241,9 @@ batch_test <- function(data,
 #' discriminant `Delta` on a leave-window-out baseline.
 #' @keywords internal
 #' @noRd
-.batch_registration <- function(data, lookback, baseline_window, period) {
-  increments      <- .batch_report_increments(data)
+.batch_registration <- function(data, lookback, baseline_window, period,
+                               axis = "report") {
+  increments      <- .batch_report_increments(data, axis = axis)
   registration    <- .batch_registration_totals(increments, data)
   baseline_window <- .batch_baseline_window(baseline_window, lookback, period)
   registration    <- .batch_add_baseline(registration, baseline_window, period)
@@ -258,13 +268,58 @@ batch_test <- function(data,
 #'   `.stratum`.
 #' @keywords internal
 #' @noRd
-.batch_report_increments <- function(data) {
+#' Resolve the confirmation column for a batch scan
+#'
+#' @param data A `tbl_now`.
+#'
+#' @return The confirmation-date column name.
+#'
+#' @keywords internal
+#' @noRd
+.batch_confirmation_axis <- function(data) {
+  confirmation_col <- get_confirmation_date(data)
+  if (is.null(confirmation_col)) {
+    cli::cli_abort(c(
+      "{.code axis = \"confirmation\"} needs a confirmation process, and
+       {.arg data} has none.",
+      "i" = "Attach one with {.fn add_confirmation}."
+    ))
+  }
+  confirmation_col
+}
+
+.batch_report_increments <- function(data, axis = c("report", "confirmation")) {
+  axis <- match.arg(axis)
   observations <- as.data.frame(data)
   event_col    <- get_event_date(data)
-  report_col   <- get_report_date(data)
   data_type    <- get_data_type(data)
   strata_cols  <- get_strata(data)
   case_count_col <- get_case_count(data)
+
+  # The whole batch machinery asks one question: "did an unusual number of
+  # records arrive on this date?". That question is identical on the
+  # CONFIRMATION axis -- a laboratory clearing its backlog looks exactly like a
+  # surveillance system clearing its inbox -- so the axis is swapped here, at
+  # the single point every batch function and every reporting-process plot goes
+  # through, rather than duplicating any of them.
+  report_col <- if (identical(axis, "confirmation")) {
+    .batch_confirmation_axis(data)
+  } else {
+    get_report_date(data)
+  }
+
+  if (identical(axis, "confirmation")) {
+    # A pending case has not been confirmed, so it contributes nothing to the
+    # confirmation axis -- counting it on a date it does not have would invent
+    # arrivals.
+    observations <- observations[!is.na(observations[[report_col]]), , drop = FALSE]
+    if (nrow(observations) == 0) {
+      cli::cli_abort(c(
+        "No confirmed records: every row is still {.val pending}.",
+        "i" = "There is nothing to look for batches in on the confirmation axis."
+      ))
+    }
+  }
 
   # The per-row count, before any de-accumulation.
   if (identical(data_type, "linelist")) {
@@ -304,7 +359,7 @@ batch_test <- function(data,
   }
 
   # Integer delay, measured in report-grid steps (unit-agnostic).
-  date_grid <- .batch_date_grid(observations, data)
+  date_grid <- .batch_date_grid(observations, data, axis = axis)
   observations |>
     dplyr::mutate(
       .delay = match(.data$.report_date, date_grid) - match(.data$.event_date, date_grid)
@@ -375,8 +430,13 @@ batch_test <- function(data,
 #' The complete calendar grid spanned by the events and reports, in report units.
 #' @keywords internal
 #' @noRd
-.batch_date_grid <- function(observations, data) {
-  report_unit <- get_report_units(data) %||% "days"
+.batch_date_grid <- function(observations, data, axis = "report") {
+  report_unit <- if (identical(axis, "confirmation")) {
+    get_confirmation_units(data) %||% get_report_units(data) %||% "days"
+  } else {
+    get_report_units(data) %||% "days"
+  }
+  report_unit <- report_unit
   grid_start  <- min(observations$.event_date,  na.rm = TRUE)
   grid_end    <- max(observations$.report_date, na.rm = TRUE)
   seq(from = grid_start, to = grid_end, by = as.character(report_unit))

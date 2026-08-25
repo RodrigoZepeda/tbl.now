@@ -283,6 +283,11 @@ simulate_batch <- function(data,
   if (!is.null(existing_now)) {
     tbl_now_arguments$now <- existing_now
   }
+  # A confirmation is real data about the case; holding its report back does not
+  # unmake the laboratory result, so it is carried through. It CAN leave a report
+  # sitting after its own confirmation -- that is a true statement about the
+  # simulated system, and `tbl_now()`'s ordering check is what says so.
+  tbl_now_arguments <- c(tbl_now_arguments, .confirmation_rebuild_args(data, observations))
 
   suppressWarnings(do.call(tbl_now, tbl_now_arguments))
 }

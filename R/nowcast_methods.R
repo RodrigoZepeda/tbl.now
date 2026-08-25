@@ -90,12 +90,15 @@ nowcast_fit.diseasenowcasting <- function(method, x, ...,
   # directly -- including downward revisions, which de-accumulating would
   # destroy.
   #
-  # What that likelihood needs is a CONFIRMATION PROCESS: the retraction side of
-  # a stream that can revise down. `model()`'s default is `no_confirmation()`,
-  # and with it a cumulative fit reports "Joint fit failed to converge for all
-  # init attempts". So supply one when the data are cumulative and the caller
-  # gave no `model` of their own, using the package's own data-informed default
-  # prior on `p` -- which reduces to the ordinary count model at `p = 1`.
+  # What a cumulative stream additionally needs is a CONFIRMATION PROCESS -- the
+  # retraction side of a series that revises down. That is a MODELLING choice,
+  # and it belongs to `diseasenowcasting`, not here: pass
+  # `model = diseasenowcasting::model(confirmation = ...)` through `...`. See
+  # `?diseasenowcasting::confirmation_process`.
+  #
+  # `run_nowcast()` deliberately does not inject one. Choosing a model component
+  # on the caller's behalf would mean the fit answers a question they did not
+  # ask, and they would have no way of seeing that it happened.
   #
   # Everything is looked up at run time rather than written
   # `diseasenowcasting::`. The package is GitHub-only and sits in no repository
@@ -103,23 +106,8 @@ nowcast_fit.diseasenowcasting <- function(method, x, ...,
   # `R CMD check --as-cran` report a dependency it cannot find, while NOT
   # declaring it makes a literal `::` an undeclared import. `.need_pkg()` above
   # has already established that it is installed.
-  arguments <- list(...)
-  if (identical(get_data_type(x), "count-cumulative") && is.null(arguments$model)) {
-    build_model <- getExportedValue("diseasenowcasting", "model")
-    confirmation <- getExportedValue("diseasenowcasting", "confirmation_process")
-    arguments$model <- build_model(confirmation = confirmation())
-    if (isTRUE(verbose)) {
-      cli::cli_inform(c(
-        "i" = "{.val count-cumulative} data: adding a
-               {.fn diseasenowcasting::confirmation_process} so the
-               signed-increment likelihood can model downward revisions.",
-        "i" = "Pass {.arg model} yourself to override it."
-      ))
-    }
-  }
-
   nowcast <- getExportedValue("diseasenowcasting", "nowcast")
-  .quietly_if(do.call(nowcast, c(list(x), arguments)), verbose)
+  .quietly_if(nowcast(x, ...), verbose)
 }
 
 #' @rdname nowcast_tidy

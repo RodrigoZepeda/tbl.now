@@ -22,8 +22,9 @@
 #' the window statistics standardised as `creation_z` and `transport_z`.
 #' @keywords internal
 #' @noRd
-.batch_detrended <- function(data, lookback, baseline_window, period) {
-  reg  <- .batch_registration(data, lookback, baseline_window, period)
+.batch_detrended <- function(data, lookback, baseline_window, period,
+                             axis = "report") {
+  reg  <- .batch_registration(data, lookback, baseline_window, period, axis = axis)
   disp <- .batch_dispersion(reg)
   dplyr::mutate(
     reg,
@@ -46,10 +47,11 @@
 #' Returns a two-column frame (`report_date`, `.stratum`).
 #' @keywords internal
 #' @noRd
-.batch_confirmed <- function(x, lookback, baseline_window, period, alpha) {
+.batch_confirmed <- function(x, lookback, baseline_window, period, alpha,
+                             axis = "report") {
   screened <- suppressWarnings(batch_test(
     x, lookback = lookback, baseline_window = baseline_window,
-    period = period, alpha = alpha
+    period = period, alpha = alpha, axis = axis
   ))
   confirmed <- screened[screened$batch %in% TRUE, c("report_date", "stratum"), drop = FALSE]
   names(confirmed)[match("stratum", names(confirmed))] <- ".stratum"
@@ -61,9 +63,9 @@
 #' @keywords internal
 #' @noRd
 .conservation_prep <- function(x, lookback = 7L, baseline_window = NULL,
-                               period = NULL, alpha = 0.05) {
-  reg       <- .batch_detrended(x, as.integer(lookback), baseline_window, period)
-  confirmed <- .batch_confirmed(x, as.integer(lookback), baseline_window, period, alpha)
+                               period = NULL, alpha = 0.05, axis = "report") {
+  reg       <- .batch_detrended(x, as.integer(lookback), baseline_window, period, axis)
+  confirmed <- .batch_confirmed(x, as.integer(lookback), baseline_window, period, alpha, axis)
   list(
     reg        = reg,
     flagged    = dplyr::semi_join(reg, confirmed, by = c("report_date", ".stratum")),
