@@ -1,3 +1,110 @@
+# tbl.now 0.20.0
+
+## Bugs found by the new engine test suite
+
+Every one of these was found by writing the tests, not before:
+
+* **`count-cumulative` data failed on `diseasenowcasting` for want of a
+  confirmation process.** `diseasenowcasting::nowcast()` auto-detects cumulative
+  data and switches to the signed-increment Skellam / SkNB likelihood, but that
+  likelihood needs a `confirmation_process()` -- the retraction side of a stream
+  that can revise **down** -- and `model()`'s default is `no_confirmation()`.
+  Without one the fit reports "Joint fit failed to converge for all init
+  attempts". `run_nowcast()` now attaches one (with the package's own
+  data-informed prior on `p`, which reduces to the ordinary count model at
+  `p = 1`) when the data are cumulative and you passed no `model` of your own.
+
+  De-accumulating to incidence first would also "work", and is wrong: it
+  discards the downward revisions the cumulative likelihood exists to model.
+* **A censored report's window started before its own event date.** For
+  `is_censored` rows, `.delay_censoring_windows()` bounded the secondary window
+  below by the *earliest event in the data* rather than by that row's event, so
+  every censored row implied a possibly-negative delay, and the zero-width guard
+  pushed one strictly negative. \pkg{epidist} refuses it outright ("Assertion on
+  `data$stime_lwr` failed: not >= 0") and `EpiNow2::estimate_dist()` would have
+  fitted a delay distribution with mass below zero. The window is now
+  `[event_date, report_date]`, and the zero-width guard widens **upward**.
+* **`as_tbl_now(x, verbose = )` failed on two classes.**
+  `as_tbl_now.tbl_now_triangle_list()` and
+  `as_tbl_now.tbl_now_epinow2_snapshots()` passed `verbose` both explicitly and
+  through `...`: "formal argument 'verbose' matched by multiple actual
+  arguments". Both now default it into the dots, so the caller still wins.
+* **`verbose = FALSE` was suppressing warnings, not just chatter.**
+  `.quietly_if()` wrapped every backend in `suppressWarnings()`, which hid
+  exactly the messages that say what the model actually saw -- strata pooled, a
+  censoring flag collapsed, covariates dropped. It now suppresses **messages
+  only**. This is the same failure mode DEVELOPMENT_SKILL section 9 records for
+  `run_engine()`.
+* **`diseasenowcasting` and `NobBS` were pooling multi-column strata
+  needlessly.** `diseasenowcasting` models any number of strata and labels each
+  combination `"F|N"`; `tbl.now` only ever read the one-column case and pooled
+  otherwise. `NobBS.strat()` takes one column, so several are now joined into
+  their interaction and split back apart. Both take **any** number of strata,
+  and `?run_nowcast`'s table says so.
+
+## Covariates and censoring are no longer dropped in silence
+
+* `tbl_now_to_baselinenowcast()` (matrix and triangle formats),
+  `tbl_now_to_epinowcast()` and `tbl_now_to_EpiNow2()` now **warn** when declared
+  covariates cannot be carried, naming them and saying what to do instead.
+  Materialised temporal-effect columns count as covariates: they are the case
+  where somebody asked for an effect and would otherwise never learn it was
+  ignored.
+* The censoring collapse already warned; it is now *reachable* through
+  `run_nowcast(verbose = FALSE)` because of the `.quietly_if()` fix above.
+
+## `nowcast_truth()` removed
+
+Dropped entirely rather than kept internal. It was `get_latest_reported_cases()`
+reshaped. `score_nowcast()` and `as_scoringutils()` take the `tbl_now` itself as
+`truth`.
+
+## `covidat` removed
+
+`covid_us` is kept: it is the only shipped dataset that actually exhibits
+backlog dumps, which `vignette("batch-reporting")` is about. Measured against a
+15-day rolling baseline, `covid_us` has 21 report days above 2x and 5 above 3x;
+`covid_colombia` has one above 2x and none above 3x.
+
+## New tests
+
+All `skip_on_cran()`, all on **synthetic fixtures** built by
+`tests/testthat/helper-engines.R` rather than on shipped data, so one axis can be
+varied at a time:
+
+* `test-engines-matrix.R` -- 24 real fits per fast engine
+  ({0,2 covariates} x {0,2 strata} x {days, weeks} x the three data types), plus
+  numeric-grid refusals, weekly-grid preservation, strata labelling for 0/1/2
+  columns, counts-are-cases, and `run_nowcast()` against the hand-written call.
+* `test-engines-covariates.R` -- used, or complained about, per converter.
+* `test-engines-censoring.R` -- used, or announced, per converter.
+* `test-converter-roundtrip-all.R` -- a registry of every `tbl_now_to_*()` shape
+  and whether `as_tbl_now()` brings it back; **fails when a converter is missing
+  from it**.
+* `test-coercion-methods.R` -- every converter must expose the target package's
+  own coercion generic (`as_reporting_triangle()`, `as_tsibble()`, ...) as a thin
+  wrapper, or record why that package has none. It re-checks the "has none"
+  claims against the installed package, so we find out if one gains a verb.
+
+## Articles
+
+* `vignette("nowcasting-models")`: **EpiNow2 is now a two-step fit.** Given only
+  a reporting delay it does not nowcast at all -- its median stayed flat and sat
+  below the already-reported count. `delays` says how infections become reports;
+  it does not say the newest days are incomplete. Only `truncation` does, and
+  that is what the report dimension of a `tbl_now` measures. Step 1 fits it with
+  `estimate_truncation()`, step 2 passes it as `trunc_opts()`. Over the last
+  seven days -- about 50% complete -- the fit now sits below the reported count
+  on 4 of 21 stratum-days instead of most of them.
+* `vignette("ensemble-nowcasting")`: the three-epidemic comparison is removed;
+  the article is now about how to use ensembles.
+
+## DEVELOPMENT_SKILL
+
+* A pre-flight grep before writing any new function, with the two questions that
+  decide whether it should exist, and the two times this package got it wrong.
+* The target package's own coercion verb is now part of "writing a converter".
+
 # tbl.now 0.19.0
 
 ## Converters no longer make you aggregate first

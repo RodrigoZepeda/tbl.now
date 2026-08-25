@@ -23,7 +23,13 @@
   if (isTRUE(verbose)) {
     return(force(expr))
   }
-  suppressMessages(suppressWarnings(force(expr)))
+  # MESSAGES only. Warnings are not chatter: the converters use them to say that
+  # strata were pooled, a censoring flag was collapsed or declared covariates
+  # were dropped -- each of which changes what the model saw. Suppressing those
+  # is how a fit comes back looking fine while answering a different question,
+  # which is the same failure `run_engine()` in `data-raw/nowcast_comparison.R`
+  # is warned about in DEVELOPMENT_SKILL section 9.
+  suppressMessages(force(expr))
 }
 
 #' Build the tidy draws frame from a `[draws x time]` matrix
@@ -75,16 +81,45 @@ nowcast_fit.diseasenowcasting <- function(method, x, ...,
                                           quantile_levels = nowcast_quantile_levels(),
                                           verbose = TRUE) {
   .need_pkg("diseasenowcasting")
-  # diseasenowcasting was built around `tbl_now`, so it reads the strata,
-  # covariates and temporal effects straight off the object: no conversion.
+
+  # diseasenowcasting was built around `tbl_now`, so it reads the data type,
+  # strata, covariates and temporal effects straight off the object: NO
+  # conversion, and in particular no de-accumulation. It auto-detects
+  # `count-cumulative` via `get_data_type()` and switches to the
+  # signed-increment Skellam / SkNB likelihood, which models the running total
+  # directly -- including downward revisions, which de-accumulating would
+  # destroy.
   #
-  # Looked up at run time rather than written `diseasenowcasting::nowcast()`.
-  # The package is GitHub-only and sits in no repository CRAN can resolve, so
-  # declaring it in `Suggests` makes `R CMD check --as-cran` report a dependency
-  # it cannot find, while NOT declaring it makes a literal `::` an undeclared
-  # import. `.need_pkg()` above has already established that it is installed.
+  # What that likelihood needs is a CONFIRMATION PROCESS: the retraction side of
+  # a stream that can revise down. `model()`'s default is `no_confirmation()`,
+  # and with it a cumulative fit reports "Joint fit failed to converge for all
+  # init attempts". So supply one when the data are cumulative and the caller
+  # gave no `model` of their own, using the package's own data-informed default
+  # prior on `p` -- which reduces to the ordinary count model at `p = 1`.
+  #
+  # Everything is looked up at run time rather than written
+  # `diseasenowcasting::`. The package is GitHub-only and sits in no repository
+  # CRAN can resolve, so declaring it in `Suggests` makes
+  # `R CMD check --as-cran` report a dependency it cannot find, while NOT
+  # declaring it makes a literal `::` an undeclared import. `.need_pkg()` above
+  # has already established that it is installed.
+  arguments <- list(...)
+  if (identical(get_data_type(x), "count-cumulative") && is.null(arguments$model)) {
+    build_model <- getExportedValue("diseasenowcasting", "model")
+    confirmation <- getExportedValue("diseasenowcasting", "confirmation_process")
+    arguments$model <- build_model(confirmation = confirmation())
+    if (isTRUE(verbose)) {
+      cli::cli_inform(c(
+        "i" = "{.val count-cumulative} data: adding a
+               {.fn diseasenowcasting::confirmation_process} so the
+               signed-increment likelihood can model downward revisions.",
+        "i" = "Pass {.arg model} yourself to override it."
+      ))
+    }
+  }
+
   nowcast <- getExportedValue("diseasenowcasting", "nowcast")
-  .quietly_if(nowcast(x, ...), verbose)
+  .quietly_if(do.call(nowcast, c(list(x), arguments)), verbose)
 }
 
 #' @rdname nowcast_tidy
@@ -99,23 +134,33 @@ nowcast_tidy.diseasenowcasting <- function(method, fit, x, ..., quantile_levels)
   strata_draws <- S7::prop(prediction, "strata_draws")
 
   # The stratified draws come back as a [draws x time x stratum] array indexed by
-  # `strata_levels`. That collapses several strata columns into one label, so it
-  # can only be mapped back when a single column was declared.
-  stratified <- length(strata_cols) == 1 &&
+  # `strata_levels`. \pkg{diseasenowcasting} models ANY number of strata columns
+  # and labels each combination by joining the values with "|" -- one column
+  # gives "F", two give "F|N" -- so the label splits back into the declared
+  # columns.
+  stratified <- length(strata_cols) > 0 &&
     !is.null(strata_draws) &&
     length(dim(strata_draws)) == 3 &&
     length(strata_levels) == dim(strata_draws)[3] &&
     !identical(strata_levels, "all")
 
-  if (stratified) {
+  strata_values <- if (stratified) {
+    .split_strata_labels(strata_levels, strata_cols, sep = "|")
+  }
+
+  if (stratified && !is.null(strata_values)) {
     n_draws <- dim(strata_draws)[1]
     n_times <- dim(strata_draws)[2]
     draws <- dplyr::tibble(
       !!event_col := rep(rep(event_dates, each = n_draws), times = length(strata_levels)),
-      !!strata_cols := rep(strata_levels, each = n_draws * n_times),
       .draw = rep(seq_len(n_draws), times = n_times * length(strata_levels)),
       .value = as.vector(strata_draws)
     )
+    # One label per stratum, each repeated over every (draw, time) cell -- the
+    # order `as.vector()` unrolls the array in.
+    for (column in strata_cols) {
+      draws[[column]] <- rep(strata_values[[column]], each = n_draws * n_times)
+    }
     return(list(predictions = NULL, draws = draws))
   }
 
@@ -308,12 +353,30 @@ nowcast_fit.NobBS <- function(method, x, ..., specs = list(),
   )
 
   strata_cols <- get_strata(x) %||% character(0)
-  if (length(strata_cols) == 1) {
-    arguments$strata <- strata_cols
+
+  if (length(strata_cols) > 0) {
+    # `NobBS.strat()` takes ONE column name. Several strata are the interaction
+    # of those columns -- which is exactly what "nowcast each combination
+    # separately" means -- so they are joined into one label here and split back
+    # apart in `nowcast_tidy.NobBS()`.
+    if (length(strata_cols) > 1) {
+      labels <- .epinow2_region(linelist, strata_cols)
+      if (any(grepl(" | ", unlist(linelist[strata_cols]), fixed = TRUE))) {
+        cli::cli_abort(c(
+          "Cannot combine strata {.val {strata_cols}} for {.pkg NobBS}.",
+          "i" = "They are joined with {.val { | }} into the single column
+                 {.fn NobBS::NobBS.strat} accepts, and a value already contains
+                 that separator.",
+          "i" = "Nowcast each stratum separately instead."
+        ))
+      }
+      linelist[[".stratum"]] <- labels
+      arguments$data <- linelist
+      arguments$strata <- ".stratum"
+    } else {
+      arguments$strata <- strata_cols
+    }
     return(.quietly_if(do.call(NobBS::NobBS.strat, arguments), verbose))
-  }
-  if (length(strata_cols) > 1) {
-    .warn_pooled_strata(x, "NobBS")
   }
 
   .quietly_if(do.call(NobBS::NobBS, arguments), verbose)
@@ -328,11 +391,24 @@ nowcast_tidy.NobBS <- function(method, fit, x, ..., quantile_levels) {
   estimates <- dplyr::as_tibble(fit$estimates)
 
   # `NobBS.strat()` calls the stratum column `stratum` (and repeats it as
-  # `stratum.1`), so map it back onto the name the `tbl_now` declared.
-  if (length(strata_cols) == 1 && "stratum" %in% colnames(estimates)) {
-    estimates <- estimates |>
-      dplyr::select(-dplyr::any_of("stratum.1")) |>
-      dplyr::rename(!!strata_cols := "stratum")
+  # `stratum.1`), so map it back onto the name(s) the `tbl_now` declared. With
+  # several, the label is the " | "-joined interaction built in `nowcast_fit`.
+  if (length(strata_cols) > 0 && "stratum" %in% colnames(estimates)) {
+    estimates <- dplyr::select(estimates, -dplyr::any_of("stratum.1"))
+    if (length(strata_cols) == 1) {
+      estimates <- dplyr::rename(estimates, !!strata_cols := "stratum")
+    } else {
+      values <- .split_strata_labels(estimates$stratum, strata_cols)
+      if (is.null(values)) {
+        cli::cli_abort(
+          "Cannot split {.pkg NobBS}'s stratum labels back into
+           {.val {strata_cols}}."
+        )
+      }
+      estimates <- dplyr::bind_cols(
+        dplyr::select(estimates, -"stratum"), values
+      )
+    }
   }
 
   strata_kept <- intersect(strata_cols, colnames(estimates))
@@ -365,32 +441,33 @@ nowcast_tidy.NobBS <- function(method, fit, x, ..., quantile_levels) {
 # So these backends go through `tidy()` and `.tidy_to_predictions()` maps the
 # standard frame into the tidy quantile shape.
 
-#' Recover the strata columns from `" | "`-pasted `tidy()` stratum labels
+#' Split a joined stratum label back into its columns
 #'
-#' `tidy()` reports one `stratum` string per row, pasting several stratifying
-#' columns `" | "`-separated (`.epinowcast_stratum()`, `.epinow2_region()` and
-#' the `triangle_list` names all use that convention). A `tbl_nowcast` keeps the
-#' strata as their own columns, so the label has to be split back apart.
+#' Backends label a stratum by joining the declared values with a separator --
+#' \pkg{diseasenowcasting} uses `"|"`, this package's own `tidy()` methods and
+#' `NobBS.strat()` wrapper use `" | "`. Splitting is only safe when every label
+#' yields exactly as many pieces as there are columns; a stratum VALUE
+#' containing the separator breaks that, and silently mis-assigning strata is
+#' worse than refusing.
 #'
-#' @param labels Character vector of stratum labels.
-#' @param strata_cols Character vector of the declared strata column names.
+#' This is the ONE splitter. `.epinow2_region()` is its inverse.
 #'
-#' @return A `tibble` with one column per stratum, or `NULL` when there are no
-#'   strata.
+#' @param labels Character vector of joined labels.
+#' @param strata_cols Character vector of declared stratum column names.
+#' @param sep The separator to split on, matched literally.
+#'
+#' @return A `tibble` with one column per stratum, `NULL` when there are no
+#'   strata or when the labels cannot be split unambiguously.
 #'
 #' @keywords internal
 #' @noRd
-.strata_from_labels <- function(labels, strata_cols) {
+.split_strata_labels <- function(labels, strata_cols, sep = " | ") {
   if (length(strata_cols) == 0) {
     return(NULL)
   }
-  parts <- strsplit(as.character(labels), " | ", fixed = TRUE)
+  parts <- strsplit(as.character(labels), sep, fixed = TRUE)
   if (any(lengths(parts) != length(strata_cols))) {
-    cli::cli_abort(c(
-      "Cannot map the stratum labels back onto {.val {strata_cols}}.",
-      "i" = "Labels are {.val { ' | '}}-separated, so a stratum value \\
-             containing that separator cannot be split back apart."
-    ))
+    return(NULL)
   }
   values <- lapply(seq_along(strata_cols), function(i) {
     vapply(parts, function(p) p[[i]], character(1))
@@ -435,7 +512,14 @@ nowcast_tidy.NobBS <- function(method, fit, x, ..., quantile_levels) {
     .lower = as.numeric(tidied$conf.low),
     .upper = as.numeric(tidied$conf.high)
   )
-  strata_values <- .strata_from_labels(tidied$stratum, strata_cols)
+  strata_values <- .split_strata_labels(tidied$stratum, strata_cols)
+  if (length(strata_cols) > 0 && is.null(strata_values)) {
+    cli::cli_abort(c(
+      "Cannot map {.pkg {engine}}'s stratum labels back onto {.val {strata_cols}}.",
+      "i" = "Labels are {.val { | }}-separated, so a stratum value containing
+             that separator cannot be split back apart."
+    ))
+  }
   if (!is.null(strata_values)) base <- dplyr::bind_cols(base, strata_values)
 
   # The median is always available; the tails only when the engine said how wide

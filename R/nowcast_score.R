@@ -58,38 +58,29 @@
   observed >= lower && observed <= upper
 }
 
-#' The final observed counts of a `tbl_now`
+#' Everything eventually reported for each event date
 #'
-#' The "truth" a nowcast is scored against: everything that was eventually
-#' reported for each event date.
+#' The "truth" a nowcast is scored against. This is [get_latest_reported_cases()]
+#' with the bookkeeping the scoring code needs and the getter deliberately does
+#' not do: the `tbl_now` class and the report-date columns are dropped, any
+#' column that is neither the event date nor a requested stratum is summed away,
+#' and the count is renamed `.observed`.
 #'
-#' This is [get_latest_reported_cases()] reshaped for scoring -- the values are
-#' identical. What it adds is the bookkeeping the scoring code wants and the
-#' getter deliberately does not do: the `tbl_now` class and the report-date
-#' columns are dropped, any column that is neither the event date nor a
-#' requested stratum is summed away, and the count is renamed `.observed` so
-#' downstream code does not have to know what the source called it.
+#' It is **not** a second public way of asking the same question -- use
+#' [get_latest_reported_cases()] for that. `score_nowcast()` and
+#' `as_scoringutils()` take the `tbl_now` itself as `truth` and call this.
 #'
-#' Internal since 0.19.0. It was exported, but a second public name for
-#' `get_latest_reported_cases()` is a second thing to learn for no gain --
-#' [score_nowcast()] and [as_scoringutils()] now take the `tbl_now` itself as
-#' `truth` and call this for you.
-#'
-#' Pass the *full* object here, not the truncated snapshot the nowcast was
-#' fitted on: the point of the comparison is that the truth contains reports the
-#' model had not seen.
-#'
-#' @param x A `tbl_now` object.
-#' @param strata Character vector of strata columns to keep. Defaults to the
-#'   object's declared strata.
+#' @param x A `tbl_now` object holding the *full* data, including the reports
+#'   that arrived after the nowcast's `now`.
+#' @param strata Character vector of strata columns to keep.
 #'
 #' @return A `tibble` with the event-date column, the strata columns and
 #'   `.observed`.
 #'
 #' @keywords internal
 #' @noRd
-nowcast_truth <- function(x, strata = get_strata(x)) {
-  .assert_tbl_now(x, "nowcast_truth")
+.eventual_counts <- function(x, strata = get_strata(x)) {
+  .assert_tbl_now(x, "truth")
 
   event_col <- get_event_date(x)
   strata <- intersect(strata %||% character(0), colnames(x))
@@ -129,7 +120,7 @@ nowcast_truth <- function(x, strata = get_strata(x)) {
       ))
     }
     return(list(
-      truth = nowcast_truth(x@data, strata = x@strata), observed_col = ".observed"
+      truth = .eventual_counts(x@data, strata = x@strata), observed_col = ".observed"
     ))
   }
 
@@ -137,7 +128,7 @@ nowcast_truth <- function(x, strata = get_strata(x)) {
   # so collapse it here rather than making the caller do it.
   if (is_tbl_now(truth)) {
     return(list(
-      truth = nowcast_truth(truth, strata = x@strata), observed_col = ".observed"
+      truth = .eventual_counts(truth, strata = x@strata), observed_col = ".observed"
     ))
   }
 
@@ -340,7 +331,7 @@ nowcast_backtest <- function(x, methods, now_dates = NULL, ...,
     cli::cli_abort("No usable {.arg now_dates}: the object has too little history to backtest.")
   }
 
-  truth <- nowcast_truth(x)
+  truth <- .eventual_counts(x)
   dots <- list(...)
 
   results <- list()

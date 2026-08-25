@@ -204,7 +204,7 @@ run_epidemic <- function(epidemic) {
 
   full <- config$build()
   now <- config$now
-  truth <- tbl.now:::nowcast_truth(full)
+  truth <- tbl.now:::.eventual_counts(full)
 
   snapshot <- full |>
     filter(.data[[get_report_date(full)]] <= now) |>
@@ -399,7 +399,7 @@ capture_display <- function(epidemic) {
     baseline_draws = tibble::as_tibble(baseline, type = "draws"),
     ensemble_print = printed(ensemble),
     ensemble_tidy = tidy(ensemble),
-    truth = tbl.now:::nowcast_truth(full),
+    truth = tbl.now:::.eventual_counts(full),
     now = config$now,
     # The fan chart is redrawn in the article from these, so the plot on the page
     # is the plot of the cached fit rather than a picture of a different one.

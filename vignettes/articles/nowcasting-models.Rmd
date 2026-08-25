@@ -938,42 +938,75 @@ covid_en2 <- covid_now |>
 head(covid_en2)
 ```
 
+EpiNow2 needs **two** things fitted before it can nowcast, and they are not the
+same thing:
+
+* **`delays`** convolves infections into reports. The infection-to-onset part of
+  it is not in our data at all, so the incubation period stays EpiNow2's shipped
+  example.
+* **`truncation`** is the right-truncation correction — *the nowcast itself*.
+  That **is** what the report dimension of a `tbl_now` measures, and
+  `estimate_truncation()` fits it from snapshots of the series as it looked at
+  successive report dates. This is the one EpiNow2 model that uses the report
+  axis, which is why `tbl_now_to_EpiNow2()` has a target for it.
+
+Its default is `trunc_opts()` = `Fixed(0)`: **no truncation, so no nowcast**.
+So this is a two-step fit.
+
 ```{r epinow2-fit, eval=run_models && has("EpiNow2")}
 library(EpiNow2)
 
+# STEP 1 --- fit the truncation from the report dimension.
+covid_snaps <- covid_now |>
+  filter(notification_date >= cutoff - 60) |>
+  tbl_now_to_EpiNow2(
+    target = "estimate_truncation", snapshots = 5, verbose = FALSE, quiet = TRUE
+  )
+
+truncation_fit <- estimate_truncation(
+  covid_snaps,
+  stan = stan_opts(samples = 500, warmup = 500, chains = 2)
+)
+
+# `$dist` is defunct; the accessor is `get_parameters()`.
+fitted_truncation <- get_parameters(truncation_fit)[["truncation"]]
+
+# STEP 2 --- nowcast with it.
 epinow2_fit <- estimate_infections(
   covid_en2,
   generation_time = gt_opts(example_generation_time),
-  delays          = delay_opts(example_incubation_period + example_reporting_delay),
+  delays          = delay_opts(example_incubation_period),
+  truncation      = trunc_opts(fitted_truncation),
   rt              = rt_opts(prior = LogNormal(mean = 2, sd = 0.1)),
   stan            = stan_opts(samples = 500, warmup = 250, chains = 2)
 )
 ```
 
-Two things about that call, so the numbers below are read for what they are.
-**The delay distributions are EpiNow2's own shipped examples** — COVID-in-the-UK
-priors — not distributions fitted to these Colombian data. That is the normal
-footing for a comparison of machinery rather than of estimates, but it does mean
-the EpiNow2 curve answers a slightly different question from the engines that
-learn their delay from the reporting triangle in front of them.
+::: {.alert .alert-warning}
+**Without step 1, EpiNow2 does not nowcast at all.** Given only a reporting
+delay — whether EpiNow2's shipped UK one or one fitted from these data with
+`estimate_dist()` — its median stayed roughly flat over the last two weeks and
+sat *below* what had already been reported. `delays` tells the model how
+infections turn into reports; it does not tell it that the newest days are
+**incomplete**. Only `truncation` does.
+
+With it, over the last seven days — where these data are about **50% complete** —
+the fit sits below the already-reported count on 4 of 21 stratum-days instead of
+most of them, and the last day is nowcast at 8,090 against 4,261 reported and
+12,521 eventual.
+
+It still dips below the observed value on about half of the *older* days, and
+that is not a nowcasting failure: those days are ~92% complete, and a model that
+fits a smooth infection curve will fall below a noisy daily count roughly half
+the time. That is EpiNow2 doing what it is for.
+:::
+
+**The generation time and incubation period are still EpiNow2's shipped
+examples**, and deliberately so: both are properties of transmission rather than
+of reporting, and no amount of reporting data identifies them. What the report
+dimension *does* identify is the truncation, and that is what step 1 fits.
 **Sampling is also lighter than the default** (500 draws, 250 warmup, 2 chains),
 because this is much the slowest engine here.
-
-::: {.alert .alert-warning}
-**And it shows, on this window.** Look at the EpiNow2 figure below and compare it
-with `baselinenowcast`'s: the other engines pull the last two weeks up towards
-the truth line, while EpiNow2's median stays roughly flat and ends up *below*
-what had already been reported on several days. Its interval still covers the
-data, so the fit is not broken — it is doing what it was asked to do, which is
-to infer an infection process using a UK reporting delay and a Gaussian process
-that smooths sharp turns. Neither assumption fits a Colombian third wave that
-doubled in three weeks.
-
-This is worth seeing rather than hiding, because it is the general lesson: a
-model is only as good as the delay you give it. Fitting the delay from these data
-is one `estimate_dist()` call away — see below — and that is what you should do
-before using EpiNow2 for a real nowcast.
-:::
 
 The predictions come out with `tidy()`, in the same shape as every other engine
 here:
@@ -992,9 +1025,10 @@ show_tidy("EpiNow2")
 
 ### The report dimension: `estimate_truncation()`
 
-This is the one EpiNow2 model that uses the **report** dimension a `tbl_now`
-exists to carry. It takes a list of snapshots — the series as it looked at each
-of several report dates — which is exactly what the object already knows:
+This is step 1 above, looked at on its own — the one EpiNow2 model that uses the
+**report** dimension a `tbl_now` exists to carry. It takes a list of snapshots —
+the series as it looked at each of several report dates — which is exactly what
+the object already knows:
 
 ```{r epinow2-trunc, eval=has("EpiNow2")}
 covid_snapshots <- covid_now |>
@@ -1005,10 +1039,6 @@ covid_snapshots <- covid_now |>
   )
 
 covid_snapshots
-```
-
-```{r epinow2-trunc-fit, eval=run_models && has("EpiNow2")}
-truncation_fit <- estimate_truncation(covid_snapshots)
 ```
 
 Because the snapshots carry their report dates, this is the one EpiNow2 shape
@@ -1022,9 +1052,9 @@ as_tbl_now(covid_snapshots)
 ### The delay distribution: `estimate_dist()`
 
 `estimate_dist()` (new in EpiNow2 1.9.0) estimates a reporting-delay
-distribution, accounting for double interval censoring and right truncation. It
-takes the same schema as \pkg{epidist}, so the two are directly comparable on
-the same object:
+distribution, accounting for double interval
+censoring and right truncation. It takes the same schema as \pkg{epidist}, so
+the two are directly comparable on the same object:
 
 ```{r epinow2-dist, eval=has("EpiNow2")}
 covid_dist <- covid_now |>
@@ -1034,12 +1064,11 @@ covid_dist <- covid_now |>
 head(covid_dist)
 ```
 
-```{r epinow2-dist-fit, eval=run_models && has("EpiNow2")}
-dist_fit <- estimate_dist(covid_dist, dist = "lognormal")
-```
-
-Like `tidy.epidist_fit()`, this returns a **delay-shaped** table — one row per
-parameter, plus the distribution's `mean` and `sd`:
+Unlike the other targets, this one is **not** a nowcast and it is **not** what
+corrects the recent days — `estimate_truncation()` above does that. It answers a
+different question: how long reporting takes. Like `tidy.epidist_fit()`, it
+returns a **delay-shaped** table — one row per parameter, plus the
+distribution's `mean` and `sd`:
 
 ```{r epinow2-dist-tidy-1, eval=FALSE}
 tidy(dist_fit)
@@ -1119,15 +1148,18 @@ if (nrow(problems) > 0) {
 Two of these datasets needed fixing before they would convert at all, and both
 problems are ones you will meet in your own data:
 
-* **`mpoxdat` has a `race` column that must be declared.** Left as an undeclared
-  extra column, the `(event_date, report_date)` pair is not unique — there is one
-  row per race — and every target that needs a unique cell rejects it: a
-  reporting triangle reported *832 duplicate pairs*, and `tsibble` refused for
-  the same reason. `strata = race` fixes both. If a column genuinely is not a
-  stratum, aggregate it away with `to_count()` instead.
-* **`covidat` has rows registered *before* symptom onset.** A negative delay is
-  not a delay, and `epidist` rejects it outright rather than guess. Filter them
-  before converting.
+* **`mpoxdat` has a `race` column, and `covid_colombia` a `sex` column, that the
+  object is not told about.** Each leaves one row per level in every
+  `(event_date, report_date)` cell, and a reporting triangle or a `tsibble` key
+  has exactly one slot per cell. Since 0.19.0 the converters **pool undeclared
+  columns for you**, so this no longer stops a conversion — but it is still a
+  decision you are making: declare the column (`strata = race`) to model the
+  levels separately, or leave it undeclared to model their sum. It used to be an
+  error (*832 duplicate pairs* from `mpoxdat`), so older code that aggregates
+  first is doing by hand what the converter now does.
+* **`hai_bucaramanga` has rows received *before* the specimen was taken.** A
+  negative delay is not a delay, and `epidist` rejects it outright rather than
+  guess. Filter them before converting.
 
 A third needed fixing too, and it is the one most likely to catch you out:
 

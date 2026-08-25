@@ -288,13 +288,37 @@ EPINOW2_STAN <- EpiNow2::stan_opts(samples = 500, warmup = 250, chains = 2)
 EPINOW2_SEED <- 20260824L
 
 fit_epinow2 <- function(x) {
+  # EpiNow2 needs TWO things fitted before it can nowcast, and they are not the
+  # same thing:
+  #
+  #   `delays`    convolves infections into reports. Our data cannot identify
+  #               the infection-to-onset part of it at all, so the incubation
+  #               period stays EpiNow2's shipped example.
+  #   `truncation` is the RIGHT-TRUNCATION correction -- the nowcast itself.
+  #               That IS what the report dimension of a `tbl_now` measures, and
+  #               `estimate_truncation()` fits it from snapshots of the series as
+  #               it looked at successive report dates.
+  #
+  # Give it only `delays` and it barely corrects the recent days at all: with
+  # the shipped UK delay it ended up BELOW what had already been reported on 54
+  # of 90 stratum-days, and with a delay fitted here, on 44.
+  snapshots <- tbl_now_to_EpiNow2(
+    recent(x), target = "estimate_truncation", snapshots = 5,
+    verbose = FALSE, quiet = TRUE
+  )
+  truncation_fit <- EpiNow2::estimate_truncation(
+    snapshots,
+    stan = EpiNow2::stan_opts(samples = 500, warmup = 500, chains = 2)
+  )
+  # `$dist` is defunct; the accessor is `get_parameters()`.
+  fitted_truncation <- EpiNow2::get_parameters(truncation_fit)[["truncation"]]
+
   series <- tbl_now_to_EpiNow2(recent(x), verbose = FALSE, quiet = TRUE)
   fit <- EpiNow2::estimate_infections(
     series,
     generation_time = EpiNow2::gt_opts(EpiNow2::example_generation_time),
-    delays          = EpiNow2::delay_opts(
-      EpiNow2::example_incubation_period + EpiNow2::example_reporting_delay
-    ),
+    delays          = EpiNow2::delay_opts(EpiNow2::example_incubation_period),
+    truncation      = EpiNow2::trunc_opts(fitted_truncation),
     rt   = EpiNow2::rt_opts(prior = EpiNow2::LogNormal(mean = 2, sd = 0.1)),
     stan = EPINOW2_STAN
   )
@@ -538,9 +562,10 @@ if (!is.null(nobbs_q)) {
 }
 
 # -- EpiNow2's delay fit, which the article shows next to epidist's -------------
-# `estimate_dist()` is a different EpiNow2 entry point from the one fitted above,
-# and returns a DELAY-shaped tidy table rather than a nowcast, so it gets its own
-# display slot.
+# This is STEP 1 of `fit_epinow2()` refitted on its own, because the article
+# shows it as its own section. It MUST use the same settings as the step inside
+# the nowcast (`max_value = MAX_DELAY`), or the article would display parameters
+# that are not the ones its nowcast used.
 if ("EpiNow2" %in% selected) {
 message("== EpiNow2 estimate_dist (for display) ==")
 dist_fit <- tryCatch({
@@ -550,7 +575,10 @@ dist_fit <- tryCatch({
     verbose = FALSE, quiet = TRUE
   )
   suppressWarnings(suppressMessages(
-    EpiNow2::estimate_dist(dat, dist = "lognormal", stan = EPINOW2_STAN)
+    EpiNow2::estimate_dist(
+      dat, dist = "lognormal", max_value = MAX_DELAY,
+      stan = EpiNow2::stan_opts(samples = 500, warmup = 500, chains = 2)
+    )
   ))
 }, error = function(e) {
   message("  FAILED: ", conditionMessage(e))

@@ -517,9 +517,12 @@
 #'
 #' The primary event spans `[event_date, event_date + w]`, where `w` matches the
 #' object's time unit. The secondary spans `[report_date, report_date + w]`
-#' normally, and the left-censored `[origin, report_date]` for a row flagged by
-#' `is_censored` -- the `tbl_now` convention that a censored report is only known
-#' to lie in `[0, report_date]`, with `origin` the earliest event date.
+#' normally, and the left-censored `[event_date, report_date]` for a row flagged
+#' by `is_censored` -- the `tbl_now` convention that a censored report is known
+#' only to have happened at or before its report date. The lower bound is that
+#' row's OWN event: a delay cannot be negative, and bounding by the earliest
+#' event in the data (as this did before 0.20.0) starts the window before the
+#' case existed.
 #'
 #' @param x A `tbl_now`.
 #' @param censoring_window Optional width in days; `NULL` derives it from
@@ -541,9 +544,6 @@
   } else {
     censoring_window
   }
-  # Delay time 0 is the earliest primary (event) date.
-  origin <- min(obs[[event_col]], na.rm = TRUE)
-
   censored <- if (!is.null(censored_col)) {
     as.logical(obs[[censored_col]])
   } else {
@@ -554,7 +554,15 @@
   out <- dplyr::tibble(
     pdate_lwr = obs[[event_col]],
     pdate_upr = obs[[event_col]] + win,
-    sdate_lwr = dplyr::if_else(censored, origin, obs[[report_col]]),
+    # A censored report is known only to have happened at or before its report
+    # date -- so the window is [event_date, report_date]. It is bounded BELOW by
+    # the event, not by the earliest event in the data: a delay cannot be
+    # negative, and a global origin makes the window start before the case
+    # existed for every row except the very first. \pkg{epidist} rejects that
+    # outright ("Assertion on 'data$stime_lwr' failed: not >= 0"), and
+    # `EpiNow2::estimate_dist()` would fit a delay distribution with mass below
+    # zero.
+    sdate_lwr = dplyr::if_else(censored, obs[[event_col]], obs[[report_col]]),
     sdate_upr = dplyr::if_else(censored, obs[[report_col]], obs[[report_col]] + win)
   )
 
@@ -568,10 +576,13 @@
   # When observation STOPPED is a different quantity, and it is `obs_date` --
   # handled by the callers, which set it to the end of the `now` period.
 
-  # Both packages require strictly positive widths; a censored report sitting on
-  # the origin would collapse to zero width.
+  # Both packages require strictly positive widths, and a censored report in the
+  # same period as its event collapses to zero. Widen UPWARD: the report is then
+  # known to lie somewhere in that period, `[event, event + win)`. Widening
+  # downward instead (the old behaviour) pushed the lower bound before the event
+  # and produced the negative delays described above.
   collapsed <- out$sdate_upr <= out$sdate_lwr
-  out$sdate_lwr[collapsed] <- out$sdate_upr[collapsed] - win
+  out$sdate_upr[collapsed] <- out$sdate_lwr[collapsed] + win
 
   list(data = out, width = win, censored = censored)
 }
@@ -897,6 +908,53 @@
     ))
   }
   out
+}
+
+#' Warn that declared covariates did not survive a conversion
+#'
+#' A covariate is a promise: the user declared it because they want the model to
+#' use it. Several targets have nowhere to put one -- a reporting triangle has
+#' only (event, delay) cells, and \pkg{EpiNow2}'s series is `date`/`confirm` --
+#' so the column is dropped. Silently dropping it means the user believes a
+#' covariate is in the model when it is not, which is the worst of the three
+#' possible outcomes.
+#'
+#' Materialised temporal-effect columns count as covariates here: they are
+#' exactly the case where somebody has asked for an effect and would otherwise
+#' never learn it was ignored.
+#'
+#' @param x A `tbl_now` object.
+#' @param fn Name of the calling converter, for the message.
+#' @param kept Character vector of covariate columns that DID survive.
+#' @param advice Optional extra bullet: what the user can do instead.
+#'
+#' @return `NULL`, invisibly.
+#'
+#' @keywords internal
+#' @noRd
+.warn_dropped_covariates <- function(x, fn, kept = character(0), advice = NULL) {
+  declared <- c(
+    get_covariates(x) %||% character(0),
+    get_temporal_effect_cols(x) %||% character(0)
+  )
+  dropped <- setdiff(unique(declared), kept)
+  if (length(dropped) == 0) {
+    return(invisible(NULL))
+  }
+
+  message <- c(
+    cli::format_inline(paste0(
+      "{.fn {fn}}: {length(dropped)} declared covariate{?s} ",
+      "({.val {dropped}}) {?is/are} not carried into this format."
+    ))
+  )
+  if (!is.null(advice)) message <- c(message, "i" = advice)
+  message <- c(
+    message,
+    "i" = "The model will not see {cli::qty(length(dropped))}{?it/them}."
+  )
+  cli::cli_warn(message)
+  invisible(NULL)
 }
 
 #' Columns a `tbl_now` carries but was never told about
@@ -1604,9 +1662,11 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'   or `censoring_window` if supplied);
 #' * the secondary event spans `[report_date, report_date + w]` normally, but
 #'   for rows flagged by `is_censored` it is left-censored to
-#'   `[origin, report_date]` (with `origin` the earliest `event_date`, i.e.
+#'   `[event_date, report_date]` (the report is known only to have happened at
+#'   or before its report date, and cannot precede the event, i.e.
 #'   epidist time 0) — encoding the `tbl_now` convention that a censored report
-#'   is only known to lie in `[0, report_date]`.
+#'   is known only to have happened at or before its report date, so the window
+#'   is `[event_date, report_date]`.
 #'
 #' The strata, the covariate columns and any materialised temporal-effect columns
 #' (holidays, Fourier terms, calendar effects; see [compute_temporal_effects()])
@@ -1777,10 +1837,16 @@ tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
   is_censored_col <- NULL
   if (secondary_upper %in% colnames(observations) &&
       primary_upper %in% colnames(observations)) {
-    origin <- min(observations[[primary]], na.rm = TRUE)
     window <- as.numeric(observations[[primary_upper]] - observations[[primary]])
     gap    <- as.numeric(observations[[secondary_upper]] - observations[[secondary]])
-    censored <- (observations[[secondary]] == origin) & (gap > window)
+    # A censored row's secondary window starts at its OWN primary event -- the
+    # earliest a report could have happened -- and runs to the report date, so
+    # it is wider than one observation period. An uncensored row's window is
+    # `[report, report + window)`, which starts later than the event unless the
+    # report landed on the event date itself; that one case is genuinely
+    # ambiguous and is read as uncensored.
+    censored <- (observations[[secondary]] == observations[[primary]]) &
+      (gap > window)
     censored[is.na(censored)] <- FALSE
     if (any(censored)) {
       observations[[secondary]][censored] <- observations[[secondary_upper]][censored]
@@ -2009,6 +2075,13 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
   .assert_tbl_now(x, "tbl_now_to_epinowcast")
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_epinowcast")
   .need_pkg("epinowcast")
+  .warn_dropped_covariates(
+    x, "tbl_now_to_epinowcast",
+    advice = "{.pkg epinowcast} builds its own reference/report metadata
+              ({.val day_of_week}, {.val day}, {.val week}, {.val month}) and
+              does not carry extra columns. Use those in a module formula, e.g.
+              {.code enw_reference(~ 1 + day_of_week, data = pobs)}."
+  )
   .warn_lossy_conversion("epinowcast", quiet)
   # Warn before the cumulative coercion below: `to_count()` re-derives the grid
   # from delay 0, so afterwards the negative rows are simply not there any more.
@@ -2238,6 +2311,15 @@ tbl_now_to_baselinenowcast <- function(x, ...,
   # triangle, which has one slot per cell and nowhere to record a delay that is
   # only an upper bound, so `.tbl_now_collapse_censoring()` has already summed
   # the counts over it.
+  if (!identical(format, "long")) {
+    .warn_dropped_covariates(
+      x, "tbl_now_to_baselinenowcast",
+      advice = "A reporting triangle has only (event date, delay) cells, with
+                nowhere to put a covariate. {.code format = \"long\"} keeps them
+                as columns."
+    )
+  }
+
   extra_cols <- if (format == "long") {
     c(strata_cols, covariate_cols, temporal_cols)
   } else if (format == "triangle_list") {
@@ -2519,6 +2601,14 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
   if (target == "estimate_dist") {
     return(.epinow2_dist_data(x, verbose = verbose))
   }
+
+  .warn_dropped_covariates(
+    x, "tbl_now_to_EpiNow2",
+    advice = "The series targets are {.val date}/{.val confirm} only.
+              {.fn EpiNow2::estimate_infections} takes its covariate-like
+              structure through {.arg gp}, {.arg rt} and {.arg obs}, not through
+              columns."
+  )
 
   .epinow2_series_data(
     x, target = target, snapshots = snapshots, accumulate = accumulate,
@@ -2943,12 +3033,23 @@ as_tbl_now.tbl_now_epinow2_snapshots <- function(object, ...) {
   event_col  <- attr(object, "event_col")
   report_col <- attr(object, "report_col")
 
-  result <- tbl_now_from_EpiNow2(object, ..., verbose = FALSE)
+  # `verbose` goes through `dots`, not alongside `...`: passing both makes
+  # `as_tbl_now(x, verbose = FALSE)` fail with "formal argument 'verbose'
+  # matched by multiple actual arguments". Quiet by default, but the caller
+  # still wins.
+  dots <- list(...)
+  if (is.null(dots$verbose)) dots$verbose <- FALSE
+  result <- do.call(tbl_now_from_EpiNow2, c(list(object), dots))
 
   # Back to the caller's own column names.
   out <- dplyr::as_tibble(result)
   names(out)[names(out) == "reference_date"] <- event_col
   names(out)[names(out) == "report_date"]    <- report_col
+
+  # Same trap again, and this is the one that actually bit: `verbose` fixed in
+  # the list AND present in `list(...)`.
+  rebuild <- dots
+  if (is.null(rebuild$now)) rebuild$now <- attr(object, "now")
 
   do.call(
     tbl_now,
@@ -2958,11 +3059,9 @@ as_tbl_now.tbl_now_epinow2_snapshots <- function(object, ...) {
         event_date  = event_col,
         report_date = report_col,
         case_count  = "count",
-        data_type   = "count-incidence",
-        now         = attr(object, "now"),
-        verbose     = FALSE
+        data_type   = "count-incidence"
       ),
-      list(...)
+      rebuild
     )
   )
 }
@@ -3604,6 +3703,9 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
 
   dots <- list(...)
   if (is.null(dots$now)) dots$now <- attr(object, "now")
+  # Same trap as `as_tbl_now.tbl_now_epinow2_snapshots()`: `verbose` must be
+  # defaulted INTO `dots`, never passed beside them.
+  if (is.null(dots$verbose)) dots$verbose <- FALSE
 
   result <- do.call(
     tbl_now,
@@ -3614,8 +3716,7 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
         report_date = report_col,
         case_count  = "count",
         data_type   = "count-incidence",
-        strata      = if (length(strata_cols) > 0) strata_cols else NULL,
-        verbose     = FALSE
+        strata      = if (length(strata_cols) > 0) strata_cols else NULL
       ),
       dots
     )

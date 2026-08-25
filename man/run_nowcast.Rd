@@ -81,22 +81,29 @@ worth stating plainly.
 
 \strong{Strata.} How many strata a backend can honour is a property of the
 \emph{package}, not of this one. Where a backend cannot, it warns and pools rather
-than pretending:\tabular{lll}{
-   \code{method} \tab strata it can model \tab how \cr
-   \code{"baselinenowcast"} \tab any number \tab one reporting triangle, and one fit, per stratum \cr
-   \code{"surveillance"} \tab any number \tab one fit per stratum; the package models a single series \cr
-   \code{"EpiNow2"} \tab any number \tab \code{regional_epinow()} instead of \code{estimate_infections()} \cr
-   \code{"epinowcast"} \tab any number \tab passed to the model as \code{by}, so it is fitted jointly \cr
-   \code{"diseasenowcasting"} \tab \strong{exactly one} \tab the package returns a \verb{[draws x time x stratum]} array indexed by one label \cr
-   \code{"NobBS"} \tab \strong{exactly one} \tab \code{NobBS.strat()} instead of \code{NobBS()} \cr
+than pretending:\tabular{ll}{
+   \code{method} \tab how strata are modelled \cr
+   \code{"baselinenowcast"} \tab one reporting triangle, and one fit, per stratum \cr
+   \code{"surveillance"} \tab one fit per stratum; the package models a single series \cr
+   \code{"EpiNow2"} \tab \code{regional_epinow()} instead of \code{estimate_infections()} \cr
+   \code{"epinowcast"} \tab passed to the model as \code{by}, so they are fitted jointly \cr
+   \code{"diseasenowcasting"} \tab fitted jointly; the package returns a \verb{[draws x time x stratum]} array, one slice per combination \cr
+   \code{"NobBS"} \tab \code{NobBS.strat()} instead of \code{NobBS()} \cr
 }
 
 
-The last two \strong{pool over the declared strata with a warning} when you give
-them more than one, because the label a single array dimension carries cannot
-be split back into two columns. Nowcast each stratum yourself if you need
-that. Whatever strata columns come back are what the result reports as its
-\code{strata}, so a pooled fit reports none.
+\strong{Every backend takes any number of strata.} The two that model one series
+at a time (\code{"surveillance"}) or accept a single column
+(\code{"NobBS.strat()"}) are given the \emph{interaction} of the declared columns,
+which is what nowcasting each combination separately means; the label is
+split back into its columns on the way out.
+
+The one thing that can go wrong is a stratum \strong{value} that already contains
+the \code{" | "} used to join them. That is an error rather than a guess, because
+silently mis-assigning strata is worse than refusing.
+
+Whatever strata columns come back are what the result reports as its
+\code{strata}.
 
 Columns you did \strong{not} declare are summed away by the converters (see
 \code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast()}}). A \code{tbl_now} built from \code{covid_colombia}

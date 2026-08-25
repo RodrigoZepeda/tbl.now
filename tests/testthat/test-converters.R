@@ -567,7 +567,7 @@ test_that("tbl_now_to_epidist uses a 7-day window for weekly units", {
   expect_equal(get_event_units(back), "weeks")
 })
 
-test_that("epidist is_censored becomes a [origin, report] window and round-trips", {
+test_that("epidist is_censored becomes an [event, report] window and round-trips", {
   skip_on_cran()
   skip_if_not_installed("epidist")
   ct <- tbl_now(
@@ -581,8 +581,14 @@ test_that("epidist is_censored becomes a [origin, report] window and round-trips
     verbose = FALSE
   )
   out <- suppressMessages(tbl_now_to_epidist(ct, verbose = FALSE, quiet = TRUE))
-  # censored rows are left-censored to epidist time 0.
-  expect_equal(out$stime_lwr, c(4, 3, 0, 0))
+  # A censored report is known only to have happened at or before its report
+  # date, so its window starts at its OWN event -- `stime_lwr == ptime_lwr`.
+  #
+  # Until 0.20.0 it started at the earliest event in the data instead, which made
+  # the window begin before the case existed for every row but the first and
+  # implied a negative delay; `epidist` refuses those outright.
+  expect_equal(out$stime_lwr, c(4, 3, 3, 4))
+  expect_equal(out$stime_lwr[c(3, 4)], out$ptime_lwr[c(3, 4)])
 
   back <- suppressMessages(tbl_now_from_epidist(out, verbose = FALSE))
   expect_equal(get_is_censored(back), "is_censored")

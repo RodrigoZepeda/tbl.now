@@ -981,9 +981,12 @@ diagnostic_plot(x, panels =, by =)        # reporting-process gallery (reporting
 ## Reference: package data
 
 ```r
-data(flusight)    # flu data in the United States (count-cumulative)
-data(denguedat)   # dengue surveillance linelist (weekly, Puerto Rico)
-data(mpoxdat)     # mpox count-incidence data (has a `race` stratum + `n` counts)
+data(denguedat)        # dengue surveillance linelist (weekly, Puerto Rico)
+data(flusight)         # flu in the United States (count-cumulative)
+data(mpoxdat)          # mpox count-incidence (a `race` column + `n` counts)
+data(covid_colombia)   # daily COVID-19 counts, Colombia (a `sex` column + `n`)
+data(covid_us)         # daily COVID-19 counts, US CDC -- the batch-dump example
+data(hai_bucaramanga)  # healthcare-associated infections; deliberately messy
 ```
 
 ---

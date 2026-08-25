@@ -316,20 +316,27 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #' *package*, not of this one. Where a backend cannot, it warns and pools rather
 #' than pretending:
 #'
-#' | `method` | strata it can model | how |
-#' |---|---|---|
-#' | `"baselinenowcast"` | any number | one reporting triangle, and one fit, per stratum |
-#' | `"surveillance"` | any number | one fit per stratum; the package models a single series |
-#' | `"EpiNow2"` | any number | `regional_epinow()` instead of `estimate_infections()` |
-#' | `"epinowcast"` | any number | passed to the model as `by`, so it is fitted jointly |
-#' | `"diseasenowcasting"` | **exactly one** | the package returns a `[draws x time x stratum]` array indexed by one label |
-#' | `"NobBS"` | **exactly one** | `NobBS.strat()` instead of `NobBS()` |
+#' | `method` | how strata are modelled |
+#' |---|---|
+#' | `"baselinenowcast"` | one reporting triangle, and one fit, per stratum |
+#' | `"surveillance"` | one fit per stratum; the package models a single series |
+#' | `"EpiNow2"` | `regional_epinow()` instead of `estimate_infections()` |
+#' | `"epinowcast"` | passed to the model as `by`, so they are fitted jointly |
+#' | `"diseasenowcasting"` | fitted jointly; the package returns a `[draws x time x stratum]` array, one slice per combination |
+#' | `"NobBS"` | `NobBS.strat()` instead of `NobBS()` |
 #'
-#' The last two **pool over the declared strata with a warning** when you give
-#' them more than one, because the label a single array dimension carries cannot
-#' be split back into two columns. Nowcast each stratum yourself if you need
-#' that. Whatever strata columns come back are what the result reports as its
-#' `strata`, so a pooled fit reports none.
+#' **Every backend takes any number of strata.** The two that model one series
+#' at a time (`"surveillance"`) or accept a single column
+#' (`"NobBS.strat()"`) are given the *interaction* of the declared columns,
+#' which is what nowcasting each combination separately means; the label is
+#' split back into its columns on the way out.
+#'
+#' The one thing that can go wrong is a stratum **value** that already contains
+#' the `" | "` used to join them. That is an error rather than a guess, because
+#' silently mis-assigning strata is worse than refusing.
+#'
+#' Whatever strata columns come back are what the result reports as its
+#' `strata`.
 #'
 #' Columns you did **not** declare are summed away by the converters (see
 #' [tbl_now_to_baselinenowcast()]). A `tbl_now` built from `covid_colombia`

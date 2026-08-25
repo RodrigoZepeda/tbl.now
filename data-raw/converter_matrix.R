@@ -44,17 +44,6 @@ build <- list(
               case_count = n, strata = sex, data_type = "count-incidence",
               verbose = FALSE)
   },
-  covidat = function() {
-    data(covidat, envir = environment())
-    covidat |>
-      # Some rows are registered BEFORE symptom onset. A negative delay is not
-      # a delay, and epidist rejects it outright, so drop them first.
-      filter(date_of_registry >= date_of_symptom_onset) |>
-      filter(date_of_symptom_onset >= as.Date("2021-01-01")) |>
-      tbl_now(event_date = date_of_symptom_onset, report_date = date_of_registry,
-              case_count = n, strata = sex, data_type = "count-incidence",
-              verbose = FALSE)
-  },
   covid_us = function() {
     data(covid_us, envir = environment())
     covid_us |>

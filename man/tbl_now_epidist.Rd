@@ -98,9 +98,11 @@ it builds an \code{epidist_aggregate_data} when \code{x} holds counts and an
 or \code{censoring_window} if supplied);
 \item the secondary event spans \verb{[report_date, report_date + w]} normally, but
 for rows flagged by \code{is_censored} it is left-censored to
-\verb{[origin, report_date]} (with \code{origin} the earliest \code{event_date}, i.e.
+\verb{[event_date, report_date]} (the report is known only to have happened at
+or before its report date, and cannot precede the event, i.e.
 epidist time 0) — encoding the \code{tbl_now} convention that a censored report
-is only known to lie in \verb{[0, report_date]}.
+is known only to have happened at or before its report date, so the window
+is \verb{[event_date, report_date]}.
 }
 
 The strata, the covariate columns and any materialised temporal-effect columns

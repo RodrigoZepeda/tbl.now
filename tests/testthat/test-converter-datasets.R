@@ -35,16 +35,6 @@ dataset_tbl_now <- function(name) {
                 case_count = n, strata = sex, data_type = "count-incidence",
                 verbose = FALSE)
     },
-    covidat = {
-      data(covidat, envir = environment())
-      covidat |>
-        # Some rows are registered BEFORE onset; a negative delay is not a delay.
-        dplyr::filter(date_of_registry >= date_of_symptom_onset) |>
-        dplyr::filter(date_of_symptom_onset >= as.Date("2021-01-01")) |>
-        tbl_now(event_date = date_of_symptom_onset, report_date = date_of_registry,
-                case_count = n, strata = sex, data_type = "count-incidence",
-                verbose = FALSE)
-    },
     covid_us = {
       data(covid_us, envir = environment())
       covid_us |>
@@ -85,7 +75,7 @@ CONVERTERS <- list(
 # Datasets whose shape every converter handles.
 WORKING_DATASETS <- c(
   "denguedat", "hai_bucaramanga", "covid_colombia",
-  "covidat", "covid_us", "mpoxdat"
+  "covid_us", "mpoxdat"
 )
 
 for (dataset in WORKING_DATASETS) {

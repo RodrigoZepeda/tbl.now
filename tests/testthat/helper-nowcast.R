@@ -12,7 +12,7 @@ nowcast_fit.scoretoy <- function(method, x, ..., bias = 0, spread = 1,
                                  quantile_levels = nowcast_quantile_levels(),
                                  verbose = TRUE) {
   list(
-    observed = tbl.now:::nowcast_truth(x),
+    observed = tbl.now:::.eventual_counts(x),
     bias = bias, spread = spread, event_col = get_event_date(x)
   )
 }

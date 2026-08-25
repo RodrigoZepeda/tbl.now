@@ -111,7 +111,7 @@ S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
   }
 
   if (isTRUE(show_reported) && !is.null(object@data)) {
-    reported <- nowcast_truth(object@data, strata = strata)
+    reported <- .eventual_counts(object@data, strata = strata)
     plot <- plot +
       ggplot2::geom_point(
         data = reported,

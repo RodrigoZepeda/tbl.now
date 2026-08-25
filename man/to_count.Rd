@@ -59,14 +59,15 @@ ndata <- tbl_now(denguedat,
 
 to_count(ndata, to = "count-incidence")
 
-data("covidat")
+data("covid_colombia")
 suppressWarnings({
-  ndata <- tbl_now(covidat,
-    event_date = "date_of_symptom_onset",
-    report_date = "date_of_registry",
+  ndata <- tbl_now(covid_colombia,
+    event_date = "notification_date",
+    report_date = "diagnosis_date",
+    case_count = "n",
     strata = "sex"
   )
-  to_count(ndata)
+  to_count(ndata, to = "count-cumulative")
 })
 
 }

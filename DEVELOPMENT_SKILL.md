@@ -129,6 +129,45 @@ Rewriting a `tbl.now` helper's logic by hand is a bug waiting to happen: the
 helper handles the data types, the units and the `now` edge, and your inline
 version will handle whichever one you were thinking about that day.
 
+### Before you write a new function, prove it does not exist
+
+This has gone wrong twice, in the same shape both times, and neither time did a
+test catch it -- the duplicate had a *different body*, so nothing mechanical
+noticed.
+
+* `nowcast_truth()` was written, exported and documented before anyone noticed
+  it was `get_latest_reported_cases()` with the class stripped and the count
+  column renamed. It shipped as a second public name for one idea.
+* `.strata_from_labels()` and `.split_strata_labels()` were written a few hours
+  apart, in the same file, by the same author, to split the same `" | "` label.
+
+So the rule is a **pre-flight grep, and you say in the commit what you grepped
+for**:
+
+```bash
+# 1. Does a getter already answer this question?
+grep -n "^get_" R/getters.R
+
+# 2. Does a helper already do this? Search the VERB, not your name for it.
+grep -rn "split\|paste.*sep\|pool\|aggregate" R/ | grep "<- function"
+
+# 3. Is there already an exported function in this area?
+grep -n "^export" NAMESPACE | grep -i "<the noun you are about to use>"
+```
+
+Two questions decide it:
+
+1. **Could an existing function answer this with different arguments?** Then add
+   the argument. `score_nowcast(truth = )` learning to accept a `tbl_now` was
+   the right fix; a `nowcast_truth()` to produce that input was not.
+2. **Is the new thing a reshaping of an existing thing?** Then it is internal at
+   most, and its documentation must name what it wraps. A reshaping is not a
+   concept, and the user should not have to learn it as one.
+
+When you genuinely need both, there is **one implementation** and the other
+calls it. Two functions that split the same string are one bug waiting to be
+fixed in one place only.
+
 ---
 
 ## 5. Style
@@ -204,6 +243,32 @@ Concretely, that means **all** of:
 4. **A round-trip test** asserting that converting out and back preserves the
    data. Where the round trip is lossy, test *what* survives and document what
    does not.
+
+### The package's own coercion verb is part of the job
+
+Someone fluent in `baselinenowcast` will reach for `as_reporting_triangle()`,
+not for `tbl_now_to_baselinenowcast()`. Where the target package exposes a
+coercion **generic**, register a `tbl_now` method on it, as a thin wrapper
+around your converter:
+
+```r
+#' @rdname tbl_now_coercion_methods
+#' @exportS3Method baselinenowcast::as_reporting_triangle
+as_reporting_triangle.tbl_now <- function(data, ..., verbose = FALSE) {
+  tbl_now_to_baselinenowcast(data, format = "matrix", ..., verbose = verbose)
+}
+```
+
+A wrapper, never a second implementation, and quiet by default (`verbose =
+FALSE`) because coercion is an idiom rather than a conversion you are watching.
+
+Some packages have no such generic -- `epinowcast`, `EpiNow2` and `NobBS`
+export none at all, and `surveillance`'s `as.epidata()` is a different concept.
+That is fine, but it has to be *recorded*: `tests/testthat/test-coercion-methods.R`
+holds a registry of every `tbl_now_to_*()` with either its generic or a written
+reason there is none, and it **fails when a converter is missing from it**. It
+also re-checks the "no generic" claims against the installed package, so if one
+of them gains a coercion verb we find out.
 
 ### `tidy()` is part of the job
 
@@ -409,9 +474,13 @@ Before calling a change finished:
 - [ ] `NOT_CRAN=true` test suite passes; new behaviour has new tests.
 - [ ] Any new attribute has an exported, documented, tested getter.
 - [ ] A new converter has: `to`, `from` (where meaningful), an `as_tbl_now()`
-      method, a round-trip test, a `tidy()` method (unless it returns only
-      delays), a censoring-collapse call, and a vignette section covering both
-      the plain and the stratified case.
+      method, the target package's own coercion generic (or an entry in the
+      registry in `test-coercion-methods.R` saying why there is none), a
+      round-trip test, a `tidy()` method (unless it returns only delays), a
+      censoring-collapse call, a `.pool_undeclared()` call, and a vignette
+      section covering both the plain and the stratified case.
+- [ ] **No new function duplicates an existing one** -- see the pre-flight grep
+      in §4, and say in the commit message what you checked against.
 - [ ] `NEWS.md` updated for anything user-visible, including deliberate
       behaviour changes.
 - [ ] `SKILL.md` updated if the *user-facing* API changed.
