@@ -248,7 +248,10 @@ test_that("tbl_now throws warning when repeated rows", {
       data_type = "count-cumulative",
       verbose = FALSE
     ),
-    "Data has multiple rows for the same event"
+    # Reworded in 0.19.0: the warning now leads with how many rows collide and
+    # goes on to name the cause. These are genuine duplicate rows (sliced from
+    # the head), not an undeclared column, so it must recommend `distinct()`.
+    "Non-unique"
   )
 
 

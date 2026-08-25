@@ -19,13 +19,19 @@
 # reads the results from the saved file, because the Stan / JAGS / INLA fits are
 # far too slow to run on every build. If you change a call here, change it there.
 #
-# WHY THIS WINDOW. `covid_colombia` records notifications to 2023-03-03 but
-# diagnoses to 2023-05-26. Cutting BOTH dates at 2023-03-03 gives a `tbl_now`
-# whose recent days are genuinely incomplete -- a real nowcasting problem --
-# while the full dataset still records what those days eventually reached. That
-# is the "truth" line. The cut sits in a low-incidence stretch, which keeps the
-# line-list engines affordable: expanding counts to one row per case costs
-# ~50,000 rows over the trailing 180 days, against 2.5M at the 2021 peak.
+# WHY THIS WINDOW. Cutting BOTH dates at 2021-04-01 gives a `tbl_now` whose
+# recent days are genuinely incomplete -- a real nowcasting problem -- while the
+# full dataset still records what those days eventually reached. That is the
+# "truth" line.
+#
+# The date sits on the RISING LIMB of Colombia's third wave: the last 30 days
+# average ~5,100 cases/day and are climbing. A subsided series would be cheaper
+# but would give the nowcast nothing to correct.
+#
+# It is also the affordable point on that limb. NobBS and surveillance count
+# ROWS, so counts expand to one row per case: the trailing 60 days here is
+# 278,000 rows (NobBS 24s, surveillance 6s, measured). One month later the same
+# 60 days is 400,000, and at the June peak the trailing 180 days is 2.5M.
 #
 # TRIMMING, measured rather than assumed (timings on the article's own data):
 #
@@ -52,9 +58,9 @@ set.seed(20260820)
 
 # -- the window ----------------------------------------------------------------
 
-CUT       <- as.Date("2023-03-03")  # both dates strictly before this
-MAX_DELAY <- 30L                    # days of delay every engine is given
-TRIM      <- 180L                   # days kept by the engines that need trimming
+CUT       <- as.Date("2021-04-01")  # both dates strictly before this
+MAX_DELAY <- 30L                    # delay periods every engine is given (0-29)
+TRIM      <- 60L                    # days kept by the engines that need trimming
 N_HORIZON <- 30L                    # days shown in the article's figures
 
 data(covid_colombia)
@@ -95,16 +101,14 @@ truth <- bind_rows(
 # -- the objects the article builds --------------------------------------------
 
 make_now <- function(data) {
-  # Pool over any column that is not declared, so each (event, report) cell is
-  # unique; `sex` is a stratum only where the article asks for one.
-  pooled <- data |>
-    group_by(notification_date, diagnosis_date) |>
-    summarise(n = sum(n), .groups = "drop")
-  tbl_now(
-    pooled,
+  # NO pre-aggregation, exactly as the article shows it. `sex` rides along
+  # undeclared and every `tbl_now_to_*()` converter pools it away; the object
+  # warns about the non-unique cells, which is information rather than a fault.
+  suppressWarnings(tbl_now(
+    data,
     event_date = notification_date, report_date = diagnosis_date,
     case_count = n, data_type = "count-incidence", verbose = FALSE
-  )
+  ))
 }
 
 objects <- list(Total = make_now(covid))
@@ -152,8 +156,9 @@ fit_baselinenowcast <- function(x) {
   # Delays ARE capped, which is a modelling choice rather than a workaround: a
   # lone 330-day straggler makes the triangle 1094 x 331 and the fit take 314s,
   # against 50s at 1094 x 31, and 99% of delays arrive within 15 days.
-  capped <- x |> filter(.data$.delay <= MAX_DELAY)
-  triangle <- tbl_now_to_baselinenowcast(capped, verbose = FALSE)
+  # `max_delay` counts delay PERIODS the way epinowcast's does, so both engines
+  # see the same triangle width.
+  triangle <- tbl_now_to_baselinenowcast(x, max_delay = MAX_DELAY, verbose = FALSE)
 
   samples <- baselinenowcast::baselinenowcast(
     triangle, output_type = "samples", draws = 1000

@@ -1,3 +1,117 @@
+# tbl.now 0.19.0
+
+## Converters no longer make you aggregate first
+
+`covid_colombia` carries `sex`. An object built without `strata = sex` therefore
+has **two rows per `(notification_date, diagnosis_date)` cell**, and a reporting
+triangle, a `tsibble` key and an epinowcast observation table each have exactly
+one slot per cell. Until now that meant `tbl_now_to_baselinenowcast()` aborted
+("duplicate `reference_date` and `report_date` combinations") and
+`tbl_now_to_tsibble()` aborted ("a valid tsibble must have distinct rows"), and
+you had to `group_by() |> summarise()` before converting.
+
+Both now pool undeclared columns for you, as `tbl_now_to_nobbs()`,
+`tbl_now_to_surveillance()`, `tbl_now_to_EpiNow2()`, `tbl_now_to_epinowcast()`
+and `tbl_now_to_data_table()` already did. The pooling is `to_count()`, so case
+totals are preserved exactly, and it is reported under `verbose = TRUE`:
+
+```
+i `tbl_now_to_baselinenowcast()`: pooled over 1 undeclared column ("sex");
+  18195 rows -> 10129.
+i Declare it with `add_strata()` to nowcast it separately.
+```
+
+Line lists are left alone: one row is already one case there, and collapsing
+would destroy the individual records the target package is being handed.
+
+## The non-uniqueness warning now names the culprit
+
+It used to say "Consider using `to_count()` to aggregate the data or `distinct()`
+to remove repeated observations". The `distinct()` half is wrong whenever the
+cause is an undeclared column -- those rows **are** distinct, they differ in
+`sex` -- so it sends you in a circle, and on data with genuine repeats it
+silently deletes cases. The warning now inspects the object and says which:
+
+* undeclared columns: names them, and points at `strata =` or `to_count()`,
+  adding that the converters pool them for you so this is information rather
+  than a fault;
+* genuine duplicate rows: says so, and *then* recommends `distinct()`.
+
+## `tbl_now_to_baselinenowcast(max_delay = )`
+
+A cap on the delay axis, counted exactly as `tbl_now_to_epinowcast()` counts it
+-- `max_delay = 30` keeps delays `0` to `29`, giving a 30-column triangle -- so
+the same number means the same triangle in both. `NULL` (default) keeps every
+delay, which is the previous behaviour. This replaces the
+`filter(.delay <= 30) |>` idiom the docs used to recommend.
+
+## `nowcast_truth()` is now internal
+
+It was `get_latest_reported_cases()` with the class stripped, undeclared columns
+summed away and the count renamed `.observed` -- the values were identical. A
+second public name for that is a second thing to learn for no gain.
+
+`score_nowcast()` and `as_scoringutils()` now accept the **`tbl_now` itself** as
+`truth` and do the reshaping internally, which is shorter than what it replaces:
+
+```r
+score_nowcast(nowcast, truth = dengue)          # was: truth = nowcast_truth(dengue)
+```
+
+A data frame of observed counts still works, as does `NULL`.
+
+## `?run_nowcast` says what the models actually are
+
+Three new sections, because "it calls the package with its defaults" is not
+enough to read the output:
+
+* **Strata** -- a table of how many each backend can model and how.
+  `baselinenowcast`, `surveillance`, `EpiNow2` and `epinowcast` take any number;
+  `diseasenowcasting` and `NobBS` take exactly one and **pool with a warning**
+  beyond that, because the single array dimension they return cannot be split
+  back into two columns.
+* **Temporal effects** -- the converters materialise them into columns, but only
+  `diseasenowcasting` uses them automatically. `epinowcast` needs them named in
+  a module formula; every other backend carries them and ignores them.
+* **Censored delays** -- collapsed with a warning by every backend that goes
+  through a converter; `diseasenowcasting` receives the flag intact.
+
+And a section on how each engine's default model is specified, with the two
+that most need saying out loud:
+
+* **`epinowcast`** defaults to a per-day random effect on the growth rate (a
+  random walk in all but name), a single time-constant lognormal reporting
+  delay, and no day-of-week report effect.
+* **`EpiNow2`** defaults to `delays = delay_opts()`, which is `Fixed(0)` -- **no
+  reporting delay at all** -- and `generation_time = gt_opts()`, which is
+  `Fixed(1)`. Those defaults describe a process with nothing to nowcast, so
+  supply the epidemiology yourself. It also models \eqn{R_t} with a Gaussian
+  process rather than a random walk.
+
+## Article fixes
+
+* **`vignette("nowcasting-models")` now cuts at 2021-04-01**, on the rising limb
+  of Colombia's third wave, instead of 2023-03-03 where the epidemic had
+  subsided and a nowcast had nothing to correct. The line-list engines trim to
+  60 days (278,000 rows; NobBS 24s, surveillance 6s measured) rather than 180.
+* **The per-package figures were drawing the wrong quantity.** `geom_col()` was
+  given `width = 5.5` on a **daily** series, so each bar overlapped its
+  neighbours and ggplot2 stacked the overlaps: the grey "reported by now" bars
+  showed sums of about six days. The summary figure at the end of the article
+  used `width = 0.8` and was correct, which is why the two disagreed. All the
+  panels now use `width = 0.8`.
+* **The stratified `NobBS` example handed it count rows**, which is the exact
+  mistake the article's own warning box forbids two screens earlier -- it counts
+  rows, so it was nowcasting counts as cases. It now goes through
+  `tbl_now_to_nobbs()` like the unstratified example.
+* The stratified `surveillance` example converted the **whole** series (2.3M
+  cases) at build time and used `N.tInf.max = 1000` against per-stratum daily
+  counts of ~4,000, which silently truncates the posterior. It now trims first
+  and uses the same settings as the unstratified fit.
+* `vignette("ensemble-nowcasting")` gains an **experimental badge and note** at
+  the top, and a figure showing each member's median against the ensemble and
+  the eventual truth.
+
 # tbl.now 0.18.0
 
 ## New: one call per model, and ensembles

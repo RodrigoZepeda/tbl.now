@@ -680,7 +680,7 @@ so a converted object round-trips straight back.
 | Package | from | to | Mapping |
 |---------|:---:|:---:|---------|
 | epinowcast | ✅ | ✅ | `reference_date`/`report_date`/`confirm` ↔ count-cumulative. `from` accepts the raw long input, a preprocessed `enw_preprocess_data` object, **or** a fitted `epinowcast` object (grouping auto-detected). `to` builds the preprocessed `enw_preprocess_data` object (or the completed-input `data.table` with `preprocess = FALSE`) |
-| baselinenowcast | ✅ | ✅ | long df **or** reporting-triangle matrix ↔ count-incidence; `to` has `format = c("matrix","long","triangle_list")` — **`"matrix"` is the default**; `"triangle_list"` returns ONE TRIANGLE PER STRATUM as a thin `tbl_now_triangle_list` (still a plain list, so `lapply()` works), length-1 and named `"all"` when there are no strata, and `as_tbl_now()` rebuilds a `tbl_now` from it with the strata recoded. `to`'s `delays_unit` defaults to `NULL` and is **inferred** from the object units (equal event/report units of `"days"`/`"weeks"`) for the matrix format, else supply it. Refuses `count-cumulative` input (would need to de-accumulate to possibly-negative increments) |
+| baselinenowcast | ✅ | ✅ | long df **or** reporting-triangle matrix ↔ count-incidence; `to` has `max_delay =` (delay periods kept, counted as in `tbl_now_to_epinowcast()`: `30` → delays 0–29) and `format = c("matrix","long","triangle_list")` — **`"matrix"` is the default**; `"triangle_list"` returns ONE TRIANGLE PER STRATUM as a thin `tbl_now_triangle_list` (still a plain list, so `lapply()` works), length-1 and named `"all"` when there are no strata, and `as_tbl_now()` rebuilds a `tbl_now` from it with the strata recoded. `to`'s `delays_unit` defaults to `NULL` and is **inferred** from the object units (equal event/report units of `"days"`/`"weeks"`) for the matrix format, else supply it. Refuses `count-cumulative` input (would need to de-accumulate to possibly-negative increments) |
 | EpiNow2 | ✅ | ✅ | `to` takes `target =`, named for the EpiNow2 function the result is passed to: `"estimate_infections"` (default, a `date`/`confirm` series, also what `epinow()` takes), `"regional_epinow"` (the same plus a `region` column from the strata), `"estimate_truncation"` (a list of `date`/`confirm` snapshots, one per report date — the one model that uses the report dimension), `"estimate_dist"` (the interval-censored delay frame). `from` inverts the snapshot form only. **EpiNow2 models a DAILY process and has no `timestep`**, so `accumulate = "auto"` lays non-daily data on its grid |
 | data.table | ✅ | ✅ | `tbl_now_from_data_table()` / `tbl_now_to_data_table()` (underscores) |
 | epidist | ✅ | ✅ | epidist 0.4.0 interval-censored dates; `format = "linelist"` uses lower bounds as dates, `format = "interval"` attaches upper bounds as covariates |
@@ -694,6 +694,16 @@ nowobj <- tbl_now_from_epinowcast(epinowcast::germany_covid19_hosp,
 ts     <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
 back   <- as_tbl_now(ts, event_date = "reference_date")   # round-trip
 ```
+
+> **You do not have to aggregate first.** A column the object was never told
+> about — `sex` in `covid_colombia` — puts two rows in every `(event, report)`
+> cell. Every `tbl_now_to_*()` converter **pools undeclared columns for you**
+> via `to_count()`, so case totals are preserved and no `group_by()` is needed.
+> `tbl_now()` still *warns* that the cells are non-unique; that is information,
+> not a fault. **`distinct()` does not fix it** — those rows are distinct, they
+> differ in `sex` — and on data with genuine repeats it deletes cases. Declare
+> the column (`strata = sex`) when you want it modelled separately.
+> Line lists are never pooled: one row is already one case.
 
 ---
 
@@ -738,10 +748,15 @@ nc@fit                      # the backend's OWN object, untouched
 ### Scoring
 
 ```r
-truth <- nowcast_truth(x_full)          # what those dates EVENTUALLY reached
-score_nowcast(nc, truth = truth)        # wis, ae_median, coverage_50, coverage_90
-as_scoringutils(nc, truth = truth)      # hand it to scoringutils instead
+score_nowcast(nc, truth = x_full)   # wis, ae_median, coverage_50, coverage_90
+as_scoringutils(nc, truth = x_full) # hand it to scoringutils instead
 ```
+
+`truth` takes the **full `tbl_now`** (the one that still holds the reports which
+arrived after the nowcast's `now`), a data frame of observed counts, or `NULL`
+to reuse the nowcast's own source data. `nowcast_truth()` was un-exported in
+0.19.0: it was `get_latest_reported_cases()` reshaped, and the reshaping now
+happens inside the scoring functions.
 
 Score against data the model had not seen: snapshot at a past `now`, fit there,
 score against the full series.
@@ -946,7 +961,7 @@ tbl_nowcast(predictions =, draws =, ...)        # the constructor (for backends/
 is_tbl_nowcast(x)
 
 nowcast_ensemble(..., type =, weights =, backtest =, n_draws =, name =)
-nowcast_truth(x) / score_nowcast(nc, truth =) / as_scoringutils(nc, truth =)
+score_nowcast(nc, truth =) / as_scoringutils(nc, truth =)  # truth = the full tbl_now
 nowcast_backtest(x, methods, now_dates =, seed =) / nowcast_weights(bt, type =)
 
 nowcast_fit(method, x, ...) / nowcast_tidy(method, fit, x, ...)  # extension points
@@ -1002,6 +1017,14 @@ data(mpoxdat)     # mpox count-incidence data (has a `race` stratum + `n` counts
 - `tidy(fit, probs =)` **errors** for `NobBS` and `surveillance`: they keep no
   draws, so an arbitrary quantile would be an approximation. The same is true of
   a quantile-only `tbl_nowcast`.
+- **`NobBS`'s `moving_window` counts EVENT PERIODS and must not exceed the
+  history you hand it.** Ask for more and it pads its grid backwards and returns
+  **zero for every date, with no error** — which reads as a catastrophic score
+  rather than as the misconfiguration it is.
+- **`EpiNow2::estimate_infections()` defaults to NO reporting delay**
+  (`delay_opts()` is `Fixed(0)`) and a one-day generation time (`gt_opts()` is
+  `Fixed(1)`). Those defaults describe a process with nothing to nowcast; pass
+  `generation_time =` and `delays =` yourself.
 - **`nowcaster` is no longer supported** (dropped in 0.16.0, and its
   `run_nowcast()` backend in 0.18.0). `tbl_now_to_nowcaster()`,
   `get_nowcaster_strata()` and `run_nowcast(x, "nowcaster")` do not exist.

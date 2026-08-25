@@ -72,6 +72,121 @@ Every modelling package is an optional dependency: it is only needed when you
 ask for its method.
 }
 
+\section{What the object contributes, and what it does not}{
+
+
+\code{run_nowcast()} reads the \code{tbl_now}'s declarations and hands each package the
+shape it wants. Three of those declarations behave differently enough to be
+worth stating plainly.
+
+\strong{Strata.} How many strata a backend can honour is a property of the
+\emph{package}, not of this one. Where a backend cannot, it warns and pools rather
+than pretending:\tabular{lll}{
+   \code{method} \tab strata it can model \tab how \cr
+   \code{"baselinenowcast"} \tab any number \tab one reporting triangle, and one fit, per stratum \cr
+   \code{"surveillance"} \tab any number \tab one fit per stratum; the package models a single series \cr
+   \code{"EpiNow2"} \tab any number \tab \code{regional_epinow()} instead of \code{estimate_infections()} \cr
+   \code{"epinowcast"} \tab any number \tab passed to the model as \code{by}, so it is fitted jointly \cr
+   \code{"diseasenowcasting"} \tab \strong{exactly one} \tab the package returns a \verb{[draws x time x stratum]} array indexed by one label \cr
+   \code{"NobBS"} \tab \strong{exactly one} \tab \code{NobBS.strat()} instead of \code{NobBS()} \cr
+}
+
+
+The last two \strong{pool over the declared strata with a warning} when you give
+them more than one, because the label a single array dimension carries cannot
+be split back into two columns. Nowcast each stratum yourself if you need
+that. Whatever strata columns come back are what the result reports as its
+\code{strata}, so a pooled fit reports none.
+
+Columns you did \strong{not} declare are summed away by the converters (see
+\code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast()}}). A \code{tbl_now} built from \code{covid_colombia}
+without \code{strata = sex} is nowcast as one pooled series, not silently split.
+
+\strong{Temporal effects.} \code{\link[=add_temporal_effects]{add_temporal_effects()}} specs are lazy; the converters
+materialise them into ordinary columns, so they travel with the data. Whether
+the \emph{model} then uses them is a separate question, and mostly the answer is
+"only if you say so":
+\itemize{
+\item \code{"diseasenowcasting"} receives the \code{tbl_now} itself and reads the effects
+off it, so they enter the model with no further work.
+\item \code{"epinowcast"} carries them as covariates you name in a module formula, e.g.
+\code{reference = epinowcast::enw_reference(~ 1 + day_of_week, data = ...)}.
+Without a formula referring to them they are inert.
+\item every other backend ignores them: the columns ride along so you can split
+on them, and nothing else happens.
+}
+
+\strong{Censored delays.} A per-case censoring flag (see \code{\link[=add_is_censored]{add_is_censored()}}) puts
+a censored and an uncensored row in the same \verb{(event date, report date)} cell,
+and a reporting triangle has one slot per cell. Every backend that goes
+through a converter therefore \strong{collapses the flag with a warning} — counts
+are summed over it, line lists drop the column. \code{"diseasenowcasting"} is the
+exception: it is handed the object untouched, so the flag reaches the package
+intact. To \emph{estimate} a delay distribution from censored data, use
+\code{\link[=tbl_now_to_epidist]{tbl_now_to_epidist()}} instead; nowcasting and delay estimation are different
+jobs.
+}
+
+\section{How each model is specified, and how to change it}{
+
+
+\code{run_nowcast()} does not invent priors or model structure: it calls each
+package with \strong{that package's own defaults} and passes \code{...} straight
+through. The defaults are not always the ones you want, and two are worth
+knowing before you read the output.
+
+\strong{\code{"epinowcast"}} runs three modules, all at their package defaults. The
+expectation module is \code{enw_expectation(r = ~ 0 + (1 | day:.group))} -- a
+\strong{random effect per day} on the growth rate, which is a random walk on the
+log expected counts in all but name. The reference module is
+\code{enw_reference(parametric = ~ 1, distribution = "lognormal")} -- a \strong{single
+lognormal reporting delay, constant over time}. The report module is
+\code{enw_report(non_parametric = ~ 0)} -- \strong{no day-of-week reporting effect}.
+Override any of them through \code{...}, and use \code{preprocess_args} for
+\code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}'s own arguments such as \code{list(max_delay = 30)}:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{run_nowcast(nowobj, "epinowcast",
+  preprocess_args = list(max_delay = 30),
+  report = epinowcast::enw_report(~ 1 + day_of_week, data = pobs),
+  fit    = epinowcast::enw_fit_opts(chains = 4, iter_sampling = 1000)
+)
+}\if{html}{\out{</div>}}
+
+\strong{\code{"EpiNow2"}} -- read this before trusting the output.
+\code{EpiNow2::estimate_infections()} defaults to \code{delays = delay_opts()}, which is
+\code{Fixed(0)}: \strong{no reporting delay at all}. Its \code{generation_time = gt_opts()}
+is \code{Fixed(1)}, a one-day generation time. Those defaults describe a process
+with nothing to nowcast, so supply the epidemiology yourself. EpiNow2 also
+models \eqn{R_t} with a \strong{Gaussian process} by default
+(\code{rt_opts(rw = 0, gp_on = "R_t-1")}) rather than a random walk:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{run_nowcast(nowobj, "EpiNow2",
+  generation_time = EpiNow2::gt_opts(EpiNow2::example_generation_time),
+  delays          = EpiNow2::delay_opts(EpiNow2::example_reporting_delay),
+  rt              = EpiNow2::rt_opts(rw = 7)   # weekly random walk instead
+)
+}\if{html}{\out{</div>}}
+
+\strong{\code{"diseasenowcasting"}} uses the package's own defaults, reading strata,
+covariates and temporal effects off the object. \code{...} goes to
+\code{\link[diseasenowcasting:nowcast]{diseasenowcasting::nowcast()}} -- \code{type}, \code{n_draws} and so on.
+
+\strong{\code{"baselinenowcast"}} is not Bayesian and has no priors: the delay is
+estimated from the reporting triangle and applied. \code{draws} sets the number of
+nowcast samples, and \code{max_delay} caps the triangle's width.
+
+\strong{\code{"NobBS"}} has a fixed model; what you tune is \code{max_D} (maximum delay) and
+\code{moving_window} (how much history is fitted). \code{moving_window} counts \strong{event
+periods and must not exceed the history you hand it} -- ask for more and
+NobBS pads its grid backwards and returns zero for every date, with no error.
+\code{specs} takes its prior list.
+
+\strong{\code{"surveillance"}} takes \code{fit_method}, which is \pkg{surveillance}'s own
+\code{method} argument renamed so it cannot collide with \code{\link[=run_nowcast]{run_nowcast()}}'s
+\code{method}; it defaults to \code{"bayes.notrunc.bnb"}. \code{D}, \code{when} and \code{control} are
+derived from the object when you do not give them.
+}
+
 \examples{
 \donttest{
 data(denguedat)

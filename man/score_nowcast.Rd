@@ -9,11 +9,18 @@ score_nowcast(x, truth = NULL, observed_col = NULL)
 \arguments{
 \item{x}{A \link{tbl_nowcast} object.}
 
-\item{truth}{Either \code{NULL} (the default) or a data frame with the event-date
-column, the strata columns and a column of observed counts. When \code{NULL},
-the final observed counts of the \code{tbl_now} the nowcast was built from are
-used, which is only meaningful when that object still holds the \emph{later}
-reports (as it does inside \code{\link[=nowcast_backtest]{nowcast_backtest()}}).}
+\item{truth}{What the nowcast is scored against. One of:
+\itemize{
+\item a \strong{\code{tbl_now}} -- normally the \emph{full} object, still holding the reports
+that arrived after the nowcast's \code{now}. Its eventual counts per event
+date are worked out for you (this is \code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}},
+aggregated over anything that is not a stratum).
+\item a \strong{data frame} with the event-date column, the strata columns and a
+column of observed counts, named by \code{observed_col}.
+\item \strong{\code{NULL}} (default) -- use the \code{tbl_now} the nowcast was built from,
+which is only meaningful when that object still holds the later reports,
+as it does inside \code{\link[=nowcast_backtest]{nowcast_backtest()}}.
+}}
 
 \item{observed_col}{Name of the observed-count column in \code{truth}. Defaults to
 the last column that is neither the event date nor a stratum.}

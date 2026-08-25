@@ -306,6 +306,118 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #' Every modelling package is an optional dependency: it is only needed when you
 #' ask for its method.
 #'
+#' @section What the object contributes, and what it does not:
+#'
+#' `run_nowcast()` reads the `tbl_now`'s declarations and hands each package the
+#' shape it wants. Three of those declarations behave differently enough to be
+#' worth stating plainly.
+#'
+#' **Strata.** How many strata a backend can honour is a property of the
+#' *package*, not of this one. Where a backend cannot, it warns and pools rather
+#' than pretending:
+#'
+#' | `method` | strata it can model | how |
+#' |---|---|---|
+#' | `"baselinenowcast"` | any number | one reporting triangle, and one fit, per stratum |
+#' | `"surveillance"` | any number | one fit per stratum; the package models a single series |
+#' | `"EpiNow2"` | any number | `regional_epinow()` instead of `estimate_infections()` |
+#' | `"epinowcast"` | any number | passed to the model as `by`, so it is fitted jointly |
+#' | `"diseasenowcasting"` | **exactly one** | the package returns a `[draws x time x stratum]` array indexed by one label |
+#' | `"NobBS"` | **exactly one** | `NobBS.strat()` instead of `NobBS()` |
+#'
+#' The last two **pool over the declared strata with a warning** when you give
+#' them more than one, because the label a single array dimension carries cannot
+#' be split back into two columns. Nowcast each stratum yourself if you need
+#' that. Whatever strata columns come back are what the result reports as its
+#' `strata`, so a pooled fit reports none.
+#'
+#' Columns you did **not** declare are summed away by the converters (see
+#' [tbl_now_to_baselinenowcast()]). A `tbl_now` built from `covid_colombia`
+#' without `strata = sex` is nowcast as one pooled series, not silently split.
+#'
+#' **Temporal effects.** [add_temporal_effects()] specs are lazy; the converters
+#' materialise them into ordinary columns, so they travel with the data. Whether
+#' the *model* then uses them is a separate question, and mostly the answer is
+#' "only if you say so":
+#'
+#' * `"diseasenowcasting"` receives the `tbl_now` itself and reads the effects
+#'   off it, so they enter the model with no further work.
+#' * `"epinowcast"` carries them as covariates you name in a module formula, e.g.
+#'   `reference = epinowcast::enw_reference(~ 1 + day_of_week, data = ...)`.
+#'   Without a formula referring to them they are inert.
+#' * every other backend ignores them: the columns ride along so you can split
+#'   on them, and nothing else happens.
+#'
+#' **Censored delays.** A per-case censoring flag (see [add_is_censored()]) puts
+#' a censored and an uncensored row in the same `(event date, report date)` cell,
+#' and a reporting triangle has one slot per cell. Every backend that goes
+#' through a converter therefore **collapses the flag with a warning** — counts
+#' are summed over it, line lists drop the column. `"diseasenowcasting"` is the
+#' exception: it is handed the object untouched, so the flag reaches the package
+#' intact. To *estimate* a delay distribution from censored data, use
+#' [tbl_now_to_epidist()] instead; nowcasting and delay estimation are different
+#' jobs.
+#'
+#' @section How each model is specified, and how to change it:
+#'
+#' `run_nowcast()` does not invent priors or model structure: it calls each
+#' package with **that package's own defaults** and passes `...` straight
+#' through. The defaults are not always the ones you want, and two are worth
+#' knowing before you read the output.
+#'
+#' **`"epinowcast"`** runs three modules, all at their package defaults. The
+#' expectation module is `enw_expectation(r = ~ 0 + (1 | day:.group))` -- a
+#' **random effect per day** on the growth rate, which is a random walk on the
+#' log expected counts in all but name. The reference module is
+#' `enw_reference(parametric = ~ 1, distribution = "lognormal")` -- a **single
+#' lognormal reporting delay, constant over time**. The report module is
+#' `enw_report(non_parametric = ~ 0)` -- **no day-of-week reporting effect**.
+#' Override any of them through `...`, and use `preprocess_args` for
+#' [tbl_now_to_epinowcast()]'s own arguments such as `list(max_delay = 30)`:
+#'
+#' ```r
+#' run_nowcast(nowobj, "epinowcast",
+#'   preprocess_args = list(max_delay = 30),
+#'   report = epinowcast::enw_report(~ 1 + day_of_week, data = pobs),
+#'   fit    = epinowcast::enw_fit_opts(chains = 4, iter_sampling = 1000)
+#' )
+#' ```
+#'
+#' **`"EpiNow2"`** -- read this before trusting the output.
+#' `EpiNow2::estimate_infections()` defaults to `delays = delay_opts()`, which is
+#' `Fixed(0)`: **no reporting delay at all**. Its `generation_time = gt_opts()`
+#' is `Fixed(1)`, a one-day generation time. Those defaults describe a process
+#' with nothing to nowcast, so supply the epidemiology yourself. EpiNow2 also
+#' models \eqn{R_t} with a **Gaussian process** by default
+#' (`rt_opts(rw = 0, gp_on = "R_t-1")`) rather than a random walk:
+#'
+#' ```r
+#' run_nowcast(nowobj, "EpiNow2",
+#'   generation_time = EpiNow2::gt_opts(EpiNow2::example_generation_time),
+#'   delays          = EpiNow2::delay_opts(EpiNow2::example_reporting_delay),
+#'   rt              = EpiNow2::rt_opts(rw = 7)   # weekly random walk instead
+#' )
+#' ```
+#'
+#' **`"diseasenowcasting"`** uses the package's own defaults, reading strata,
+#' covariates and temporal effects off the object. `...` goes to
+#' [diseasenowcasting::nowcast()] -- `type`, `n_draws` and so on.
+#'
+#' **`"baselinenowcast"`** is not Bayesian and has no priors: the delay is
+#' estimated from the reporting triangle and applied. `draws` sets the number of
+#' nowcast samples, and `max_delay` caps the triangle's width.
+#'
+#' **`"NobBS"`** has a fixed model; what you tune is `max_D` (maximum delay) and
+#' `moving_window` (how much history is fitted). `moving_window` counts **event
+#' periods and must not exceed the history you hand it** -- ask for more and
+#' NobBS pads its grid backwards and returns zero for every date, with no error.
+#' `specs` takes its prior list.
+#'
+#' **`"surveillance"`** takes `fit_method`, which is \pkg{surveillance}'s own
+#' `method` argument renamed so it cannot collide with [run_nowcast()]'s
+#' `method`; it defaults to `"bayes.notrunc.bnb"`. `D`, `when` and `control` are
+#' derived from the object when you do not give them.
+#'
 #' @return A [tbl_nowcast] object.
 #'
 #' @seealso [nowcast_ensemble()] to combine several nowcasts,

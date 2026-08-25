@@ -848,6 +848,137 @@
 }
 
 
+#' Drop reports whose delay is beyond a cap
+#'
+#' Counted the way [tbl_now_to_epinowcast()] counts it, so the same number means
+#' the same triangle in both: `max_delay` is the NUMBER of delay periods kept,
+#' i.e. delays `0` to `max_delay - 1`, measured in the object's report units.
+#' `NULL` keeps every delay, which is `max(.delay) + 1` periods.
+#'
+#' Capping is a modelling choice rather than a workaround: one straggler with a
+#' 330-day delay gives the triangle 331 columns, almost all of them empty, and
+#' costs minutes of fitting for no gain.
+#'
+#' @param x A `tbl_now` object.
+#' @param max_delay A single positive whole number, or `NULL`.
+#' @param fn Name of the calling converter, for messages.
+#' @param verbose Logical.
+#'
+#' @return A `tbl_now`, filtered when a cap was given.
+#'
+#' @keywords internal
+#' @noRd
+.cap_max_delay <- function(x, max_delay, fn, verbose = TRUE) {
+  if (is.null(max_delay)) {
+    return(x)
+  }
+  if (!is.numeric(max_delay) || length(max_delay) != 1L || is.na(max_delay) ||
+        max_delay < 1 || max_delay != round(max_delay)) {
+    cli::cli_abort(
+      "{.arg max_delay} must be a single whole number of at least 1, or {.code NULL}."
+    )
+  }
+
+  delays <- dplyr::pull(x, ".delay")
+  keep <- is.na(delays) | delays < max_delay
+  dropped <- sum(!keep, na.rm = TRUE)
+
+  if (dropped == 0) {
+    return(x)
+  }
+  out <- dplyr::filter(x, !!rlang::sym(".delay") < !!max_delay | is.na(!!rlang::sym(".delay")))
+
+  if (isTRUE(verbose)) {
+    cli::cli_inform(c(
+      "i" = cli::format_inline(paste0(
+        "{.fn {fn}}: kept delays 0-{max_delay - 1} ",
+        "({get_report_units(x)}), dropping {dropped} row{?s}."
+      ))
+    ))
+  }
+  out
+}
+
+#' Columns a `tbl_now` carries but was never told about
+#'
+#' Everything that is neither protected (the dates, the count, the censoring
+#' flag, the generated `.event_num`/`.report_num`/`.delay`) nor declared as a
+#' stratum, a covariate or a materialised temporal effect.
+#'
+#' `covid_colombia` is the motivating case: it carries `sex`, and an object
+#' built without `strata = sex` therefore has TWO rows per
+#' `(notification_date, diagnosis_date)` cell. A reporting triangle, a `tsibble`
+#' key and an epinowcast observation table all have exactly one slot per cell,
+#' so the extra dimension has to go somewhere before the conversion can happen.
+#'
+#' @param x A `tbl_now` object.
+#'
+#' @return A character vector of column names, possibly empty.
+#'
+#' @keywords internal
+#' @noRd
+.undeclared_cols <- function(x) {
+  known <- c(
+    get_protected_cols(x),
+    get_strata(x) %||% character(0),
+    get_covariates(x) %||% character(0),
+    get_temporal_effect_cols(x) %||% character(0)
+  )
+  setdiff(colnames(x), known)
+}
+
+#' Pool a `tbl_now` over the columns it was never told about
+#'
+#' A converter should not make the caller aggregate first. `to_count()` already
+#' sums over every column that is neither declared nor protected, so this is
+#' just "call it when there is something to pool, and say so".
+#'
+#' Line lists are left alone: one row IS one case there, so there is nothing to
+#' sum, and collapsing would destroy the individual records the target package
+#' is being handed.
+#'
+#' The message is deliberately `verbose`-only rather than a warning. It fires on
+#' ordinary, correct usage -- any dataset with a column you did not declare --
+#' and a warning on the common path trains people to ignore warnings.
+#'
+#' @param x A `tbl_now` object.
+#' @param fn Name of the calling converter, for the message.
+#' @param verbose Logical.
+#'
+#' @return A `tbl_now`, aggregated when there was anything to aggregate.
+#'
+#' @keywords internal
+#' @noRd
+.pool_undeclared <- function(x, fn, verbose = TRUE) {
+  extra <- .undeclared_cols(x)
+  if (length(extra) == 0 || identical(get_data_type(x), "linelist")) {
+    return(x)
+  }
+
+  before <- nrow(x)
+  pooled <- suppressWarnings(suppressMessages(
+    to_count(x, to = get_data_type(x))
+  ))
+
+  if (isTRUE(verbose)) {
+    # NB: built with paste0(), not cli's `\\` continuation -- `format_inline()`
+    # does not strip those and would print them literally. `cli::qty()` supplies
+    # the quantity for a plural marker that has no `{}` of its own before it.
+    cli::cli_inform(c(
+      "i" = cli::format_inline(paste0(
+        "{.fn {fn}}: pooled over {length(extra)} undeclared ",
+        "column{?s} ({.val {extra}}); {before} rows -> {nrow(pooled)}."
+      )),
+      "i" = cli::format_inline(paste0(
+        "{cli::qty(length(extra))}Declare {?it/them} with {.fn add_strata} ",
+        "to nowcast {?it/them} separately."
+      ))
+    ))
+  }
+
+  pooled
+}
+
 #' Collapse the censoring indicator before a conversion
 #'
 #' A censoring flag that is a per-case property rather than a function of the
@@ -1198,6 +1329,12 @@ tbl_now_from_epinowcast <- function(data, ...,
 #'   `tbl_now_to_baselinenowcast()` (triangle formats only) it is **inferred**
 #'   from the object's time units when the event and report units agree and are
 #'   `"days"` or `"weeks"`; otherwise you must supply it explicitly.
+#' @param max_delay Number of delay periods to keep, in the object's report
+#'   units: `max_delay = 30` keeps delays `0` to `29`, giving a 30-column
+#'   triangle. Counted exactly as [tbl_now_to_epinowcast()] counts it, so the
+#'   same number means the same triangle in both. `NULL` (default) keeps every
+#'   delay -- which is fine on a short tail and expensive on a long one (see
+#'   *Cost of a long delay tail*).
 #' @param format For `to`, one of:
 #'   * `"matrix"` (default) -- a single [baselinenowcast::as_reporting_triangle()]
 #'     matrix. A triangle has no strata dimension, so any strata are **pooled**
@@ -1284,12 +1421,11 @@ tbl_now_from_epinowcast <- function(data, ...,
 #'
 #' The triangle gets one column per delay, so a single long straggler makes it
 #' very wide and the fit very slow: capping delays at 30 days on a daily series
-#' took a fit from **314s to 50s** for a tail carrying under 1% of cases. Unlike
-#' [tbl_now_to_epinowcast()] there is no `max_delay` argument here, so cap with a
-#' filter before converting:
+#' took a fit from **314s to 50s** for a tail carrying under 1% of cases. Use
+#' `max_delay`, which counts the way [tbl_now_to_epinowcast()]'s does:
 #'
 #' ```r
-#' x |> dplyr::filter(.delay <= 30) |> tbl_now_to_baselinenowcast()
+#' tbl_now_to_baselinenowcast(x, max_delay = 30)   # delays 0-29, 30 columns
 #' ```
 #'
 #' @section Negative delays:
@@ -1995,11 +2131,18 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
 #' @export
 tbl_now_to_baselinenowcast <- function(x, ...,
                                        format = c("matrix", "long", "triangle_list"),
-                                       delays_unit = NULL, complete = "auto",
+                                       delays_unit = NULL, max_delay = NULL,
+                                       complete = "auto",
                                        negatives = c("redistribute", "error"),
                                        verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_baselinenowcast")
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_baselinenowcast")
+  # A reporting triangle has ONE slot per (event, report) cell, so a column the
+  # object was never told about -- `sex` in `covid_colombia` -- leaves two rows
+  # per cell and the conversion fails outright. Pool it here rather than making
+  # the caller aggregate first.
+  x <- .pool_undeclared(x, "tbl_now_to_baselinenowcast", verbose = verbose)
+  x <- .cap_max_delay(x, max_delay, "tbl_now_to_baselinenowcast", verbose = verbose)
   format <- match.arg(format)
   negatives <- match.arg(negatives)
 
@@ -3014,6 +3157,10 @@ tbl_now_to_epidist <- function(x, ...,
 tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
                                verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_tsibble")
+  # A `tsibble` is invalid unless (key, index) is unique, and an undeclared
+  # column puts two rows in the same slot. Pool it away, as the other converters
+  # now do.
+  x <- .pool_undeclared(x, "tbl_now_to_tsibble", verbose = verbose)
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_tsibble")
   .need_pkg("tsibble")
   index <- match.arg(index)

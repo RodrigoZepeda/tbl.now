@@ -60,15 +60,24 @@
 
 #' The final observed counts of a `tbl_now`
 #'
-#' @description `r lifecycle::badge('experimental')`
-#'
 #' The "truth" a nowcast is scored against: everything that was eventually
-#' reported for each event date, aggregated over the columns that are neither
-#' the event date nor a stratum.
+#' reported for each event date.
 #'
-#' Pass the *full* object here, not the truncated snapshot the nowcast was fitted
-#' on: the point of the comparison is that the truth contains reports the model
-#' had not seen.
+#' This is [get_latest_reported_cases()] reshaped for scoring -- the values are
+#' identical. What it adds is the bookkeeping the scoring code wants and the
+#' getter deliberately does not do: the `tbl_now` class and the report-date
+#' columns are dropped, any column that is neither the event date nor a
+#' requested stratum is summed away, and the count is renamed `.observed` so
+#' downstream code does not have to know what the source called it.
+#'
+#' Internal since 0.19.0. It was exported, but a second public name for
+#' `get_latest_reported_cases()` is a second thing to learn for no gain --
+#' [score_nowcast()] and [as_scoringutils()] now take the `tbl_now` itself as
+#' `truth` and call this for you.
+#'
+#' Pass the *full* object here, not the truncated snapshot the nowcast was
+#' fitted on: the point of the comparison is that the truth contains reports the
+#' model had not seen.
 #'
 #' @param x A `tbl_now` object.
 #' @param strata Character vector of strata columns to keep. Defaults to the
@@ -77,17 +86,8 @@
 #' @return A `tibble` with the event-date column, the strata columns and
 #'   `.observed`.
 #'
-#' @seealso [score_nowcast()], [nowcast_backtest()]
-#'
-#' @examples
-#' data(denguedat)
-#' recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
-#' dengue <- tbl_now(recent,
-#'   event_date = onset_week, report_date = report_week, verbose = FALSE
-#' )
-#' nowcast_truth(dengue)
-#'
-#' @export
+#' @keywords internal
+#' @noRd
 nowcast_truth <- function(x, strata = get_strata(x)) {
   .assert_tbl_now(x, "nowcast_truth")
 
@@ -105,6 +105,50 @@ nowcast_truth <- function(x, strata = get_strata(x)) {
     dplyr::summarise(.observed = sum(.data[[count_col]], na.rm = TRUE), .groups = "drop")
 }
 
+#' Resolve the `truth` argument of the scoring functions
+#'
+#' Accepts the full `tbl_now` (the common case -- everything eventually reported
+#' for each event date), a data frame of observed counts, or `NULL` to fall back
+#' to the nowcast's own source data.
+#'
+#' @param truth The user's `truth` argument.
+#' @param observed_col The user's `observed_col` argument.
+#' @param x The `tbl_nowcast` being scored.
+#' @param arg Calling function name, for messages.
+#'
+#' @return A list with `truth` (a tibble) and `observed_col`.
+#'
+#' @keywords internal
+#' @noRd
+.resolve_truth <- function(truth, observed_col, x, arg) {
+  if (is.null(truth)) {
+    if (is.null(x@data)) {
+      cli::cli_abort(c(
+        "{.arg truth} is required: the nowcast does not carry its source data.",
+        "i" = "Pass the full {.cls tbl_now} the nowcast was made from."
+      ))
+    }
+    return(list(
+      truth = nowcast_truth(x@data, strata = x@strata), observed_col = ".observed"
+    ))
+  }
+
+  # A `tbl_now` is the natural thing to hand over -- it IS the eventual truth --
+  # so collapse it here rather than making the caller do it.
+  if (is_tbl_now(truth)) {
+    return(list(
+      truth = nowcast_truth(truth, strata = x@strata), observed_col = ".observed"
+    ))
+  }
+
+  if (!is.data.frame(truth)) {
+    cli::cli_abort(
+      "{.arg truth} must be a {.cls tbl_now}, a data frame, or {.code NULL}."
+    )
+  }
+  list(truth = dplyr::as_tibble(truth), observed_col = observed_col)
+}
+
 #' Score a nowcast against observed data
 #'
 #' @description `r lifecycle::badge('experimental')`
@@ -114,11 +158,17 @@ nowcast_truth <- function(x, strata = get_strata(x)) {
 #' (and stratum).
 #'
 #' @param x A [tbl_nowcast] object.
-#' @param truth Either `NULL` (the default) or a data frame with the event-date
-#'   column, the strata columns and a column of observed counts. When `NULL`,
-#'   the final observed counts of the `tbl_now` the nowcast was built from are
-#'   used, which is only meaningful when that object still holds the *later*
-#'   reports (as it does inside [nowcast_backtest()]).
+#' @param truth What the nowcast is scored against. One of:
+#'
+#'   * a **`tbl_now`** -- normally the *full* object, still holding the reports
+#'     that arrived after the nowcast's `now`. Its eventual counts per event
+#'     date are worked out for you (this is [get_latest_reported_cases()],
+#'     aggregated over anything that is not a stratum).
+#'   * a **data frame** with the event-date column, the strata columns and a
+#'     column of observed counts, named by `observed_col`.
+#'   * **`NULL`** (default) -- use the `tbl_now` the nowcast was built from,
+#'     which is only meaningful when that object still holds the later reports,
+#'     as it does inside [nowcast_backtest()].
 #' @param observed_col Name of the observed-count column in `truth`. Defaults to
 #'   the last column that is neither the event date nor a stratum.
 #'
@@ -149,15 +199,10 @@ score_nowcast <- function(x, truth = NULL, observed_col = NULL) {
   strata <- x@strata
   key <- c(event_col, strata)
 
-  if (is.null(truth)) {
-    if (is.null(x@data)) {
-      cli::cli_abort("{.arg truth} is required: the nowcast does not carry its source data.")
-    }
-    truth <- nowcast_truth(x@data, strata = strata)
-    observed_col <- ".observed"
-  }
+  resolved <- .resolve_truth(truth, observed_col, x, "score_nowcast")
+  truth <- resolved$truth
+  observed_col <- resolved$observed_col
 
-  truth <- dplyr::as_tibble(truth)
   if (is.null(observed_col)) {
     observed_col <- utils::tail(setdiff(colnames(truth), key), 1)
   }
@@ -614,14 +659,10 @@ as_scoringutils <- function(x, truth = NULL, observed_col = NULL) {
 
   key <- c(x@event_date, x@strata)
 
-  if (is.null(truth)) {
-    if (is.null(x@data)) {
-      cli::cli_abort("{.arg truth} is required: the nowcast does not carry its source data.")
-    }
-    truth <- nowcast_truth(x@data, strata = x@strata)
-    observed_col <- ".observed"
-  }
-  truth <- dplyr::as_tibble(truth)
+  resolved <- .resolve_truth(truth, observed_col, x, "as_scoringutils")
+  truth <- resolved$truth
+  observed_col <- resolved$observed_col
+
   if (is.null(observed_col)) {
     observed_col <- utils::tail(setdiff(colnames(truth), key), 1)
   }

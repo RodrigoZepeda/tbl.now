@@ -7,7 +7,7 @@
 nowcast_fit.testtoy <- function(method, x, ..., spread = 1.2,
                                 quantile_levels = nowcast_quantile_levels(),
                                 verbose = TRUE) {
-  observed <- nowcast_truth(x)
+  observed <- tbl.now:::nowcast_truth(x)
   list(observed = observed, spread = spread, event_col = get_event_date(x))
 }
 

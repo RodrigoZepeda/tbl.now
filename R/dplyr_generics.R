@@ -298,14 +298,45 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
       nrow()
 
     if (current_rows > distinct_rows) {
-      warnings <- c(
-        warnings,
-        paste0(
-          "*Non-unique*: Data has multiple rows for the same event ({event_date}) and report",
-          "({report_date}) dates. Consider using `to_count()` to aggregate the data or",
-          "`distinct()` to remove repeated observations."
+      # Naming the culprit matters. The usual cause is a column the object was
+      # never told about -- `sex` in `covid_colombia` -- and the old advice to
+      # try `distinct()` sends people in a circle: those rows ARE distinct, they
+      # differ in the undeclared column. It only helps for genuine duplicates,
+      # and it silently deletes real cases when the rows are not duplicates.
+      extra <- .undeclared_cols(x)
+      cause <- if (length(extra) > 0) {
+        cli::format_inline(
+          "{length(extra)} column{?s} {.val {extra}} {?is/are} not declared, so
+           {?it splits/they split} each cell into several rows."
         )
+      } else {
+        "The rows are exact duplicates of one another."
+      }
+      fix <- if (length(extra) > 0) {
+        cli::format_inline(paste0(
+          "{cli::qty(length(extra))}Declare {?it/them} with ",
+          "{.code strata = } to model {?it/them} separately, or ",
+          "{.fn to_count} to pool {?it/them} away."
+        ))
+      } else {
+        cli::format_inline("Use {.fn dplyr::distinct} to drop the repeats.")
+      }
+      message <- c(
+        cli::format_inline(paste0(
+          "*Non-unique*: {current_rows - distinct_rows} row{?s} ",
+          "{?shares/share} an ({event_date}, {report_date}) combination."
+        )),
+        "i" = cause,
+        "i" = fix
       )
+      if (length(extra) > 0) {
+        message <- c(
+          message,
+          "i" = "The {.fn tbl_now_to_*} converters pool undeclared columns for
+                 you, so this is a warning rather than an error."
+        )
+      }
+      warnings <- c(warnings, list(message))
     }
   }
 

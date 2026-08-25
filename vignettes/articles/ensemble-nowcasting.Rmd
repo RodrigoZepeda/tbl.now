@@ -30,6 +30,23 @@ if (has("data.table")) data.table::setDTthreads(1)
 
 > This was written automatically by an AI model. A human has yet to review.
 
+::: {.alert .alert-warning}
+`r lifecycle::badge("experimental")`
+**Everything on this page is experimental.** `run_nowcast()`,
+`nowcast_ensemble()`, `nowcast_backtest()`, `nowcast_weights()`,
+`score_nowcast()` and the `tbl_nowcast` class are all marked
+[experimental](https://lifecycle.r-lib.org/articles/stages.html#experimental):
+they work, they are tested, and their **interfaces may still change** — argument
+names, defaults and the shape of what comes back. The extension contract
+(`nowcast_fit()` / `nowcast_tidy()`) is the part most likely to move, because it
+is the youngest.
+
+Pin a version if you are building something on top of this. The stable, settled
+half of the package is the `tbl_now` class and the `tbl_now_to_*()` converters
+in `vignette("nowcasting-models")` — you can always drive a model by hand
+through those, and `tidy()` will normalise the result the same way.
+:::
+
 ## Why this vignette?
 
 `vignette("nowcasting-models")` shows how one `tbl_now` can be handed to six
@@ -286,7 +303,7 @@ Scoring only makes sense against data the model had not seen, which is why
 `snapshot` was truncated at `now` and the truth comes from the full series:
 
 ```{r score, eval=FALSE}
-score_nowcast(baseline, truth = nowcast_truth(dengue))
+score_nowcast(baseline, truth = dengue)
 ```
 
 ```{r score-out, echo=FALSE}
@@ -308,7 +325,7 @@ If you would rather use the full \pkg{scoringutils} score suite,
 
 ```{r scoringutils, eval=FALSE}
 baseline |>
-  as_scoringutils(truth = nowcast_truth(dengue)) |>
+  as_scoringutils(truth = dengue) |>
   as.data.frame() |>
   scoringutils::as_forecast_quantile() |>
   scoringutils::score()
@@ -487,9 +504,8 @@ evaluate <- function(x_full, now, members, method_args = list()) {
     `ensemble (quantile)` = nowcast_ensemble(fits, type = "quantile")
   ))
 
-  truth <- nowcast_truth(x_full)
   everything |>
-    lapply(as_scoringutils, truth = truth) |>
+    lapply(as_scoringutils, truth = x_full) |>
     bind_rows(.id = "model")
 }
 ```
@@ -549,6 +565,63 @@ wis |>
     plot.title = element_text(face = "bold", colour = "#334335")
   )
 ```
+
+### What that looks like day by day
+
+The table says the ensemble is mid-pack. This is what "mid-pack" actually means:
+
+```{r comparison-lines, eval=has("ggplot2"), message=FALSE, warning=FALSE, fig.width=9, fig.height=3.4, fig.alt="Three panels, one per epidemic. Thin coloured lines show each member model's median nowcast, a thick green line the ensemble, and a black dashed line what those dates eventually reached. The members disagree and the ensemble runs between them."}
+members <- cached$members
+
+medians <- cached$forecasts |>
+  filter(quantile_level == 0.5, model %in% c(members, "ensemble (quantile)"))
+
+truth_line <- cached$forecasts |>
+  distinct(epidemic, target_date, observed)
+
+# Okabe-Ito for the members: they need to be told APART, which is a categorical
+# job. The ensemble gets the tbl.now palette's green, the colour this package
+# reserves for the epidemic process.
+member_colours <- c(
+  baselinenowcast   = "#D55E00",
+  diseasenowcasting = "#0072B2",
+  NobBS             = "#CC79A7"
+)
+
+ggplot(mapping = aes(target_date)) +
+  geom_line(
+    data = filter(medians, model %in% members),
+    aes(y = predicted, colour = model), linewidth = 0.5, alpha = 0.9
+  ) +
+  # The ensemble in the palette's green: it is an estimate of the epidemic
+  # process, like every other line here, but it is the subject of the figure.
+  geom_line(
+    data = filter(medians, model == "ensemble (quantile)"),
+    aes(y = predicted, colour = "ensemble (quantile)"), linewidth = 1.2
+  ) +
+  geom_line(
+    data = truth_line, aes(y = observed, linetype = "eventual truth"),
+    colour = "#262626", linewidth = 0.6
+  ) +
+  facet_wrap(~epidemic, scales = "free", nrow = 1) +
+  scale_colour_manual(
+    name = NULL,
+    values = c(member_colours, `ensemble (quantile)` = "#5F7E62"),
+    breaks = c(members, "ensemble (quantile)")
+  ) +
+  scale_linetype_manual(name = NULL, values = c(`eventual truth` = "dashed")) +
+  labs(x = NULL, y = "Cases") +
+  theme_minimal(base_size = 9) +
+  theme(
+    legend.position = "top", legend.box = "horizontal",
+    panel.grid.minor = element_blank()
+  ) +
+  guides(colour = guide_legend(nrow = 2, byrow = TRUE))
+```
+
+The members disagree — on dengue by a wide margin — and the ensemble runs
+between them. That is the whole mechanism: it cannot be the best line on the
+page, because it is an average of lines, but it also cannot be the worst.
 
 ### Is it calibrated?
 
@@ -668,11 +741,12 @@ nowcast, but it is a complete one.
 ```{r custom-fit}
 nowcast_fit.inflate <- function(method, x, ..., factor = 1.2, sigma = 0.15,
                                 quantile_levels, verbose = TRUE) {
-  reported <- nowcast_truth(x)
+  reported <- get_latest_reported_cases(x)
+  count_col <- get_case_count(reported)
 
   list(
     dates  = reported[[get_event_date(x)]],
-    counts = reported[[".observed"]],
+    counts = reported[[count_col]],
     factor = factor,
     sigma  = sigma
   )

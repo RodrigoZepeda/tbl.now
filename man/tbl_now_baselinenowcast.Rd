@@ -21,6 +21,7 @@ tbl_now_to_baselinenowcast(
   ...,
   format = c("matrix", "long", "triangle_list"),
   delays_unit = NULL,
+  max_delay = NULL,
   complete = "auto",
   negatives = c("redistribute", "error"),
   verbose = TRUE
@@ -62,6 +63,13 @@ whether strata happen to be present. Unlike splitting the long format
 yourself, the delay unit and the strata are taken from the object, and
 \code{\link[=as_tbl_now]{as_tbl_now()}} can rebuild a \code{tbl_now} from the result.
 }}
+
+\item{max_delay}{Number of delay periods to keep, in the object's report
+units: \code{max_delay = 30} keeps delays \code{0} to \code{29}, giving a 30-column
+triangle. Counted exactly as \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}} counts it, so the
+same number means the same triangle in both. \code{NULL} (default) keeps every
+delay -- which is fine on a short tail and expensive on a long one (see
+\emph{Cost of a long delay tail}).}
 
 \item{complete}{For \code{to} with a triangle format: fill event periods that have
 no reports at all with zeroes, out to the object's \code{\link[=get_now]{get_now()}}, via
@@ -150,11 +158,10 @@ problem.
 
 The triangle gets one column per delay, so a single long straggler makes it
 very wide and the fit very slow: capping delays at 30 days on a daily series
-took a fit from \strong{314s to 50s} for a tail carrying under 1\% of cases. Unlike
-\code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}} there is no \code{max_delay} argument here, so cap with a
-filter before converting:
+took a fit from \strong{314s to 50s} for a tail carrying under 1\% of cases. Use
+\code{max_delay}, which counts the way \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}'s does:
 
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{x |> dplyr::filter(.delay <= 30) |> tbl_now_to_baselinenowcast()
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{tbl_now_to_baselinenowcast(x, max_delay = 30)   # delays 0-29, 30 columns
 }\if{html}{\out{</div>}}
 }
 
