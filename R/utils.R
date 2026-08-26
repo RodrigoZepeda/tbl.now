@@ -130,3 +130,52 @@ tbl_now_attributes <- function(x) {
 
   attributes(x)[own]
 }
+
+#' The complete grid of dates between two bounds, in an axis's own units
+#'
+#' `seq.Date()` matches its `by` string with `pmatch()`, so the plural unit
+#' names the attributes carry (`"days"`, `"weeks"`, ...) work directly -- but
+#' `"numeric"` is not a calendar unit and has to step by 1 instead. Every grid
+#' in the package needs that distinction, and it was inlined in three different
+#' shapes before this existed.
+#'
+#' @param from,to The bounds, `Date` or numeric.
+#' @param units One of `"days"`, `"weeks"`, `"months"`, `"years"`, `"numeric"`.
+#'
+#' @return A vector of the same type as `from`, empty when `from > to`.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_date_seq <- function(from, to, units) {
+  if (length(from) == 0 || length(to) == 0 || is.na(from) || is.na(to)) {
+    return(from[0])
+  }
+  if (from > to) {
+    return(from[0])
+  }
+  if (identical(units, "numeric") || !lubridate::is.Date(from)) {
+    seq(from, to, by = 1)
+  } else {
+    seq(from, to, by = as.character(units))
+  }
+}
+
+#' How many units separate two dates
+#'
+#' Wraps [.date_difference_in_units()] so that `"numeric"` axes, which are not
+#' dates at all, take the plain difference.
+#'
+#' @param from,to The bounds, `Date` or numeric. Either may be a vector.
+#' @param units One of `"days"`, `"weeks"`, `"months"`, `"years"`, `"numeric"`.
+#'
+#' @return A numeric vector: `to - from`, expressed in `units`.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_units_between <- function(from, to, units) {
+  if (identical(units, "numeric") || !lubridate::is.Date(from)) {
+    as.numeric(to) - as.numeric(from)
+  } else {
+    .date_difference_in_units(to, from, units)
+  }
+}

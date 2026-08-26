@@ -292,6 +292,56 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
   quantile_levels
 }
 
+#' Keep only the targets EVERY member predicted
+#'
+#' A prediction target one member covers and another does not is not something
+#' an ensemble can combine. Both combination rules here group by the target and
+#' average what they find, so a target with a single member present comes out as
+#' that member's own value -- carrying full weight, labelled as the ensemble,
+#' with nothing to say it is not one. `EpiNow2` makes this concrete: it forecasts
+#' one period past the end of the data, so before that was trimmed it contributed
+#' a lone extra week at the `now` edge, which is the part of the picture people
+#' actually read.
+#'
+#' @param members A named list of `tbl_nowcast` objects.
+#' @param key Character vector of the columns identifying a prediction target.
+#'
+#' @return `members`, restricted to the targets common to all of them.
+#'
+#' @keywords internal
+#' @noRd
+.common_targets <- function(members, key) {
+  if (length(members) < 2L) {
+    return(members)
+  }
+  targets <- lapply(members, function(m) {
+    unique(dplyr::select(m@predictions, dplyr::all_of(key)))
+  })
+  shared <- Reduce(function(a, b) dplyr::inner_join(a, b, by = key), targets)
+
+  dropped <- vapply(targets, function(t) nrow(t) - nrow(shared), numeric(1))
+  if (any(dropped > 0)) {
+    losers <- names(members)[dropped > 0]
+    cli::cli_warn(c(
+      "Dropping {.val {max(dropped)}} prediction target{?s} that not every \\
+       member covers.",
+      "i" = "{.val {losers}} predict{?s/} {cli::qty(length(losers))}\\
+             {?a target/targets} the other{?s} do{?es/} not; averaging over the \\
+             member{?s} that happen{?s/} to be present would report one \\
+             member's own value as the ensemble's.",
+      "i" = "{.val {nrow(shared)}} shared target{?s} remain{?s/}."
+    ))
+  }
+
+  lapply(members, function(m) {
+    m@predictions <- dplyr::semi_join(m@predictions, shared, by = key)
+    if (!is.null(m@draws)) {
+      m@draws <- dplyr::semi_join(m@draws, shared, by = key)
+    }
+    m
+  })
+}
+
 #' Weighted average of the members' quantiles
 #'
 #' @param members A named list of `tbl_nowcast` objects.
@@ -304,6 +354,7 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
 #' @keywords internal
 #' @noRd
 .ensemble_quantiles <- function(members, weights, key, quantile_levels) {
+  members <- .common_targets(members, key)
   quantile_levels <- .common_quantile_levels(members, quantile_levels)
 
   stacked <- purrr_map_dfr(names(members), function(nm) {
@@ -349,6 +400,7 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
     ))
   }
 
+  members <- .common_targets(members, key)
   quantile_levels <- .common_quantile_levels(members, quantile_levels)
   # Give each member a whole number of draws that respects its weight, with the
   # rounding remainder going to the heaviest members.

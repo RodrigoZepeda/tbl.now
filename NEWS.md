@@ -1,3 +1,71 @@
+# tbl.now 0.23.0
+
+## `summary()` describes the object the way a nowcaster reads it
+
+`summary()` on a `tbl_now` now returns a tibble rather than the column-by-column
+listing `summary.data.frame()` produces, which said nothing about the structure
+the class exists to carry. One row is one statistic of one quantity of one
+stratum:
+
+```r
+summary(dengue_now) |> dplyr::filter(component == "delay")
+```
+
+It covers the case counts on each of the object's time axes (event, report and,
+where there is one, confirmation), the delay distributions between them, the
+lengths of the runs of zero dates, the compositional shares (censored, per
+confirmation outcome, per stratum, per categorical covariate level), the lag-1
+autocorrelation of each series, the reporting-completeness curve, the totals,
+the date ranges and `now`, and how full the reporting triangle is.
+
+Three decisions worth knowing about:
+
+* **The date grids run to `now`, not to the last row present.** "Cases per event
+  date" is a statement about a calendar; a date with no rows is a zero, not an
+  absence. This is what makes `prop_zero` and the zero-run lengths mean
+  anything, and it is why a **line list** -- which cannot represent a zero --
+  summarises to exactly the same numbers as its counts. The grid is *global*, so
+  a stratum whose cases start late shows its leading zeros and the strata stay
+  comparable. So does the triangle-occupancy denominator.
+* **Quantiles are the inverse-ECDF (type 1) estimator**, not
+  `stats::quantile()`'s default: `q50` is the smallest value whose cumulative
+  weight reaches `0.5`. This is the estimator `autoplot()` and
+  `test_delay_drift()` already use, so the table and the figures agree, and it
+  always returns a delay that was actually observed. The mean and standard
+  deviation are the ordinary case-weighted ones, equal to expanding the counts
+  to one row per case.
+* **Not-yet-observed cells are dropped.** An `NA` count means the cell has not
+  been observed yet, unlike a `0`, which was observed and was zero. Those rows
+  carry no cases and are excluded, rather than turning every total they touch
+  into `NA` -- which is what `flusight` did to an earlier draft. The
+  `"unobserved_cells"` coverage row says how many were dropped.
+* **`count-cumulative` data gets no delay rows.** A cumulative total is not
+  additive across delays, so a case-weighted delay distribution would be
+  meaningless; `delay_summary()` refuses it outright and points at `to_count()`.
+  The new `"growth"` rows take its place, giving the ratio of each event date's
+  running total from one delay to the next.
+
+## Every block of the summary is its own function
+
+`summary()` is exactly the `bind_rows()` of these, and each returns the same
+schema, so they stack:
+
+`cases_per_date()`, `delay_summary()`, `zero_run_summary()`, `prop_censored()`,
+`prop_confirmation_type()`, `prop_strata()`, `prop_covariate_levels()`,
+`case_autocorrelation()`, `date_ranges()`, `triangle_occupancy()`,
+`reporting_completeness()` and `cumulative_growth()`.
+
+`delay_summary()` names the three delays explicitly -- `"event_to_report"`,
+`"event_to_confirmation"` and `"report_to_confirmation"` -- because the first
+two are measured from the event and the last is the laboratory's own turnaround,
+measured from the report, and confusing them is a documented hazard.
+
+## Internal
+
+One date-grid helper replaces three inlined copies of the same
+`seq(from, to, by = <units>)` logic, including the one in `complete_zeroes()`
+that only knew about days and weeks.
+
 # tbl.now 0.22.0
 
 ## The back-ends that stratify by ONE column

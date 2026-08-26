@@ -470,6 +470,78 @@ incomplete"). `autoplot()` works on **all three data types**, including
 
 ---
 
+## Skill: summarise a `tbl_now` (`summary`)
+
+`summary()` on a `tbl_now` returns a **tibble**, one row per statistic of one
+quantity of one stratum, rather than `summary.data.frame()`'s column listing.
+Read the block you want with `dplyr::filter()`.
+
+```r
+summary(tn)                              # everything
+summary(tn) |> dplyr::filter(component == "delay")
+summary(tn, by_strata = FALSE)           # pooled rows only
+```
+
+Columns: `component`, `quantity`, `stratum`, then `n`, `total`, `mean`, `sd`,
+`min`, `q25`, `q50`, `q75`, `q90`, `max`, `prop_zero`, `prop`, `value`,
+`date_min`, `date_max`. A row uses the columns that apply to it and leaves the
+rest `NA`. `stratum` is `"all"` for the pooled rows.
+
+`component` is one of:
+
+| component | rows |
+|---|---|
+| `cases` | counts per event / report / confirmation date, and per confirmation outcome; plus `censored_per_*_date` when there is a censoring flag |
+| `delay` | `event_to_report`, `event_to_confirmation`, `report_to_confirmation`, split by outcome when there is more than one |
+| `zero_run` | lengths of the runs of consecutive zero dates, per axis |
+| `composition` | shares: `censored`, `confirmation_type = ...`, `strata = ...`, `covariate: <col> = <level>` (in `prop`) |
+| `autocorrelation` | lag-*k* correlation of each case series (in `value`) |
+| `completeness` | share of each event date's eventual total arrived by delay *d* |
+| `coverage` | `total_cases`, the date ranges, `now`, `max_delay`, the triangle cell counts and occupancy, `now_gap_*` |
+| `growth` | ratio of each event date's running total from one delay to the next (`count-cumulative` only) |
+
+Each block is also its own exported function, returning the same schema, so they
+stack with `dplyr::bind_rows()`:
+
+```r
+cases_per_date(tn, axis = "event")       # "event" / "report" / "confirmation"
+delay_summary(tn, delay = "event_to_report")
+zero_run_summary(tn, axis = "event")
+prop_censored(tn); prop_strata(tn)
+prop_confirmation_type(tn); prop_covariate_levels(tn)
+case_autocorrelation(tn, lags = 1)
+date_ranges(tn); triangle_occupancy(tn)
+reporting_completeness(tn, delays = 0:7)
+cumulative_growth(tn, k = 7)
+```
+
+Three things to know before reading the numbers:
+
+- **The grids run to `now`, not to the last row.** A date with no rows is a
+  **zero**, not an absence — which is what makes `prop_zero` and the zero-run
+  lengths mean anything, and why a **line list** summarises to exactly the same
+  numbers as its counts. The grid is *global*, so a stratum whose cases start
+  late shows its leading zeros and the strata stay comparable. So does the
+  triangle-occupancy denominator.
+- **Quantiles are inverse-ECDF (type 1)**, not `stats::quantile()`'s default:
+  `q50` is the smallest value whose cumulative weight reaches `0.5`. Same
+  estimator as `autoplot()` / `test_delay_drift()`, so the table matches the
+  figures. `mean`/`sd` are the ordinary case-weighted ones (equal to expanding
+  the counts to one row per case).
+- **`NA` counts are dropped** as not-yet-observed cells (an `NA` is "not seen
+  yet", a `0` is "seen, and it was zero"). The `unobserved_cells` coverage row
+  counts them, so the drop is visible rather than silent.
+- **`count-cumulative` gets no `delay` rows.** `delay_summary()` errors on it —
+  a cumulative total is not additive across delays. Use the `growth` rows, or
+  `to_count(x, to = "count-incidence")` first (remembering that de-accumulating
+  can produce negative increments).
+
+`report_to_confirmation` is the **laboratory's turnaround, measured from the
+report**; `event_to_confirmation` is measured from the event, so it is directly
+comparable with `event_to_report`. They are different quantities.
+
+---
+
 ## Skill: diagnose reporting-delay drift & change points
 
 Ask whether the reporting delay is **stable over time** before trusting a fixed
@@ -971,6 +1043,11 @@ nowcast_method("nobbs")                         # -> the dispatch object
 ## Reference: diagnostics & batches (all experimental)
 
 ```r
+summary(x, by_strata =)                   # the whole summary, as a tibble
+cases_per_date(x, axis =) / delay_summary(x, delay =) / zero_run_summary(x, axis =)
+prop_censored(x) / prop_strata(x) / prop_confirmation_type(x) / prop_covariate_levels(x)
+case_autocorrelation(x, lags =) / date_ranges(x) / triangle_occupancy(x)
+reporting_completeness(x, delays =) / cumulative_growth(x, k =)
 autoplot(x, panels =, by_strata =)        # multi-panel diagnostic (patchwork)
 plot_delay_drift(x) / test_delay_drift(x) / test_delay_changepoint(x)
 batch_test(x) / batch_shape_test(x, at =) / simulate_batch(x, closed_dates =)

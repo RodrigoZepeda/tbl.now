@@ -449,3 +449,58 @@ test_that("built-in method names are matched case-insensitively", {
   expect_equal(nowcast_method("EPINOW2")$name, "EpiNow2")
   expect_equal(nowcast_method("Surveillance")$name, "surveillance")
 })
+
+# A nowcast estimates what has already happened -----------------------------
+#
+# `EpiNow2::estimate_infections()` also forecasts: it returns one period past the
+# end of the data, so a weekly object comes back with an extra week after `now`.
+# Left in, it reaches `nowcast_ensemble()` as a target no other member predicted.
+
+test_that("predictions after `now` are dropped, with a message naming them", {
+  x <- counts_tbl_now()
+  now <- get_now(x)
+  event_col <- get_event_date(x)
+
+  # A tidied frame in the shape every engine hands to `.tidy_to_predictions()`,
+  # carrying one row past `now`.
+  tidied <- dplyr::tibble(
+    event_date = c(now - 7, now, now + 7),
+    stratum    = "all",
+    estimate   = c(10, 20, 30),
+    conf.low   = c(5, 15, 25),
+    conf.high  = c(15, 25, 35),
+    level      = 0.95,
+    engine     = "EpiNow2"
+  )
+
+  # The fixture reports one interval, so the "cannot report levels" warning is
+  # expected noise here; the message about `now` is what is under test.
+  expect_message(
+    out <- suppressWarnings(tbl.now:::.tidy_to_predictions(
+      tidied, x, nowcast_quantile_levels(), "EpiNow2"
+    )),
+    "after"
+  )
+  expect_equal(max(out$predictions[[event_col]]), now)
+  expect_false((now + 7) %in% out$predictions[[event_col]])
+  # Everything at or before `now` survives untouched.
+  expect_setequal(unique(out$predictions[[event_col]]), c(now - 7, now))
+})
+
+test_that("an engine that stops at `now` is left alone and stays silent", {
+  x <- counts_tbl_now()
+  now <- get_now(x)
+
+  tidied <- dplyr::tibble(
+    event_date = c(now - 7, now), stratum = "all",
+    estimate = c(10, 20), conf.low = c(5, 15), conf.high = c(15, 25),
+    level = 0.95, engine = "baselinenowcast"
+  )
+
+  expect_no_message(
+    out <- suppressWarnings(tbl.now:::.tidy_to_predictions(
+      tidied, x, nowcast_quantile_levels(), "baselinenowcast"
+    ))
+  )
+  expect_equal(nrow(dplyr::distinct(out$predictions[get_event_date(x)])), 2L)
+})

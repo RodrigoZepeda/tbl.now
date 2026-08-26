@@ -532,7 +532,47 @@ nowcast_tidy.NobBS <- function(method, fit, x, ..., quantile_levels) {
       c(event_col, strata_cols, ".quantile_level")
     )))
 
+  # A nowcast estimates what has already happened. Some back-ends also forecast:
+  # `EpiNow2::estimate_infections()` returns one period past the end of the data,
+  # so a weekly object comes back with an extra week beyond `now`. That row is a
+  # forecast, and keeping it here would put it in an ensemble alongside members
+  # that never predicted it -- where it is averaged over the one member that did
+  # and reported as the ensemble's own value.
+  predictions <- .drop_beyond_now(predictions, x, event_col, engine)
+
   list(predictions = predictions, draws = NULL)
+}
+
+#' Drop predictions that fall after `now`
+#'
+#' @param predictions The long prediction frame.
+#' @param x The source `tbl_now`.
+#' @param event_col Name of the event-date column.
+#' @param engine Engine name, for the message.
+#'
+#' @return `predictions`, without rows after `get_now(x)`.
+#'
+#' @keywords internal
+#' @noRd
+.drop_beyond_now <- function(predictions, x, event_col, engine) {
+  now <- get_now(x)
+  if (is.null(now) || !nrow(predictions)) {
+    return(predictions)
+  }
+  beyond <- predictions[[event_col]] > now
+  if (!any(beyond, na.rm = TRUE)) {
+    return(predictions)
+  }
+  dropped <- sort(unique(predictions[[event_col]][beyond]))
+  cli::cli_inform(c(
+    "i" = "{.pkg {engine}} also forecast {length(dropped)} \\
+           {cli::qty(length(dropped))}date{?s} after {.field now} \\
+           ({.val {as.character(dropped)}}); dropping {cli::qty(length(dropped))}\\
+           {?it/them}.",
+    "i" = "A nowcast estimates what has already happened. Use the back-end \\
+           directly if you want its forecast."
+  ))
+  predictions[!beyond, , drop = FALSE]
 }
 
 # surveillance -----
@@ -592,6 +632,13 @@ nowcast_fit.surveillance <- function(method, x, ..., when = NULL, D = NULL,
   grid <- get_surveillance_range(x, by = aggregate_by)
   when <- when %||% get_surveillance_when(x, length = D + 1L, by = aggregate_by)
 
+  # `N.tInf.max` caps the support of the nowcast distribution, and
+  # `surveillance`'s own default is 300 -- smaller than a single period's count
+  # on any series of consequence. Exceeding it does not warn usefully: the fit
+  # dies with `subscript out of bounds`, which names nothing and sends you
+  # looking at the date grids. Scale it off the data instead.
+  n_max <- control$N.tInf.max %||% .surveillance_support(x)
+
   fit_one <- function(stratum) {
     # The converter expands counts to one row per case.
     linelist <- .quietly_if(
@@ -604,7 +651,9 @@ nowcast_fit.surveillance <- function(method, x, ..., when = NULL, D = NULL,
         data = linelist,
         dEventCol = "dHospital", dReportCol = "dReport",
         aggregate.by = aggregate_by, D = D, method = fit_method,
-        control = utils::modifyList(list(dRange = grid), control)
+        control = utils::modifyList(
+          list(dRange = grid, N.tInf.max = n_max), control
+        )
       ),
       list(...)
     )
@@ -616,6 +665,42 @@ nowcast_fit.surveillance <- function(method, x, ..., when = NULL, D = NULL,
     return(fits[[1]])
   }
   structure(fits, class = "surveillance_strata")
+}
+
+#' An upper bound for `surveillance`'s nowcast distribution
+#'
+#' [surveillance::nowcast()]'s `control$N.tInf.max` is the largest case count the
+#' posterior may put mass on. Its default is `300`. That is fine for the package's
+#' own examples and far too small for most real series: a period whose count
+#' approaches it has its posterior silently truncated, and a period that exceeds
+#' it aborts with `subscript out of bounds` -- an error that names neither the
+#' argument nor the number.
+#'
+#' Ten times the largest observed period total leaves room for the nowcast to
+#' correct upwards while staying well inside what the sampler can enumerate.
+#'
+#' @param x A `tbl_now` object.
+#'
+#' @return A single integer, never below \pkg{surveillance}'s own default.
+#'
+#' @keywords internal
+#' @noRd
+.surveillance_support <- function(x) {
+  counted <- suppressWarnings(suppressMessages(
+    to_count(ungroup(x), to = "count-incidence")
+  ))
+  count_col <- get_case_count(counted)
+  totals <- if (is.null(count_col)) {
+    table(counted[[get_event_date(counted)]])
+  } else {
+    tapply(counted[[count_col]], counted[[get_event_date(counted)]], sum,
+           na.rm = TRUE)
+  }
+  largest <- suppressWarnings(max(as.numeric(totals), na.rm = TRUE))
+  if (!is.finite(largest)) {
+    return(300L)
+  }
+  max(300L, as.integer(ceiling(largest * 10)))
 }
 
 #' The maximum delay to give an engine that must be told one

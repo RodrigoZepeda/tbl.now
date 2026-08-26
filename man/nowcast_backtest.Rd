@@ -21,7 +21,12 @@ nowcast_backtest(
 \item{x}{A \code{tbl_now} object holding the \emph{full} data (the later reports are
 what the retrospective nowcasts are scored against).}
 
-\item{methods}{Character vector of method names, as in \code{\link[=run_nowcast]{run_nowcast()}}.}
+\item{methods}{Character vector of method names, as in \code{\link[=run_nowcast]{run_nowcast()}}.
+\strong{Optionally named}, and the names become the labels in the result. That is
+how one package appears twice: \code{c(hsgp = "diseasenowcasting", ar1 = "diseasenowcasting")} backtests two models of the same package
+separately, so \code{\link[=nowcast_weights]{nowcast_weights()}} can learn a weight for each — matching
+how \code{\link[=nowcast_ensemble]{nowcast_ensemble()}} takes a named list of members. Unnamed methods are
+labelled by their own name, exactly as before.}
 
 \item{now_dates}{Vector of Dates to nowcast at. Defaults to the four most
 recent event dates that are at least \code{horizon} units before the object's
@@ -31,7 +36,9 @@ recent event dates that are at least \code{horizon} units before the object's
 arguments that differ between methods.}
 
 \item{method_args}{A named list of lists: \code{method_args$epinowcast} is passed
-only to the \code{"epinowcast"} method. Overrides \code{...} on name clashes.}
+only to the \code{"epinowcast"} method. Overrides \code{...} on name clashes. Keyed by
+the \emph{label} when \code{methods} is named (see \code{methods}), falling back to the
+method name.}
 
 \item{horizon}{Number of time units of hindsight required when \code{now_dates} is
 chosen automatically. Default \code{4}.}

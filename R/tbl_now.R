@@ -66,6 +66,27 @@
 #' "count-incidence" or "count-cumulative". See section below for
 #' an explanation on data types.
 #'
+#' @param confirmation_date (optional)
+#' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#' column holding a **third** date: the day the report was resolved. Influenza is
+#' the picture to keep in mind -- symptoms begin (the event), the patient sees a
+#' doctor (the report), and days later a swab comes back. The assumed timeline is
+#' `event_date <= report_date <= confirmation_date <= now`. Leave `NULL` (the
+#' default) for the usual two-date object. See [add_confirmation()].
+#'
+#' @param confirmation_type (optional)
+#' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#' column saying what the resolution *was*: `"confirmed"`, `"retracted"` (it was
+#' reported, but it is not a case after all), `"pending"` or `NA`. **`"pending"`
+#' means reported and still waiting**, so it carries no confirmation date --
+#' which is a different thing from a result that was never recorded (`NA`). A
+#' confirmation date with no type warns rather than guessing, because a date
+#' alone cannot say whether the case was confirmed or retracted.
+#'
+#' @param confirmation_units (optional) Character. Either `"auto"` (default),
+#' `"days"`, `"weeks"`, `"months"`, `"years"` or `"numeric"` -- the grid the
+#' confirmation date lives on, resolved the same way as `report_units`.
+#'
 #' @param verbose (optional) Logical. Whether to throw a message. Default = `TRUE`.
 #'
 #' @param force (optional) Logical. Whether to force computation overwriting pre-existing variables.

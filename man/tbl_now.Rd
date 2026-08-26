@@ -73,6 +73,27 @@ set \code{is_censored = FALSE} but if the \code{report_date} corresponds to an e
 and is only an upper bound of the real report date
 set \code{is_censored = TRUE}.}
 
+\item{confirmation_date}{(optional)
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
+column holding a \strong{third} date: the day the report was resolved. Influenza is
+the picture to keep in mind -- symptoms begin (the event), the patient sees a
+doctor (the report), and days later a swab comes back. The assumed timeline is
+\verb{event_date <= report_date <= confirmation_date <= now}. Leave \code{NULL} (the
+default) for the usual two-date object. See \code{\link[=add_confirmation]{add_confirmation()}}.}
+
+\item{confirmation_type}{(optional)
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
+column saying what the resolution \emph{was}: \code{"confirmed"}, \code{"retracted"} (it was
+reported, but it is not a case after all), \code{"pending"} or \code{NA}. \strong{\code{"pending"}
+means reported and still waiting}, so it carries no confirmation date --
+which is a different thing from a result that was never recorded (\code{NA}). A
+confirmation date with no type warns rather than guessing, because a date
+alone cannot say whether the case was confirmed or retracted.}
+
+\item{confirmation_units}{(optional) Character. Either \code{"auto"} (default),
+\code{"days"}, \code{"weeks"}, \code{"months"}, \code{"years"} or \code{"numeric"} -- the grid the
+confirmation date lives on, resolved the same way as \code{report_units}.}
+
 \item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
 nowcast. If no \code{now} is given then the function automatically uses the last
 \code{event_date}.}

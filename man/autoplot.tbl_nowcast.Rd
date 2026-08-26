@@ -11,8 +11,12 @@
 \item{levels}{Numeric vector of central interval widths to shade. Defaults to
 the widest intervals available in the object.}
 
-\item{show_reported}{Logical. Whether to overlay the cases reported up to
-\code{now}. Requires the nowcast to carry its source data.}
+\item{show_reported}{Logical. Whether to overlay the cases \strong{reported so
+far} -- \code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}} on the object's own source data, so
+the points are what the model was actually shown as of \code{now}, not what those
+dates eventually reached. The vertical gap between the points and the fan is
+the correction the nowcast is making, which is the whole reason to draw it.
+Requires the nowcast to carry its source data.}
 
 \item{colour}{Colour of the fan. Defaults to the \code{tbl.now} palette's green:
 a nowcast is an estimate of the \strong{epidemic} process (cases by event date),

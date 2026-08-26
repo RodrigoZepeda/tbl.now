@@ -127,3 +127,61 @@ test_that("the grids drive a real surveillance::nowcast() call", {
   expect_equal(nrow(tidied), 3L)
   expect_equal(max(tidied$event_date), get_now(x))
 })
+
+# `N.tInf.max`: the support of surveillance's nowcast distribution -------------
+#
+# `surveillance::nowcast()` defaults it to 300 -- smaller than a single period's
+# count on most real series. Exceeding it does not warn: the fit dies with
+# `subscript out of bounds`, which names neither the argument nor the number, and
+# sends you looking at the date grids instead. `run_nowcast()` passed only
+# `dRange`, so it inherited that default and failed on anything of consequence.
+
+test_that("the surveillance support is scaled off the data, not left at 300", {
+  x <- daily_tbl_now()
+  # Five events, one per day: the largest period total is 1, so the floor holds.
+  expect_equal(tbl.now:::.surveillance_support(x), 300L)
+
+  big <- data.frame(
+    ev = as.Date("2024-01-01") + c(0, 1, 2),
+    rp = as.Date("2024-01-02") + c(0, 1, 2),
+    n  = c(10, 5000, 20)
+  )
+  big_now <- tbl_now(big, event_date = "ev", report_date = "rp", case_count = "n",
+                     data_type = "count-incidence", verbose = FALSE)
+  # Ten times the largest period total, so the nowcast has room to correct up.
+  expect_equal(tbl.now:::.surveillance_support(big_now), 50000L)
+})
+
+test_that("run_nowcast(surveillance) survives counts above surveillance's default", {
+  skip_on_cran()
+  skip_if_not_installed("surveillance")
+  x <- weekly_tbl_now()
+  x <- x[x$onset_week >= get_now(x) - 700, ]
+
+  # The largest weekly total here is well above 300, which is exactly the case
+  # that used to abort with "subscript out of bounds".
+  counted <- suppressWarnings(suppressMessages(to_count(x, to = "count-incidence")))
+  largest <- max(tapply(counted[[get_case_count(counted)]],
+                        counted[[get_event_date(counted)]], sum))
+  expect_gt(largest, 300)
+
+  fit <- suppressWarnings(suppressMessages(
+    run_nowcast(x, "surveillance", D = 5, verbose = FALSE)
+  ))
+  expect_s3_class(tidy(fit), "data.frame")
+  expect_gt(nrow(as_tibble(fit)), 0L)
+})
+
+test_that("an explicit N.tInf.max in `control` still wins", {
+  skip_on_cran()
+  skip_if_not_installed("surveillance")
+  x <- weekly_tbl_now()
+  x <- x[x$onset_week >= get_now(x) - 200, ]
+
+  # Whatever the default would have been, the caller's value is what is used --
+  # so this is small enough to be visibly the caller's choice, not ours.
+  expect_no_error(suppressWarnings(suppressMessages(
+    run_nowcast(x, "surveillance", D = 4,
+                control = list(N.tInf.max = 100000), verbose = FALSE)
+  )))
+})

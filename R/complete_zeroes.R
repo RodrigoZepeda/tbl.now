@@ -132,17 +132,11 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
     )
   }
 
-  # Check units to fill 0's
-  if (get_event_units(x) == "weeks") {
-    units_by <- "1 week"
-  } else if (get_event_units(x) == "days") {
-    units_by <- "1 day"
-  } else if (get_event_units(x) == "numeric") {
-    units_by <- 1
-  }
-
   # Create a table with all dates
-  event_dates <- dplyr::tibble(!!as.symbol(get_event_date(x)) := seq(min_event, max_event, by = units_by))
+  event_dates <- dplyr::tibble(
+    !!as.symbol(get_event_date(x)) :=
+      .tbl_now_date_seq(min_event, max_event, get_event_units(x))
+  )
 
   event_dict <- event_dates |>
     dplyr::mutate(.event_num_new = 0:(dplyr::n() - 1))

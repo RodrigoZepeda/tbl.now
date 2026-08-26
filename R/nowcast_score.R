@@ -258,13 +258,21 @@ score_nowcast <- function(x, truth = NULL, observed_col = NULL) {
 #' @param x A `tbl_now` object holding the *full* data (the later reports are
 #'   what the retrospective nowcasts are scored against).
 #' @param methods Character vector of method names, as in [run_nowcast()].
+#'   **Optionally named**, and the names become the labels in the result. That is
+#'   how one package appears twice: `c(hsgp = "diseasenowcasting",
+#'   ar1 = "diseasenowcasting")` backtests two models of the same package
+#'   separately, so [nowcast_weights()] can learn a weight for each — matching
+#'   how [nowcast_ensemble()] takes a named list of members. Unnamed methods are
+#'   labelled by their own name, exactly as before.
 #' @param now_dates Vector of Dates to nowcast at. Defaults to the four most
 #'   recent event dates that are at least `horizon` units before the object's
 #'   `now`, so that some later reports exist to score against.
 #' @param ... Passed to [run_nowcast()] for every method. Use `method_args` for
 #'   arguments that differ between methods.
 #' @param method_args A named list of lists: `method_args$epinowcast` is passed
-#'   only to the `"epinowcast"` method. Overrides `...` on name clashes.
+#'   only to the `"epinowcast"` method. Overrides `...` on name clashes. Keyed by
+#'   the *label* when `methods` is named (see `methods`), falling back to the
+#'   method name.
 #' @param horizon Number of time units of hindsight required when `now_dates` is
 #'   chosen automatically. Default `4`.
 #' @param quantile_levels Quantile levels to score at, see [run_nowcast()].
@@ -321,7 +329,24 @@ nowcast_backtest <- function(x, methods, now_dates = NULL, ...,
   if (missing(methods) || length(methods) == 0) {
     cli::cli_abort("{.arg methods} must name at least one nowcasting method.")
   }
+  # NAMES ARE LABELS. `nowcast_ensemble()` takes a named list, so a member can be
+  # "the same package, a different model" -- two `diseasenowcasting` fits with
+  # different epidemic processes, say. A backtest that keyed everything on the
+  # package name could not tell those apart, so their weights could not be
+  # learned, only guessed. Accepting names here closes that: unnamed methods
+  # behave exactly as before, because the label falls back to the method.
+  labels <- names(methods) %||% methods
+  labels[!nzchar(labels)] <- methods[!nzchar(labels)]
   methods <- vapply(methods, .canonical_nowcast_method, character(1), USE.NAMES = FALSE)
+  if (anyDuplicated(labels)) {
+    duplicated_labels <- unique(labels[duplicated(labels)])
+    cli::cli_abort(c(
+      "{.arg methods} has duplicate label{?s} {.val {duplicated_labels}}.",
+      "i" = "Each entry becomes one row per date in the result, so the labels \\
+             have to be unique. Name them, e.g. \\
+             {.code c(hsgp = \"diseasenowcasting\", ar1 = \"diseasenowcasting\")}."
+    ))
+  }
 
   if (is.null(now_dates)) {
     now_dates <- .default_backtest_dates(x, horizon = horizon)
@@ -338,26 +363,35 @@ nowcast_backtest <- function(x, methods, now_dates = NULL, ...,
   for (now_date in as.list(now_dates)) {
     snapshot <- .nowcast_snapshot(x, now_date)
 
-    for (method in methods) {
+    for (i in seq_along(methods)) {
+      method <- methods[[i]]
+      label <- labels[[i]]
       if (isTRUE(verbose)) {
-        cli::cli_alert_info("Backtesting {.val {method}} at {.val {now_date}}.")
+        cli::cli_alert_info("Backtesting {.val {label}} at {.val {now_date}}.")
       }
 
-      arguments <- utils::modifyList(dots, method_args[[method]] %||% list())
+      # Keyed by LABEL first, so two fits of one package can take different
+      # arguments; falling back to the method name keeps every existing call
+      # working unchanged.
+      arguments <- utils::modifyList(
+        dots, method_args[[label]] %||% method_args[[method]] %||% list()
+      )
       arguments <- c(
         list(x = snapshot, method = method, quantile_levels = quantile_levels, verbose = FALSE),
         arguments
       )
 
       if (!is.null(seed)) {
-        set.seed(.backtest_seed(seed, method, now_date))
+        # Seeded from the LABEL, so the two models of one package do not draw
+        # the same numbers -- which would make them look more alike than they are.
+        set.seed(.backtest_seed(seed, label, now_date))
       }
 
       nowcast <- tryCatch(
         do.call(run_nowcast, arguments),
         error = function(e) {
           message <- c(
-            "Method {.val {method}} failed at {.val {now_date}}.",
+            "Method {.val {label}} failed at {.val {now_date}}.",
             "x" = conditionMessage(e)
           )
           if (on_error == "abort") cli::cli_abort(message) else cli::cli_warn(message)
@@ -366,9 +400,14 @@ nowcast_backtest <- function(x, methods, now_dates = NULL, ...,
       )
       if (is.null(nowcast)) next
 
-      scores <- score_nowcast(nowcast, truth = truth, observed_col = ".observed")
+      # `score_nowcast()` labels with the fit's own `@method` -- the PACKAGE.
+      # Overwrite with the backtest's label, or two models of one package would
+      # score under one name here while their predictions carried two, and
+      # `nowcast_weights()` would learn a single weight for both.
+      scores <- score_nowcast(nowcast, truth = truth, observed_col = ".observed") |>
+        dplyr::mutate(.method = label)
       predictions <- nowcast@predictions |>
-        dplyr::mutate(.method = method, .now = now_date, .before = 1)
+        dplyr::mutate(.method = label, .now = now_date, .before = 1)
 
       results[[length(results) + 1]] <- list(scores = scores, predictions = predictions)
     }

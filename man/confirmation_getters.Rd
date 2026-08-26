@@ -60,5 +60,5 @@ get_confirmation_date(hai)
 }
 \seealso{
 \code{\link[=add_confirmation]{add_confirmation()}} to attach one, \code{\link[=get_latest_confirmed]{get_latest_confirmed()}} and
-\code{\link[=get_net_confirmed]{get_net_confirmed()}} to count the outcomes, \link{tbl_now_getters}.
+\code{\link[=get_net_confirmed]{get_net_confirmed()}} to count the outcomes, \link{nowcast_data_getters}.
 }

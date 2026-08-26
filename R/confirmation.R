@@ -172,7 +172,7 @@
 #' * `has_confirmation()` -- `TRUE` when the object carries a confirmation date.
 #'
 #' @seealso [add_confirmation()] to attach one, [get_latest_confirmed()] and
-#'   [get_net_confirmed()] to count the outcomes, [tbl_now_getters].
+#'   [get_net_confirmed()] to count the outcomes, [nowcast_data_getters].
 #'
 #' @examples
 #' data(hai_bucaramanga)

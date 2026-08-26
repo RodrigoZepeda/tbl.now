@@ -106,7 +106,7 @@ snapshot <- dengue |>
 get_now(snapshot)
 ```
 
-```{r cache-load, echo=FALSE, message=FALSE}
+```{r cache-load, echo=FALSE, message=FALSE, purl=FALSE}
 cached <- readRDS("ensemble-comparison.rds")
 display <- cached$display
 
@@ -131,43 +131,163 @@ baseline <- run_nowcast(
 baseline
 ```
 
-```{r bln-run-out, echo=FALSE, eval=!run_models}
+```{r bln-run-out, echo=FALSE, eval=!run_models, purl=FALSE}
 replay(display$baseline_print)
 ```
 
 The `...` goes straight through to the backend, so switching models mostly means
-switching the arguments you already know:
-
-```{r other-methods, eval=FALSE}
-# Bayesian structural time series (diseasenowcasting)
-dnc <- run_nowcast(snapshot, "diseasenowcasting")
-
-# Bayesian delay + reference modules (epinowcast)
-enw <- run_nowcast(snapshot, "epinowcast",
-  preprocess_args = list(max_delay = 10),
-  fit = epinowcast::enw_fit_opts(chains = 2, iter_sampling = 500)
-)
-
-# Nowcasting by Bayesian Smoothing (NobBS); needs JAGS
-nobbs <- run_nowcast(snapshot, "NobBS", max_D = 10, moving_window = 64)
-
-# Hoehle & an der Heiden (surveillance)
-sur <- run_nowcast(snapshot, "surveillance", D = 10)
-
-# EpiNow2's estimate_infections()
-en2 <- run_nowcast(snapshot, "EpiNow2")
-```
-
-Each of those routes through the same `tbl_now_to_*()` converter documented in
-`vignette("nowcasting-models")` — so `"NobBS"` expands your counts to the one row
-per case that `NobBS()` counts, and `"surveillance"` hands over a grid that
-reaches the `now` even when the newest days carry no reports yet.
-
-`list_nowcast_methods()` tells you what is available in your session:
+switching the arguments you already know. `list_nowcast_methods()` tells you what
+is available in your session:
 
 ```{r methods}
 list_nowcast_methods()
 ```
+
+### One card per engine
+
+Each of these routes through the `tbl_now_to_*()` converter documented in
+`vignette("nowcasting-models")`, which is where you go to learn a package's own
+API. What follows is the other half: the call through `run_nowcast()`, and the
+**one thing about that engine most likely to catch you out**.
+
+#### baselinenowcast
+
+Fast, assumption-light, and the only engine here that needs no external
+toolchain. It works from a reporting triangle, so the delay axis is a modelling
+choice you make.
+
+```{r card-bln, eval=FALSE}
+baseline <- run_nowcast(snapshot, "baselinenowcast", draws = 1000)  # fitted above
+```
+
+**Watch for:** `max_delay` caps the triangle's *width*. Left unset it is inferred
+from the longest delay present, so a single straggler can give the triangle
+hundreds of near-empty columns and turn a fast fit into a slow one. It keeps
+draws, so it can join a `type = "linear_pool"` ensemble.
+
+#### diseasenowcasting
+
+The one engine that takes the `tbl_now` **directly**: it reads the strata and the
+temporal-effect columns off the object, so there is nothing to pass.
+
+```{r card-dnc, eval=run_models && has("diseasenowcasting")}
+dnc <- run_nowcast(snapshot, "diseasenowcasting")
+
+dnc
+```
+
+```{r card-dnc-out, echo=FALSE, eval=!run_models, purl=FALSE}
+replay(display$card_dnc)
+```
+
+**Watch for:** it is also the one engine whose *model* you can swap without
+changing packages — see the ensemble below, which uses two of them. On
+`count-cumulative` data that revises downwards, pass a
+`model(confirmation = confirmation_process())`, or the de-accumulated negatives
+have nowhere to go.
+
+#### epinowcast
+
+A flexible Bayesian model with separate modules for the reporting delay and the
+reference process. Preprocessing arguments go through `preprocess_args`;
+everything else goes to `epinowcast()` itself.
+
+```{r card-enw, eval=run_models && has("epinowcast")}
+enw <- run_nowcast(snapshot, "epinowcast",
+  preprocess_args = list(max_delay = 10),
+  fit = epinowcast::enw_fit_opts(
+    chains = 2, iter_sampling = 500, seed = 20260824
+  )
+)
+
+enw
+```
+
+```{r card-enw-out, echo=FALSE, eval=!run_models, purl=FALSE}
+replay(display$card_enw)
+```
+
+**Watch for:** it is **unseeded** unless you say otherwise. `enw_fit_opts()`
+passes `...` to the sampler, so `seed =` reaches Stan — without it, the same fit
+can take forty minutes on one run and six hours on the next, and neither
+reproduces. It handles a weekly object natively (`timestep = "week"`), so its
+reference dates line up with the object's grid.
+
+#### NobBS
+
+Nowcasting by Bayesian Smoothing. Needs **JAGS** installed as a separate program.
+
+```{r card-nobbs, eval=run_models && has("NobBS")}
+nobbs <- run_nowcast(snapshot, "NobBS", max_D = 10, moving_window = 64)
+
+nobbs
+```
+
+```{r card-nobbs-out, echo=FALSE, eval=!run_models, purl=FALSE}
+replay(display$card_nobbs)
+```
+
+**Watch for:** it keeps **no draws per event date**, so it cannot join a
+`type = "linear_pool"` ensemble, and it can only report quantiles it was asked
+for *at fit time*: pass `specs = list(quantiles = ...)` and `tidy(fit, probs =)`
+will return them, but a level it never computed is an error rather than an
+approximation. It also counts **rows**, so the converter expands your counts to
+one row per case — trim before fitting on a long series.
+
+#### surveillance
+
+The classic Höhle & an der Heiden nowcast. No external toolchain for the method
+used here.
+
+```{r card-sur, eval=run_models && has("surveillance")}
+sur <- run_nowcast(snapshot, "surveillance", D = 10)
+
+sur
+```
+
+```{r card-sur-out, echo=FALSE, eval=!run_models, purl=FALSE}
+replay(display$card_sur)
+```
+
+**Watch for:** `surveillance::nowcast()` has **no strata argument at all**, so
+`run_nowcast()` fits one model per stratum and labels the blocks for you. Both
+date grids it needs come from the object via `get_surveillance_when()` and
+`get_surveillance_range()` — the second matters because a line list cannot
+express a zero, so the quiet days at the `now` edge would otherwise fall off the
+grid entirely.
+
+#### EpiNow2
+
+A renewal-equation model of the *infection* process, with the reporting
+correction supplied separately.
+
+```{r card-en2, eval=run_models && has("EpiNow2")}
+en2 <- run_nowcast(snapshot, "EpiNow2")
+
+en2
+```
+
+```{r card-en2-out, echo=FALSE, eval=!run_models, purl=FALSE}
+replay(display$card_en2)
+```
+
+**Watch for:** EpiNow2 has no `timestep` — it always models a *daily* process. The
+converter therefore lays a weekly object onto EpiNow2's daily grid, putting each
+week's count on the week-ending day and marking the rest `accumulate = TRUE`.
+EpiNow2 honours that on the way out as well as in the likelihood, so predictions
+come back on **your** grid at **your** scale; you do not have to undo anything.
+It is also the one engine here that *forecasts* — it returns one period past the
+end of the data — and `run_nowcast()` drops that, because a nowcast estimates
+what has already happened.
+
+::: {.alert .alert-info}
+**Its priors are not fitted from your data unless you say so.** The generation
+time and incubation period default to EpiNow2's shipped examples. Those are
+properties of transmission rather than of reporting, and no amount of reporting
+data identifies them — but they are still an assumption you are making, not a
+detail. See `vignette("nowcasting-models")` for fitting the truncation from the
+report dimension, which *is* what a `tbl_now` measures.
+:::
 
 ### What you get back
 
@@ -179,7 +299,7 @@ in the same tidy shape:
 as_tibble(baseline)
 ```
 
-```{r bln-quantiles, echo=FALSE}
+```{r bln-quantiles, echo=FALSE, purl=FALSE}
 display$baseline_quantiles
 ```
 
@@ -189,7 +309,7 @@ and, when the backend is sample-based, the draws are there too:
 as_tibble(baseline, type = "draws")
 ```
 
-```{r bln-draws, echo=FALSE}
+```{r bln-draws, echo=FALSE, purl=FALSE}
 display$baseline_draws
 ```
 
@@ -204,7 +324,7 @@ by calling a package by hand are read the same way:
 tidy(baseline)
 ```
 
-```{r bln-tidy, echo=FALSE}
+```{r bln-tidy, echo=FALSE, purl=FALSE}
 display$baseline_tidy
 ```
 
@@ -237,13 +357,14 @@ estimate of *what happened*, not of *when we found out*:
 autoplot(baseline)
 ```
 
-```{r bln-plot, echo=FALSE, eval=has("ggplot2"), message=FALSE, warning=FALSE, fig.width=7, fig.height=4, fig.alt="A green fan chart of the dengue nowcast: nested prediction intervals around a median line, with the counts reported so far as points."}
+```{r bln-plot, echo=FALSE, purl=FALSE, eval=has("ggplot2"), message=FALSE, warning=FALSE, fig.width=7, fig.height=4, fig.alt="A green fan chart of the dengue nowcast: nested prediction intervals around a median line, with the counts reported so far as points."}
 library(ggplot2)
 
-# Redrawn from the cached predictions, so this is a picture of the fit the code
-# above produces rather than of a different one.
+# Redrawn from the cached predictions of THIS fit. It used to be drawn from the
+# ensemble's predictions under the label "baselinenowcast", which is a picture of
+# a different object than the code above produces.
 autoplot(tbl_nowcast(
-  predictions = display$ensemble_predictions,
+  predictions = display$baseline_predictions,
   method      = "baselinenowcast",
   event_date  = display$event_date,
   now         = display$now
@@ -275,7 +396,7 @@ by_sex <- run_nowcast(dengue_by_sex, "baselinenowcast", draws = 1000, verbose = 
 as_tibble(by_sex)
 ```
 
-```{r strata-out, echo=FALSE, eval=!run_models}
+```{r strata-out, echo=FALSE, eval=!run_models, purl=FALSE}
 display$stratified_quantiles
 ```
 
@@ -286,7 +407,7 @@ unique key and the two series can never be confused for one another:
 tidy(by_sex)
 ```
 
-```{r strata-tidy, echo=FALSE}
+```{r strata-tidy, echo=FALSE, purl=FALSE}
 display$stratified_tidy
 ```
 
@@ -306,15 +427,8 @@ Scoring only makes sense against data the model had not seen, which is why
 score_nowcast(baseline, truth = dengue)
 ```
 
-```{r score-out, echo=FALSE}
-score_nowcast(
-  tbl_nowcast(
-    predictions = display$ensemble_predictions,
-    method = "baselinenowcast", event_date = display$event_date
-  ),
-  truth = display$truth, observed_col = ".observed"
-) |>
-  filter(.data$onset_week > display$now - 56)
+```{r score-out, echo=FALSE, purl=FALSE}
+display$baseline_score
 ```
 
 Lower WIS is better; `coverage_90` should be `TRUE` about nine times in ten if
@@ -345,17 +459,30 @@ admit, and the two rules below behave differently enough that the choice is
 worth making deliberately. Because every `run_nowcast()` result has the same
 shape, combining them is one call.
 
-```{r members, eval=FALSE}
+The members below are the fits from the cards above, so nothing is refitted:
+
+```{r members, eval=run_models}
 members <- list(
-  baselinenowcast   = run_nowcast(snapshot, "baselinenowcast", draws = 1000),
-  diseasenowcasting = run_nowcast(snapshot, "diseasenowcasting"),
-  NobBS             = run_nowcast(snapshot, "NobBS", max_D = 10, moving_window = 64)
+  baselinenowcast   = baseline,
+  diseasenowcasting = dnc,
+  # The SAME package, a different epidemic process. An ensemble is not only a
+  # hedge across packages -- two structurally different models from one package
+  # disagree in their own way, and that disagreement is worth combining too.
+  dnc_ar1           = run_nowcast(
+    snapshot, "diseasenowcasting",
+    model = diseasenowcasting::model(
+      epidemic = diseasenowcasting::ar1_epidemic()
+    )
+  ),
+  epinowcast        = enw,
+  NobBS             = nobbs,
+  EpiNow2           = en2
 )
 
 ensemble <- nowcast_ensemble(members)
 ```
 
-```{r ensemble-out, echo=FALSE, eval=!run_models}
+```{r members-out, echo=FALSE, eval=!run_models, purl=FALSE}
 replay(display$ensemble_print)
 ```
 
@@ -366,7 +493,7 @@ the same way. Its `engine` is the ensemble's name rather than a package:
 tidy(ensemble)
 ```
 
-```{r ensemble-tidy, echo=FALSE}
+```{r ensemble-tidy, echo=FALSE, purl=FALSE}
 display$ensemble_tidy
 ```
 
@@ -382,9 +509,13 @@ distribution and re-summarises it. It needs draws from every member and
 generally produces **wider** intervals, because disagreement between models
 becomes extra spread rather than being averaged away.
 
-```{r pool, eval=FALSE}
+```{r pool, eval=run_models}
 sharp <- nowcast_ensemble(members, type = "quantile")
-wide  <- nowcast_ensemble(members, type = "linear_pool", n_draws = 4000)
+
+# The pool needs draws, so it takes the members that have them.
+with_draws <- members[c("baselinenowcast", "diseasenowcasting",
+                        "dnc_ar1", "epinowcast")]
+wide <- nowcast_ensemble(with_draws, type = "linear_pool", n_draws = 4000)
 ```
 
 Which one you want depends on whether you read between-model disagreement as
@@ -392,11 +523,32 @@ noise to be averaged out (quantile) or as genuine uncertainty to be propagated
 (linear pool).
 
 ::: {.alert .alert-warning}
-**The linear pool needs draws, and not every backend has them.** `NobBS` reports
-quantiles only — its `nowcast.post.samps` cover the `now` date rather than every
-event date — so `type = "linear_pool"` refuses a set of members that includes
-it, rather than silently dropping it and returning a differently-composed
-ensemble under the same name.
+**The linear pool needs draws, and not every backend has them.** Of the six
+engines above, `baselinenowcast`, `diseasenowcasting` and `epinowcast` keep
+per-event-date draws; `NobBS`, `surveillance` and `EpiNow2` report summaries
+only. (`NobBS`'s `nowcast.post.samps` cover the `now` date rather than every
+event date, which is not the same thing.) `type = "linear_pool"` **refuses** a
+set of members that includes one of the three, rather than silently dropping it
+and returning a differently-composed ensemble under the same name — which is why
+the call above selects its members explicitly.
+:::
+
+::: {.alert .alert-info}
+**Members must agree on what they are predicting.** An ensemble combines members
+target by target, so a date one member covers and another does not cannot be
+combined: averaging over whoever happens to be present would report a single
+member's own value as the ensemble's. Those targets are dropped, with a warning
+saying how many. This is not hypothetical — `EpiNow2` forecasts one period past
+the end of the data, and before `run_nowcast()` trimmed it that lone extra week
+landed exactly at the `now` edge, which is the part of the picture people read.
+:::
+
+::: {.alert .alert-info}
+**Why `surveillance` is not a member here.** No principled reason — it would
+combine perfectly well. It is left out to keep the ensemble at six fits, and
+because it reports a fixed interval width, so it constrains the levels every
+other member has to be summarised at. Add it if you want it; nothing in
+`nowcast_ensemble()` treats it differently.
 :::
 
 ### Weights
@@ -404,8 +556,10 @@ ensemble under the same name.
 By default every member counts the same. You can also give weights directly:
 
 ```{r weights-manual, eval=FALSE}
-nowcast_ensemble(members, weights = c(baselinenowcast = 0.5,
-                                      diseasenowcasting = 0.3, NobBS = 0.2))
+nowcast_ensemble(members, weights = c(
+  baselinenowcast = 0.3, diseasenowcasting = 0.2, dnc_ar1 = 0.1,
+  epinowcast = 0.2, NobBS = 0.1, EpiNow2 = 0.1
+))
 ```
 
 or *learn* them from how the members actually performed. `nowcast_backtest()`
@@ -413,10 +567,25 @@ walks back through time: at each retrospective date it truncates the data to the
 reports available then, refits every method, and scores the result against what
 was eventually observed.
 
-```{r backtest, eval=FALSE}
+`methods` may be **named**, and the names become the labels — which is how one
+package appears twice, so the two `diseasenowcasting` models above can be
+weighted separately rather than sharing one weight:
+
+```{r backtest, eval=run_models}
 backtest <- nowcast_backtest(
   dengue,
-  methods   = c("baselinenowcast", "diseasenowcasting", "NobBS"),
+  methods = c(
+    baselinenowcast   = "baselinenowcast",
+    diseasenowcasting = "diseasenowcasting",
+    dnc_ar1           = "diseasenowcasting",
+    NobBS             = "NobBS"
+  ),
+  method_args = list(
+    dnc_ar1 = list(model = diseasenowcasting::model(
+      epidemic = diseasenowcasting::ar1_epidemic()
+    )),
+    NobBS = list(max_D = 10, moving_window = 64)
+  ),
   now_dates = now - 7 * 8 * (3:1),
   seed      = 20260824
 )
@@ -424,25 +593,24 @@ backtest <- nowcast_backtest(
 tidy(backtest)
 ```
 
-```{r backtest-out, echo=FALSE}
-cached$backtests |>
-  filter(.data$epidemic == "dengue") |>
-  select(-"epidemic") |>
-  head()
+```{r backtest-out, echo=FALSE, eval=!run_models, purl=FALSE}
+head(cached$backtest_tidy)
 ```
+
+::: {.alert .alert-info}
+**Why not every ensemble member is backtested here.** A backtest is
+`length(methods) × length(now_dates)` model fits. `epinowcast` and `EpiNow2` are
+both Stan models and each would add three more, so they are left out of *this*
+backtest to keep the article buildable — not because anything stops them. If you
+weight an ensemble from a backtest that does not cover every member, give the
+uncovered ones weights yourself; `nowcast_ensemble()` will not invent them.
+:::
 
 `tidy()` on a backtest gives one row per (method, `now` date, target), which goes
 straight into `dplyr` or `ggplot2`:
 
-```{r backtest-summary, echo=FALSE}
-cached$backtests |>
-  filter(.data$epidemic == "dengue") |>
-  summarise(
-    mean_wis = round(mean(wis, na.rm = TRUE), 1),
-    coverage_90 = round(mean(coverage_90, na.rm = TRUE), 2),
-    .by = c(method, now)
-  ) |>
-  arrange(now, mean_wis)
+```{r backtest-summary, echo=FALSE, purl=FALSE}
+cached$backtest_summary
 ```
 
 This is the expensive part of the workflow — it is `length(methods) ×
@@ -453,13 +621,15 @@ in the same order, which stops being true the moment you drop a method.
 
 From the backtest, `nowcast_weights()` offers two rules:
 
-```{r weights-fitted, eval=FALSE}
-nowcast_weights(backtest, type = "inverse_score") # w proportional to 1 / mean WIS
+```{r weights-fitted, eval=run_models}
+fitted_weights <- nowcast_weights(backtest, type = "inverse_score")
+fitted_weights                                    # w proportional to 1 / mean WIS
+
 nowcast_weights(backtest, type = "optim")         # w minimising the ensemble's WIS
 ```
 
-```{r weights-out, echo=FALSE}
-round(cached$weights$dengue, 3)
+```{r weights-out, echo=FALSE, purl=FALSE}
+round(cached$weights, 3)
 ```
 
 `"inverse_score"` is the safe default: it is monotone in performance, never

@@ -8,6 +8,11 @@ home:
 
 template:
   bootstrap: 5
+  # pkgdown >= 2.1 renders a light/dark toggle in the navbar and sets
+  # `data-bs-theme` on <html>. Every colour in `pkgdown/extra.css` is a
+  # `var(--tn-*)` token defined for both modes, so the switch themes the whole
+  # site rather than only the parts Bootstrap knows about.
+  light-switch: true
   # NOTE: `pkgdown/extra.css` is picked up and linked automatically by pkgdown.
   # It must NOT be listed under `includes: in_header:` — that slot expects HTML
   # and would paste raw CSS text into <head>, where the browser ignores it.

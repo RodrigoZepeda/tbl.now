@@ -436,10 +436,9 @@ batch_test <- function(data,
   } else {
     get_report_units(data) %||% "days"
   }
-  report_unit <- report_unit
   grid_start  <- min(observations$.event_date,  na.rm = TRUE)
   grid_end    <- max(observations$.report_date, na.rm = TRUE)
-  seq(from = grid_start, to = grid_end, by = as.character(report_unit))
+  .tbl_now_date_seq(grid_start, grid_end, report_unit)
 }
 
 # =============================================================================

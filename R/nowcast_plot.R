@@ -1,6 +1,35 @@
 # A fan chart for a `tbl_nowcast`: nested prediction intervals around the
 # median, with the counts reported so far drawn on top.
 
+#' The counts a nowcast's source data had reported by `now`
+#'
+#' [get_latest_reported_cases()] returns the snapshot as of the object's `now`;
+#' this reduces it to one total per event date (and stratum), which is what the
+#' plot draws under the fan.
+#'
+#' @param x The nowcast's source `tbl_now`.
+#' @param event_col Name of the event-date column.
+#' @param strata Character vector of stratifying columns.
+#'
+#' @return A tibble with the event date, the strata, and `.observed`.
+#'
+#' @keywords internal
+#' @noRd
+.nowcast_reported_counts <- function(x, event_col, strata) {
+  strata <- intersect(strata %||% character(0), colnames(x))
+  reported <- suppressWarnings(suppressMessages(get_latest_reported_cases(x)))
+  # `.reported_cases_at()` names the count after the object's `case_count`, or
+  # `n` when the source was a line list.
+  count_col <- get_case_count(reported) %||% "n"
+
+  .declass_tbl_now(reported) |>
+    dplyr::as_tibble() |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(c(event_col, strata)))) |>
+    dplyr::summarise(
+      .observed = sum(.data[[count_col]], na.rm = TRUE), .groups = "drop"
+    )
+}
+
 #' Plot a nowcast
 #'
 #' @description `r lifecycle::badge('experimental')`
@@ -13,8 +42,12 @@
 #' @param ... Unused; present for compatibility with [ggplot2::autoplot()].
 #' @param levels Numeric vector of central interval widths to shade. Defaults to
 #'   the widest intervals available in the object.
-#' @param show_reported Logical. Whether to overlay the cases reported up to
-#'   `now`. Requires the nowcast to carry its source data.
+#' @param show_reported Logical. Whether to overlay the cases **reported so
+#'   far** -- [get_latest_reported_cases()] on the object's own source data, so
+#'   the points are what the model was actually shown as of `now`, not what those
+#'   dates eventually reached. The vertical gap between the points and the fan is
+#'   the correction the nowcast is making, which is the whole reason to draw it.
+#'   Requires the nowcast to carry its source data.
 #' @param colour Colour of the fan. Defaults to the `tbl.now` palette's green:
 #'   a nowcast is an estimate of the **epidemic** process (cases by event date),
 #'   which the package always draws in green, with red reserved for the
@@ -111,13 +144,21 @@ S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
   }
 
   if (isTRUE(show_reported) && !is.null(object@data)) {
-    reported <- .eventual_counts(object@data, strata = strata)
+    # `get_latest_reported_cases()` -- the counts as they stood at `now`, which
+    # is what the model saw. NOT the eventual totals: drawing those would show
+    # the answer next to the estimate of it, and the gap the fan is correcting
+    # would silently become a gap the fan already knows about.
+    reported <- .nowcast_reported_counts(object@data, event_col, strata)
     plot <- plot +
       ggplot2::geom_point(
         data = reported,
-        ggplot2::aes(x = .data[[event_col]], y = .data$.observed),
-        colour = palette[["near_black"]], size = 0.8
-      )
+        ggplot2::aes(
+          x = .data[[event_col]], y = .data$.observed,
+          shape = "Reported by now"
+        ),
+        colour = palette[["near_black"]], size = 0.9
+      ) +
+      ggplot2::scale_shape_manual(values = c("Reported by now" = 16), name = NULL)
   }
 
   if (length(strata) > 0) {
