@@ -483,27 +483,106 @@
   )
 }
 
-#' Collapse a `tbl_now`'s strata into the single `region` column EpiNow2 takes
+#' Paste several stratifying columns into the one label column a back-end takes
 #'
-#' [EpiNow2::regional_epinow()] takes one `region` column. A `tbl_now` may carry
-#' several stratifying columns, so they are pasted `" | "`-separated -- the same
-#' convention as `tbl_now_to_baselinenowcast(format = "triangle_list")`'s names
-#' and `.epinowcast_stratum()`.
+#' Several back-ends stratify by ONE column: [NobBS::NobBS.strat()] takes a
+#' single `strata` name, [EpiNow2::regional_epinow()] a single `region`, and
+#' [surveillance::nowcast()] takes none at all, so a stratified analysis there
+#' means splitting the line list yourself. A `tbl_now` may declare any number of
+#' stratifying columns, and their interaction -- "nowcast each observed
+#' combination separately" -- is exactly what those back-ends mean by one
+#' stratum. This pastes them into that label.
+#'
+#' The separator has to be recoverable, because [tidy()] splits the label back
+#' into the original columns. If a stratum VALUE already contains the separator
+#' the split is ambiguous, and a silently mispaired stratum is worse than a
+#' failed conversion -- so that aborts, naming the separator to choose instead.
 #'
 #' @param data A data frame carrying the strata columns.
 #' @param strata_cols Character vector of stratifying column names.
+#' @param sep Separator to paste with.
+#' @param fn Calling function, for the error message.
+#' @param argument The name of the separator argument to point the user at.
 #'
 #' @return A character vector of labels, one per row; all `"all"` when there are
 #'   no strata.
 #'
 #' @keywords internal
 #' @noRd
-.epinow2_region <- function(data, strata_cols) {
+.paste_strata_labels <- function(data, strata_cols, sep = " | ",
+                                 fn = NULL, argument = "strata_sep") {
   if (length(strata_cols) == 0L) {
     return(rep("all", nrow(data)))
   }
-  do.call(
-    paste, c(unname(as.list(data[strata_cols])), sep = " | ")
+  values <- unname(as.list(data[strata_cols]))
+  if (any(vapply(
+    values,
+    function(column) any(grepl(sep, as.character(column), fixed = TRUE)),
+    logical(1)
+  ))) {
+    cli::cli_abort(c(
+      "Cannot combine strata {.val {strata_cols}}{if (is.null(fn)) '' else \
+       paste0(' in ', fn)}.",
+      "i" = "They are pasted {.val {sep}}-separated into a single label, and a \
+             stratum value already contains that separator -- the label could \
+             not be split back apart.",
+      "i" = "Choose a separator the values do not contain, with \
+             {.arg {argument}}."
+    ))
+  }
+  do.call(paste, c(values, sep = sep))
+}
+
+#' Add the single pasted strata column a one-column back-end takes
+#'
+#' Shared by [tbl_now_to_nobbs()] and [tbl_now_to_surveillance()]. Refuses to
+#' overwrite a column that is already there: silently replacing a declared
+#' covariate called `strata` would lose data.
+#'
+#' @param data The line list being built.
+#' @param strata_cols Character vector of stratifying column names.
+#' @param strata_col Name for the new column, or `NULL` to add nothing.
+#' @param strata_sep Separator to paste with.
+#' @param fn Calling function, for the messages.
+#'
+#' @return `data`, with the column added when there was anything to add.
+#'
+#' @keywords internal
+#' @noRd
+.add_strata_column <- function(data, strata_cols, strata_col, strata_sep, fn) {
+  if (length(strata_cols) == 0L || is.null(strata_col)) {
+    return(data)
+  }
+  if (strata_col %in% names(data) && !strata_col %in% strata_cols) {
+    cli::cli_abort(c(
+      "{.arg strata_col} {.val {strata_col}} is already a column of {.arg x}.",
+      "i" = "{.fn {fn}} would overwrite it with the pasted strata label.",
+      "i" = "Choose another name with {.arg strata_col}, or drop the column \
+             with {.arg strata_col = NULL}."
+    ))
+  }
+  data[[strata_col]] <- .paste_strata_labels(
+    data, strata_cols, sep = strata_sep, fn = paste0(fn, "()")
+  )
+  data
+}
+
+#' Collapse a `tbl_now`'s strata into the single `region` column EpiNow2 takes
+#'
+#' [EpiNow2::regional_epinow()] takes one `region` column, pasted `" | "`-
+#' separated -- the same convention as
+#' `tbl_now_to_baselinenowcast(format = "triangle_list")`'s names and
+#' `.epinowcast_stratum()`.
+#'
+#' @inheritParams .paste_strata_labels
+#'
+#' @return A character vector of labels, one per row.
+#'
+#' @keywords internal
+#' @noRd
+.epinow2_region <- function(data, strata_cols, sep = " | ") {
+  .paste_strata_labels(
+    data, strata_cols, sep = sep, fn = "tbl_now_to_EpiNow2()"
   )
 }
 
@@ -3395,11 +3474,36 @@ tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
 #' @param x A `tbl_now`.
 #' @param event_col,report_col Names the two date columns should take in the
 #'   result. The defaults match the arguments of [NobBS::NobBS()].
+#' @param strata_col Name of the single stratifying column to add, holding every
+#'   declared stratum pasted together. This is what [NobBS::NobBS.strat()]'s own
+#'   `strata` argument takes. `NULL` leaves it out. Ignored when the object
+#'   declares no strata.
+#' @param strata_sep Separator used to paste the strata into `strata_col`.
 #' @param verbose Print what the conversion did. The `units` line prints the
 #'   string [NobBS::NobBS()] itself accepts (`"1 day"` or `"1 week"`), not the
 #'   object's own `"days"` / `"weeks"`, so it can be pasted straight into the
 #'   call.
 #' @param ... Unused, for extensibility.
+#'
+#' @section Stratified nowcasts:
+#'
+#' [NobBS::NobBS.strat()] fits one nowcast per stratum, and its `strata`
+#' argument names **one** column. A `tbl_now` may declare several -- age group
+#' and region, say -- and "nowcast each age-group-and-region separately" is a
+#' single stratum as far as NobBS is concerned. So the declared columns are also
+#' pasted into one `strata` column, which you hand straight to `NobBS.strat()`:
+#'
+#' ```r
+#' nb <- tbl_now_to_nobbs(x, verbose = FALSE)
+#' NobBS::NobBS.strat(nb, now = get_now(x), units = "1 day",
+#'                    onset_date = "onset_date", report_date = "report_date",
+#'                    strata = "strata")
+#' ```
+#'
+#' The original columns are kept alongside it, so a hand-rolled per-stratum loop
+#' can still split on them. Choose a separator your stratum values do not
+#' contain: `run_nowcast()` splits the label back into the original columns when
+#' it tidies the fit.
 #'
 #' @section Units NobBS can model:
 #'
@@ -3411,8 +3515,8 @@ tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
 #' dates. Aggregate to days or weeks first (see [align_weeks()]).
 #'
 #' @returns A `data.frame` with one row per case, ready for [NobBS::NobBS()].
-#'   The strata, covariates and temporal-effect columns ride along so a
-#'   per-stratum loop can split on them.
+#'   The strata, covariates and temporal-effect columns ride along, plus the
+#'   single pasted `strata_col` that [NobBS::NobBS.strat()] takes.
 #'
 #' @seealso [tbl_now_to_surveillance()], [tbl_now_to_epinowcast()]
 #'
@@ -3427,7 +3531,9 @@ tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
 #' @name tbl_now_nobbs
 #' @export
 tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
-                             report_col = "report_date", verbose = TRUE) {
+                             report_col = "report_date",
+                             strata_col = "strata", strata_sep = " | ",
+                             verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_nobbs")
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_nobbs")
 
@@ -3460,12 +3566,26 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
   linelist[[event_col]]  <- as.Date(linelist[[event_col]])
   linelist[[report_col]] <- as.Date(linelist[[report_col]])
 
+  # `NobBS.strat()` takes ONE column name, so the declared strata are pasted
+  # into one here rather than left for the caller to work out. The originals
+  # stay put: a hand-rolled per-stratum loop still wants them.
+  stratified <- length(strata_cols) > 0 && !is.null(strata_col)
+  linelist <- .add_strata_column(
+    linelist, strata_cols, strata_col, strata_sep, "tbl_now_to_nobbs"
+  )
+
   if (verbose) {
     cli::cli_h3("Converting {.cls tbl_now} into a {.pkg NobBS} line list")
     cli::cli_ul()
     cli::cli_li("{.arg onset_date} <- {.val {event_col}}")
     cli::cli_li("{.arg report_date} <- {.val {report_col}}")
     cli::cli_li("{.arg units} <- {.val {nobbs_units}}")
+    if (stratified) {
+      cli::cli_li(
+        "{.arg strata} <- {.val {strata_col}} \\
+         ({.val {strata_cols}}, {.val {strata_sep}}-separated)"
+      )
+    }
     cli::cli_li("rows (one per case): {.val {nrow(linelist)}}")
     cli::cli_end()
   }
@@ -3506,6 +3626,10 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #'   calendar dates [surveillance::linelist2sts()] needs. Pass a value
 #'   explicitly to override, including on a numeric grid if you know what the
 #'   index steps mean.
+#' @param strata_col Name of a single column to add, holding every declared
+#'   stratum pasted together, for splitting the line list into one fit per
+#'   stratum. `NULL` leaves it out. Ignored when the object declares no strata.
+#' @param strata_sep Separator used to paste the strata into `strata_col`.
 #' @param verbose Logical. Print the choices that were made.
 #' @param ... Forwarded to [surveillance::linelist2sts()] when
 #'   `format = "sts"`; ignored otherwise.
@@ -3528,6 +3652,25 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #'
 #' @inheritSection tbl_now_baselinenowcast Censored delays
 
+#' @section Stratified nowcasts:
+#'
+#' [surveillance::nowcast()] models one series and has no strata argument, so a
+#' stratified analysis means fitting each stratum separately. The declared
+#' strata are pasted into a single `strata` column to split on:
+#'
+#' ```r
+#' sur <- tbl_now_to_surveillance(x, verbose = FALSE)
+#' fits <- lapply(split(sur, sur$strata), function(piece) {
+#'   surveillance::nowcast(
+#'     now = get_now(x), when = get_surveillance_when(x),
+#'     data = piece, dEventCol = "dHospital", dReportCol = "dReport",
+#'     control = list(dRange = get_surveillance_range(x))
+#'   )
+#' })
+#' ```
+#'
+#' The original columns are kept alongside it, so you can split on them instead.
+#'
 #' @section Cost of expanding counts:
 #'
 #' \pkg{surveillance} counts rows, so `count-incidence` input is expanded to one
@@ -3540,7 +3683,9 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
                                     report_col = "dReport",
                                     format = c("linelist", "sts"),
-                                    aggregate_by = NULL, verbose = TRUE) {
+                                    aggregate_by = NULL,
+                                    strata_col = "strata", strata_sep = " | ",
+                                    verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_surveillance")
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_surveillance")
   .need_pkg("surveillance")
@@ -3580,6 +3725,15 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
   linelist[[event_col]]  <- as.Date(linelist[[event_col]])
   linelist[[report_col]] <- as.Date(linelist[[report_col]])
 
+  # `surveillance::nowcast()` has no strata argument at all: a stratified
+  # analysis means splitting the line list and fitting each piece. One column
+  # holding the whole combination is what `split()` wants, so it is built here
+  # rather than left to the caller.
+  stratified <- length(strata_cols) > 0 && !is.null(strata_col)
+  linelist <- .add_strata_column(
+    linelist, strata_cols, strata_col, strata_sep, "tbl_now_to_surveillance"
+  )
+
   if (verbose) {
     cli::cli_h3("Converting {.cls tbl_now} into a {.pkg surveillance} line list")
     cli::cli_ul()
@@ -3587,6 +3741,12 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
     cli::cli_li("{.arg dReportCol} <- {.val {report_col}}")
     cli::cli_li("{.arg aggregate.by} <- {.val {aggregate_by}}")
     cli::cli_li("{.arg now} <- {.val {as.character(get_now(x))}}")
+    if (stratified) {
+      cli::cli_li(
+        "{.field {strata_col}} <- {.val {strata_cols}}, \\
+         {.val {strata_sep}}-separated (split on it for a fit per stratum)"
+      )
+    }
     cli::cli_end()
   }
 
@@ -3601,6 +3761,140 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
 
 
 
+
+
+#' The date grids [surveillance::nowcast()] needs
+#'
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' [surveillance::nowcast()] takes three dates and two date *grids*, and none of
+#' them have defaults you can rely on. These two helpers build the grids from the
+#' `tbl_now` itself, so the object stays the single source of truth for what
+#' "now" is and how wide a time step is:
+#'
+#' * `get_surveillance_when()` -- the dates you want **estimated**, passed as
+#'   `when`. The most recent `length` steps up to and including [get_now()].
+#' * `get_surveillance_range()` -- the **whole** time axis the model is laid on,
+#'   passed as `control$dRange`. Every step from the first event to `now`.
+#'
+#' ```r
+#' sur_fit <- surveillance::nowcast(
+#'   now  = get_now(x),
+#'   when = get_surveillance_when(x, length = 30),
+#'   data = tbl_now_to_surveillance(x, verbose = FALSE),
+#'   dEventCol = "dHospital", dReportCol = "dReport",
+#'   control = list(dRange = get_surveillance_range(x))
+#' )
+#' ```
+#'
+#' @section Why `dRange` has to be given explicitly:
+#'
+#' Left to itself, [surveillance::nowcast()] infers the time axis from the data
+#' it was handed -- and a **line list cannot express a zero**. A day on which
+#' nothing was reported has no rows, so it is not in the line list, so it is not
+#' in the inferred axis. That is exactly the situation at the `now` edge, which
+#' is the part you are nowcasting: the last few days are quiet precisely because
+#' their reports have not arrived yet, and the axis silently stops short of
+#' `now`. Passing `dRange` states the grid instead of letting it be guessed, so
+#' the quiet days at the end are modelled as zeros observed so far rather than
+#' as days that do not exist.
+#'
+#' This is also why [complete_zeroes()] is no help here: it can only add zero
+#' *counts*, and a line list has no count column to put a zero in.
+#'
+#' @param x A `tbl_now`.
+#' @param length Number of time steps to estimate, counting back from `to`. The
+#'   result has `length` elements, the last of which is `to`.
+#' @param from First date of the grid. Defaults to the earliest event date in
+#'   `x`.
+#' @param to Last date of the grid. Defaults to [get_now()].
+#' @param by Step, as a [seq.Date()] `by` string (`"1 day"`, `"1 week"`, ...).
+#'   Defaults to the object's own event units.
+#' @param ... Unused, for extensibility.
+#'
+#' @returns A `Date` vector, in increasing order.
+#'
+#' @seealso [tbl_now_to_surveillance()], [get_now()], [get_event_units()]
+#'
+#' @examplesIf requireNamespace("surveillance", quietly = TRUE)
+#' data(denguedat)
+#' nowobj <- tbl_now(denguedat,
+#'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
+#' )
+#' get_surveillance_when(nowobj, length = 4)
+#' range(get_surveillance_range(nowobj))
+#'
+#' @name surveillance_grids
+NULL
+
+#' @rdname surveillance_grids
+#' @export
+get_surveillance_when <- function(x, length = 30L, ..., to = NULL, by = NULL) {
+  .assert_tbl_now(x, "get_surveillance_when")
+  if (!is.numeric(length) || length(length) != 1L || is.na(length) ||
+        length < 1) {
+    cli::cli_abort(
+      "{.arg length} must be a single positive number, not {.val {length}}."
+    )
+  }
+  by <- by %||% .surveillance_aggregate_by(get_event_units(x))
+  to <- .surveillance_grid_date(to %||% get_now(x), "to")
+
+  # `seq()` counting BACK from `to` rather than forward from a computed start:
+  # on months the two disagree (a month is not a fixed number of days), and it
+  # is the `now` end of the grid that has to land exactly.
+  grid <- seq(to, by = paste0("-", by), length.out = as.integer(length))
+  sort(grid)
+}
+
+#' @rdname surveillance_grids
+#' @export
+get_surveillance_range <- function(x, ..., from = NULL, to = NULL, by = NULL) {
+  .assert_tbl_now(x, "get_surveillance_range")
+  by <- by %||% .surveillance_aggregate_by(get_event_units(x))
+  to <- .surveillance_grid_date(to %||% get_now(x), "to")
+
+  from <- from %||% suppressWarnings(min(x[[get_event_date(x)]], na.rm = TRUE))
+  if (!is.finite(unclass(from))) {
+    cli::cli_abort(c(
+      "{.arg x} has no non-missing event date to start the grid from.",
+      "i" = "Pass {.arg from} explicitly."
+    ))
+  }
+  from <- .surveillance_grid_date(from, "from")
+
+  if (from > to) {
+    cli::cli_abort(c(
+      "{.arg from} ({.val {as.character(from)}}) is after {.arg to} \
+       ({.val {as.character(to)}}).",
+      "i" = "{.arg to} defaults to {.fn get_now}, so this means every event \
+             date in {.arg x} sits after its own {.field now}."
+    ))
+  }
+
+  seq(from, to, by = by)
+}
+
+#' Coerce one end of a surveillance date grid, insisting on a real date
+#'
+#' @param value The value given for that end of the grid.
+#' @param argument Its argument name, for the error message.
+#'
+#' @return A length-1 `Date`.
+#'
+#' @keywords internal
+#' @noRd
+.surveillance_grid_date <- function(value, argument) {
+  if (length(value) != 1L || is.na(value)) {
+    cli::cli_abort(
+      "{.arg {argument}} must be a single non-missing date, not \
+       {.val {value}}."
+    )
+  }
+  # A numeric grid is caught upstream by `.surveillance_aggregate_by()`, so
+  # anything reaching here should already be a date.
+  as.Date(value)
+}
 
 
 # tbl_now_triangle_list ---------------------------------------------------------

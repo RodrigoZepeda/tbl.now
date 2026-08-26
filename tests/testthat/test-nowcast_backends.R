@@ -196,7 +196,13 @@ test_that("a single stratum routes NobBS through NobBS.strat()", {
 
   nowcast <- run_nowcast(x, "NobBS", verbose = FALSE)
 
-  expect_equal(seen$strata, "sex")
+  # `tbl_now_to_nobbs()` builds the single column `NobBS.strat()` takes, and the
+  # engine hands over that column whether there is one declared stratum or six.
+  # Passing "sex" directly (as this did before 0.22.0) worked only in the
+  # one-stratum case, and left the engine carrying its own copy of the pasting
+  # logic for every other case.
+  expect_equal(seen$strata, "strata")
+  expect_equal(seen$data$strata, as.character(seen$data$sex))
   expect_equal(nrow(seen$data), sum(x$n))
   # NobBS.strat() calls the column `stratum`; the nowcast must report it under
   # the name the `tbl_now` declared, or the strata cannot be joined to anything.

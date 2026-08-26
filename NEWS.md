@@ -1,3 +1,100 @@
+# tbl.now 0.22.0
+
+## The back-ends that stratify by ONE column
+
+`NobBS::NobBS.strat()` takes a single `strata` column name,
+`EpiNow2::regional_epinow()` a single `region`, and `surveillance::nowcast()`
+takes no strata argument at all. A `tbl_now` may declare several stratifying
+columns, and their interaction -- "nowcast each observed combination separately"
+-- is exactly one stratum to those back-ends. The converters now build that
+column, so there is an argument to write:
+
+* `tbl_now_to_nobbs()` and `tbl_now_to_surveillance()` gain `strata_col`
+  (default `"strata"`) and `strata_sep` (default `" | "`). The declared strata
+  are pasted into that one column, which `NobBS.strat(strata = "strata")` takes
+  directly and which `split()` splits a `surveillance` line list on. The
+  original columns ride along unchanged, and `strata_col = NULL` opts out.
+* Pasting is refused rather than fudged when a **stratum value already contains
+  the separator**: the label could not be split back apart, and a nowcast
+  silently attached to the wrong stratum is worse than a failed conversion. The
+  error names `strata_sep`. `tbl_now_to_EpiNow2(target = "regional_epinow")`
+  gained the same check, which it did not have.
+* Writing into an existing column is refused too, so a declared covariate
+  called `strata` is not overwritten.
+
+Previously `tbl_now_to_nobbs()` handed back the strata as ordinary columns and
+nothing else, so there was no way to call `NobBS.strat()` on a multiply
+stratified object at all. `run_nowcast(x, "NobBS")` had its own copy of the
+pasting logic; it now uses the converter's column, so the two cannot disagree.
+
+`tidy()` also learned the last per-stratum shape it did not know: a list of
+`stsNC` fits, which is what `split()`-ing a `surveillance` line list and looping
+produces.
+
+## `tidy()` returns the quantiles a NobBS fit was asked for
+
+`NobBS` keeps no draws, so `tidy(fit, probs = ...)` refused every `probs`
+outright. But `NobBS(specs = list(quantiles = c(0.1, 0.5, 0.9)))` computes those
+levels at fit time and puts them in `estimates` -- reading them back is a
+lookup, not an approximation, and refusing it made the documented workflow
+("ask at fit time, then request them with `probs`") impossible to complete.
+
+`tidy()` now returns them. A level the fit was **not** asked for still aborts,
+because that one really is unrecoverable, and the message now names the missing
+levels and the `specs = list(quantiles = ...)` call that would have produced
+them.
+
+## The two date grids `surveillance::nowcast()` needs
+
+* `get_surveillance_when(x, length = 30)` -- the dates to estimate, the most
+  recent `length` steps ending exactly at `get_now()`.
+* `get_surveillance_range(x)` -- the whole time axis, passed as
+  `control$dRange`.
+
+Both read the step off the object's own event units and abort on a `"numeric"`
+grid rather than anchoring integer indices at the 1970 epoch. `dRange` matters
+more than it looks: left to itself `nowcast()` infers the axis from the line
+list it was handed, and **a line list cannot express a zero** -- the quiet days
+at the `now` edge have no rows, so the inferred axis stops short of exactly the
+days being nowcast.
+
+## The article now runs the code it shows
+
+`vignettes/articles/nowcasting-models.Rmd` displayed cached results next to code
+that a separate script, `data-raw/nowcast_comparison.R`, kept its own copy of.
+The two drifted, invisibly, because the article never ran what it printed.
+
+`data-raw/nowcast_models_precompute.R` replaces it: it `knitr::purl()`s the
+article, runs the article's own chunks with the fits live, and reads the
+displayed objects back out by name. The code that produced every number is now
+literally the code printed above it. Renaming an object in the article stops the
+script with a list of what is missing instead of quietly saving a shorter file.
+
+Fixed along the way, all of it drift the old arrangement hid:
+
+* the Summary figure showed an unnamed grey `NA` line, because `EpiNow2` had no
+  entry in the figure's colour scale and the factor dropped it to `NA`;
+* two chunk labels were duplicated and two chunks called `tidy()` on objects the
+  article never created, so the article could not be knitted at all;
+* the `EpiNow2` delay section tidied a `dist_fit` that was never fitted, and the
+  `epinowcast` seasonal fit was never assigned to a name;
+* `regional_epinow()` was called without `truncation`, which is the one argument
+  that makes it a nowcast -- the same trap the pooled section spends a warning
+  box on;
+* `epidist`'s **marginal** model is used, now that it compiles. It reads the
+  aggregated weights the converter produces instead of expanding 6.1M cases back
+  to one row each, which is why the latent model was there;
+* the `epinowcast` sections filtered to **two years** of daily reference dates
+  while every other engine used 60 days, and the article claimed that "keeps the
+  Stan fit tractable". It does not: one chain spent **six hours** in a bad region
+  of the posterior while the other chain of the same fit finished in sixteen
+  minutes. The cached numbers had come from a 180-day fit that took six minutes,
+  so the article had never run its own window. It is 180 days now, with the
+  discrepancy explained in the text;
+* the `epinowcast` fits were **unseeded** -- `epinowcast()` does not take R's
+  `set.seed()`, so Stan drew its own each run and the same fit took 41 minutes
+  once and six hours the next. Both now pass `seed` through `enw_fit_opts()`.
+
 # tbl.now 0.21.0
 
 ## The confirmation process

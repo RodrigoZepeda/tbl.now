@@ -363,6 +363,28 @@ breaks things. Test with the second kind or your test proves nothing.
   `complete` defaults to `"auto"` (line lists only) rather than `TRUE`.
 * **Resolve units from the attribute**, never assume days. A weekly triangle
   whose `delays_unit` you ignore will read its delays as days and abort.
+* **Ask how the target stratifies, not whether it can.** Three shapes exist and
+  they need different things:
+  * *many columns* (`epinowcast`'s `by`, a `tsibble` key, an `epidist` formula):
+    hand over the columns themselves. Pasting them would be the bug.
+  * *one column* (`NobBS::NobBS.strat(strata=)`,
+    `EpiNow2::regional_epinow(region)`): the converter must **build** that
+    column — `.add_strata_column()` — with a user-settable `strata_col` /
+    `strata_sep`. Carrying the originals along is not enough: without the pasted
+    column there is no argument the user can write, and a multiply-stratified
+    object simply cannot be fitted.
+  * *none at all* (`surveillance::nowcast()`): still build the column, because
+    the answer is `split()` and that needs something to split on.
+
+  Whenever you paste, refuse the paste if a stratum **value** contains the
+  separator (`.paste_strata_labels()` does this): `tidy()` splits the label back
+  into columns, and an ambiguous split attaches a nowcast to the wrong stratum
+  with no error. Refuse to overwrite an existing column too.
+
+  A test that only asserts "the strata columns are present in the output" does
+  **not** cover this — that test existed and the bug shipped anyway. Assert that
+  the target's own stratified entry point can be *called*, and that splitting on
+  the result reproduces each stratum's total.
 
 ### Document it in the vignette
 
@@ -381,10 +403,32 @@ Follow the section pattern already in the file:
 * a **hidden** `echo=FALSE` chunk rendering the cached result, so the output
   appears to come from the visible call.
 
-Fits are precomputed by `data-raw/nowcast_comparison.R` into
-`vignettes/articles/nowcast-comparison.rds`; `run_models` is `FALSE` in the
-article so the build never fits anything. Add your engine there, then re-run the
-script.
+**The precompute runs the article, it does not restate it.**
+`data-raw/nowcast_models_precompute.R` `knitr::purl()`s
+`nowcasting-models.Rmd`, sources the extracted chunks with
+`TBL_NOW_RUN_MODELS=true`, and reads the fits back out **by name** into
+`vignettes/articles/nowcast-comparison.rds`. `run_models` is `FALSE` during a
+normal build, so the article never fits anything and shows the cached results
+instead.
+
+This replaced a script that kept its own copy of every fit next to a comment
+asking whoever edited one to remember the other. They drifted, silently, because
+the article never ran what it printed. Do not reintroduce that: **add your
+engine to the article**, then add its object name to `DISPLAYED` / `PANELS` in
+the precompute and re-run it.
+
+Consequences to respect when you edit the article:
+
+* a chunk that only *displays* a cached result (`show_fit()`, `show_tidy()`,
+  `nowcast_panels()`, the figures) must be marked `purl = FALSE`, or the
+  precompute will try to run it before the file it reads exists;
+* every object the precompute names must actually be **assigned** in a chunk.
+  An `eval = FALSE` chunk still gets purled and run, so illustrative code that
+  cannot run needs `purl = FALSE` too;
+* every package that appears in `nowcasts` needs an entry in `engine_colours`.
+  The Summary figure turns `package` into a factor with those levels, so a
+  missing one becomes a grey unnamed `NA` line with no error;
+* chunk labels must be unique — a duplicate stops `knit()` and `purl()` alike.
 
 Also add a row to the package table at the top of the article, and to the
 converter matrix in `data-raw/converter_matrix.R`, which runs every converter
@@ -469,10 +513,19 @@ against every shipped dataset.
   file as it evaluates, so an edit mid-run corrupts its read position and
   produces a parse error at a line that is perfectly valid on disk. Copy the
   script somewhere frozen and run that copy if you need to keep editing.
-* **A vignette that displays cached results has TWO sources of truth.** The code
-  on the page and the script that produced the cache must agree, or the reader
-  cannot reproduce what they see. Whenever you change a fitting call in one,
-  change it in the other, and re-run the precompute.
+* **A vignette that displays cached results must not have TWO sources of
+  truth.** `nowcasting-models.Rmd` used to show one call and cache the output of
+  another, kept in step by a comment asking whoever edited one to remember the
+  other. Nobody did, and nothing caught it: the article never runs what it
+  prints, so the drift is invisible until a reader copies a line off the page.
+  The fix is structural, not a reminder -- purl the article and run *its* code
+  (§7). If you find yourself writing "keep this in step with", you are building
+  the bug.
+* **A test can assert the right fact and still miss the bug.** "The strata
+  columns are present in the converter's output" was true, passing, and useless:
+  `NobBS.strat()` needs *one* column and there was none, so a multiply
+  stratified object could not be fitted at all. Assert that the destination's
+  own entry point can be **called** with what the converter returns.
 * **A Stan fit that does not converge does not error -- it returns numbers.**
   `run_engine()` wraps every fit in `suppressWarnings(suppressMessages(...))`, so
   divergent-transition and low-ESS warnings never reach the log and a broken fit
@@ -490,7 +543,7 @@ against every shipped dataset.
 
   Seed per `(engine, stratum)` **immediately before each fit**, so a fit depends
   only on which fit it is, not on what ran before it or whether anything did.
-  `nowcast_comparison.R` does this in `run_engine()`; both engines then reproduce
+  `nowcast_models_precompute.R` seeds once before the run; both engines then reproduce
   to `max abs diff == 0` with the RNG deliberately perturbed in between.
 
 * **A uniqueness key that omits an attribute reports real rows as duplicates.**

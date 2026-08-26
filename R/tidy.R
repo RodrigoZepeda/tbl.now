@@ -59,9 +59,10 @@
 #' @param probs Optional numeric vector of probabilities in `[0, 1]`. Adds a
 #'   `q*` column per probability. Only available for engines that expose draws.
 #' @param engine Optional string naming the engine. Needed only for the shapes
-#'   that arrive as an **unclassed list** -- a \pkg{NobBS} fit, or a list of
-#'   per-stratum \pkg{baselinenowcast} fits -- which are otherwise recognised by
-#'   their structure.
+#'   that arrive as an **unclassed list** -- a \pkg{NobBS} fit, an
+#'   [EpiNow2::regional_epinow()] result, or a per-stratum list of
+#'   \pkg{baselinenowcast} or [surveillance::nowcast()] fits -- which are
+#'   otherwise recognised by their structure.
 #' @param level Interval width to report for an engine that does not say what it
 #'   produced. Only used by the \pkg{NobBS} branch (see `level` under *Value*);
 #'   `NULL`, the default, reports `NA`.
@@ -200,6 +201,58 @@ generics::tidy
     ))
   }
   invisible(NULL)
+}
+
+#' Read back the quantiles a \pkg{NobBS} fit was ASKED to compute
+#'
+#' \pkg{NobBS} keeps no draws, so it can only report quantiles it was told about
+#' at fit time, through `specs$quantiles`. Those land in the `estimates` table as
+#' `q_0.1`-style columns. Asking `tidy()` for one of them is therefore a
+#' *lookup*, not an approximation, and it is what
+#' `NobBS(specs = list(quantiles = ...))` exists for.
+#'
+#' Anything the fit was not asked for is genuinely unrecoverable, and that still
+#' aborts -- naming the missing levels and where to ask for them.
+#'
+#' @param estimates The fit's `estimates` data frame.
+#' @param probs The probabilities the caller asked for, or `NULL`.
+#'
+#' @return A named list of columns to append, or `NULL`.
+#'
+#' @keywords internal
+#' @noRd
+.nobbs_quantile_columns <- function(estimates, probs) {
+  if (is.null(probs) || length(probs) == 0L) return(NULL)
+  .assert_probs(probs)
+
+  # NobBS names them from the number it was handed, so match on the VALUE rather
+  # than on a formatted string: `0.5` may be written `q_0.5`, and `0.025`
+  # `q_0.025`.
+  available <- grep("^q_", names(estimates), value = TRUE)
+  levels <- suppressWarnings(as.numeric(sub("^q_", "", available)))
+  matched <- vapply(probs, function(p) {
+    hit <- which(!is.na(levels) & abs(levels - p) < 1e-8)
+    if (length(hit)) available[hit[1L]] else NA_character_
+  }, character(1))
+
+  if (anyNA(matched)) {
+    missing <- probs[is.na(matched)]
+    cli::cli_abort(c(
+      "{.pkg NobBS} did not compute {cli::qty(length(missing))} quantile{?s} \\
+       {.val {missing}}.",
+      "i" = "It keeps no draws, so a quantile it was not asked for cannot be \\
+             recovered afterwards -- returning one would be an approximation \\
+             dressed up as a quantile.",
+      "i" = "Ask at fit time: {.code NobBS(..., specs = list(quantiles = \\
+             c({paste(sort(unique(c(levels[!is.na(levels)], probs))), \\
+             collapse = \", \")})))}."
+    ))
+  }
+
+  stats::setNames(
+    lapply(matched, function(column) estimates[[column]]),
+    .tidy_quantile_names(probs)
+  )
 }
 
 # -- methods --------------------------------------------------------------------
@@ -774,8 +827,11 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
   engine <- engine %||% .tidy_detect_engine(x)
 
   if (identical(engine, "NobBS")) {
-    .reject_probs(probs, "NobBS")
     est <- as.data.frame(x$estimates)
+    # NOT `.reject_probs()`. NobBS computes whatever `specs$quantiles` asked for
+    # and puts it in `estimates`, so a requested level that is already there is
+    # a lookup rather than an approximation.
+    quantile_columns <- .nobbs_quantile_columns(est, probs)
     # `NobBS.strat()` stacks one block per stratum and names it in a `stratum`
     # column; plain `NobBS()` has no such column and is a single pooled series.
     # Reading only the first would drop strata, and labelling them all "all"
@@ -791,15 +847,17 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
     # unrecoverable from the fit, so it is reported as NA unless the caller says
     # what they asked for. Guessing the 0.95 default would put a number in the
     # one column that exists to stop widths being compared blindly.
-    return(.tidy_nowcast_frame(
+    tidied <- .tidy_nowcast_frame(
       event_date = as.Date(est$onset_date),
       estimate   = est$estimate,
       conf.low   = est$lower,
       conf.high  = est$upper,
       level      = .tidy_level(level),
       engine     = "NobBS",
-      stratum    = stratum
-    ))
+      stratum    = stratum,
+      quantiles  = quantile_columns
+    )
+    return(tidied)
   }
 
   # `regional_epinow()` returns a plain nested list, one block per region under
@@ -812,10 +870,11 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
     })))
   }
 
-  # A per-stratum list of `baselinenowcast_df` fits: tidy each and label it with
-  # its list name, so the result is the same one-block-per-stratum table the
-  # natively stratified engines produce.
-  if (identical(engine, "baselinenowcast")) {
+  # A per-stratum list of fits -- `baselinenowcast_df` from a triangle list, or
+  # `stsNC` from `split()`-ing a surveillance line list. Tidy each and label it
+  # with its list name, so the result is the same one-block-per-stratum table
+  # the natively stratified engines produce.
+  if (isTRUE(engine %in% c("baselinenowcast", "surveillance"))) {
     labels <- names(x)
     if (is.null(labels) || any(!nzchar(labels))) {
       labels <- as.character(seq_along(x))
@@ -829,8 +888,9 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
 
   cli::cli_abort(c(
     "Don't know how to {.fn tidy} this list.",
-    "i" = "Recognised shapes are a {.pkg NobBS} fit and a list of \\
-           {.cls baselinenowcast_df} fits, one per stratum.",
+    "i" = "Recognised shapes are a {.pkg NobBS} fit, a {.pkg EpiNow2} \\
+           {.fn regional_epinow} result, and a per-stratum list of \\
+           {.cls baselinenowcast_df} or {.cls stsNC} fits.",
     "i" = "Supply {.arg engine} explicitly, e.g. \\
            {.code tidy(x, engine = \"NobBS\")}."
   ))
@@ -887,6 +947,12 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
   if (length(x) > 0L &&
         all(vapply(x, inherits, logical(1), "baselinenowcast_df"))) {
     return("baselinenowcast")
+  }
+  # `surveillance::nowcast()` has no strata argument at all, so a stratified
+  # analysis is `split()` plus a loop -- which yields a list of `stsNC` objects
+  # the same shape as the one above.
+  if (length(x) > 0L && all(vapply(x, inherits, logical(1), "stsNC"))) {
+    return("surveillance")
   }
   NULL
 }

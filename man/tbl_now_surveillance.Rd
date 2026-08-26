@@ -12,6 +12,8 @@ tbl_now_to_surveillance(
   report_col = "dReport",
   format = c("linelist", "sts"),
   aggregate_by = NULL,
+  strata_col = "strata",
+  strata_sep = " | ",
   verbose = TRUE
 )
 }
@@ -38,6 +40,12 @@ calendar dates \code{\link[surveillance:linelist2sts]{surveillance::linelist2sts
 explicitly to override, including on a numeric grid if you know what the
 index steps mean.}
 
+\item{strata_col}{Name of a single column to add, holding every declared
+stratum pasted together, for splitting the line list into one fit per
+stratum. \code{NULL} leaves it out. Ignored when the object declares no strata.}
+
+\item{strata_sep}{Separator used to paste the strata into \code{strata_col}.}
+
 \item{verbose}{Logical. Print the choices that were made.}
 }
 \value{
@@ -60,6 +68,26 @@ With \code{format = "sts"} it instead returns the observed epidemic curve as an
 \code{now} and the delay unit are \emph{not} baked into the result: pass them from the
 object with \code{\link[=get_now]{get_now()}} and \code{\link[=get_event_units]{get_event_units()}}, as in the example below.
 }
+\section{Stratified nowcasts}{
+
+
+\code{\link[surveillance:nowcast]{surveillance::nowcast()}} models one series and has no strata argument, so a
+stratified analysis means fitting each stratum separately. The declared
+strata are pasted into a single \code{strata} column to split on:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{sur <- tbl_now_to_surveillance(x, verbose = FALSE)
+fits <- lapply(split(sur, sur$strata), function(piece) \{
+  surveillance::nowcast(
+    now = get_now(x), when = get_surveillance_when(x),
+    data = piece, dEventCol = "dHospital", dReportCol = "dReport",
+    control = list(dRange = get_surveillance_range(x))
+  )
+\})
+}\if{html}{\out{</div>}}
+
+The original columns are kept alongside it, so you can split on them instead.
+}
+
 \section{Cost of expanding counts}{
 
 

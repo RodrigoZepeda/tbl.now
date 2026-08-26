@@ -111,11 +111,12 @@ triangle's delay axis; inferred from the object's time units when \code{NULL}.}
 
 \item{when, D, fit_method, control}{(\code{"surveillance"} only) The \code{when}, \code{D},
 \code{method} and \code{control} arguments of \code{\link[surveillance:nowcast]{surveillance::nowcast()}}. \code{when}
-defaults to the last \code{D + 1} points of the object's grid, \code{D} to the
-largest delay in the data, and \code{control$dRange} to the grid running to
-\code{\link[=get_now]{get_now()}}, which a line list cannot express on its own. \code{fit_method} is
-\pkg{surveillance}'s \code{method} argument, renamed so it cannot collide with
-\code{\link[=run_nowcast]{run_nowcast()}}'s own \code{method}.}
+defaults to \code{get_surveillance_when(x, length = D + 1)}, \code{D} to the largest
+delay in the data, and \code{control$dRange} to \code{\link[=get_surveillance_range]{get_surveillance_range()}} --
+the grid running to \code{\link[=get_now]{get_now()}}, which a line list cannot express on its
+own. Both grids are built from the whole object, so every stratum is fitted
+on the same time axis. \code{fit_method} is \pkg{surveillance}'s \code{method}
+argument, renamed so it cannot collide with \code{\link[=run_nowcast]{run_nowcast()}}'s own \code{method}.}
 
 \item{convert_args}{(\code{"EpiNow2"} only) A list of arguments for
 \code{\link[=tbl_now_to_EpiNow2]{tbl_now_to_EpiNow2()}}, e.g. \code{list(accumulate = FALSE)}.}

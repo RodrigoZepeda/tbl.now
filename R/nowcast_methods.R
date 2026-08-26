@@ -27,8 +27,7 @@
   # strata were pooled, a censoring flag was collapsed or declared covariates
   # were dropped -- each of which changes what the model saw. Suppressing those
   # is how a fit comes back looking fine while answering a different question,
-  # which is the same failure `run_engine()` in `data-raw/nowcast_comparison.R`
-  # is warned about in DEVELOPMENT_SKILL section 9.
+  # which is the same failure warned about in DEVELOPMENT_SKILL section 9.
   suppressMessages(force(expr))
 }
 
@@ -345,25 +344,9 @@ nowcast_fit.NobBS <- function(method, x, ..., specs = list(),
   if (length(strata_cols) > 0) {
     # `NobBS.strat()` takes ONE column name. Several strata are the interaction
     # of those columns -- which is exactly what "nowcast each combination
-    # separately" means -- so they are joined into one label here and split back
-    # apart in `nowcast_tidy.NobBS()`.
-    if (length(strata_cols) > 1) {
-      labels <- .epinow2_region(linelist, strata_cols)
-      if (any(grepl(" | ", unlist(linelist[strata_cols]), fixed = TRUE))) {
-        cli::cli_abort(c(
-          "Cannot combine strata {.val {strata_cols}} for {.pkg NobBS}.",
-          "i" = "They are joined with {.val { | }} into the single column
-                 {.fn NobBS::NobBS.strat} accepts, and a value already contains
-                 that separator.",
-          "i" = "Nowcast each stratum separately instead."
-        ))
-      }
-      linelist[[".stratum"]] <- labels
-      arguments$data <- linelist
-      arguments$strata <- ".stratum"
-    } else {
-      arguments$strata <- strata_cols
-    }
+    # separately" means -- and `tbl_now_to_nobbs()` has already pasted them into
+    # its `strata` column. `nowcast_tidy.NobBS()` splits the label back apart.
+    arguments$strata <- "strata"
     return(.quietly_if(do.call(NobBS::NobBS.strat, arguments), verbose))
   }
 
@@ -599,18 +582,25 @@ nowcast_fit.surveillance <- function(method, x, ..., when = NULL, D = NULL,
   now <- get_now(x)
   D <- D %||% .surveillance_max_delay(x)
 
+  # Both grids come from the WHOLE object, once, not from each stratum's own
+  # rows: a stratum whose first case arrived a fortnight later would otherwise
+  # start its own time axis a fortnight later, and its estimates would not line
+  # up with anyone else's. `get_surveillance_range()` also reaches the `now` even
+  # when the last days carry no reports -- which is exactly the situation being
+  # nowcast, and which `surveillance` cannot infer from a line list, because a
+  # line list has no way to say "zero".
+  grid <- get_surveillance_range(x, by = aggregate_by)
+  when <- when %||% get_surveillance_when(x, length = D + 1L, by = aggregate_by)
+
   fit_one <- function(stratum) {
-    # The converter expands counts to one row per case; `now` and the grid stay
-    # the caller's job, because a line list cannot express a zero day and
-    # `surveillance` would otherwise stop at the last date with a report.
+    # The converter expands counts to one row per case.
     linelist <- .quietly_if(
       tbl_now_to_surveillance(stratum, verbose = verbose), verbose
     )
-    grid <- seq(min(linelist$dHospital), now, by = aggregate_by)
     arguments <- utils::modifyList(
       list(
         now = now,
-        when = when %||% utils::tail(grid, D + 1L),
+        when = when,
         data = linelist,
         dEventCol = "dHospital", dReportCol = "dReport",
         aggregate.by = aggregate_by, D = D, method = fit_method,

@@ -37,9 +37,10 @@ tidy(x, ...)
 \verb{q*} column per probability. Only available for engines that expose draws.}
 
 \item{engine}{Optional string naming the engine. Needed only for the shapes
-that arrive as an \strong{unclassed list} -- a \pkg{NobBS} fit, or a list of
-per-stratum \pkg{baselinenowcast} fits -- which are otherwise recognised by
-their structure.}
+that arrive as an \strong{unclassed list} -- a \pkg{NobBS} fit, an
+\code{\link[EpiNow2:regional_epinow]{EpiNow2::regional_epinow()}} result, or a per-stratum list of
+\pkg{baselinenowcast} or \code{\link[surveillance:nowcast]{surveillance::nowcast()}} fits -- which are
+otherwise recognised by their structure.}
 
 \item{level}{Interval width to report for an engine that does not say what it
 produced. Only used by the \pkg{NobBS} branch (see \code{level} under \emph{Value});

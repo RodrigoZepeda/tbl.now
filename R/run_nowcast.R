@@ -101,11 +101,12 @@ print.nowcast_method <- function(x, ...) {
 #'   `quantiles` element is filled from `quantile_levels` unless you set it.
 #' @param when,D,fit_method,control (`"surveillance"` only) The `when`, `D`,
 #'   `method` and `control` arguments of [surveillance::nowcast()]. `when`
-#'   defaults to the last `D + 1` points of the object's grid, `D` to the
-#'   largest delay in the data, and `control$dRange` to the grid running to
-#'   [get_now()], which a line list cannot express on its own. `fit_method` is
-#'   \pkg{surveillance}'s `method` argument, renamed so it cannot collide with
-#'   [run_nowcast()]'s own `method`.
+#'   defaults to `get_surveillance_when(x, length = D + 1)`, `D` to the largest
+#'   delay in the data, and `control$dRange` to [get_surveillance_range()] --
+#'   the grid running to [get_now()], which a line list cannot express on its
+#'   own. Both grids are built from the whole object, so every stratum is fitted
+#'   on the same time axis. `fit_method` is \pkg{surveillance}'s `method`
+#'   argument, renamed so it cannot collide with [run_nowcast()]'s own `method`.
 #' @param convert_args (`"EpiNow2"` only) A list of arguments for
 #'   [tbl_now_to_EpiNow2()], e.g. `list(accumulate = FALSE)`.
 #'
