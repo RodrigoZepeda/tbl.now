@@ -189,6 +189,69 @@ mpoxdat_now <- tbl_now(mpoxdat,
 autoplot(mpoxdat_now)
 ```
 
+## Describing and diagnosing a `tbl_now`
+
+### What is in the data?
+
+`summary()` returns a **tibble**, not printed text, so every number in it can be
+filtered, joined or plotted. One row describes one quantity, and `component`
+says which block it belongs to:
+
+```{r summary-cases}
+summary(mpoxdat_now) |>
+  filter(component == "cases") |>
+  select(quantity, n, total, mean, sd, q50, max, prop_zero)
+```
+
+Seventy percent of the event dates carry no cases at all (`prop_zero`), which is
+the first thing worth knowing before choosing a model. The `coverage` block
+gives the reach of the object, including its `now`:
+
+```{r summary-coverage}
+summary(mpoxdat_now) |>
+  filter(component == "coverage", quantity %in% c("total_cases", "event_date", "report_date", "now")) |>
+  select(quantity, n, total, date_min, date_max)
+```
+
+The other blocks are `delay`, `zero_run`, `composition`, `autocorrelation`,
+`completeness` and `growth`, and each is also a function of its own —
+`delay_summary()`, `prop_censored()`, `reporting_completeness()` and so on. See
+`?tbl_now_summary`.
+
+### Is anything wrong with it?
+
+`diagnose()` answers that, returning findings **sorted worst first**. `status` is
+an ordered factor (`error` > `warning` > `note` > `ok` > `not_run` > `skipped`),
+so filtering to what needs acting on is a comparison:
+
+```{r diagnose}
+diagnose(mpoxdat_now) |>
+  filter(status <= "note") |>
+  select(check, scope, status, n_affected, message)
+```
+
+It caught a real problem in the object built above: `race` was never declared, so
+it silently splits every `(event_date, report_date)` cell into several rows. That
+is the most common source of surprising results in this package. Declaring it
+fixes the finding:
+
+```{r diagnose-fixed}
+mpoxdat_now |>
+  add_strata(race) |>
+  diagnose(checks = "duplicates") |>
+  select(check, status, n_affected, message)
+```
+
+`diagnose()` is deliberately **structural**: it never runs a statistical test, so
+it is fast and its answer never depends on a random seed. The questions that do
+need a test come back as `not_run` signposts naming the call that answers them —
+which are exactly the two sections that follow:
+
+```{r diagnose-signposts}
+diagnose_signposts(mpoxdat_now) |>
+  select(scope, status, message)
+```
+
 ### Diagnosing reporting problems
 
 `tbl.now` also diagnoses common reporting artefacts directly from the

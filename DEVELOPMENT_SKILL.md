@@ -577,6 +577,12 @@ Before calling a change finished:
 - [ ] `NEWS.md` updated for anything user-visible, including deliberate
       behaviour changes.
 - [ ] `SKILL.md` updated if the *user-facing* API changed.
+- [ ] **Every new exported topic added to `reference:` in `_pkgdown.yml`.**
+      The index is explicit, so `pkgdown` **fails the build** on a topic that is
+      not listed. Check with `pkgdown::check_pkgdown()`, which is fast and needs
+      no site build.
+- [ ] A new check or statistic goes **into the findings engine**, not beside it
+      — see §11.
 - [ ] Plots use `.tbl_now_palette()` and the red/green grammar.
 - [ ] **`R CMD check` clean** — the test suite passing is not the same check.
 - [ ] **`checktor::checkup()` clean** — the extra CRAN-submission checks.
@@ -606,3 +612,110 @@ For a package **not on CRAN**, adding it to `Suggests` alone is not enough:
 entry under `Additional_repositories` (this is how `epinowcast` is handled) or
 the vignette must stop attaching it and use `pkg::fun()` behind
 `requireNamespace()` instead.
+
+---
+
+## 11. The two report families (`summary()` and `diagnose()`)
+
+`R/summary.R` and `R/diagnose.R` answer the two questions a user has about a new
+object: **what is in it** and **what is wrong with it**. They are built the same
+way, and the rules below are what keep them from drifting apart.
+
+### One engine, two presentations
+
+`validate_tbl_now()` and `diagnose()` are **the same code**.
+`.tbl_now_findings()` computes the findings; `diagnose()` returns them as a
+tibble, and `validate_tbl_now()` re-emits the `error` rows as an abort and the
+`warning` rows as warnings.
+
+This is the rule that matters: **a new check goes in the engine.** Adding one to
+`validate_tbl_now()` directly means `diagnose()` cannot see it, and adding it to
+`diagnose()` directly means construction stops complaining about it. Both
+failures are silent. Before the engine existed, the ordering and duplicate
+checks lived only in `validate_tbl_now()` as `cli` warnings, which is why they
+could not be tested on their value — only on whether a warning was thrown.
+
+Two constraints on the engine itself:
+
+* **Keep the pre-flight stage.** Missing attributes short-circuit before the
+  findings stage, because every later check assumes the attributes exist. Do not
+  flatten the two passes into one.
+* **Never promote a `note` to a `warning`.** `validate_tbl_now()` runs on every
+  `dplyr` verb. A new warning there turns a quiet construction into a noisy one
+  for data that has always been accepted, for every existing user at once.
+  `note` exists precisely so `diagnose()` can say more than `validate` does.
+
+### The schema is the contract
+
+Every function in each family returns the same columns, so `summary()` and
+`diagnose()` are literally the `bind_rows()` of their components — and there is
+a test asserting exactly that. When you add a block:
+
+* return the **full schema**, and let blocks **omit** columns they do not
+  populate. `bind_rows()` then infers each column's type. Handing it a logical
+  `NA` where a `Date` belongs is an error, not a coercion — which is why
+  `date_min`/`date_max` appear only when a coverage row is present.
+* put the *subset being described* in `stratum` and the *category* in
+  `quantity`. `"confirmation_type = confirmed"` is a quantity; `"Female"` is a
+  stratum. Mixing them makes a compositional row impossible to interpret.
+
+### `skipped` is not `ok`, and the difference is load-bearing
+
+`ok` means the check ran and found nothing. `skipped` means it could not run —
+no confirmation process, the wrong data type, an optional package absent. A
+check that cannot be performed must never be reported as a pass; silence that
+reads as approval is the main way a health check misleads.
+
+The example that keeps coming up: **`diagnose()` refuses to look for duplicates
+in a line list**, because one row is one case, so two identical rows are two
+infections. That is a `skipped` with a reason, not an `ok`, and not a bug.
+
+### Reuse the estimators, do not add new ones
+
+Both families reuse what the plots already use — `.tbl_now_weighted_quantile()`
+for every quantile, `.tbl_now_maturity_threshold()` for "how recent is too
+recent", `.tbl_now_strata_label()` for stratum labels,
+`.tbl_now_date_seq()`/`.tbl_now_units_between()` for grids. This is not
+tidiness: a second median estimator means `summary()` and `autoplot()` print
+different numbers for the same data, and nothing fails to tell you.
+
+The consequence to accept: quantiles are **inverse-ECDF (type 1)**, so `q50` on
+an even number of observations is the upper middle value rather than the
+average. It is documented in a `@note` on both families. Changing it means
+changing the plots too.
+
+### Statistical tests live outside `diagnose()`
+
+`diagnose()` is structural and deterministic: no test, no seed, no optional
+package, no runtime that depends on the data size. Drift and batching are
+statements about a distribution, and answering them means choosing a method, a
+window and a multiplicity correction — decisions a health check has no business
+making silently.
+
+They come back as `not_run` **signposts** carrying the call that answers them
+(`diagnose_drift()`, `diagnose_batches()`). If you add a statistical diagnostic,
+add a signpost row for it; do not wire it into `diagnose()`.
+
+### Grids run to `now`, globally
+
+Every date grid in `summary()` runs from the earliest observed date on that axis
+to `get_now()`, stepping in that axis's units — not to the last row present.
+A date with no rows is a **zero**, not an absence.
+
+Two things follow, and both are asserted in the tests:
+
+* a **line list summarises to exactly the same numbers as its counts**, which is
+  only true because the grid does not come from the rows;
+* the grid is **global**, not per-stratum, so a stratum whose cases start late
+  shows its leading zeros and the strata stay comparable. The
+  triangle-occupancy denominator uses the global widest delay for the same
+  reason — it was per-stratum first, and it flattered any stratum whose cases
+  all arrived same-day.
+
+### `NA` counts are dropped, visibly
+
+In count data an `NA` count means *not yet observed*; a `0` means *observed, and
+it was zero*. `summary()` drops the `NA`s and counts them in the
+`unobserved_cells` coverage row, so the drop is visible rather than silent.
+This was found by running against `flusight`: one `NA` turned every total in the
+table into `NA`.

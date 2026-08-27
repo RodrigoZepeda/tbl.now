@@ -1003,6 +1003,105 @@ The **holiday effect** panel splits the days by *type*. The categories you get f
 The **holiday lag effect** panel splits them by *position relative to the nearest holiday*, showing exactly the days that `holiday_lags` flags — `"1 after"`, `"2 after"`, and so on, with `"Other"` (every other day) as the reference to read them against. Negative depths add `"1 before"`, `"2 before"`, … to the left of the holiday, so the axis reads left-to-right as time does. Counting is in **working days**, so weekends and other holidays are skipped exactly as they are for the `..._holiday_lag_k` columns.
 
 
+## Describing and diagnosing a `tbl_now`
+
+Two questions come up with every new object: **what is in it**, and **what is
+wrong with it**. [summary()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.html)
+and [diagnose()](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.html)
+answer them. Both return a **tibble** rather than printed text, so their answers
+can be filtered, joined, plotted, or asserted on in a test.
+
+### What is in the data?
+
+`summary()` stacks several blocks into one table. `component` says which block a
+row belongs to:
+
+```{r vig-summary-blocks}
+summary(dengue_now) |>
+  count(component)
+```
+
+The `completeness` block is often the most useful of them: it says how much of
+each event date's eventual total had arrived by delay `d`, which is what decides
+how far back a nowcast is even meaningful.
+
+```{r vig-summary-completeness}
+summary(dengue_now) |>
+  filter(component == "completeness") |>
+  select(quantity, n, mean, q50, prop) |>
+  head(4)
+```
+
+Half of a week's cases are in by the end of the following week, and 94% by three
+weeks — so a nowcast reaching further back than about three weeks has very
+little left to estimate.
+
+Every block is also a function of its own, returning the same schema, so
+`summary()` is exactly the `bind_rows()` of them:
+
+```{r vig-summary-components}
+delay_summary(dengue_now) |>
+  select(quantity, n, total, mean, sd, q50, q90, max)
+```
+
+The others are `cases_per_date()`, `zero_run_summary()`, `prop_censored()`,
+`prop_confirmation_type()`, `prop_strata()`, `prop_covariate_levels()`,
+`case_autocorrelation()`, `date_ranges()`, `triangle_occupancy()`,
+`reporting_completeness()` and `cumulative_growth()`. See
+`?nowcast_summary_components`.
+
+::: {.alert .alert-info}
+Quantiles in `summary()` are **inverse-ECDF** (type 1): `q50` is the smallest
+value whose cumulative weight reaches 0.5, which for an even number of
+observations is the upper of the two middle values rather than their average.
+This is the same estimator `autoplot()` and `plot_delay_drift()` use, so the
+table and the figures always agree.
+:::
+
+### What is wrong with it?
+
+`diagnose()` returns findings **sorted worst first**. `status` is an ordered
+factor — `error` > `warning` > `note` > `ok` > `not_run` > `skipped` — so
+filtering to what needs acting on is a comparison:
+
+```{r vig-diagnose}
+diagnose(dengue_now) |>
+  filter(status <= "note") |>
+  select(check, scope, status, n_affected, message)
+```
+
+Three findings on a dataset that looks clean: an undeclared `gender` column
+(which silently splits every reporting-triangle cell), an object whose last
+event date is three weeks behind its `now`, and one event date still too young
+to be trusted.
+
+`diagnose()` is deliberately **structural**. It never runs a statistical test, so
+it is fast and its answer never depends on a random seed. The questions that *do*
+need a test come back as `not_run` signposts naming the call that answers each
+one — the two sections that follow:
+
+```{r vig-diagnose-signposts}
+diagnose_signposts(dengue_now) |>
+  select(scope, status, message)
+```
+
+`skipped` is a distinct status from `ok`, and the difference matters: `ok` means
+the check ran and found nothing, whereas `skipped` means it could not run at all
+— here because `dengue_now` carries no confirmation process. A check that cannot
+be performed is never silently reported as a pass.
+
+Like `summary()`, every block is callable on its own —
+`diagnose_declarations()`, `diagnose_ordering()`, `diagnose_missing()`,
+`diagnose_duplicates()`, `diagnose_units()`, `diagnose_negatives()`,
+`diagnose_now()`, `diagnose_truncation()`, `diagnose_strata()` and
+`diagnose_signposts()`. See `?nowcast_diagnose_components`.
+
+The same findings reach you a second way:
+[validate_tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.html)
+runs the same engine but *re-emits* the `error` and `warning` rows as conditions
+rather than returning them, which is why a malformed object complains as soon as
+you build it.
+
 ### Do delay distributions drift over time?
 
 Reporting delays are not always stable: a surveillance system may speed up or slow down over a season or across years. [plot_delay_drift()](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.html) draws a rolling *fan chart* of the delay distribution indexed by event date — a solid rolling median, a dashed rolling mean, and 25–75% / 10–90% quantile bands. A rising or falling centre line signals *location* drift; widening or narrowing bands signal *spread* drift.

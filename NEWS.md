@@ -90,6 +90,36 @@ they are tests. **The old names are gone**, not deprecated:
 The S3 class `batch_test`, and with it `print.batch_test()`, is renamed to
 `diagnose_batches` to match.
 
+## Documentation and website
+
+`summary()` and `diagnose()` are now documented where people actually meet the
+package:
+
+* **A new article**, *Describing and diagnosing a `tbl_now`*, treats the two as
+  one workflow: what the schema means, what the six statuses mean, why `skipped`
+  is not `ok`, and why `diagnose()` refuses to run a statistical test.
+* **The worked example article is restructured.** It now builds the `tbl_now`
+  *before* cleaning and lets `diagnose()` report the defects, rather than
+  checking for them by hand and hoping the list was complete. The hand-written
+  cleaning is still there — it is now the *fix* for what was reported, and it
+  keeps the one check `diagnose()` deliberately will not do for a line list
+  (deduplicating on a record id).
+* **The README and the introductory vignette** gain a compact section on each.
+* **The reference index is now explicit.** `_pkgdown.yml` gained a `reference:`
+  section grouping every exported topic, so `summary()`, `diagnose()` and their
+  components are findable rather than buried in one alphabetical list. Note for
+  contributors: `pkgdown` now **fails the build** on an exported topic that is
+  not listed. `pkgdown::check_pkgdown()` catches it without building the site.
+
+### Fixed: the light/dark switch never rendered
+
+`template: light-switch: true` was set and `lightswitch.js` was being loaded,
+but the site had no toggle. The control is a navbar **component**, and
+`_pkgdown.yml` named an explicit `navbar: structure: right:` that replaced
+pkgdown's default `[search, github, lightswitch]` without listing it. The script
+loaded, the button did not exist, and nothing errored. `lightswitch` is now
+listed explicitly.
+
 # tbl.now 0.23.0
 
 ## `summary()` describes the object the way a nowcaster reads it

@@ -28,8 +28,14 @@ template:
 
 navbar:
   structure:
+    # `lightswitch` MUST be listed here. `template: light-switch: true` only
+    # loads `lightswitch.js`; the control itself is a navbar *component*, and
+    # pkgdown's default right-hand structure is `[search, github, lightswitch]`.
+    # Naming an explicit `right:` REPLACES that default, so omitting the
+    # component silently drops the toggle -- the script loads, the site has no
+    # button, and nothing errors.
     left:  [get_started, reference, articles, news]
-    right: [search, github, twitter]
+    right: [search, github, twitter, lightswitch]
 
   components:
     get_started:
@@ -43,3 +49,156 @@ navbar:
       icon: fab fa-github
       href: https://github.com/rodrigozepeda/tbl.now
       aria-label: GitHub
+
+# Every exported topic must appear below or `pkgdown` fails the build. When you
+# export something new, add it here in the same commit.
+reference:
+- title: The `tbl_now` class
+  desc: Create one, check it, and move between the three data types.
+  contents:
+  - tbl_now
+  - as_tbl_now
+  - is_tbl_now
+  - validate_tbl_now
+  - tbl_now_attributes
+  - to_count
+
+- title: Attributes
+  desc: Read what the object was told about itself, and change it.
+  contents:
+  - nowcast_data_getters
+  - get_latest_first
+  - confirmation_getters
+  - add
+  - change
+  - remove
+  - confirmation_setters
+  - update.tbl_now
+
+- title: Reshaping
+  desc: Put the data on the grid a model needs.
+  contents:
+  - align_weeks
+  - complete_zeroes
+  - censor_delays_above
+  - censor_confirmation_delays_above
+  - week_2_date
+  - is_weekday
+
+- title: Temporal effects
+  desc: Calendar structure, recorded lazily and materialised on demand.
+  contents:
+  - temporal_effects
+  - add_temporal_effects
+  - compute_temporal_effects
+
+- title: The confirmation process
+  desc: The optional third date, and the outcomes it carries.
+  contents:
+  - confirmation_counts
+  - confirmation_delay
+
+- title: Summarising
+  desc: >
+    What is in the data. `summary()` returns a tibble, and every block of it is
+    also a function of its own.
+  contents:
+  - tbl_now_summary
+  - nowcast_summary_components
+
+- title: Diagnosing
+  desc: >
+    What is wrong with the data. `diagnose()` is structural and deterministic;
+    the statistical tests it signposts are listed after it.
+  contents:
+  - diagnose
+  - nowcast_diagnose_components
+  - diagnose_drift
+  - diagnose_changepoint
+  - diagnose_batches
+  - diagnose_batch_shape
+  - transport_discriminant
+  - simulate_batch
+
+- title: Plots
+  desc: One grid, or any panel of it on its own.
+  contents:
+  - autoplot.tbl_now
+  - diagnostic_plot
+  - calendar_effect_plots
+  - plot_confirmation_status
+  - plot_cycles
+  - plot_delay_distribution
+  - plot_delay_drift
+  - plot_delay_profiles
+  - plot_epidemic_process
+  - plot_observed_cases
+  - plot_reporting_hexamap
+  - plot_reporting_process
+  - plot_reporting_triangle
+  - plot_scalogram
+  - plot_transport_discriminant
+
+- title: Fitting nowcasts
+  desc: One interface over the modelling packages.
+  contents:
+  - run_nowcast
+  - nowcast_method
+  - list_nowcast_methods
+  - nowcast_fit
+  - nowcast_tidy
+  - tbl_nowcast
+  - is_tbl_nowcast
+  - nowcast_quantile_levels
+  - autoplot.tbl_nowcast
+  - as_tibble.tbl_nowcast
+
+- title: Ensembles, backtests and scoring
+  contents:
+  - nowcast_ensemble
+  - nowcast_weights
+  - nowcast_backtest
+  - score_nowcast
+  - as_scoringutils
+
+- title: Converters
+  desc: Out to the modelling packages, and back again.
+  contents:
+  - tbl_now_EpiNow2
+  - tbl_now_baselinenowcast
+  - tbl_now_data_table
+  - tbl_now_epidist
+  - tbl_now_epinowcast
+  - tbl_now_nobbs
+  - tbl_now_surveillance
+  - tbl_now_tsibble
+  - tbl_now_coercion_methods
+  - tbl_now_epinow2_snapshots
+  - tbl_now_triangle_list
+  - surveillance_grids
+
+- title: Tidying model output
+  desc: Every engine's result, in one shape.
+  contents:
+  - tidy.nowcast
+  - tidy.tbl_nowcast
+  - tidy.nowcast_backtest
+  - tidy.epidist_fit
+  - tidy.estimate_dist
+
+- title: dplyr integration
+  desc: The methods that keep the class alive inside a pipeline.
+  contents:
+  - as_tibble.tbl_now
+  - assign_tbl
+  - names_tbl_now
+  - money_tbl_now
+
+- title: Datasets
+  contents:
+  - covid_colombia
+  - covid_us
+  - denguedat
+  - flusight
+  - hai_bucaramanga
+  - mpoxdat
