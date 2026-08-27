@@ -1,3 +1,95 @@
+# tbl.now 0.24.0
+
+## `diagnose()`: a structural health check
+
+`summary()` describes a `tbl_now`; `diagnose()` looks for what is **wrong** with
+it. One row is one finding, sorted worst first, and the offending row indices
+come with it:
+
+```r
+findings <- diagnose(dengue_now)
+findings |> dplyr::filter(status <= "note")
+
+bad <- findings |> dplyr::filter(check == "ordering")
+dengue_now[bad$rows[[1]], ]
+```
+
+Ten checks: `declarations` (attribute types, the columns they name, role
+collisions, columns the object was never told about, temporal effects added but
+never materialised), `ordering` (`event <= report <= confirmation`, including
+the transitive leg that a missing `report_date` would otherwise hide),
+`missing`, `duplicates`, `units`, `negatives`, `now`, `truncation`, `strata` and
+`signposts`. Each is also an exported function of its own -- see
+`?nowcast_diagnose_components` -- and `diagnose(x)` is exactly the
+`dplyr::bind_rows()` of them.
+
+`status` is an **ordered factor**, worst first, which is why the tibble sorts
+itself and why `status <= "note"` reads as "anything worth acting on":
+`error` > `warning` > `note` > `ok` > `not_run` > `skipped`.
+
+Four decisions worth knowing about:
+
+* **It runs no statistical test, ever.** Whether the reporting delay drifts, and
+  whether reports arrive in batches, are statements about a *distribution*.
+  Answering them means choosing a method, a maturity window and a multiplicity
+  correction, and `diagnose()` has no business choosing those on your behalf. It
+  emits `not_run` rows carrying the call instead -- `diagnose_drift(x, axis =)`
+  and `diagnose_batches(x, axis =)`.
+* **Reporting outages are deliberately not detected.** A `tbl_now` does not
+  carry the zeroes, so an absent row means "nothing was reported" and a quiet
+  Sunday is structurally identical to a three-week outage. Telling them apart
+  requires asking whether a run of zero-arrival dates is improbably long, which
+  is a test. The descriptive answer is `zero_run_summary()`; the inferential one
+  is `diagnose_batches()`.
+* **An `NA` count is reported neutrally.** In a reporting triangle it means
+  *not yet observed* -- correct data, and the thing that tells a nowcast the
+  cell is still open -- so `diagnose_missing()` counts it without calling it a
+  defect. An `NA` *date* is a different matter and stays a warning.
+* **`diagnose_strata()` uses no thresholds.** "Too small to fit separately"
+  depends on the engine and on the epidemic, so it names the extremes -- the
+  smallest stratum, its case count and its share; the sparsest stratum and how
+  much of the event grid it leaves empty -- and lets you judge.
+
+## `validate_tbl_now()` is the same engine, presented as conditions
+
+`validate_tbl_now()` no longer has a check list of its own. It calls the
+findings engine and re-emits the result as the `cli` conditions it has always
+emitted: it aborts on the `error`s and warns about the `warning`s. One
+implementation, two presentations.
+
+What that changes for you:
+
+* **`validate_tbl_now()` now warns when a confirmation precedes its report.**
+  That check existed, but only ran at construction, so an object that acquired
+  the problem later never mentioned it again. `tbl_now()` no longer runs it
+  separately, so it warns once rather than twice.
+* Everything else aborts and warns exactly as before, including
+  `warn_non_uniqueness`, which stays `FALSE` there. `diagnose()` defaults it
+  `TRUE`.
+* A `note` is never emitted as a warning. `validate_tbl_now()` runs inside every
+  `dplyr` verb, and turning a `diagnose()` observation into a warning there
+  would make construction noisy for data the class has always accepted.
+* **One warning was reworded.** The missing-date warning said "*N* rows have
+  NULL or NA values in column `event_date = "event_date"`" -- it printed the
+  literal string rather than the column, and a column cannot hold `NULL`. It now
+  reads "*N* rows have NA values in the event_date column `"onset_week"`".
+
+## Breaking: the statistical tests take the `diagnose_` prefix
+
+The five tests are named for what they are for rather than for the fact that
+they are tests. **The old names are gone**, not deprecated:
+
+| was | is now |
+|---|---|
+| `test_delay_drift()` | `diagnose_drift()` |
+| `test_delay_changepoint()` | `diagnose_changepoint()` |
+| `test_confirmation_delay()` | `diagnose_confirmation_delay()` |
+| `batch_test()` | `diagnose_batches()` |
+| `batch_shape_test()` | `diagnose_batch_shape()` |
+
+The S3 class `batch_test`, and with it `print.batch_test()`, is renamed to
+`diagnose_batches` to match.
+
 # tbl.now 0.23.0
 
 ## `summary()` describes the object the way a nowcaster reads it

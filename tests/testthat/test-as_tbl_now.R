@@ -729,7 +729,10 @@ test_that("as_tbl_now handles NA values", {
       strata = "gender",
       verbose = FALSE
     ),
-    "have NULL or NA values"
+    # Reworded in 0.24.0, when the check moved onto the `diagnose()` findings
+    # engine: the old text said "NULL or NA" (a column cannot hold NULL) and
+    # named the literal string "event_date" instead of the column.
+    "NA values in the event_date column"
   )
 
   suppressWarnings(

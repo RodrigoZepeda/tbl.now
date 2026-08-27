@@ -109,43 +109,6 @@
   list(data = data, confirmation_type = confirmation_type)
 }
 
-#' Check the event <= report <= confirmation ordering
-#'
-#' Real surveillance data breaks this: `hai_bucaramanga` has rows received
-#' before the specimen was taken. It is a warning rather than an error, because
-#' refusing the object would leave the user with nothing to inspect, and the
-#' diagnostics in this package exist precisely to find such rows.
-#'
-#' @param data A data frame.
-#' @param event_date,report_date,confirmation_date Column names.
-#'
-#' @return `NULL`, invisibly.
-#'
-#' @keywords internal
-#' @noRd
-.check_confirmation_ordering <- function(data, event_date, report_date,
-                                         confirmation_date) {
-  if (is.null(confirmation_date)) {
-    return(invisible(NULL))
-  }
-  confirmation <- data[[confirmation_date]]
-  report <- data[[report_date]]
-
-  before_report <- which(!is.na(confirmation) & !is.na(report) & confirmation < report)
-  if (length(before_report) > 0) {
-    shown <- utils::head(before_report, 5)
-    cli::cli_warn(c(
-      "{length(before_report)} row{?s} are confirmed BEFORE they were reported.",
-      "i" = paste0(
-        "The timeline is {.code event_date <= report_date <= ",
-        "confirmation_date}; a negative confirmation delay is not a delay."
-      ),
-      "i" = "{cli::qty(length(shown))}First affected row{?s}: {.val {shown}}."
-    ))
-  }
-  invisible(NULL)
-}
-
 # Getters -----
 
 #' Confirmation attributes of a `tbl_now`
@@ -222,7 +185,7 @@ has_confirmation <- function(x) {
 #' `.confirmation_num` is the confirmation date on the same numeric anchor as
 #' `.event_num` and `.report_num`; `.confirmation_delay` is
 #' `.confirmation_num - .report_num`, the time from report to resolution. That
-#' second one is the quantity [test_confirmation_delay()] compares between
+#' second one is the quantity [diagnose_confirmation_delay()] compares between
 #' confirmed and retracted cases.
 #'
 #' @param x A `tbl_now` object.
@@ -340,7 +303,7 @@ has_confirmation <- function(x) {
 #'   accepted.
 #'
 #' @seealso [confirmation_getters], [get_latest_confirmed()],
-#'   [get_net_confirmed()], [test_confirmation_delay()].
+#'   [get_net_confirmed()], [diagnose_confirmation_delay()].
 #'
 #' @examples
 #' data(hai_bucaramanga)
@@ -519,7 +482,7 @@ remove_confirmation <- function(x) {
 #' was the laboratory) and this package does not silently answer it.
 #'
 #' @seealso [get_latest_reported_cases()], [add_confirmation()],
-#'   [test_confirmation_delay()].
+#'   [diagnose_confirmation_delay()].
 #'
 #' @examples
 #' cases <- data.frame(
@@ -624,14 +587,14 @@ get_net_confirmed <- function(x) {
 #' assumes it is will be wrong about how many pending cases are still to be
 #' confirmed.
 #'
-#' `test_confirmation_delay()` compares the two delay distributions;
+#' `diagnose_confirmation_delay()` compares the two delay distributions;
 #' `plot_confirmation_delay()` shows them.
 #'
 #' @param x A `tbl_now` with a confirmation process.
 #' @param by Optional stratum column to compare within; `NULL` (default) pools.
 #'
 #' @return
-#' `test_confirmation_delay()` returns a one-row-per-comparison `tibble` with
+#' `diagnose_confirmation_delay()` returns a one-row-per-comparison `tibble` with
 #' `stratum`, `n_confirmed`, `n_retracted`, `median_confirmed`,
 #' `median_retracted`, `difference`, `statistic` and `p.value`.
 #'
@@ -654,7 +617,7 @@ get_net_confirmed <- function(x) {
 #' in the `dropped` attribute of the result. A negative confirmation delay means
 #' the record is confirmed before it was reported, which the timeline forbids.
 #'
-#' @seealso [add_confirmation()], [test_delay_drift()] for the same question
+#' @seealso [add_confirmation()], [diagnose_drift()] for the same question
 #'   about the *reporting* delay over time.
 #'
 #' @examples
@@ -671,15 +634,15 @@ get_net_confirmed <- function(x) {
 #'   data_type = "linelist", verbose = FALSE
 #' )
 #'
-#' test_confirmation_delay(flu)
+#' diagnose_confirmation_delay(flu)
 #'
 #' @name confirmation_delay
 NULL
 
 #' @rdname confirmation_delay
 #' @export
-test_confirmation_delay <- function(x, by = NULL) {
-  delays <- .confirmation_delay_table(x, by, "test_confirmation_delay")
+diagnose_confirmation_delay <- function(x, by = NULL) {
+  delays <- .confirmation_delay_table(x, by, "diagnose_confirmation_delay")
 
   results <- lapply(split(delays, delays$stratum), function(piece) {
     confirmed <- piece$.confirmation_delay[piece$outcome == "confirmed"]
@@ -876,7 +839,7 @@ get_initial_confirmed <- function(x) {
 #'   `NA`, because a resolution you refuse to believe is not a resolution.
 #'
 #' @seealso [censor_delays_above()] for the reporting delay,
-#'   [test_confirmation_delay()].
+#'   [diagnose_confirmation_delay()].
 #'
 #' @examples
 #' cases <- data.frame(
@@ -971,7 +934,7 @@ censor_confirmation_delays_above <- function(data, max_delay, quiet = FALSE) {
 #' epidemic process), `retracted` in the accent red (it was removed by the
 #' reporting process), and `pending` in grey (not yet known either way).
 #'
-#' @seealso [test_confirmation_delay()], [get_latest_confirmed()].
+#' @seealso [diagnose_confirmation_delay()], [get_latest_confirmed()].
 #'
 #' @examples
 #' cases <- data.frame(

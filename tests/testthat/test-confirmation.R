@@ -322,7 +322,7 @@ test_that("the counting getters refuse an object with no confirmation", {
 
 # Does the delay depend on the outcome? ---------------------------------------
 
-test_that("test_confirmation_delay() finds a difference that is really there", {
+test_that("diagnose_confirmation_delay() finds a difference that is really there", {
   # Retracted results deliberately take 5-6 days against the confirmed 1-2, so
   # a test that cannot see this cannot see anything.
   cases <- data.frame(
@@ -338,7 +338,7 @@ test_that("test_confirmation_delay() finds a difference that is really there", {
     data_type = "linelist", verbose = FALSE
   )
 
-  result <- test_confirmation_delay(flu)
+  result <- diagnose_confirmation_delay(flu)
 
   expect_equal(nrow(result), 1L)
   expect_equal(result$n_confirmed, 40L)
@@ -365,7 +365,7 @@ test_that("no difference is reported when there is none", {
     data_type = "linelist", verbose = FALSE
   )
 
-  result <- test_confirmation_delay(flu)
+  result <- diagnose_confirmation_delay(flu)
   expect_equal(result$difference, 0)
   expect_gt(result$p.value, 0.05)
 })
@@ -384,7 +384,7 @@ test_that("unusable delays are dropped and counted", {
     data_type = "linelist", verbose = FALSE
   ))
 
-  result <- test_confirmation_delay(flu)
+  result <- diagnose_confirmation_delay(flu)
   expect_equal(attr(result, "dropped"), 2L)
   expect_equal(result$n_confirmed + result$n_retracted, 4L)
 })
@@ -404,7 +404,7 @@ test_that("the comparison can be made within a stratum", {
     data_type = "linelist", verbose = FALSE
   )
 
-  result <- test_confirmation_delay(flu, by = "site")
+  result <- diagnose_confirmation_delay(flu, by = "site")
   expect_setequal(result$stratum, c("north", "south"))
   expect_equal(nrow(result), 2L)
 })
@@ -487,12 +487,12 @@ confirmation_axis_fixture <- function(seed = 7L) {
   ))
 }
 
-test_that("batch_test() finds a laboratory backlog only on the confirmation axis", {
+test_that("diagnose_batches() finds a laboratory backlog only on the confirmation axis", {
   x <- confirmation_axis_fixture()
 
-  on_report <- suppressWarnings(suppressMessages(batch_test(x, lookback = 5)))
+  on_report <- suppressWarnings(suppressMessages(diagnose_batches(x, lookback = 5)))
   on_confirmation <- suppressWarnings(suppressMessages(
-    batch_test(x, lookback = 5, axis = "confirmation")
+    diagnose_batches(x, lookback = 5, axis = "confirmation")
   ))
 
   # The point of the option: reporting was regular, so the report axis sees
@@ -515,7 +515,7 @@ test_that("the confirmation axis needs a confirmation process", {
     event_date = "e", report_date = "r", data_type = "linelist", verbose = FALSE
   ))
   expect_error(
-    suppressWarnings(suppressMessages(batch_test(plain, axis = "confirmation"))),
+    suppressWarnings(suppressMessages(diagnose_batches(plain, axis = "confirmation"))),
     "needs a confirmation process"
   )
 })
@@ -664,7 +664,7 @@ test_that("the delay diagnostics accept the confirmation axis", {
   expect_s3_class(quietly(plot_delay_drift(x, axis = "confirmation")), "ggplot")
   expect_s3_class(quietly(diagnostic_plot(x, axis = "confirmation")), "ggplot")
 
-  expect_s3_class(quietly(test_delay_drift(x, axis = "confirmation")), "data.frame")
+  expect_s3_class(quietly(diagnose_drift(x, axis = "confirmation")), "data.frame")
   expect_s3_class(quietly(transport_discriminant(x, axis = "confirmation")), "data.frame")
 })
 
@@ -703,9 +703,9 @@ test_that("simulate_batch() carries the confirmation through", {
   # The mirror of the laboratory-backlog test: a simulated REPORTING backlog is
   # found on the report axis and is correctly invisible on the confirmation
   # axis, because the laboratory never paused.
-  on_report <- suppressWarnings(suppressMessages(batch_test(sim)))
+  on_report <- suppressWarnings(suppressMessages(diagnose_batches(sim)))
   on_confirmation <- suppressWarnings(suppressMessages(
-    batch_test(sim, axis = "confirmation")
+    diagnose_batches(sim, axis = "confirmation")
   ))
   expect_gte(sum(on_report$batch, na.rm = TRUE), 1L)
   expect_equal(sum(on_confirmation$batch, na.rm = TRUE), 0L)

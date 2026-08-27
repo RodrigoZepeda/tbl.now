@@ -60,7 +60,7 @@
 #' `q50` is the smallest value whose cumulative weight reaches `0.5`, which for
 #' an even number of observations is the upper of the two middle values rather
 #' than their average. This is deliberate: it is the same estimator
-#' [autoplot.tbl_now()] and [test_delay_drift()] use for the delay quantiles
+#' [autoplot.tbl_now()] and [diagnose_drift()] use for the delay quantiles
 #' they draw, so the numbers in this table match the numbers in the plots. It
 #' also always returns a value that was actually observed, which a half-case
 #' delay is not.

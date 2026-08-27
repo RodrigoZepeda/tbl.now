@@ -4,7 +4,7 @@
 # NOTE ON PACKAGE PLACEMENT.  Model-free; destined for `tbl.now`.  See the header
 # of `35_batch_test_tbl_now.R`.
 #
-# `batch_test()` looks only at *how many* reports arrived on each date.  This
+# `diagnose_batches()` looks only at *how many* reports arrived on each date.  This
 # file looks at *which event dates they came from* -- equivalently, at the
 # distribution of reporting delays among the reports that arrived on one date.
 #
@@ -37,7 +37,7 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' A complement to [batch_test()], which sees only report *volumes*.  This test
+#' A complement to [diagnose_batches()], which sees only report *volumes*.  This test
 #' asks whether the reports that arrived on a candidate date came from
 #' systematically *older* event dates -- the signature of a released backlog --
 #' by comparing their delays with those of neighbouring report dates.  It is
@@ -65,7 +65,7 @@
 #'
 #' @param data A [tbl_now()] object.
 #' @param at The candidate report date (coercible to the class of the report
-#'   column), typically one flagged by [batch_test()].
+#'   column), typically one flagged by [diagnose_batches()].
 #' @param neighbours Number of report dates on each side used as the reference
 #'   group.  Default `3`.
 #' @param guard Number of report dates immediately either side of `at` to skip.
@@ -87,7 +87,7 @@
 #'   `n_reference`, `mean_delay_at`, `mean_delay_reference`, `statistic`
 #'   (standardised rank-sum) and `p_value` (one-sided: longer delays on `at`).
 #'
-#' @seealso [batch_test()], [simulate_batch()]
+#' @seealso [diagnose_batches()], [simulate_batch()]
 #'
 #' @examples
 #' library(tbl.now)
@@ -101,10 +101,10 @@
 #'   verbose     = FALSE
 #' )
 #'
-#' batch_shape_test(dengue_tbl, at = as.Date("1990-06-25"), n_permutations = 99)
+#' diagnose_batch_shape(dengue_tbl, at = as.Date("1990-06-25"), n_permutations = 99)
 #'
 #' @export
-batch_shape_test <- function(data,
+diagnose_batch_shape <- function(data,
                              at,
                              neighbours     = 3L,
                              guard          = 1L,
@@ -114,7 +114,7 @@ batch_shape_test <- function(data,
                              seed           = NULL) {
   permute <- match.arg(permute)
   axis    <- match.arg(axis)
-  .batch_experimental_warning("batch_shape_test")
+  .batch_experimental_warning("diagnose_batch_shape")
   .batch_check_tbl_now(data)
   if (!is.null(seed)) set.seed(seed)
 

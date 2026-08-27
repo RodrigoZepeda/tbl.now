@@ -338,11 +338,11 @@ plot_delay_drift(covidat_now, changepoint = TRUE)
 We can see that the delay does change in time varying a lot at the
 beginning of the epidemic (before April) then stabilizing between April
 and July, and finally shifting downwards around August. The same result
-can be observed with `test_delay_drift()` which checks, statistically,
+can be observed with `diagnose_drift()` which checks, statistically,
 via a modified Mann-Kendall test, whether there is a drift in the delay:
 
 ``` r
-test_delay_drift(covidat_now, method = "yue-pilon")
+diagnose_drift(covidat_now, method = "yue-pilon")
 #> # A tibble: 2 x 9
 #>   strata stat       n    tau sens_slope statistic p_value method    drift
 #>   <chr>  <chr>  <int>  <dbl>      <dbl>     <dbl>   <dbl> <chr>     <lgl>
@@ -352,10 +352,10 @@ test_delay_drift(covidat_now, method = "yue-pilon")
 
 The **changepoint** option uses [Pettitt’s
 test](https://doi.org/10.2307/2346729) to identify **one** changepoint
-in the data. It can be recovered with `test_delay_changepoint()`:
+in the data. It can be recovered with `diagnose_changepoint()`:
 
 ``` r
-test_delay_changepoint(covidat_now)
+diagnose_changepoint(covidat_now)
 #> # A tibble: 2 x 10
 #>   strata stat       n changepoint statistic  p_value before after shift changepoint_detected
 #>   <chr>  <chr>  <int> <date>          <dbl>    <dbl>  <dbl> <dbl> <dbl> <lgl>               
@@ -369,11 +369,11 @@ testing](https://www.semana.com/que-son-las-pruebas-de-antigeno-y-quien-las-prov
 for COVID-19 and in August 25th implemented the **PRASS programme**
 which shifted the sampling and reporting paradigm for the country
 (*Osorio Saldarriga et al*). These are the changes potentially
-identified by `test_delay_changepoint()`.
+identified by `diagnose_changepoint()`.
 
 <div class="alert alert-warning">
 
-Pettitt’s test in `test_delay_changepoint()` detects only one change
+Pettitt’s test in `diagnose_changepoint()` detects only one change
 point: the largest one. If your data has more than one changepoint break
 your data into chunks and run the test for each of them.
 
@@ -388,14 +388,14 @@ not create new cases they just shift their report dates to a later
 period (see the [corresponding article for more
 information](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html)).
 
-The `batch_test()` function uses this idea to identify batches. The
+The `diagnose_batches()` function uses this idea to identify batches. The
 confidence level can be set with `alpha`. For example here we set a
 level of 80%:
 
 ``` r
 covidat_now |>
   remove_all_strata() |>
-  batch_test(period = 7, alpha = 0.2) 
+  diagnose_batches(period = 7, alpha = 0.2) 
 ```
 
     #> # A tibble: 302 x 9

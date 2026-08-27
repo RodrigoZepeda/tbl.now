@@ -69,5 +69,5 @@ plot_confirmation_status(flu)
 
 }
 \seealso{
-\code{\link[=test_confirmation_delay]{test_confirmation_delay()}}, \code{\link[=get_latest_confirmed]{get_latest_confirmed()}}.
+\code{\link[=diagnose_confirmation_delay]{diagnose_confirmation_delay()}}, \code{\link[=get_latest_confirmed]{get_latest_confirmed()}}.
 }

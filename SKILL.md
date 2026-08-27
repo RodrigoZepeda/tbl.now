@@ -525,7 +525,7 @@ Three things to know before reading the numbers:
   triangle-occupancy denominator.
 - **Quantiles are inverse-ECDF (type 1)**, not `stats::quantile()`'s default:
   `q50` is the smallest value whose cumulative weight reaches `0.5`. Same
-  estimator as `autoplot()` / `test_delay_drift()`, so the table matches the
+  estimator as `autoplot()` / `diagnose_drift()`, so the table matches the
   figures. `mean`/`sd` are the ordinary case-weighted ones (equal to expanding
   the counts to one row per case).
 - **`NA` counts are dropped** as not-yet-observed cells (an `NA` is "not seen
@@ -542,6 +542,79 @@ comparable with `event_to_report`. They are different quantities.
 
 ---
 
+## Skill: health-check a `tbl_now` (`diagnose`)
+
+`summary()` describes the object; `diagnose()` looks for what is **wrong** with
+it. It returns a tibble of findings sorted worst first, and it is **structural
+and deterministic** — it runs no statistical test.
+
+```r
+diagnose(tn)                                   # everything, worst first
+diagnose(tn) |> dplyr::filter(status <= "note")  # only what needs acting on
+diagnose(tn, checks = "units")                 # one block
+diagnose(tn, by_strata = FALSE)                # pooled rows only
+
+# The offending rows are carried, so you can go straight to them:
+bad <- diagnose(tn) |> dplyr::filter(check == "ordering")
+tn[bad$rows[[1]], ]
+```
+
+Columns: `check`, `scope`, `stratum`, `status`, `n_affected`, `n_total`,
+`prop`, `message`, `hint`, `rows` (a list-column of row indices into `tn`).
+
+`status` is an **ordered factor**, worst first, which is why the tibble sorts
+itself and why `status <= "note"` reads as "anything worth acting on":
+
+| status | meaning |
+|---|---|
+| `error` | `validate_tbl_now()` aborts on it |
+| `warning` | `validate_tbl_now()` warns about it |
+| `note` | a `diagnose()`-only observation. **Never promoted to a warning**: `validate_tbl_now()` runs on every dplyr verb, and a new warning there would make construction noisy for data that has always been accepted |
+| `ok` | the check ran and found nothing |
+| `not_run` | a signpost: the question needs a statistical test, and `message` is the call that answers it |
+| `skipped` | could not be assessed (no confirmation process, wrong data type, package not installed) |
+
+`check` is one of:
+
+| check | what it looks for |
+|---|---|
+| `declarations` | attribute types, the columns they name, role collisions, **undeclared columns**, temporal effects added but never materialised |
+| `ordering` | `event <= report <= confirmation`, including the transitive leg a missing `report_date` would otherwise hide |
+| `missing` | `NA`s per column and per stratum. An `NA` **count** is reported *neutrally* — in a triangle it means *not yet observed*, which is correct data |
+| `duplicates` | rows repeating on the full key (including the confirmation columns). Defaults **on** here, unlike `validate_tbl_now()` |
+| `units` | the declared units against each other, against the calendar the dates land on, and against the `.delay` they produce |
+| `negatives` | negative incidence counts, and the negative increments a downward revision leaves when cumulative data is de-accumulated |
+| `now` | anything dated after `now`, and the gap from the last observation to `now` |
+| `truncation` | how many recent event dates are still immature, and how much of their eventual total has not arrived |
+| `strata` | the smallest and the sparsest stratum (named, **not** thresholded), and the confirmations still pending |
+| `signposts` | the four questions `diagnose()` refuses to answer |
+
+Each block is also its own exported function, same schema, so they stack with
+`dplyr::bind_rows()` — and `diagnose(x)` *is* that bind:
+
+```r
+diagnose_declarations(tn); diagnose_ordering(tn); diagnose_missing(tn)
+diagnose_duplicates(tn);   diagnose_units(tn);    diagnose_negatives(tn)
+diagnose_now(tn);          diagnose_truncation(tn)
+diagnose_strata(tn);       diagnose_signposts(tn)
+```
+
+Three things to know:
+
+- **It never runs a test.** Drift and batching are statements about a
+  *distribution*; answering them means choosing a method, a window and a
+  multiplicity correction. `diagnose()` emits `not_run` rows carrying the call
+  instead: `diagnose_drift(x, axis =)` and `diagnose_batches(x, axis =)`.
+- **Outage detection is deliberately absent.** A `tbl_now` does not carry the
+  zeroes, so a quiet Sunday and a three-week outage are structurally identical.
+  The descriptive answer is `zero_run_summary()`; the inferential one is
+  `diagnose_batches()`.
+- **`validate_tbl_now()` is the same engine, presented as conditions.** One
+  implementation: `diagnose()` returns the findings as data, `validate_tbl_now()`
+  aborts on the `error`s and warns about the `warning`s.
+
+---
+
 ## Skill: diagnose reporting-delay drift & change points
 
 Ask whether the reporting delay is **stable over time** before trusting a fixed
@@ -552,10 +625,10 @@ delay model. All are experimental and index by event date.
 plot_delay_drift(tn, window = 7, by_strata = FALSE, changepoint = FALSE)
 
 # Gradual monotonic trend (autocorrelation-robust Mann-Kendall; needs `modifiedmk`)
-test_delay_drift(tn, stat = c("median", "spread"))   # location AND dispersion
+diagnose_drift(tn, stat = c("median", "spread"))   # location AND dispersion
 
 # Abrupt shift (Pettitt change-point test; no extra dependency)
-test_delay_changepoint(tn, stat = c("median", "spread"))
+diagnose_changepoint(tn, stat = c("median", "spread"))
 ```
 
 - **`plot_delay_drift()`** — solid = rolling median, dashed = rolling mean, bands =
@@ -563,12 +636,12 @@ test_delay_changepoint(tn, stat = c("median", "spread"))
   weekly). The recent, not-yet-complete region (after the `level` incompleteness
   cutoff) is **shaded grey** — do not read it as drift. `changepoint = TRUE` marks
   the estimated median change point. Supports `by_strata`.
-- **`test_delay_drift()`** returns a tidy tibble (per `stat` × stratum) with the
+- **`diagnose_drift()`** returns a tidy tibble (per `stat` × stratum) with the
   Kendall `tau`, Sen's slope, `p_value` and a `drift` verdict; `method` is
   `"hamed-rao"` (default), `"yue-pilon"` or `"block-bootstrap"`. Tests a *location*
   (`"median"`/`"mean"`) and a *dispersion* (`"iqr"`/`"spread"`) statistic — drift
   can be in either. Runs on **mature** data only (`mature_only = TRUE`).
-- **`test_delay_changepoint()`** returns the estimated `changepoint` date, the
+- **`diagnose_changepoint()`** returns the estimated `changepoint` date, the
   `before`/`after` level, the `shift`, and a `changepoint_detected` verdict.
 - Both test functions **emit an experimental `cli` warning** and treat a flag as a
   *potential* trend change / change point, not a confirmed one.
@@ -589,7 +662,7 @@ and distinct from an epidemic surge by construction.
 
 ```r
 # 1) Volume screen over the report axis (per report date x stratum)
-scr <- batch_test(tn, lookback = 3, alpha = 0.05)
+scr <- diagnose_batches(tn, lookback = 3, alpha = 0.05)
 scr[scr$batch, ]            # the flagged report dates
 # LEAN output (v0.13.0): report_date, stratum, reported, baseline,
 #   deficit (reports missing beforehand -> batch), delta (window total minus
@@ -600,15 +673,15 @@ scr[scr$batch, ]            # the flagged report dates
 
 # 2) Shape test: did ONE report date draw from unusually OLD event dates?
 #    (complements the volume screen; `at` must be an observed report date)
-batch_shape_test(tn, at = as.Date("2010-05-24"),
+diagnose_batch_shape(tn, at = as.Date("2010-05-24"),
                  permute = "items")   # use "blocks" if counts are overdispersed
 
 # 3) Validate a detector: plant a known batch and check it is recovered
 planted <- simulate_batch(tn, closed_dates = as.Date(c("2010-05-10","2010-05-17")))
-batch_test(planted)
+diagnose_batches(planted)
 ```
 
-- **`batch_test()`** — the transport test conditions on the window total, so its
+- **`diagnose_batches()`** — the transport test conditions on the window total, so its
   size does **not** depend on the unknown incidence; the local baseline is refit
   from report dates *outside* each candidate window (Siegel's repeated median,
   robust to the episode). `null_model = "auto"` is **overdispersion-aware**: it uses
@@ -623,7 +696,7 @@ batch_test(planted)
   -> `period=52` (reads `get_temporal_effects(x)` list; each spec is `list(t_effects=<S7>,
   date_type,...)`, access via `spec$t_effects@day_of_week`). User `period` wins (informs on
   disagreement). Daily data + no temporal effect + no period -> `cli_inform` suggests period=7.**
-- **`batch_shape_test()`** — a one-sided rank-sum on the delays at `at` vs
+- **`diagnose_batch_shape()`** — a one-sided rank-sum on the delays at `at` vs
   neighbouring report dates; **exactly distribution-free** when incidence is
   locally log-linear and counts are Poisson. `permute = "blocks"` for overdispersed
   (NB) counts; `guard` omits dates adjacent to `at` (a batch's own deficit sits
@@ -686,16 +759,16 @@ batch_test(planted)
   the gallery space — batch score conflates holds+big-dumps so unreliable). Other devel:
   `plot_rotated_triangle` (`devel/rotated_triangle.R`), `plot_ternary_reporting`/`plot_ternary_transport`
   (`devel/ternary_plots.R`), `plot_transport_timeline`/`plot_delay_band_ternary` (`devel/removed_plots.R`).
-  IMPORTANT gotcha in `batch_test()`'s classification: `hold_or_deletion` OVERRIDES
+  IMPORTANT gotcha in `diagnose_batches()`'s classification: `hold_or_deletion` OVERRIDES
   `batch`/`surge` whenever creation_z < -z_star, REGARDLESS of transport_z — so the
   most extreme top-left points are holds, not batches. Also: `plot_transport_discriminant`
   colours RED only BH-confirmed batches (`td$batch`), NOT the raw per-point
   `classification` (which over-identifies ~10-20% at alpha by construction).
 - **`transport_discriminant(x, lookback=, period=, alpha=)`** — the plane behind
-  `batch_test()`: per report date the deficit `W` (transport) and `Δ = S − M`
+  `diagnose_batches()`: per report date the deficit `W` (transport) and `Δ = S − M`
   (creation), standardised as `transport_z` / `creation_z`, plus the quadrant
   `classification`. A batch = high transport, ~0 creation (top-left). **DEFAULT
-  lookback = 7L** (changed from 3L, 2026-07-10) for batch_test/transport_discriminant.
+  lookback = 7L** (changed from 3L, 2026-07-10) for diagnose_batches/transport_discriminant.
   Discriminant shaded region labelled "Potential batch region";
   confirmed batches get bold white-on-red date labels (y_hi has +18% headroom so labels
   aren't clipped). Devel plot_creation_transport titles "(a batch)"/"(a surge)" — NO question marks.
@@ -711,7 +784,7 @@ batch_test(planted)
   > `plot_conservation_dashboard` (3 standardised series), `plot_reporting_lag` (mean
   > delay vs a local band) — are clearest when batches are LARGE relative to the noise
   > (e.g. `covid_us`, where they read beautifully). On small overdispersed counts they
-  > can be noisy — there the transport-discriminant scatter + `batch_test()` are the
+  > can be noisy — there the transport-discriminant scatter + `diagnose_batches()` are the
   > robust batch story. All three mark only BH-confirmed batches in red.
   - **`covid_us`** dataset — CDC COVID-19 case surveillance, 2020-2021 events aggregated
     event×report (no strata), built to DEMONSTRATE batch reporting (huge right-skewed
@@ -719,7 +792,7 @@ batch_test(planted)
     "Finding batch reporting…" article + `data-raw/covid_us.R` (duckdb over the 14GB source).
 
 > The older `detect_report_batches()` / `plot_report_batches()` are **removed** —
-> use `batch_test()` + `batch_shape_test()`.
+> use `diagnose_batches()` + `diagnose_batch_shape()`.
 
 ---
 
@@ -1044,13 +1117,16 @@ nowcast_method("nobbs")                         # -> the dispatch object
 
 ```r
 summary(x, by_strata =)                   # the whole summary, as a tibble
+diagnose(x, checks =, by_strata =)        # the structural health check
+diagnose_declarations/ordering/missing/duplicates/units/negatives(x)
+diagnose_now/truncation/strata/signposts(x)
 cases_per_date(x, axis =) / delay_summary(x, delay =) / zero_run_summary(x, axis =)
 prop_censored(x) / prop_strata(x) / prop_confirmation_type(x) / prop_covariate_levels(x)
 case_autocorrelation(x, lags =) / date_ranges(x) / triangle_occupancy(x)
 reporting_completeness(x, delays =) / cumulative_growth(x, k =)
 autoplot(x, panels =, by_strata =)        # multi-panel diagnostic (patchwork)
-plot_delay_drift(x) / test_delay_drift(x) / test_delay_changepoint(x)
-batch_test(x) / batch_shape_test(x, at =) / simulate_batch(x, closed_dates =)
+plot_delay_drift(x) / diagnose_drift(x) / diagnose_changepoint(x)
+diagnose_batches(x) / diagnose_batch_shape(x, at =) / simulate_batch(x, closed_dates =)
 transport_discriminant(x)                 # deficit W vs discriminant Delta, per report date
 diagnostic_plot(x, panels =, by =)        # reporting-process gallery (reporting/triangle/profiles/delay_drift/transport)
 ```
@@ -1082,12 +1158,12 @@ data(hai_bucaramanga)  # healthcare-associated infections; deliberately messy
 - `rowwise()` is **unsupported**.
 - For weekly data with fractional `.delay`, use `align_weeks`.
 - Count data types **require** a `case_count` column.
-- `batch_shape_test(at =)` needs `at` to be an **observed report date**; the volume
-  screen `batch_test()` scans them all.
-- `test_delay_drift()` needs the `modifiedmk` package (a Suggests); the batch and
+- `diagnose_batch_shape(at =)` needs `at` to be an **observed report date**; the volume
+  screen `diagnose_batches()` scans them all.
+- `diagnose_drift()` needs the `modifiedmk` package (a Suggests); the batch and
   drift diagnostics all print an experimental warning.
 - `detect_report_batches()` / `plot_report_batches()` were **removed** —
-  use `batch_test()` + `batch_shape_test()`.
+  use `diagnose_batches()` + `diagnose_batch_shape()`.
 - **A zero period is invisible in a line list.** An event date with no reports has
   no rows, so engines that build their time grid from the rows they are handed
   stop short of the `now`. `complete_zeroes()` fixes this for *count*-shaped

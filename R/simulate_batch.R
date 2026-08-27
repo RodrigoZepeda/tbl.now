@@ -13,7 +13,7 @@
 # and move every report whose report date falls in `H` to `rho(report date)`.
 # Nothing is created and nothing is destroyed: each report keeps its event date
 # and only its *report* date changes, and it can only ever move later.  That is
-# precisely the definition of a transport, and it is what `batch_test()` is
+# precisely the definition of a transport, and it is what `diagnose_batches()` is
 # built to detect.
 # =============================================================================
 
@@ -26,7 +26,7 @@
 #' and releases its accumulated backlog on the next open date.  Reports keep
 #' their event dates and merely move *later* on the report axis, so no cases are
 #' created or destroyed -- the defining property of a batch.  Useful for checking
-#' that [batch_test()] and [batch_shape_test()] recover a batch you planted.
+#' that [diagnose_batches()] and [diagnose_batch_shape()] recover a batch you planted.
 #'
 #' @details
 #' A batch is a **transport**: it moves an item's report date later while leaving
@@ -75,7 +75,7 @@
 #' @returns A new `tbl_now` with the same event dates, strata and data type, and
 #'   modified report dates.
 #'
-#' @seealso [batch_test()], [batch_shape_test()]
+#' @seealso [diagnose_batches()], [diagnose_batch_shape()]
 #'
 #' @examples
 #' library(tbl.now)

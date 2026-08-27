@@ -74,7 +74,7 @@ columns.
 
 This is a real, unpolished open-data extract, and it is included partly
 \emph{because} it is messy: it is a realistic exercise for the delay diagnostics in
-this package (\code{\link[=test_delay_drift]{test_delay_drift()}}, \code{\link[=test_delay_changepoint]{test_delay_changepoint()}},
+this package (\code{\link[=diagnose_drift]{diagnose_drift()}}, \code{\link[=diagnose_changepoint]{diagnose_changepoint()}},
 \code{\link[=plot_delay_profiles]{plot_delay_profiles()}}). Nothing below has been silently repaired.
 
 \describe{
@@ -138,7 +138,7 @@ quantile(iaas_now$.delay, c(0.5, 0.75, 0.9, 0.99), na.rm = TRUE)
 }
 \seealso{
 \link{covid_colombia} for a second Colombian surveillance dataset,
-\code{\link[=test_delay_drift]{test_delay_drift()}} and \code{\link[=test_delay_changepoint]{test_delay_changepoint()}} for the delay
+\code{\link[=diagnose_drift]{diagnose_drift()}} and \code{\link[=diagnose_changepoint]{diagnose_changepoint()}} for the delay
 diagnostics this dataset is well suited to.
 }
 \keyword{datasets}

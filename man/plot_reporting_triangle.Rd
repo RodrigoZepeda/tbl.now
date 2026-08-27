@@ -25,7 +25,7 @@ draw as the third (report-date) axis. \code{0} disables it. Default \code{6}.}
 
 \item{mark_batches}{Integer: additionally highlight this many of the biggest
 batch stripes with a stronger dashed diagonal labelled by report date. \code{0}
-(default) disables it. Found cheaply from volume spikes, not \code{\link[=batch_test]{batch_test()}}.}
+(default) disables it. Found cheaply from volume spikes, not \code{\link[=diagnose_batches]{diagnose_batches()}}.}
 
 \item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget instead of a
 static plot. Default \code{FALSE}.}

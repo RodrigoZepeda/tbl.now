@@ -42,7 +42,7 @@ stratum (faceted).}
 \item{changepoint}{Logical (default \code{FALSE}). When \code{TRUE}, mark the estimated
 abrupt change point of the \strong{median} delay (Pettitt's test, on mature data)
 with a vertical line, when one is detected (p < 0.05). See
-\code{\link[=test_delay_changepoint]{test_delay_changepoint()}}.}
+\code{\link[=diagnose_changepoint]{diagnose_changepoint()}}.}
 
 \item{level}{Completeness level for the immature-region shading (default
 \code{0.95}; see \code{\link[=autoplot]{autoplot()}}).}
@@ -78,7 +78,7 @@ Because recent event dates have not had time to be fully reported, their delay
 summaries are downward-biased (only short delays are observable yet). That
 immature region — event dates after the \code{level} incompleteness cutoff — is
 \strong{shaded grey} and should not be read as drift. Pair the plot with
-\code{\link[=test_delay_drift]{test_delay_drift()}} for a formal test.
+\code{\link[=diagnose_drift]{diagnose_drift()}} for a formal test.
 }
 \examples{
 \dontshow{if (requireNamespace("ggplot2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
@@ -90,5 +90,5 @@ plot_delay_drift(dengue)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=test_delay_drift]{test_delay_drift()}}, \code{\link[=test_delay_changepoint]{test_delay_changepoint()}}, \code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}}
+\code{\link[=diagnose_drift]{diagnose_drift()}}, \code{\link[=diagnose_changepoint]{diagnose_changepoint()}}, \code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}}
 }

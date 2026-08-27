@@ -57,10 +57,10 @@ test_that("planting a batch flags a release date that clean data does not", {
   expect_false(isTRUE(clean$batch[clean$report_date == release]))
 })
 
-test_that("the flags agree with batch_test()'s robust null", {
+test_that("the flags agree with diagnose_batches()'s robust null", {
   fixture <- make_td_tbl()
   td <- suppressWarnings(transport_discriminant(fixture$tbl))
-  bs <- suppressWarnings(batch_test(fixture$tbl, null_model = "robust"))
+  bs <- suppressWarnings(diagnose_batches(fixture$tbl, null_model = "robust"))
   expect_equal(sum(td$batch, na.rm = TRUE), sum(bs$batch, na.rm = TRUE))
 })
 

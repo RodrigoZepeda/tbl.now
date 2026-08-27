@@ -24,6 +24,13 @@ Returns \code{TRUE} invisibly or throws an error. Called for its side effects.
 Checks that an object is a properly constructed \code{tbl_now}
 with all required attributes and valid data.
 }
+\details{
+\code{validate_tbl_now()} and \code{\link[=diagnose]{diagnose()}} share one implementation. This function
+is the \emph{condition} presentation of it: it aborts on the \code{error} findings and
+warns about the \code{warning} ones. \code{\link[=diagnose]{diagnose()}} is the \emph{data} presentation, and
+additionally reports the \code{note}-level observations that would make every
+\code{dplyr} verb noisy if they were emitted here.
+}
 \examples{
 data(denguedat)
 ndata <- tbl_now(denguedat,
@@ -37,4 +44,7 @@ validate_tbl_now(ndata)
 # Validate with errors (wrapped in try() since this intentionally errors)
 try(validate_tbl_now(data.frame(x = 1:3)))
 
+}
+\seealso{
+\code{\link[=diagnose]{diagnose()}} for the same findings as a tibble.
 }

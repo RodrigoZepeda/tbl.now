@@ -47,5 +47,5 @@ table(censor_confirmation_delays_above(flu, 30)[["outcome"]])
 }
 \seealso{
 \code{\link[=censor_delays_above]{censor_delays_above()}} for the reporting delay,
-\code{\link[=test_confirmation_delay]{test_confirmation_delay()}}.
+\code{\link[=diagnose_confirmation_delay]{diagnose_confirmation_delay()}}.
 }

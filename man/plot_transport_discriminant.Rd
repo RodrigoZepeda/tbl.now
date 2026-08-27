@@ -34,7 +34,7 @@ score (y) from \code{\link[=transport_discriminant]{transport_discriminant()}}, 
 batch call. Surges are not distinguished here (they fold into the quiet
 background) since only the batch call is of interest.
 
-Only the \code{\link[=batch_test]{batch_test()}}-confirmed batches (Benjamini-Hochberg-corrected) are
+Only the \code{\link[=diagnose_batches]{diagnose_batches()}}-confirmed batches (Benjamini-Hochberg-corrected) are
 coloured red; the dashed lines and shaded region are a reference for where a
 batch sits (deficit cleared, and significant), not the flagging rule. The most
 extreme-looking points (far left, far up) are \emph{holds} -- windows still depleted

@@ -2,11 +2,11 @@
 % Please edit documentation in R/confirmation.R
 \name{confirmation_delay}
 \alias{confirmation_delay}
-\alias{test_confirmation_delay}
+\alias{diagnose_confirmation_delay}
 \alias{plot_confirmation_delay}
 \title{Compare confirmation delays between confirmed and retracted cases}
 \usage{
-test_confirmation_delay(x, by = NULL)
+diagnose_confirmation_delay(x, by = NULL)
 
 plot_confirmation_delay(x, by = NULL)
 }
@@ -16,7 +16,7 @@ plot_confirmation_delay(x, by = NULL)
 \item{by}{Optional stratum column to compare within; \code{NULL} (default) pools.}
 }
 \value{
-\code{test_confirmation_delay()} returns a one-row-per-comparison \code{tibble} with
+\code{diagnose_confirmation_delay()} returns a one-row-per-comparison \code{tibble} with
 \code{stratum}, \code{n_confirmed}, \code{n_retracted}, \code{median_confirmed},
 \code{median_retracted}, \code{difference}, \code{statistic} and \code{p.value}.
 
@@ -31,7 +31,7 @@ is \strong{not} the same distribution for the two outcomes, and a nowcast that
 assumes it is will be wrong about how many pending cases are still to be
 confirmed.
 
-\code{test_confirmation_delay()} compares the two delay distributions;
+\code{diagnose_confirmation_delay()} compares the two delay distributions;
 \code{plot_confirmation_delay()} shows them.
 }
 \section{The test}{
@@ -67,10 +67,10 @@ flu <- tbl_now(cases,
   data_type = "linelist", verbose = FALSE
 )
 
-test_confirmation_delay(flu)
+diagnose_confirmation_delay(flu)
 
 }
 \seealso{
-\code{\link[=add_confirmation]{add_confirmation()}}, \code{\link[=test_delay_drift]{test_delay_drift()}} for the same question
+\code{\link[=add_confirmation]{add_confirmation()}}, \code{\link[=diagnose_drift]{diagnose_drift()}} for the same question
 about the \emph{reporting} delay over time.
 }

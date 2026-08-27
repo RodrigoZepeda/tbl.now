@@ -2471,7 +2471,7 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 
     # Split into one group per observed strata combination. With no strata the
     # result is still a list -- of length one, named "all" (the same convention
-    # `test_delay_drift()` uses) -- so the return type never depends on whether
+    # `diagnose_drift()` uses) -- so the return type never depends on whether
     # strata happen to be attached.
     if (length(strata_cols) > 0) {
       strata_frame <- as.data.frame(long_data)[, strata_cols, drop = FALSE]

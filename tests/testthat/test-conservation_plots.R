@@ -27,6 +27,6 @@ test_that("a planted batch is confirmed by the screening machinery", {
   tn       <- make_cons_tbl()
   closed   <- seq(as.Date("2023-02-06"), by = "day", length.out = 6L)
   batched  <- suppressWarnings(simulate_batch(tn, closed_dates = closed))
-  screened <- suppressWarnings(batch_test(batched, lookback = 6))
+  screened <- suppressWarnings(diagnose_batches(batched, lookback = 6))
   expect_true(any(screened$batch %in% TRUE))
 })

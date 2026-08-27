@@ -217,23 +217,23 @@ covidat_now <- covid_colombia |>
 plot_delay_drift(covidat_now, changepoint = TRUE)
 ```
 
-We can see that the delay does change in time varying a lot at the beginning of the epidemic (before April) then stabilizing between April and July, and finally shifting downwards around August. The same result can be observed with `test_delay_drift()` which checks, statistically, via a modified Mann-Kendall test, whether there is a drift in the delay:
+We can see that the delay does change in time varying a lot at the beginning of the epidemic (before April) then stabilizing between April and July, and finally shifting downwards around August. The same result can be observed with `diagnose_drift()` which checks, statistically, via a modified Mann-Kendall test, whether there is a drift in the delay:
 
 ```{r, warning=FALSE}
-test_delay_drift(covidat_now, method = "yue-pilon")
+diagnose_drift(covidat_now, method = "yue-pilon")
 ```
 
 
-The **changepoint** option uses [Pettitt's test](https://doi.org/10.2307/2346729) to identify **one** changepoint in the data. It can be recovered  with `test_delay_changepoint()`:
+The **changepoint** option uses [Pettitt's test](https://doi.org/10.2307/2346729) to identify **one** changepoint in the data. It can be recovered  with `diagnose_changepoint()`:
 
 ```{r, warning=FALSE}
-test_delay_changepoint(covidat_now)
+diagnose_changepoint(covidat_now)
 ```
 
-As context, on August 10th 2020 the [Colombian government anounced the massive use of antigen testing](https://www.semana.com/que-son-las-pruebas-de-antigeno-y-quien-las-provee-en-colombia/692542/) for COVID-19 and in August 25th implemented the **PRASS programme** which shifted the sampling and reporting paradigm for the country (_Osorio Saldarriga et al_). These are the changes potentially identified by `test_delay_changepoint()`. 
+As context, on August 10th 2020 the [Colombian government anounced the massive use of antigen testing](https://www.semana.com/que-son-las-pruebas-de-antigeno-y-quien-las-provee-en-colombia/692542/) for COVID-19 and in August 25th implemented the **PRASS programme** which shifted the sampling and reporting paradigm for the country (_Osorio Saldarriga et al_). These are the changes potentially identified by `diagnose_changepoint()`. 
 
 ::: {.alert .alert-warning}
-Pettitt's test in `test_delay_changepoint()` detects only one change point: the largest one. If your data has more than one changepoint break your data into chunks and run the test for each of them. 
+Pettitt's test in `diagnose_changepoint()` detects only one change point: the largest one. If your data has more than one changepoint break your data into chunks and run the test for each of them. 
 :::
 
 ### Batch reporting
@@ -242,18 +242,18 @@ Some systems might withhold results and then release their backlog at once.
 Such *batches* displace reports along the report axis by first _not presenting 
 them in time_ and then reporting all in bulk. Batches do not create new cases they just shift their report dates to a later period (see the [corresponding article for more information](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html)). 
 
-The `batch_test()` function uses this idea to identify batches. The confidence level can be set with `alpha`. For example here we set a level of 80%:
+The `diagnose_batches()` function uses this idea to identify batches. The confidence level can be set with `alpha`. For example here we set a level of 80%:
 
 ```{r batches, warning=FALSE, eval = FALSE}
 covidat_now |>
   remove_all_strata() |>
-  batch_test(period = 7, alpha = 0.2) 
+  diagnose_batches(period = 7, alpha = 0.2) 
 ```
 
 ```{r batches2, warning=FALSE, echo = FALSE}
 covidat_now |>
   remove_all_strata() |>
-  batch_test(period = 7, alpha = 0.2) |>
+  diagnose_batches(period = 7, alpha = 0.2) |>
   arrange(desc(batch)) |>
   select(report_date, reported, baseline, p_transport_bh, batch, everything())
 ```

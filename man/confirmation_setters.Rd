@@ -94,5 +94,5 @@ has_confirmation(hai)
 }
 \seealso{
 \link{confirmation_getters}, \code{\link[=get_latest_confirmed]{get_latest_confirmed()}},
-\code{\link[=get_net_confirmed]{get_net_confirmed()}}, \code{\link[=test_confirmation_delay]{test_confirmation_delay()}}.
+\code{\link[=get_net_confirmed]{get_net_confirmed()}}, \code{\link[=diagnose_confirmation_delay]{diagnose_confirmation_delay()}}.
 }

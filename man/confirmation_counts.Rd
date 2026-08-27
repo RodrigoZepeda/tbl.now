@@ -78,5 +78,5 @@ get_net_confirmed(flu)           # positives minus withdrawals
 }
 \seealso{
 \code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}}, \code{\link[=add_confirmation]{add_confirmation()}},
-\code{\link[=test_confirmation_delay]{test_confirmation_delay()}}.
+\code{\link[=diagnose_confirmation_delay]{diagnose_confirmation_delay()}}.
 }

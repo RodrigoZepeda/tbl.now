@@ -1,6 +1,6 @@
 # =============================================================================
 # The creation-vs-transport score panel (and the detrended machinery it shares
-# with batch_test()).
+# with diagnose_batches()).
 #
 # The two window scores are put on the detrended, deseasonalised, standardised
 # residual -- observed minus the package's own robust baseline (a trend smooth
@@ -15,7 +15,7 @@
 
 #' Detrended, deseasonalised, standardised residual series.
 #'
-#' Reuses `batch_test()`'s registration: `baseline_global` is a robust trend
+#' Reuses `diagnose_batches()`'s registration: `baseline_global` is a robust trend
 #' smooth optionally multiplied by weekday factors (`period`), so the residual
 #' `reported - baseline_global` has the trend and the reporting calendar removed.
 #' Standardising by the quasi-Poisson SE makes the series scale-free. Also carries
@@ -39,7 +39,7 @@
 
 .batch_has_strata <- function(x) length(get_strata(x)) > 0L
 
-#' Report dates (and strata) that `batch_test()` confirms as batches.
+#' Report dates (and strata) that `diagnose_batches()` confirms as batches.
 #'
 #' Marks the dates the *test itself* flags -- with its null model and
 #' Benjamini-Hochberg multiplicity control -- not per-point threshold crossings,
@@ -49,7 +49,7 @@
 #' @noRd
 .batch_confirmed <- function(x, lookback, baseline_window, period, alpha,
                              axis = "report") {
-  screened <- suppressWarnings(batch_test(
+  screened <- suppressWarnings(diagnose_batches(
     x, lookback = lookback, baseline_window = baseline_window,
     period = period, alpha = alpha, axis = axis
   ))
@@ -58,7 +58,7 @@
   dplyr::as_tibble(confirmed)
 }
 
-#' Shared preparation: the detrended registration, the batch_test()-confirmed
+#' Shared preparation: the detrended registration, the diagnose_batches()-confirmed
 #' rows, and the reference level.
 #' @keywords internal
 #' @noRd
@@ -125,7 +125,7 @@
       caption = paste(
         "Both are z-scores: (observed minus expected) in standard deviations. A big batch",
         "\ngenuinely sits hundreds of SDs out, so the axis is signed-log -- the dashed +/- band",
-        "\nis the ordinary range. Grey verticals = batch_test()-confirmed batch dates."
+        "\nis the ordinary range. Grey verticals = diagnose_batches()-confirmed batch dates."
       )
     ) +
     .tbl_now_theme(palette) +

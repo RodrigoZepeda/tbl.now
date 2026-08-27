@@ -1,4 +1,4 @@
-# Tests for plot_delay_drift() and test_delay_drift().
+# Tests for plot_delay_drift() and diagnose_drift().
 
 # Daily count-incidence tbl_now whose mean reporting delay rises with `slope`
 # per day (slope = 0 is stationary).
@@ -53,12 +53,12 @@ test_that("plot_delay_drift validates its input", {
   expect_error(plot_delay_drift(make_drift_now(), by_strata = TRUE), "strata")
 })
 
-# --- test_delay_drift() -----------------------------------------------------
+# --- diagnose_drift() -----------------------------------------------------
 
-test_that("test_delay_drift returns one tidy row per stat", {
+test_that("diagnose_drift returns one tidy row per stat", {
   skip_if_not_installed("modifiedmk")
 
-  res <- test_delay_drift(make_drift_now(slope = 0.003), stat = c("median", "spread"))
+  res <- diagnose_drift(make_drift_now(slope = 0.003), stat = c("median", "spread"))
   expect_s3_class(res, "tbl_df")
   expect_setequal(res$stat, c("median", "spread"))
   expect_true(all(c(
@@ -67,11 +67,11 @@ test_that("test_delay_drift returns one tidy row per stat", {
   ) %in% names(res)))
 })
 
-test_that("test_delay_drift detects a real upward drift", {
+test_that("diagnose_drift detects a real upward drift", {
   skip_on_cran()
   skip_if_not_installed("modifiedmk")
 
-  res <- test_delay_drift(
+  res <- diagnose_drift(
     make_drift_now(slope = 0.004), stat = "mean", mature_only = FALSE
   )
   expect_true(res$drift)
@@ -79,33 +79,33 @@ test_that("test_delay_drift detects a real upward drift", {
   expect_lt(res$p_value, 0.05)
 })
 
-test_that("test_delay_drift does not flag a stationary series", {
+test_that("diagnose_drift does not flag a stationary series", {
   skip_on_cran()
   skip_if_not_installed("modifiedmk")
 
   # Flat mean delay (slope 0); Hamed-Rao correction should keep this null.
-  res <- test_delay_drift(
+  res <- diagnose_drift(
     make_drift_now(slope = 0, seed = 7), stat = "median", mature_only = FALSE
   )
   expect_false(res$drift)
 })
 
-test_that("test_delay_drift runs per stratum", {
+test_that("diagnose_drift runs per stratum", {
   skip_on_cran()
   skip_if_not_installed("modifiedmk")
 
-  res <- test_delay_drift(
+  res <- diagnose_drift(
     make_drift_now(slope = 0.003, strata = TRUE),
     stat = "median", by_strata = TRUE, mature_only = FALSE
   )
   expect_setequal(res$strata, c("a", "b"))
 })
 
-test_that("test_delay_drift supports the block-bootstrap method", {
+test_that("diagnose_drift supports the block-bootstrap method", {
   skip_on_cran()
   skip_if_not_installed("modifiedmk")
 
-  res <- test_delay_drift(
+  res <- diagnose_drift(
     make_drift_now(slope = 0.004), stat = "mean",
     method = "block-bootstrap", mature_only = FALSE, nsim = 200
   )
@@ -113,10 +113,10 @@ test_that("test_delay_drift supports the block-bootstrap method", {
   expect_false(is.na(res$p_value))
 })
 
-test_that("test_delay_drift errors without modifiedmk installed", {
+test_that("diagnose_drift errors without modifiedmk installed", {
   # Only meaningful when the package is absent; skip when it is present.
   skip_if(requireNamespace("modifiedmk", quietly = TRUE))
-  expect_error(test_delay_drift(make_drift_now()), "modifiedmk")
+  expect_error(diagnose_drift(make_drift_now()), "modifiedmk")
 })
 
 # --- change-point detection -------------------------------------------------
@@ -150,8 +150,8 @@ test_that(".tbl_now_pettitt locates a clear step and guards edge cases", {
   expect_true(is.na(tbl.now:::.tbl_now_pettitt(1:5)$p_value))
 })
 
-test_that("test_delay_changepoint returns one tidy row per stat", {
-  res <- test_delay_changepoint(make_step_now(), stat = c("median", "mean"))
+test_that("diagnose_changepoint returns one tidy row per stat", {
+  res <- diagnose_changepoint(make_step_now(), stat = c("median", "mean"))
   expect_s3_class(res, "tbl_df")
   expect_setequal(res$stat, c("median", "mean"))
   expect_true(all(c(
@@ -160,9 +160,9 @@ test_that("test_delay_changepoint returns one tidy row per stat", {
   ) %in% names(res)))
 })
 
-test_that("test_delay_changepoint detects an abrupt upward shift near the truth", {
+test_that("diagnose_changepoint detects an abrupt upward shift near the truth", {
   skip_on_cran()
-  res <- test_delay_changepoint(
+  res <- diagnose_changepoint(
     make_step_now(before = 1, after = 5, at = "2019-04-01"),
     stat = "mean", mature_only = FALSE
   )
@@ -171,10 +171,10 @@ test_that("test_delay_changepoint detects an abrupt upward shift near the truth"
   expect_lt(abs(as.numeric(res$changepoint - as.Date("2019-04-01"))), 21)
 })
 
-test_that("test_delay_changepoint runs per stratum", {
+test_that("diagnose_changepoint runs per stratum", {
   skip_on_cran()
   nowobj <- make_drift_now(slope = 0.003, strata = TRUE)
-  res <- test_delay_changepoint(nowobj, stat = "median", by_strata = TRUE)
+  res <- diagnose_changepoint(nowobj, stat = "median", by_strata = TRUE)
   expect_setequal(res$strata, c("a", "b"))
 })
 

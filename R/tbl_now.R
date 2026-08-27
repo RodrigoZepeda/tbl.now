@@ -440,7 +440,9 @@ tbl_now <- function(data,
   # Infer automatic variables------
 
   # Infer the now
-  .check_confirmation_ordering(data, event_date, report_date, confirmation_date)
+  # The event <= report <= confirmation timeline is checked by
+  # `validate_tbl_now()` at the end of this function, through the same findings
+  # engine `diagnose()` uses. Checking it here as well would warn twice.
 
   # A confirmation is an OBSERVATION, so it moves the `now` forward exactly as a
   # report does: the as-of moment is the last thing anybody knew.

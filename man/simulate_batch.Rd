@@ -43,7 +43,7 @@ Simulates a reporting system that is \strong{closed} on a given set of report da
 and releases its accumulated backlog on the next open date.  Reports keep
 their event dates and merely move \emph{later} on the report axis, so no cases are
 created or destroyed -- the defining property of a batch.  Useful for checking
-that \code{\link[=batch_test]{batch_test()}} and \code{\link[=batch_shape_test]{batch_shape_test()}} recover a batch you planted.
+that \code{\link[=diagnose_batches]{diagnose_batches()}} and \code{\link[=diagnose_batch_shape]{diagnose_batch_shape()}} recover a batch you planted.
 }
 \details{
 A batch is a \strong{transport}: it moves an item's report date later while leaving
@@ -93,5 +93,5 @@ batched_tbl <- simulate_batch(dengue_tbl, closed_dates = closed, verbose = FALSE
 
 }
 \seealso{
-\code{\link[=batch_test]{batch_test()}}, \code{\link[=batch_shape_test]{batch_shape_test()}}
+\code{\link[=diagnose_batches]{diagnose_batches()}}, \code{\link[=diagnose_batch_shape]{diagnose_batch_shape()}}
 }

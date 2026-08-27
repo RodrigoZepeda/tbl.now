@@ -24,7 +24,7 @@
 #'
 #' This is a real, unpolished open-data extract, and it is included partly
 #' *because* it is messy: it is a realistic exercise for the delay diagnostics in
-#' this package ([test_delay_drift()], [test_delay_changepoint()],
+#' this package ([diagnose_drift()], [diagnose_changepoint()],
 #' [plot_delay_profiles()]). Nothing below has been silently repaired.
 #'
 #' \describe{
@@ -99,7 +99,7 @@
 #'   Spanish; see `data-raw/hai_bucaramanga.R` for the mapping.
 #'
 #' @seealso [covid_colombia] for a second Colombian surveillance dataset,
-#'   [test_delay_drift()] and [test_delay_changepoint()] for the delay
+#'   [diagnose_drift()] and [diagnose_changepoint()] for the delay
 #'   diagnostics this dataset is well suited to.
 #'
 #' @examples

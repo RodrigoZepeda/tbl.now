@@ -188,7 +188,7 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "confirm
 #'   draw as the third (report-date) axis. `0` disables it. Default `6`.
 #' @param mark_batches Integer: additionally highlight this many of the biggest
 #'   batch stripes with a stronger dashed diagonal labelled by report date. `0`
-#'   (default) disables it. Found cheaply from volume spikes, not [batch_test()].
+#'   (default) disables it. Found cheaply from volume spikes, not [diagnose_batches()].
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget instead of a
 #'   static plot. Default `FALSE`.
 #' @param palette A named colour palette. Defaults to the package palette.
@@ -218,7 +218,7 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 }
 
 #' Report dates whose volume spikes above a local median: the obvious batch
-#' stripes, found cheaply (no `batch_test()`), so the triangle can annotate them.
+#' stripes, found cheaply (no `diagnose_batches()`), so the triangle can annotate them.
 #' @keywords internal
 #' @noRd
 .diag_batch_stripes <- function(increments, k) {
@@ -461,7 +461,7 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
 #' background) since only the batch call is of interest.
 #'
 #' @details
-#' Only the [batch_test()]-confirmed batches (Benjamini-Hochberg-corrected) are
+#' Only the [diagnose_batches()]-confirmed batches (Benjamini-Hochberg-corrected) are
 #' coloured red; the dashed lines and shaded region are a reference for where a
 #' batch sits (deficit cleared, and significant), not the flagging rule. The most
 #' extreme-looking points (far left, far up) are *holds* -- windows still depleted
@@ -495,7 +495,7 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, palette = .tbl_n
   z_star <- stats::qnorm(1 - attr(td, "alpha"))
   red    <- palette[["accent_red"]]
 
-  # Colour ONLY the batch_test()-confirmed batches (BH-corrected `batch`), not
+  # Colour ONLY the diagnose_batches()-confirmed batches (BH-corrected `batch`), not
   # the raw per-point classification: at level alpha the raw quadrants paint
   # ~10-20% of points batch/surge/hold by construction, ignoring multiplicity and
   # the heavy autocorrelation of the window statistics. The dashed lines and the

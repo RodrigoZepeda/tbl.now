@@ -3,7 +3,7 @@
 #   plot_delay_drift()  — a rolling fan chart of the reporting-delay
 #                         distribution (mean + median + 25/75 & 10/90 bands)
 #                         indexed by event date.
-#   test_delay_drift()  — an autocorrelation-robust monotonic-trend test on the
+#   diagnose_drift()  — an autocorrelation-robust monotonic-trend test on the
 #                         per-period delay summaries (via the `modifiedmk`
 #                         package).
 #
@@ -214,7 +214,7 @@
 #' summaries are downward-biased (only short delays are observable yet). That
 #' immature region — event dates after the `level` incompleteness cutoff — is
 #' **shaded grey** and should not be read as drift. Pair the plot with
-#' [test_delay_drift()] for a formal test.
+#' [diagnose_drift()] for a formal test.
 #'
 #' @param x A `tbl_now` object.
 #' @param window Rolling-window width, in event-time **periods**. `NULL`
@@ -230,7 +230,7 @@
 #' @param changepoint Logical (default `FALSE`). When `TRUE`, mark the estimated
 #'   abrupt change point of the **median** delay (Pettitt's test, on mature data)
 #'   with a vertical line, when one is detected (p < 0.05). See
-#'   [test_delay_changepoint()].
+#'   [diagnose_changepoint()].
 #' @param level Completeness level for the immature-region shading (default
 #'   `0.95`; see [autoplot()]).
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget instead of a
@@ -247,7 +247,7 @@
 #'   [add_confirmation()]); cases still `"pending"` are left out.
 #' @return A \pkg{ggplot2} object.
 #'
-#' @seealso [test_delay_drift()], [test_delay_changepoint()], [autoplot.tbl_now()]
+#' @seealso [diagnose_drift()], [diagnose_changepoint()], [autoplot.tbl_now()]
 #'
 #' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
 #' data(denguedat)
@@ -425,7 +425,7 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
 }
 
 
-# test_delay_drift()-----
+# diagnose_drift()-----
 
 #' Extract the standard fields from a `modifiedmk` result vector
 #'
@@ -565,7 +565,7 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
 #'
 #' Because this is a trend test it will *not* find an abrupt one-off shift; a
 #' step change can even cancel out to a non-significant monotonic trend. Pair it
-#' with [test_delay_changepoint()], which is built for exactly that case.
+#' with [diagnose_changepoint()], which is built for exactly that case.
 #'
 #' @section Choosing a method:
 #'
@@ -600,7 +600,7 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
 #' When a decision matters, run the default first and confirm a borderline
 #' result with `method = "block-bootstrap"` on a restricted window.
 #'
-#' @seealso [test_delay_changepoint()] for abrupt shifts,
+#' @seealso [diagnose_changepoint()] for abrupt shifts,
 #'   [plot_delay_drift()] to visualise the series being tested.
 #'
 #' @examplesIf requireNamespace("modifiedmk", quietly = TRUE)
@@ -608,10 +608,10 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
 #' dengue <- tbl_now(denguedat,
 #'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 #' )
-#' test_delay_drift(dengue)
+#' diagnose_drift(dengue)
 #'
 #' @export
-test_delay_drift <- function(x, ...,
+diagnose_drift <- function(x, ...,
                              stat = c("median", "spread"),
                              method = c("hamed-rao", "yue-pilon", "block-bootstrap"),
                              by_strata = FALSE, strata = NULL,
@@ -623,7 +623,7 @@ test_delay_drift <- function(x, ...,
   }
   if (!requireNamespace("modifiedmk", quietly = TRUE)) {
     cli::cli_abort(c(
-      "Package {.pkg modifiedmk} is required for {.fn test_delay_drift}.",
+      "Package {.pkg modifiedmk} is required for {.fn diagnose_drift}.",
       "i" = "Install it with {.code install.packages(\"modifiedmk\")}."
     ))
   }
@@ -633,13 +633,13 @@ test_delay_drift <- function(x, ...,
 
   cli::cli_warn(
     c(
-      "!" = "{.fn test_delay_drift} is {.emph experimental}: results are not \\
+      "!" = "{.fn diagnose_drift} is {.emph experimental}: results are not \\
              guaranteed and the interface may change.",
       "i" = "Interpret a significant result as a {.emph potential} trend change, \\
              not a confirmed one."
     ),
     .frequency = "regularly",
-    .frequency_id = "tbl.now::test_delay_drift"
+    .frequency_id = "tbl.now::diagnose_drift"
   )
 
   x <- ungroup(x)
@@ -700,7 +700,7 @@ test_delay_drift <- function(x, ...,
 }
 
 
-# test_delay_changepoint()-----
+# diagnose_changepoint()-----
 
 #' Pettitt's nonparametric single-change-point test
 #'
@@ -740,15 +740,15 @@ test_delay_drift <- function(x, ...,
 #'
 #' `r lifecycle::badge("experimental")`
 #'
-#' Complements [test_delay_drift()]. Where that tests for a *gradual* monotonic
+#' Complements [diagnose_drift()]. Where that tests for a *gradual* monotonic
 #' trend, this tests for a **single abrupt shift** (e.g. a reporting-system change
 #' on some date) in the per-period delay summaries, using **Pettitt's**
-#' nonparametric change-point test. As with [test_delay_drift()] it works on both
+#' nonparametric change-point test. As with [diagnose_drift()] it works on both
 #' a location statistic (median / mean) and a dispersion statistic (IQR / 10-90
 #' spread), on mature data only, and — being rank-based — it is robust to the
 #' skew and serial dependence of a delay series.
 #'
-#' @inheritParams test_delay_drift
+#' @inheritParams diagnose_drift
 #'
 #' @param axis Which time axis the delay is measured to: `"report"` (default)
 #'   or `"confirmation"`. Both are measured *from the event*, so the two are
@@ -766,7 +766,7 @@ test_delay_drift <- function(x, ...,
 #'     `"all"`; otherwise one level per observed combination of `strata`.}
 #'   \item{`stat`}{`character`. Which delay summary was tested — one of
 #'     `"median"`, `"mean"`, `"iqr"` or `"spread"`. As in
-#'     [test_delay_drift()], the first two are *location* statistics and the
+#'     [diagnose_drift()], the first two are *location* statistics and the
 #'     last two *dispersion* statistics.}
 #'   \item{`n`}{`integer`. **Length of the tested series**: the number of event
 #'     dates contributing a non-missing value after the `mature_only` filter —
@@ -810,7 +810,7 @@ test_delay_drift <- function(x, ...,
 #'   returns the most prominent and silently ignores the rest. If you suspect
 #'   more, re-run on each side of the first `changepoint` to search recursively.
 #' - A slow monotonic drift will often trip this test too, with the change point
-#'   landing near the middle of the series. Running [test_delay_drift()]
+#'   landing near the middle of the series. Running [diagnose_drift()]
 #'   alongside disambiguates: a genuine step shows up here and not
 #'   necessarily there, while a gradual drift shows up in both.
 #'
@@ -820,10 +820,10 @@ test_delay_drift <- function(x, ...,
 #' about the cause, and about how far back a nowcasting model can safely be
 #' fitted: data before the change point comes from a different reporting regime.
 #'
-#' Unlike [test_delay_drift()], this test has no third-party dependency and no
+#' Unlike [diagnose_drift()], this test has no third-party dependency and no
 #' meaningful runtime cost, so it is cheap to run routinely.
 #'
-#' @seealso [test_delay_drift()] for gradual trends,
+#' @seealso [diagnose_drift()] for gradual trends,
 #'   [plot_delay_drift()] to visualise the series and mark detected changes.
 #'
 #' @examples
@@ -831,10 +831,10 @@ test_delay_drift <- function(x, ...,
 #' dengue <- tbl_now(denguedat,
 #'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 #' )
-#' test_delay_changepoint(dengue)
+#' diagnose_changepoint(dengue)
 #'
 #' @export
-test_delay_changepoint <- function(x, ...,
+diagnose_changepoint <- function(x, ...,
                                    stat = c("median", "spread"),
                                    by_strata = FALSE, strata = NULL,
                                    mature_only = TRUE, level = 0.95, alpha = 0.05,
@@ -847,13 +847,13 @@ test_delay_changepoint <- function(x, ...,
 
   cli::cli_warn(
     c(
-      "!" = "{.fn test_delay_changepoint} is {.emph experimental}: results are \\
+      "!" = "{.fn diagnose_changepoint} is {.emph experimental}: results are \\
              not guaranteed and the interface may change.",
       "i" = "Treat a detected change as a {.emph potential} change point, not a \\
              confirmed one."
     ),
     .frequency = "regularly",
-    .frequency_id = "tbl.now::test_delay_changepoint"
+    .frequency_id = "tbl.now::diagnose_changepoint"
   )
 
   x <- ungroup(x)

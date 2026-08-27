@@ -83,7 +83,7 @@ increments.
 \code{q50} is the smallest value whose cumulative weight reaches \code{0.5}, which for
 an even number of observations is the upper of the two middle values rather
 than their average. This is deliberate: it is the same estimator
-\code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}} and \code{\link[=test_delay_drift]{test_delay_drift()}} use for the delay quantiles
+\code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}} and \code{\link[=diagnose_drift]{diagnose_drift()}} use for the delay quantiles
 they draw, so the numbers in this table match the numbers in the plots. It
 also always returns a value that was actually observed, which a half-case
 delay is not.

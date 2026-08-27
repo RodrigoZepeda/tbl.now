@@ -338,11 +338,11 @@ that split.
 
 ### Is there a gradual trend?
 
-`test_delay_drift()` runs an autocorrelation-robust Mann-Kendall test for a
+`diagnose_drift()` runs an autocorrelation-robust Mann-Kendall test for a
 *monotonic* trend:
 
 ```{r drift-test, warning=FALSE}
-test_delay_drift(hai_now)
+diagnose_drift(hai_now)
 ```
 
 No. Neither the median nor the spread shows a monotonic trend. Read `tau` before
@@ -352,11 +352,11 @@ underpowered one.
 ### Is there an abrupt shift?
 
 A trend test cannot see a step change — a jump up and a jump down can even
-cancel out to no trend at all. `test_delay_changepoint()` uses Pettitt's test to
+cancel out to no trend at all. `diagnose_changepoint()` uses Pettitt's test to
 look for exactly that:
 
 ```{r changepoint-test, warning=FALSE}
-test_delay_changepoint(hai_now)
+diagnose_changepoint(hai_now)
 ```
 
 Here is the finding that matters. The **median** delay has no change point, but
@@ -373,7 +373,7 @@ section 7.
 ### Does this differ by unit?
 
 ```{r drift-strata, warning=FALSE}
-test_delay_drift(hai_now, by_strata = TRUE)
+diagnose_drift(hai_now, by_strata = TRUE)
 ```
 
 The neonatal unit shows a positive trend in the median delay
@@ -679,8 +679,8 @@ hai_now <- tbl_now(hai_weekly, event_date = event_week, report_date = report_wee
 
 # 4. Look at it, and test the delay for drift and change points.
 autoplot(hai_now)
-test_delay_drift(hai_now)
-test_delay_changepoint(hai_now)
+diagnose_drift(hai_now)
+diagnose_changepoint(hai_now)
 
 # 5. Let those findings set the model window and the maximum delay.
 hai_model <- hai_now |> censor_delays_above(max_delay = 20)

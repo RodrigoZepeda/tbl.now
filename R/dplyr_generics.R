@@ -19,6 +19,15 @@
 #'
 #' @return Returns `TRUE` invisibly or throws an error. Called for its side effects.
 #'
+#' @details
+#' `validate_tbl_now()` and [diagnose()] share one implementation. This function
+#' is the *condition* presentation of it: it aborts on the `error` findings and
+#' warns about the `warning` ones. [diagnose()] is the *data* presentation, and
+#' additionally reports the `note`-level observations that would make every
+#' `dplyr` verb noisy if they were emitted here.
+#'
+#' @seealso [diagnose()] for the same findings as a tibble.
+#'
 #' @examples
 #' data(denguedat)
 #' ndata <- tbl_now(denguedat,
@@ -34,364 +43,27 @@
 #'
 #' @export
 validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
-  # Get required attributes
-  required_attrs <- c(
-    "event_date", "report_date", "now", "event_units", "report_units",
-    "data_type"
+  # One implementation, two presentations: `diagnose()` returns the findings as
+  # data, this returns them as the conditions the class has always emitted.
+  #
+  # `deep = FALSE` is what keeps that affordable. This function runs inside
+  # `tbl_now_can_reconstruct()`, i.e. on every `dplyr` verb, so the engine is
+  # told to skip any work that costs a pass over the data and only ever yields
+  # a note. `floor = "note"` then reports the errors, the warnings, and the one
+  # note this function has always shown as an alert.
+  findings <- .tbl_now_findings(
+    x,
+    checks = .diagnose_validation_checks(),
+    by_strata = FALSE,
+    warn_non_uniqueness = warn_non_uniqueness,
+    warn_now = warn_now,
+    floor = "note",
+    deep = FALSE,
+    assert = FALSE,
+    fn = "validate_tbl_now"
   )
 
-  errors <- character(0)
-  warnings <- character(0)
-
-  # # === 1. Check class ===
-  if (!is.data.frame(x)) {
-    errors <- c(errors, "Object must inherit from {.code data.frame}")
-  }
-
-  # === 2. Check required attributes exist ===
-  for (attr_name in required_attrs) {
-    if (is.null(attr(x, attr_name, exact = TRUE))) {
-      errors <- c(errors, sprintf("Missing required attribute: {.val %s}", attr_name))
-    }
-  }
-
-  # If required attributes are missing, return early
-  if (length(errors) > 0) {
-    cli::cli_abort(c("Invalid {.code tbl_now} object:", errors))
-  }
-
-  # === 3. Extract attributes for validation ===
-  event_date <- get_event_date(x)
-  report_date <- get_report_date(x)
-  strata <- get_strata(x)
-  covariates <- get_covariates(x)
-  now <- get_now(x)
-  report_units <- get_report_units(x)
-  event_units <- get_event_units(x)
-  data_type <- get_data_type(x)
-  is_censored <- get_is_censored(x)
-  case_count <- get_case_count(x)
-
-  if (data_type == "linelist") {
-    warn_non_uniqueness <- FALSE
-  }
-
-  # === 4. Validate attribute types ===
-
-  # event_date and report_date must be character(1)
-  if (!is.character(event_date) || length(event_date) != 1) {
-    errors <- c(errors, "Attribute {.val event_date} must be a Date of length 1")
-  }
-
-  if (!is.character(report_date) || length(report_date) != 1) {
-    errors <- c(errors, "Attribute {.val report_date} must be a Date of length 1")
-  }
-
-
-  # strata must be NULL or character
-  if (!is.null(strata) && !is.character(strata)) {
-    errors <- c(errors, "Attribute {.val strata} must be {.val NULL} or a character vector")
-  }
-
-  # covariates must be NULL or character
-  if (!is.null(covariates) && !is.character(covariates)) {
-    errors <- c(errors, "Attribute {.val covariates} must be {.val NULL} or a character vector")
-  }
-
-  # now must be a Date
-  if ((!lubridate::is.Date(now) && !is.integer(now)) || length(now) != 1) {
-    errors <- c(errors, "Attribute {.val now}  must be a Date or integer object of length 1")
-  }
-
-  # "event_units" and "report_units" must be valid option
-  valid_date_units <- c("auto", "days", "weeks", "numeric", "months", "years")
-  if (!is.character(report_units) || length(report_units) != 1 ||
-    !report_units %in% valid_date_units) {
-    errors <- c(errors, sprintf(
-      "Attribute {.val report_units} must be one of: {.val %s}",
-      paste(valid_date_units, collapse = ", ")
-    ))
-  }
-  if (!is.character(event_units) || length(event_units) != 1 ||
-    !event_units %in% valid_date_units) {
-    errors <- c(errors, sprintf(
-      "Attribute {.val event_units} must be one of: {.val %s}",
-      paste(valid_date_units, collapse = ", ")
-    ))
-  }
-
-  # data_type must be valid option
-  valid_data_types <- c("auto", "linelist", "count-incidence", "count-cumulative")
-  if (!is.character(data_type) || length(data_type) != 1 ||
-    !data_type %in% valid_data_types) {
-    errors <- c(errors, sprintf(
-      "Attribute {.val data_type} must be one of: {.val %s}",
-      paste(valid_data_types, collapse = ", ")
-    ))
-  }
-
-  # is_censored must be NULL or character(1)
-  if (!is.null(is_censored) && (length(is_censored) != 1 || !is.character(is_censored))) {
-    errors <- c(errors, "Attribute {.val is_censored} must be {.val NULL} or a character vector of length 1")
-  }
-
-  # === 5. Validate columns exist in data ===
-  if (!is.null(event_date) && !event_date %in% colnames(x)) {
-    errors <- c(errors, sprintf("Column {.val %s} (event_date) not found in data", event_date))
-  }
-
-  if (!is.null(report_date) && !report_date %in% colnames(x)) {
-    errors <- c(errors, sprintf("Column {.val %s} (report_date) not found in data", report_date))
-  }
-
-  if (!is.null(is_censored) && length(is_censored) == 1 && !(is_censored %in% colnames(x))) {
-    errors <- c(errors, sprintf("Column {.val %s} (is_censored) not found in data", is_censored))
-  }
-
-  if (!is.null(strata)) {
-    for (st in strata) {
-      if (!st %in% colnames(x)) {
-        errors <- c(errors, sprintf("Strata column {.val %s} not found in data", st))
-      }
-    }
-  }
-
-  if (!is.null(covariates)) {
-    for (cv in covariates) {
-      if (!cv %in% colnames(x)) {
-        errors <- c(errors, sprintf("Covariate column {.val %s} not found in data", cv))
-      }
-    }
-  }
-
-  # Check once per category--------------
-
-  # Check that no covariate is in strata and viceversa
-  if (any(covariates %in% strata)) {
-    # Get those that are repeated
-    repeated_vars <- covariates[which(covariates %in% strata)]
-
-    errors <- c(
-      errors,
-      sprintf("Strata variable {.val %s} cannot also be a covariate", repeated_vars)
-    )
-  }
-
-  # Check that no date is in strata
-  if (report_date %in% strata) {
-    errors <- c(errors, sprintf("Report date {.val %s} cannot be strata", report_date))
-  }
-  if (event_date %in% strata) {
-    errors <- c(errors, sprintf("Event date {.val %s} cannot be strata", event_date))
-  }
-
-  # Check that no date is in covariate
-  if (report_date %in% covariates) {
-    errors <- c(errors, sprintf("Report date {.val %s} cannot be a covariate", report_date))
-  }
-  if (event_date %in% covariates) {
-    errors <- c(errors, sprintf("Event date {.val %s} cannot be a covariate", event_date))
-  }
-
-  # Check that is_censored is not a covariate / strata
-  if (!is.null(is_censored) && any(is_censored %in% covariates)) {
-    errors <- c(errors, sprintf("Censored indicator {.val %s} cannot be also a covariate", is_censored))
-  }
-
-  if (!is.null(is_censored) && any(is_censored %in% strata)) {
-    errors <- c(errors, sprintf("Censored indicator {.val %s} cannot be also strata", is_censored))
-  }
-
-  # === 6. Validate column types ===
-  if (!is.null(event_date) && event_date %in% colnames(x)) {
-    if (!lubridate::is.Date(x[[event_date]]) && !is.integer(x[[event_date]])) {
-      errors <- c(errors, sprintf("Column '%s' must be of class Date or integer", event_date))
-    }
-  }
-
-  if (!is.null(report_date) && report_date %in% colnames(x)) {
-    if (!lubridate::is.Date(x[[report_date]]) && !is.integer(x[[report_date]])) {
-      errors <- c(errors, sprintf("Column '%s' must be of class Date or integer", report_date))
-    }
-  }
-
-  if (!is.null(is_censored) && length(is_censored) == 1 && is_censored %in% colnames(x)) {
-    if (!is.logical(x[[is_censored]])) {
-      errors <- c(errors, sprintf("Column '%s' must be logical (TRUE/FALSE)", is_censored))
-    }
-  }
-
-  # Check they don't have the same report and event dates
-  if (get_event_date(x) == get_report_date(x)) {
-    cli::cli_alert_warning(
-      "Object has the same event and report dates with value {.val {get_event_date(x)}}"
-    )
-  }
-
-  # Removing the case_count
-  if (data_type != "linelist" && (is.null(case_count) || !(case_count %in% colnames(x)))) {
-    errors <- c(
-      errors,
-      paste0("Dropped case column ", case_count, " when data_type was ", data_type, ".")
-    )
-  }
-
-  # === 8. Validate data relationships ===
-
-  if (!is.null(event_date) && !is.null(report_date) &&
-    event_date %in% colnames(x) && report_date %in% colnames(x)) {
-    # Check that report_date >= event_date (where both are non-NA)
-    valid_rows <- !is.na(x[[event_date]]) & !is.na(x[[report_date]])
-    if (any(valid_rows)) {
-      invalid_dates <- x[[report_date]][valid_rows] < x[[event_date]][valid_rows]
-      if (any(invalid_dates, na.rm = TRUE)) {
-        warnings <- c(warnings, sprintf(
-          "%d row(s) have a `report_date` before `event_date`",
-          sum(invalid_dates, na.rm = TRUE)
-        ))
-      }
-    }
-
-    # Check that 'now' is >= max(report_date)
-    if (nrow(x) > 0 & warn_now) {
-      max_report <- max(x[[report_date]], na.rm = TRUE)
-      if (!is.na(max_report) && !is.null(now) && lubridate::is.Date(now) && now < max_report) {
-        warnings <- c(warnings, sprintf(
-          "Attribute 'now' (%s) seems to be in the past (before maximum report_date (%s))",
-          as.character(now), as.character(max_report)
-        ))
-      }
-    }
-  }
-
-  # FIXME: Throw warning when now is too far in the future or in the past
-
-  # Warn ig they have missing values
-  if (event_date %in% colnames(x)) {
-    missing_events <- x |>
-      ungroup() |>
-      dplyr::filter(is.na(!!as.symbol(event_date)) | is.null(!!as.symbol(event_date)))
-
-    if (nrow(missing_events) > 0) {
-      warnings <- c(warnings, "{.val {nrow(missing_events)}} rows have NULL or NA values in column `event_date ={.val event_date}`.")
-    }
-  }
-
-
-  if (report_date %in% colnames(x)) {
-    missing_reports <- x |>
-      ungroup() |>
-      dplyr::filter(is.na(!!as.symbol(report_date)) | is.null(!!as.symbol(report_date)))
-
-    if (nrow(missing_reports) > 0) {
-      warnings <- c(warnings, "{.val {nrow(missing_reports)}} rows have NULL or NA values in column `report_date = {.val report_date}`.")
-    }
-  }
-
-
-  # === Confirmation process ===
-  # A confirmation is an OBSERVATION, so nothing can have been confirmed after
-  # the as-of moment. This is the same rule `now` already obeys for reports;
-  # breaking it means the object claims to know something it could not have.
-  confirmation_date <- get_confirmation_date(x)
-  if (!is.null(confirmation_date) && confirmation_date %in% colnames(x)) {
-    latest_confirmation <- suppressWarnings(
-      max(x[[confirmation_date]], na.rm = TRUE)
-    )
-    current_now <- attr(x, "now", exact = TRUE)
-    if (is.finite(latest_confirmation) && !is.null(current_now) &&
-          latest_confirmation > current_now) {
-      errors <- c(
-        errors,
-        sprintf(
-          paste0(
-            "The latest confirmation ({.val %s}) is AFTER {.field now} ",
-            "({.val %s}). Nothing can be confirmed after the as-of moment."
-          ),
-          as.character(latest_confirmation), as.character(current_now)
-        )
-      )
-    }
-
-    allowed <- .confirmation_levels()
-    type_col <- get_confirmation_type(x)
-    if (!is.null(type_col) && type_col %in% colnames(x)) {
-      unknown <- setdiff(stats::na.omit(unique(as.character(x[[type_col]]))), allowed)
-      if (length(unknown) > 0) {
-        errors <- c(errors, sprintf(
-          "{.field confirmation_type} has unrecognised value(s): {.val %s}.",
-          paste(unknown, collapse = ", ")
-        ))
-      }
-    }
-  }
-
-  # Validate that event_date and report_date don't have repeated values for same strata/covariates----
-  if (warn_non_uniqueness) {
-    current_rows <- nrow(x)
-    # The confirmation columns belong in the key: a case and its own retraction
-    # share an (event, report) pair and are still two different rows. Left out,
-    # every confirmed/retracted pair looked like a duplicate.
-    confirmation_cols <- intersect(.confirmation_group_cols(x), colnames(x))
-    distinct_rows <- x |>
-      dplyr::as_tibble() |>
-      dplyr::distinct(dplyr::across(dplyr::all_of(c(get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x), get_is_censored(x), get_temporal_effect_cols(x), confirmation_cols)))) |>
-      nrow()
-
-    if (current_rows > distinct_rows) {
-      # Naming the culprit matters. The usual cause is a column the object was
-      # never told about -- `sex` in `covid_colombia` -- and the old advice to
-      # try `distinct()` sends people in a circle: those rows ARE distinct, they
-      # differ in the undeclared column. It only helps for genuine duplicates,
-      # and it silently deletes real cases when the rows are not duplicates.
-      extra <- .undeclared_cols(x)
-      cause <- if (length(extra) > 0) {
-        cli::format_inline(
-          "{length(extra)} column{?s} {.val {extra}} {?is/are} not declared, so
-           {?it splits/they split} each cell into several rows."
-        )
-      } else {
-        "The rows are exact duplicates of one another."
-      }
-      fix <- if (length(extra) > 0) {
-        cli::format_inline(paste0(
-          "{cli::qty(length(extra))}Declare {?it/them} with ",
-          "{.code strata = } to model {?it/them} separately, or ",
-          "{.fn to_count} to pool {?it/them} away."
-        ))
-      } else {
-        cli::format_inline("Use {.fn dplyr::distinct} to drop the repeats.")
-      }
-      message <- c(
-        cli::format_inline(paste0(
-          "*Non-unique*: {current_rows - distinct_rows} row{?s} ",
-          "{?shares/share} an ({event_date}, {report_date}) combination."
-        )),
-        "i" = cause,
-        "i" = fix
-      )
-      if (length(extra) > 0) {
-        message <- c(
-          message,
-          "i" = "The {.fn tbl_now_to_*} converters pool undeclared columns for
-                 you, so this is a warning rather than an error."
-        )
-      }
-      warnings <- c(warnings, list(message))
-    }
-  }
-
-
-  # === 9. Return results ===
-  if (length(errors) > 0) {
-    cli::cli_abort(c("Invalid tbl_now object:", errors))
-  }
-
-  if (length(warnings) > 0) {
-    for (w in warnings) {
-      cli::cli_warn(w)
-    }
-  }
+  .tbl_now_emit_findings(findings)
 
   return(invisible(TRUE))
 }

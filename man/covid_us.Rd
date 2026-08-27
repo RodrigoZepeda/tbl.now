@@ -36,7 +36,7 @@ earlier of the clinical/specimen date and the date the case was received by
 CDC) and the \strong{report date} is \code{cdc_report_dt} (the date the case was first
 reported to CDC). The delay between them is enormous and heavily right-skewed:
 cases were reported to CDC not smoothly but in large backlog dumps -- a textbook
-batch-reporting pattern that \code{\link[=batch_test]{batch_test()}} and \code{\link[=transport_discriminant]{transport_discriminant()}}
+batch-reporting pattern that \code{\link[=diagnose_batches]{diagnose_batches()}} and \code{\link[=transport_discriminant]{transport_discriminant()}}
 recover.
 
 Cases are kept when both their event date and their report date fall between

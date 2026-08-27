@@ -678,7 +678,7 @@ diagnostic_plot(hai_now, axis = "confirmation")
 
 # A laboratory clearing a backlog is a batch, exactly as a surveillance system
 # clearing its inbox is.
-batch_test(hai_now, axis = "confirmation")
+diagnose_batches(hai_now, axis = "confirmation")
 ```
 
 Two notes on what `axis = "confirmation"` means. Delays are still measured
@@ -690,7 +690,7 @@ them would invent an arrival on a date they do not have.
 Finally, when a system produces both confirmations and retractions you can ask
 whether they take equally long -- a laboratory that rules cases out faster than
 it confirms them will bias any nowcast that treats the two alike.
-`test_confirmation_delay()` tests exactly that (a Wilcoxon rank-sum test on the
+`diagnose_confirmation_delay()` tests exactly that (a Wilcoxon rank-sum test on the
 two delay distributions) and `plot_confirmation_delay()` draws it. The
 Bucaramanga extract records no retractions, so there is nothing to compare here.
 
@@ -1013,18 +1013,18 @@ plot_delay_drift(dengue_now)
 
 Because the most recent event dates have not had time to be fully reported, their delays look artificially short; that immature region (after the completeness cutoff) is **shaded grey** and should not be read as drift.
 
-For a formal answer, [test_delay_drift()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.html) tests both a location statistic (the median) and a dispersion statistic (the 10–90 spread), on mature data only for any drift:
+For a formal answer, [diagnose_drift()](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.html) tests both a location statistic (the median) and a dispersion statistic (the 10–90 spread), on mature data only for any drift:
 
 ```{r delay-drift-test, eval=requireNamespace("modifiedmk", quietly = TRUE)}
-test_delay_drift(dengue_now, stat = c("median", "spread"))
+diagnose_drift(dengue_now, stat = c("median", "spread"))
 ```
 
 A significant `drift` for `spread` with a non-significant one for `median`, say, would mean the *typical* delay held steady while its *variability* changed.
 
-The trend test looks for *gradual* change. If instead you suspect an **abrupt** shift — a reporting-system change on some date — use [test_delay_changepoint()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.html), which applies Pettitt's nonparametric change-point test and returns the estimated change date together with the before/after delay level:
+The trend test looks for *gradual* change. If instead you suspect an **abrupt** shift — a reporting-system change on some date — use [diagnose_changepoint()](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.html), which applies Pettitt's nonparametric change-point test and returns the estimated change date together with the before/after delay level:
 
 ```{r delay-changepoint}
-test_delay_changepoint(dengue_now, stat = c("median", "spread"))
+diagnose_changepoint(dengue_now, stat = c("median", "spread"))
 ```
 
 
@@ -1032,10 +1032,10 @@ You can get more information in the [corresponding article](https://rodrigozeped
 
 ### Detecting batch reporting
 
-Reporting systems sometimes withhold results and then release a whole backlog at once — a **batch**. The key idea is that a batch *moves* reports along the report axis without *creating* them, so a window of report dates spanning both the lull and the spike has an unchanged total — whereas a genuine epidemic surge adds cases and inflates it. [batch_test()](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.html) turns this into a per-report-date diagnostic that separates the two:
+Reporting systems sometimes withhold results and then release a whole backlog at once — a **batch**. The key idea is that a batch *moves* reports along the report axis without *creating* them, so a window of report dates spanning both the lull and the spike has an unchanged total — whereas a genuine epidemic surge adds cases and inflates it. [diagnose_batches()](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.html) turns this into a per-report-date diagnostic that separates the two:
 
 ```{r batches, warning=FALSE}
-batches <- batch_test(dengue_now, lookback = 2)
+batches <- diagnose_batches(dengue_now, lookback = 2)
 
 batches |>
   filter(batch) |>

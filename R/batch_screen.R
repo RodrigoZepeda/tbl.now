@@ -52,7 +52,7 @@
 #' Detects **batches**: report dates at which a stalled reporting system releases
 #' a backlog.  A batch *moves* reports along the report axis without creating
 #' them, so it shows up as a spike preceded by a deficit, while the total over a
-#' window spanning both is unchanged.  `batch_test()` is completely
+#' window spanning both is unchanged.  `diagnose_batches()` is completely
 #' **model-free** -- it needs only a [tbl_now()], not a fitted model -- which
 #' makes it the right tool for exploratory data analysis before any nowcasting
 #' model is chosen.
@@ -84,7 +84,7 @@
 #' negative (a down-revision).
 #'
 #' A reporting system that is always closed at weekends produces every batch
-#' symptom, every week, so `batch_test()` needs the length of any scheduled
+#' symptom, every week, so `diagnose_batches()` needs the length of any scheduled
 #' cycle. It reads that from the object's temporal effects when it can: a
 #' **day-of-week** effect sets `period = 7`, a **week-of-year** effect
 #' `period = 52` (see [add_temporal_effects()]). Pass `period` yourself to
@@ -125,7 +125,7 @@
 #' @param alpha Significance level for the Benjamini-Hochberg `batch` flag.
 #'   Default `0.05`.
 #'
-#' @returns A tibble of class `batch_test`, one row per (report date, stratum),
+#' @returns A tibble of class `diagnose_batches`, one row per (report date, stratum),
 #'   with a `print()` method that summarises the flagged dates. Columns:
 #'   \describe{
 #'     \item{`report_date`}{The report (registration) date the row describes.}
@@ -147,7 +147,7 @@
 #'       window is not still depleted (a hold). This is the column to trust.}
 #'   }
 #'
-#' @seealso [batch_shape_test()] for the complementary test on *which* event
+#' @seealso [diagnose_batch_shape()] for the complementary test on *which* event
 #'   dates a report date drew from, and [simulate_batch()] to inject a known
 #'   batch for validation.
 #'
@@ -163,11 +163,11 @@
 #'   verbose     = FALSE
 #' )
 #'
-#' screened <- batch_test(dengue_tbl, lookback = 2)
+#' screened <- diagnose_batches(dengue_tbl, lookback = 2)
 #' head(screened)
 #'
 #' @export
-batch_test <- function(data,
+diagnose_batches <- function(data,
                          lookback        = 7L,
                          baseline_window = NULL,
                          period          = NULL,
@@ -176,7 +176,7 @@ batch_test <- function(data,
                          alpha           = 0.05) {
   null_model      <- match.arg(null_model)
   axis            <- match.arg(axis)
-  .batch_experimental_warning("batch_test")
+  .batch_experimental_warning("diagnose_batches")
   .batch_check_tbl_now(data)
 
   lookback <- as.integer(lookback)
@@ -224,7 +224,7 @@ batch_test <- function(data,
 
   structure(
     dplyr::as_tibble(registration),
-    class      = c("batch_test", class(dplyr::tibble())),
+    class      = c("diagnose_batches", class(dplyr::tibble())),
     lookback   = lookback,
     period     = period,
     null_model = null_used,
@@ -233,7 +233,7 @@ batch_test <- function(data,
 }
 
 #' Reporting totals, baseline and the window statistics, shared by
-#' `batch_test()` and `transport_discriminant()`.
+#' `diagnose_batches()` and `transport_discriminant()`.
 #'
 #' Runs steps 1-4 of the pipeline: reduce to signed counts, lay them on the
 #' complete report-date grid, fit the robust (optionally calendar-adjusted)
@@ -989,7 +989,7 @@ batch_test <- function(data,
 #' effects.
 #'
 #' A scheduled reporting cycle -- a desk that is shut at weekends, say -- produces
-#' every batch symptom, every cycle, so `batch_test()` needs to know the cycle
+#' every batch symptom, every cycle, so `diagnose_batches()` needs to know the cycle
 #' length. When the user does not pass `period`, we read it off the `tbl_now`'s
 #' temporal-effect specs: a **day-of-week** effect implies a weekly cycle
 #' (`period = 7`), a **week-of-year** effect a yearly one (`period = 52`). A
@@ -1040,8 +1040,8 @@ batch_test <- function(data,
 #' Warn, on every call, that the batch-detection functions are experimental.
 #'
 #' The batch detectors are new and their statistical behaviour and interface are
-#' still settling.  Every user-facing entry point (`batch_test()`,
-#' `batch_shape_test()`, `simulate_batch()`) calls this so a user is always told
+#' still settling.  Every user-facing entry point (`diagnose_batches()`,
+#' `diagnose_batch_shape()`, `simulate_batch()`) calls this so a user is always told
 #' that a flagged batch is a *potential* batch, not a confirmed one.
 #' @param function_name The calling function, for the message.
 #' @keywords internal
@@ -1056,7 +1056,7 @@ batch_test <- function(data,
     ),
     # "regularly" (rlang throttles to roughly once per session per id) matches the
     # convention already used by the other experimental tbl.now diagnostics
-    # (`test_delay_drift()`, `test_delay_changepoint()`), so a user is warned
+    # (`diagnose_drift()`, `diagnose_changepoint()`), so a user is warned
     # without being buried when a function is called in a loop.
     .frequency    = "regularly",
     .frequency_id = paste0("tbl.now::", function_name)
@@ -1076,11 +1076,11 @@ batch_test <- function(data,
 }
 
 #' Print a batch screen
-#' @param x A `batch_test` object.
+#' @param x A `diagnose_batches` object.
 #' @param ... Unused.
 #' @export
 #' @noRd
-print.batch_test <- function(x, ...) {
+print.diagnose_batches <- function(x, ...) {
   flagged <- x[!is.na(x$batch) & x$batch, , drop = FALSE]
 
   # stdout (`cat_*`), not messages (`cli_*`): print output must survive
