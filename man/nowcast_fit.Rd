@@ -123,7 +123,9 @@ argument, renamed so it cannot collide with \code{\link[=run_nowcast]{run_nowcas
 }
 \value{
 \code{nowcast_fit()} returns the modelling package's own object, verbatim.
-It is stored in the \code{fit} property of the resulting \link{tbl_nowcast}.
+It is stored in the \code{fit} property of the resulting \link{tbl_nowcast}, and it is
+the only thing \code{\link[=nowcast_tidy]{nowcast_tidy()}} is given besides the \code{tbl_now} itself, so
+put whatever the tidying step will need into it.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -157,5 +159,5 @@ nowcast_tidy.constant <- function(method, fit, x, ..., quantile_levels) {
 }
 \seealso{
 \code{\link[=nowcast_tidy]{nowcast_tidy()}}, \code{\link[=run_nowcast]{run_nowcast()}}, \code{\link[=list_nowcast_methods]{list_nowcast_methods()}} and
-\code{vignette("ensemble-nowcasting")} for a worked example of a new backend.
+\code{vignette("custom-nowcast-models")} for a worked example of a new backend.
 }

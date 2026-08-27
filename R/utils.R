@@ -179,3 +179,21 @@ tbl_now_attributes <- function(x) {
     .date_difference_in_units(to, from, units)
   }
 }
+
+#' Compare probabilities up to floating-point noise
+#'
+#' Quantile levels are written as decimals and then arithmetic is done on them
+#' (`1 - 2 * lower`, `(1 - level) / 2`), which does not round-trip: the two
+#' expressions above disagree in the last bit, so `%in%` and `setdiff()` on
+#' quantile levels silently match nothing. Compare with this instead.
+#'
+#' @param x,y Numeric vectors, recycled against each other.
+#' @param tolerance Absolute tolerance.
+#'
+#' @return A logical vector.
+#'
+#' @keywords internal
+#' @noRd
+.near <- function(x, y, tolerance = 1e-8) {
+  abs(x - y) < tolerance
+}

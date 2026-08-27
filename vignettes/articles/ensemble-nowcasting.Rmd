@@ -646,160 +646,26 @@ nowcast_ensemble(members, weights = "inverse_score", backtest = backtest)
 
 ## 4. Adding your own model
 
-This is the part that makes the whole thing worth building. A backend is
-**two S3 methods**, and they can live in your own package, your analysis script,
-or a one-off chunk like this one. Nothing inside `tbl.now` needs to change.
+This is the part that makes the whole thing worth building. A back-end is **two
+S3 methods**, and they can live in your own package, your analysis script, or a
+one-off chunk. Nothing inside `tbl.now` needs to change.
 
-The dispatch works like this: `run_nowcast(x, method = "mymodel")` builds a
-little object of class `c("mymodel", "nowcast_method")` and calls
+`run_nowcast(x, method = "mymodel")` builds a little object of class
+`c("mymodel", "nowcast_method")` and calls
 
 * `nowcast_fit(method, x, ...)` — run the model, return whatever it returns;
-* `nowcast_tidy(method, fit, x, ..., quantile_levels)` — describe the result in
-  the tidy format.
+* `nowcast_tidy(method, fit, x, ..., quantile_levels)` — describe the result as
+  `predictions` (one row per event date, stratum and quantile level) or `draws`
+  (one row per event date, stratum and draw). Either may be `NULL`, not both.
 
-### A worked example
-
-Let us register a genuinely simple model: multiply the counts reported so far by
-a fixed inflation factor, with lognormal noise around it. It is not a good
-nowcast, but it is a complete one.
-
-```{r custom-fit}
-nowcast_fit.inflate <- function(method, x, ..., factor = 1.2, sigma = 0.15,
-                                quantile_levels, verbose = TRUE) {
-  reported <- get_latest_reported_cases(x)
-  count_col <- get_case_count(reported)
-
-  list(
-    dates  = reported[[get_event_date(x)]],
-    counts = reported[[count_col]],
-    factor = factor,
-    sigma  = sigma
-  )
-}
-```
-
-`nowcast_fit()` returns whatever is convenient — here a plain list, elsewhere a
-Stan fit. It is stored verbatim in the result's `fit` property.
-
-The second method turns that into predictions. You may return **draws**
-(`tbl.now` derives the quantiles for you), **quantiles**, or both:
-
-```{r custom-tidy}
-nowcast_tidy.inflate <- function(method, fit, x, ..., quantile_levels) {
-  n_draws <- 1000
-
-  draws <- tidyr::expand_grid(
-    .index = seq_along(fit$dates),
-    .draw  = seq_len(n_draws)
-  ) |>
-    dplyr::mutate(
-      !!get_event_date(x) := fit$dates[.index],
-      .value = fit$counts[.index] * fit$factor *
-        stats::rlnorm(dplyr::n(), meanlog = 0, sdlog = fit$sigma)
-    ) |>
-    dplyr::select(-".index")
-
-  list(predictions = NULL, draws = draws)
-}
-```
-
-The contract for `nowcast_tidy()` is short:
-
-| element | shape |
-|---|---|
-| `predictions` | one row per (event date, stratum, quantile level), columns `<event_date>`, the strata, `.quantile_level`, `.value` |
-| `draws` | one row per (event date, stratum, draw), columns `<event_date>`, the strata, `.draw`, `.value` |
-
-Either may be `NULL`, but not both. Returning draws is preferable: it is what
-`type = "linear_pool"` needs, and the quantiles follow from them automatically.
-
-That is the whole backend. It now behaves like any other method — no modelling
-package required, so this chunk really does run:
-
-```{r custom-use}
-set.seed(20260824)
-inflated <- run_nowcast(snapshot, method = "inflate", factor = 1.15, verbose = FALSE)
-
-inflated
-```
-
-It tidies like everything else,
-
-```{r custom-tidy-out}
-tidy(inflated) |> tail(3)
-```
-
-it shows up in the catalogue,
-
-```{r custom-list}
-list_nowcast_methods(installed_only = FALSE)
-```
-
-it can be scored (here against the same data it was fitted on, which flatters it
-enormously — the backtest below is the honest version),
-
-```{r custom-score}
-score_nowcast(inflated) |> tail(3)
-```
-
-and it can be backtested:
-
-```{r custom-backtest}
-custom_backtest <- nowcast_backtest(
-  dengue,
-  methods   = "inflate",
-  now_dates = as.Date(c("2010-08-01", "2010-09-01")),
-  seed      = 20260824,
-  verbose   = FALSE
-)
-
-tidy(custom_backtest) |>
-  summarise(mean_wis = round(mean(wis, na.rm = TRUE), 1), .by = now)
-```
-
-It also ensembles with the packaged methods, exactly like one of them:
-
-```{r custom-ensemble, eval=FALSE}
-mixed <- nowcast_ensemble(
-  baselinenowcast = baseline,
-  inflate         = inflated,
-  weights         = c(baselinenowcast = 0.7, inflate = 0.3)
-)
-```
-
-### Notes for backend authors
-
-A few things worth knowing when the backend lives in a package rather than a
-chunk:
-
-* **Register the methods in your `NAMESPACE`** with
-  `S3method(nowcast_fit, mymodel)` and `S3method(nowcast_tidy, mymodel)` (or
-  `@export` on `nowcast_fit.mymodel` if you use roxygen), and put `tbl.now` in
-  `Imports`. Because dispatch is ordinary S3, the methods are found as soon as
-  your package is loaded.
-* **Use the event-date column name from the object**, `get_event_date(x)`, not a
-  hard-coded `"event_date"`. The same goes for `get_strata(x)`,
-  `get_case_count(x)` and `get_now(x)`.
-* **Convert the data with the existing bridges** rather than by hand:
-  `tbl_now_to_baselinenowcast()`, `tbl_now_to_epinowcast()`,
-  `tbl_now_to_nobbs()`, `tbl_now_to_surveillance()`, `tbl_now_to_EpiNow2()`,
-  `tbl_now_to_epidist()`, `tbl_now_to_tsibble()`, `tbl_now_to_data_table()`.
-  They handle the three data types, the time units and the `now` edge; an inline
-  version handles whichever one you were thinking about that day.
-* **Reuse `tidy()` if your package already has a method for its own fits.** The
-  built-in `surveillance` and `EpiNow2` backends do exactly that: `tidy()`
-  already knows how to find their interval *and how wide it is*, and re-deriving
-  that in a second place is how two real bugs got in.
-* **Honour the strata if you can**, and warn and pool if you cannot. Whatever
-  strata columns you put on the output are what the result reports as its strata.
-* **`quantile_levels` reaches both methods.** Most backends can ignore it at fit
-  time; the ones that must be told up front which quantiles to report (as `NobBS`
-  is) use it in `nowcast_fit()`.
-* **Declare the modelling package in `Suggests`**, and check for it at fit time,
-  so that installing your package does not drag in a Stan toolchain.
+`vignette("custom-nowcast-models")` is the full account: what your method may
+assume about the `tbl_now` it is handed, how to reuse the converters instead of
+reshaping by hand, a complete worked back-end that needs no modelling package,
+and what shipping one in a package involves.
 
 ## See also
 
+* `vignette("custom-nowcast-models")` — writing your own back-end, in full.
 * `vignette("nowcasting-models")` — the same packages, driven by hand through
   the converters.
 * `?run_nowcast`, `?nowcast_ensemble`, `?nowcast_backtest`.

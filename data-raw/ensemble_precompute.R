@@ -61,12 +61,12 @@ on.exit({
   else Sys.setenv(TBL_NOW_RUN_MODELS = old_flag)
 }, add = TRUE)
 
-# THE GLOBAL ENVIRONMENT, deliberately. Section 4 of the article defines its own
-# backend by writing `nowcast_fit.inflate()` at top level, and S3 dispatch finds
-# a method like that only in the global environment or the method registry --
-# not in some private environment we happened to evaluate into. knitr evaluates
-# chunks in `globalenv()`, so running them anywhere else silently fails the one
-# section whose whole point is that a user-defined backend works. Everything this
+# THE GLOBAL ENVIRONMENT, deliberately. knitr evaluates chunks in `globalenv()`,
+# and an article that registers its own backend by writing `nowcast_fit.mymodel()`
+# at top level relies on that: S3 dispatch finds a method like that only in the
+# global environment or the method registry, not in some private environment we
+# happened to evaluate into. (`custom-nowcast-models.Rmd` is built entirely on
+# this, and it is why that article needs no precompute at all.) Everything this
 # script owns is prefixed `.pc_` to stay out of the article's way.
 article <- globalenv()
 started <- Sys.time()

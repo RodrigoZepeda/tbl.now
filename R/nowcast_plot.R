@@ -86,30 +86,54 @@ S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
   predictions <- object@predictions
 
   available <- sort(unique(predictions$.quantile_level))
-  # A central interval only exists when both of its tails were reported.
+  # A central interval only exists when both of its tails were reported. The two
+  # tails are carried around explicitly rather than re-derived from the width:
+  # `1 - 2 * lower` and `(1 - level) / 2` do NOT round-trip in floating point --
+  # `(1 - (1 - 2 * 0.05)) / 2` is 0.049999999999999996 -- so an exact `%in%`
+  # matched no rows and every band but the 50% one was silently drawn as NA.
   candidates <- available[available < 0.5]
-  candidates <- candidates[(1 - candidates) %in% available]
-  interval_levels <- sort(1 - 2 * candidates)
+  upper_tail <- vapply(candidates, function(lower) {
+    hit <- available[.near(available, 1 - lower)]
+    if (length(hit) == 1) hit else NA_real_
+  }, numeric(1))
+  candidates <- candidates[!is.na(upper_tail)]
+  upper_tail <- upper_tail[!is.na(upper_tail)]
+
+  interval_levels <- 1 - 2 * candidates
+  ordering <- order(interval_levels)
+  candidates <- candidates[ordering]
+  upper_tail <- upper_tail[ordering]
+  interval_levels <- interval_levels[ordering]
 
   if (!is.null(levels)) {
-    missing_levels <- setdiff(levels, interval_levels)
+    keep <- vapply(levels, function(level) {
+      hit <- which(.near(interval_levels, level))
+      if (length(hit) == 0) NA_integer_ else hit[1]
+    }, integer(1))
+    missing_levels <- levels[is.na(keep)]
     if (length(missing_levels) > 0) {
       cli::cli_abort("Interval{?s} {.val {missing_levels}} {?is/are} not available.")
     }
-    interval_levels <- sort(levels)
+    keep <- sort(keep)
+    candidates <- candidates[keep]
+    upper_tail <- upper_tail[keep]
+    interval_levels <- interval_levels[keep]
   }
   if (length(interval_levels) == 0) {
     cli::cli_abort("The nowcast has no symmetric quantile pairs to draw a fan from.")
   }
 
-  bands <- dplyr::bind_rows(lapply(interval_levels, function(level) {
-    lower <- (1 - level) / 2
+  bands <- dplyr::bind_rows(lapply(seq_along(interval_levels), function(i) {
+    lower <- candidates[i]
+    upper <- upper_tail[i]
     predictions |>
-      dplyr::filter(.data$.quantile_level %in% c(lower, 1 - lower)) |>
+      dplyr::filter(
+        .near(.data$.quantile_level, lower) | .near(.data$.quantile_level, upper)
+      ) |>
       dplyr::mutate(.bound = ifelse(.data$.quantile_level < 0.5, "lower", "upper")) |>
       dplyr::select(dplyr::all_of(c(event_col, strata, ".bound", ".value"))) |>
       tidyr::pivot_wider(names_from = ".bound", values_from = ".value") |>
-      dplyr::mutate(.level = level)
+      dplyr::mutate(.level = interval_levels[i])
   }))
   bands$.level <- factor(bands$.level, levels = sort(interval_levels, decreasing = TRUE))
 

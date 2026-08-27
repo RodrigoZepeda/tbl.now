@@ -34,7 +34,10 @@ nowcast_tidy(method, fit, x, ..., quantile_levels)
 
 \item{x}{The \code{tbl_now} the nowcast was produced from.}
 
-\item{...}{Unused by the built-in methods; available to your own.}
+\item{...}{Not forwarded by \code{\link[=run_nowcast]{run_nowcast()}}, which passes the user's \code{...} to
+\code{\link[=nowcast_fit]{nowcast_fit()}} only. Anything the tidying step needs -- a number of draws,
+a tuning parameter, a lookup table -- must therefore travel inside the
+object \code{nowcast_fit()} returned.}
 
 \item{quantile_levels}{Numeric vector of probabilities the predictions should
 be summarised at.}

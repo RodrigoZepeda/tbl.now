@@ -1,3 +1,41 @@
+# tbl.now 0.25.0
+
+## A vignette on writing your own back-end
+
+`vignette("custom-nowcast-models")` is the full account of the `nowcast_fit()` /
+`nowcast_tidy()` contract: what a method may assume about the `tbl_now` it is
+handed (get the column names from the getters, work on `.event_num`/`.delay`
+rather than the calendar, run the grid to `get_now()`, remember that a line list
+cannot hold a zero), how to reuse the `tbl_now_to_*()` converters and
+`as_tbl_now()` instead of reshaping by hand, and what shipping a back-end in a
+package involves.
+
+The worked example is a **delay-ratio nowcast**: for each delay it takes the
+median of the factor by which past mature event dates grew from that delay to
+their eventual total, and applies the empirical quantiles of that factor to the
+counts reported so far. It needs no modelling package, so the article runs every
+line of its own code -- including the scoring, the backtest and the ensemble --
+and it is written twice, once returning `predictions` and once returning `draws`,
+to show both branches of the contract.
+
+`vignette("ensemble-nowcasting")`'s section 4 now points here instead of carrying
+its own smaller version of the same material.
+
+## Bug fixes
+
+* `autoplot()` on a `tbl_nowcast` drew **only the 50% band**. The tails of each
+  central interval were matched to the requested width by exact equality, and
+  `(1 - (1 - 2 * 0.05)) / 2` is not `0.05`, so every other band came out as an
+  `NA` ribbon and was silently dropped by `ggplot2`. The default nine quantile
+  levels now draw all four bands, and `levels =` is matched with a tolerance too.
+
+## Documentation
+
+* `?nowcast_tidy` said its `...` was "available to your own" methods. It is not:
+  `run_nowcast()` forwards the user's `...` to `nowcast_fit()` only, so anything
+  the tidying step needs has to travel inside the fit object. Both help pages now
+  say so.
+
 # tbl.now 0.24.0
 
 ## `diagnose()`: a structural health check

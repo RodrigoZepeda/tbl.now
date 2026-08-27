@@ -9,7 +9,7 @@
 #
 # Adding a backend therefore means writing two S3 methods; nothing in tbl.now
 # needs to change and the methods can live in any package. See
-# `vignette("ensemble-nowcasting")`.
+# `vignette("custom-nowcast-models")`.
 
 #' Built-in method aliases
 #'
@@ -111,10 +111,12 @@ print.nowcast_method <- function(x, ...) {
 #'   [tbl_now_to_EpiNow2()], e.g. `list(accumulate = FALSE)`.
 #'
 #' @return `nowcast_fit()` returns the modelling package's own object, verbatim.
-#'   It is stored in the `fit` property of the resulting [tbl_nowcast].
+#'   It is stored in the `fit` property of the resulting [tbl_nowcast], and it is
+#'   the only thing [nowcast_tidy()] is given besides the `tbl_now` itself, so
+#'   put whatever the tidying step will need into it.
 #'
 #' @seealso [nowcast_tidy()], [run_nowcast()], [list_nowcast_methods()] and
-#'   `vignette("ensemble-nowcasting")` for a worked example of a new backend.
+#'   `vignette("custom-nowcast-models")` for a worked example of a new backend.
 #'
 #' @examples
 #' # A minimal backend: two S3 methods and you are done.
@@ -147,7 +149,7 @@ nowcast_fit.default <- function(method, x, ..., quantile_levels = nowcast_quanti
     "No nowcasting method called {.val {name}} is registered.",
     "i" = "Available methods: {.val {list_nowcast_methods()}}.",
     "i" = "To add your own, define {.fn nowcast_fit.{name}} and \\
-           {.fn nowcast_tidy.{name}}. See {.code vignette(\"ensemble-nowcasting\")}."
+           {.fn nowcast_tidy.{name}}. See {.code vignette(\"custom-nowcast-models\")}."
   ))
 }
 
@@ -162,7 +164,10 @@ nowcast_fit.default <- function(method, x, ..., quantile_levels = nowcast_quanti
 #' @param method A [nowcast_method()] object.
 #' @param fit The object returned by [nowcast_fit()].
 #' @param x The `tbl_now` the nowcast was produced from.
-#' @param ... Unused by the built-in methods; available to your own.
+#' @param ... Not forwarded by [run_nowcast()], which passes the user's `...` to
+#'   [nowcast_fit()] only. Anything the tidying step needs -- a number of draws,
+#'   a tuning parameter, a lookup table -- must therefore travel inside the
+#'   object `nowcast_fit()` returned.
 #' @param quantile_levels Numeric vector of probabilities the predictions should
 #'   be summarised at.
 #'
