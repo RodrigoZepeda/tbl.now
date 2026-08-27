@@ -3604,6 +3604,11 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #' exactly that data frame, renaming the two dates to \pkg{surveillance}'s own
 #' defaults so the result can be passed straight through.
 #'
+#' With `format = "linelist_list"` it returns **one line list per stratum** as a
+#' [tbl_now_surveillance_list], ready to `lapply()` over --
+#' [surveillance::nowcast()] has no strata argument, so a stratified analysis is
+#' one fit per stratum and this saves splitting by hand.
+#'
 #' With `format = "sts"` it instead returns the observed epidemic curve as an
 #' [surveillance::sts] object via [surveillance::linelist2sts()], which is what
 #' \pkg{surveillance}'s plotting and outbreak-detection verbs consume.
@@ -3616,9 +3621,15 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #'   in the result. Default to \pkg{surveillance}'s own `"dHospital"` and
 #'   `"dReport"`, so [surveillance::nowcast()] finds them without further
 #'   arguments.
-#' @param format `"linelist"` (default) for the data frame
-#'   [surveillance::nowcast()] expects, or `"sts"` for an
-#'   [surveillance::sts] object of the observed curve.
+#' @param format One of
+#'   * `"linelist"` (default) -- the single data frame
+#'     [surveillance::nowcast()] expects;
+#'   * `"linelist_list"` -- one line list **per stratum**, as a
+#'     [tbl_now_surveillance_list]. Still a plain list, so it goes straight into
+#'     `lapply()`; length one and named `"all"` when the object declares no
+#'     strata, so the return type does not depend on whether strata happen to be
+#'     attached;
+#'   * `"sts"` -- an [surveillance::sts] object of the observed curve.
 #' @param aggregate_by Aggregation interval, e.g. `"1 week"`. `NULL` (default)
 #'   derives it from the object's event units (`"days"` -> `"1 day"`, `"weeks"`
 #'   -> `"1 week"`, `"months"` -> `"1 month"`, `"years"` -> `"1 year"`), and
@@ -3634,10 +3645,11 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #' @param ... Forwarded to [surveillance::linelist2sts()] when
 #'   `format = "sts"`; ignored otherwise.
 #'
-#' @return A `data.frame` line list (`format = "linelist"`) or an
+#' @return A `data.frame` line list (`format = "linelist"`), a
+#'   [tbl_now_surveillance_list] (`format = "linelist_list"`) or an
 #'   [surveillance::sts] object (`format = "sts"`).
 #'
-#' @seealso [tbl_now_to_epinowcast()]
+#' @seealso [tbl_now_to_epinowcast()], [tbl_now_surveillance_list]
 #'
 #' @examplesIf requireNamespace("surveillance", quietly = TRUE)
 #' data(denguedat)
@@ -3655,12 +3667,12 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #' @section Stratified nowcasts:
 #'
 #' [surveillance::nowcast()] models one series and has no strata argument, so a
-#' stratified analysis means fitting each stratum separately. The declared
-#' strata are pasted into a single `strata` column to split on:
+#' stratified analysis means fitting each stratum separately.
+#' `format = "linelist_list"` does the splitting, so the fit is an `lapply()`:
 #'
 #' ```r
-#' sur <- tbl_now_to_surveillance(x, verbose = FALSE)
-#' fits <- lapply(split(sur, sur$strata), function(piece) {
+#' pieces <- tbl_now_to_surveillance(x, format = "linelist_list", verbose = FALSE)
+#' fits <- lapply(pieces, function(piece) {
 #'   surveillance::nowcast(
 #'     now = get_now(x), when = get_surveillance_when(x),
 #'     data = piece, dEventCol = "dHospital", dReportCol = "dReport",
@@ -3669,7 +3681,14 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #' })
 #' ```
 #'
-#' The original columns are kept alongside it, so you can split on them instead.
+#' The `control$dRange` comes from the **whole object**, not from the piece:
+#' every stratum has to be laid on the same time axis, or a stratum whose first
+#' case arrived late starts its own time on a different day.
+#'
+#' The default `format = "linelist"` keeps the same information in one frame:
+#' the declared strata are pasted into a single `strata` column, so
+#' `split(sur, sur$strata)` reproduces the list. The original columns are kept
+#' alongside it, so you can split on them instead.
 #'
 #' @section Cost of expanding counts:
 #'
@@ -3682,7 +3701,8 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #' @export
 tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
                                     report_col = "dReport",
-                                    format = c("linelist", "sts"),
+                                    format = c("linelist", "linelist_list",
+                                               "sts"),
                                     aggregate_by = NULL,
                                     strata_col = "strata", strata_sep = " | ",
                                     verbose = TRUE) {
@@ -3753,6 +3773,46 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
   if (format == "sts") {
     return(surveillance::linelist2sts(
       linelist, dateCol = event_col, aggregate.by = aggregate_by, ...
+    ))
+  }
+
+  if (format == "linelist_list") {
+    # Split on the strata VALUES rather than on `strata_col`: that column is
+    # optional (`strata_col = NULL` drops it) and the list has to come out the
+    # same either way. With no strata the labels are all "all", so the result is
+    # still a LIST -- of length one -- and the return type never depends on
+    # whether strata happen to be attached.
+    labels <- .paste_strata_labels(
+      linelist, strata_cols, sep = strata_sep, fn = "tbl_now_to_surveillance()"
+    )
+    pieces <- lapply(
+      split(seq_len(nrow(linelist)), labels),
+      function(rows) {
+        piece <- linelist[rows, , drop = FALSE]
+        rownames(piece) <- NULL
+        piece
+      }
+    )
+    return(structure(
+      pieces,
+      class             = "tbl_now_surveillance_list",
+      strata_cols       = strata_cols,
+      covariate_cols    = covariate_cols,
+      strata_sep        = strata_sep,
+      # The pasted label column, when there is one. `as_tbl_now()` drops it: it
+      # is derived from `strata_cols`, which are still there.
+      strata_col        = if (stratified) strata_col else NULL,
+      now               = get_now(x),
+      # BOTH pairs are needed. The first says what the columns are called in the
+      # frames -- what `dEventCol`/`dReportCol` must be given; the second what
+      # they were called in the `tbl_now`, so `as_tbl_now()` can put them back.
+      event_col         = event_col,
+      report_col        = report_col,
+      source_event_col  = event_date_col,
+      source_report_col = report_date_col,
+      event_units       = get_event_units(x),
+      report_units      = get_report_units(x),
+      aggregate_by      = aggregate_by
     ))
   }
 
@@ -4019,6 +4079,142 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
   .drop_zero_counts(result)
 }
 
+
+# tbl_now_surveillance_list ----------------------------------------------------
+
+#' One \pkg{surveillance} line list per stratum
+#'
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' The object returned by
+#' `tbl_now_to_surveillance(x, format = "linelist_list")`: one individual-level
+#' line list per observed combination of the object's strata, together with the
+#' metadata needed to rebuild a `tbl_now` from it.
+#'
+#' It is a **thin** class -- it is still a list of plain data frames, so
+#' `lapply()`, `[[` and friends work as usual:
+#'
+#' ```r
+#' pieces <- tbl_now_to_surveillance(x, format = "linelist_list")
+#' lapply(pieces, function(piece) {
+#'   surveillance::nowcast(
+#'     now = get_now(x), when = get_surveillance_when(x),
+#'     data = piece, dEventCol = "dHospital", dReportCol = "dReport",
+#'     control = list(dRange = get_surveillance_range(x))
+#'   )
+#' })
+#' ```
+#'
+#' The class exists for the same reason [tbl_now_triangle_list] does: printing
+#' says plainly that these are strata rather than something else shaped like a
+#' list of line lists, and it carries the `now`, the units and the original
+#' date-column names, none of which survive in a bare `split()`.
+#'
+#' `now` and the time grid are deliberately **not** baked into each piece. The
+#' grid must come from the whole object ([get_surveillance_range()]), not from
+#' the piece: every stratum has to be laid on the same axis, or a stratum whose
+#' first case arrived late starts its own time on a different day.
+#'
+#' `as_tbl_now()` binds the pieces back together and restores the original
+#' date-column names, the strata and the covariates. Two things do **not**
+#' survive, because they are not in the line list to survive: count input comes
+#' back as a `"linelist"` (one row per case, so the totals are unchanged but the
+#' `case_count` column is gone), and materialised temporal-effect columns come
+#' back as ordinary columns rather than as a spec.
+#'
+#' @param x A `tbl_now_surveillance_list`.
+#' @param ... Ignored.
+#'
+#' @return `print()` returns `x` invisibly.
+#'
+#' @seealso [tbl_now_to_surveillance()], [as_tbl_now()], [tbl_now_triangle_list]
+#'
+#' @name tbl_now_surveillance_list
+NULL
+
+#' @rdname tbl_now_surveillance_list
+#' @exportS3Method base::print
+print.tbl_now_surveillance_list <- function(x, ...) {
+  # NOTE: a print method must write to STDOUT. The `cli_*()` family emits
+  # *messages*, so its output disappears under `message = FALSE`, `sink()` or
+  # `capture.output()`. The `cat_*()` family is the stdout counterpart.
+  strata_cols <- attr(x, "strata_cols")
+
+  cli::cat_rule(
+    left = cli::format_inline(
+      "{length(x)} {.pkg surveillance} line list{?s} from a {.cls tbl_now}"
+    )
+  )
+  cli::cat_bullet(c(
+    if (length(strata_cols) > 0) {
+      cli::format_inline("One per stratum ({.val {strata_cols}}): {.val {names(x)}}")
+    } else {
+      cli::format_inline("No strata; a single line list named {.val all}")
+    },
+    # NB: paste0(), not cli's `\\` line continuation -- `format_inline()` does
+    # not strip those, so the backslash would be printed literally.
+    cli::format_inline(paste0(
+      "Date columns: {.val {attr(x, 'event_col')}} (event), ",
+      "{.val {attr(x, 'report_col')}} (report)"
+    )),
+    cli::format_inline("Rows each: {.val {unname(vapply(x, nrow, integer(1)))}}"),
+    cli::format_inline("Now: {.val {as.character(attr(x, 'now'))}}")
+  ))
+  cli::cat_line(cli::format_inline(paste0(
+    "{cli::symbol$info} {.fn lapply} over this, passing ",
+    "{.code control$dRange = get_surveillance_range(x)} from the WHOLE object ",
+    "so every stratum shares one time axis."
+  )))
+  invisible(x)
+}
+
+#' @rdname as_tbl_now
+#' @export
+as_tbl_now.tbl_now_surveillance_list <- function(object, ...) {
+  strata_cols    <- attr(object, "strata_cols")
+  covariate_cols <- attr(object, "covariate_cols")
+  event_col      <- attr(object, "event_col")
+  report_col     <- attr(object, "report_col")
+
+  linelist <- do.call(rbind, unname(lapply(object, as.data.frame)))
+  rownames(linelist) <- NULL
+
+  # Back to the caller's own column names. The pasted `strata` label is dropped:
+  # the strata columns it was built from are still there, and keeping both would
+  # declare a column that duplicates the others.
+  names(linelist)[match(event_col, names(linelist))]  <-
+    attr(object, "source_event_col")
+  names(linelist)[match(report_col, names(linelist))] <-
+    attr(object, "source_report_col")
+  strata_col <- attr(object, "strata_col")
+  if (!is.null(strata_col) && !strata_col %in% strata_cols) {
+    linelist <- linelist[, setdiff(names(linelist), strata_col), drop = FALSE]
+  }
+
+  dots <- list(...)
+  # Same trap as `as_tbl_now.tbl_now_triangle_list()`: `verbose` and the rest
+  # must be defaulted INTO `dots`, never passed beside them, or a caller who
+  # supplies one gets a duplicated formal.
+  if (is.null(dots$now)) dots$now <- attr(object, "now")
+  if (is.null(dots$verbose)) dots$verbose <- FALSE
+  if (is.null(dots$event_units)) dots$event_units <- attr(object, "event_units")
+  if (is.null(dots$report_units)) dots$report_units <- attr(object, "report_units")
+
+  do.call(
+    tbl_now,
+    c(
+      list(
+        linelist,
+        event_date  = attr(object, "source_event_col"),
+        report_date = attr(object, "source_report_col"),
+        data_type   = "linelist",
+        strata      = if (length(strata_cols) > 0) strata_cols else NULL,
+        covariates  = if (length(covariate_cols) > 0) covariate_cols else NULL
+      ),
+      dots
+    )
+  )
+}
 
 
 # 4. S3 methods on other packages' coercion generics------

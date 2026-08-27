@@ -60,11 +60,19 @@
 
 #' Everything eventually reported for each event date
 #'
-#' The "truth" a nowcast is scored against. This is [get_latest_reported_cases()]
-#' with the bookkeeping the scoring code needs and the getter deliberately does
-#' not do: the `tbl_now` class and the report-date columns are dropped, any
-#' column that is neither the event date nor a requested stratum is summed away,
-#' and the count is renamed `.observed`.
+#' The "truth" a nowcast is scored against, and the reason the scoring functions
+#' need no `observed_col`: the count column is read off the object rather than
+#' named by the caller.
+#'
+#' This is [get_latest_reported_cases()] with the bookkeeping the scoring code
+#' needs and the getter deliberately does not do -- the `tbl_now` class and the
+#' report-date columns are dropped, any column that is neither the event date nor
+#' a requested stratum is summed away, and the count is renamed `.observed`.
+#'
+#' A **line list** has no count column at all. `get_latest_reported_cases()`
+#' aggregates it first (that is `to_count()`, applied for you), and the result
+#' carries its count under `n` -- which is why the fallback below is `"n"` rather
+#' than an error.
 #'
 #' It is **not** a second public way of asking the same question -- use
 #' [get_latest_reported_cases()] for that. `score_nowcast()` and
@@ -87,7 +95,7 @@
 
   observed <- get_latest_reported_cases(x)
   # `.reported_cases_at()` names the count after the object's `case_count`, or
-  # `n` when the source was a line list.
+  # `n` when the source was a line list (which it has just aggregated).
   count_col <- get_case_count(observed) %||% "n"
 
   .declass_tbl_now(observed) |>
@@ -98,20 +106,24 @@
 
 #' Resolve the `truth` argument of the scoring functions
 #'
-#' Accepts the full `tbl_now` (the common case -- everything eventually reported
-#' for each event date), a data frame of observed counts, or `NULL` to fall back
-#' to the nowcast's own source data.
+#' The full `tbl_now` -- everything eventually reported for each event date -- or
+#' `NULL` to fall back to the nowcast's own source data.
+#'
+#' Before 0.27.0 a plain data frame was also accepted, together with an
+#' `observed_col` naming its count column. That put the burden on the caller to
+#' say which column held the truth, when the `tbl_now` already knows: it is
+#' `get_case_count()`, or the count `to_count()` produces from a line list.
+#' Guessing (the old default was "the last column that is neither the event date
+#' nor a stratum") is exactly the kind of silent mis-scoring worth removing.
 #'
 #' @param truth The user's `truth` argument.
-#' @param observed_col The user's `observed_col` argument.
 #' @param x The `tbl_nowcast` being scored.
-#' @param arg Calling function name, for messages.
 #'
-#' @return A list with `truth` (a tibble) and `observed_col`.
+#' @return A tibble with the event date, the strata and `.observed`.
 #'
 #' @keywords internal
 #' @noRd
-.resolve_truth <- function(truth, observed_col, x, arg) {
+.resolve_truth <- function(truth, x) {
   if (is.null(truth)) {
     if (is.null(x@data)) {
       cli::cli_abort(c(
@@ -119,93 +131,51 @@
         "i" = "Pass the full {.cls tbl_now} the nowcast was made from."
       ))
     }
-    return(list(
-      truth = .eventual_counts(x@data, strata = x@strata), observed_col = ".observed"
-    ))
+    return(.eventual_counts(x@data, strata = x@strata))
   }
 
-  # A `tbl_now` is the natural thing to hand over -- it IS the eventual truth --
-  # so collapse it here rather than making the caller do it.
-  if (is_tbl_now(truth)) {
-    return(list(
-      truth = .eventual_counts(truth, strata = x@strata), observed_col = ".observed"
+  if (!is_tbl_now(truth)) {
+    cli::cli_abort(c(
+      "{.arg truth} must be a {.cls tbl_now}, or {.code NULL} to reuse the \\
+       nowcast's own source data.",
+      "i" = "The observed counts are read off the object with \\
+             {.fn get_case_count} (a line list is aggregated first), so there \\
+             is no column to name."
     ))
   }
-
-  if (!is.data.frame(truth)) {
-    cli::cli_abort(
-      "{.arg truth} must be a {.cls tbl_now}, a data frame, or {.code NULL}."
-    )
-  }
-  list(truth = dplyr::as_tibble(truth), observed_col = observed_col)
+  .eventual_counts(truth, strata = x@strata)
 }
 
-#' Score a nowcast against observed data
+#' Score predictions against a resolved truth table
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' The engine behind [score_nowcast()], split out so [nowcast_backtest()] can
+#' compute the truth once and score every fit against the same table rather than
+#' re-collapsing the `tbl_now` for each of `methods x dates` fits.
 #'
-#' Computes the weighted interval score (WIS), the absolute error of the median
-#' and the 50%/90% interval coverage of a [tbl_nowcast], one row per event date
-#' (and stratum).
+#' @param x A `tbl_nowcast`.
+#' @param truth A tibble with the event date, the strata and `.observed`.
 #'
-#' @param x A [tbl_nowcast] object.
-#' @param truth What the nowcast is scored against. One of:
+#' @return A scored tibble, as [score_nowcast()] documents.
 #'
-#'   * a **`tbl_now`** -- normally the *full* object, still holding the reports
-#'     that arrived after the nowcast's `now`. Its eventual counts per event
-#'     date are worked out for you (this is [get_latest_reported_cases()],
-#'     aggregated over anything that is not a stratum).
-#'   * a **data frame** with the event-date column, the strata columns and a
-#'     column of observed counts, named by `observed_col`.
-#'   * **`NULL`** (default) -- use the `tbl_now` the nowcast was built from,
-#'     which is only meaningful when that object still holds the later reports,
-#'     as it does inside [nowcast_backtest()].
-#' @param observed_col Name of the observed-count column in `truth`. Defaults to
-#'   the last column that is neither the event date nor a stratum.
-#'
-#' @return A `tibble` with the event-date column, the strata columns and the
-#'   columns `.observed`, `wis`, `ae_median`, `coverage_50` and `coverage_90`.
-#'
-#' @references
-#' Bracher, J., Ray, E. L., Gneiting, T., & Reich, N. G. (2021). Evaluating
-#' epidemic forecasts in an interval format. *PLoS Computational Biology*,
-#' 17(2), e1008618.
-#'
-#' @seealso [nowcast_backtest()], [as_scoringutils()]
-#'
-#' @examples
-#' predictions <- data.frame(
-#'   onset_week = as.Date("2020-01-05"),
-#'   .quantile_level = c(0.25, 0.5, 0.75),
-#'   .value = c(8, 10, 13)
-#' )
-#' nc <- tbl_nowcast(predictions = predictions, method = "toy", event_date = "onset_week")
-#' score_nowcast(nc, truth = data.frame(onset_week = as.Date("2020-01-05"), .observed = 11))
-#'
-#' @export
-score_nowcast <- function(x, truth = NULL, observed_col = NULL) {
-  .assert_tbl_nowcast(x)
+#' @keywords internal
+#' @noRd
+.score_against <- function(x, truth) {
+  key <- c(x@event_date, x@strata)
 
-  event_col <- x@event_date
-  strata <- x@strata
-  key <- c(event_col, strata)
-
-  resolved <- .resolve_truth(truth, observed_col, x, "score_nowcast")
-  truth <- resolved$truth
-  observed_col <- resolved$observed_col
-
-  if (is.null(observed_col)) {
-    observed_col <- utils::tail(setdiff(colnames(truth), key), 1)
+  missing_key <- setdiff(key, colnames(truth))
+  if (length(missing_key) > 0) {
+    cli::cli_abort(c(
+      "{.arg truth} has no column{?s} {.val {missing_key}}.",
+      "i" = "The nowcast is keyed by {.val {key}}; the truth must carry the same \\
+             columns."
+    ))
   }
-  if (!observed_col %in% colnames(truth)) {
-    cli::cli_abort("Column {.val {observed_col}} was not found in {.arg truth}.")
-  }
-  truth <- truth |>
-    dplyr::select(dplyr::all_of(c(key, observed_col))) |>
-    dplyr::rename(.observed = dplyr::all_of(observed_col))
 
   x@predictions |>
-    dplyr::inner_join(truth, by = key) |>
+    dplyr::inner_join(
+      dplyr::select(truth, dplyr::all_of(c(key, ".observed"))),
+      by = key
+    ) |>
     dplyr::group_by(dplyr::across(dplyr::all_of(key))) |>
     dplyr::summarise(
       .observed = dplyr::first(.data$.observed),
@@ -223,6 +193,63 @@ score_nowcast <- function(x, truth = NULL, observed_col = NULL) {
       .groups = "drop"
     ) |>
     dplyr::mutate(.method = x@method, .before = 1)
+}
+
+#' Score a nowcast against observed data
+#'
+#' @description `r lifecycle::badge('experimental')`
+#'
+#' Computes the weighted interval score (WIS), the absolute error of the median
+#' and the 50%/90% interval coverage of a [tbl_nowcast], one row per event date
+#' (and stratum).
+#'
+#' @param x A [tbl_nowcast] object.
+#' @param truth The `tbl_now` the nowcast is scored against -- normally the
+#'   *full* object, still holding the reports that arrived after the nowcast's
+#'   `now`. Its eventual counts per event date are worked out for you: this is
+#'   [get_latest_reported_cases()], aggregated over anything that is not a
+#'   stratum, with the count column read off the object
+#'   ([get_case_count()]). A **line list** is aggregated first, so it needs no
+#'   special handling.
+#'
+#'   `NULL` (default) uses the `tbl_now` the nowcast was built from, which is
+#'   only meaningful when that object still holds the later reports.
+#'
+#' @return A `tibble` with the event-date column, the strata columns and the
+#'   columns `.observed`, `wis`, `ae_median`, `coverage_50` and `coverage_90`.
+#'
+#' @references
+#' Bracher, J., Ray, E. L., Gneiting, T., & Reich, N. G. (2021). Evaluating
+#' epidemic forecasts in an interval format. *PLoS Computational Biology*,
+#' 17(2), e1008618.
+#'
+#' @seealso [nowcast_backtest()], [as_scoringutils()]
+#'
+#' @examples
+#' \donttest{
+#' data(denguedat)
+#'
+#' recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+#' dengue <- tbl_now(recent,
+#'   event_date = onset_week, report_date = report_week, verbose = FALSE
+#' )
+#' snapshot <- change_now(
+#'   dplyr::filter(dengue, report_week <= as.Date("2010-10-04")),
+#'   now = as.Date("2010-10-04")
+#' )
+#'
+#' if (requireNamespace("baselinenowcast", quietly = TRUE)) {
+#'   nc <- run_nowcast(snapshot, engine_baselinenowcast(draws = 100), verbose = FALSE)
+#'   # The FULL object is the truth: it still holds the reports that arrived
+#'   # after the snapshot's `now`.
+#'   score_nowcast(nc, truth = dengue)
+#' }
+#' }
+#'
+#' @export
+score_nowcast <- function(x, truth = NULL) {
+  .assert_tbl_nowcast(x)
+  .score_against(x, .resolve_truth(truth, x))
 }
 
 #' Restrict a `tbl_now` to the data available at a past date
@@ -257,31 +284,27 @@ score_nowcast <- function(x, truth = NULL, observed_col = NULL) {
 #'
 #' @param x A `tbl_now` object holding the *full* data (the later reports are
 #'   what the retrospective nowcasts are scored against).
-#' @param methods Character vector of method names, as in [run_nowcast()].
-#'   **Optionally named**, and the names become the labels in the result. That is
-#'   how one package appears twice: `c(hsgp = "diseasenowcasting",
-#'   ar1 = "diseasenowcasting")` backtests two models of the same package
-#'   separately, so [nowcast_weights()] can learn a weight for each — matching
-#'   how [nowcast_ensemble()] takes a named list of members. Unnamed methods are
-#'   labelled by their own name, exactly as before.
+#' @param ... The [engine()] objects to backtest, one per model. Each carries its
+#'   own arguments, so there is no keyed side-table of per-method options to get
+#'   wrong.
+#'
+#'   Give an engine a `label` (or name the argument) when the same package
+#'   appears twice: `engine_diseasenowcasting(label = "ar1", model = ...)` and a
+#'   plain `engine_diseasenowcasting()` are backtested separately, so
+#'   [nowcast_weights()] can learn a weight for each -- matching how
+#'   [nowcast_ensemble()] takes a named list of members. An engine with no label
+#'   is labelled by its method.
 #' @param now_dates Vector of Dates to nowcast at. Defaults to the four most
 #'   recent event dates that are at least `horizon` units before the object's
 #'   `now`, so that some later reports exist to score against.
-#' @param ... Passed to [run_nowcast()] for every method. Use `method_args` for
-#'   arguments that differ between methods.
-#' @param method_args A named list of lists: `method_args$epinowcast` is passed
-#'   only to the `"epinowcast"` method. Overrides `...` on name clashes. Keyed by
-#'   the *label* when `methods` is named (see `methods`), falling back to the
-#'   method name.
 #' @param horizon Number of time units of hindsight required when `now_dates` is
 #'   chosen automatically. Default `4`.
-#' @param quantile_levels Quantile levels to score at, see [run_nowcast()].
 #' @param seed Optional integer. When given, the RNG is seeded **immediately
-#'   before each fit**, from `seed` and the method and date that fit is for. One
+#'   before each fit**, from `seed` and the label and date that fit is for. One
 #'   `set.seed()` before the whole backtest is not enough: it only pins anything
 #'   if every method consumes the same random numbers in the same order, so
 #'   dropping a method, or refitting one date, silently moves every other fit.
-#'   Seeding per (method, date) makes a fit depend only on which fit it is.
+#'   Seeding per (label, date) makes a fit depend only on which fit it is.
 #' @param on_error Either `"warn"` (default) to skip a model/date that fails
 #'   with a warning, or `"abort"` to stop.
 #' @param verbose Logical. Whether to report progress.
@@ -292,11 +315,26 @@ score_nowcast <- function(x, truth = NULL, observed_col = NULL) {
 #'     \item{scores}{A `tibble` of per-date scores with an extra `.now` column.}
 #'     \item{predictions}{A `tibble` of every retrospective quantile prediction.}
 #'     \item{truth}{The observed counts used for scoring.}
-#'     \item{methods}{The methods that produced at least one nowcast.}
+#'     \item{methods}{The labels that produced at least one nowcast.}
 #'     \item{now_dates}{The dates that were nowcast.}
 #'   }
 #'
-#' @seealso [nowcast_weights()], [nowcast_ensemble()], [score_nowcast()]
+#' @section Every engine must report the same quantile levels:
+#'
+#' A backtest exists to compare models, and two models summarised at different
+#' levels are not comparable: the weighted interval score is an average over the
+#' levels reported, so a model asked for three of them and one asked for nine are
+#' scoring different quantities. Mismatched engines are therefore an **error**
+#' rather than a warning.
+#'
+#' This matters most for the engines where the levels are a *fit-time* argument.
+#' \pkg{NobBS} computes exactly the quantiles it is handed and keeps no draws, so
+#' a level it was never asked for cannot be recovered afterwards -- and an
+#' ensemble weighted from such a backtest would silently fall back to whatever
+#' levels its members happened to share.
+#'
+#' @seealso [engine()], [nowcast_weights()], [nowcast_ensemble()],
+#'   [score_nowcast()]
 #'
 #' @examples
 #' \donttest{
@@ -310,43 +348,22 @@ score_nowcast <- function(x, truth = NULL, observed_col = NULL) {
 #'
 #' if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 #'   bt <- nowcast_backtest(dengue,
-#'     methods = "baselinenowcast", now_dates = as.Date("2010-11-15"),
-#'     draws = 100, verbose = FALSE
+#'     engine_baselinenowcast(draws = 100),
+#'     now_dates = as.Date("2010-11-15"), verbose = FALSE
 #'   )
 #'   bt$scores
 #' }
 #' }
 #'
 #' @export
-nowcast_backtest <- function(x, methods, now_dates = NULL, ...,
-                             method_args = list(), horizon = 4,
-                             quantile_levels = nowcast_quantile_levels(),
+nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
                              seed = NULL,
                              on_error = c("warn", "abort"), verbose = TRUE) {
   .assert_tbl_now(x, "nowcast_backtest")
   on_error <- match.arg(on_error)
 
-  if (missing(methods) || length(methods) == 0) {
-    cli::cli_abort("{.arg methods} must name at least one nowcasting method.")
-  }
-  # NAMES ARE LABELS. `nowcast_ensemble()` takes a named list, so a member can be
-  # "the same package, a different model" -- two `diseasenowcasting` fits with
-  # different epidemic processes, say. A backtest that keyed everything on the
-  # package name could not tell those apart, so their weights could not be
-  # learned, only guessed. Accepting names here closes that: unnamed methods
-  # behave exactly as before, because the label falls back to the method.
-  labels <- names(methods) %||% methods
-  labels[!nzchar(labels)] <- methods[!nzchar(labels)]
-  methods <- vapply(methods, .canonical_nowcast_method, character(1), USE.NAMES = FALSE)
-  if (anyDuplicated(labels)) {
-    duplicated_labels <- unique(labels[duplicated(labels)])
-    cli::cli_abort(c(
-      "{.arg methods} has duplicate label{?s} {.val {duplicated_labels}}.",
-      "i" = "Each entry becomes one row per date in the result, so the labels \\
-             have to be unique. Name them, e.g. \\
-             {.code c(hsgp = \"diseasenowcasting\", ar1 = \"diseasenowcasting\")}."
-    ))
-  }
+  engines <- .collect_engines(...)
+  labels <- names(engines)
 
   if (is.null(now_dates)) {
     now_dates <- .default_backtest_dates(x, horizon = horizon)
@@ -356,30 +373,20 @@ nowcast_backtest <- function(x, methods, now_dates = NULL, ...,
     cli::cli_abort("No usable {.arg now_dates}: the object has too little history to backtest.")
   }
 
+  # Computed ONCE, not per fit: it is the same table for every (engine, date),
+  # and collapsing the full object is not free on a long series.
   truth <- .eventual_counts(x)
-  dots <- list(...)
 
   results <- list()
   for (now_date in as.list(now_dates)) {
     snapshot <- .nowcast_snapshot(x, now_date)
 
-    for (i in seq_along(methods)) {
-      method <- methods[[i]]
+    for (i in seq_along(engines)) {
+      this_engine <- engines[[i]]
       label <- labels[[i]]
       if (isTRUE(verbose)) {
         cli::cli_alert_info("Backtesting {.val {label}} at {.val {now_date}}.")
       }
-
-      # Keyed by LABEL first, so two fits of one package can take different
-      # arguments; falling back to the method name keeps every existing call
-      # working unchanged.
-      arguments <- utils::modifyList(
-        dots, method_args[[label]] %||% method_args[[method]] %||% list()
-      )
-      arguments <- c(
-        list(x = snapshot, method = method, quantile_levels = quantile_levels, verbose = FALSE),
-        arguments
-      )
 
       if (!is.null(seed)) {
         # Seeded from the LABEL, so the two models of one package do not draw
@@ -388,10 +395,10 @@ nowcast_backtest <- function(x, methods, now_dates = NULL, ...,
       }
 
       nowcast <- tryCatch(
-        do.call(run_nowcast, arguments),
+        run_nowcast(snapshot, this_engine, verbose = FALSE),
         error = function(e) {
           message <- c(
-            "Method {.val {label}} failed at {.val {now_date}}.",
+            "Engine {.val {label}} failed at {.val {now_date}}.",
             "x" = conditionMessage(e)
           )
           if (on_error == "abort") cli::cli_abort(message) else cli::cli_warn(message)
@@ -400,11 +407,11 @@ nowcast_backtest <- function(x, methods, now_dates = NULL, ...,
       )
       if (is.null(nowcast)) next
 
-      # `score_nowcast()` labels with the fit's own `@method` -- the PACKAGE.
+      # `.score_against()` labels with the fit's own `@method` -- the PACKAGE.
       # Overwrite with the backtest's label, or two models of one package would
       # score under one name here while their predictions carried two, and
       # `nowcast_weights()` would learn a single weight for both.
-      scores <- score_nowcast(nowcast, truth = truth, observed_col = ".observed") |>
+      scores <- .score_against(nowcast, truth) |>
         dplyr::mutate(.method = label)
       predictions <- nowcast@predictions |>
         dplyr::mutate(.method = label, .now = now_date, .before = 1)
@@ -438,6 +445,70 @@ nowcast_backtest <- function(x, methods, now_dates = NULL, ...,
     ),
     class = "nowcast_backtest"
   )
+}
+
+#' Collect and label the engines passed to `nowcast_backtest()`
+#'
+#' Accepts loose [engine()] arguments or a single list of them, labels each one,
+#' and refuses the two ways a set of engines cannot be backtested: duplicate
+#' labels, and disagreeing quantile levels.
+#'
+#' @param ... The `...` of [nowcast_backtest()].
+#'
+#' @return A named list of engines; the names are the labels.
+#'
+#' @keywords internal
+#' @noRd
+.collect_engines <- function(...) {
+  engines <- list(...)
+  # A list of engines is what `lapply()` over a set of configurations produces,
+  # and refusing it would send the caller to `do.call()` for no reason.
+  if (length(engines) == 1 && is.list(engines[[1]]) && !is_nowcast_engine(engines[[1]])) {
+    engines <- engines[[1]]
+  }
+
+  if (length(engines) == 0) {
+    cli::cli_abort(c(
+      "{.fn nowcast_backtest} needs at least one engine.",
+      "i" = "e.g. {.code nowcast_backtest(x, engine_baselinenowcast(), \\
+             engine_nobbs(max_D = 10))}."
+    ))
+  }
+  for (i in seq_along(engines)) {
+    .assert_engine(engines[[i]], arg = paste0("engine ", i))
+  }
+
+  # An argument name wins over the engine's own `label`, so a call can rename a
+  # member without rebuilding it.
+  given <- names(engines) %||% rep("", length(engines))
+  own <- vapply(engines, function(e) e$label, character(1))
+  given[!nzchar(given)] <- own[!nzchar(given)]
+
+  if (anyDuplicated(given)) {
+    duplicated_labels <- unique(given[duplicated(given)])
+    cli::cli_abort(c(
+      "Duplicate engine label{?s} {.val {duplicated_labels}}.",
+      "i" = "Each engine becomes one row per date in the result, so the labels \\
+             have to be unique.",
+      "i" = "Set one with {.code engine_diseasenowcasting(label = \"ar1\")}, or \\
+             name the argument."
+    ))
+  }
+
+  # See the "Every engine must report the same quantile levels" section: the WIS
+  # averages over the levels reported, so engines summarised differently are not
+  # measuring the same thing, and NobBS cannot be re-summarised afterwards.
+  levels <- unique(lapply(engines, function(e) e$quantile_levels))
+  if (length(levels) > 1) {
+    cli::cli_abort(c(
+      "The engines report different {.arg quantile_levels}.",
+      "i" = "A backtest compares them, and the weighted interval score averages \\
+             over the levels reported, so they must match.",
+      "i" = "Levels found: {.val {lapply(levels, function(l) paste(l, collapse = ', '))}}."
+    ))
+  }
+
+  stats::setNames(engines, given)
 }
 
 #' A seed that depends only on which fit it is
@@ -542,8 +613,8 @@ print.nowcast_backtest <- function(x, ...) {
 #'
 #' if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 #'   bt <- nowcast_backtest(dengue,
-#'     methods = "baselinenowcast", now_dates = as.Date("2010-11-15"),
-#'     draws = 100, verbose = FALSE
+#'     engine_baselinenowcast(draws = 100),
+#'     now_dates = as.Date("2010-11-15"), verbose = FALSE
 #'   )
 #'   nowcast_weights(bt)
 #' }
@@ -667,8 +738,10 @@ nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"
 #' full \pkg{scoringutils} score suite can be applied.
 #'
 #' @param x A [tbl_nowcast] object.
-#' @param truth Passed to [score_nowcast()]; see there.
-#' @param observed_col Passed to [score_nowcast()]; see there.
+#' @param truth The `tbl_now` the nowcast is scored against, or `NULL` to reuse
+#'   the nowcast's own source data. Passed to [score_nowcast()]; see there. The
+#'   observed counts are read off the object with [get_case_count()] -- a line
+#'   list is aggregated first -- so there is no column to name.
 #'
 #' @return A `tibble` with the columns `observed`, `predicted`, `quantile_level`
 #'   and `model`, plus the event date and strata as forecast units.
@@ -676,36 +749,40 @@ nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"
 #' @seealso [score_nowcast()]
 #'
 #' @examples
-#' predictions <- data.frame(
-#'   onset_week = as.Date("2020-01-05"),
-#'   .quantile_level = c(0.25, 0.5, 0.75), .value = c(8, 10, 13)
+#' \donttest{
+#' data(denguedat)
+#'
+#' recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+#' dengue <- tbl_now(recent,
+#'   event_date = onset_week, report_date = report_week, verbose = FALSE
 #' )
-#' nc <- tbl_nowcast(predictions = predictions, method = "toy", event_date = "onset_week")
-#' as_scoringutils(nc, truth = data.frame(onset_week = as.Date("2020-01-05"), .observed = 11))
+#' snapshot <- change_now(
+#'   dplyr::filter(dengue, report_week <= as.Date("2010-10-04")),
+#'   now = as.Date("2010-10-04")
+#' )
+#'
+#' if (requireNamespace("baselinenowcast", quietly = TRUE)) {
+#'   nc <- run_nowcast(snapshot, engine_baselinenowcast(draws = 100), verbose = FALSE)
+#'   as_scoringutils(nc, truth = dengue)
+#' }
+#' }
 #'
 #' @export
-as_scoringutils <- function(x, truth = NULL, observed_col = NULL) {
+as_scoringutils <- function(x, truth = NULL) {
   .assert_tbl_nowcast(x)
 
   key <- c(x@event_date, x@strata)
-
-  resolved <- .resolve_truth(truth, observed_col, x, "as_scoringutils")
-  truth <- resolved$truth
-  observed_col <- resolved$observed_col
-
-  if (is.null(observed_col)) {
-    observed_col <- utils::tail(setdiff(colnames(truth), key), 1)
-  }
+  truth <- .resolve_truth(truth, x)
 
   x@predictions |>
     dplyr::inner_join(
-      truth |> dplyr::select(dplyr::all_of(c(key, observed_col))),
+      dplyr::select(truth, dplyr::all_of(c(key, ".observed"))),
       by = key
     ) |>
     dplyr::rename(
       predicted = ".value",
       quantile_level = ".quantile_level",
-      observed = dplyr::all_of(observed_col)
+      observed = ".observed"
     ) |>
     dplyr::mutate(model = x@method)
 }

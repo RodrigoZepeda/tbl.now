@@ -255,13 +255,23 @@ engine_args <- function(engine, x) {
   )
 }
 
+#' Build the `engine()` object for one method on one fixture
+#'
+#' `engine_args()` above is keyed by METHOD NAME, which is how these tests are
+#' written -- they loop over `available_engines()`. `engine()` is the general
+#' constructor precisely so a name plus a list of arguments can be turned into an
+#' engine without a `switch()` over the six specific ones.
+engine_for <- function(method, x, ...) {
+  arguments <- utils::modifyList(engine_args(method, x), list(...))
+  do.call(engine, c(list(method), arguments))
+}
+
 #' Fit an engine, returning either the nowcast or the error condition
-try_run_nowcast <- function(engine, x, ...) {
-  arguments <- utils::modifyList(engine_args(engine, x), list(...))
+try_run_nowcast <- function(method, x, ...) {
   tryCatch(
-    suppressWarnings(suppressMessages(do.call(
-      run_nowcast, c(list(x, engine, verbose = FALSE), arguments)
-    ))),
+    suppressWarnings(suppressMessages(
+      run_nowcast(x, engine_for(method, x, ...), verbose = FALSE)
+    )),
     error = function(e) e
   )
 }

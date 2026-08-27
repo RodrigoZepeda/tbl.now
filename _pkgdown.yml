@@ -143,7 +143,9 @@ reference:
   desc: One interface over the modelling packages.
   contents:
   - run_nowcast
-  - nowcast_method
+  - engine
+  - nowcast_engines
+  - is_nowcast_engine
   - list_nowcast_methods
   - nowcast_fit
   - nowcast_tidy
@@ -175,6 +177,7 @@ reference:
   - tbl_now_coercion_methods
   - tbl_now_epinow2_snapshots
   - tbl_now_triangle_list
+  - tbl_now_surveillance_list
   - surveillance_grids
 
 - title: Tidying model output

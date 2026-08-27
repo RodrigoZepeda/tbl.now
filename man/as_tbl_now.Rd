@@ -12,6 +12,7 @@
 \alias{as_tbl_now.data.table}
 \alias{as_tbl_now.tbl_now_epinow2_snapshots}
 \alias{as_tbl_now.tbl_now_triangle_list}
+\alias{as_tbl_now.tbl_now_surveillance_list}
 \title{Transform an object into a \code{tbl_now}}
 \usage{
 as_tbl_now(object, ...)
@@ -35,6 +36,8 @@ as_tbl_now(object, ...)
 \method{as_tbl_now}{tbl_now_epinow2_snapshots}(object, ...)
 
 \method{as_tbl_now}{tbl_now_triangle_list}(object, ...)
+
+\method{as_tbl_now}{tbl_now_surveillance_list}(object, ...)
 }
 \arguments{
 \item{object}{An object to convert to a \code{tbl_now}.}

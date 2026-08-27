@@ -11,12 +11,17 @@
 \item{levels}{Numeric vector of central interval widths to shade. Defaults to
 the widest intervals available in the object.}
 
-\item{show_reported}{Logical. Whether to overlay the cases \strong{reported so
-far} -- \code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}} on the object's own source data, so
-the points are what the model was actually shown as of \code{now}, not what those
-dates eventually reached. The vertical gap between the points and the fan is
-the correction the nowcast is making, which is the whole reason to draw it.
-Requires the nowcast to carry its source data.}
+\item{show_reported}{Logical. Whether to draw the cases \strong{reported so far}
+as columns under the fan -- \code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}} on the object's own
+source data, so the bars are what the model was actually shown as of \code{now},
+not what those dates eventually reached. The vertical gap between the top of
+a bar and the fan is the correction the nowcast is making, which is the
+whole reason to draw it. Requires the nowcast to carry its source data.
+
+The bars are one period wide, taken from \code{\link[=get_event_units]{get_event_units()}}. A fixed width
+would draw hairlines on a weekly series, and one wider than the step would
+make \pkg{ggplot2} stack overlapping bars, so each would show several
+periods' counts rather than its own.}
 
 \item{colour}{Colour of the fan. Defaults to the \code{tbl.now} palette's green:
 a nowcast is an estimate of the \strong{epidemic} process (cases by event date),
@@ -29,9 +34,10 @@ A \code{ggplot} object.
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Draws a fan chart of a \link{tbl_nowcast}: one shaded band per central prediction
-interval, the median as a line, and the counts reported so far as points, so
-that the size of the correction the model is applying is visible.
+Draws a fan chart of a \link{tbl_nowcast}: the counts reported so far as grey
+columns, one shaded band per central prediction interval over them, and the
+median as a line, so that the size of the correction the model is applying is
+visible as the gap between the bars and the fan.
 }
 \examples{
 predictions <- tidyr::expand_grid(

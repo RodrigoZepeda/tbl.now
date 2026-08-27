@@ -39,22 +39,46 @@ toy_tbl_now <- function() {
   )
 }
 
-test_that("nowcast_method() canonicalises the built-in names", {
-  expect_equal(nowcast_method("nobbs")$name, "NobBS")
-  expect_equal(nowcast_method("NOBBS")$name, "NobBS")
-  expect_equal(nowcast_method("epinowcast")$name, "epinowcast")
+test_that("engine() canonicalises the built-in names", {
+  expect_equal(engine("nobbs")$name, "NobBS")
+  expect_equal(engine("NOBBS")$name, "NobBS")
+  expect_equal(engine("epinowcast")$name, "epinowcast")
   # Unknown names are passed through so third-party backends keep working
-  expect_equal(nowcast_method("my_model")$name, "my_model")
+  expect_equal(engine("my_model")$name, "my_model")
 
-  expect_s3_class(nowcast_method("testtoy"), "nowcast_method")
-  expect_error(nowcast_method(c("a", "b")), "single")
-  expect_error(nowcast_method(1), "single")
+  expect_s3_class(engine("testtoy"), "nowcast_engine")
+  expect_error(engine(c("a", "b")), "single")
+  expect_error(engine(1), "single")
+})
+
+test_that("engine() validates its arguments at CONSTRUCTION time", {
+  # The whole point of the engine: a mistake is caught here, where the call is,
+  # rather than at fit time or -- worse -- not at all.
+  expect_error(engine("testtoy", 1), "must be named")
+  expect_error(engine("testtoy", quantile_levels = c(0, 0.5)), "between")
+  expect_error(engine("testtoy", quantile_levels = 1.5), "between")
+  expect_error(engine("testtoy", min_date = -1), "positive")
+  expect_error(engine("testtoy", min_date = c(1, 2)), "single")
+  expect_error(engine("testtoy", label = c("a", "b")), "single")
+
+  # An argument left NULL must not reach the backend at all: several of these
+  # packages treat an explicit NULL as an error rather than as a default.
+  expect_named(engine_nobbs()$args, character(0))
+  expect_named(engine_nobbs(max_D = 3)$args, "max_D")
+})
+
+test_that("run_nowcast() refuses a bare method name, and says what to write", {
+  x <- toy_tbl_now()
+  expect_error(run_nowcast(x, "testtoy"), "engine")
+  # The message has to name the constructor, or the reader is left guessing
+  # where the arguments the string used to carry are supposed to go.
+  expect_error(run_nowcast(x, "nobbs"), "engine_nobbs")
 })
 
 test_that("an unregistered method gives an actionable error", {
   x <- toy_tbl_now()
   expect_error(
-    run_nowcast(x, method = "definitely_not_a_method", verbose = FALSE),
+    run_nowcast(x, engine("definitely_not_a_method"), verbose = FALSE),
     "No nowcasting method"
   )
 })
@@ -68,7 +92,7 @@ test_that("a backend with no nowcast_tidy() method is reported as such", {
       envir = asNamespace("tbl.now")
     )
   })
-  expect_error(run_nowcast(x, "halfdone", verbose = FALSE), "nowcast_tidy")
+  expect_error(run_nowcast(x, engine("halfdone"), verbose = FALSE), "nowcast_tidy")
 })
 
 test_that("run_nowcast() returns a well formed tbl_nowcast", {
@@ -76,7 +100,7 @@ test_that("run_nowcast() returns a well formed tbl_nowcast", {
   registerS3method("nowcast_fit", "testtoy", nowcast_fit.testtoy, envir = asNamespace("tbl.now"))
   registerS3method("nowcast_tidy", "testtoy", nowcast_tidy.testtoy, envir = asNamespace("tbl.now"))
 
-  nowcast <- run_nowcast(x, "testtoy", verbose = FALSE)
+  nowcast <- run_nowcast(x, engine("testtoy"), verbose = FALSE)
 
   expect_true(is_tbl_nowcast(nowcast))
   expect_equal(nowcast@method, "testtoy")
@@ -94,22 +118,54 @@ test_that("run_nowcast() returns a well formed tbl_nowcast", {
   expect_false(is.null(nowcast@draws))
 })
 
-test_that("run_nowcast() honours quantile_levels and validates them", {
+test_that("the engine's quantile_levels reach the result", {
   x <- toy_tbl_now()
-  nowcast <- run_nowcast(x, "testtoy", quantile_levels = c(0.1, 0.5, 0.9), verbose = FALSE)
+  nowcast <- run_nowcast(
+    x, engine("testtoy", quantile_levels = c(0.1, 0.5, 0.9)), verbose = FALSE
+  )
   expect_equal(sort(unique(nowcast@predictions$.quantile_level)), c(0.1, 0.5, 0.9))
+})
 
-  expect_error(run_nowcast(x, "testtoy", quantile_levels = c(0, 0.5), verbose = FALSE), "between")
-  expect_error(run_nowcast(x, "testtoy", quantile_levels = 1.5, verbose = FALSE), "between")
+test_that("the engine's min_date trims the series it is fitted on", {
+  x <- toy_tbl_now()
+  now <- get_now(x)
+
+  # A Date is a fixed cut...
+  cut <- as.Date("2020-03-02")
+  by_date <- run_nowcast(x, engine("testtoy", min_date = cut), verbose = FALSE)
+  expect_true(min(by_date@predictions$event_date) >= cut)
+
+  # ...and a number is that many PERIODS before `now`, in the object's own
+  # units, which on this weekly fixture is weeks and not days. Measured from
+  # `now`, NOT from the last event date: `now` is the as-of date of the whole
+  # nowcasting problem, and it is what a backtest moves, so a window anchored to
+  # it stays the same length at every retrospective date. Here `now` sits three
+  # weeks past the last event, so a five-week window holds two event dates.
+  kept <- unique(x[[get_event_date(x)]])
+  kept <- kept[as.numeric(now - kept) / 7 < 5]
+  expect_length(kept, 2L)
+
+  by_periods <- run_nowcast(x, engine("testtoy", min_date = 5), verbose = FALSE)
+  expect_setequal(unique(by_periods@predictions$event_date), kept)
+
+  # The trimmed object is what the result carries, so everything downstream --
+  # scoring, `autoplot()`'s reported counts -- describes the data the model saw.
+  expect_equal(min(by_periods@data[[get_event_date(x)]]), min(kept))
+  expect_equal(get_now(by_periods@data), now)
+
+  expect_error(
+    run_nowcast(x, engine("testtoy", min_date = as.Date("2099-01-01")), verbose = FALSE),
+    "leaves no data"
+  )
 })
 
 test_that("run_nowcast() rejects anything that is not a tbl_now", {
-  expect_error(run_nowcast(mtcars, "testtoy"), "tbl_now")
+  expect_error(run_nowcast(mtcars, engine("testtoy")), "tbl_now")
 })
 
 test_that("the predicted quantiles are monotone in the quantile level", {
   x <- toy_tbl_now()
-  nowcast <- run_nowcast(x, "testtoy", verbose = FALSE)
+  nowcast <- run_nowcast(x, engine("testtoy"), verbose = FALSE)
 
   monotone <- nowcast@predictions |>
     dplyr::group_by(.data$event_date) |>
@@ -153,7 +209,7 @@ test_that("tbl_nowcast validates its inputs", {
 
 test_that("as_tibble() gives quantiles by default and draws on request", {
   x <- toy_tbl_now()
-  nowcast <- run_nowcast(x, "testtoy", verbose = FALSE)
+  nowcast <- run_nowcast(x, engine("testtoy"), verbose = FALSE)
 
   expect_true(".quantile_level" %in% colnames(tibble::as_tibble(nowcast)))
   expect_true(".draw" %in% colnames(tibble::as_tibble(nowcast, type = "draws")))
@@ -168,7 +224,7 @@ test_that("as_tibble() gives quantiles by default and draws on request", {
 test_that("autoplot() draws a fan", {
   skip_if_not_installed("ggplot2")
   x <- toy_tbl_now()
-  nowcast <- run_nowcast(x, "testtoy", verbose = FALSE)
+  nowcast <- run_nowcast(x, engine("testtoy"), verbose = FALSE)
 
   expect_s3_class(autoplot(nowcast), "ggplot")
   expect_s3_class(autoplot(nowcast, levels = 0.9), "ggplot")

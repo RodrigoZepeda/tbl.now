@@ -4,26 +4,19 @@
 \alias{run_nowcast}
 \title{Nowcast a \code{tbl_now} with any supported modelling package}
 \usage{
-run_nowcast(
-  x,
-  method = "diseasenowcasting",
-  ...,
-  quantile_levels = nowcast_quantile_levels(),
-  verbose = TRUE
-)
+run_nowcast(x, engine = engine_diseasenowcasting(), verbose = TRUE)
 }
 \arguments{
 \item{x}{A \code{tbl_now} object.}
 
-\item{method}{A string naming the modelling package to use. One of
-\code{\link[=list_nowcast_methods]{list_nowcast_methods()}}, or the name of a backend you registered yourself.
-Built-in names are matched case-insensitively.}
+\item{engine}{A \code{\link[=engine]{engine()}} object: the modelling package \strong{and every argument
+it takes}, including \code{min_date} and \code{quantile_levels}. Defaults to
+\code{engine_diseasenowcasting()}.
 
-\item{...}{Passed straight to the underlying modelling function. What is
-accepted therefore depends on \code{method}; see the Methods section.}
-
-\item{quantile_levels}{Numeric vector of probabilities to summarise the
-nowcast at. Defaults to \code{\link[=nowcast_quantile_levels]{nowcast_quantile_levels()}}.}
+The data and \code{verbose} are the only things that sit outside it. That is the
+point: an argument in an outer \code{...} had to be routed to the right backend
+by name, and one that missed simply vanished, leaving the model at its
+default with nothing to say so.}
 
 \item{verbose}{Logical. Whether to report what is being done.}
 }
@@ -42,34 +35,33 @@ The function is named \code{run_nowcast()} rather than \code{nowcast()} because
 \pkg{diseasenowcasting} already exports a \code{nowcast()} function; keeping the
 names distinct means both packages can be attached at once.
 }
-\section{Methods}{
+\section{Engines}{
 
 
 \describe{
-\item{\code{"diseasenowcasting"}}{Bayesian structural time series. \code{...} goes to
-\code{\link[diseasenowcasting:nowcast]{diseasenowcasting::nowcast()}}; the \code{tbl_now} is passed in directly, so
-strata and temporal effects are picked up automatically.}
-\item{\code{"baselinenowcast"}}{Fast, assumption-light baseline built from the
-reporting triangle. \code{...} goes to \code{baselinenowcast::baselinenowcast()}.
-Stratified objects are nowcast one triangle per stratum.}
-\item{\code{"epinowcast"}}{Bayesian model with separate delay and reference
-modules. \code{...} goes to \code{epinowcast::epinowcast()}; use \code{preprocess_args}
-to control \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}.}
-\item{\code{"surveillance"}}{Höhle & an der Heiden's nowcast. \code{...} goes to
-\code{\link[surveillance:nowcast]{surveillance::nowcast()}}, fed by \code{\link[=tbl_now_to_surveillance]{tbl_now_to_surveillance()}}. The
-package models one series, so a stratified object is fitted one stratum
-at a time.}
-\item{\code{"EpiNow2"}}{\code{EpiNow2::estimate_infections()}, fed by
+\item{\code{\link[=engine_diseasenowcasting]{engine_diseasenowcasting()}}}{Bayesian structural time series. The
+\code{tbl_now} is passed in directly, so strata and temporal effects are picked
+up automatically.}
+\item{\code{\link[=engine_baselinenowcast]{engine_baselinenowcast()}}}{Fast, assumption-light baseline built from
+the reporting triangle. Stratified objects are nowcast one triangle per
+stratum.}
+\item{\code{\link[=engine_epinowcast]{engine_epinowcast()}}}{Bayesian model with separate delay and
+reference modules; \code{preprocess_args} controls
+\code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}.}
+\item{\code{\link[=engine_surveillance]{engine_surveillance()}}}{Höhle & an der Heiden's nowcast, fed by
+\code{\link[=tbl_now_to_surveillance]{tbl_now_to_surveillance()}}. The package models one series, so a
+stratified object is fitted one stratum at a time.}
+\item{\code{\link[=engine_epinow2]{engine_epinow2()}}}{\code{EpiNow2::estimate_infections()}, fed by
 \code{\link[=tbl_now_to_EpiNow2]{tbl_now_to_EpiNow2()}}; \code{EpiNow2::regional_epinow()} when the object
-declares strata. \code{...} goes to whichever of the two is used.}
-\item{\code{"NobBS"}}{Nowcasting by Bayesian Smoothing. \code{...} goes to
-\code{NobBS::NobBS()} (or \code{NobBS::NobBS.strat()} when the object declares
-exactly one stratum), fed by \code{\link[=tbl_now_to_nobbs]{tbl_now_to_nobbs()}}, which expands counts
-to the one row per case \pkg{NobBS} counts.}
+declares strata.}
+\item{\code{\link[=engine_nobbs]{engine_nobbs()}}}{Nowcasting by Bayesian Smoothing, fed by
+\code{\link[=tbl_now_to_nobbs]{tbl_now_to_nobbs()}}, which expands counts to the one row per case
+\pkg{NobBS} counts.}
 }
 
-Every modelling package is an optional dependency: it is only needed when you
-ask for its method.
+\code{\link[=engine]{engine()}} covers any other registered method, including one you wrote
+yourself. Every modelling package is an optional dependency: it is only needed
+when you ask for its engine.
 }
 
 \section{What the object contributes, and what it does not}{
@@ -82,7 +74,7 @@ worth stating plainly.
 \strong{Strata.} How many strata a backend can honour is a property of the
 \emph{package}, not of this one. Where a backend cannot, it warns and pools rather
 than pretending:\tabular{ll}{
-   \code{method} \tab how strata are modelled \cr
+   engine \tab how strata are modelled \cr
    \code{"baselinenowcast"} \tab one reporting triangle, and one fit, per stratum \cr
    \code{"surveillance"} \tab one fit per stratum; the package models a single series \cr
    \code{"EpiNow2"} \tab \code{regional_epinow()} instead of \code{estimate_infections()} \cr
@@ -138,28 +130,28 @@ jobs.
 
 
 \code{run_nowcast()} does not invent priors or model structure: it calls each
-package with \strong{that package's own defaults} and passes \code{...} straight
-through. The defaults are not always the ones you want, and two are worth
-knowing before you read the output.
+package with \strong{that package's own defaults} and passes the engine's
+arguments straight through. The defaults are not always the ones you want, and
+two are worth knowing before you read the output.
 
-\strong{\code{"epinowcast"}} runs three modules, all at their package defaults. The
-expectation module is \code{enw_expectation(r = ~ 0 + (1 | day:.group))} -- a
+\strong{\code{\link[=engine_epinowcast]{engine_epinowcast()}}} runs three modules, all at their package defaults.
+The expectation module is \code{enw_expectation(r = ~ 0 + (1 | day:.group))} -- a
 \strong{random effect per day} on the growth rate, which is a random walk on the
 log expected counts in all but name. The reference module is
 \code{enw_reference(parametric = ~ 1, distribution = "lognormal")} -- a \strong{single
 lognormal reporting delay, constant over time}. The report module is
 \code{enw_report(non_parametric = ~ 0)} -- \strong{no day-of-week reporting effect}.
-Override any of them through \code{...}, and use \code{preprocess_args} for
-\code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}'s own arguments such as \code{list(max_delay = 30)}:
+Each is a named argument of the engine, and \code{preprocess_args} carries
+\code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}'s own arguments:
 
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{run_nowcast(nowobj, "epinowcast",
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{run_nowcast(nowobj, engine_epinowcast(
   preprocess_args = list(max_delay = 30),
   report = epinowcast::enw_report(~ 1 + day_of_week, data = pobs),
   fit    = epinowcast::enw_fit_opts(chains = 4, iter_sampling = 1000)
-)
+))
 }\if{html}{\out{</div>}}
 
-\strong{\code{"EpiNow2"}} -- read this before trusting the output.
+\strong{\code{\link[=engine_epinow2]{engine_epinow2()}}} -- read this before trusting the output.
 \code{EpiNow2::estimate_infections()} defaults to \code{delays = delay_opts()}, which is
 \code{Fixed(0)}: \strong{no reporting delay at all}. Its \code{generation_time = gt_opts()}
 is \code{Fixed(1)}, a one-day generation time. Those defaults describe a process
@@ -167,31 +159,31 @@ with nothing to nowcast, so supply the epidemiology yourself. EpiNow2 also
 models \eqn{R_t} with a \strong{Gaussian process} by default
 (\code{rt_opts(rw = 0, gp_on = "R_t-1")}) rather than a random walk:
 
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{run_nowcast(nowobj, "EpiNow2",
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{run_nowcast(nowobj, engine_epinow2(
   generation_time = EpiNow2::gt_opts(EpiNow2::example_generation_time),
   delays          = EpiNow2::delay_opts(EpiNow2::example_reporting_delay),
   rt              = EpiNow2::rt_opts(rw = 7)   # weekly random walk instead
-)
+))
 }\if{html}{\out{</div>}}
 
-\strong{\code{"diseasenowcasting"}} uses the package's own defaults, reading strata,
-covariates and temporal effects off the object. \code{...} goes to
-\code{\link[diseasenowcasting:nowcast]{diseasenowcasting::nowcast()}} -- \code{type}, \code{n_draws} and so on.
+\strong{\code{\link[=engine_diseasenowcasting]{engine_diseasenowcasting()}}} uses the package's own defaults, reading
+strata, covariates and temporal effects off the object. \code{model}, \code{type} and
+\code{n_draws} go to \code{\link[diseasenowcasting:nowcast]{diseasenowcasting::nowcast()}}.
 
-\strong{\code{"baselinenowcast"}} is not Bayesian and has no priors: the delay is
+\strong{\code{\link[=engine_baselinenowcast]{engine_baselinenowcast()}}} is not Bayesian and has no priors: the delay is
 estimated from the reporting triangle and applied. \code{draws} sets the number of
 nowcast samples, and \code{max_delay} caps the triangle's width.
 
-\strong{\code{"NobBS"}} has a fixed model; what you tune is \code{max_D} (maximum delay) and
-\code{moving_window} (how much history is fitted). \code{moving_window} counts \strong{event
-periods and must not exceed the history you hand it} -- ask for more and
-NobBS pads its grid backwards and returns zero for every date, with no error.
-\code{specs} takes its prior list.
+\strong{\code{\link[=engine_nobbs]{engine_nobbs()}}} has a fixed model; what you tune is \code{max_D} (maximum
+delay) and \code{moving_window} (how much history is fitted). \code{moving_window}
+counts \strong{event periods and must not exceed the history you hand it} -- ask
+for more and NobBS pads its grid backwards and returns zero for every date,
+with no error. \code{specs} takes its prior list.
 
-\strong{\code{"surveillance"}} takes \code{fit_method}, which is \pkg{surveillance}'s own
-\code{method} argument renamed so it cannot collide with \code{\link[=run_nowcast]{run_nowcast()}}'s
-\code{method}; it defaults to \code{"bayes.notrunc.bnb"}. \code{D}, \code{when} and \code{control} are
-derived from the object when you do not give them.
+\strong{\code{\link[=engine_surveillance]{engine_surveillance()}}} takes \code{fit_method}, which is
+\pkg{surveillance}'s own \code{method} argument renamed so it cannot collide with
+the engine's method; it defaults to \code{"bayes.notrunc.bnb"}. \code{D}, \code{when} and
+\code{control} are derived from the object when you do not give them.
 }
 
 \examples{
@@ -205,13 +197,14 @@ dengue <- tbl_now(recent,
 )
 
 if (requireNamespace("baselinenowcast", quietly = TRUE)) {
-  nc <- run_nowcast(dengue, method = "baselinenowcast", draws = 100, verbose = FALSE)
+  nc <- run_nowcast(dengue, engine_baselinenowcast(draws = 100), verbose = FALSE)
   nc
 }
 }
 
 }
 \seealso{
-\code{\link[=nowcast_ensemble]{nowcast_ensemble()}} to combine several nowcasts,
-\code{\link[=nowcast_backtest]{nowcast_backtest()}} to score them, and \code{\link[=nowcast_fit]{nowcast_fit()}} to add a backend.
+\code{\link[=engine]{engine()}} and \link{nowcast_engines} to specify a model,
+\code{\link[=nowcast_ensemble]{nowcast_ensemble()}} to combine several nowcasts, \code{\link[=nowcast_backtest]{nowcast_backtest()}} to
+score them, and \code{\link[=nowcast_fit]{nowcast_fit()}} to add a backend.
 }

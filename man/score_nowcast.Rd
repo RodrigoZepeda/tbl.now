@@ -4,26 +4,21 @@
 \alias{score_nowcast}
 \title{Score a nowcast against observed data}
 \usage{
-score_nowcast(x, truth = NULL, observed_col = NULL)
+score_nowcast(x, truth = NULL)
 }
 \arguments{
 \item{x}{A \link{tbl_nowcast} object.}
 
-\item{truth}{What the nowcast is scored against. One of:
-\itemize{
-\item a \strong{\code{tbl_now}} -- normally the \emph{full} object, still holding the reports
-that arrived after the nowcast's \code{now}. Its eventual counts per event
-date are worked out for you (this is \code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}},
-aggregated over anything that is not a stratum).
-\item a \strong{data frame} with the event-date column, the strata columns and a
-column of observed counts, named by \code{observed_col}.
-\item \strong{\code{NULL}} (default) -- use the \code{tbl_now} the nowcast was built from,
-which is only meaningful when that object still holds the later reports,
-as it does inside \code{\link[=nowcast_backtest]{nowcast_backtest()}}.
-}}
+\item{truth}{The \code{tbl_now} the nowcast is scored against -- normally the
+\emph{full} object, still holding the reports that arrived after the nowcast's
+\code{now}. Its eventual counts per event date are worked out for you: this is
+\code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}}, aggregated over anything that is not a
+stratum, with the count column read off the object
+(\code{\link[=get_case_count]{get_case_count()}}). A \strong{line list} is aggregated first, so it needs no
+special handling.
 
-\item{observed_col}{Name of the observed-count column in \code{truth}. Defaults to
-the last column that is neither the event date nor a stratum.}
+\code{NULL} (default) uses the \code{tbl_now} the nowcast was built from, which is
+only meaningful when that object still holds the later reports.}
 }
 \value{
 A \code{tibble} with the event-date column, the strata columns and the
@@ -37,13 +32,25 @@ and the 50\%/90\% interval coverage of a \link{tbl_nowcast}, one row per event d
 (and stratum).
 }
 \examples{
-predictions <- data.frame(
-  onset_week = as.Date("2020-01-05"),
-  .quantile_level = c(0.25, 0.5, 0.75),
-  .value = c(8, 10, 13)
+\donttest{
+data(denguedat)
+
+recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+dengue <- tbl_now(recent,
+  event_date = onset_week, report_date = report_week, verbose = FALSE
 )
-nc <- tbl_nowcast(predictions = predictions, method = "toy", event_date = "onset_week")
-score_nowcast(nc, truth = data.frame(onset_week = as.Date("2020-01-05"), .observed = 11))
+snapshot <- change_now(
+  dplyr::filter(dengue, report_week <= as.Date("2010-10-04")),
+  now = as.Date("2010-10-04")
+)
+
+if (requireNamespace("baselinenowcast", quietly = TRUE)) {
+  nc <- run_nowcast(snapshot, engine_baselinenowcast(draws = 100), verbose = FALSE)
+  # The FULL object is the truth: it still holds the reports that arrived
+  # after the snapshot's `now`.
+  score_nowcast(nc, truth = dengue)
+}
+}
 
 }
 \references{

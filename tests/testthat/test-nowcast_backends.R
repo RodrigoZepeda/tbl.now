@@ -49,7 +49,7 @@ test_that("baselinenowcast produces draws on the object's own event dates", {
   x <- backend_tbl_now()
   set.seed(20260824)
   nowcast <- suppressWarnings(
-    run_nowcast(x, "baselinenowcast", draws = 100, verbose = FALSE)
+    run_nowcast(x, engine_baselinenowcast(draws = 100), verbose = FALSE)
   )
 
   expect_true(is_tbl_nowcast(nowcast))
@@ -86,7 +86,7 @@ test_that("baselinenowcast nowcasts each stratum separately", {
   x <- backend_tbl_now(strata = TRUE)
   set.seed(20260824)
   nowcast <- suppressWarnings(
-    run_nowcast(x, "baselinenowcast", draws = 50, verbose = FALSE)
+    run_nowcast(x, engine_baselinenowcast(draws = 50), verbose = FALSE)
   )
 
   expect_equal(nowcast@strata, "gender")
@@ -104,7 +104,7 @@ test_that("two baselinenowcast fits can be ensembled", {
   x <- backend_tbl_now()
   set.seed(20260824)
   members <- lapply(1:2, function(i) {
-    suppressWarnings(run_nowcast(x, "baselinenowcast", draws = 100, verbose = FALSE))
+    suppressWarnings(run_nowcast(x, engine_baselinenowcast(draws = 100), verbose = FALSE))
   })
 
   ensemble <- nowcast_ensemble(a = members[[1]], b = members[[2]], verbose = FALSE)
@@ -139,7 +139,7 @@ test_that("NobBS is handed one row per CASE, not one row per count row", {
     .package = "NobBS"
   )
 
-  run_nowcast(x, "NobBS", verbose = FALSE)
+  run_nowcast(x, engine_nobbs(), verbose = FALSE)
 
   # THE failure this converter exists to prevent: 30 rows carrying 1,800 cases
   # nowcast as 30 cases, with no error and an answer 60 times too small.
@@ -165,13 +165,17 @@ test_that("NobBS is told the quantile levels that were asked for", {
 
   # NobBS reports whichever quantiles it is given at FIT time, so the levels have
   # to reach `specs` -- they cannot be recovered afterwards.
-  run_nowcast(x, "NobBS", quantile_levels = c(0.1, 0.5, 0.9), verbose = FALSE)
+  run_nowcast(x, engine_nobbs(quantile_levels = c(0.1, 0.5, 0.9)), verbose = FALSE)
   expect_equal(seen$quantiles, c(0.1, 0.5, 0.9))
 
   # An explicit `specs$quantiles` still wins
-  run_nowcast(x, "NobBS",
-    specs = list(quantiles = c(0.25, 0.75)),
-    quantile_levels = c(0.1, 0.5, 0.9), verbose = FALSE
+  run_nowcast(
+    x,
+    engine_nobbs(
+      specs = list(quantiles = c(0.25, 0.75)),
+      quantile_levels = c(0.1, 0.5, 0.9)
+    ),
+    verbose = FALSE
   )
   expect_equal(seen$quantiles, c(0.25, 0.75))
 })
@@ -194,7 +198,7 @@ test_that("a single stratum routes NobBS through NobBS.strat()", {
     .package = "NobBS"
   )
 
-  nowcast <- run_nowcast(x, "NobBS", verbose = FALSE)
+  nowcast <- run_nowcast(x, engine_nobbs(), verbose = FALSE)
 
   # `tbl_now_to_nobbs()` builds the single column `NobBS.strat()` takes, and the
   # engine hands over that column whether there is one declared stratum or six.
@@ -224,7 +228,7 @@ test_that("NobBS refuses a grid it cannot model", {
     data_type = "linelist", verbose = FALSE
   )
 
-  expect_error(run_nowcast(monthly, "NobBS", verbose = FALSE), "event units")
+  expect_error(run_nowcast(monthly, engine_nobbs(), verbose = FALSE), "event units")
 })
 
 # surveillance ----------------------------------------------------------------
@@ -242,7 +246,7 @@ test_that("surveillance gets a line list and a grid that reaches `now`", {
     .package = "surveillance"
   )
 
-  nowcast_fit(nowcast_method("surveillance"), x, verbose = FALSE)
+  nowcast_fit(engine_surveillance(), x, verbose = FALSE)
 
   expect_equal(nrow(seen$data), sum(x$n))
   expect_true(all(c("dHospital", "dReport") %in% colnames(seen$data)))
@@ -268,7 +272,7 @@ test_that("surveillance is fitted once per stratum", {
     .package = "surveillance"
   )
 
-  fit <- nowcast_fit(nowcast_method("surveillance"), x, verbose = FALSE)
+  fit <- nowcast_fit(engine_surveillance(), x, verbose = FALSE)
 
   # `surveillance::nowcast()` models ONE series and has no strata argument, so
   # two strata must mean two fits, each carrying only its own cases.
@@ -303,7 +307,7 @@ test_that("surveillance's predictions come from tidy(), keeping its own width", 
     class = "surveillance_strata"
   )
   tidied <- suppressWarnings(
-    nowcast_tidy(nowcast_method("surveillance"), fit, x,
+    nowcast_tidy(engine_surveillance(), fit, x,
       quantile_levels = nowcast_quantile_levels()
     )
   )
@@ -365,7 +369,7 @@ test_that("EpiNow2 uses estimate_infections(), and regional_epinow() for strata"
     .package = "EpiNow2"
   )
 
-  fit <- nowcast_fit(nowcast_method("EpiNow2"), x, verbose = FALSE)
+  fit <- nowcast_fit(engine_epinow2(), x, verbose = FALSE)
 
   expect_s3_class(fit, "estimate_infections")
   # `tbl_now_to_EpiNow2()`'s `estimate_infections` target: a date/confirm series
@@ -382,7 +386,7 @@ test_that("EpiNow2 uses estimate_infections(), and regional_epinow() for strata"
   )
 
   stratified <- nowcast_fit(
-    nowcast_method("EpiNow2"), counts_tbl_now(strata = TRUE), verbose = FALSE
+    engine_epinow2(), counts_tbl_now(strata = TRUE), verbose = FALSE
   )
 
   expect_true("region" %in% colnames(regional_seen))
@@ -412,7 +416,7 @@ test_that("EpiNow2's predictions come from tidy(), keeping its own width", {
 
   tidied <- suppressWarnings(
     nowcast_tidy(
-      nowcast_method("EpiNow2"), structure(list(), class = "estimate_infections"),
+      engine_epinow2(), structure(list(), class = "estimate_infections"),
       x, quantile_levels = nowcast_quantile_levels()
     )
   )
@@ -445,9 +449,9 @@ test_that("every built-in method has both extension methods registered", {
 })
 
 test_that("built-in method names are matched case-insensitively", {
-  expect_equal(nowcast_method("epinow2")$name, "EpiNow2")
-  expect_equal(nowcast_method("EPINOW2")$name, "EpiNow2")
-  expect_equal(nowcast_method("Surveillance")$name, "surveillance")
+  expect_equal(engine("epinow2")$name, "EpiNow2")
+  expect_equal(engine("EPINOW2")$name, "EpiNow2")
+  expect_equal(engine("Surveillance")$name, "surveillance")
 })
 
 # A nowcast estimates what has already happened -----------------------------

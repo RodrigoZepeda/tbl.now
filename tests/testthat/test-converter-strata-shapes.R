@@ -194,6 +194,60 @@ test_that("tbl_now_to_surveillance emits a column to split the line list on", {
   expect_equal(unname(totals[truth$label]), truth$total)
 })
 
+test_that("linelist_list pairs each line list with its own stratum's cases", {
+  skip_if_not_installed("surveillance")
+  x      <- awkward_strata_tbl_now()
+  pieces <- q(tbl_now_to_surveillance(x, format = "linelist_list",
+                                      verbose = FALSE))
+  truth  <- awkward_strata_totals()
+
+  expect_s3_class(pieces, "tbl_now_surveillance_list")
+  expect_true(is.list(pieces))
+  expect_setequal(names(pieces), truth$label)
+
+  # The counts have to be attached to the right label, not merely present: the
+  # totals are powers of ten per group, so a swap is arithmetically obvious.
+  expect_equal(
+    vapply(pieces[truth$label], nrow, integer(1)),
+    stats::setNames(as.integer(truth$total), truth$label)
+  )
+  # Each piece is a plain frame surveillance::nowcast() can take unchanged.
+  expect_true(all(c("dHospital", "dReport", "g1", "g2") %in% names(pieces[[1]])))
+  expect_s3_class(pieces[[1]], "data.frame")
+})
+
+test_that("linelist_list is a length-one list when there are no strata", {
+  skip_if_not_installed("surveillance")
+  x <- q(remove_all_strata(awkward_strata_tbl_now()))
+  pieces <- q(tbl_now_to_surveillance(x, format = "linelist_list",
+                                      verbose = FALSE))
+
+  # The return TYPE must not depend on whether strata happen to be attached --
+  # otherwise the caller's `lapply()` has to branch on it.
+  expect_named(pieces, "all")
+  expect_equal(nrow(pieces[[1]]), sum(awkward_strata_totals()$total))
+})
+
+test_that("linelist_list round-trips back to a tbl_now with its strata", {
+  skip_if_not_installed("surveillance")
+  x      <- awkward_strata_tbl_now()
+  pieces <- q(tbl_now_to_surveillance(x, format = "linelist_list",
+                                      verbose = FALSE))
+  back   <- q(as_tbl_now(pieces))
+
+  expect_true(is_tbl_now(back))
+  # The dates come back under the names the tbl_now used, not surveillance's.
+  expect_equal(get_event_date(back), "ev")
+  expect_equal(get_report_date(back), "rp")
+  expect_setequal(get_strata(back), c("g1", "g2"))
+  expect_equal(get_now(back), get_now(x))
+  # Counts expanded to rows, so the line list holds one row per case.
+  expect_equal(nrow(back), sum(awkward_strata_totals()$total))
+  # The derived label is dropped: it duplicates g1/g2 and declaring it would
+  # make the strata set wrong.
+  expect_false("strata" %in% names(back))
+})
+
 test_that("tbl_now_to_EpiNow2 emits the single `region` regional_epinow takes", {
   skip_if_not_installed("EpiNow2")
   x   <- awkward_strata_tbl_now()

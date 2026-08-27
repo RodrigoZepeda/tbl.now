@@ -44,8 +44,8 @@ dengue <- tbl_now(recent,
 
 if (requireNamespace("baselinenowcast", quietly = TRUE)) {
   bt <- nowcast_backtest(dengue,
-    methods = "baselinenowcast", now_dates = as.Date("2010-11-15"),
-    draws = 100, verbose = FALSE
+    engine_baselinenowcast(draws = 100),
+    now_dates = as.Date("2010-11-15"), verbose = FALSE
   )
   nowcast_weights(bt)
 }

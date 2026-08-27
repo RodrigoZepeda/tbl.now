@@ -88,6 +88,13 @@ ROUNDTRIP_REGISTRY <- list(
     reason = "same as NobBS: an unclassed data.frame."
   ),
   list(
+    id = "surveillance/linelist_list", package = "surveillance",
+    convert = function(x) {
+      tbl_now_to_surveillance(x, format = "linelist_list", verbose = FALSE)
+    },
+    back = TRUE, reason = NA_character_
+  ),
+  list(
     id = "surveillance/sts", package = "surveillance",
     convert = function(x) tbl_now_to_surveillance(x, format = "sts", verbose = FALSE),
     back = FALSE,

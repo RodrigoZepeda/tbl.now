@@ -56,3 +56,22 @@ score_tbl_now <- function() {
   )
 }
 
+
+#' A `tbl_now` whose eventual counts are exactly `counts`
+#'
+#' `score_nowcast()` and `as_scoringutils()` take the truth as a `tbl_now` and
+#' read the observed column off it -- there is no `observed_col` to hand them a
+#' bare data frame with. One report per event date, all at delay zero, so
+#' `get_latest_reported_cases()` gives back `counts` unchanged.
+truth_tbl_now <- function(dates, counts, event_col = "event_date",
+                          units = "days") {
+  data <- data.frame(ev = dates, rp = dates, n = as.numeric(counts))
+  names(data)[1] <- event_col
+  tbl_now(data,
+    event_date = event_col, report_date = "rp", case_count = "n",
+    data_type = "count-incidence",
+    # Stated rather than inferred: a single-row truth has no spacing to infer
+    # from, and `infer_units_one_column()` errors on fewer than two observations.
+    event_units = units, report_units = units, verbose = FALSE
+  )
+}

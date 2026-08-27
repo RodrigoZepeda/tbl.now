@@ -6,12 +6,9 @@
 \usage{
 nowcast_backtest(
   x,
-  methods,
-  now_dates = NULL,
   ...,
-  method_args = list(),
+  now_dates = NULL,
   horizon = 4,
-  quantile_levels = nowcast_quantile_levels(),
   seed = NULL,
   on_error = c("warn", "abort"),
   verbose = TRUE
@@ -21,36 +18,30 @@ nowcast_backtest(
 \item{x}{A \code{tbl_now} object holding the \emph{full} data (the later reports are
 what the retrospective nowcasts are scored against).}
 
-\item{methods}{Character vector of method names, as in \code{\link[=run_nowcast]{run_nowcast()}}.
-\strong{Optionally named}, and the names become the labels in the result. That is
-how one package appears twice: \code{c(hsgp = "diseasenowcasting", ar1 = "diseasenowcasting")} backtests two models of the same package
-separately, so \code{\link[=nowcast_weights]{nowcast_weights()}} can learn a weight for each — matching
-how \code{\link[=nowcast_ensemble]{nowcast_ensemble()}} takes a named list of members. Unnamed methods are
-labelled by their own name, exactly as before.}
+\item{...}{The \code{\link[=engine]{engine()}} objects to backtest, one per model. Each carries its
+own arguments, so there is no keyed side-table of per-method options to get
+wrong.
+
+Give an engine a \code{label} (or name the argument) when the same package
+appears twice: \code{engine_diseasenowcasting(label = "ar1", model = ...)} and a
+plain \code{engine_diseasenowcasting()} are backtested separately, so
+\code{\link[=nowcast_weights]{nowcast_weights()}} can learn a weight for each -- matching how
+\code{\link[=nowcast_ensemble]{nowcast_ensemble()}} takes a named list of members. An engine with no label
+is labelled by its method.}
 
 \item{now_dates}{Vector of Dates to nowcast at. Defaults to the four most
 recent event dates that are at least \code{horizon} units before the object's
 \code{now}, so that some later reports exist to score against.}
 
-\item{...}{Passed to \code{\link[=run_nowcast]{run_nowcast()}} for every method. Use \code{method_args} for
-arguments that differ between methods.}
-
-\item{method_args}{A named list of lists: \code{method_args$epinowcast} is passed
-only to the \code{"epinowcast"} method. Overrides \code{...} on name clashes. Keyed by
-the \emph{label} when \code{methods} is named (see \code{methods}), falling back to the
-method name.}
-
 \item{horizon}{Number of time units of hindsight required when \code{now_dates} is
 chosen automatically. Default \code{4}.}
 
-\item{quantile_levels}{Quantile levels to score at, see \code{\link[=run_nowcast]{run_nowcast()}}.}
-
 \item{seed}{Optional integer. When given, the RNG is seeded \strong{immediately
-before each fit}, from \code{seed} and the method and date that fit is for. One
+before each fit}, from \code{seed} and the label and date that fit is for. One
 \code{set.seed()} before the whole backtest is not enough: it only pins anything
 if every method consumes the same random numbers in the same order, so
 dropping a method, or refitting one date, silently moves every other fit.
-Seeding per (method, date) makes a fit depend only on which fit it is.}
+Seeding per (label, date) makes a fit depend only on which fit it is.}
 
 \item{on_error}{Either \code{"warn"} (default) to skip a model/date that fails
 with a warning, or \code{"abort"} to stop.}
@@ -64,7 +55,7 @@ An object of class \code{nowcast_backtest}: a list with
 \item{scores}{A \code{tibble} of per-date scores with an extra \code{.now} column.}
 \item{predictions}{A \code{tibble} of every retrospective quantile prediction.}
 \item{truth}{The observed counts used for scoring.}
-\item{methods}{The methods that produced at least one nowcast.}
+\item{methods}{The labels that produced at least one nowcast.}
 \item{now_dates}{The dates that were nowcast.}
 }
 }
@@ -80,6 +71,22 @@ eventually observed. This is what turns a set of models into ensemble weights
 Be aware that this refits every model once per date: with Bayesian backends
 and a long \code{now_dates} it is genuinely expensive.
 }
+\section{Every engine must report the same quantile levels}{
+
+
+A backtest exists to compare models, and two models summarised at different
+levels are not comparable: the weighted interval score is an average over the
+levels reported, so a model asked for three of them and one asked for nine are
+scoring different quantities. Mismatched engines are therefore an \strong{error}
+rather than a warning.
+
+This matters most for the engines where the levels are a \emph{fit-time} argument.
+\pkg{NobBS} computes exactly the quantiles it is handed and keeps no draws, so
+a level it was never asked for cannot be recovered afterwards -- and an
+ensemble weighted from such a backtest would silently fall back to whatever
+levels its members happened to share.
+}
+
 \examples{
 \donttest{
 data(denguedat)
@@ -92,8 +99,8 @@ dengue <- tbl_now(recent,
 
 if (requireNamespace("baselinenowcast", quietly = TRUE)) {
   bt <- nowcast_backtest(dengue,
-    methods = "baselinenowcast", now_dates = as.Date("2010-11-15"),
-    draws = 100, verbose = FALSE
+    engine_baselinenowcast(draws = 100),
+    now_dates = as.Date("2010-11-15"), verbose = FALSE
   )
   bt$scores
 }
@@ -101,5 +108,6 @@ if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 
 }
 \seealso{
-\code{\link[=nowcast_weights]{nowcast_weights()}}, \code{\link[=nowcast_ensemble]{nowcast_ensemble()}}, \code{\link[=score_nowcast]{score_nowcast()}}
+\code{\link[=engine]{engine()}}, \code{\link[=nowcast_weights]{nowcast_weights()}}, \code{\link[=nowcast_ensemble]{nowcast_ensemble()}},
+\code{\link[=score_nowcast]{score_nowcast()}}
 }

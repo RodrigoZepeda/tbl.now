@@ -46,12 +46,12 @@ first-class citizen of the package by lunchtime.
 
 # 1. The contract
 
-`run_nowcast(x, method = "mymodel")` does exactly three things:
+`run_nowcast(x, engine("mymodel", ...))` does exactly three things:
 
-1. builds a tiny S3 object of class `c("mymodel", "nowcast_method")`
-   (this is `nowcast_method()`, which you can call yourself when testing);
+1. takes the **engine** — an object of class `c("mymodel", "nowcast_engine")`
+   carrying your arguments, built by `engine()`;
 2. calls **`nowcast_fit(method, x, ...)`** — run the model, return whatever it
-   returns;
+   returns. The engine's arguments arrive in that `...`;
 3. calls **`nowcast_tidy(method, fit, x, ..., quantile_levels)`** — describe that
    result in the one shape the rest of the package understands.
 
@@ -79,12 +79,32 @@ need. Return `predictions` when your model produces quantiles directly, which is
 the case for the one we are about to write. You may return both.
 
 ::: {.alert .alert-info}
-**`...` reaches `nowcast_fit()`, not `nowcast_tidy()`.** `run_nowcast()` forwards
-the user's extra arguments to the fitting step only; the tidying step is called
-with the fit, the object and `quantile_levels`. Anything the tidy step needs —
-a number of draws, a tuning parameter, a lookup table — must be **stored in the
-object `nowcast_fit()` returns**. That is not a limitation so much as the reason
-the fit is kept verbatim.
+**The engine's arguments reach `nowcast_fit()`, not `nowcast_tidy()`.**
+`run_nowcast()` splices them into the fitting step only; the tidying step is
+called with the fit, the object and `quantile_levels`. Anything the tidy step
+needs — a number of draws, a tuning parameter, a lookup table — must be **stored
+in the object `nowcast_fit()` returns**. That is not a limitation so much as the
+reason the fit is kept verbatim.
+:::
+
+::: {.alert .alert-info}
+**Your backend gets `engine()` for free, and can have its own constructor.**
+`engine("mymodel", window = 12)` works the moment `nowcast_fit.mymodel()` is
+registered — there is nothing to declare. If you are shipping the backend in a
+package, write an `engine_mymodel()` alongside it that names your arguments, the
+way `engine_nobbs()` names `max_D` and `moving_window`: a named formal is
+discoverable from the signature and a typo in one is an error, where a typo in
+`...` is a default nobody notices.
+
+```r
+engine_mymodel <- function(..., window = 12,
+                           min_date = NULL,
+                           quantile_levels = nowcast_quantile_levels(),
+                           label = NULL) {
+  engine("mymodel", window = window, ...,
+         min_date = min_date, quantile_levels = quantile_levels, label = label)
+}
+```
 :::
 
 # 2. Reading the `tbl_now` correctly
@@ -374,9 +394,8 @@ That is the entire back-end: two functions, no registration, no `tbl.now` change
 ```{r run}
 nowcast <- run_nowcast(
   snapshot,
-  method    = "delay_ratio",
-  max_delay = 8,
-  verbose   = FALSE
+  engine("delay_ratio", max_delay = 8),
+  verbose = FALSE
 )
 
 nowcast
@@ -453,14 +472,14 @@ list_nowcast_methods(installed_only = FALSE)
 ```
 
 **`nowcast_backtest()`** refits it at a series of past dates and scores each one.
-`...` goes to `run_nowcast()`, so `max_delay` reaches our method:
+It takes engines, so `max_delay` travels with the model that needs it rather than
+in an outer `...` that has to be routed to the right backend by name:
 
 ```{r backtest}
 backtest <- nowcast_backtest(
   dengue,
-  methods   = "delay_ratio",
+  engine("delay_ratio", max_delay = 8),
   now_dates = as.Date(c("2010-07-05", "2010-08-02", "2010-09-06")),
-  max_delay = 8,
   seed      = 20260827,
   verbose   = FALSE
 )
@@ -535,10 +554,8 @@ set.seed(20260827)
 
 bootstrapped <- run_nowcast(
   snapshot,
-  method    = "delay_ratio_boot",
-  max_delay = 8,
-  n_draws   = 2000,
-  verbose   = FALSE
+  engine("delay_ratio_boot", max_delay = 8, n_draws = 2000),
+  verbose = FALSE
 )
 
 bootstrapped
@@ -596,7 +613,8 @@ dengue_by_sex <- denguedat |>
 
 stratified <- run_nowcast(
   dengue_by_sex,
-  method = "delay_ratio", max_delay = 8, verbose = FALSE
+  engine("delay_ratio", max_delay = 8),
+  verbose = FALSE
 )
 
 tidy(stratified) |> tail(4)
@@ -632,8 +650,11 @@ Everything above worked from the global environment. To put it in a package:
   built-in `"surveillance"` and `"EpiNow2"` back-ends do exactly this: `tidy()`
   already knows how to find their interval *and how wide it is*, and re-deriving
   that in a second place is how two real bugs got in.
-* **Test the fit and the tidy separately.** `nowcast_method("mymodel")` builds
-  the dispatch object, so `nowcast_tidy(nowcast_method("mymodel"), fit, x,
+* **Give it an `engine_mymodel()`.** `engine("mymodel", ...)` already works; a
+  constructor that names your arguments makes them discoverable and turns a typo
+  into an error. See section 1.
+* **Test the fit and the tidy separately.** `engine("mymodel")` builds the
+  dispatch object, so `nowcast_tidy(engine("mymodel"), fit, x,
   quantile_levels = c(0.1, 0.5, 0.9))` can be tested against a stored fit without
   refitting anything.
 * **Test against more than one shape.** A line list and a `count-cumulative`

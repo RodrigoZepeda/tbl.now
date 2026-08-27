@@ -117,6 +117,16 @@ tbl_now_columns <- function(env) {
     if (is.data.frame(value) || is.list(value)) {
       found <- c(found, names(value))
     }
+    # A list OF data frames -- `tbl_now_to_surveillance(format =
+    # "linelist_list")`, a `triangle_list` -- names its elements after the
+    # STRATA, so `names()` above returns stratum labels rather than columns.
+    # Look one level in, or the effect columns those pieces carry are invisible
+    # to the preflight and a perfectly good fit is skipped.
+    if (!is.data.frame(value) && is.list(value)) {
+      found <- c(found, unlist(lapply(value, function(piece) {
+        if (is.data.frame(piece)) names(piece) else NULL
+      })))
+    }
     for (nested in c("metareference", "metareport", "metadelay")) {
       if (is.list(value) && nested %in% names(value)) {
         found <- c(found, unlist(lapply(value[[nested]], names)))

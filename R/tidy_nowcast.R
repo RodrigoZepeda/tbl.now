@@ -216,7 +216,7 @@ tidy_tbl_nowcast <- function(x, probs = NULL, ...) {
 #'
 #' @examplesIf FALSE
 #' # A backtest refits every method once per date, so this is not run.
-#' bt <- nowcast_backtest(dengue, methods = "baselinenowcast")
+#' bt <- nowcast_backtest(dengue, engine_baselinenowcast())
 #' tidy(bt)
 #'
 #' @exportS3Method generics::tidy

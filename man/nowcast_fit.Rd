@@ -85,11 +85,15 @@ nowcast_fit(
 )
 }
 \arguments{
-\item{method}{A \code{\link[=nowcast_method]{nowcast_method()}} object.}
+\item{method}{A \code{\link[=engine]{engine()}} object. (The argument is called \code{method} for
+historical reasons and because that is what it selects; what arrives is the
+engine, so \code{method$args}, \code{method$label} and the rest are available to a
+backend that wants them.)}
 
 \item{x}{A \code{tbl_now} object.}
 
-\item{...}{Arguments passed straight to the underlying modelling function.}
+\item{...}{Arguments passed straight to the underlying modelling function.
+\code{\link[=run_nowcast]{run_nowcast()}} splices the engine's own arguments in here.}
 
 \item{quantile_levels}{Numeric vector of probabilities. Most backends ignore
 it at fit time (the quantiles are computed from the draws afterwards), but
@@ -136,7 +140,7 @@ modelling package: \code{nowcast_fit()} runs the model, \code{nowcast_tidy()} tu
 whatever it returned into the tidy quantile format every other function in
 tbl.now understands.
 
-Dispatch happens on the object built by \code{\link[=nowcast_method]{nowcast_method()}}, so a method for
+Dispatch happens on the object built by \code{\link[=engine]{engine()}}, so a method for
 \code{"mypackage"} is a function called \code{nowcast_fit.mypackage()}. It can live in
 any package.
 }

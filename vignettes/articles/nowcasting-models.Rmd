@@ -58,7 +58,7 @@ how to use the `run_nowcast` function for any
 of the aforementioned methods and generate ensemble nowcasts. 
 :::
 
-::: {.alert .alert-info}
+::: {.alert .alert-warning}
 **Note** This article aims only to show how to use each package for nowcasting.
 We are purposefully not using the optimal models from each 
 package for _this particular dataset_. Our goal is just to show
@@ -93,7 +93,7 @@ pak::pkg_install("RodrigoZepeda/diseasenowcasting")
 `tbl.now` ships with `covid_colombia`, daily COVID-19 case counts from
 Colombia's national surveillance system (INS) from 2020 to 2023. Each row is a
 `(notification_date, diagnosis_date, sex)` combination with a case count `n`. It includes
-notification date as the date the case was first notified (`event_date`), and the date the laboratory diagnosis was registered (`report_date`). The gap between the two is the reporting delay and **our goal is to nowcast the notifications**.
+notification date as the date the case was first notified (`event_date`), and the date the laboratory diagnosis was registered (`report_date`). The gap between the two is the reporting delay.  **OUR GOAL IS TO NOWCAST THE CASES AS THEY HAPPEN ACCORDING TO `notification_date`**.
 
 ```{r setup, message=FALSE}
 library(dplyr)
@@ -130,14 +130,15 @@ covid_now <- covid |>
     data_type   = "count-incidence"
   )
 
+#We can see the tbl_now
 covid_now
 ```
 
 ::: {.alert .alert-info}
 **About the warning.** `sex` is in the data but was not declared as 
 a covariate or strata, so each
-`(notification_date, diagnosis_date)` cell has two rows — one per sex — and
-`tbl_now()` says so. **You do not have to do anything about it.** The object is
+`(notification_date, diagnosis_date)` cell has two rows (one per sex). 
+**You can ignore the warning.** The object will be
 valid, and every `tbl_now_to_*()` converter pools undeclared columns for you, so
 this article's pooled fits are one series summed over `sex`, exactly as intended.
 :::
@@ -146,19 +147,6 @@ That is `r format(sum(covid$n), big.mark = ",")` cases over
 `r dplyr::n_distinct(covid$notification_date)` days, from March 2020 to
 `r format(get_now(covid_now))`. Everything in this article — every fit, every
 figure — is built from this dataset.
-
-::: {.alert .alert-info}
-**A note on series length.** This dataset carries 2.3M cases, and what that costs
-depends entirely on whether a package counts rows or reads counts:
-
-* `diseasenowcasting` takes the **whole** series untrimmed. Nothing is dropped.
-* `baselinenowcast` also keeps every day, but the **delays** are capped with
-  `max_delay = 30`. That is a modelling assumption, not a workaround: the long
-  tail carries under 1% of cases, and one 185-day straggler otherwise gives the
-  triangle 186 columns instead of 30.
-* The remaining packages (`NobBS`, `surveillance`, `epinowcast` and `epidist`)
-  are trimmed before converting as the time they take to run the models is prohibitively expensive. 
-:::
 
 ### A more complex object: strata and temporal effects
 
@@ -181,11 +169,17 @@ covid_seasonal <- covid_now |>
 
 
 ::: {.alert .alert-info}
-**TIP**: Run `autoplot()`
-with `panels = "delay_seasonality"` or `"delay_calendar"` first to *see* whether
-such effects are present before modelling them.
-:::
+**A note on series length.** This dataset carries 2.3M cases, and what that costs
+depends entirely on whether a package counts rows or reads counts:
 
+* `diseasenowcasting` takes the **whole** series untrimmed. Nothing is dropped.
+* `baselinenowcast` also keeps every day, but the **delays** are capped with
+  `max_delay = 30`. That is a modelling assumption, not a workaround: the long
+  tail carries under 1% of cases, and one 185-day straggler otherwise gives the
+  triangle 186 columns instead of 30.
+* The remaining packages (`NobBS`, `surveillance`, `epinowcast` and `epidist`)
+  are trimmed before converting as the time they take to run the models is prohibitively expensive. 
+:::
 
 ```{r comparison-load, echo=FALSE, message=FALSE, purl=FALSE}
 library(ggplot2)
@@ -211,7 +205,38 @@ show_fit <- function(package) {
 show_tidy <- function(package, n = 5) {
   tidied <- comparison$display[[package]]$tidy
   if (is.null(tidied)) return(invisible(NULL))
-  head(tidied, n)
+  tail(tidied, n)
+}
+
+# The interval an engine reported, quoted in prose. COMPUTED from the same
+# cached tables the section prints, never typed: a hand-written number next to a
+# rebuilt figure is the drift this file's precompute exists to prevent.
+#
+# `width` is the last day's band; `typical` the median over the whole plotted
+# window, which is the one that matters for "can you see it?" -- the band widens
+# sharply at the `now` edge, so the last day flatters a narrow engine.
+last_interval <- function(package) {
+  tidied <- comparison$display[[package]]$tidy
+  row    <- tidied[nrow(tidied), ]
+  num    <- function(v) format(round(v), big.mark = ",", trim = TRUE)
+  pct    <- function(v) sprintf("%.1f%%", 100 * v)
+
+  shown <- nowcasts[
+    nowcasts$package == package &
+      nowcasts$stratum == "Total" &
+      nowcasts$event_date %in% meta$horizon,
+  ]
+
+  list(
+    date    = format(row$event_date),
+    point   = num(row$estimate),
+    lower   = num(row$conf.low),
+    upper   = num(row$conf.high),
+    width   = pct((row$conf.high - row$conf.low) / row$estimate),
+    typical = pct(stats::median(
+      (shown$upper - shown$lower) / shown$estimate, na.rm = TRUE
+    ))
+  )
 }
 # EVERY package that appears in `nowcasts` needs an entry. The Summary figure
 # turns `package` into a factor with these levels, so a package missing here
@@ -370,7 +395,7 @@ covid_triangle[1:5, 1:6]
 ```
 
 ::: {.alert .alert-info}
-**Why cap the delays?** It is a modelling assumption, not a workaround. The
+**Why cap the delays?**  The reporting
 triangle keeps every one of the `r nrow(covid_triangle)` event dates. 
 This makes the fit very slow for a tail that carries well under 1% of cases. 
 :::
@@ -392,10 +417,9 @@ nowcast_samples <- baselinenowcast(
 
 ### With strata and effects.
 
-A reporting-triangle *matrix* is a single table with no room for strata or
-covariates, so `format = "matrix"` pools the strata (with a warning) and drops
-the effect columns. To nowcast each stratum we need to do it separately via a
-`format = "triangle_list"`. This creates one reporting-triangle per stratum.
+To nowcast each stratum we need to specify a
+`format = "triangle_list"`. This creates one reporting-triangle per stratum and
+returns them as a list.
 
 ```{r bln-strata, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
 # One reporting triangle per stratum, straight from the object.
@@ -454,10 +478,7 @@ on the *observations* before applying `tbl_now_to_epinowcast()`.
 ```{r enw-convert, eval=has("epinowcast"), warning=FALSE, message=FALSE}
 library(epinowcast)
 
-# Trim, then convert. 180 days, not two years: this is the slowest fit in the
-# article by a wide margin and it scales with the number of reference dates, so
-# the window is a real cost, not a formality. Two years of daily data took
-# **six hours** on one chain.
+# Trim, then convert. 180 days, not two years otherwise it takes too long to fit.
 covid_enw_recent <- covid_now |>
   filter(notification_date >= cutoff - 180) |>
   tbl_now_to_epinowcast(max_delay = 30, verbose = FALSE, quiet = TRUE)
@@ -473,9 +494,6 @@ enw_fit <- epinowcast(
   covid_enw_recent,
   fit = enw_fit_opts(
     pp = TRUE, chains = 2, iter_sampling = 500, iter_warmup = 500,
-    # `enw_fit_opts()` passes `...` to the sampler, so this is cmdstanr's own
-    # `seed`. Without it Stan picks its own each run: the same fit took 41
-    # minutes once and six hours the next time, and neither is reproducible.
     seed = 20260824
   )
 )
@@ -483,19 +501,8 @@ enw_fit <- epinowcast(
 
 Again, the `max_delay` is a **modelling choice, not a detail**: left unset, the
 converter infers it from the longest delay present (330 days here), and the
-nowcast then carries one reference date per delay. This becomes extremely slow. So
-we trim it.
+nowcast then carries one reference date per delay. This also becomes extremely slow. 
 
-::: {.alert .alert-warning}
-**Both trims matter here, and the reference-date one matters most.** `max_delay`
-caps the triangle's *width*; the `filter()` above caps its *height*. On this data
-the height is what hurts: two years of daily reference dates put one chain into a
-bad region of the posterior for six hours (repeated
-`neg_binomial_2_log_lpmf ... is nan` rejections and saturated treedepth), while
-the other chain of the same fit finished in sixteen minutes. 180 days does not
-have that problem. If you widen the window on your own data, watch the sampler
-rather than assuming it scales gently.
-:::
 
 ### With strata and effects.
 
@@ -511,13 +518,11 @@ enw_seasonal <- covid_seasonal |>
   tbl_now_to_epinowcast(max_delay = 30, verbose = FALSE, quiet = TRUE)
 
 # Drop the seasonal terms into a reference-module formula and fit as usual: the
-# covariates now enter the reference model.
+# covariates now enter the reference model. Thet have the same names as in 
+# `covid_seasonal` when using `compute_temporal_effects`. 
 enw_seasonal_fit <- epinowcast(
   enw_seasonal,
   reference = enw_reference(
-    # The column names carry the PERIOD: `seasons = 365` above makes
-    # `.event_season_365_*`, not `.event_season_52_*`. `get_temporal_effect_cols()`
-    # on the object tells you which you have.
     parametric   = ~ 1 + .event_season_365_sin + .event_season_365_cos,
     distribution = "lognormal",
     data         = enw_seasonal
@@ -530,11 +535,9 @@ enw_seasonal_fit <- epinowcast(
 ```
 
 ::: {.alert .alert-info}
-**A 365-day cycle on a 180-day window is half a period.** The Fourier terms are
-still estimable, but they are weakly identified here, so read the seasonal
+The Fourier terms are weakly identified in this model, so read the seasonal
 coefficients as a demonstration of *how* to put temporal effects into a module
-formula rather than as a finding about COVID in Colombia. On a series long
-enough to carry the cycle, the same two lines are the whole change.
+formula rather than as a finding about COVID-19 in Colombia. 
 :::
 
 In both stratified and unstratified cases the predictions can be recovered with `tidy`:
@@ -554,8 +557,8 @@ nowcast_panels("epinowcast")
 ## NobBS
 
 [`NobBS`](https://cran.r-project.org/package=NobBS) works from a **linelist**
-with an onset-date column and a report-date column, and it counts **rows** —
-each row is one case. Our data are counts, so they have to be expanded first.
+with an onset-date column and a report-date column, and it counts **rows**. 
+Each row is one case. Our data are counts, so they have to be expanded first.
 `tbl_now_to_nobbs()` does that and names the columns what `NobBS()` expects:
 
 ::: {.alert .alert-warning}
@@ -576,9 +579,8 @@ nrow(covid_linelist)   # one row per case
 
 ::: {.alert .alert-warning}
 **Do not hand `NobBS()` count data directly.** It counts rows, so a table of
-1,174 rows carrying 50,160 cases is nowcast as **1,174 cases** — no error, just
-an answer that is 40 times too small. The converter exists to make that
-impossible.
+1,174 rows carrying 50,160 cases is nowcast as **1,174 cases**!. 
+The converter exists to make that impossible.
 :::
 
 
@@ -617,10 +619,8 @@ figured out.
 
 `NobBS.strat()` fits one nowcast per stratum, and its `strata` argument names
 **one** column. `tbl_now_to_nobbs()` therefore adds a `strata` column holding
-every declared stratum pasted together, which you hand straight over — with one
-stratum it is just `sex`, and with several it is the combination
-(`"Female | Bogotá"`), which is what "a nowcast per stratum" means to `NobBS`.
-The original columns ride along too, so you can split on them yourself instead:
+every declared stratum pasted together under the name `strata`. Use
+`"strata"`  as the name for `NobBS.strat`:
 
 ```{r nobbs-strata, eval=run_models && has("NobBS"), warning=FALSE, message=FALSE}
 covid_linelist_sex <- covid_seasonal |>
@@ -643,6 +643,27 @@ In both stratified and unstratified cases the predictions can be recovered with 
 ```{r nobbs-panels, purl=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=3.6, out.width="100%", fig.cap="Nowcast both stratified and total using the NobBS package", fig.alt="Three panels (Total, Female, Male) comparing the NobBS nowcast against the counts reported by now and the counts those dates eventually reached."}
 nowcast_panels("NobBS")
 ```
+
+```{r nobbs-interval, echo=FALSE, purl=FALSE}
+nobbs_ci <- last_interval("NobBS")
+```
+
+::: {.alert .alert-warning}
+**There is a credible interval in that figure — it is just too narrow to see.**
+Every panel in this article draws the engine's interval as a shaded band, and
+`NobBS` does return one. The `tidy()` table above gives
+**`r nobbs_ci$point` [`r nobbs_ci$lower`, `r nobbs_ci$upper`]** for
+`r nobbs_ci$date` — a band `r nobbs_ci$width` of the estimate wide, and that is
+its *widest* day. Across the thirty days plotted the median width is
+**`r nobbs_ci$typical`**, which is thinner than the line drawn on top of it.
+
+Nothing was lost in translation — the model is simply that confident. At roughly
+ten thousand cases a day a Poisson-like posterior puts its interval near
+$\pm\sqrt{n}$, and `NobBS` estimates the delay distribution from a great deal of
+data. **Read these bounds off `tidy()`, not off the figure**, and compare them
+with `epinowcast` above and `EpiNow2` below, whose delay carries far more
+uncertainty and whose bands show it.
+:::
 
 ## surveillance
 
@@ -669,34 +690,25 @@ covid_sur <- tbl_now_to_surveillance(covid_sur_now, verbose = FALSE)
 head(covid_sur)
 ```
 
-`surveillance::nowcast()` also wants two date **grids**, and neither has a
-default you can rely on. `get_surveillance_when()` gives the dates you want
-estimated, and `get_surveillance_range()` the whole axis the model is laid on —
-both read off the `tbl_now`, so `now` and the daily step are not restated by
-hand:
-
+`surveillance::nowcast()` requires you to pass two date **grids**. Use `get_surveillance_when()` to get the dates you want estimated, and `get_surveillance_range()` for the whole axis the model is laid on.
 The nowcast itself needs a `now`, the dates you want estimated (`when`), and a
 maximum delay `D`. All of it can come from the `tbl_now`:
 
 ```{r sur-fit, eval=run_models && has("surveillance"), message=FALSE, warning=FALSE}
-sur_now  <- get_now(covid_now)
-sur_when <- get_surveillance_when(covid_sur_now, length = 30)   # days to estimate
-
-# `dRange` gives surveillance the grid explicitly, so it reaches the `now` even
-# if the most recent days carry no reports yet: a line list cannot express a
-# zero day (no rows), so zero-completion is no help here.
-sur_range <- get_surveillance_range(covid_sur_now)
-
+#Note that in the call we use our get_now(), get_surveillance_when()
+#and get_surveillance_range() functions to get those variables from the 
+#tbl.now
 sur_fit <- nowcast(
-  now          = sur_now,
-  when         = sur_when,
+  now          = get_now(covid_sur_now),
+  when         = get_surveillance_when(covid_sur_now, length = 30),
   data         = covid_sur,
   dEventCol    = "dHospital",
   dReportCol   = "dReport",
   aggregate.by = "1 day",
   D            = 30,
   method       = "bayes.notrunc.bnb",
-  control      = list(dRange = sur_range, N.tInf.max = 100000, nSamples = 1000)
+  control      = list(dRange = get_surveillance_range(covid_sur_now), 
+                      N.tInf.max = 100000, nSamples = 1000)
 )
 
 ```
@@ -716,10 +728,10 @@ show_tidy("surveillance")
 ### With strata and effects.
 
 `surveillance::nowcast()` has **no strata argument** as it only models one
-series, so a stratified analysis means one fit per stratum. The converter adds a
-single `strata` column holding every declared stratum, which is what `split()`
-needs — with one stratum it is just `sex`, and with several it is the
-combination:
+series, so a stratified analysis means one fit per stratum. Ask the converter
+for `format = "linelist_list"` and it does the splitting, exactly as
+`format = "triangle_list"` does for `baselinenowcast`: one line list per stratum,
+in a plain list you can `lapply()` over.
 
 ```{r sur-strata, eval=has("surveillance"), message=FALSE, warning=FALSE}
 # Trim first, exactly as above: the whole window is 2.3M cases and the converter
@@ -727,18 +739,27 @@ combination:
 covid_sur_seasonal <- covid_seasonal |>
   filter(notification_date >= cutoff - 60)
 
-covid_sur_eff <- tbl_now_to_surveillance(covid_sur_seasonal, verbose = FALSE)
-
-# `sex` is kept as a column, and `strata` is the one to split on.
-head(covid_sur_eff)
+covid_sur_eff <- tbl_now_to_surveillance(
+  covid_sur_seasonal,
+  format  = "linelist_list",
+  verbose = FALSE
+)
 ```
+
+```{r sur-strata-print, eval=has("surveillance"), warning=FALSE}
+covid_sur_eff
+```
+
+With no strata declared this is still a list, of length one named `"all"`, so the
+`lapply()` below does not have to know which case it is in. The default
+`format = "linelist"` gives the same information as one frame with a pasted
+`strata` column, if you would rather split it yourself.
 
 ```{r sur-strata-fit, eval=run_models && has("surveillance"), message=FALSE}
 sur_by_stratum <- covid_sur_eff |>
-  split(covid_sur_eff$strata) |>
   lapply(\(df) nowcast(
-    now          = sur_now,
-    when         = sur_when,
+    now          = get_now(covid_sur_seasonal),
+    when         = get_surveillance_when(covid_sur_seasonal, length = 30),
     data         = df,
     dEventCol    = "dHospital",
     dReportCol   = "dReport",
@@ -768,6 +789,22 @@ In both stratified and unstratified cases the predictions can be recovered with 
 ```{r sur-panels, purl=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=3.6, out.width="100%", fig.cap="Nowcast both stratified and total using the surveillance package", fig.alt="Three panels (Total, Female, Male) comparing the surveillance nowcast against the counts reported by now and the counts those dates eventually reached."}
 nowcast_panels("surveillance")
 ```
+
+```{r sur-interval, echo=FALSE, purl=FALSE}
+sur_ci <- last_interval("surveillance")
+```
+
+::: {.alert .alert-warning}
+**As with `NobBS`, the prediction interval is drawn but invisible.** `tidy()`
+reads it from the `stsNC` object's `pi` slot at the width `control$alpha` sets
+(95% by default), and for `r sur_ci$date` it is
+**`r sur_ci$point` [`r sur_ci$lower`, `r sur_ci$upper`]** — `r sur_ci$width` of
+the estimate, against a median of `r sur_ci$typical` over the thirty days
+plotted. You do **not** need the JAGS-backed `bayes.trunc` methods to get
+uncertainty out of `surveillance`; `bayes.notrunc.bnb` above reports it. (The
+`lawless` and `unif` methods may leave the slot empty, and then the bounds come
+back `NA`.)
+:::
 
 ## EpiNow2
 
@@ -989,7 +1026,20 @@ regional_fit <- regional_epinow(
 ```
 
 `tidy()` on the result gives one block per region, so `stratum` stays a unique
-key alongside `event_date`.
+key alongside `event_date`, and the pooled and stratified fits plot together
+exactly as every other engine's do:
+
+```{r epinow2-panels, purl=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=3.6, out.width="100%", fig.cap="Nowcast both stratified and total using the EpiNow2 package", fig.alt="Three panels (Total, Female, Male) comparing the EpiNow2 nowcast against the counts reported by now and the counts those dates eventually reached."}
+nowcast_panels("EpiNow2")
+```
+
+::: {.alert .alert-info}
+**EpiNow2's interval is much the widest here**, and that is the model rather
+than the data: `estimate_infections()` fits a latent infection curve and
+propagates the generation time, the incubation period *and* the fitted
+truncation into every day, where the other engines model the reporting delay
+alone. Read the width as the price of the extra structure.
+:::
 
 ::: {.alert .alert-info}
 **Two shapes EpiNow2 has that `tbl.now` does not convert for.**
@@ -1040,16 +1090,6 @@ delay_model <- covid_now |>
   epidist()
 ```
 
-::: {.alert .alert-info}
-**Why `marginal` and not `latent` on this data.** `as_epidist_latent_model()`
-carries one latent variable per **case**, so it needs the counts expanded back to
-one row each — handing it the whole series turns 6.1M cases into 6.1M rows and it
-never finishes. The marginal model reads the weights instead, which is exactly
-what `tbl_now_to_epidist()` gives it for `count-incidence` data. The trim to the
-last 30 days is still there because a delay distribution needs *delays*, not a
-long series.
-:::
-
 The fitted delay distribution can then feed back into a nowcast for example as
 a data-informed prior in `epinowcast`.
 
@@ -1069,7 +1109,7 @@ delay_by_sex <- covid_seasonal |>
   filter(notification_date >= cutoff - 30) |>
   tbl_now_to_epidist(verbose = FALSE) |>
   as_epidist_marginal_model() |>
-  epidist(formula = mu ~ 1 + sex)
+  epidist(formula = mu ~ 1 + sex + .event_season_365_sin + .event_season_365_cos)
 ```
 
 `tidy()` works here too, but it returns a **different table**, because
@@ -1081,79 +1121,15 @@ the fitted delay distribution:
 tidy(delay_model)
 ```
 
-| column | meaning |
-|---|---|
-| `term` | a parameter of the fitted delay distribution |
-| `estimate` | posterior median |
-| `conf.low`, `conf.high` | interval bounds, using \pkg{broom}'s names |
-| `level` | the width of that interval |
-| `engine` | always `"epidist"` |
-
-The `term` values are the distribution's own parameters (`mu`, `sigma`, or
-whichever the `family` has) **plus** the derived `mean` and `sd` — the delay
-summaries those parameters imply, which are usually the numbers you actually
-want to quote. The fit keeps its draws, so `probs` works as it does elsewhere:
-`tidy(delay_model, probs = c(0.05, 0.95))` adds `q5` and `q95` columns.
-
-::: {.alert .alert-warning}
-**Watch the dispatch.** `epidist()` returns an object whose class is
-`c("brmsfit", "epidist_fit")`, in that order. If \pkg{broom.mixed} is loaded,
-its `tidy.brmsfit()` method matches **first** and you get raw \pkg{brms}
-parameters instead of the delay table above. Call `tidy.epidist_fit(fit)`
-explicitly when you cannot be sure which method wins.
-:::
-
-The natural use of the result here is as a **data-informed delay prior** for one
-of the other engines.
-
-### A caveat on this dataset: same-day reporting
-
-Every other section ends with the nowcast plotted against the truth. The
-equivalent check here would be the fitted delay distribution against the delays
-actually observed — and on `covid_colombia` that check **fails**, for a reason
-worth understanding before you reach for a delay model on your own data.
-
-```{r epidist-zero-share, echo=FALSE, purl=FALSE}
-# Computed, not typed. The figure quoted here was hand-written and had drifted
-# to 57.4% against an actual 34.9% -- the same class of mistake as everything
-# else the precompute now runs rather than restates.
-delay_window <- covid_now |>
-  filter(notification_date >= cutoff - 30) |>
-  as_tibble()
-delay_days <- as.numeric(delay_window$diagnosis_date - delay_window$notification_date)
-share <- function(d) {
-  sprintf("%.1f%%", 100 * sum(delay_window$n[delay_days == d]) / sum(delay_window$n))
-}
-```
-
-**`r share(0)`** of the cases in the fitting window carry a delay of exactly
-**zero** days: notification and laboratory diagnosis are recorded on the same
-date. Another `r share(1)` arrive the next day. A lognormal — `epidist`'s default
-family, and the usual choice for a delay — has no way to represent a point mass
-at zero, because `log(0)` is undefined. Asked to fit one anyway, it does not fail
-loudly; it inflates the variance until the density piles up near zero, and
-reports:
 
 ```{r epidist-caveat, echo=FALSE, purl=FALSE}
 show_tidy("epidist")
 ```
 
-A mean delay of that order is not a convergence warning you can tune away. It is
-the model telling you that the family cannot describe the data. (These are the
-numbers from the fit shown above, not an illustration: the table is read back
-from the same run.)
-
 ::: {.alert .alert-warning}
-**What to do instead.** If same-day reporting dominates your series, a
-continuous positive-support distribution is the wrong tool. The options are to
-model the delay as **discrete** (a distribution that puts real mass on 0), to fit
-a **zero-inflated** or hurdle form that separates "reported same day" from "how
-long otherwise", or to keep the continuous fit for the *non-zero* delays only and
-report the zero share separately. `epidist` also offers `Gamma()` and
-`weibull()`, but neither solves this: both have zero density at zero too.
-
-This is a property of the data, not of `tbl.now` or `epidist` — the converter
-does its job, and the diagnosis above comes straight from `tidy()`.
+The current model does not converge. Again this lies on how we specified the model
+and in the amount of zero-day-delays we have (~34%). Read this as a demonstration of *how* 
+to call the model from `tbl.now` rather than a demonstration of the model's effectiveness. 
 :::
 
 
@@ -1199,17 +1175,9 @@ show_tidy("baselinenowcast_probs")
 **Only engines that keep draws can answer an arbitrary `probs`.** That is
 `diseasenowcasting`, `baselinenowcast` and `epinowcast`. `NobBS` and
 `surveillance` report a fixed set of summaries, so asking them for a quantile
-they never computed is an **error** rather than a silent approximation. See below.
-:::
-
-### Asking the other engines for the quantiles you want
- 
-Several of these packages will happily compute any quantile you
-just have to **ask at fit time**, because once the fit returns, the draws are
-gone and there is nothing left.
-
-`NobBS` is the clearest example. Its `specs` argument takes a `quantiles`
-element, and whatever you put there is computed alongside the default summaries:
+they never computed is an **error** rather than a silent approximation. To be
+able to do so you need to specify at **fit time** the quantiles you want. For example with
+`NobBS` you can use the `specs` to set `quantiles`:
 
 ```{r nobbs-quantiles-1, eval=run_models && has("NobBS")}
 nobbs_quantiles <- NobBS(
@@ -1224,15 +1192,16 @@ nobbs_quantiles <- NobBS(
 )
 ```
 
-You can now request them with probs: 
+so that they can be called with `tidy`:
 
 ```{r nobbs-probs, message=FALSE, warning=FALSE, eval=FALSE}
 tidy(nobbs_quantiles, probs = c(0.1, 0.5, 0.9))
-```
+``` 
 
 ```{r nobbs-probs-out, echo=FALSE, purl=FALSE}
 show_tidy("NobBS_quantiles")
 ```
+:::
 
 
 ## Summary

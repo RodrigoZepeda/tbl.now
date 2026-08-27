@@ -209,7 +209,9 @@ test_that("counts are nowcast as CASES, not as rows", {
     },
     .package = "NobBS"
   )
-  suppressWarnings(run_nowcast(x, "NobBS", max_D = 3, moving_window = 20, verbose = FALSE))
+  suppressWarnings(run_nowcast(
+    x, engine_nobbs(max_D = 3, moving_window = 20), verbose = FALSE
+  ))
 
   expect_equal(nrow(seen), total)
 })
@@ -264,7 +266,7 @@ test_that("run_nowcast() agrees with the hand-written call", {
 
   set.seed(20260825L)
   through_run_nowcast <- suppressWarnings(suppressMessages(
-    run_nowcast(x, "baselinenowcast", draws = 100, verbose = FALSE)
+    run_nowcast(x, engine_baselinenowcast(draws = 100), verbose = FALSE)
   ))
 
   set.seed(20260825L)

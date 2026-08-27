@@ -80,6 +80,13 @@
   --tn-ink-muted:       #9aa3a0;
   --tn-on-strong:       #ffffff;
   --tn-code-surface:    #22292a;
+
+  /* Terminal colours, lifted for the dark code surface — see the ANSI block
+     at the bottom of this file. Only defined here: in light mode the originals
+     are already legible and nothing overrides them. */
+  --tn-ansi-blue:       #6ea8fe;
+  --tn-ansi-red:        #e78b7f;
+  --tn-ansi-cyan:       #5fd7d7;
 }
 
 .navbar {
@@ -441,4 +448,41 @@ figcaption {
 .figure,
 figure {
   text-align: center;
+}
+
+
+/* --------------------------------------------------------------------------
+   ANSI colours in printed output, in dark mode.
+
+   `cli` styles `{.val ...}` in ANSI blue, `{.cls ...}` and error bullets in
+   red, and a few fields in cyan. pkgdown converts the escape codes to HTML at
+   build time and bakes each one in as an INLINE `style="color: #0000BB"`. On
+   the charcoal `--tn-code-surface` those three are near-invisible: the dates
+   and row counts in `print(covid_snapshots)` disappear entirely.
+
+   Two consequences shape the rules below.
+
+     1. An inline style beats every class selector, whatever its specificity,
+        so the ONLY way to lift them is an attribute selector carrying
+        `!important`. There is nothing to hook that is not the style itself.
+     2. This must be scoped to `pre`. pkgdown stamps `data-bs-theme="dark"` on
+        the `<nav class="navbar">` ELEMENT on every page, light mode included
+        (see the note by the search box above), so an unscoped
+        `[data-bs-theme="dark"] [style*=...]` would also match inside the
+        navbar. No `<pre>` lives there, so `pre` is what keeps this rule to
+        genuinely dark pages.
+
+   Light mode is left alone: these are the colours a terminal shows, and they
+   are perfectly legible on the pale code surface.
+   -------------------------------------------------------------------------- */
+[data-bs-theme="dark"] pre [style*="#0000BB" i] {
+  color: var(--tn-ansi-blue) !important;
+}
+
+[data-bs-theme="dark"] pre [style*="#BB0000" i] {
+  color: var(--tn-ansi-red) !important;
+}
+
+[data-bs-theme="dark"] pre [style*="#00BBBB" i] {
+  color: var(--tn-ansi-cyan) !important;
 }

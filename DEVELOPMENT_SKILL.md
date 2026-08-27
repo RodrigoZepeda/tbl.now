@@ -438,10 +438,25 @@ against every shipped dataset.
 
 ## 8. Testing
 
-* Run with `NOT_CRAN=true`, or roughly 780 tests silently skip:
+* Run with `NOT_CRAN=true`, or 424 tests silently skip:
   ```r
   NOT_CRAN=true Rscript -e 'devtools::load_all("."); testthat::test_local()'
   ```
+* **You cannot measure the CRAN path with `test_local()`, and the mistake is
+  invisible.** `testthat::test_local()` calls `local_assume_not_on_cran()`, which
+  sets `NOT_CRAN = "true"` whenever the variable is empty; `devtools::check()`
+  sets it too (`formals(devtools::check)$env_vars`). So `env -u NOT_CRAN Rscript
+  -e 'testthat::test_local()'` runs **every** `skip_on_cran()` test anyway. Use
+  `test_check()` -- what `tests/testthat.R` runs under `R CMD check` -- and
+  assert you are on the path you think you are:
+  ```r
+  library(testthat); library(tbl.now)
+  stopifnot(testthat:::on_cran())
+  setwd("tests"); test_check("tbl.now")
+  ```
+  The two paths are not close: at 0.27.0 the CRAN path was **6.1 min** (1334
+  tests, 424 skipped) and the full path **30.8 min**. Optimising the wrong one
+  wastes a day. See `devel/TEST_SPEEDUP_BRIEF.md`.
 * Guard optional packages with `skip_if_not_installed()`, and heavy work with
   `skip_on_cran()`.
 * **Test the failure you actually fixed.** A test that exercises the harmless

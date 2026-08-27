@@ -10,7 +10,7 @@ tbl_now_to_surveillance(
   ...,
   event_col = "dHospital",
   report_col = "dReport",
-  format = c("linelist", "sts"),
+  format = c("linelist", "linelist_list", "sts"),
   aggregate_by = NULL,
   strata_col = "strata",
   strata_sep = " | ",
@@ -28,9 +28,17 @@ in the result. Default to \pkg{surveillance}'s own \code{"dHospital"} and
 \code{"dReport"}, so \code{\link[surveillance:nowcast]{surveillance::nowcast()}} finds them without further
 arguments.}
 
-\item{format}{\code{"linelist"} (default) for the data frame
-\code{\link[surveillance:nowcast]{surveillance::nowcast()}} expects, or \code{"sts"} for an
-\link[surveillance:sts]{surveillance::sts} object of the observed curve.}
+\item{format}{One of
+\itemize{
+\item \code{"linelist"} (default) -- the single data frame
+\code{\link[surveillance:nowcast]{surveillance::nowcast()}} expects;
+\item \code{"linelist_list"} -- one line list \strong{per stratum}, as a
+\link{tbl_now_surveillance_list}. Still a plain list, so it goes straight into
+\code{lapply()}; length one and named \code{"all"} when the object declares no
+strata, so the return type does not depend on whether strata happen to be
+attached;
+\item \code{"sts"} -- an \link[surveillance:sts]{surveillance::sts} object of the observed curve.
+}}
 
 \item{aggregate_by}{Aggregation interval, e.g. \code{"1 week"}. \code{NULL} (default)
 derives it from the object's event units (\code{"days"} -> \code{"1 day"}, \code{"weeks"}
@@ -49,7 +57,8 @@ stratum. \code{NULL} leaves it out. Ignored when the object declares no strata.}
 \item{verbose}{Logical. Print the choices that were made.}
 }
 \value{
-A \code{data.frame} line list (\code{format = "linelist"}) or an
+A \code{data.frame} line list (\code{format = "linelist"}), a
+\link{tbl_now_surveillance_list} (\code{format = "linelist_list"}) or an
 \link[surveillance:sts]{surveillance::sts} object (\code{format = "sts"}).
 }
 \description{
@@ -60,6 +69,11 @@ column holding the event date and another the report date, named by its
 \code{dEventCol} / \code{dReportCol} arguments. \code{tbl_now_to_surveillance()} produces
 exactly that data frame, renaming the two dates to \pkg{surveillance}'s own
 defaults so the result can be passed straight through.
+
+With \code{format = "linelist_list"} it returns \strong{one line list per stratum} as a
+\link{tbl_now_surveillance_list}, ready to \code{lapply()} over --
+\code{\link[surveillance:nowcast]{surveillance::nowcast()}} has no strata argument, so a stratified analysis is
+one fit per stratum and this saves splitting by hand.
 
 With \code{format = "sts"} it instead returns the observed epidemic curve as an
 \link[surveillance:sts]{surveillance::sts} object via \code{\link[surveillance:linelist2sts]{surveillance::linelist2sts()}}, which is what
@@ -72,11 +86,11 @@ object with \code{\link[=get_now]{get_now()}} and \code{\link[=get_event_units]{
 
 
 \code{\link[surveillance:nowcast]{surveillance::nowcast()}} models one series and has no strata argument, so a
-stratified analysis means fitting each stratum separately. The declared
-strata are pasted into a single \code{strata} column to split on:
+stratified analysis means fitting each stratum separately.
+\code{format = "linelist_list"} does the splitting, so the fit is an \code{lapply()}:
 
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{sur <- tbl_now_to_surveillance(x, verbose = FALSE)
-fits <- lapply(split(sur, sur$strata), function(piece) \{
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{pieces <- tbl_now_to_surveillance(x, format = "linelist_list", verbose = FALSE)
+fits <- lapply(pieces, function(piece) \{
   surveillance::nowcast(
     now = get_now(x), when = get_surveillance_when(x),
     data = piece, dEventCol = "dHospital", dReportCol = "dReport",
@@ -85,7 +99,14 @@ fits <- lapply(split(sur, sur$strata), function(piece) \{
 \})
 }\if{html}{\out{</div>}}
 
-The original columns are kept alongside it, so you can split on them instead.
+The \code{control$dRange} comes from the \strong{whole object}, not from the piece:
+every stratum has to be laid on the same time axis, or a stratum whose first
+case arrived late starts its own time on a different day.
+
+The default \code{format = "linelist"} keeps the same information in one frame:
+the declared strata are pasted into a single \code{strata} column, so
+\code{split(sur, sur$strata)} reproduces the list. The original columns are kept
+alongside it, so you can split on them instead.
 }
 
 \section{Cost of expanding counts}{
@@ -130,5 +151,5 @@ get_now(nowobj)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}
+\code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}, \link{tbl_now_surveillance_list}
 }

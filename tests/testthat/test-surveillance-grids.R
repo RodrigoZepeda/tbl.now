@@ -166,7 +166,7 @@ test_that("run_nowcast(surveillance) survives counts above surveillance's defaul
   expect_gt(largest, 300)
 
   fit <- suppressWarnings(suppressMessages(
-    run_nowcast(x, "surveillance", D = 5, verbose = FALSE)
+    run_nowcast(x, engine_surveillance(D = 5), verbose = FALSE)
   ))
   expect_s3_class(tidy(fit), "data.frame")
   expect_gt(nrow(as_tibble(fit)), 0L)
@@ -181,7 +181,10 @@ test_that("an explicit N.tInf.max in `control` still wins", {
   # Whatever the default would have been, the caller's value is what is used --
   # so this is small enough to be visibly the caller's choice, not ours.
   expect_no_error(suppressWarnings(suppressMessages(
-    run_nowcast(x, "surveillance", D = 4,
-                control = list(N.tInf.max = 100000), verbose = FALSE)
+    run_nowcast(
+      x,
+      engine_surveillance(D = 4, control = list(N.tInf.max = 100000)),
+      verbose = FALSE
+    )
   )))
 })

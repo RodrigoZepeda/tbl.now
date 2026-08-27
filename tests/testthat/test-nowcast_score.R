@@ -41,9 +41,7 @@ test_that("score_nowcast() returns one row per target", {
   nowcast <- tbl_nowcast(
     predictions = predictions, method = "toy", event_date = "event_date"
   )
-  truth <- data.frame(
-    event_date = as.Date("2020-01-06") + c(0, 7), .observed = c(10, 20)
-  )
+  truth <- truth_tbl_now(as.Date("2020-01-06") + c(0, 7), c(10, 20), units = "weeks")
 
   scores <- score_nowcast(nowcast, truth = truth)
 
@@ -69,11 +67,46 @@ test_that("score_nowcast() needs a truth it can find", {
     method = "toy", event_date = "event_date"
   )
   expect_error(score_nowcast(nowcast), "does not carry its source data")
+
+  # A bare data frame is refused: the count column is read off the `tbl_now`
+  # with `get_case_count()`, so there is nothing for the caller to name and
+  # nothing to guess at.
   expect_error(
-    score_nowcast(nowcast, truth = data.frame(event_date = as.Date("2020-01-06"), y = 1),
-      observed_col = "nope"
+    score_nowcast(nowcast, truth = data.frame(event_date = as.Date("2020-01-06"), y = 1)),
+    "must be a <tbl_now>"
+  )
+  expect_error(
+    as_scoringutils(nowcast, truth = data.frame(event_date = as.Date("2020-01-06"), y = 1)),
+    "must be a <tbl_now>"
+  )
+})
+
+test_that("the truth's observed column is read off the object, line list included", {
+  # The point of dropping `observed_col`: a line list has NO count column, and a
+  # count object names its own. Both must score identically, because they are
+  # the same data.
+  dates <- as.Date("2020-01-06") + c(0, 7)
+  counts <- truth_tbl_now(dates, c(3, 2))
+  linelist <- tbl_now(
+    data.frame(
+      event_date = rep(dates, times = c(3, 2)),
+      rp = rep(dates, times = c(3, 2))
     ),
-    "was not found"
+    event_date = "event_date", report_date = "rp", verbose = FALSE
+  )
+  expect_null(get_case_count(linelist))
+
+  predictions <- tidyr::expand_grid(
+    event_date = dates, .quantile_level = c(0.25, 0.5, 0.75)
+  ) |>
+    dplyr::mutate(.value = rep(c(2, 3, 4), times = 2))
+  nowcast <- tbl_nowcast(
+    predictions = predictions, method = "toy", event_date = "event_date"
+  )
+
+  expect_equal(
+    score_nowcast(nowcast, truth = counts)$.observed,
+    score_nowcast(nowcast, truth = linelist)$.observed
   )
 })
 
@@ -93,8 +126,7 @@ test_that("nowcast_backtest() scores every method at every date", {
   dates <- as.Date(c("2020-06-01", "2020-06-08"))
 
   backtest <- nowcast_backtest(
-    x,
-    methods = "scoretoy", now_dates = dates, verbose = FALSE
+    x, engine("scoretoy"), now_dates = dates, verbose = FALSE
   )
 
   expect_s3_class(backtest, "nowcast_backtest")
@@ -106,8 +138,8 @@ test_that("nowcast_backtest() scores every method at every date", {
 
 test_that("nowcast_backtest() validates its inputs", {
   x <- score_tbl_now()
-  expect_error(nowcast_backtest(mtcars, methods = "scoretoy"), "tbl_now")
-  expect_error(nowcast_backtest(x, methods = character(0)), "at least one")
+  expect_error(nowcast_backtest(mtcars, engine("scoretoy")), "tbl_now")
+  expect_error(nowcast_backtest(x), "at least one engine")
 })
 
 test_that("a failing method is skipped with a warning, or aborts on request", {
@@ -121,17 +153,16 @@ test_that("a failing method is skipped with a warning, or aborts on request", {
 
   expect_warning(
     backtest <- nowcast_backtest(
-      x,
-      methods = c("scoretoy", "brokentoy"), now_dates = dates, verbose = FALSE
+      x, engine("scoretoy"), engine("brokentoy"),
+      now_dates = dates, verbose = FALSE
     ),
     "failed"
   )
   expect_equal(backtest$methods, "scoretoy")
 
   expect_error(
-    nowcast_backtest(x,
-      methods = "brokentoy", now_dates = dates,
-      on_error = "abort", verbose = FALSE
+    nowcast_backtest(x, engine("brokentoy"),
+      now_dates = dates, on_error = "abort", verbose = FALSE
     ),
     "failed"
   )
@@ -144,9 +175,9 @@ test_that("weights reward the better model", {
 
   backtest <- nowcast_backtest(
     x,
-    methods = c("scoretoy", "scoretoy2"),
-    now_dates = dates, verbose = FALSE,
-    method_args = list(scoretoy = list(bias = 0), scoretoy2 = list(bias = 25))
+    engine("scoretoy", bias = 0),
+    engine("scoretoy2", bias = 25),
+    now_dates = dates, verbose = FALSE
   )
   expect_equal(sort(backtest$methods), c("scoretoy", "scoretoy2"))
 
@@ -174,12 +205,13 @@ test_that("performance weights flow into nowcast_ensemble()", {
 
   backtest <- nowcast_backtest(
     x,
-    methods = c("scoretoy", "scoretoy2"), now_dates = dates, verbose = FALSE,
-    method_args = list(scoretoy = list(bias = 0), scoretoy2 = list(bias = 25))
+    engine("scoretoy", bias = 0),
+    engine("scoretoy2", bias = 25),
+    now_dates = dates, verbose = FALSE
   )
 
-  good <- run_nowcast(x, "scoretoy", bias = 0, verbose = FALSE)
-  bad <- run_nowcast(x, "scoretoy2", bias = 25, verbose = FALSE)
+  good <- run_nowcast(x, engine("scoretoy", bias = 0), verbose = FALSE)
+  bad <- run_nowcast(x, engine("scoretoy2", bias = 25), verbose = FALSE)
 
   ensemble <- nowcast_ensemble(
     good, bad,
@@ -199,7 +231,7 @@ test_that("as_scoringutils() produces the expected column names", {
   nowcast <- tbl_nowcast(
     predictions = predictions, method = "toy", event_date = "event_date"
   )
-  truth <- data.frame(event_date = as.Date("2020-01-06"), .observed = 11)
+  truth <- truth_tbl_now(as.Date("2020-01-06"), 11)
 
   exported <- as_scoringutils(nowcast, truth = truth)
 
@@ -279,9 +311,7 @@ test_that("score_nowcast() agrees with scoringutils end to end", {
   nowcast <- tbl_nowcast(
     predictions = predictions, method = "toy", event_date = "event_date"
   )
-  truth <- data.frame(
-    event_date = dates, .observed = as.numeric(stats::rpois(length(dates), means))
-  )
+  truth <- truth_tbl_now(dates, stats::rpois(length(dates), means))
 
   ours <- score_nowcast(nowcast, truth = truth)
   theirs <- as_scoringutils(nowcast, truth = truth) |>
@@ -327,7 +357,7 @@ simulate_calibration <- function(seed = 20260824, n = 400) {
   }
 
   list(
-    truth = data.frame(event_date = dates, .observed = stats::rpois(n, mu)),
+    truth = truth_tbl_now(dates, stats::rpois(n, mu)),
     member = member
   )
 }
@@ -382,9 +412,9 @@ test_that("every weighting rule returns non-negative weights summing to 1", {
   x <- score_tbl_now()
   backtest <- nowcast_backtest(
     x,
-    methods = c("scoretoy", "scoretoy2"),
-    now_dates = as.Date(c("2020-06-01", "2020-06-08")), verbose = FALSE,
-    method_args = list(scoretoy = list(bias = 0), scoretoy2 = list(bias = 25))
+    engine("scoretoy", bias = 0),
+    engine("scoretoy2", bias = 25),
+    now_dates = as.Date(c("2020-06-01", "2020-06-08")), verbose = FALSE
   )
 
   for (type in c("equal", "inverse_score", "optim")) {
@@ -400,9 +430,9 @@ test_that("the optim weights are reproducible", {
   x <- score_tbl_now()
   backtest <- nowcast_backtest(
     x,
-    methods = c("scoretoy", "scoretoy2"),
-    now_dates = as.Date(c("2020-06-01", "2020-06-08")), verbose = FALSE,
-    method_args = list(scoretoy = list(bias = 0), scoretoy2 = list(bias = 25))
+    engine("scoretoy", bias = 0),
+    engine("scoretoy2", bias = 25),
+    now_dates = as.Date(c("2020-06-01", "2020-06-08")), verbose = FALSE
   )
 
   set.seed(1)
@@ -418,9 +448,9 @@ test_that("an optimiser that fails falls back to equal weights, not NA", {
   x <- score_tbl_now()
   backtest <- nowcast_backtest(
     x,
-    methods = c("scoretoy", "scoretoy2"),
-    now_dates = as.Date("2020-06-01"), verbose = FALSE,
-    method_args = list(scoretoy = list(bias = 0), scoretoy2 = list(bias = 25))
+    engine("scoretoy", bias = 0),
+    engine("scoretoy2", bias = 25),
+    now_dates = as.Date("2020-06-01"), verbose = FALSE
   )
 
   # A vector of NA weights does not fail here: it fails much later, inside

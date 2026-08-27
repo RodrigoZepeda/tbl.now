@@ -30,24 +30,59 @@
     )
 }
 
+#' Bar width, in days, for one period of a `tbl_now`'s event axis
+#'
+#' The reported counts are drawn as columns, and a column's width is measured in
+#' the units of the x axis -- which is days, whatever the series' own step is. A
+#' fixed width is therefore wrong twice over: 0.8 on a WEEKLY series draws
+#' hairlines with six-sevenths of the axis empty, and a width wider than the step
+#' makes neighbouring bars overlap, which \pkg{ggplot2} resolves by STACKING
+#' them, so each bar would show the sum of several periods rather than its own
+#' count.
+#'
+#' @param x The nowcast's source `tbl_now`, or `NULL`.
+#'
+#' @return A single number: 90% of one period, in days. `0.9` (a daily step) when
+#'   there is no object to ask.
+#'
+#' @keywords internal
+#' @noRd
+.nowcast_bar_width <- function(x) {
+  if (is.null(x)) {
+    return(0.9)
+  }
+  step <- switch(get_event_units(x),
+    days = 1, weeks = 7, months = 30, years = 365,
+    # A "numeric" axis is already in its own units, so one step is one unit.
+    1
+  )
+  0.9 * step
+}
+
 #' Plot a nowcast
 #'
 #' @description `r lifecycle::badge('experimental')`
 #'
-#' Draws a fan chart of a [tbl_nowcast]: one shaded band per central prediction
-#' interval, the median as a line, and the counts reported so far as points, so
-#' that the size of the correction the model is applying is visible.
+#' Draws a fan chart of a [tbl_nowcast]: the counts reported so far as grey
+#' columns, one shaded band per central prediction interval over them, and the
+#' median as a line, so that the size of the correction the model is applying is
+#' visible as the gap between the bars and the fan.
 #'
 #' @param object A [tbl_nowcast] object.
 #' @param ... Unused; present for compatibility with [ggplot2::autoplot()].
 #' @param levels Numeric vector of central interval widths to shade. Defaults to
 #'   the widest intervals available in the object.
-#' @param show_reported Logical. Whether to overlay the cases **reported so
-#'   far** -- [get_latest_reported_cases()] on the object's own source data, so
-#'   the points are what the model was actually shown as of `now`, not what those
-#'   dates eventually reached. The vertical gap between the points and the fan is
-#'   the correction the nowcast is making, which is the whole reason to draw it.
-#'   Requires the nowcast to carry its source data.
+#' @param show_reported Logical. Whether to draw the cases **reported so far**
+#'   as columns under the fan -- [get_latest_reported_cases()] on the object's own
+#'   source data, so the bars are what the model was actually shown as of `now`,
+#'   not what those dates eventually reached. The vertical gap between the top of
+#'   a bar and the fan is the correction the nowcast is making, which is the
+#'   whole reason to draw it. Requires the nowcast to carry its source data.
+#'
+#'   The bars are one period wide, taken from [get_event_units()]. A fixed width
+#'   would draw hairlines on a weekly series, and one wider than the step would
+#'   make \pkg{ggplot2} stack overlapping bars, so each would show several
+#'   periods' counts rather than its own.
 #' @param colour Colour of the fan. Defaults to the `tbl.now` palette's green:
 #'   a nowcast is an estimate of the **epidemic** process (cases by event date),
 #'   which the package always draws in green, with red reserved for the
@@ -140,7 +175,37 @@ S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
   median <- predictions |>
     dplyr::filter(abs(.data$.quantile_level - 0.5) < 1e-8)
 
-  plot <- ggplot2::ggplot() +
+  plot <- ggplot2::ggplot()
+
+  if (isTRUE(show_reported) && !is.null(object@data)) {
+    # `get_latest_reported_cases()` -- the counts as they stood at `now`, which
+    # is what the model saw. NOT the eventual totals: drawing those would show
+    # the answer next to the estimate of it, and the gap the fan is correcting
+    # would silently become a gap the fan already knows about.
+    reported <- .nowcast_reported_counts(object@data, event_col, strata)
+    # Columns rather than points, and added FIRST so the fan draws over them.
+    # A bar reads as a count measured from zero, which is what these are, and it
+    # turns the correction the nowcast applies into a visible gap between the top
+    # of the bar and the fan. Points floated in the middle of the band instead,
+    # which reads as a second estimate rather than as the data underneath one.
+    plot <- plot +
+      ggplot2::geom_col(
+        data = reported,
+        ggplot2::aes(
+          x = .data[[event_col]], y = .data$.observed,
+          fill = "Reported by now"
+        ),
+        width = .nowcast_bar_width(object@data)
+      ) +
+      ggplot2::scale_fill_manual(
+        # Neutral grey, not a palette hue: these are the OBSERVED counts, and
+        # colouring them green would put them in the same visual family as the
+        # estimate drawn on top of them.
+        values = c("Reported by now" = "#dfe1df"), name = NULL
+      )
+  }
+
+  plot <- plot +
     ggplot2::geom_ribbon(
       data = bands,
       ggplot2::aes(
@@ -165,24 +230,6 @@ S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
         ggplot2::aes(x = .data[[event_col]], y = .data$.value),
         colour = colour, linewidth = 0.7
       )
-  }
-
-  if (isTRUE(show_reported) && !is.null(object@data)) {
-    # `get_latest_reported_cases()` -- the counts as they stood at `now`, which
-    # is what the model saw. NOT the eventual totals: drawing those would show
-    # the answer next to the estimate of it, and the gap the fan is correcting
-    # would silently become a gap the fan already knows about.
-    reported <- .nowcast_reported_counts(object@data, event_col, strata)
-    plot <- plot +
-      ggplot2::geom_point(
-        data = reported,
-        ggplot2::aes(
-          x = .data[[event_col]], y = .data$.observed,
-          shape = "Reported by now"
-        ),
-        colour = palette[["near_black"]], size = 0.9
-      ) +
-      ggplot2::scale_shape_manual(values = c("Reported by now" = 16), name = NULL)
   }
 
   if (length(strata) > 0) {

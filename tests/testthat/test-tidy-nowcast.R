@@ -195,8 +195,9 @@ test_that("tidy() of a backtest gives one row per method, now date and target", 
 
   backtest <- nowcast_backtest(
     x,
-    methods = c("scoretoy", "scoretoy2"), now_dates = dates, verbose = FALSE,
-    method_args = list(scoretoy = list(bias = 0), scoretoy2 = list(bias = 25))
+    engine("scoretoy", bias = 0),
+    engine("scoretoy2", bias = 25),
+    now_dates = dates, verbose = FALSE
   )
 
   tidied <- tidy(backtest)

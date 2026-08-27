@@ -764,13 +764,90 @@ nowcast_fit.EpiNow2 <- function(method, x, ..., convert_args = list(), # nolint:
   .quietly_if(EpiNow2::estimate_infections(series, ...), verbose)
 }
 
+#' The posterior samples of `reported_cases` from an EpiNow2 fit
+#'
+#' [EpiNow2::get_predictions()] reads the fit's own draws rather than the
+#' `lower_<pct>`/`upper_<pct>` summary. That is the difference between an engine
+#' that reports three numbers and one that reports a distribution, and it is why
+#' \pkg{EpiNow2} can honour arbitrary `quantile_levels` and join a
+#' `type = "linear_pool"` ensemble.
+#'
+#' Returns `NULL` rather than erroring when the fit is not a shape
+#' `get_predictions()` handles -- a mocked fit in a test, an older
+#' \pkg{EpiNow2}, a `regional_epinow()` block whose estimates were not kept --
+#' so the caller can fall back to the summary.
+#'
+#' @param fit An `estimate_infections` object (or something holding one).
+#' @param event_col Name to give the date column.
+#'
+#' @return A tibble of `<event_col>`, `.draw`, `.value`, or `NULL`.
+#'
+#' @keywords internal
+#' @noRd
+.epinow2_draws <- function(fit, event_col) {
+  if (!is.function(getExportedValue("EpiNow2", "get_predictions"))) {
+    return(NULL)
+  }
+  samples <- tryCatch(
+    suppressWarnings(suppressMessages(
+      EpiNow2::get_predictions(fit, format = "sample")
+    )),
+    error = function(e) NULL
+  )
+  if (is.null(samples) || !is.data.frame(samples) || nrow(samples) == 0) {
+    return(NULL)
+  }
+  if (!all(c("date", "sample", "predicted") %in% names(samples))) {
+    return(NULL)
+  }
+  dplyr::tibble(
+    !!event_col := as.Date(samples$date),
+    .draw = as.integer(samples$sample),
+    .value = as.numeric(samples$predicted)
+  )
+}
+
 #' @rdname nowcast_tidy
 #' @export
 nowcast_tidy.EpiNow2 <- function(method, fit, x, ..., quantile_levels) { # nolint: object_name_linter.
-  # `tidy.estimate_infections()` and the `tidy.list()` EpiNow2 branch both read
-  # the interval width off the fit's own `lower_<pct>`/`upper_<pct>` columns,
-  # because `CrIs` is a user argument and assuming 0.95 would be wrong for a
-  # default fit (which reports 0.9).
-  tidied <- tidy(fit)
-  .tidy_to_predictions(tidied, x, quantile_levels, "EpiNow2")
+  event_col <- get_event_date(x)
+  strata_cols <- get_strata(x) %||% character(0)
+
+  # DRAWS, not the summary. `EpiNow2::get_predictions(format = "sample")` returns
+  # the posterior samples of `reported_cases`, so the quantiles are derived here
+  # like any other sample-based back-end. Reading the fit's `lower_<pct>` /
+  # `upper_<pct>` columns instead -- which is what this did before 0.27.0 --
+  # limited EpiNow2 to a median and the two tails of whatever `CrIs` it happened
+  # to be fitted with, so `quantile_levels` could not be honoured, `probs` was an
+  # error, and it could not join a linear pool.
+  draws <- if (length(strata_cols) == 0) {
+    .epinow2_draws(fit, event_col)
+  } else {
+    # `regional_epinow()` returns one block per region under `$regional`; each
+    # block's `$estimates` is the `estimate_infections` object.
+    regional <- fit$regional
+    pieces <- lapply(names(regional), function(region) {
+      one <- .epinow2_draws(regional[[region]]$estimates %||% regional[[region]], event_col)
+      if (is.null(one)) {
+        return(NULL)
+      }
+      labels <- .split_strata_labels(rep(region, nrow(one)), strata_cols)
+      if (is.null(labels)) NULL else dplyr::bind_cols(one, labels)
+    })
+    if (any(vapply(pieces, is.null, logical(1)))) NULL else dplyr::bind_rows(pieces)
+  }
+
+  if (is.null(draws)) {
+    # The summary path, kept as a fallback: `tidy()` reads the interval width off
+    # the fit's own columns, because `CrIs` is a user argument and assuming 0.95
+    # would be wrong for a default fit (which reports 0.9). It reports only the
+    # levels it has, and says so.
+    return(.tidy_to_predictions(tidy(fit), x, quantile_levels, "EpiNow2"))
+  }
+
+  # A nowcast estimates what has already happened, and EpiNow2 also forecasts one
+  # period past the end of the data. See `.drop_beyond_now()`.
+  draws <- .drop_beyond_now(draws, x, event_col, "EpiNow2")
+
+  list(predictions = NULL, draws = draws)
 }

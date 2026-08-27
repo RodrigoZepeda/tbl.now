@@ -28,7 +28,7 @@ nowcast_tidy(method, fit, x, ..., quantile_levels)
 \method{nowcast_tidy}{default}(method, fit, x, ..., quantile_levels)
 }
 \arguments{
-\item{method}{A \code{\link[=nowcast_method]{nowcast_method()}} object.}
+\item{method}{A \code{\link[=engine]{engine()}} object.}
 
 \item{fit}{The object returned by \code{\link[=nowcast_fit]{nowcast_fit()}}.}
 

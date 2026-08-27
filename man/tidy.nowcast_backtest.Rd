@@ -28,7 +28,7 @@ result goes straight into \pkg{dplyr} or \pkg{ggplot2}.
 \examples{
 \dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 # A backtest refits every method once per date, so this is not run.
-bt <- nowcast_backtest(dengue, methods = "baselinenowcast")
+bt <- nowcast_backtest(dengue, engine_baselinenowcast())
 tidy(bt)
 \dontshow{\}) # examplesIf}
 }

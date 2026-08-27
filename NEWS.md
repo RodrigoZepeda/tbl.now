@@ -1,3 +1,161 @@
+# tbl.now 0.27.0
+
+## Breaking: a nowcast is specified with an `engine()`
+
+`run_nowcast()` and `nowcast_backtest()` used to take a method **name** plus a
+`...` (and, for the backtest, a `method_args` list of lists keyed by label). Both
+failed the same silent way: an argument that missed its backend simply vanished,
+and you got a fitted model at its default with nothing on the object to say so.
+
+An **engine** is one modelling package plus every argument it needs:
+
+```r
+run_nowcast(x, engine_nobbs(max_D = 10, moving_window = 64))
+
+nowcast_backtest(x,
+  engine_baselinenowcast(draws = 1000),
+  engine_nobbs(max_D = 10),
+  now_dates = dates, seed = 20260824
+)
+```
+
+* One constructor per supported package -- `engine_diseasenowcasting()`,
+  `engine_baselinenowcast()`, `engine_epinowcast()`, `engine_nobbs()`,
+  `engine_surveillance()`, `engine_epinow2()` -- each **naming** that package's
+  own arguments, so they are visible in the signature and a typo is an error at
+  the call rather than a default nobody notices. `...` still carries anything a
+  named argument does not cover.
+* `engine(method, ...)` is the general constructor and works for any registered
+  method, including a backend you wrote yourself.
+* **The data and `verbose` are the only arguments outside the engine.**
+  `quantile_levels` moved onto it, because for `NobBS` it is a *fit-time* model
+  argument (it lands in `specs$quantiles`, and NobBS keeps no draws, so a level
+  it was never asked for cannot be recovered) rather than a way of summarising
+  afterwards.
+* `nowcast_backtest(x, ...)` now takes the engines **variadically**, or as one
+  list. `methods` and `method_args` are gone. An engine's `label` is its name in
+  the result; labels must be unique, and every engine must report the **same**
+  quantile levels -- the WIS averages over the levels reported, so mismatched
+  engines are not scoring the same quantity.
+* `nowcast_method()` is **removed**. The engine is the object `nowcast_fit()` and
+  `nowcast_tidy()` dispatch on, so an existing backend needs no change; write
+  `engine("mymodel")` where you wrote `nowcast_method("mymodel")`.
+* A bare method string is an error that names the constructor to use.
+
+## New: `min_date`, per engine
+
+Every engine takes `min_date`, saying how much history to fit on:
+
+| `min_date` | means |
+|---|---|
+| `NULL` (default) | the whole series |
+| a `Date` | keep event dates on or after it |
+| a number | keep the last *n* periods before `now`, in the object's own units |
+
+It is per engine on purpose. `baselinenowcast` and `diseasenowcasting` take a
+long series in their stride, while `epinowcast` and `EpiNow2` scale with the
+number of reference dates and are best given a window -- so one global `filter()`
+over all of them was the wrong tool.
+
+Prefer the **number** inside a `nowcast_backtest()`: `now` moves between fits, so
+a fixed calendar cut makes the fitted window grow as the backtest walks forward
+and the last fit is trained on more data than the first.
+
+`min_date` trims the **event axis**, not `now`, and the trimmed object is what
+the result carries -- so `score_nowcast()` and `autoplot()`'s reported counts
+describe the series the model was actually shown.
+
+## Breaking: `score_nowcast()` / `as_scoringutils()` take a `tbl_now` as `truth`
+
+`observed_col` is **removed**, and a plain data frame is no longer accepted. The
+`tbl_now` already knows which column holds the observed counts -- it is
+`get_case_count()`, or the count `to_count()` produces from a line list -- so
+naming it was a burden on the caller and the old default (*"the last column that
+is neither the event date nor a stratum"*) was a guess that could mis-score
+silently.
+
+```r
+score_nowcast(nc, truth = dengue)     # the FULL tbl_now, line list or counts
+as_scoringutils(nc, truth = dengue)
+```
+
+## `autoplot()` on a nowcast draws the reported counts as columns
+
+The cases reported so far were points floating in the middle of the fan, which
+reads as a second estimate. They are now grey **columns** under it, so they read
+as a count measured from zero and the correction the nowcast applies is the
+visible gap between the top of a bar and the band. The bars are one period wide,
+taken from `get_event_units()`.
+
+## `EpiNow2` keeps its draws
+
+`nowcast_tidy.EpiNow2()` now reads the posterior samples with
+`EpiNow2::get_predictions(format = "sample")` instead of the fit's
+`lower_<pct>`/`upper_<pct>` summary. Before, EpiNow2 could report only a median
+and the two tails of whatever `CrIs` it happened to be fitted with -- three
+levels -- so `quantile_levels` could not be honoured, `tidy(probs =)` was an
+error, and it could not join a `type = "linear_pool"` ensemble. It now does all
+three. The summary path remains as a fallback for a fit `get_predictions()`
+cannot read.
+
+This has a visible knock-on: an ensemble containing EpiNow2 now shares all nine
+of `nowcast_quantile_levels()` rather than collapsing to three.
+
+## Documentation
+
+* `vignette("ensemble-nowcasting")` gains a figure of **the ensemble against each
+  of its members**, and a section on `min_date` explaining why the engines are
+  not all shown the same data.
+* `data-raw/ensemble_comparison.R` fits both Stan back-ends with **approximate
+  inference** (`epinowcast` through `enw_pathfinder()`, `EpiNow2` through
+  `stan_opts(method = "pathfinder")`), so the article rebuilds in minutes rather
+  than overnight. The article says so, so no member's band is mistaken for that
+  package's tuned answer.
+* It also **no longer fits three epidemics.** It scored every member on mpox and
+  covid as well as dengue and cached the result as `forecasts`; no chunk in the
+  article ever read that table, and it was roughly two thirds of the run time.
+* `DEVELOPMENT_SKILL.md` records why the CRAN test path cannot be measured with
+  `testthat::test_local()`, and `devel/TEST_SPEEDUP_BRIEF.md` is a standalone
+  brief on the suite's runtime with measured per-file timings.
+
+# tbl.now 0.26.0
+
+## One `surveillance` line list per stratum
+
+`tbl_now_to_surveillance()` gains `format = "linelist_list"`, which returns one
+line list **per stratum** as a `tbl_now_surveillance_list` instead of one frame
+with a pasted `strata` column. `surveillance::nowcast()` has no strata argument,
+so a stratified analysis is one fit per stratum, and the split no longer has to
+be done by hand:
+
+```r
+pieces <- tbl_now_to_surveillance(x, format = "linelist_list")
+lapply(pieces, function(piece) surveillance::nowcast(data = piece, ...))
+```
+
+It mirrors `tbl_now_to_baselinenowcast(format = "triangle_list")` throughout: the
+result is a **plain list**, so `lapply()`, `[[` and friends work unchanged; it is
+length one and named `"all"` when the object declares no strata, so the return
+type never depends on whether strata happen to be attached; it prints what it is;
+and `as_tbl_now()` binds it back into a `tbl_now`, restoring the original
+date-column names, the strata and the covariates. Count input comes back as a
+`"linelist"` -- one row per case, totals unchanged -- because that is what a
+`surveillance` line list holds.
+
+`format = "linelist"` remains the default and is unchanged.
+
+## Documentation
+
+* The `surveillance` and `NobBS` sections of
+  `vignette("nowcasting-models")` now say that the credible interval **is** in
+  their figures and is simply too narrow to see: the median band over the plotted
+  window is under 1% of the estimate for both, against 37% for `epinowcast`. The
+  numbers quoted are computed from the cached `tidy()` tables rather than typed.
+* `EpiNow2` gained the nowcast-vs-truth figure every other engine's section
+  already had.
+* The `surveillance` section fits its strata through the new
+  `format = "linelist_list"`.
+
 # tbl.now 0.25.0
 
 ## A vignette on writing your own back-end

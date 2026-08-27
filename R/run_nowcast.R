@@ -1,8 +1,8 @@
 # `run_nowcast()`: one entry point, many nowcasting packages.
 #
-# The dispatch is deliberately boring S3. `run_nowcast(x, method = "foo")`
-# turns "foo" into an object of class `c("foo", "nowcast_method")` and calls
-# two generics on it:
+# The dispatch is deliberately boring S3. `run_nowcast(x, engine_foo(...))`
+# takes the engine -- an object of class `c("foo", "nowcast_engine")` carrying
+# its own arguments (see R/nowcast_engine.R) -- and calls two generics on it:
 #
 #   nowcast_fit(method, x, ...)        -> whatever the backend returns
 #   nowcast_tidy(method, fit, x, ...)  -> list(predictions =, draws =)
@@ -36,40 +36,6 @@
   if (is.na(hit)) method else unname(hit)
 }
 
-#' Build a nowcasting-method object
-#'
-#' @description `r lifecycle::badge('experimental')`
-#'
-#' Turns a method name into the tiny S3 object that [nowcast_fit()] and
-#' [nowcast_tidy()] dispatch on. You rarely call this yourself: [run_nowcast()]
-#' does it for you. It is exported because it is convenient when writing and
-#' testing a new backend.
-#'
-#' @param method A single string naming the method, e.g. `"epinowcast"`.
-#'
-#' @return An object of class `c(method, "nowcast_method")`.
-#'
-#' @examples
-#' nowcast_method("baselinenowcast")
-#'
-#' # Names of the built-in methods are matched case-insensitively
-#' nowcast_method("nobbs")
-#'
-#' @export
-nowcast_method <- function(method) {
-  if (!is.character(method) || length(method) != 1 || is.na(method)) {
-    cli::cli_abort("{.arg method} must be a single, non-missing string.")
-  }
-  method <- .canonical_nowcast_method(method)
-  structure(list(name = method), class = c(method, "nowcast_method"))
-}
-
-#' @exportS3Method base::print
-print.nowcast_method <- function(x, ...) {
-  cli::cli_text("<nowcast_method: {.val {x$name}}>")
-  invisible(x)
-}
-
 #' Fit a nowcast with one modelling package
 #'
 #' @description `r lifecycle::badge('experimental')`
@@ -80,13 +46,17 @@ print.nowcast_method <- function(x, ...) {
 #' whatever it returned into the tidy quantile format every other function in
 #' tbl.now understands.
 #'
-#' Dispatch happens on the object built by [nowcast_method()], so a method for
+#' Dispatch happens on the object built by [engine()], so a method for
 #' `"mypackage"` is a function called `nowcast_fit.mypackage()`. It can live in
 #' any package.
 #'
-#' @param method A [nowcast_method()] object.
+#' @param method A [engine()] object. (The argument is called `method` for
+#'   historical reasons and because that is what it selects; what arrives is the
+#'   engine, so `method$args`, `method$label` and the rest are available to a
+#'   backend that wants them.)
 #' @param x A `tbl_now` object.
 #' @param ... Arguments passed straight to the underlying modelling function.
+#'   [run_nowcast()] splices the engine's own arguments in here.
 #' @param quantile_levels Numeric vector of probabilities. Most backends ignore
 #'   it at fit time (the quantiles are computed from the draws afterwards), but
 #'   some need to be told up front which levels to report.
@@ -161,7 +131,7 @@ nowcast_fit.default <- function(method, x, ..., quantile_levels = nowcast_quanti
 #' It receives the object the modelling package returned and must express its
 #' predictions in the tidy format tbl.now uses everywhere else.
 #'
-#' @param method A [nowcast_method()] object.
+#' @param method A [engine()] object.
 #' @param fit The object returned by [nowcast_fit()].
 #' @param x The `tbl_now` the nowcast was produced from.
 #' @param ... Not forwarded by [run_nowcast()], which passes the user's `...` to
@@ -275,42 +245,42 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #' names distinct means both packages can be attached at once.
 #'
 #' @param x A `tbl_now` object.
-#' @param method A string naming the modelling package to use. One of
-#'   [list_nowcast_methods()], or the name of a backend you registered yourself.
-#'   Built-in names are matched case-insensitively.
-#' @param ... Passed straight to the underlying modelling function. What is
-#'   accepted therefore depends on `method`; see the Methods section.
-#' @param quantile_levels Numeric vector of probabilities to summarise the
-#'   nowcast at. Defaults to [nowcast_quantile_levels()].
+#' @param engine A [engine()] object: the modelling package **and every argument
+#'   it takes**, including `min_date` and `quantile_levels`. Defaults to
+#'   `engine_diseasenowcasting()`.
+#'
+#'   The data and `verbose` are the only things that sit outside it. That is the
+#'   point: an argument in an outer `...` had to be routed to the right backend
+#'   by name, and one that missed simply vanished, leaving the model at its
+#'   default with nothing to say so.
 #' @param verbose Logical. Whether to report what is being done.
 #'
-#' @section Methods:
+#' @section Engines:
 #'
 #' \describe{
-#'   \item{`"diseasenowcasting"`}{Bayesian structural time series. `...` goes to
-#'     [diseasenowcasting::nowcast()]; the `tbl_now` is passed in directly, so
-#'     strata and temporal effects are picked up automatically.}
-#'   \item{`"baselinenowcast"`}{Fast, assumption-light baseline built from the
-#'     reporting triangle. `...` goes to `baselinenowcast::baselinenowcast()`.
-#'     Stratified objects are nowcast one triangle per stratum.}
-#'   \item{`"epinowcast"`}{Bayesian model with separate delay and reference
-#'     modules. `...` goes to `epinowcast::epinowcast()`; use `preprocess_args`
-#'     to control [tbl_now_to_epinowcast()].}
-#'   \item{`"surveillance"`}{Höhle & an der Heiden's nowcast. `...` goes to
-#'     [surveillance::nowcast()], fed by [tbl_now_to_surveillance()]. The
-#'     package models one series, so a stratified object is fitted one stratum
-#'     at a time.}
-#'   \item{`"EpiNow2"`}{`EpiNow2::estimate_infections()`, fed by
+#'   \item{[engine_diseasenowcasting()]}{Bayesian structural time series. The
+#'     `tbl_now` is passed in directly, so strata and temporal effects are picked
+#'     up automatically.}
+#'   \item{[engine_baselinenowcast()]}{Fast, assumption-light baseline built from
+#'     the reporting triangle. Stratified objects are nowcast one triangle per
+#'     stratum.}
+#'   \item{[engine_epinowcast()]}{Bayesian model with separate delay and
+#'     reference modules; `preprocess_args` controls
+#'     [tbl_now_to_epinowcast()].}
+#'   \item{[engine_surveillance()]}{Höhle & an der Heiden's nowcast, fed by
+#'     [tbl_now_to_surveillance()]. The package models one series, so a
+#'     stratified object is fitted one stratum at a time.}
+#'   \item{[engine_epinow2()]}{`EpiNow2::estimate_infections()`, fed by
 #'     [tbl_now_to_EpiNow2()]; `EpiNow2::regional_epinow()` when the object
-#'     declares strata. `...` goes to whichever of the two is used.}
-#'   \item{`"NobBS"`}{Nowcasting by Bayesian Smoothing. `...` goes to
-#'     `NobBS::NobBS()` (or `NobBS::NobBS.strat()` when the object declares
-#'     exactly one stratum), fed by [tbl_now_to_nobbs()], which expands counts
-#'     to the one row per case \pkg{NobBS} counts.}
+#'     declares strata.}
+#'   \item{[engine_nobbs()]}{Nowcasting by Bayesian Smoothing, fed by
+#'     [tbl_now_to_nobbs()], which expands counts to the one row per case
+#'     \pkg{NobBS} counts.}
 #' }
 #'
-#' Every modelling package is an optional dependency: it is only needed when you
-#' ask for its method.
+#' [engine()] covers any other registered method, including one you wrote
+#' yourself. Every modelling package is an optional dependency: it is only needed
+#' when you ask for its engine.
 #'
 #' @section What the object contributes, and what it does not:
 #'
@@ -322,7 +292,7 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #' *package*, not of this one. Where a backend cannot, it warns and pools rather
 #' than pretending:
 #'
-#' | `method` | how strata are modelled |
+#' | engine | how strata are modelled |
 #' |---|---|
 #' | `"baselinenowcast"` | one reporting triangle, and one fit, per stratum |
 #' | `"surveillance"` | one fit per stratum; the package models a single series |
@@ -374,29 +344,29 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #' @section How each model is specified, and how to change it:
 #'
 #' `run_nowcast()` does not invent priors or model structure: it calls each
-#' package with **that package's own defaults** and passes `...` straight
-#' through. The defaults are not always the ones you want, and two are worth
-#' knowing before you read the output.
+#' package with **that package's own defaults** and passes the engine's
+#' arguments straight through. The defaults are not always the ones you want, and
+#' two are worth knowing before you read the output.
 #'
-#' **`"epinowcast"`** runs three modules, all at their package defaults. The
-#' expectation module is `enw_expectation(r = ~ 0 + (1 | day:.group))` -- a
+#' **[engine_epinowcast()]** runs three modules, all at their package defaults.
+#' The expectation module is `enw_expectation(r = ~ 0 + (1 | day:.group))` -- a
 #' **random effect per day** on the growth rate, which is a random walk on the
 #' log expected counts in all but name. The reference module is
 #' `enw_reference(parametric = ~ 1, distribution = "lognormal")` -- a **single
 #' lognormal reporting delay, constant over time**. The report module is
 #' `enw_report(non_parametric = ~ 0)` -- **no day-of-week reporting effect**.
-#' Override any of them through `...`, and use `preprocess_args` for
-#' [tbl_now_to_epinowcast()]'s own arguments such as `list(max_delay = 30)`:
+#' Each is a named argument of the engine, and `preprocess_args` carries
+#' [tbl_now_to_epinowcast()]'s own arguments:
 #'
 #' ```r
-#' run_nowcast(nowobj, "epinowcast",
+#' run_nowcast(nowobj, engine_epinowcast(
 #'   preprocess_args = list(max_delay = 30),
 #'   report = epinowcast::enw_report(~ 1 + day_of_week, data = pobs),
 #'   fit    = epinowcast::enw_fit_opts(chains = 4, iter_sampling = 1000)
-#' )
+#' ))
 #' ```
 #'
-#' **`"EpiNow2"`** -- read this before trusting the output.
+#' **[engine_epinow2()]** -- read this before trusting the output.
 #' `EpiNow2::estimate_infections()` defaults to `delays = delay_opts()`, which is
 #' `Fixed(0)`: **no reporting delay at all**. Its `generation_time = gt_opts()`
 #' is `Fixed(1)`, a one-day generation time. Those defaults describe a process
@@ -405,36 +375,37 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #' (`rt_opts(rw = 0, gp_on = "R_t-1")`) rather than a random walk:
 #'
 #' ```r
-#' run_nowcast(nowobj, "EpiNow2",
+#' run_nowcast(nowobj, engine_epinow2(
 #'   generation_time = EpiNow2::gt_opts(EpiNow2::example_generation_time),
 #'   delays          = EpiNow2::delay_opts(EpiNow2::example_reporting_delay),
 #'   rt              = EpiNow2::rt_opts(rw = 7)   # weekly random walk instead
-#' )
+#' ))
 #' ```
 #'
-#' **`"diseasenowcasting"`** uses the package's own defaults, reading strata,
-#' covariates and temporal effects off the object. `...` goes to
-#' [diseasenowcasting::nowcast()] -- `type`, `n_draws` and so on.
+#' **[engine_diseasenowcasting()]** uses the package's own defaults, reading
+#' strata, covariates and temporal effects off the object. `model`, `type` and
+#' `n_draws` go to [diseasenowcasting::nowcast()].
 #'
-#' **`"baselinenowcast"`** is not Bayesian and has no priors: the delay is
+#' **[engine_baselinenowcast()]** is not Bayesian and has no priors: the delay is
 #' estimated from the reporting triangle and applied. `draws` sets the number of
 #' nowcast samples, and `max_delay` caps the triangle's width.
 #'
-#' **`"NobBS"`** has a fixed model; what you tune is `max_D` (maximum delay) and
-#' `moving_window` (how much history is fitted). `moving_window` counts **event
-#' periods and must not exceed the history you hand it** -- ask for more and
-#' NobBS pads its grid backwards and returns zero for every date, with no error.
-#' `specs` takes its prior list.
+#' **[engine_nobbs()]** has a fixed model; what you tune is `max_D` (maximum
+#' delay) and `moving_window` (how much history is fitted). `moving_window`
+#' counts **event periods and must not exceed the history you hand it** -- ask
+#' for more and NobBS pads its grid backwards and returns zero for every date,
+#' with no error. `specs` takes its prior list.
 #'
-#' **`"surveillance"`** takes `fit_method`, which is \pkg{surveillance}'s own
-#' `method` argument renamed so it cannot collide with [run_nowcast()]'s
-#' `method`; it defaults to `"bayes.notrunc.bnb"`. `D`, `when` and `control` are
-#' derived from the object when you do not give them.
+#' **[engine_surveillance()]** takes `fit_method`, which is
+#' \pkg{surveillance}'s own `method` argument renamed so it cannot collide with
+#' the engine's method; it defaults to `"bayes.notrunc.bnb"`. `D`, `when` and
+#' `control` are derived from the object when you do not give them.
 #'
 #' @return A [tbl_nowcast] object.
 #'
-#' @seealso [nowcast_ensemble()] to combine several nowcasts,
-#'   [nowcast_backtest()] to score them, and [nowcast_fit()] to add a backend.
+#' @seealso [engine()] and [nowcast_engines] to specify a model,
+#'   [nowcast_ensemble()] to combine several nowcasts, [nowcast_backtest()] to
+#'   score them, and [nowcast_fit()] to add a backend.
 #'
 #' @examples
 #' \donttest{
@@ -447,34 +418,41 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #' )
 #'
 #' if (requireNamespace("baselinenowcast", quietly = TRUE)) {
-#'   nc <- run_nowcast(dengue, method = "baselinenowcast", draws = 100, verbose = FALSE)
+#'   nc <- run_nowcast(dengue, engine_baselinenowcast(draws = 100), verbose = FALSE)
 #'   nc
 #' }
 #' }
 #'
 #' @export
-run_nowcast <- function(x, method = "diseasenowcasting", ...,
-                        quantile_levels = nowcast_quantile_levels(),
-                        verbose = TRUE) {
+run_nowcast <- function(x, engine = engine_diseasenowcasting(), verbose = TRUE) {
   .assert_tbl_now(x, "run_nowcast")
+  .assert_engine(engine)
 
-  quantile_levels <- sort(unique(as.numeric(quantile_levels)))
-  if (length(quantile_levels) == 0 || any(quantile_levels <= 0 | quantile_levels >= 1)) {
-    cli::cli_abort("{.arg quantile_levels} must be probabilities strictly between 0 and 1.")
-  }
-
-  spec <- nowcast_method(method)
+  quantile_levels <- engine$quantile_levels
 
   if (isTRUE(verbose)) {
-    cli::cli_alert_info("Nowcasting with method {.val {spec$name}} as of {.val {get_now(x)}}.")
+    cli::cli_alert_info(
+      "Nowcasting with {.val {engine$name}} as of {.val {get_now(x)}}."
+    )
   }
 
-  fit <- nowcast_fit(spec, x, ..., quantile_levels = quantile_levels, verbose = verbose)
-  tidied <- nowcast_tidy(spec, fit, x, quantile_levels = quantile_levels)
+  # Trim BEFORE the fit and keep the trimmed object: everything downstream --
+  # the tidying, the `data` property, `autoplot()`'s "reported by now" -- must
+  # describe the series the model was actually shown, not the one it was not.
+  x <- .engine_trim(x, engine$min_date, verbose = verbose)
+
+  fit <- do.call(
+    nowcast_fit,
+    c(
+      list(engine, x), engine$args,
+      list(quantile_levels = quantile_levels, verbose = verbose)
+    )
+  )
+  tidied <- nowcast_tidy(engine, fit, x, quantile_levels = quantile_levels)
 
   .as_tbl_nowcast(
     tidied,
-    x = x, method = spec$name, fit = fit,
+    x = x, method = engine$name, fit = fit,
     quantile_levels = quantile_levels, call = match.call()
   )
 }

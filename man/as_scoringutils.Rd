@@ -4,14 +4,15 @@
 \alias{as_scoringutils}
 \title{Export a nowcast in \code{scoringutils} format}
 \usage{
-as_scoringutils(x, truth = NULL, observed_col = NULL)
+as_scoringutils(x, truth = NULL)
 }
 \arguments{
 \item{x}{A \link{tbl_nowcast} object.}
 
-\item{truth}{Passed to \code{\link[=score_nowcast]{score_nowcast()}}; see there.}
-
-\item{observed_col}{Passed to \code{\link[=score_nowcast]{score_nowcast()}}; see there.}
+\item{truth}{The \code{tbl_now} the nowcast is scored against, or \code{NULL} to reuse
+the nowcast's own source data. Passed to \code{\link[=score_nowcast]{score_nowcast()}}; see there. The
+observed counts are read off the object with \code{\link[=get_case_count]{get_case_count()}} -- a line
+list is aggregated first -- so there is no column to name.}
 }
 \value{
 A \code{tibble} with the columns \code{observed}, \code{predicted}, \code{quantile_level}
@@ -25,12 +26,23 @@ quantile format \code{scoringutils::as_forecast_quantile()} expects, so that the
 full \pkg{scoringutils} score suite can be applied.
 }
 \examples{
-predictions <- data.frame(
-  onset_week = as.Date("2020-01-05"),
-  .quantile_level = c(0.25, 0.5, 0.75), .value = c(8, 10, 13)
+\donttest{
+data(denguedat)
+
+recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+dengue <- tbl_now(recent,
+  event_date = onset_week, report_date = report_week, verbose = FALSE
 )
-nc <- tbl_nowcast(predictions = predictions, method = "toy", event_date = "onset_week")
-as_scoringutils(nc, truth = data.frame(onset_week = as.Date("2020-01-05"), .observed = 11))
+snapshot <- change_now(
+  dplyr::filter(dengue, report_week <= as.Date("2010-10-04")),
+  now = as.Date("2010-10-04")
+)
+
+if (requireNamespace("baselinenowcast", quietly = TRUE)) {
+  nc <- run_nowcast(snapshot, engine_baselinenowcast(draws = 100), verbose = FALSE)
+  as_scoringutils(nc, truth = dengue)
+}
+}
 
 }
 \seealso{

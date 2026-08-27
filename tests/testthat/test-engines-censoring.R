@@ -183,7 +183,7 @@ test_that("run_nowcast() surfaces the collapse rather than swallowing it", {
   set.seed(20260825)
   withCallingHandlers(
     suppressMessages(
-      run_nowcast(x, "baselinenowcast", draws = 25, verbose = FALSE)
+      run_nowcast(x, engine_baselinenowcast(draws = 25), verbose = FALSE)
     ),
     warning = function(cnd) {
       warnings <<- c(warnings, conditionMessage(cnd))
