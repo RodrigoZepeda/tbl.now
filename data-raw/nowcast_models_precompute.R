@@ -122,8 +122,16 @@ tbl_now_columns <- function(env) {
     # STRATA, so `names()` above returns stratum labels rather than columns.
     # Look one level in, or the effect columns those pieces carry are invisible
     # to the preflight and a perfectly good fit is skipped.
+    #
+    # `unclass()` FIRST, and that is not tidiness. `lapply()` over a classed
+    # list calls that class's own `[[` method, and a fitted object's can do
+    # anything -- `[[.estimate_truncation` forwards to `$`, which
+    # `deprecate_stop()`s on the defunct `$dist`. So merely LOOKING at the
+    # environment aborted the whole run, before a single model was fitted.
+    # Stripping the class makes `[[` the internal default again.
     if (!is.data.frame(value) && is.list(value)) {
-      found <- c(found, unlist(lapply(value, function(piece) {
+      pieces <- tryCatch(unclass(value), error = function(e) list())
+      found <- c(found, unlist(lapply(pieces, function(piece) {
         if (is.data.frame(piece)) names(piece) else NULL
       })))
     }
@@ -421,6 +429,50 @@ if (nrow(implausible)) {
   stop("the fits above did not converge: the largest estimate or upper bound is ",
        "more than ", IMPLAUSIBLE_FACTOR, "x the observed maximum. Refusing to ",
        "cache them.", call. = FALSE)
+}
+
+# THE OTHER DIRECTION, which the check above cannot see.
+#
+# A nowcast estimates what a date will EVENTUALLY reach, so its median cannot
+# sensibly sit below the count that has ALREADY been reported for that date --
+# those cases are in hand, not predicted. The guard above only refuses fits that
+# are far too BIG, and a fit that collapses to near zero passes it happily.
+#
+# This is not hypothetical. One cached `regional_epinow()` block nowcast the
+# Male stratum at 876 against 1,973 already reported and 5,773 eventually --
+# below its own input. It survived every check here, shipped in the article's
+# figure, and refitting the identical call reproduced 3,786 (ratio 0.66), so it
+# was a one-off pathological sample rather than a mis-specified model. Nothing
+# announced it; somebody had to read the picture.
+#
+# A tolerance, because an engine on its own event-date grid can legitimately sit
+# slightly under a noisy daily count -- what cannot happen is sitting a long way
+# under it, systematically, over the whole window.
+BELOW_REPORTED_TOLERANCE <- 0.8   # median must reach 80% of what is in hand
+BELOW_REPORTED_SHARE     <- 0.5   # ...on more than half the plotted dates
+
+too_low <- nowcasts |>
+  filter(!is.na(.data$estimate), .data$event_date %in% horizon) |>
+  inner_join(
+    truth |> select("event_date", "stratum", "observed"),
+    by = c("event_date", "stratum")
+  ) |>
+  filter(.data$observed > 0) |>
+  group_by(.data$package, .data$stratum) |>
+  summarise(
+    n_below = sum(.data$estimate < BELOW_REPORTED_TOLERANCE * .data$observed),
+    n = dplyr::n(),
+    worst_ratio = round(min(.data$estimate / .data$observed), 3),
+    .groups = "drop"
+  ) |>
+  filter(.data$n_below > BELOW_REPORTED_SHARE * .data$n)
+
+if (nrow(too_low)) {
+  print(as.data.frame(too_low))
+  stop("the fits above nowcast FEWER cases than were already reported, on more ",
+       "than half the plotted dates. A nowcast estimates the eventual total, so ",
+       "it cannot fall below the count already in hand. That is a broken sample, ",
+       "not a bad model. Refusing to cache it.", call. = FALSE)
 }
 
 # -- 7. save -------------------------------------------------------------------

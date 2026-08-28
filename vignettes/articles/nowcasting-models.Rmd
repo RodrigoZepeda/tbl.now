@@ -478,9 +478,10 @@ on the *observations* before applying `tbl_now_to_epinowcast()`.
 ```{r enw-convert, eval=has("epinowcast"), warning=FALSE, message=FALSE}
 library(epinowcast)
 
-# Trim, then convert. 180 days, not two years otherwise it takes too long to fit.
+# Trim, then convert. 90 days, not two years: this fit scales with the number of
+# REFERENCE dates, and it is the slowest engine on the page.
 covid_enw_recent <- covid_now |>
-  filter(notification_date >= cutoff - 180) |>
+  filter(notification_date >= cutoff - 90) |>
   tbl_now_to_epinowcast(max_delay = 30, verbose = FALSE, quiet = TRUE)
 
 covid_enw_recent
@@ -493,7 +494,7 @@ This can then be passed to `epinowcast()`:
 enw_fit <- epinowcast(
   covid_enw_recent,
   fit = enw_fit_opts(
-    pp = TRUE, chains = 2, iter_sampling = 500, iter_warmup = 500,
+    pp = TRUE, chains = 2, iter_sampling = 250, iter_warmup = 250,
     seed = 20260824
   )
 )
@@ -514,30 +515,54 @@ the `metareference` / `metareport` tables so that they can be used in a module f
 ```{r effects-enw-fit, eval=run_models && has("epinowcast")}
 # Same trim, from the enriched object.
 enw_seasonal <- covid_seasonal |>
-  filter(notification_date >= cutoff - 180) |>
+  filter(notification_date >= cutoff - 90) |>
   tbl_now_to_epinowcast(max_delay = 30, verbose = FALSE, quiet = TRUE)
 
-# Drop the seasonal terms into a reference-module formula and fit as usual: the
-# covariates now enter the reference model. Thet have the same names as in 
-# `covid_seasonal` when using `compute_temporal_effects`. 
+# Drop a temporal effect into a reference-module formula and fit as usual: the
+# covariate now enters the reference model. The columns carry the same names as
+# in `covid_seasonal` after `compute_temporal_effects()`.
+#
+# DAY OF WEEK, not the annual Fourier pair. `covid_seasonal` declares both, but
+# a 365-day cycle observed over a 90-day window is a quarter of one period and
+# is barely identified -- and a weakly identified parameter is what makes a
+# sampler crawl. Measured on this data: the Fourier version took 1,424s, and at
+# a 60-day window it finished faster but with 250 divergent transitions. Day of
+# week is fully identified here, fits in 219s, and diverges not at all.
 enw_seasonal_fit <- epinowcast(
   enw_seasonal,
   reference = enw_reference(
-    parametric   = ~ 1 + .event_season_365_sin + .event_season_365_cos,
+    parametric   = ~ 1 + .event_day_of_week,
     distribution = "lognormal",
     data         = enw_seasonal
   ),
   fit = enw_fit_opts(
-    pp = TRUE, chains = 2, iter_sampling = 500, iter_warmup = 500,
+    pp = TRUE, chains = 2, iter_sampling = 250, iter_warmup = 250,
     seed = 20260824
   )
 )
 ```
 
 ::: {.alert .alert-info}
-The Fourier terms are weakly identified in this model, so read the seasonal
-coefficients as a demonstration of *how* to put temporal effects into a module
-formula rather than as a finding about COVID-19 in Colombia. 
+**Pick an effect the window can actually identify.** The point of this section is
+*how* a temporal effect reaches the reference module, not what it says about
+COVID-19 in Colombia — but the choice of effect is not free. `covid_seasonal`
+carries both a day-of-week effect and an annual Fourier pair, and only the first
+is estimable from ninety days of data: one period of the second has not even
+finished. Asking for the Fourier terms anyway does not error, it just samples
+badly — 1,424s here, and 250 divergent transitions when the window was shortened
+further. Day of week costs 219s and diverges not at all.
+:::
+
+::: {.alert .alert-warning}
+**These fits are deliberately small.** Two chains, 250 warmup and 250 sampling
+iterations on a short window, because this page is about **how to drive the
+engine** and rebuilds on every change. Raise them when the numbers matter.
+
+`enw_pathfinder()` looks like the obvious speed-up and is **not** an option
+here: on this data its optimiser cannot start (`Line search failed to achieve a
+sufficient decrease`), every iteration fails, and the fit returns no draws at
+all. It works for other models -- `EpiNow2` uses it in
+`vignette("ensemble-nowcasting")` -- but not for this one.
 :::
 
 In both stratified and unstratified cases the predictions can be recovered with `tidy`:
@@ -878,7 +903,11 @@ covid_snaps <- covid_now |>
 
 truncation_fit <- estimate_truncation(
   covid_snaps,
-  stan = stan_opts(samples = 500, warmup = 500, chains = 2)
+  # `stan_opts()` picks a RANDOM seed by default
+  # (`seed = as.integer(runif(1, 1e8))`), so an unseeded EpiNow2 fit cannot be
+  # reproduced -- and a pathological sample cannot be told apart from a bad
+  # model afterwards. Pin it, as the epinowcast section above does.
+  stan = stan_opts(samples = 500, warmup = 500, chains = 2, seed = 20260824)
 )
 
 # `$dist` is defunct; the accessor is `get_parameters()`.
@@ -890,8 +919,16 @@ epinow2_fit <- estimate_infections(
   generation_time = gt_opts(example_generation_time),
   delays          = delay_opts(example_incubation_period),
   truncation      = trunc_opts(fitted_truncation),
-  rt              = rt_opts(prior = LogNormal(mean = 2, sd = 0.1)),
-  stan            = stan_opts(samples = 500, warmup = 250, chains = 2)
+  # A WEEKLY RANDOM WALK, and no Gaussian process. EpiNow2's default models
+  # R_t with a GP, which on this data is both slower and unstable: at the
+  # package defaults one stratum or the other came back nowcasting FEWER cases
+  # than had already been reported (a ratio of 0.42, where it must be at least
+  # 1). The random walk is EpiNow2's own documented alternative when speed
+  # matters, and here it is also the one that converges.
+  rt              = rt_opts(prior = LogNormal(mean = 2, sd = 0.1), rw = 7),
+  gp              = NULL,
+  stan            = stan_opts(samples = 1000, warmup = 250, chains = 2,
+                              seed = 20260824)
 )
 ```
 
@@ -918,8 +955,14 @@ the time. That is EpiNow2 doing what it is for.
 examples**, and deliberately so: both are properties of transmission rather than
 of reporting, and no amount of reporting data identifies them. What the report
 dimension *does* identify is the truncation, and that is what step 1 fits.
-**Sampling is also lighter than the default** (500 draws, 250 warmup, 2 chains),
-because this is much the slowest engine here.
+**Sampling is also lighter than the default** (1,000 draws, 250 warmup, 2
+chains), and \eqn{R_t} follows a **weekly random walk** rather than EpiNow2's
+default Gaussian process. That is not only for speed. At the defaults this fit
+is unstable on these data: one stratum or the other comes back nowcasting fewer
+cases than had *already been reported*, which no nowcast can legitimately do.
+The random walk is EpiNow2's own documented alternative when speed matters, and
+here it is also the one that converges — it was faster (229s against 381s) and
+both strata came out above their reported counts.
 
 The predictions come out with `tidy()`, in the same shape as every other engine
 here:
@@ -986,7 +1029,7 @@ distribution's `mean` and `sd`:
 ```{r epinow2-dist-fit, eval=run_models && has("EpiNow2")}
 dist_fit <- estimate_dist(
   covid_dist,
-  stan = stan_opts(samples = 500, warmup = 500, chains = 2)
+  stan = stan_opts(samples = 500, warmup = 500, chains = 2, seed = 20260824)
 )
 ```
 
@@ -1020,8 +1063,12 @@ regional_fit <- regional_epinow(
   # a nowcast, just a smooth through the incomplete recent days. The truncation
   # fitted in step 1 above is reused here.
   truncation      = trunc_opts(fitted_truncation),
-  rt              = rt_opts(prior = LogNormal(mean = 2, sd = 0.1)),
-  stan            = stan_opts(samples = 500, warmup = 250, chains = 2)
+  # Same weekly random walk as the pooled fit above, and for the same reason:
+  # with the default Gaussian process one region came back below its own input.
+  rt              = rt_opts(prior = LogNormal(mean = 2, sd = 0.1), rw = 7),
+  gp              = NULL,
+  stan            = stan_opts(samples = 1000, warmup = 250, chains = 2,
+                              seed = 20260824)
 )
 ```
 
