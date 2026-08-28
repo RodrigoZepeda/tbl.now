@@ -37,7 +37,8 @@ Suggests:
     testthat (>= 3.0.0),
     tsibble,
     wavScalogram,
-    WaveletComp
+    WaveletComp,
+    withr
 Additional_repositories:
     https://epinowcast.r-universe.dev,
     https://davisvaughan.r-universe.dev

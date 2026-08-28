@@ -510,6 +510,55 @@ Two things to know before touching that code again:
 * **`paste()` on a `.diagnose_text()` forces it**, which is the cost the whole
   design avoids. Use `.diagnose_join()`.
 
+### Engine tests: assert the CALL, not the fit
+
+`test-engines-matrix.R` used to fit a real model in every cell of a 24-shape
+grid, per engine, and `diseasenowcasting` alone took 956 s of it — 52% of the
+whole suite — for assertions that only ever checked plumbing: no error, the
+right strata, the right combinations, monotone quantiles. None of that needs a
+good fit, or any fit.
+
+So the grid is now a **dry-run tier** (`engine_dry_args()` in
+`helper-engines.R`): `diseasenowcasting` simulates from the prior
+(`prior_only = TRUE`), `baselinenowcast` draws 10 samples, `NobBS` runs a short
+JAGS chain, and `epinowcast` and `EpiNow2` drop their likelihood
+(`enw_fit_opts(likelihood = FALSE)`, `obs_opts(likelihood = FALSE)`). The file
+went 798 s -> 432 s while going from **three engines to all six** — the other
+three had only ever been excluded for being slow to fit. Reach for a dry run
+before tuning a sampler: every "make the fit smaller" knob on
+`diseasenowcasting` made it **slower** (see `devel/TEST_SPEEDUP_BRIEF.md`),
+because fewer basis functions break convergence and the fitter retries.
+
+**Measure before concluding a package is too slow to test.** An earlier pass
+here ruled `epinowcast` out at "~100 s per shape". It is really ~90 s of Stan
+compilation **once per R process** plus 1.5 s per fit, so its full 24 shapes
+cost 153 s and dropping half of them would have saved 50. Never read the first
+fit in a session as the cost of a fit.
+
+Two rules if you add to that file:
+
+* **A dry run must still be a model, not an absent one.** `prior_only = TRUE`
+  returns all-`NA` draws for `count-cumulative` — silently, with the shape still
+  correct — so every shape assertion would pass on nothing. Assert non-NA
+  values, and where a package genuinely cannot produce them, assert the NA-ness
+  explicitly so an upstream fix shows up as a failure rather than passing
+  unnoticed.
+* **Keep one real fit per data type.** `"each data type is either modelled or
+  refused with a reason"` is that tier, and it deliberately pays ~24 s for the
+  `count-cumulative` fit: that is the shape needing `confirmation_process()`,
+  without which the fit reports "Joint fit failed to converge for all init
+  attempts".
+
+And one trap, now fixed but worth knowing: `engine_for()` used to combine
+overrides with `engine_args()` through `utils::modifyList()`, which **recurses
+into list-valued arguments**. Overriding one merged it with the default rather
+than replacing it, so `fit = enw_fit_opts(sampler = enw_pathfinder)` kept
+`epinowcast`'s default `chains`/`iter_sampling` and the pathfinder then refused
+them as unused arguments — a failure that reads as "the sampler is broken"
+rather than "the override did not take". `engine_for()` now assigns overrides
+directly. Exported `engine()` stores `list(...)` unmerged and never had the
+problem.
+
 ---
 
 ## 9. Pitfalls that have already bitten
@@ -519,6 +568,25 @@ Two things to know before touching that code again:
   use `cli::cat_line()` / `cat_rule()` / `cat_bullet()`.
 * **`\\` line continuations render literally** inside `cli::format_inline()`.
   Use `paste0()`.
+* **`local_mocked_s3_method()` DELETES the real method when the owning package
+  is not attached.** It restores whatever it found in the S3 methods table on
+  exit; with the package merely loaded it finds nothing, and faithfully restores
+  nothing — unregistering the real method for the rest of the R session.
+  `test-converter-epinow2.R` did this to
+  `EpiNow2::get_predictions.estimate_infections`, and nothing noticed until the
+  engine matrix began fitting EpiNow2 for real: all 24 of its shapes died with
+  "no applicable method for 'get_predictions'", in a file that passed on its
+  own. `withr::local_package("EpiNow2")` before the mock fixes it — attached,
+  the method is visible, so it is found and put back. Only bites generics OWNED
+  by the package: mocking a base generic like `summary()` is safe, because the
+  mock goes in base's table and the package's own entry is never touched.
+* **A test file that passes alone is not isolated.** That leak was invisible for
+  as long as nothing downstream used the thing it broke. When adding a test that
+  really calls a suggested package, run it after the files that sort before it,
+  not just on its own:
+  ```r
+  for (f in earlier_files) test_file(f); test_file("the-new-one.R")
+  ```
 * **A findings message is a template, not a string.** `.diagnose_text()` returns
   a deferred object so that a finding below the reporting floor is never
   formatted. `paste()` on one forces it (and returns something useless);

@@ -255,14 +255,114 @@ engine_args <- function(engine, x) {
   )
 }
 
+#' The cheapest mode each engine's package offers
+#'
+#' The 24-shape grid in `test-engines-matrix.R` asks whether the CALL is right
+#' -- that the strata, covariates, dates and quantile levels survive the round
+#' trip -- not whether the model fits well. So it runs each engine as a dry run.
+#'
+#' * `diseasenowcasting` simulates from the prior instead of sampling
+#'   (`prior_only`), which takes its 24 shapes from **956 s to 8 s**. The whole
+#'   956 s was the eight `count-cumulative` shapes -- one of them alone was
+#'   137 s -- and none of the obvious "make it smaller" levers help: measured on
+#'   the fixture, `delay_window = 4` changes nothing, `K = 5` makes one shape SIX
+#'   TIMES slower (24 s -> 140 s) and the three together reach 1447 s, because
+#'   fewer basis functions break convergence and the fitter retries.
+#' * `baselinenowcast` draws 10 samples instead of 50 (32 s -> 7 s).
+#' * `NobBS` runs a short JAGS chain instead of its 1000/1000/10000 default,
+#'   which is what lets it be in the grid at all: 8 s for the 24 shapes against
+#'   about 2 minutes at its own settings.
+#' * `surveillance` has no such lever and needs none: its 24 shapes take 10 s.
+#'   Do NOT cap its `N.tInf.max` to speed it up. The support cap has to exceed
+#'   the counts, and below them the fit dies with `subscript out of bounds`,
+#'   which names nothing -- see the comment in `nowcast_fit.surveillance()`.
+#'
+#' * `epinowcast` and `EpiNow2` drop their likelihood and sample the prior, via
+#'   `enw_fit_opts(likelihood = FALSE)` and `obs_opts(likelihood = FALSE)`.
+#'   (There is no `passthrough` argument in `epinowcast` 0.7.0; `likelihood` is
+#'   the flag, and it sets `likelihood = 0` in the Stan data.) Both give real,
+#'   non-NA, monotone quantiles.
+#'
+#' What actually costs on those last two is NOT the likelihood, and measuring it
+#' is the only way to see that:
+#'
+#' * `epinowcast` spends about **90 s compiling its Stan model, once per R
+#'   process** (`enw_model()` compiles into a temp dir). After that a fit is
+#'   1.5 s, so all 24 shapes cost 135 s and the 12 unstratified ones cost 104 s
+#'   -- almost the same, because the compile dominates either way. Turning the
+#'   likelihood off saves 6 s of 101; `enw_pathfinder()` saves nothing. Do not
+#'   read the first fit in a session as the cost of a fit.
+#' * `EpiNow2` has no compile cost (rstan, precompiled) but about 4 s of setup
+#'   per fit, and a 2-strata shape is four fits. That, not the sampler, is its
+#'   198 s: cutting `samples`/`warmup` from 100 to 25 moved one shape 21.1 s ->
+#'   17.5 s.
+#'
+#' A dry run cannot tell you the SAMPLER path works. That is what
+#' `"each data type is either modelled or refused with a reason"` is for: it
+#' fits every data type for real, at full settings.
+#'
+#' @param engine A method name.
+#'
+#' @return A list of arguments to override `engine_args()` with.
+#'
+engine_dry_args <- function(engine) {
+  switch(engine,
+    diseasenowcasting = list(prior_only = TRUE),
+    baselinenowcast = list(draws = 10),
+    NobBS = list(specs = list(nAdapt = 100, nBurnin = 100, nSamp = 200)),
+    epinowcast = list(fit = epinowcast::enw_fit_opts(
+      likelihood = FALSE, chains = 1, iter_sampling = 100, iter_warmup = 100,
+      show_messages = FALSE, refresh = 0
+    )),
+    EpiNow2 = list(obs = EpiNow2::obs_opts(likelihood = FALSE)),
+    list()
+  )
+}
+
+#' Whether a dry run of this engine returns NA instead of numbers
+#'
+#' `diseasenowcasting`'s prior simulation does not support cumulative input (as
+#' of 2.1.0): every draw comes back `NA` while the SHAPE -- rows, strata, dates,
+#' quantile levels -- is still right, and it does so silently rather than
+#' erroring. The dry run therefore still proves the plumbing for those shapes;
+#' it just cannot say anything about the numbers, which the real fits cover.
+#'
+#' The grid asserts this is still true, so that an upstream fix shows up as a
+#' failure telling you to delete the exception rather than passing unnoticed.
+#'
+#' @param engine A method name.
+#' @param data_type A `tbl_now` data type.
+#'
+#' @return `TRUE` when the dry run cannot produce values.
+engine_dry_run_is_valueless <- function(engine, data_type) {
+  identical(engine, "diseasenowcasting") &&
+    identical(data_type, "count-cumulative")
+}
+
 #' Build the `engine()` object for one method on one fixture
 #'
 #' `engine_args()` above is keyed by METHOD NAME, which is how these tests are
 #' written -- they loop over `available_engines()`. `engine()` is the general
 #' constructor precisely so a name plus a list of arguments can be turned into an
 #' engine without a `switch()` over the six specific ones.
+#'
+#' An override REPLACES the default argument; it does not merge with it. That is
+#' deliberate, and it is not what [utils::modifyList()] does: `modifyList()`
+#' recurses into list-valued arguments, so overriding one merges it with the
+#' default instead. Several of these arguments ARE lists --
+#' `epinowcast`'s `fit`, `EpiNow2`'s `obs` and `stan` -- and merging them is not
+#' a subtle difference. Passing `fit = epinowcast::enw_fit_opts(sampler =
+#' epinowcast::enw_pathfinder)` left the default `chains` and `iter_sampling`
+#' sitting in the merged list, and `enw_pathfinder()` then died on them as
+#' unused arguments, which reads as "pathfinder is broken" rather than "your
+#' override did not take".
+#'
+#' Single-bracket assignment, so that an explicit `NULL` override sets the
+#' argument to `NULL` rather than deleting it.
 engine_for <- function(method, x, ...) {
-  arguments <- utils::modifyList(engine_args(method, x), list(...))
+  overrides <- list(...)
+  arguments <- engine_args(method, x)
+  arguments[names(overrides)] <- overrides
   do.call(engine, c(list(method), arguments))
 }
 

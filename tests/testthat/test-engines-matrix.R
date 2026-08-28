@@ -5,21 +5,31 @@
 # fit that silently answers a different question -- counts read as rows, a
 # weekly series modelled as daily, a numeric grid coerced into 1970 dates.
 #
-# Two tiers, because a Stan/JAGS fit per cell would be hours:
+# Three tiers, because a Stan/JAGS fit per cell would be hours:
 #
-#   REAL   {0,2 covariates} x {0,2 strata} x {days,weeks} x {the 3 data types}
-#          = 24 shapes, actually fitted by the fast engines.
-#   MOCKED the rest of the matrix -- the numeric grid, one stratum, and the slow
-#          Bayesian engines -- where the modelling call is replaced and what is
-#          asserted is the DATA and ARGUMENTS the engine was handed.
+#   DRY RUN {0,2 covariates} x {0,2 strata} x {days,weeks} x {the 3 data types}
+#           = 24 shapes, run through each engine in the cheapest mode its
+#           package offers (`engine_dry_args()`). This tier asks whether the
+#           CALL is right -- do the strata, covariates, dates and quantile
+#           levels survive the round trip -- not whether the model fits well.
+#   REAL    one genuine fit per data type, at full settings, in "each data type
+#           is either modelled or refused with a reason" below. A dry run cannot
+#           tell you the sampler path works; that test can.
+#   MOCKED  the rest of the matrix -- the numeric grid, one stratum, and the slow
+#           Bayesian engines -- where the modelling call is replaced and what is
+#           asserted is the DATA and ARGUMENTS the engine was handed.
+#
+# The dry-run tier used to fit every cell for real, and `diseasenowcasting`
+# alone took 956 s of it -- 52% of the entire test suite -- for 24 assertions
+# about plumbing. See `engine_dry_args()` for what was tried and what worked.
 #
 # `skip_on_cran()` throughout: these fit models.
 
 skip_on_cran()
 
-# -- the 24 real-fit shapes ----------------------------------------------------
+# -- the 24 shapes -------------------------------------------------------------
 
-REAL_SHAPES <- expand.grid(
+SHAPES <- expand.grid(
   units = c("days", "weeks"),
   data_type = c("linelist", "count-incidence", "count-cumulative"),
   n_strata = c(0L, 2L),
@@ -27,25 +37,34 @@ REAL_SHAPES <- expand.grid(
   stringsAsFactors = FALSE
 )
 
-test_that("the real-fit grid is the 24 shapes it claims to be", {
-  expect_equal(nrow(REAL_SHAPES), 24L)
-  expect_setequal(unique(REAL_SHAPES$units), c("days", "weeks"))
+test_that("the shape grid is the 24 shapes it claims to be", {
+  expect_equal(nrow(SHAPES), 24L)
+  expect_setequal(unique(SHAPES$units), c("days", "weeks"))
   expect_setequal(
-    unique(REAL_SHAPES$data_type),
+    unique(SHAPES$data_type),
     c("linelist", "count-incidence", "count-cumulative")
   )
 })
 
-for (engine_name in c("baselinenowcast", "diseasenowcasting", "surveillance")) {
+# EVERY engine, including the three that are `fast = FALSE` in `ENGINE_SPEC`.
+# That flag gates the tiers that fit for real, and it is why `NobBS`,
+# `epinowcast` and `EpiNow2` were once left out of this grid entirely -- a
+# genuine fit per cell was hours. Run as dry runs they cost 9 s, 135 s and
+# 198 s, so the PLUMBING tier can afford all six even though the real-fit tiers
+# still cannot. `engine_dry_args()` has the per-engine lever and what it costs.
+for (engine_name in c(
+  "baselinenowcast", "diseasenowcasting", "surveillance", "NobBS",
+  "epinowcast", "EpiNow2"
+)) {
   local({
     this_engine <- engine_name
 
-    test_that(paste0("all 24 shapes really fit: ", this_engine), {
+    test_that(paste0("all 24 shapes are handled: ", this_engine), {
       skip_if_not_installed(this_engine)
 
       failures <- character()
-      for (row in seq_len(nrow(REAL_SHAPES))) {
-        shape <- REAL_SHAPES[row, ]
+      for (row in seq_len(nrow(SHAPES))) {
+        shape <- SHAPES[row, ]
         label <- paste(
           this_engine, shape$units, shape$data_type,
           paste0(shape$n_strata, " strata"), paste0(shape$n_covariates, " cov"),
@@ -58,7 +77,10 @@ for (engine_name in c("baselinenowcast", "diseasenowcasting", "surveillance")) {
           n_periods = 30L
         )
         set.seed(20260825L)
-        out <- try_run_nowcast(this_engine, x)
+        out <- do.call(
+          try_run_nowcast,
+          c(list(this_engine, x), engine_dry_args(this_engine))
+        )
 
         if (inherits(out, "condition")) {
           failures <- c(failures, paste0(label, ": ", conditionMessage(out)))
@@ -86,17 +108,42 @@ for (engine_name in c("baselinenowcast", "diseasenowcasting", "surveillance")) {
             ))
           }
         }
-        # Quantiles must be monotone in the level: a crossing means the
-        # summarisation is wrong whatever the model said.
-        crossing <- dplyr::as_tibble(out@predictions) |>
-          dplyr::group_by(dplyr::across(dplyr::all_of(
-            c(out@event_date, out@strata)
-          ))) |>
-          dplyr::summarise(
-            bad = is.unsorted(.data$.value[order(.data$.quantile_level)]),
-            .groups = "drop"
-          )
-        if (any(crossing$bad)) problems <- c(problems, "quantiles cross")
+        # Weekly data must come back on a weekly grid. `EpiNow2` models a daily
+        # process, so this is the axis a converter silently gets wrong.
+        dates <- sort(unique(out@predictions[[out@event_date]]))
+        if (identical(shape$units, "weeks") && length(dates) > 1 &&
+          !all(as.integer(diff(dates)) %% 7L == 0L)) {
+          problems <- c(problems, "event dates are not weekly-spaced")
+        }
+
+        if (engine_dry_run_is_valueless(this_engine, shape$data_type)) {
+          # Asserted, not tolerated: if this ever stops being all-NA the
+          # exception in `engine_dry_run_is_valueless()` has been fixed
+          # upstream and should be deleted, and a silent pass would hide that.
+          if (!all(is.na(out@predictions$.value))) {
+            problems <- c(problems, paste0(
+              "the dry run now returns values -- drop this data type from ",
+              "engine_dry_run_is_valueless()"
+            ))
+          }
+        } else {
+          # A dry run may be a crude model, but it may not be an ABSENT one:
+          # all-NA draws would satisfy every shape assertion above.
+          if (anyNA(out@predictions$.value)) {
+            problems <- c(problems, "NA predictions")
+          }
+          # Quantiles must be monotone in the level: a crossing means the
+          # summarisation is wrong whatever the model said.
+          crossing <- dplyr::as_tibble(out@predictions) |>
+            dplyr::group_by(dplyr::across(dplyr::all_of(
+              c(out@event_date, out@strata)
+            ))) |>
+            dplyr::summarise(
+              bad = is.unsorted(.data$.value[order(.data$.quantile_level)]),
+              .groups = "drop"
+            )
+          if (any(crossing$bad)) problems <- c(problems, "quantiles cross")
+        }
 
         if (length(problems)) {
           failures <- c(failures, paste0(label, ": ", paste(problems, collapse = "; ")))
@@ -172,6 +219,12 @@ test_that("weekly data is modelled on a weekly grid, not a daily one", {
 # -- data types: modelled, or refused ------------------------------------------
 
 test_that("each data type is either modelled or refused with a reason", {
+  # THE REAL-FIT TIER. No `engine_dry_args()` here on purpose: the 24-shape grid
+  # above runs the engines in their cheapest mode, so this is the only place
+  # that exercises the actual sampler. `count-cumulative` is the shape that
+  # needs `confirmation_process()` -- without it `diseasenowcasting` reports
+  # "Joint fit failed to converge for all init attempts" -- and it is worth the
+  # ~24 s it costs. Do not make this one cheaper.
   for (engine_name in available_engines(fast_only = TRUE)) {
     spec <- ENGINE_SPEC[[engine_name]]
     for (data_type in c("linelist", "count-incidence", "count-cumulative")) {

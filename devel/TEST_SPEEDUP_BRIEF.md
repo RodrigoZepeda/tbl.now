@@ -4,15 +4,20 @@
 >
 > | | before | after | |
 > |---|---|---|---|
-> | CRAN test path | 311.6 s | **152.4 s** | **−51%** |
-> | CRAN wall (`test_check`) | 318.1 s | **159.1 s** | 5.3 min -> **2.7 min** |
-> | `R CMD check` tests stage | — | 158 s | whole check now ~7 min |
-> | Developer path (`NOT_CRAN=true`) | 1404.4 s | **1066.7 s** | **−24%**, 23.5 -> **17.9 min** |
+> | CRAN test path | 311.6 s | **139–160 s** | **−52%** |
+> | CRAN wall (`test_check`) | 318.1 s | **145–168 s** | 5.3 min -> **2.6 min** |
+> | `R CMD check` tests stage | — | 168 s | whole check now ~7 min |
+> | Developer path (`NOT_CRAN=true`) | 1404.4 s | **778.4 s** | **−45%**, 23.5 -> **13.1 min**, with DOUBLE the engine coverage |
 > | `covr::package_coverage()` | 78.30% | **78.38%** | up |
 > | `R CMD check --as-cran` | 0 errors, 0 warnings | 0 errors, 0 warnings | unchanged |
 >
-> Both paths measured with `testthat:::on_cran()` asserted, 0 failures, and the
-> same test counts as before (CRAN 1334/424 skipped; full 1389/3 skipped).
+> Both paths measured with `testthat:::on_cran()` asserted and 0 failures. Test
+> counts are unchanged apart from one ADDED test (full 1389 -> 1390): the
+> 24-shape grid now covers `NobBS` too. The CRAN figure is a range because two
+> separate runs gave 152.4 s and 139.0 s; expect roughly 10% run-to-run
+> variance on this machine and do not read a single run as a regression. The
+> engine work does not touch the CRAN path at all — that file is
+> `skip_on_cran()`.
 >
 > **Both "before" columns were re-measured here, in a worktree at the unmodified
 > commit — do not compare against the numbers further down this brief.** That
@@ -21,11 +26,20 @@
 > Quoting the old baseline against a new run would have claimed −42% on the
 > developer path instead of the real −24%. Measure both ends yourself.
 
-> The developer path improves less than the CRAN one because
-> `test-engines-matrix.R` — 798 s of its 1404 s, and Stan fits, not class
-> overhead — barely moves (798 s -> 727 s). Everything else roughly halves:
-> `test-converters.R` 63.9 -> 39.9, `test-update.R` 32.3 -> 12.4,
-> `test-changers.R` 27.4 -> 11.5, `test-summary.R` 21.2 -> 8.9.
+> Read the developer figure carefully: it is **−45% while testing twice as
+> much**. Three things moved it.
+>
+> 1. The findings-engine work below roughly halves everything that touches the
+>    class (`test-converters.R` 63.9 -> 36.7, `test-update.R` 32.3 -> 12.1,
+>    `test-changers.R` 27.4 -> 9.8, `test-summary.R` 21.2 -> 7.1).
+> 2. `test-engines-matrix.R` — 798 s of the original 1404 s, and Stan fits
+>    rather than class overhead — became a dry-run tier and fell to **72 s** for
+>    the three engines it already covered. At that point the whole path was
+>    386 s / 6.5 min.
+> 3. Then the grid gained `epinowcast` and `EpiNow2` (+353 s), which it had
+>    never covered, taking the file to 432 s and the path to 778 s. That was a
+>    deliberate trade: the plumbing tier now exercises **all six** engines
+>    against all 24 shapes. Revert step 3 alone to get back to 6.5 min.
 >
 > **No test was deleted, and the 24-shape cross product is untouched.**
 >
@@ -65,11 +79,12 @@
 >   One shared fit: **18 s -> ~6 s**. The test that empties the `pi` slot
 >   rebinds its own copy, so the cache is safe.
 >
-> ### §1's `diseasenowcasting` suggestions were tried and are WRONG
+> ### `test-engines-matrix.R`: 798 s -> 72 s, and one more engine
 >
-> Do not repeat them. The 956 s is **entirely the 8 `count-cumulative` shapes**
-> (one is 136 s), and the driver is the `confirmation_process()` that
-> `engine_args()` injects — not the delay window. Measured on the fixture:
+> **§1's tuning suggestions are all WRONG — do not repeat them.** The 956 s was
+> **entirely the 8 `count-cumulative` shapes** (one alone was 137 s), and the
+> driver is the `confirmation_process()` that `engine_args()` injects, not the
+> delay window. Measured on the fixture:
 >
 > ```
 > current (n_draws = 100)                 24 s      <- weeks/count-cumulative
@@ -82,18 +97,89 @@
 >
 > Fewer basis functions break convergence and the fitter retries, so every
 > "make it smaller" lever costs more than it saves. `n_periods` was already 30.
-> `test-engines-matrix.R` still fell 798 s -> 727 s on the class speedup alone,
-> but it is now 68% of the developer path and the only thing left worth
-> attacking there.
+>
+> **The answer was not to tune the fit but to stop fitting.** The 24-shape grid
+> asserts plumbing — no error, right strata, right combinations, monotone
+> quantiles — so it never needed a good fit, or any fit. It is now a DRY-RUN
+> tier (`engine_dry_args()` in `helper-engines.R`):
+>
+> | engine | 24 shapes before | after | how |
+> |---|---|---|---|
+> | `diseasenowcasting` | 956 s | **11 s** | `prior_only = TRUE` |
+> | `baselinenowcast` | 32 s | **8 s** | `draws = 10` |
+> | `surveillance` | 44 s | **13 s** | nothing; the class speedup |
+> | `NobBS` | *not in the grid* | **10 s** | short JAGS chain |
+> | `epinowcast` | *not in the grid* | **153 s** | `enw_fit_opts(likelihood = FALSE)` |
+> | `EpiNow2` | *not in the grid* | **200 s** | `obs_opts(likelihood = FALSE)` |
+>
+> **The grid now covers all six engines, where it used to cover three.** The
+> other three were excluded only because a genuine fit per cell was hours; run
+> as dry runs they are affordable, and the file is 432 s against the 798 s it
+> cost for half the engines. The real sampler path is still covered — "each data
+> type is either modelled or refused with a reason" fits all three data types at
+> full settings, and deliberately keeps the ~24 s `count-cumulative` fit, which
+> is the shape that needs `confirmation_process()`.
+>
+> **On the last two, the likelihood is NOT what costs — measure before you
+> tune.** An earlier pass here concluded they could never join the grid because
+> a shape cost ~100 s. That was wrong, and wrong in an instructive way:
+>
+> * `epinowcast` spends about **90 s compiling its Stan model, once per R
+>   process** (`enw_model()` compiles into a temp dir). A fit after that is
+>   1.5 s. So all 24 shapes cost 153 s while the 12 unstratified ones cost 104 s
+>   — nearly the same, because the compile dominates either way. Dropping the
+>   likelihood saves 6 s of 101; `enw_pathfinder()` saves nothing at all.
+>   **Never read the first fit in a session as the cost of a fit.**
+> * `EpiNow2` has no compile cost (rstan is precompiled) but ~4 s of setup per
+>   fit, and a 2-strata shape is four fits. That is its 200 s, not the sampler:
+>   cutting `samples`/`warmup` from 100 to 25 moved one shape 21.1 s -> 17.5 s.
+>
+> There is no `passthrough` argument in `epinowcast` 0.7.0; `likelihood = FALSE`
+> is the flag, and it sets `likelihood = 0` in the Stan data.
+>
+> ### It also uncovered a test-isolation bug that was already there
+>
+> Putting a REAL `EpiNow2` fit after `test-converter-epinow2.R` failed all 24
+> shapes with "no applicable method for 'get_predictions'" — while the engine
+> file passed on its own. `testthat::local_mocked_s3_method()` restores what it
+> found in the S3 methods table on exit, and with `EpiNow2` merely loaded rather
+> than ATTACHED it found nothing and restored nothing, **unregistering
+> `get_predictions.estimate_infections` for the rest of the session**. The leak
+> pre-dates this work; it simply had no victim until something downstream used a
+> real fit. Fixed with `withr::local_package("EpiNow2")` before the mock (`withr`
+> added to `Suggests`; it ships with `testthat` anyway).
+>
+> It only bites generics OWNED by the non-attached package. `test-tidy-strata.R`
+> mocks `summary.epinowcast`, and `summary()` is a base generic, so the mock goes
+> in base's table and epinowcast's own entry is untouched — checked, not assumed.
+>
+> Two things that bit, both recorded in `engine_dry_args()`:
+>
+> * **`prior_only = TRUE` returns all-`NA` draws for `count-cumulative`** (upstream,
+>   2.1.0) — silently, with the shape still correct. The grid asserts the NA-ness
+>   explicitly so an upstream fix surfaces as a failure instead of passing
+>   unnoticed, and asserts non-NA everywhere else so an absent model cannot pass
+>   the shape checks.
+> * **`engine_for()` used to merge through `modifyList()`, which recurses into
+>   nested lists**, so overriding a list-valued argument MERGED it with the
+>   default instead of replacing it: `fit = enw_fit_opts(sampler =
+>   enw_pathfinder)` left `epinowcast`'s `chains`/`iter_sampling` in the merged
+>   list and the pathfinder died on them as unused arguments — which reads as
+>   "pathfinder is broken" rather than "your override did not take". FIXED:
+>   `engine_for()` now assigns overrides directly, so they replace. Exported
+>   `engine()` never had this problem, so no user code was affected.
 >
 > ### Still on the table, not taken
 >
-> `Config/testthat/parallel: false` in `DESCRIPTION`. Turning it on would help
-> the developer path, but the floor is the slowest single FILE, and
-> `test-engines-matrix.R` is 727 s of the 1067 s — so it would need that file
-> split per engine to pay off, and a parallel suite's flakiness cannot be judged
-> from one green run. Left alone deliberately; it is the obvious next move if
-> the developer path matters more than it does today.
+> `Config/testthat/parallel: false` in `DESCRIPTION`. With
+> `test-engines-matrix.R` no longer dominating, the developer path has no single
+> file worth splitting around, so parallelism is now the main lever left — but a
+> parallel suite's flakiness cannot be judged from one green run. Left alone
+> deliberately.
+>
+> Caching `epinowcast`'s compiled Stan model across R processes
+> (`enw_model(target_dir = )`) would take ~90 s off every developer run, but it
+> means writing a build artefact to a persistent location from a test. Not done.
 >
 > `devel/measure_tests.R` is the reproducible measurement this brief asked for.
 

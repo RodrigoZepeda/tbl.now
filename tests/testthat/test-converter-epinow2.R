@@ -647,9 +647,15 @@ test_that("tidy() on an estimate_infections fit meets the nowcast contract", {
     upper_50 = c(108, 130, 151),
     upper_90 = c(120, 144, 168)
   )
-  # `registerS3method()` looks the generic up from the calling frame, and
-  # EpiNow2 is not attached during tests, so bring it into scope first.
-  get_predictions <- EpiNow2::get_predictions
+  # EpiNow2 has to be ATTACHED, not merely reachable, and this is not cosmetic.
+  # `local_mocked_s3_method()` restores what it found in the S3 methods table on
+  # exit; with the package only loaded, it finds nothing, and "restores" that --
+  # DELETING EpiNow2's real `get_predictions.estimate_infections` for the rest of
+  # the R session. Nothing downstream noticed until the engine matrix started
+  # fitting EpiNow2 for real, and then every one of its 24 shapes died with
+  # "no applicable method for 'get_predictions'", in a file that passed on its
+  # own. Attaching makes the method visible, so it is found and put back.
+  withr::local_package("EpiNow2")
   testthat::local_mocked_s3_method(
     "get_predictions", "estimate_infections",
     function(object, format = "summary", ...) fake_predictions
@@ -680,7 +686,9 @@ test_that("tidy() gives regional_epinow one block per region", {
     )
   }
   predictions <- list(north = make_predictions(1), south = make_predictions(100))
-  get_predictions <- EpiNow2::get_predictions
+  # Attached, not just loaded -- see the note above; otherwise this unregisters
+  # EpiNow2's real method for the rest of the session.
+  withr::local_package("EpiNow2")
   testthat::local_mocked_s3_method(
     "get_predictions", "estimate_infections",
     function(object, format = "summary", ...) predictions[[object$region]]
