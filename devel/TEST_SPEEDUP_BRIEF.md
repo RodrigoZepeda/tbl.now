@@ -1,5 +1,105 @@
 # Brief: make `tbl.now`'s test suite faster
 
+> ## DONE — 2026-08-28. Outcome below; the brief as written is kept underneath.
+>
+> | | before | after | |
+> |---|---|---|---|
+> | CRAN test path | 311.6 s | **152.4 s** | **−51%** |
+> | CRAN wall (`test_check`) | 318.1 s | **159.1 s** | 5.3 min -> **2.7 min** |
+> | `R CMD check` tests stage | — | 158 s | whole check now ~7 min |
+> | Developer path (`NOT_CRAN=true`) | 1404.4 s | **1066.7 s** | **−24%**, 23.5 -> **17.9 min** |
+> | `covr::package_coverage()` | 78.30% | **78.38%** | up |
+> | `R CMD check --as-cran` | 0 errors, 0 warnings | 0 errors, 0 warnings | unchanged |
+>
+> Both paths measured with `testthat:::on_cran()` asserted, 0 failures, and the
+> same test counts as before (CRAN 1334/424 skipped; full 1389/3 skipped).
+>
+> **Both "before" columns were re-measured here, in a worktree at the unmodified
+> commit — do not compare against the numbers further down this brief.** That
+> session's machine was slower: it recorded the CRAN path at 354 s where it
+> measures 311.6 s now, and the full path at 1848 s where it measures 1404.4 s.
+> Quoting the old baseline against a new run would have claimed −42% on the
+> developer path instead of the real −24%. Measure both ends yourself.
+
+> The developer path improves less than the CRAN one because
+> `test-engines-matrix.R` — 798 s of its 1404 s, and Stan fits, not class
+> overhead — barely moves (798 s -> 727 s). Everything else roughly halves:
+> `test-converters.R` 63.9 -> 39.9, `test-update.R` 32.3 -> 12.4,
+> `test-changers.R` 27.4 -> 11.5, `test-summary.R` 21.2 -> 8.9.
+>
+> **No test was deleted, and the 24-shape cross product is untouched.**
+>
+> ### What was actually slow: the class, not any one test
+>
+> The flat profile was the clue. The cost was not in any test but in
+> `validate_tbl_now()`, which runs on every `dplyr` verb, and inside it in
+> **formatting messages nobody reads**. Validating a clean object formatted
+> ELEVEN `cli` messages and reported ONE; `cli::format_inline()` costs ~0.5 ms
+> for a static string, ~3.5 ms with `{.val {x}}`, and **~15 ms** for a hint
+> interpolating a vector of row numbers (`isatty()` alone was 28% of a
+> `tbl_now()` call). Each finding also built its own one-row `dplyr::tibble()`
+> (~2 ms), and `dplyr::arrange()` on the resulting ten rows cost 6 ms where
+> `order(..., method = "radix")` costs 0.11 ms.
+>
+> Fixed in `R/diagnose.R`: `.diagnose_text()` returns a **template** rather than
+> a string, `.diagnose_finalise()` filters by the reporting floor **before**
+> formatting, and findings stay plain lists until the one tibble the caller sees
+> is assembled. `tbl_now()` **−68%**, `validate_tbl_now()` **−76%** — a user-facing
+> win, not just a test-suite one. Behaviour is unchanged: `diagnose()`,
+> `summary()` and `validate_tbl_now()`'s condition stream were captured across 5
+> problem frames x 2 data types x 2 strata settings plus broken objects and
+> compared against the unmodified package — **70/70 identical**, plus 4 targeted
+> cases for the `.diagnose_join()` paths.
+>
+> **The trap in that change** (see `DEVELOPMENT_SKILL.md` §8): most templates are
+> built inside a `for` loop over columns, axes or strata, so a deferred template
+> reading the live frame would report the loop variable's LAST value in every
+> row. `.diagnose_text()` therefore `rlang::env_clone()`s its `.envir`.
+>
+> ### The two test-level fixes (§3 of this brief)
+>
+> * `test-tbl_now.R` "throws warning when repeated rows" fed all 452,000 rows of
+>   `flusight` through `tbl_now()` twice. Three locations prove the same thing:
+>   **12.0 s -> 0.69 s**, both asserted warnings verified to still fire.
+> * `test-tidy.R`'s three `surveillance` tests each ran their own MCMC.
+>   One shared fit: **18 s -> ~6 s**. The test that empties the `pi` slot
+>   rebinds its own copy, so the cache is safe.
+>
+> ### §1's `diseasenowcasting` suggestions were tried and are WRONG
+>
+> Do not repeat them. The 956 s is **entirely the 8 `count-cumulative` shapes**
+> (one is 136 s), and the driver is the `confirmation_process()` that
+> `engine_args()` injects — not the delay window. Measured on the fixture:
+>
+> ```
+> current (n_draws = 100)                 24 s      <- weeks/count-cumulative
+> + delay_window = 4                      29 s      no help; on other shapes, none
+> + K = 5                                140 s      SIX TIMES WORSE
+> + one_stage + K = 5                    275 s
+> + one_stage + K = 5 + delay_window = 4 1447 s
+> type = "one_stage" alone                23 s      -15%, the only real gain
+> ```
+>
+> Fewer basis functions break convergence and the fitter retries, so every
+> "make it smaller" lever costs more than it saves. `n_periods` was already 30.
+> `test-engines-matrix.R` still fell 798 s -> 727 s on the class speedup alone,
+> but it is now 68% of the developer path and the only thing left worth
+> attacking there.
+>
+> ### Still on the table, not taken
+>
+> `Config/testthat/parallel: false` in `DESCRIPTION`. Turning it on would help
+> the developer path, but the floor is the slowest single FILE, and
+> `test-engines-matrix.R` is 727 s of the 1067 s — so it would need that file
+> split per engine to pay off, and a parallel suite's flakiness cannot be judged
+> from one green run. Left alone deliberately; it is the obvious next move if
+> the developer path matters more than it does today.
+>
+> `devel/measure_tests.R` is the reproducible measurement this brief asked for.
+
+---
+
+
 > **You are picking this up cold.** Read `DEVELOPMENT_SKILL.md` first (how to
 > develop the package) and `SKILL.md` (how to use it). This file is the brief for
 > **one job**: cut the test suite's runtime without losing coverage.

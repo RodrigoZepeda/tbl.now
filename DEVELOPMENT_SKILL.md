@@ -470,6 +470,46 @@ against every shipped dataset.
   else to trip over — that is how `test-autoplot.R` ended up asserting a default
   that had been changed weeks earlier.
 
+### Why the suite was slow, and what actually fixed it
+
+The suite's profile is **flat** — no file is more than 8% of the CRAN path — so
+there was no one test to fix. The cost was spread over roughly 780 `tbl_now()`
+constructions, and it was not in the data handling. It was in
+`validate_tbl_now()`, which runs on every `dplyr` verb, and inside that in
+**formatting messages nobody reads**:
+
+* `cli::format_inline()` is not cheap: about 0.5 ms for a static string, 3.5 ms
+  once `{.val {x}}` is involved, and **15 ms** for a hint that interpolates a
+  vector of row numbers. It calls `isatty()` every time, which alone was 28% of
+  a `tbl_now()` call.
+* A findings block builds the "you have a problem" message *and* the "all clear"
+  message whether or not the check found anything. Validating a clean object
+  formatted **eleven messages and reported one** — the other ten were dropped by
+  the status floor before anyone could read them.
+* A `dplyr::tibble()` costs about 2 ms to construct. One per finding, ten
+  findings, on every verb. `dplyr::arrange()` on a ten-row tibble costs 6 ms;
+  `order(..., method = "radix")` does the same job in 0.11 ms.
+
+So `.diagnose_text()` no longer returns a string: it returns a **template**, and
+`.diagnose_finalise()` filters by the floor first and formats only the survivors.
+Findings are plain lists (`.diagnose_row()`), assembled into the one tibble the
+caller sees at the very end. Together: `tbl_now()` −68%, `validate_tbl_now()`
+−76%, and the CRAN test path from 311.6 s to 152.4 s — **half** — with no test
+removed and coverage slightly up. See `devel/TEST_SPEEDUP_BRIEF.md` for the
+full before/after and for the `diseasenowcasting` levers that turned out to
+make things worse.
+
+Two things to know before touching that code again:
+
+* **Deferring changes *when* a template is read.** Most of these are built in a
+  `for` loop over columns, axes or strata, so a template that read the live
+  frame would report the loop variable's LAST value in every row.
+  `.diagnose_text()` therefore `rlang::env_clone()`s its `.envir`; the clone
+  costs 0.01 ms and does not force promises. If you write a new finding, you get
+  this for free — but do not "optimise" the clone away.
+* **`paste()` on a `.diagnose_text()` forces it**, which is the cost the whole
+  design avoids. Use `.diagnose_join()`.
+
 ---
 
 ## 9. Pitfalls that have already bitten
@@ -479,6 +519,14 @@ against every shipped dataset.
   use `cli::cat_line()` / `cat_rule()` / `cat_bullet()`.
 * **`\\` line continuations render literally** inside `cli::format_inline()`.
   Use `paste0()`.
+* **A findings message is a template, not a string.** `.diagnose_text()` returns
+  a deferred object so that a finding below the reporting floor is never
+  formatted. `paste()` on one forces it (and returns something useless);
+  `.diagnose_join()` is the concatenation that stays lazy. See §8.
+* **`dplyr::arrange()` sorts in the C locale, `order()` in the session's.**
+  Swapping one for the other to save time silently changes row order for
+  anybody outside an ASCII locale. `order(..., method = "radix")` is the
+  match.
 * **S7 classes break S3 method naming.** `class()` is
   `"pkg::thing"`, and `::` cannot appear in a method name. Register in
   `.onLoad()`.

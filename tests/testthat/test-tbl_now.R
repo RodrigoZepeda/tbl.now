@@ -218,8 +218,15 @@ test_that("tbl_now errors if strata or covariates are not characters", {
 test_that("tbl_now throws warning when repeated rows", {
   data("flusight")
 
+  # Three locations, not all 53. This test is about `tbl_now()`'s response to
+  # repeated rows, and one location shows that as well as fifty-three do -- but
+  # the full `flusight` is 452,000 rows and every one of them is validated
+  # twice below, which made this single test 4% of the whole CRAN suite. Both
+  # warnings asserted below still fire on the subset; that was checked, not
+  # assumed.
   flusight <- flusight |>
     dplyr::filter(!is.na(observation)) |>
+    dplyr::filter(location_name %in% sort(unique(location_name))[1:3]) |>
     dplyr::mutate(epiweek_as_of = lubridate::epiweek(as_of)) |>
     dplyr::mutate(epiyear_as_of = lubridate::epiyear(as_of)) |>
     dplyr::left_join(

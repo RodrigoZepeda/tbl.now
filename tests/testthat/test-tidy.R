@@ -124,7 +124,20 @@ test_that("tidy() records the interval width each engine actually returns", {
 # `nowcast()` already reports a prediction interval in the object's `pi` slot,
 # so `tidy()` must not blank it out (it used to return NA bounds and NA level).
 
-surveillance_fit <- function() {
+# Fitted ONCE and shared by the three tests below. `nowcast()` runs an MCMC, and
+# paying for it per test cost 18 seconds -- 5% of the CRAN suite -- for three
+# assertions about the same `pi` slot. The fit is read-only here: the test that
+# empties `pi` assigns into its own local binding, which R copies on
+# modification, so the cache cannot be reached through it.
+surveillance_fit <- local({
+  cached <- NULL
+  function() {
+    if (is.null(cached)) cached <<- .surveillance_fit()
+    cached
+  }
+})
+
+.surveillance_fit <- function() {
   data(denguedat, envir = environment())
   cut <- as.Date("2002-07-22")
   dengue <- denguedat |>

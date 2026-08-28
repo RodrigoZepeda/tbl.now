@@ -383,8 +383,8 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   # Pre-flight. Every check below assumes the attributes exist and name real
   # columns, so this stage short-circuits instead of feeding the rest garbage.
   preflight <- .diagnose_preflight(x)
-  if (nrow(preflight) > 0) {
-    return(.diagnose_finalise(list(preflight), floor))
+  if (length(preflight) > 0) {
+    return(.diagnose_finalise(preflight, floor))
   }
 
   context <- .diagnose_context(
@@ -399,11 +399,11 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   # when `checks` did not ask for it, so that a component called on its own
   # reports the broken declaration rather than tripping over it.
   declarations <- .diagnose_declarations(context)
-  fatal <- declarations[as.character(declarations$status) == "error", ,
-    drop = FALSE
-  ]
-  if (nrow(fatal) > 0) {
-    return(.diagnose_finalise(list(fatal), floor))
+  fatal <- Filter(
+    function(finding) identical(finding$status, "error"), declarations
+  )
+  if (length(fatal) > 0) {
+    return(.diagnose_finalise(fatal, floor))
   }
 
   blocks <- lapply(checks, function(check) {
@@ -538,11 +538,16 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
 #' @param check,scope,stratum Row identifiers.
 #' @param status One of `.diagnose_status_levels()`.
 #' @param n_affected,n_total Counts; `prop` is their ratio.
-#' @param message One formatted sentence.
+#' @param message One sentence, usually still a deferred `.diagnose_text()`.
 #' @param hint What to do about it, or `NA`.
 #' @param rows Offending row indices.
 #'
-#' @return A one-row tibble.
+#' @return A `diagnose_finding`: a plain list, NOT a one-row tibble. A tibble
+#'   costs about 2 ms to build and a finding is worth about 2 microseconds as a
+#'   list, and a clean object produces ten of them on every `dplyr` verb.
+#'   `.diagnose_finalise()` assembles the survivors into the one tibble anybody
+#'   sees. `status` stays a character here for the same reason: the factor is
+#'   built once, there, over the whole column.
 #'
 #' @keywords internal
 #' @noRd
@@ -551,15 +556,49 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
                           hint = NA_character_, rows = integer(0)) {
   n_affected <- as.numeric(n_affected)
   n_total <- as.numeric(n_total)
-  dplyr::tibble(
-    check = check, scope = scope, stratum = stratum,
-    status = factor(status, levels = .diagnose_status_levels(), ordered = TRUE),
-    n_affected = n_affected,
-    n_total = n_total,
-    prop = if (is.na(n_total) || n_total == 0) NA_real_ else n_affected / n_total,
-    message = message, hint = as.character(hint),
-    rows = list(as.integer(rows))
+  structure(
+    list(
+      check = check, scope = scope, stratum = stratum, status = status,
+      n_affected = n_affected,
+      n_total = n_total,
+      prop = if (is.na(n_total) || n_total == 0) {
+        NA_real_
+      } else {
+        n_affected / n_total
+      },
+      message = message, hint = hint, rows = as.integer(rows)
+    ),
+    class = "diagnose_finding"
   )
+}
+
+#' Flatten whatever a block returned into a flat list of findings
+#'
+#' Blocks build their findings in nested lists, and some hand back a single one.
+#' Anything that is not a finding or a list of them is a bug in the block, so it
+#' aborts rather than being quietly dropped.
+#'
+#' @param x A finding, or an arbitrarily nested list of them.
+#'
+#' @return A flat list of `diagnose_finding` objects.
+#'
+#' @keywords internal
+#' @noRd
+.diagnose_block <- function(x) {
+  if (inherits(x, "diagnose_finding")) {
+    return(list(x))
+  }
+  if (is.null(x)) {
+    return(list())
+  }
+  if (!is.list(x) || is.data.frame(x)) {
+    cli::cli_abort(
+      "Internal error: a findings block held a {.cls {class(x)[1]}}.",
+      .internal = TRUE
+    )
+  }
+  flattened <- lapply(x, .diagnose_block)
+  unlist(flattened, recursive = FALSE, use.names = FALSE) %||% list()
 }
 
 #' A finding whose status depends on whether anything was found
@@ -588,30 +627,110 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   }
 }
 
-#' Format one message, without styling and on one line
+#' Hold one message, to be formatted only if anything will read it
 #'
 #' `cli::format_inline()` emits ANSI escapes when the console supports them,
 #' which is right for a condition and wrong for a column of a tibble. It also
 #' keeps the source indentation of a template written across several lines,
 #' which `cli_warn()` would have re-wrapped. The findings are data first: strip
-#' the styling and the line breaks once, here, so both presentations read the
-#' same string.
+#' the styling and the line breaks once, in `.diagnose_chr()`, so both
+#' presentations read the same string.
 #'
-#' @param ... Passed to [cli::format_inline()].
-#' @param .envir Evaluation environment for the inline expressions.
+#' **This returns a template, not a string.** Formatting is what a finding
+#' costs: `{.val {x}}` runs to about 3.5 ms and a hint carrying a vector of row
+#' numbers to about 15 ms, and a block builds one of each whether or not the
+#' check found anything. Most of them are then thrown away -- a clean object
+#' validated at `floor = "note"` formats eleven messages and reports one -- and
+#' since `validate_tbl_now()` runs on every `dplyr` verb, that waste was the
+#' single largest cost in the class. `.diagnose_finalise()` filters first and
+#' formats afterwards, so only a finding somebody will actually read is paid
+#' for.
+#'
+#' Combine two of these with `.diagnose_join()`, not `paste()`.
+#'
+#' @param ... Passed to [cli::format_inline()] when the text is finally needed.
+#' @param .envir Evaluation environment for the inline expressions. It is
+#'   CLONED rather than held, because deferring changes WHEN the template is
+#'   read: most of these are built inside a `for` loop over columns, axes or
+#'   strata, and one that read the live frame would report the loop variable's
+#'   LAST value in every row. `rlang::env_clone()` copies the bindings without
+#'   forcing any promise among them, and at 0.01 ms it is a rounding error
+#'   against the 0.5-15 ms it saves.
+#'
+#' @return A `diagnose_text` object.
+#'
+#' @keywords internal
+#' @noRd
+.diagnose_text <- function(..., .envir = parent.frame()) {
+  .new_diagnose_text(
+    list(list(args = list(...), envir = rlang::env_clone(.envir)))
+  )
+}
+
+#' @param chunks A list whose elements are either character scalars or
+#'   `list(args =, envir =)` templates.
+#' @noRd
+.new_diagnose_text <- function(chunks) {
+  structure(list(chunks = chunks), class = "diagnose_text")
+}
+
+#' Concatenate message fragments without formatting any of them
+#'
+#' The replacement for `paste()` over `.diagnose_text()` results: pasting would
+#' force each one, which is the cost this is all here to avoid.
+#'
+#' @param ... `diagnose_text` objects, character scalars, or lists of either.
+#'
+#' @return A `diagnose_text` object whose text is the fragments joined by a
+#'   single space.
+#'
+#' @keywords internal
+#' @noRd
+.diagnose_join <- function(...) {
+  parts <- list(...)
+  chunks <- list()
+  for (part in parts) {
+    if (inherits(part, "diagnose_text")) {
+      chunks <- c(chunks, part$chunks)
+    } else if (is.list(part)) {
+      chunks <- c(chunks, do.call(.diagnose_join, part)$chunks)
+    } else if (length(part) > 0) {
+      chunks <- c(chunks, as.list(as.character(part)))
+    }
+  }
+  .new_diagnose_text(chunks)
+}
+
+#' Format a deferred message into the one line the findings carry
+#'
+#' @param x A `diagnose_text` object, or anything already character.
 #'
 #' @return A character scalar.
 #'
 #' @keywords internal
 #' @noRd
-.diagnose_text <- function(..., .envir = parent.frame()) {
-  formatted <- cli::ansi_strip(cli::format_inline(..., .envir = .envir))
-  trimws(gsub("[[:space:]]+", " ", formatted))
+.diagnose_chr <- function(x) {
+  if (!inherits(x, "diagnose_text")) {
+    return(as.character(x))
+  }
+  if (length(x$chunks) == 0) {
+    return("")
+  }
+  parts <- vapply(x$chunks, function(chunk) {
+    if (is.character(chunk)) {
+      return(chunk)
+    }
+    formatted <- cli::ansi_strip(
+      do.call(cli::format_inline, c(chunk$args, list(.envir = chunk$envir)))
+    )
+    trimws(gsub("[[:space:]]+", " ", formatted))
+  }, character(1), USE.NAMES = FALSE)
+  paste(parts, collapse = " ")
 }
 
 #' Bind blocks into the canonical schema, worst first
 #'
-#' @param blocks A list of tibbles.
+#' @param blocks A finding, or an arbitrarily nested list of them.
 #' @param floor Least severe status to keep.
 #'
 #' @return A tibble with the columns of `.diagnose_schema()`, in that order.
@@ -619,30 +738,64 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
 #' @keywords internal
 #' @noRd
 .diagnose_finalise <- function(blocks, floor = "skipped") {
-  out <- dplyr::bind_rows(blocks)
+  findings <- .diagnose_block(blocks)
+  levels <- .diagnose_status_levels()
 
-  if (nrow(out) == 0) {
+  # Drop first, format second. The findings below the floor are the ones nobody
+  # will read, and formatting a message is what a finding costs -- see
+  # `.diagnose_text()`.
+  if (length(findings) > 0) {
+    status <- vapply(findings, function(f) f$status, character(1),
+      USE.NAMES = FALSE
+    )
+    findings <- findings[match(status, levels) <= match(floor, levels)]
+  }
+
+  if (length(findings) == 0) {
     return(dplyr::tibble(
       check = character(0), scope = character(0), stratum = character(0),
-      status = factor(character(0),
-        levels = .diagnose_status_levels(), ordered = TRUE
-      ),
+      status = factor(character(0), levels = levels, ordered = TRUE),
       n_affected = numeric(0), n_total = numeric(0), prop = numeric(0),
       message = character(0), hint = character(0), rows = list()
     ))
   }
 
-  out$status <- factor(as.character(out$status),
-    levels = .diagnose_status_levels(), ordered = TRUE
-  )
-  keep <- as.integer(out$status) <=
-    match(floor, .diagnose_status_levels())
-  out <- out[keep, , drop = FALSE]
+  field_chr <- function(field) {
+    vapply(findings, function(f) f[[field]], character(1), USE.NAMES = FALSE)
+  }
+  field_num <- function(field) {
+    vapply(findings, function(f) f[[field]], numeric(1), USE.NAMES = FALSE)
+  }
 
-  out <- dplyr::arrange(
-    out, .data$status, .data$check, .data$scope, .data$stratum
+  check <- field_chr("check")
+  scope <- field_chr("scope")
+  stratum <- field_chr("stratum")
+  status <- factor(field_chr("status"), levels = levels, ordered = TRUE)
+  n_affected <- field_num("n_affected")
+  n_total <- field_num("n_total")
+  prop <- field_num("prop")
+
+  # `method = "radix"` because that is the C-locale collation `dplyr::arrange()`
+  # uses by default; the default `order()` would sort in the session locale and
+  # a findings tibble would come back in a different order abroad.
+  index <- order(as.integer(status), check, scope, stratum, method = "radix")
+  findings <- findings[index]
+
+  dplyr::tibble(
+    check = check[index], scope = scope[index], stratum = stratum[index],
+    status = status[index],
+    n_affected = n_affected[index],
+    n_total = n_total[index],
+    prop = prop[index],
+    message = vapply(findings, function(f) .diagnose_chr(f$message),
+      character(1),
+      USE.NAMES = FALSE
+    ),
+    hint = vapply(findings, function(f) .diagnose_chr(f$hint), character(1),
+      USE.NAMES = FALSE
+    ),
+    rows = lapply(findings, function(f) f$rows)
   )
-  dplyr::relocate(out, dplyr::any_of(.diagnose_schema()))
 }
 
 # Pre-flight ------------------------------------------------------------------
@@ -678,7 +831,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     }
   }
 
-  dplyr::bind_rows(rows)
+  .diagnose_block(rows)
 }
 
 # Checks ----------------------------------------------------------------------
@@ -924,7 +1077,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     )
   }
 
-  dplyr::bind_rows(rows)
+  .diagnose_block(rows)
 }
 
 #' The `event <= report <= confirmation` timeline
@@ -970,7 +1123,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       "ordering", "event_to_confirmation", "skipped",
       .diagnose_text("The object carries no confirmation process.")
     )
-    return(dplyr::bind_rows(rows))
+    return(.diagnose_block(rows))
   }
 
   before_report <- which(
@@ -1009,7 +1162,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     rows = before_all
   )
 
-  dplyr::bind_rows(rows)
+  .diagnose_block(rows)
 }
 
 #' `NA` values, per column and per stratum
@@ -1050,7 +1203,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   }
 
   if (!context$deep || !.diagnose_wants(context, "note")) {
-    return(dplyr::bind_rows(rows))
+    return(.diagnose_block(rows))
   }
 
   # -- everything else, per stratum -------------------------------------------
@@ -1121,7 +1274,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     )
   }
 
-  dplyr::bind_rows(rows)
+  .diagnose_block(rows)
 }
 
 #' Rows that repeat on the full key
@@ -1202,7 +1355,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       "Every row is unique on ({event_date}, {report_date}) and everything the
        object declares."
     ),
-    hint = paste(cause, fix),
+    hint = .diagnose_join(cause, fix),
     rows = repeated
   )
 }
@@ -1254,34 +1407,36 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   }
   numeric_axes <- declared == "numeric"
 
-  problems <- character(0)
+  # A list, not a character vector: these are deferred templates, and `c()` on
+  # one would drop its class.
+  problems <- list()
   if (any(numeric_axes) && !all(numeric_axes)) {
-    problems <- c(problems, .diagnose_text(
+    problems <- c(problems, list(.diagnose_text(
       "{.val numeric} is mixed with calendar units
        ({.val {declared[!numeric_axes]}}); an axis is either a calendar or a
        number line, never both."
-    ))
+    )))
   }
   if (!any(numeric_axes)) {
     if (match(report_units, order) < match(event_units, order)) {
-      problems <- c(problems, .diagnose_text(
+      problems <- c(problems, list(.diagnose_text(
         "{.field report_units} ({.val {report_units}}) is finer than
          {.field event_units} ({.val {event_units}})."
-      ))
+      )))
     }
     if (!is.null(confirmation_units) &&
       !identical(confirmation_units, event_units)) {
-      problems <- c(problems, .diagnose_text(
+      problems <- c(problems, list(.diagnose_text(
         "{.field confirmation_units} ({.val {confirmation_units}}) differs from
          {.field event_units} ({.val {event_units}}), so
          {.code .confirmation_delay} subtracts one scale from another."
-      ))
+      )))
     }
   }
 
   rows[[1]] <- .diagnose_count_row(
     "units", "declared", length(problems), length(declared), "note",
-    paste(problems, collapse = " "),
+    .diagnose_join(problems),
     clean = .diagnose_text(
       "The declared units agree: {.val {declared}}."
     ),
@@ -1350,7 +1505,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     rows = fractional
   )
 
-  dplyr::bind_rows(rows)
+  .diagnose_block(rows)
 }
 
 #' Dates that do not sit on the grid their units claim
@@ -1423,7 +1578,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
         rows = offending
       )
     })
-    return(dplyr::bind_rows(rows))
+    return(.diagnose_block(rows))
   }
 
   # count-cumulative: the negatives only appear once the totals are
@@ -1459,7 +1614,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       )
     )
   })
-  dplyr::bind_rows(rows)
+  .diagnose_block(rows)
 }
 
 #' Anything dated after `now`, and how stale the object is
@@ -1539,7 +1694,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   }
 
   if (!.diagnose_wants(context, "note")) {
-    return(dplyr::bind_rows(rows))
+    return(.diagnose_block(rows))
   }
 
   event <- x[[get_event_date(x)]]
@@ -1559,7 +1714,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   )
 
   if (!context$deep) {
-    return(dplyr::bind_rows(rows))
+    return(.diagnose_block(rows))
   }
 
   # The gap to `now` is already computed, per stratum, by the summary family --
@@ -1580,7 +1735,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       "now", "gap", "skipped",
       .diagnose_text("The reporting triangle could not be laid out.")
     )
-    return(dplyr::bind_rows(rows))
+    return(.diagnose_block(rows))
   }
 
   for (axis in c("event", "report")) {
@@ -1617,7 +1772,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     }
   }
 
-  dplyr::bind_rows(rows)
+  .diagnose_block(rows)
 }
 
 #' How much of the recent data has not arrived yet
@@ -1744,7 +1899,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     )
   })
 
-  dplyr::bind_rows(rows)
+  .diagnose_block(rows)
 }
 
 #' The smallest and the sparsest stratum, and the confirmations still pending
@@ -1822,7 +1977,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       "strata", "pending", "skipped",
       .diagnose_text("The object carries no confirmation process.")
     )
-    return(dplyr::bind_rows(rows))
+    return(.diagnose_block(rows))
   }
 
   summary <- .diagnose_summary(context)
@@ -1831,7 +1986,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       "strata", "pending", "skipped",
       .diagnose_text("The confirmations could not be counted.")
     )
-    return(dplyr::bind_rows(rows))
+    return(.diagnose_block(rows))
   }
 
   cases <- summary$cases
@@ -1887,7 +2042,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     )
   }
 
-  dplyr::bind_rows(rows)
+  .diagnose_block(rows)
 }
 
 #' The questions `diagnose()` deliberately does not answer
@@ -1941,7 +2096,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
      look-back, a null model and a multiplicity correction."
   )
 
-  dplyr::bind_rows(
+  .diagnose_block(list(
     signpost("signposts", "report", "diagnose_drift(x, axis = \"report\")", drift_why),
     signpost(
       "signposts", "confirmation",
@@ -1952,7 +2107,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       "signposts", "confirmation_batches",
       "diagnose_batches(x, axis = \"confirmation\")", batch_why
     )
-  )
+  ))
 }
 
 # The `validate_tbl_now()` presentation ---------------------------------------

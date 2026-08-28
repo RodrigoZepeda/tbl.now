@@ -101,6 +101,27 @@ cannot read.
 This has a visible knock-on: an ensemble containing EpiNow2 now shares all nine
 of `nowcast_quantile_levels()` rather than collapsing to three.
 
+## Performance: `tbl_now()` and every `dplyr` verb on one
+
+No behaviour changed, but the class got substantially cheaper. `tbl_now()` is
+about **3x faster** and `validate_tbl_now()` -- which runs on every `dplyr`
+verb via `tbl_now_reconstruct()` -- about **4x**.
+
+Almost all of the cost was building findings that were then discarded.
+`validate_tbl_now()` reports at `floor = "note"`, so on a clean object it
+formatted eleven `cli` messages and showed one; formatting is the expensive part
+(a hint interpolating a vector of row numbers costs ~15 ms), and each finding
+also built its own one-row tibble (~2 ms).
+
+* `.diagnose_text()` now returns a **template** rather than a formatted string,
+  and `.diagnose_finalise()` filters by the reporting floor *before* formatting,
+  so only a finding somebody will read is paid for.
+* Findings are plain lists until `.diagnose_finalise()` assembles the one tibble
+  the caller sees.
+
+`diagnose()` returns exactly the same tibble, and `validate_tbl_now()` the same
+conditions.
+
 ## Documentation
 
 * `vignette("ensemble-nowcasting")` gains a figure of **the ensemble against each
