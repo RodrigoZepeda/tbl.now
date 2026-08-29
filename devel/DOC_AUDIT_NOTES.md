@@ -221,3 +221,19 @@ Keywords standardised to `datasets` (they were `dengue`, `mpox`, `flu influenza`
 
 Note: dataset pages use `\format`, not `\value` -- `\value` is for functions, and
 `R CMD check`'s value check skips `\docType{data}`.
+
+## Final verification
+
+`R CMD check --as-cran --no-manual` on the finished tree:
+
+```
+Status: OK
+Duration: 19m 36.2s
+0 errors | 0 warnings | 0 notes
+```
+
+Includes the full test suite (OK), all examples on the default path (77s) and with
+`--run-donttest` (219s), Rd files / metadata / line widths / cross-references,
+S3 generic-method consistency after the `method` -> `engine` rename, missing
+documentation entries, code/documentation mismatches, `\usage` sections and Rd
+contents -- all OK.
