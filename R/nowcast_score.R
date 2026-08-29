@@ -408,28 +408,14 @@ score_nowcast <- function(x, truth = NULL) {
 #'   event_date = onset_week, report_date = report_week, verbose = FALSE
 #' )
 #'
-#' # A backtest needs a model. The engine below is a deliberately naive one
-#' # defined on the spot -- it carries the latest reported count forward -- so
-#' # that this example needs no modelling package installed.
-#' nowcast_fit.carry_forward <- function(engine, x, ..., quantile_levels,
-#'                                       verbose = TRUE) {
-#'   counts <- get_latest_reported_cases(x)
-#'   list(dates = counts[[get_event_date(x)]], value = counts[["n"]])
-#' }
-#' nowcast_tidy.carry_forward <- function(engine, fit, x, ..., quantile_levels) {
-#'   predictions <- tidyr::expand_grid(
-#'     event_date = fit$dates, .quantile_level = quantile_levels
-#'   )
-#'   predictions$.value <- rep(fit$value, each = length(quantile_levels))
-#'   names(predictions)[1] <- get_event_date(x)
-#'   list(predictions = predictions)
-#' }
-#' registerS3method("nowcast_fit", "carry_forward", nowcast_fit.carry_forward)
-#' registerS3method("nowcast_tidy", "carry_forward", nowcast_tidy.carry_forward)
+#' # `example_engine()` is a toy that ignores the reporting delay entirely; it
+#' # is used here only so the example runs without a modelling package.
+#' # Swap in a real one -- `engine_baselinenowcast()`, `engine_epinowcast()`,
+#' # `engine_nobbs()` -- for anything you intend to act on.
 #'
 #' # Refit at two past `now` dates and score each against what is known now.
 #' bt <- nowcast_backtest(dengue,
-#'   engine("carry_forward", label = "carry forward"),
+#'   example_engine(label = "carry forward"),
 #'   now_dates = as.Date(c("2010-10-04", "2010-11-15")),
 #'   verbose = FALSE
 #' )
@@ -707,35 +693,20 @@ print.nowcast_backtest <- function(x, ...) {
 #'   event_date = onset_week, report_date = report_week, verbose = FALSE
 #' )
 #'
-#' # A backtest needs a model. The engine below is a deliberately naive one
-#' # defined on the spot -- it carries the latest reported count forward -- so
-#' # that this example needs no modelling package installed.
-#' nowcast_fit.carry_forward <- function(engine, x, ..., quantile_levels,
-#'                                       verbose = TRUE) {
-#'   counts <- get_latest_reported_cases(x)
-#'   list(dates = counts[[get_event_date(x)]], value = counts[["n"]])
-#' }
-#' nowcast_tidy.carry_forward <- function(engine, fit, x, ..., quantile_levels) {
-#'   predictions <- tidyr::expand_grid(
-#'     event_date = fit$dates, .quantile_level = quantile_levels
-#'   )
-#'   predictions$.value <- rep(fit$value, each = length(quantile_levels))
-#'   names(predictions)[1] <- get_event_date(x)
-#'   list(predictions = predictions)
-#' }
-#' registerS3method("nowcast_fit", "carry_forward", nowcast_fit.carry_forward)
-#' registerS3method("nowcast_tidy", "carry_forward", nowcast_tidy.carry_forward)
+#' # `example_engine()` is a toy that ignores the reporting delay entirely; it
+#' # is used here only so the example runs without a modelling package.
+#' # Swap in a real one -- `engine_baselinenowcast()`, `engine_epinowcast()`,
+#' # `engine_nobbs()` -- for anything you intend to act on.
 #'
-#' # Two engines that differ only in label, so the backtest can weight them.
+#' # Two engines that differ in how wide they claim their intervals are.
 #' bt <- nowcast_backtest(dengue,
-#'   engine("carry_forward", label = "carry forward"),
-#'   engine("carry_forward", label = "carry forward (copy)"),
+#'   example_engine(spread = 0.2, label = "narrow"),
+#'   example_engine(spread = 0.5, label = "wide"),
 #'   now_dates = as.Date(c("2010-10-04", "2010-11-15")),
 #'   verbose = FALSE
 #' )
 #'
-#' # Weights sum to one. Two identical models score identically and so split it
-#' # evenly; a better model would take a larger share.
+#' # Weights sum to one, and the better-scoring engine takes the larger share.
 #' nowcast_weights(bt)
 #' sum(nowcast_weights(bt))
 #'

@@ -79,6 +79,98 @@ score_nowcast(nc, truth = dengue)     # the FULL tbl_now, line list or counts
 as_scoringutils(nc, truth = dengue)
 ```
 
+## Breaking: argument names made consistent
+
+A documentation audit read every exported function and found the same argument
+wearing different names in different places. 116 of the 148 exports already took
+`x` first; these were the exceptions.
+
+* **`nowcast_fit()` and `nowcast_tidy()` take `engine`, not `method`.** This is
+  the one that affects code outside the package: if you wrote a backend, rename
+  the first argument of your methods.
+
+  ```r
+  # before
+  nowcast_fit.mymodel  <- function(method, x, ..., quantile_levels, verbose) { }
+  nowcast_tidy.mymodel <- function(method, fit, x, ..., quantile_levels) { }
+
+  # after
+  nowcast_fit.mymodel  <- function(engine, x, ..., quantile_levels, verbose) { }
+  nowcast_tidy.mymodel <- function(engine, fit, x, ..., quantile_levels) { }
+  ```
+
+  What arrives has always been the engine -- `engine()`'s own documentation
+  defines an engine as "the object `nowcast_fit()` and `nowcast_tidy()` dispatch
+  on" -- and the old name was left over from the removed `nowcast_method()`. The
+  argument is only a dispatch handle, so no method body needed changing;
+  `R CMD check`'s S3 consistency check will flag yours until you rename it.
+
+  `engine(method = )` and `list_nowcast_methods()` **keep** "method", where it
+  correctly means the *name* of a backend rather than a configured engine.
+
+* **`data` becomes `x`** in `diagnose_batches()`, `diagnose_batch_shape()`,
+  `simulate_batch()`, `transport_discriminant()`, `censor_delays_above()` and
+  `censor_confirmation_delays_above()`. Positional calls are unaffected. Two
+  internal helpers also named `data` in their error messages, so
+  `diagnose_batches(x = <not a tbl_now>)` used to complain about an argument that
+  did not exist.
+
+* **`quiet` becomes `verbose`** in `censor_delays_above()` and
+  `censor_confirmation_delays_above()`, with the sense inverted and defaulting to
+  `TRUE`, matching the twenty other functions that control messaging this way.
+  Write `verbose = FALSE` where you wrote `quiet = TRUE`.
+
+  The converters that carry **both** `verbose` and `quiet` keep both: they are
+  different channels -- `verbose` is the conversion summary, `quiet` is the
+  lossy-conversion warning -- and the documentation now says so.
+
+## Breaking: `align_weeks()` numbers weekdays the ISO way
+
+`align_weeks(align_on_day = )` counted from Sunday while `is_weekday(weekend_days = )`
+counted from Monday. Both now use ISO numbering: **1 = Monday ... 7 = Sunday**.
+
+**The default is unchanged.** It becomes `7`, which is still Sunday, so
+`align_weeks(x)` -- and `tbl_now(..., align_weeks = TRUE)`, which is where nearly
+everyone meets it -- behaves exactly as before. Only an explicit `align_on_day`
+changes meaning, and the migration is to subtract one, wrapping `1` to `7`:
+
+| you wrote | you meant | now write |
+|---|---|---|
+| `1` | Sunday | `7` |
+| `2` | Monday | `1` |
+| `3` | Tuesday | `2` |
+| ... | ... | ... |
+| `7` | Saturday | `6` |
+
+## New: `example_engine()`, a toy engine for examples
+
+Every real engine needs its modelling package, so every example that fitted a
+nowcast sat inside `\donttest{}` behind a `requireNamespace()` guard -- and none
+of them ran on a default check. `example_engine()` needs nothing, is
+deterministic, and returns in milliseconds, so the examples for `run_nowcast()`,
+`nowcast_backtest()`, `nowcast_weights()`, `score_nowcast()` and `tidy()` on a
+backtest now show real output.
+
+It is not a nowcasting method. It ignores the reporting delay entirely --
+reporting the counts that have arrived and putting a `spread`-wide band around
+them -- so it under-predicts recent dates by construction. That is useful to
+*see* and useless to rely on; the examples say so. Its source is also the
+shortest complete `nowcast_fit()` / `nowcast_tidy()` pair in the package, if you
+are writing a backend.
+
+## New: `tbl_now()` warns on misspelled argument names
+
+`tbl_now()` keeps unmatched `...` names as user metadata, which meant a typo in a
+real argument name was accepted in silence. `case_col = "n"` set a useless
+attribute and left count data typed as a line list -- as it had been doing in one
+of this package's own examples.
+
+Names close enough to a real argument to be a typo now warn and name the intended
+one. Deliberate metadata (`data_source`, `citation`, `population`) stays silent:
+a match needs a shared first letter and an edit distance under a third of the
+longer name, which is what keeps `source` from being read as a misspelling of
+`force`.
+
 ## `autoplot()` on a nowcast draws the reported counts as columns
 
 The cases reported so far were points floating in the middle of the fan, which
@@ -123,6 +215,41 @@ also built its own one-row tibble (~2 ms).
 conditions.
 
 ## Documentation
+
+Every reference page was read once, function by function, for an audience of
+public-health practitioners first and statisticians second.
+
+* **Eleven defects**, most of them found by running examples that had never been
+  run. `tbl_now()` documented two attributes that do not exist (`repot_num` --
+  a typo -- and `event_num`) and omitted four that do. The `align_weeks` example
+  passed `case_col =`, which `...` swallowed, building count data as a line list.
+  The `change` example referenced an undefined object that only survived because
+  R never forced the promise. `update()`'s example built from the whole dataset
+  and then "updated" it with rows it already held.
+* **Fifteen pages shipped with an empty Description.** A block opening with a bare
+  `` `r lifecycle::badge()` `` paragraph gets that badge as its *entire*
+  `@description`, pushing the prose into Details; `?diagnose_drift` and fourteen
+  others showed a badge and nothing else, in the help viewer and in the reference
+  index.
+* **Article links.** `vignettes/articles` is `.Rbuildignore`d, so
+  `vignette("nowcasting-models")` and `vignette("custom-nowcast-models")` resolved
+  to nothing in an installed package. All article references now use URLs.
+* **Ten pages merged into five**, with aliases preserved so `?change` and existing
+  links still resolve: `change` and `remove` onto `add`;
+  `plot_reporting_process` onto `plot_epidemic_process`; `names_tbl_now` and
+  `money_tbl_now` onto `assign_tbl`; `as_scoringutils` onto `score_nowcast`;
+  `censor_confirmation_delays_above` onto `censor_delays_above`; `is_tbl_now` onto
+  `validate_tbl_now`; `week_2_date` onto `align_weeks`;
+  `compute_temporal_effects` onto `add_temporal_effects`.
+* Every exported topic now has `@seealso`, `@return` and a runnable example; every
+  internal function carries `@noRd`. Both `@examplesIf FALSE` blocks are gone, and
+  nothing in `man/` contains `if (FALSE)` or `\dontrun{}`.
+* `?tbl.now` was the DESCRIPTION text and nothing else. It now lays out the
+  workflow -- declare, describe, diagnose, reshape, fit, check -- with a link into
+  each step.
+* Three slow examples trimmed: `align_weeks` ran the whole 452,567-row FluSight
+  table (15.4s to 1.5s), `tbl_now_summary` computed `summary()` four times over,
+  and both Stan examples fitted on twenty years of dengue data.
 
 * `vignette("ensemble-nowcasting")` gains a figure of **the ensemble against each
   of its members**, and a section on `min_date` explaining why the engines are

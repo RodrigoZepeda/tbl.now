@@ -195,30 +195,14 @@ dengue <- tbl_now(recent,
   event_date = onset_week, report_date = report_week, verbose = FALSE
 )
 
-# Every nowcast goes the same way: describe the model with `engine()`, then
-# hand it and the data to `run_nowcast()`. The engine below is a deliberately
-# naive one defined on the spot -- it simply carries the latest reported count
-# forward -- so that this example needs no modelling package installed.
-nowcast_fit.carry_forward <- function(engine, x, ..., quantile_levels,
-                                      verbose = TRUE) {
-  counts <- get_latest_reported_cases(x)
-  list(dates = counts[[get_event_date(x)]], value = counts[["n"]])
-}
-nowcast_tidy.carry_forward <- function(engine, fit, x, ..., quantile_levels) {
-  predictions <- tidyr::expand_grid(
-    event_date = fit$dates, .quantile_level = quantile_levels
-  )
-  predictions$.value <- rep(fit$value, each = length(quantile_levels))
-  names(predictions)[1] <- get_event_date(x)
-  list(predictions = predictions)
-}
-
-# Methods defined outside a package need registering so that dispatch finds
-# them; inside a package `@export` on the method does this for you.
-registerS3method("nowcast_fit", "carry_forward", nowcast_fit.carry_forward)
-registerS3method("nowcast_tidy", "carry_forward", nowcast_tidy.carry_forward)
-
-nc <- run_nowcast(dengue, engine("carry_forward"), verbose = FALSE)
+# Every nowcast goes the same way: describe the model with an engine, then
+# hand it and the data to `run_nowcast()`.
+#
+# `example_engine()` is a toy that ignores the reporting delay entirely; it is
+# used here only so the example runs without a modelling package. Swap in a
+# real one -- `engine_baselinenowcast()`, `engine_epinowcast()`,
+# `engine_nobbs()` -- for anything you intend to act on.
+nc <- run_nowcast(dengue, example_engine(), verbose = FALSE)
 nc
 
 # The result is a tbl_nowcast: one row per event date and quantile level.
@@ -238,7 +222,8 @@ if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 \link[=autoplot.tbl_nowcast]{autoplot()} and \link[=tidy.tbl_nowcast]{tidy()} to look at
 the result; \code{\link[=nowcast_ensemble]{nowcast_ensemble()}} to combine several nowcasts;
 \code{\link[=nowcast_backtest]{nowcast_backtest()}} and \code{\link[=score_nowcast]{score_nowcast()}} to find out whether they are any
-good; \code{\link[=nowcast_fit]{nowcast_fit()}} and \code{\link[=nowcast_tidy]{nowcast_tidy()}} to add a backend of your own. The
+good; \code{\link[=nowcast_fit]{nowcast_fit()}} and \code{\link[=nowcast_tidy]{nowcast_tidy()}} to add a backend of your own, and
+\code{\link[=example_engine]{example_engine()}} for the shortest complete one. The
 \href{https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html}{\emph{One dataset, many nowcasts} article}
 fits the same data with every supported package.
 }

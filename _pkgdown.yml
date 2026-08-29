@@ -138,6 +138,7 @@ reference:
   - run_nowcast
   - engine
   - nowcast_engines
+  - example_engine
   - is_nowcast_engine
   - list_nowcast_methods
   - nowcast_fit
