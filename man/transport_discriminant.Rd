@@ -5,7 +5,7 @@
 \title{The transport discriminant of a reporting series}
 \usage{
 transport_discriminant(
-  data,
+  x,
   lookback = 7L,
   baseline_window = NULL,
   period = NULL,
@@ -14,7 +14,7 @@ transport_discriminant(
 )
 }
 \arguments{
-\item{data}{A \code{\link[=tbl_now]{tbl_now()}} object.}
+\item{x}{A \code{\link[=tbl_now]{tbl_now()}} object.}
 
 \item{lookback}{Integer window half-width \code{k} (report-grid steps) over which the
 deficit is accumulated. Default \code{7} (a week of daily reporting).}

@@ -95,14 +95,36 @@ ndata <- tbl_now(denguedat,
   verbose = FALSE
 )
 
+# Is the object described correctly, and do the dates make sense?
 diagnose_declarations(ndata)
 diagnose_ordering(ndata)
-diagnose_missing(ndata)
 diagnose_units(ndata)
 diagnose_now(ndata)
+
+# Is anything missing, repeated, negative, or cut off at the recent edge?
+diagnose_missing(ndata)
+diagnose_duplicates(ndata)
+diagnose_negatives(ndata)
+diagnose_truncation(ndata)
+
+# Are the strata usable, and which statistical tests does the data call for?
+diagnose_strata(ndata)
 diagnose_signposts(ndata)
+
+# Each returns the same schema, so they stack the way diagnose() stacks them.
+dplyr::bind_rows(
+  diagnose_units(ndata),
+  diagnose_now(ndata)
+)
 
 }
 \seealso{
-\code{\link[=diagnose]{diagnose()}}, which stacks all of these.
+\code{\link[=diagnose]{diagnose()}}, which stacks all of these and sorts them worst-first;
+\code{\link[=validate_tbl_now]{validate_tbl_now()}} for the same findings raised as errors and warnings;
+\link{nowcast_summary_components} for what \emph{is} in the data rather than what is
+wrong with it; \code{\link[=diagnose_drift]{diagnose_drift()}}, \code{\link[=diagnose_changepoint]{diagnose_changepoint()}} and
+\code{\link[=diagnose_batches]{diagnose_batches()}} for the statistical tests \code{diagnose_signposts()} points
+you at. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html}{\emph{Describing and diagnosing a tbl_now} article}
+explains how to read each finding.
 }

@@ -93,7 +93,7 @@
 #' medians across cycles, so an irregular batch reads as an excursion relative to
 #' the schedule.
 #'
-#' @param data A [tbl_now()] object of any `data_type`.
+#' @param x A [tbl_now()] object of any `data_type`.
 #' @param lookback Integer `k`: how many report dates before `r` the window
 #'   reaches back.  Should comfortably cover the longest plausible stall.
 #'   Default `7` (a week of daily reporting).
@@ -147,13 +147,18 @@
 #'       window is not still depleted (a hold). This is the column to trust.}
 #'   }
 #'
-#' @seealso [diagnose_batch_shape()] for the complementary test on *which* event
-#'   dates a report date drew from, and [simulate_batch()] to inject a known
-#'   batch for validation.
+#' @seealso
+#' [diagnose_batch_shape()] for the complementary test on *which* event dates a
+#' flagged report date drew from; [transport_discriminant()] for the two
+#' coordinates behind the test, without the hypothesis test on top;
+#' [simulate_batch()] to plant a known batch and check the screen finds it;
+#' [plot_reporting_process()] and [plot_reporting_triangle()] to see it;
+#' [add_is_censored()][add] to record a batch once you believe it. The
+#' [*Diagnosing reporting batches* article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html)
+#' works through a real example.
 #'
 #' @examples
-#' library(tbl.now)
-#' data(denguedat, package = "tbl.now")
+#' data(denguedat)
 #'
 #' dengue_tbl <- tbl_now(
 #'   denguedat,
@@ -163,11 +168,20 @@
 #'   verbose     = FALSE
 #' )
 #'
+#' # Scan every report date for an unusually large arrival.
 #' screened <- diagnose_batches(dengue_tbl, lookback = 2)
 #' head(screened)
 #'
+#' # The dates it flagged, strongest evidence first. Treat these as candidates to
+#' # look into, not as confirmed backlog releases. `reported` against `baseline`
+#' # says how much bigger the arrival was than the surrounding days led you to
+#' # expect.
+#' flagged <- screened[screened$batch, ]
+#' nrow(flagged)
+#' flagged[order(flagged$p_transport_bh), c("report_date", "reported", "baseline")]
+#'
 #' @export
-diagnose_batches <- function(data,
+diagnose_batches <- function(x,
                          lookback        = 7L,
                          baseline_window = NULL,
                          period          = NULL,
@@ -177,7 +191,7 @@ diagnose_batches <- function(data,
   null_model      <- match.arg(null_model)
   axis            <- match.arg(axis)
   .batch_experimental_warning("diagnose_batches")
-  .batch_check_tbl_now(data)
+  .batch_check_tbl_now(x)
 
   lookback <- as.integer(lookback)
   if (lookback < 1L) {
@@ -188,10 +202,10 @@ diagnose_batches <- function(data,
   }
 
   # Fill in / sanity-check the calendar period from the object's temporal effects.
-  period <- .batch_resolve_period(data, period)
+  period <- .batch_resolve_period(x, period)
 
   # -- 1-4. reporting totals, baseline and the window statistics Delta and W ----
-  registration <- .batch_registration(data, lookback, baseline_window, period, axis = axis)
+  registration <- .batch_registration(x, lookback, baseline_window, period, axis = axis)
 
   # -- 5. p-values under the appropriate null ---------------------------------
   # The exact Poisson/Binomial null is only valid when the counts are Poisson AND
@@ -201,7 +215,7 @@ diagnose_batches <- function(data,
   # `auto` therefore reserves the exact Poisson null for non-negative counts that
   # show no overdispersion, and falls back to the dispersion-corrected robust null
   # for signed increments or whenever overdispersion is detected.
-  is_signed  <- identical(get_data_type(data), "count-cumulative")
+  is_signed  <- identical(get_data_type(x), "count-cumulative")
   null_used  <- if (!identical(null_model, "auto")) {
     null_model
   } else if (is_signed || .batch_dispersion(registration) > 1.5) {
@@ -256,18 +270,18 @@ diagnose_batches <- function(data,
 
 #' Resolve the confirmation column for a batch scan
 #'
-#' @param data A `tbl_now`.
+#' @param x A `tbl_now`.
 #'
 #' @return The confirmation-date column name.
 #'
 #' @keywords internal
 #' @noRd
-.batch_confirmation_axis <- function(data) {
-  confirmation_col <- get_confirmation_date(data)
+.batch_confirmation_axis <- function(x) {
+  confirmation_col <- get_confirmation_date(x)
   if (is.null(confirmation_col)) {
     cli::cli_abort(c(
       "{.code axis = \"confirmation\"} needs a confirmation process, and
-       {.arg data} has none.",
+       {.arg x} has none.",
       "i" = "Attach one with {.fn add_confirmation}."
     ))
   }
@@ -1067,10 +1081,10 @@ diagnose_batches <- function(data,
 
 #' @keywords internal
 #' @noRd
-.batch_check_tbl_now <- function(data) {
-  if (!is_tbl_now(data)) {
+.batch_check_tbl_now <- function(x) {
+  if (!is_tbl_now(x)) {
     cli::cli_abort(
-      "{.arg data} must be a {.cls tbl_now} object. Got {.cls {class(data)}}."
+      "{.arg x} must be a {.cls tbl_now} object. Got {.cls {class(x)}}."
     )
   }
   invisible(TRUE)

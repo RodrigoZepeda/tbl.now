@@ -129,12 +129,20 @@ diagnose(ndata)
 # Only what needs acting on
 diagnose(ndata) |> dplyr::filter(status <= "note")
 
-# One block
+# One block on its own
 diagnose(ndata, checks = "units")
+
+# `diagnose()` never stops your pipeline -- it hands back a table for you to
+# read. Use validate_tbl_now() when you want a broken object to be an error.
+nrow(diagnose(ndata))
 
 }
 \seealso{
-\link{nowcast_diagnose_components} for the individual blocks,
-\code{\link[=summary.tbl_now]{summary.tbl_now()}} for the descriptive counterpart,
-\code{\link[=validate_tbl_now]{validate_tbl_now()}} for the abort/warn presentation of the same findings.
+\link{nowcast_diagnose_components} for the individual blocks;
+\link[=tbl_now_summary]{summary()} for the descriptive counterpart -- what is in the
+data rather than what is wrong with it;
+\code{\link[=validate_tbl_now]{validate_tbl_now()}} for the same findings raised as errors and warnings;
+\code{\link[=diagnostic_plot]{diagnostic_plot()}} for the picture version. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html}{\emph{Describing and diagnosing a tbl_now} article}
+goes through the findings one at a time.
 }

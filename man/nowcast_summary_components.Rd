@@ -96,13 +96,20 @@ distribution -- the same rule \code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}
 \item{k}{Number of delays for the growth ratios.}
 }
 \value{
-A tibble in the schema documented in \link{tbl_now_summary}.
+A tibble in the schema documented in \link{tbl_now_summary}: one row per
+quantity and stratum, with \code{component}, \code{quantity} and \code{stratum} identifying
+the row and the remaining columns holding whichever statistics apply.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Each function returns one block of \code{\link[=summary.tbl_now]{summary.tbl_now()}}, in the same schema,
-so they can be stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}} or used on their own.
+\link[=tbl_now_summary]{summary()} answers a dozen questions about a \code{tbl_now} at
+once. When you only want one of them -- for a report, a dashboard, or a check
+inside a script -- call that block directly instead of computing the rest and
+filtering it away.
+
+Every one of these returns the same schema as \code{summary()} itself, so they can
+be stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}}, compared across datasets, or used alone:
 \itemize{
 \item \code{cases_per_date()} -- case counts per date on one axis.
 \item \code{delay_summary()} -- the case-weighted delay distribution.
@@ -131,16 +138,37 @@ ndata <- tbl_now(denguedat,
   verbose = FALSE
 )
 
+# How many cases per week of onset, and how long they took to be reported.
 cases_per_date(ndata, axis = "event")
 delay_summary(ndata)
+
+# How sparse the series is, and how strongly one week predicts the next.
 zero_run_summary(ndata, axis = "event")
+case_autocorrelation(ndata, lags = 1)
+
+# What the data is made of, and how far it reaches.
 prop_strata(ndata)
-case_autocorrelation(ndata, lag = 1)
+prop_censored(ndata)
 date_ranges(ndata)
 triangle_occupancy(ndata)
+
+# The two that matter most for nowcasting: what share of a week's eventual
+# total had arrived by delay d, and how fast the total is still growing.
 reporting_completeness(ndata, delays = 0:3)
+cumulative_growth(ndata, k = 3)
+
+# Every block shares one schema, so they stack.
+dplyr::bind_rows(
+  date_ranges(ndata),
+  delay_summary(ndata)
+)
 
 }
 \seealso{
-\link{tbl_now_summary}, which stacks all of these.
+\link[=tbl_now_summary]{summary()}, which stacks all of these into one table and
+documents the schema; \code{\link[=diagnose]{diagnose()}} for what is \emph{wrong} with the data rather
+than what is in it; \link[=autoplot.tbl_now]{autoplot()} for the same information as
+pictures. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html}{\emph{Describing and diagnosing a tbl_now} article}
+walks through them in order.
 }

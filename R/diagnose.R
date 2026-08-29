@@ -105,9 +105,14 @@
 #'
 #' @return A tibble with the columns described above, sorted worst first.
 #'
-#' @seealso [nowcast_diagnose_components] for the individual blocks,
-#'   [summary.tbl_now()] for the descriptive counterpart,
-#'   [validate_tbl_now()] for the abort/warn presentation of the same findings.
+#' @seealso
+#' [nowcast_diagnose_components] for the individual blocks;
+#' [summary()][tbl_now_summary] for the descriptive counterpart -- what is in the
+#' data rather than what is wrong with it;
+#' [validate_tbl_now()] for the same findings raised as errors and warnings;
+#' [diagnostic_plot()] for the picture version. The
+#' [*Describing and diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+#' goes through the findings one at a time.
 #'
 #' @examples
 #' data(denguedat)
@@ -124,8 +129,12 @@
 #' # Only what needs acting on
 #' diagnose(ndata) |> dplyr::filter(status <= "note")
 #'
-#' # One block
+#' # One block on its own
 #' diagnose(ndata, checks = "units")
+#'
+#' # `diagnose()` never stops your pipeline -- it hands back a table for you to
+#' # read. Use validate_tbl_now() when you want a broken object to be an error.
+#' nrow(diagnose(ndata))
 #'
 #' @md
 #' @export
@@ -185,7 +194,15 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 #'
 #' @return A tibble in the schema documented in [diagnose()].
 #'
-#' @seealso [diagnose()], which stacks all of these.
+#' @seealso
+#' [diagnose()], which stacks all of these and sorts them worst-first;
+#' [validate_tbl_now()] for the same findings raised as errors and warnings;
+#' [nowcast_summary_components] for what *is* in the data rather than what is
+#' wrong with it; [diagnose_drift()], [diagnose_changepoint()] and
+#' [diagnose_batches()] for the statistical tests `diagnose_signposts()` points
+#' you at. The
+#' [*Describing and diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+#' explains how to read each finding.
 #'
 #' @examples
 #' data(denguedat)
@@ -196,12 +213,27 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 #'   verbose = FALSE
 #' )
 #'
+#' # Is the object described correctly, and do the dates make sense?
 #' diagnose_declarations(ndata)
 #' diagnose_ordering(ndata)
-#' diagnose_missing(ndata)
 #' diagnose_units(ndata)
 #' diagnose_now(ndata)
+#'
+#' # Is anything missing, repeated, negative, or cut off at the recent edge?
+#' diagnose_missing(ndata)
+#' diagnose_duplicates(ndata)
+#' diagnose_negatives(ndata)
+#' diagnose_truncation(ndata)
+#'
+#' # Are the strata usable, and which statistical tests does the data call for?
+#' diagnose_strata(ndata)
 #' diagnose_signposts(ndata)
+#'
+#' # Each returns the same schema, so they stack the way diagnose() stacks them.
+#' dplyr::bind_rows(
+#'   diagnose_units(ndata),
+#'   diagnose_now(ndata)
+#' )
 #'
 #' @name nowcast_diagnose_components
 #' @md

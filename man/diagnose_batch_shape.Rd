@@ -5,7 +5,7 @@
 \title{Test whether one report date drew from unusually old event dates}
 \usage{
 diagnose_batch_shape(
-  data,
+  x,
   at,
   neighbours = 3L,
   guard = 1L,
@@ -16,7 +16,7 @@ diagnose_batch_shape(
 )
 }
 \arguments{
-\item{data}{A \code{\link[=tbl_now]{tbl_now()}} object.}
+\item{x}{A \code{\link[=tbl_now]{tbl_now()}} object.}
 
 \item{at}{The candidate report date (coercible to the class of the report
 column), typically one flagged by \code{\link[=diagnose_batches]{diagnose_batches()}}.}
@@ -78,8 +78,7 @@ data only positive increments carry a meaningful delay; negative increments
 (down-revisions) are dropped with a message.
 }
 \examples{
-library(tbl.now)
-data(denguedat, package = "tbl.now")
+data(denguedat)
 
 dengue_tbl <- tbl_now(
   denguedat,
@@ -89,9 +88,16 @@ dengue_tbl <- tbl_now(
   verbose     = FALSE
 )
 
+# Pick a report date to interrogate. A real workflow takes this from
+# diagnose_batches(); here we simply name one.
 diagnose_batch_shape(dengue_tbl, at = as.Date("1990-06-25"), n_permutations = 99)
+
+# `n_permutations` sets the resolution of the p-value: 99 keeps the example
+# fast, but use the default (999) for anything you intend to report.
 
 }
 \seealso{
-\code{\link[=diagnose_batches]{diagnose_batches()}}, \code{\link[=simulate_batch]{simulate_batch()}}
+\code{\link[=diagnose_batches]{diagnose_batches()}}, which finds the report dates worth passing to \code{at};
+\code{\link[=simulate_batch]{simulate_batch()}} to plant a batch of known shape and check it is recovered;
+\code{\link[=plot_delay_profiles]{plot_delay_profiles()}} to see the delay profile this tests.
 }

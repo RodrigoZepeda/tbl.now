@@ -125,3 +125,33 @@ Other shared names:
 name is accepted silently** — that is how `case_col = "observation"` slipped into a
 shipped example and mis-typed the data. Worth considering a warning for unknown names
 that are near-misses of real ones. Behaviour change, so not done in this pass.
+
+### Sections 6-7 — Summarising and Diagnosing
+
+Cross-cutting fix (13 blocks, all sections): a roxygen block that opens with a bare
+`r lifecycle::badge()` paragraph gets that badge as its **entire** `@description`, with
+the real prose falling through to Details. Every affected page shipped with an empty
+Description in `?fn` and in the pkgdown index. Lead paragraph promoted to
+`@description`, remainder tagged `@details`. None remain.
+
+Fixed:
+* `case_autocorrelation(ndata, lag = 1)` in the shipped example — the argument is
+  `lags`. It worked only through R's partial matching.
+* `nowcast_summary_components` exemplified 8 of its 12 functions;
+  `nowcast_diagnose_components` 6 of its 10. Both now cover all of them, grouped by
+  the question they answer.
+* `library(tbl.now)` / `data(..., package = "tbl.now")` boilerplate removed from three
+  batch examples — the package is already attached when its own examples run.
+* `simulate_batch`'s example planted a batch and then showed nothing. It now shows
+  that no cases are lost, and that `diagnose_batches()` recovers the planted date —
+  which is the whole reason the function exists.
+* `tbl_now_summary` computed `summary()` four times over: **4.5s -> 2.9s**.
+
+**Naming fixes applied:** `diagnose_batches()`, `diagnose_batch_shape()`,
+`simulate_batch()`, `transport_discriminant()` take `x` rather than `data`. Two
+internal helpers (`.batch_check_tbl_now()`, `.batch_confirmation_axis()`) hardcoded
+`{.arg data}` in their error messages, so a user calling `diagnose_batches(x = ...)`
+was told that `data` must be a `tbl_now`. Both renamed. 108 batch tests pass.
+
+Full test suite after the weekday-numbering and near-miss-warning changes: **0
+failures, 0 errors**.

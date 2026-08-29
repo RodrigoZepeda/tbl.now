@@ -43,7 +43,7 @@
 #' window is depleted and nothing has been released yet). The `classification`
 #' column applies these labels at level `alpha`, exactly as in [diagnose_batches()].
 #'
-#' @param data A [tbl_now()] object.
+#' @param x A [tbl_now()] object.
 #' @param lookback Integer window half-width `k` (report-grid steps) over which the
 #'   deficit is accumulated. Default `7` (a week of daily reporting).
 #' @param baseline_window,period Baseline controls, passed through to the same
@@ -70,7 +70,7 @@
 #'
 #' @export
 #' @md
-transport_discriminant <- function(data,
+transport_discriminant <- function(x,
                                     lookback        = 7L,
                                     baseline_window = NULL,
                                     period          = NULL,
@@ -78,7 +78,7 @@ transport_discriminant <- function(data,
                                     axis            = c("report", "confirmation")) {
   axis <- match.arg(axis)
   .batch_experimental_warning("transport_discriminant")
-  .batch_check_tbl_now(data)
+  .batch_check_tbl_now(x)
 
   lookback <- as.integer(lookback)
   if (lookback < 1L) {
@@ -88,7 +88,7 @@ transport_discriminant <- function(data,
     cli::cli_abort("`alpha` must lie strictly between 0 and 1. Got {alpha}.")
   }
 
-  registration <- .batch_registration(data, lookback, baseline_window, period, axis = axis)
+  registration <- .batch_registration(x, lookback, baseline_window, period, axis = axis)
   dispersion   <- .batch_dispersion(registration)
 
   registration <- dplyr::mutate(

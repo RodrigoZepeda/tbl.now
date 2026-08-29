@@ -57,7 +57,7 @@
 #' reports for the same event date are pushed onto the same release date, only
 #' the later one survives: it is that report date's final word on the total.
 #'
-#' @param data A [tbl_now()] object.
+#' @param x A [tbl_now()] object.
 #' @param closed_dates A vector of report dates on which the reporting system is
 #'   closed. Must be coercible to the class of the report-date column.
 #' @param held_fraction Fraction of the reports due on each closed date that are
@@ -75,11 +75,15 @@
 #' @returns A new `tbl_now` with the same event dates, strata and data type, and
 #'   modified report dates.
 #'
-#' @seealso [diagnose_batches()], [diagnose_batch_shape()]
+#' @seealso
+#' [diagnose_batches()] and [diagnose_batch_shape()], the tests this exists to
+#' validate; [censor_delays_above()] for recording a real batch rather than
+#' planting one. The
+#' [*Diagnosing reporting batches* article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html)
+#' uses this to calibrate the screen.
 #'
 #' @examples
-#' library(tbl.now)
-#' data(denguedat, package = "tbl.now")
+#' data(denguedat)
 #'
 #' dengue_tbl <- tbl_now(
 #'   denguedat,
@@ -89,30 +93,40 @@
 #'   verbose     = FALSE
 #' )
 #'
-#' # Close the reporting desk for three consecutive weeks
+#' # Pretend the reporting desk was shut for three consecutive weeks: everything
+#' # that would have been reported then is held, and released together afterwards.
 #' closed <- as.Date(c("1990-06-04", "1990-06-11", "1990-06-18"))
 #' batched_tbl <- simulate_batch(dengue_tbl, closed_dates = closed, verbose = FALSE)
 #'
+#' # No cases are lost -- they are only moved later in the reporting process.
+#' nrow(dengue_tbl)
+#' nrow(batched_tbl)
+#'
+#' # Which is the point: you now have data with a batch you planted yourself, so
+#' # you can check whether the screen finds it.
+#' found <- suppressWarnings(diagnose_batches(batched_tbl, lookback = 2))
+#' found$report_date[found$batch]
+#'
 #' @export
-simulate_batch <- function(data,
+simulate_batch <- function(x,
                            closed_dates,
                            held_fraction   = 1,
                            drop_unreleased = TRUE,
                            verbose         = TRUE) {
   .batch_experimental_warning("simulate_batch")
-  .batch_check_tbl_now(data)
+  .batch_check_tbl_now(x)
   if (!is.numeric(held_fraction) || length(held_fraction) != 1L ||
       is.na(held_fraction) || held_fraction <= 0 || held_fraction > 1) {
     cli::cli_abort("`held_fraction` must be a single number in (0, 1].")
   }
 
-  observations <- as.data.frame(data)
-  event_col      <- get_event_date(data)
-  report_col     <- get_report_date(data)
-  data_type      <- get_data_type(data)
-  strata_cols    <- get_strata(data)
-  case_count_col <- get_case_count(data)
-  report_unit    <- get_report_units(data) %||% "days"
+  observations <- as.data.frame(x)
+  event_col      <- get_event_date(x)
+  report_col     <- get_report_date(x)
+  data_type      <- get_data_type(x)
+  strata_cols    <- get_strata(x)
+  case_count_col <- get_case_count(x)
+  report_unit    <- get_report_units(x) %||% "days"
 
   closed_dates <- .batch_coerce_dates(closed_dates, observations[[report_col]])
   if (length(closed_dates) == 0L) {
@@ -143,7 +157,7 @@ simulate_batch <- function(data,
     observations$.hold <- on_closed
   } else if (identical(data_type, "count-cumulative")) {
     cli::cli_abort(c(
-      "`held_fraction` < 1 is not supported for {.val count-cumulative} data.",
+      "`held_fraction` < 1 is not supported for {.val count-cumulative} x.",
       "i" = "A cumulative total cannot be split; use `held_fraction = 1` (a full closure)."
     ))
   } else if (is_count) {
@@ -207,7 +221,7 @@ simulate_batch <- function(data,
   }
 
   .batch_rebuild_tbl_now(
-    observations, data, event_col, report_col, case_count_col, strata_cols, data_type
+    observations, x, event_col, report_col, case_count_col, strata_cols, data_type
   )
 }
 

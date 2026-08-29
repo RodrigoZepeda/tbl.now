@@ -63,7 +63,7 @@
 #' data only positive increments carry a meaningful delay; negative increments
 #' (down-revisions) are dropped with a message.
 #'
-#' @param data A [tbl_now()] object.
+#' @param x A [tbl_now()] object.
 #' @param at The candidate report date (coercible to the class of the report
 #'   column), typically one flagged by [diagnose_batches()].
 #' @param neighbours Number of report dates on each side used as the reference
@@ -87,11 +87,13 @@
 #'   `n_reference`, `mean_delay_at`, `mean_delay_reference`, `statistic`
 #'   (standardised rank-sum) and `p_value` (one-sided: longer delays on `at`).
 #'
-#' @seealso [diagnose_batches()], [simulate_batch()]
+#' @seealso
+#' [diagnose_batches()], which finds the report dates worth passing to `at`;
+#' [simulate_batch()] to plant a batch of known shape and check it is recovered;
+#' [plot_delay_profiles()] to see the delay profile this tests.
 #'
 #' @examples
-#' library(tbl.now)
-#' data(denguedat, package = "tbl.now")
+#' data(denguedat)
 #'
 #' dengue_tbl <- tbl_now(
 #'   denguedat,
@@ -101,10 +103,15 @@
 #'   verbose     = FALSE
 #' )
 #'
+#' # Pick a report date to interrogate. A real workflow takes this from
+#' # diagnose_batches(); here we simply name one.
 #' diagnose_batch_shape(dengue_tbl, at = as.Date("1990-06-25"), n_permutations = 99)
 #'
+#' # `n_permutations` sets the resolution of the p-value: 99 keeps the example
+#' # fast, but use the default (999) for anything you intend to report.
+#'
 #' @export
-diagnose_batch_shape <- function(data,
+diagnose_batch_shape <- function(x,
                              at,
                              neighbours     = 3L,
                              guard          = 1L,
@@ -115,7 +122,7 @@ diagnose_batch_shape <- function(data,
   permute <- match.arg(permute)
   axis    <- match.arg(axis)
   .batch_experimental_warning("diagnose_batch_shape")
-  .batch_check_tbl_now(data)
+  .batch_check_tbl_now(x)
   if (!is.null(seed)) set.seed(seed)
 
   neighbours <- as.integer(neighbours)
@@ -123,7 +130,7 @@ diagnose_batch_shape <- function(data,
   if (neighbours < 1L) cli::cli_abort("`neighbours` must be at least 1. Got {neighbours}.")
   if (guard < 0L)      cli::cli_abort("`guard` must be non-negative. Got {guard}.")
 
-  increments <- .batch_report_increments(data, axis = axis)
+  increments <- .batch_report_increments(x, axis = axis)
 
   # Only appearing reports carry a delay; down-revisions do not.
   if (any(increments$.count < 0)) {

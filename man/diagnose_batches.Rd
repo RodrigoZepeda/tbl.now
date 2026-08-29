@@ -5,7 +5,7 @@
 \title{Screen the report axis for batched reporting}
 \usage{
 diagnose_batches(
-  data,
+  x,
   lookback = 7L,
   baseline_window = NULL,
   period = NULL,
@@ -15,7 +15,7 @@ diagnose_batches(
 )
 }
 \arguments{
-\item{data}{A \code{\link[=tbl_now]{tbl_now()}} object of any \code{data_type}.}
+\item{x}{A \code{\link[=tbl_now]{tbl_now()}} object of any \code{data_type}.}
 
 \item{lookback}{Integer \code{k}: how many report dates before \code{r} the window
 reaches back.  Should comfortably cover the longest plausible stall.
@@ -124,8 +124,7 @@ medians across cycles, so an irregular batch reads as an excursion relative to
 the schedule.
 }
 \examples{
-library(tbl.now)
-data(denguedat, package = "tbl.now")
+data(denguedat)
 
 dengue_tbl <- tbl_now(
   denguedat,
@@ -135,12 +134,26 @@ dengue_tbl <- tbl_now(
   verbose     = FALSE
 )
 
+# Scan every report date for an unusually large arrival.
 screened <- diagnose_batches(dengue_tbl, lookback = 2)
 head(screened)
 
+# The dates it flagged, strongest evidence first. Treat these as candidates to
+# look into, not as confirmed backlog releases. `reported` against `baseline`
+# says how much bigger the arrival was than the surrounding days led you to
+# expect.
+flagged <- screened[screened$batch, ]
+nrow(flagged)
+flagged[order(flagged$p_transport_bh), c("report_date", "reported", "baseline")]
+
 }
 \seealso{
-\code{\link[=diagnose_batch_shape]{diagnose_batch_shape()}} for the complementary test on \emph{which} event
-dates a report date drew from, and \code{\link[=simulate_batch]{simulate_batch()}} to inject a known
-batch for validation.
+\code{\link[=diagnose_batch_shape]{diagnose_batch_shape()}} for the complementary test on \emph{which} event dates a
+flagged report date drew from; \code{\link[=transport_discriminant]{transport_discriminant()}} for the two
+coordinates behind the test, without the hypothesis test on top;
+\code{\link[=simulate_batch]{simulate_batch()}} to plant a known batch and check the screen finds it;
+\code{\link[=plot_reporting_process]{plot_reporting_process()}} and \code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}} to see it;
+\link[=add]{add_is_censored()} to record a batch once you believe it. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html}{\emph{Diagnosing reporting batches} article}
+works through a real example.
 }

@@ -130,13 +130,20 @@ ndata <- tbl_now(denguedat,
   verbose = FALSE
 )
 
-# The whole summary
-summary(ndata)
+# The whole summary: one row per quantity, per stratum.
+overview <- summary(ndata)
+overview
 
-# Only the delay block
-summary(ndata) |> dplyr::filter(component == "delay")
+# It is an ordinary tibble, so pick out the block you want.
+overview |> dplyr::filter(component == "delay")
 
-# Pooled rows only
+# How much of each week's eventual total had arrived by delay d? This is the
+# reporting-delay problem, in one table.
+overview |>
+  dplyr::filter(component == "completeness", stratum == "all") |>
+  dplyr::select(quantity, value)
+
+# Pooled rows only, ignoring the strata.
 summary(ndata, by_strata = FALSE)
 
 }
