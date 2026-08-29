@@ -126,8 +126,10 @@ wearing different names in different places. 116 of the 148 exports already took
 
 ## Breaking: `align_weeks()` numbers weekdays the ISO way
 
-`align_weeks(align_on_day = )` counted from Sunday while `is_weekday(weekend_days = )`
-counted from Monday. Both now use ISO numbering: **1 = Monday ... 7 = Sunday**.
+`align_weeks(align_on_day = )` counted weekdays from Sunday while
+`is_weekday(weekend_days = )` counted them from Monday. `align_weeks()` now uses
+ISO numbering too -- **1 = Monday ... 7 = Sunday** -- so the two agree.
+`is_weekday()` is unchanged.
 
 **The default is unchanged.** It becomes `7`, which is still Sunday, so
 `align_weeks(x)` -- and `tbl_now(..., align_weeks = TRUE)`, which is where nearly
