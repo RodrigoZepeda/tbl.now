@@ -275,3 +275,30 @@ README or `data-raw/` script passes numeric `weekend_days`; the one vignette cal
 
 **Migration for an explicit caller:** subtract one, wrapping 1 to 7.
 Old `1`(Sun)→`7`, `2`(Mon)→`1`, `3`(Tue)→`2`, ... `7`(Sat)→`6`.
+
+## A flaky test worth knowing about
+
+`R CMD check` on the final tree once came back `1 ERROR`:
+
+```
+-- Failure ('test-engines-matrix.R:153:7'): all 24 shapes are handled: epinowcast --
+- "epinowcast / weeks / count-incidence / 2 strata / 0 cov: External command failed
+   with exit code 2. This can happen when the disk is full in the temporary
+   directory (...). See ?fread for the tmpdir argument."
+[ FAIL 1 | WARN 57 | SKIP 3 | PASS 3864 ]
+```
+
+It is **not** a code regression:
+
+* the error is `data.table::fread` failing to run an external command, and its own
+  message names a full temp directory as the cause;
+* repeated concurrent `R CMD check` runs had left **3.9 GB** in
+  `/var/folders/.../T`; after clearing it, `test_file("test-engines-matrix.R")`
+  passes **71/71 with zero** "External command failed" occurrences;
+* the same suite, with the same converter code, passed `[23m/13m] OK` in the
+  previous full check. The only code added between the two runs is
+  `R/example_engine.R`, which cannot reach `tbl_now_to_epinowcast()`;
+* the whole file is `skip_on_cran()`, so it never runs on CRAN at all.
+
+Worth remembering when a `data.table`-backed engine test fails for no reason: clear
+the temp directory before believing it.
