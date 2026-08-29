@@ -88,11 +88,22 @@ hai <- suppressWarnings(add_confirmation(hai, received_date))
 has_confirmation(hai)
 get_confirmation_date(hai)
 
+# A date alone cannot say whether the case was confirmed or retracted, which
+# is why the call above warns. Supplying the outcome column removes the doubt.
+hai$outcome <- ifelse(seq_len(nrow(hai)) \%\% 10 == 0, "retracted", "confirmed")
+hai <- change_confirmation(hai, received_date, confirmation_type = outcome)
+get_confirmation_type(hai)
+table(hai[[get_confirmation_type(hai)]])
+
+# Dropping it leaves an ordinary two-date object.
 hai <- remove_confirmation(hai)
 has_confirmation(hai)
 
 }
 \seealso{
-\link{confirmation_getters}, \code{\link[=get_latest_confirmed]{get_latest_confirmed()}},
-\code{\link[=get_net_confirmed]{get_net_confirmed()}}, \code{\link[=diagnose_confirmation_delay]{diagnose_confirmation_delay()}}.
+\link{confirmation_getters} to read the attributes back;
+\link{confirmation_counts} to count confirmed, retracted and pending cases;
+\link{confirmation_delay} and \code{\link[=diagnose_confirmation_delay]{diagnose_confirmation_delay()}} for how long
+resolution takes; \code{\link[=plot_confirmation_status]{plot_confirmation_status()}} to see it;
+\code{\link[=add]{add()}} for the event- and report-date attributes.
 }

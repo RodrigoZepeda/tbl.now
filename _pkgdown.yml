@@ -69,8 +69,6 @@ reference:
   - get_latest_first
   - confirmation_getters
   - add
-  - change
-  - remove
   - confirmation_setters
   - update.tbl_now
 

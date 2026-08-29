@@ -1,183 +1,70 @@
-#' Change/update the attributes of a `tbl_now` object
+#' Set, change and remove the attributes of a `tbl_now`
 #'
 #' @description `r lifecycle::badge("stable")`
 #'
-#' Functions to change the attributes of a `tbl_now` object.
+#' A [tbl_now()] remembers which of its columns are the event date, the report
+#' date, the strata, and so on. These functions edit that memory after the object
+#' has been built -- useful when new columns appear part-way through a pipeline,
+#' or when you want to nowcast the same data broken down a different way.
 #'
-#' @details Variable selection is done via [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
-#' and can be used with the auxiliary dplyr verbs such as [dplyr::starts_with()], [dplyr::all_of()],
-#' and [dplyr::where()]. See [dplyr::select()] for additional information.
+#' There are three verbs, and they differ only in what they do to what is already
+#' recorded:
 #'
-#' The `update_now()` function updates the now to the latest date in
-#' a tibble. For example:
+#' * **`add_*()`** keeps what is there and adds to it. `add_strata(x, age_group)`
+#'   on an object already stratified by gender leaves you stratified by both.
+#' * **`change_*()`** replaces it. `change_strata(x, age_group)` on the same
+#'   object leaves you stratified by age group *only*.
+#' * **`remove_*()`** takes it away. `remove_all_strata(x)` forgets every
+#'   stratum; `remove_strata(x, gender)` forgets just that one.
+#'
+#' Nothing here touches the data itself. Renaming an attribute does not rename,
+#' create or delete a column -- it only changes which existing column the object
+#' treats as playing that role.
+#'
+#' @details
+#' Columns are chosen with
+#' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html), so
+#' a bare column name works, and so do the helpers
+#' [dplyr::starts_with()], [dplyr::all_of()] and [dplyr::where()]. See
+#' [dplyr::select()] for the full set.
+#'
+#' `update_now()` deserves a note of its own. The `now` of a nowcast is the day
+#' you are standing on, and it does **not** move when you filter the data -- an
+#' object filtered down to 1992 still believes `now` is 2010, which is usually
+#' not what you want. `update_now()` resets it to the latest date actually
+#' present:
 #'
 #' ```{r}
-#' #Get the data
 #' data(denguedat)
 #' ndata <- tbl_now(denguedat,
-#'                  event_date = onset_week,
-#'                  report_date = report_week,
-#'                  verbose = FALSE)
+#'   event_date = onset_week, report_date = report_week, verbose = FALSE
+#' )
 #'
-#' #The now is in 2010 because the data reaches all the way there
+#' # `now` is in 2010, because the data runs that far.
 #' get_now(ndata)
 #'
-#' #We can filter the data
+#' # Filtering the data does not move it ...
 #' ndata_1992 <- ndata |>
-#'  dplyr::filter(onset_week <= as.Date("1992/01/01") &
-#'                report_week <= as.Date("1992/01/01"))
-#'
-#' #But the now will still be in 2010
+#'   dplyr::filter(
+#'     onset_week <= as.Date("1992/01/01") & report_week <= as.Date("1992/01/01")
+#'   )
 #' get_now(ndata_1992)
 #'
-#' #The update now brings it to the closest date before the cut
-#' ndata_1992 <- ndata_1992 |> update_now()
-#'
-#' #Which is now correct and set to the latest date before the cut
-#' get_now(ndata_1992)
+#' # ... but `update_now()` does.
+#' get_now(update_now(ndata_1992))
 #' ```
 #'
+#' @param x A `tbl_now` object.
 #'
-#' @inheritParams remove
+#' @param ... [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#' columns for the attribute being set. For `strata` and `covariates` this may
+#' name several columns at once.
+#'
 #' @inheritParams tbl_now
 #' @inheritParams validate_tbl_now
 #'
-#'
-#' @return A `tbl_now` object with updated attributes
-#'
-#' @examples
-#' data(denguedat)
-#' ndata <- tbl_now(denguedat,
-#'   event_date = onset_week,
-#'   report_date = report_week,
-#'   verbose = FALSE
-#' )
-#'
-#' # Change the event_date column to a different date column
-#' ndata$new_onset_week <- ndata$onset_week - lubridate::days(1)
-#' ndata <- ndata |> change_event_date(new_onset_week)
-#' ndata
-#'
-#' # Change the report_date column to a different column
-#' ndata$new_report_week <- ndata$report_week - lubridate::days(1)
-#' ndata <- ndata |> change_report_date(new_report_week)
-#' ndata
-#'
-#' # Change strata to different strata
-#' ndata$age_group <- sample(c("< 18", "20-60", "60+"), nrow(ndata), replace = TRUE)
-#' ndata <- ndata |> change_strata(gender, age_group)
-#' ndata
-#'
-#' # Change covariates
-#' ndata$temperature <- rnorm(nrow(ndata), 25, 4)
-#' ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
-#' ndata <- ndata |> change_covariates(temperature, humidity)
-#' ndata
-#'
-#' # Change now
-#' ndata <- change_now(ndata, now = as.Date("2025-01-01"))
-#' ndata
-#'
-#' # Bring `now` back to the latest date actually observed
-#' ndata <- ndata |> update_now()
-#' ndata
-#'
-#' # Change case count column
-#' count_data <- ndata |>
-#'   to_count(to = "count-incidence")
-#'
-#' count_data |>
-#'   dplyr::mutate(n2 = 1.15 * n) |>
-#'   change_case_count(n2)
-#'
-#' # Change is_censored
-#' ndata$is_censored <- FALSE
-#' ndata <- ndata |>
-#'   change_is_censored(is_censored)
-#' ndata
-#'
-#' # Change covariates
-#' ndata$temperature <- rnorm(nrow(ndata), 25, 4)
-#' ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
-#' ndata <- ndata |> change_covariates(temperature, humidity)
-#' ndata
-#'
-#' # Add temporal effects, remove and replace them
-#' ndata <- ndata |>
-#'   add_temporal_effects(disease_data,
-#'     t_effects = temporal_effects(week_of_year = TRUE, month_of_year = TRUE)
-#'   )
-#'
-#' # Use the compute to calculate them
-#' ndata |> compute_temporal_effects()
-#'
-#' # Use replace to change them
-#' ndata |> replace_temporal_effects(t_effects = temporal_effects(seasons = 52))
-#'
-#' # Use remove to delete them
-#' ndata |> remove_temporal_effects()
-#'
-#' @md
-#' @name change
-#' @seealso [add_temporal_effects()] [add] [remove]
-NULL
-
-#' Add attributes to a `tbl_now` object
-#'
-#' @description `r lifecycle::badge("stable")`
-#'
-#' Functions to add attributes to a `tbl_now` object.
-#'
-#' @details Variable selection can be used with the
-#' auxiliary dplyr verbs such as [dplyr::starts_with()], [dplyr::all_of()],
-#' and [dplyr::where()]. See [dplyr::select()] for additional info.
-#'
-#' @inheritParams change
-#'
-#' @return A `tbl_now` object with updated attributes
-#'
-#' @examples
-#' data(denguedat)
-#' ndata <- tbl_now(denguedat,
-#'   event_date = onset_week,
-#'   report_date = report_week,
-#'   verbose = FALSE
-#' )
-#'
-#' # Add strata
-#' ndata <- ndata |> add_strata(dplyr::starts_with("gender"))
-#' ndata
-#'
-#' # Add covariates
-#' ndata$temperature <- rnorm(nrow(ndata), 25, 4)
-#' ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
-#' ndata <- ndata |> add_covariates(temperature, humidity)
-#' ndata
-#'
-#' @md
-#' @name add
-#' @seealso [add_temporal_effects()] [change] [remove]
-NULL
-
-#' Remove/replace attributes from a `tbl_now` object
-#'
-#' @description `r lifecycle::badge('stable')`
-#'
-#' Functions that remove or replace the specified attributes of a `tbl_now` object.
-#'
-#' @details Variable selection can be used with the
-#' auxiliary dplyr verbs such as [dplyr::starts_with()], [dplyr::all_of()],
-#' and [dplyr::where()]. See [dplyr::select()] for additional info.
-#'
-#' @param x A `tbl_now` object
-#'
-#' @inheritParams tbl_now
-#'
-#' @param ... 	[tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) with the columns
-#' for the attribute. In the case of `covariates` and `strata` argument `...` can
-#' refer to multiple columns.
-#'
-#' @return A `tbl_now` object with updated attributes
+#' @return A `tbl_now` object with the attribute updated. The data are returned
+#' unchanged; only what the object records about itself differs.
 #'
 #' @examples
 #' data(denguedat)
@@ -188,24 +75,94 @@ NULL
 #'   verbose = FALSE
 #' )
 #'
-#' # Add strata
-#' ndata <- remove_strata(ndata, gender)
-#' ndata
+#' ## ---- Strata: add, change, remove ------------------------------------
 #'
-#' # Change covariates
+#' ndata$age_group <- sample(c("<18", "18-60", "60+"), nrow(ndata), replace = TRUE)
+#'
+#' # `add_strata()` keeps gender and adds age group.
+#' get_strata(add_strata(ndata, age_group))
+#'
+#' # `change_strata()` replaces gender with age group.
+#' get_strata(change_strata(ndata, age_group))
+#'
+#' # `remove_strata()` drops one; `remove_all_strata()` drops the lot.
+#' get_strata(remove_strata(ndata, gender))
+#' get_strata(remove_all_strata(add_strata(ndata, age_group)))
+#'
+#' ## ---- Covariates behave the same way ---------------------------------
+#'
+#' # Covariates influence the nowcast but are not of interest in themselves.
 #' ndata$temperature <- rnorm(nrow(ndata), 25, 4)
 #' ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
 #' ndata <- ndata |> add_covariates(temperature, humidity)
-#' ndata
+#' get_covariates(ndata)
 #'
-#' ndata |> remove_covariates(temperature, humidity)
+#' ndata |>
+#'   remove_covariates(humidity) |>
+#'   get_covariates()
 #'
-#' @name remove
-#' @seealso [add_temporal_effects()] [add] [change]
-#' @md
+#' ## ---- Pointing an attribute at a different column ---------------------
+#'
+#' # Suppose onset was recorded a day late and you correct it. `change_event_date()`
+#' # tells the object to use the corrected column instead.
+#' ndata$corrected_onset <- ndata$onset_week - lubridate::days(1)
+#' ndata <- ndata |> change_event_date(corrected_onset)
+#' get_event_date(ndata)
+#'
+#' ## ---- The censoring indicator -----------------------------------------
+#'
+#' # TRUE means the report date is only an upper bound (e.g. a backlog dump).
+#' ndata$is_censored <- FALSE
+#' ndata <- ndata |> add_is_censored(is_censored)
+#' get_is_censored(ndata)
+#' ndata <- remove_is_censored(ndata)
+#'
+#' ## ---- `now` -----------------------------------------------------------
+#'
+#' # Set it by hand ...
+#' get_now(change_now(ndata, now = as.Date("2011-01-01")))
+#'
+#' # ... or snap it back to the latest date actually observed.
+#' get_now(update_now(ndata))
+#'
+#' ## ---- Count data: which column holds the counts ------------------------
+#'
+#' counts <- to_count(ndata, to = "count-incidence")
+#' counts |>
+#'   dplyr::mutate(inflated = round(1.15 * n)) |>
+#'   change_case_count(inflated) |>
+#'   get_case_count()
+#'
+#' ## ---- Temporal effects --------------------------------------------------
+#'
+#' # Recorded lazily: `replace_*` swaps the specification, `remove_*` forgets it.
+#' ndata <- ndata |>
+#'   add_temporal_effects(
+#'     t_effects = temporal_effects(week_of_year = TRUE, month_of_year = TRUE)
+#'   )
+#' get_temporal_effects(ndata)
+#'
+#' ndata |>
+#'   replace_temporal_effects(t_effects = temporal_effects(seasons = 52)) |>
+#'   get_temporal_effects()
+#'
+#' ndata |>
+#'   remove_temporal_effects() |>
+#'   get_temporal_effects()
+#'
+#' @seealso
+#' [tbl_now()] for setting these when the object is first built;
+#' the [getters][nowcast_data_getters] for reading them back;
+#' [tbl_now_attributes()] to list them all at once;
+#' [add_confirmation()][confirmation_setters] for the third-date attributes;
+#' [add_temporal_effects()] and [temporal_effects()] for calendar structure;
+#' [update()][update.tbl_now] for appending new rows rather than editing attributes.
+#'
+#' @name add
+#' @aliases change remove
 NULL
 
-#' @rdname change
+#' @rdname add
 #' @export
 change_now <- function(x, now = NULL) {
   if (!inherits(x, "tbl_now")) {
@@ -235,14 +192,14 @@ change_now <- function(x, now = NULL) {
   return(x)
 }
 
-#' @rdname change
+#' @rdname add
 #' @export
 update_now <- function(x) {
   change_now(x)
 }
 
 
-#' @rdname change
+#' @rdname add
 #' @export
 # Change the `event_date` to a different column name
 change_event_date <- function(x, event_date) {
@@ -286,7 +243,7 @@ change_event_date <- function(x, event_date) {
   return(x)
 }
 
-#' @rdname change
+#' @rdname add
 #' @export
 # Change the `report_date` to a different column name
 change_report_date <- function(x, report_date) {
@@ -335,7 +292,7 @@ change_report_date <- function(x, report_date) {
   return(x)
 }
 
-#' @rdname change
+#' @rdname add
 #' @export
 # Change the `case_count` to a different column name
 change_case_count <- function(x, case_count) {
@@ -367,7 +324,7 @@ change_case_count <- function(x, case_count) {
   return(x)
 }
 
-#' @rdname change
+#' @rdname add
 #' @export
 # Change the `is_censored` to a different column name
 change_is_censored <- function(x, is_censored) {
@@ -399,7 +356,7 @@ change_is_censored <- function(x, is_censored) {
   return(x)
 }
 
-#' @rdname remove
+#' @rdname add
 #' @export
 # Remove `value`  from is_censored
 remove_is_censored <- function(x) {
@@ -429,7 +386,7 @@ add_is_censored <- function(x, is_censored) {
   change_is_censored(x, {{ is_censored }})
 }
 
-#' @rdname change
+#' @rdname add
 #' @export
 # Change all of the strata to whatever is added in ...
 change_strata <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE) {
@@ -455,7 +412,7 @@ change_strata <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE) {
   return(x)
 }
 
-#' @rdname remove
+#' @rdname add
 #' @export
 # Remove `value`  from strata
 remove_strata <- function(x, ...) {
@@ -486,7 +443,7 @@ add_strata <- function(x, ...) {
 }
 
 
-#' @rdname remove
+#' @rdname add
 #' @export
 # Remove all `values`  from strata
 remove_all_strata <- function(x) {
@@ -499,7 +456,7 @@ remove_all_strata <- function(x) {
 }
 
 
-#' @rdname change
+#' @rdname add
 #' @export
 # Change the existing covariates to the ones in value
 change_covariates <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE) {
@@ -524,7 +481,7 @@ change_covariates <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRU
   return(x)
 }
 
-#' @rdname remove
+#' @rdname add
 #' @export
 # Removes the specific covariate `value`
 remove_covariates <- function(x, ...) {
@@ -556,7 +513,7 @@ add_covariates <- function(x, ...) {
 }
 
 
-#' @rdname remove
+#' @rdname add
 #' @export
 # Removes all covariates
 remove_all_covariates <- function(x) {
@@ -569,7 +526,7 @@ remove_all_covariates <- function(x) {
 }
 
 
-#' @rdname remove
+#' @rdname add
 #' @export
 replace_temporal_effects <- function(x, t_effects) {
   if (get_data_type(x) == "count-cumulative") {
@@ -603,7 +560,7 @@ replace_temporal_effects <- function(x, t_effects) {
   x
 }
 
-#' @rdname remove
+#' @rdname add
 #' @export
 remove_temporal_effects <- function(x) {
   replace_temporal_effects(x, t_effects = NULL)

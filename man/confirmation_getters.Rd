@@ -54,11 +54,24 @@ hai <- hai_bucaramanga |>
     verbose = FALSE
   )
 
+# No third date was declared, so there is no confirmation process ...
 has_confirmation(hai)
 get_confirmation_date(hai)
 
+# ... until one is attached. Here the laboratory receipt plays that role.
+hai <- suppressWarnings(add_confirmation(hai, received_date))
+has_confirmation(hai)
+get_confirmation_date(hai)
+get_confirmation_units(hai)
+
+# As always, the getter gives you the column NAME; index to get the values.
+head(hai[[get_confirmation_date(hai)]])
+
 }
 \seealso{
-\code{\link[=add_confirmation]{add_confirmation()}} to attach one, \code{\link[=get_latest_confirmed]{get_latest_confirmed()}} and
-\code{\link[=get_net_confirmed]{get_net_confirmed()}} to count the outcomes, \link{nowcast_data_getters}.
+\link[=confirmation_setters]{add_confirmation()} to attach one;
+\link[=confirmation_counts]{get_latest_confirmed()} and
+\link[=confirmation_counts]{get_net_confirmed()} to count the outcomes;
+\link{confirmation_delay} for how long resolution takes;
+\link{nowcast_data_getters} for the event- and report-date attributes.
 }

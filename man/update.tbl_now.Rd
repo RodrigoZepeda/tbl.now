@@ -2,7 +2,7 @@
 % Please edit documentation in R/update.R
 \name{update.tbl_now}
 \alias{update.tbl_now}
-\title{Update a \code{tbl_now}}
+\title{Append newly arrived data to a \code{tbl_now}}
 \usage{
 \method{update}{tbl_now}(
   object,
@@ -46,8 +46,15 @@ A \code{tbl_now} object with all the properties of \code{object}
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Updates a \code{tbl_now} object with new observations
-either from another \code{tbl_now} or a \code{data.frame}
+Surveillance data does not arrive once; it arrives every week. \code{update()}
+takes a \code{tbl_now} and a batch of newer rows -- as another \code{tbl_now} or as a
+plain \code{data.frame} -- and returns a single object containing both, still
+knowing everything the original knew about itself.
+
+It also moves \code{now} forward, because the new rows may carry a later report
+than the object had seen. That is the difference between this and
+\code{\link[dplyr:bind_rows]{dplyr::bind_rows()}}, which would give you back a plain data frame with no
+idea what a nowcast is.
 }
 \note{
 By default it keeps the strata, covariates and temporal effects of \code{object}. Use
@@ -55,16 +62,29 @@ the \code{strata}, \code{covariates} and \code{t_effects} arguments to change it
 }
 \examples{
 data(denguedat)
-initial_data <- denguedat[1:500, ]
-update_data <- denguedat[501:1000, ]
 
-initial_tbl <- tbl_now(denguedat,
+# Pretend the first 500 rows are what you had last week ...
+initial_tbl <- tbl_now(denguedat[1:500, ],
   event_date = "onset_week",
   report_date = "report_week", strata = "gender",
   verbose = FALSE
 )
+nrow(initial_tbl)
+get_now(initial_tbl)
 
-# Update collapses everything into a single data.frame
-update(initial_tbl, new_data = update_data)
+# ... and these arrived since.
+new_rows <- denguedat[501:1000, ]
 
+# The result has both, keeps `gender` as a stratum, and has moved `now`
+# forward to the latest report it has now seen.
+updated <- update(initial_tbl, new_data = new_rows)
+nrow(updated)
+get_strata(updated)
+get_now(updated)
+
+}
+\seealso{
+\link[=add]{update_now()} to move \code{now} without adding rows;
+\code{\link[=tbl_now]{tbl_now()}} for the attributes that are carried over;
+\code{\link[=add]{add()}} and \link[=add]{change()} to edit those attributes instead of the data.
 }

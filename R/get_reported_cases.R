@@ -1,32 +1,47 @@
-#' Get the latest / first / nth-delay reported cases for each event date
+#' Reported cases at a chosen point in the reporting process
 #'
 #' `r lifecycle::badge("stable")`
 #'
-#' Functions that extract, for each `event_date` (and stratum), the number of
-#' cases reported at a particular point in the reporting process:
+#' The same event date has more than one count, depending on when you look. A
+#' week of dengue onsets might show 12 cases the day reporting starts, 40 a week
+#' later, and 47 once everything has arrived. These functions let you pick which
+#' of those numbers you want.
 #'
-#' * `get_initial_reported_cases()` — the count as **first** observed (the
-#'   earliest report for that event date).
-#' * `get_latest_reported_cases()` — the count as **latest** observed (the most
-#'   recent report; the current best estimate of the incidence).
-#' * `get_nth_reported_cases()` — the cumulative count observed **within a given
-#'   delay**. `r lifecycle::badge("experimental")` With `delay = 0` you get the
-#'   cases reported at delay 0 (the initial snapshot when reporting starts at
-#'   delay 0); `delay = 1` adds those reported at delay 1, and so on. `delay = Inf`
-#'   (or the maximum delay) is identical to `get_latest_reported_cases()`.
+#' * `get_initial_reported_cases()` -- the count as **first** seen: the earliest
+#'   report for that event date. This is what a dashboard would have shown you at
+#'   the time, and it is always an undercount.
+#' * `get_latest_reported_cases()` -- the count as **latest** seen: the most
+#'   recent report. This is the current best estimate of what really happened,
+#'   and it is what you score a nowcast against.
+#' * `get_nth_reported_cases()` -- the count accumulated **within a given
+#'   delay**. `r lifecycle::badge("experimental")` `delay = 0` gives the cases
+#'   reported on the event date itself, `delay = 1` adds those reported one
+#'   period later, and so on. `delay = Inf` is the same as
+#'   `get_latest_reported_cases()`.
 #'
-#' @param x A `tbl.now` object
+#' The gap between the first and the latest count *is* the reporting delay
+#' problem that nowcasting exists to solve.
+#'
+#' @param x A `tbl_now` object.
 #'
 #' @param delay A single non-negative number (or `Inf`) giving the maximum
-#'   reporting delay, in report units, to include (only for
-#'   `get_nth_reported_cases()`).
+#'   reporting delay, in report units, to include. Only used by
+#'   `get_nth_reported_cases()`.
 #'
-#' @returns A `tbl.now` containing the following columns:
-#' * `event_date` The date the event happened. Its numerical version is `.event_num`.
-#' * `report_date` The date of the selected report for events happening on `event_date`. Its numerical version is `.report_num`.
-#' * `n` The number of events reported for `event_date` at the selected point.
-#' * `.delay` The delay of the selected report for that `event_date`.
-#' * Other columns that include the strata or the censoring indicators and the temporal effects for that event.
+#' @returns A `count-cumulative` `tbl_now` with one row per event date (and
+#' stratum), containing:
+#' * the event-date column -- when the cases happened. Its numeric version is `.event_num`.
+#' * the report-date column -- the report that was selected for that event date. Its numeric version is `.report_num`.
+#' * `n` -- the number of cases reported for that event date at the selected point.
+#' * `.delay` -- the delay of the selected report.
+#' * any strata, censoring indicator and temporal-effect columns the object carried.
+#'
+#' @seealso
+#' [get_latest_confirmed()][confirmation_counts] and friends for the same idea on
+#' the confirmation process; [to_count()] for the underlying data shapes;
+#' [score_nowcast()], which uses the latest counts as truth;
+#' [reporting_completeness()][nowcast_summary_components] for the same
+#' information as a proportion.
 #'
 #' @examples
 #' data(denguedat)
@@ -37,13 +52,19 @@
 #'   verbose = FALSE
 #' )
 #'
-#' # Gets the first reported cases (what as initially thought of to be the incidence)
-#' get_initial_reported_cases(dengue)
+#' # What the surveillance system showed the very first time it reported each
+#' # week -- an undercount, because the late reports had not arrived yet.
+#' first <- get_initial_reported_cases(dengue)
+#' first
 #'
-#' # Gets the latest reported cases (what is now thought of to be the incidence)
-#' get_latest_reported_cases(dengue)
+#' # What it shows now, after all the corrections.
+#' latest <- get_latest_reported_cases(dengue)
+#' latest
 #'
-#' # Gets the cases reported within a delay of at most 2 weeks
+#' # The difference between them is what a nowcast tries to predict.
+#' sum(latest$n) - sum(first$n)
+#'
+#' # Everything known within two weeks of onset.
 #' get_nth_reported_cases(dengue, delay = 2)
 #'
 #' @name get_latest_first

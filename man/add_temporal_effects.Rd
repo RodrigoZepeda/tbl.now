@@ -94,5 +94,8 @@ disease_data |>
 disease_data |> remove_temporal_effects()
 }
 \seealso{
-\code{\link[=temporal_effects]{temporal_effects()}} \link{add} \link{remove} \link{change}
+\code{\link[=temporal_effects]{temporal_effects()}} to build the specification;
+\code{\link[=compute_temporal_effects]{compute_temporal_effects()}} to materialise the columns;
+\link[=add]{replace_temporal_effects()} and \link[=add]{remove_temporal_effects()} to
+swap or drop it; \code{\link[=add]{add()}} for the other attribute setters.
 }

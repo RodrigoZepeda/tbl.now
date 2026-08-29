@@ -59,7 +59,11 @@
 #' disease_data |> remove_temporal_effects()
 #' @name add_temporal_effects
 #'
-#' @seealso [temporal_effects()] [add] [remove] [change]
+#' @seealso
+#' [temporal_effects()] to build the specification;
+#' [compute_temporal_effects()] to materialise the columns;
+#' [replace_temporal_effects()][add] and [remove_temporal_effects()][add] to
+#' swap or drop it; [add()] for the other attribute setters.
 #'
 #' @export
 add_temporal_effects <- function(x, t_effects = NULL, overwrite = FALSE, ...) {

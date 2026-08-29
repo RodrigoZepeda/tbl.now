@@ -134,8 +134,12 @@
 #'   `"numeric"`, or `NULL` when the object carries no confirmation.
 #' * `has_confirmation()` -- `TRUE` when the object carries a confirmation date.
 #'
-#' @seealso [add_confirmation()] to attach one, [get_latest_confirmed()] and
-#'   [get_net_confirmed()] to count the outcomes, [nowcast_data_getters].
+#' @seealso
+#' [add_confirmation()][confirmation_setters] to attach one;
+#' [get_latest_confirmed()][confirmation_counts] and
+#' [get_net_confirmed()][confirmation_counts] to count the outcomes;
+#' [confirmation_delay] for how long resolution takes;
+#' [nowcast_data_getters] for the event- and report-date attributes.
 #'
 #' @examples
 #' data(hai_bucaramanga)
@@ -150,8 +154,18 @@
 #'     verbose = FALSE
 #'   )
 #'
+#' # No third date was declared, so there is no confirmation process ...
 #' has_confirmation(hai)
 #' get_confirmation_date(hai)
+#'
+#' # ... until one is attached. Here the laboratory receipt plays that role.
+#' hai <- suppressWarnings(add_confirmation(hai, received_date))
+#' has_confirmation(hai)
+#' get_confirmation_date(hai)
+#' get_confirmation_units(hai)
+#'
+#' # As always, the getter gives you the column NAME; index to get the values.
+#' head(hai[[get_confirmation_date(hai)]])
 #'
 #' @name confirmation_getters
 NULL
@@ -302,8 +316,12 @@ has_confirmation <- function(x) {
 #'   confirmation_date`; rows that break it are warned about, not silently
 #'   accepted.
 #'
-#' @seealso [confirmation_getters], [get_latest_confirmed()],
-#'   [get_net_confirmed()], [diagnose_confirmation_delay()].
+#' @seealso
+#' [confirmation_getters] to read the attributes back;
+#' [confirmation_counts] to count confirmed, retracted and pending cases;
+#' [confirmation_delay] and [diagnose_confirmation_delay()] for how long
+#' resolution takes; [plot_confirmation_status()] to see it;
+#' [add()] for the event- and report-date attributes.
 #'
 #' @examples
 #' data(hai_bucaramanga)
@@ -323,6 +341,14 @@ has_confirmation <- function(x) {
 #' has_confirmation(hai)
 #' get_confirmation_date(hai)
 #'
+#' # A date alone cannot say whether the case was confirmed or retracted, which
+#' # is why the call above warns. Supplying the outcome column removes the doubt.
+#' hai$outcome <- ifelse(seq_len(nrow(hai)) %% 10 == 0, "retracted", "confirmed")
+#' hai <- change_confirmation(hai, received_date, confirmation_type = outcome)
+#' get_confirmation_type(hai)
+#' table(hai[[get_confirmation_type(hai)]])
+#'
+#' # Dropping it leaves an ordinary two-date object.
 #' hai <- remove_confirmation(hai)
 #' has_confirmation(hai)
 #'

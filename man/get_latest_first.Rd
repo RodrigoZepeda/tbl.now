@@ -5,7 +5,7 @@
 \alias{get_latest_reported_cases}
 \alias{get_initial_reported_cases}
 \alias{get_nth_reported_cases}
-\title{Get the latest / first / nth-delay reported cases for each event date}
+\title{Reported cases at a chosen point in the reporting process}
 \usage{
 get_latest_reported_cases(x)
 
@@ -14,39 +14,47 @@ get_initial_reported_cases(x)
 get_nth_reported_cases(x, delay)
 }
 \arguments{
-\item{x}{A \code{tbl.now} object}
+\item{x}{A \code{tbl_now} object.}
 
 \item{delay}{A single non-negative number (or \code{Inf}) giving the maximum
-reporting delay, in report units, to include (only for
-\code{get_nth_reported_cases()}).}
+reporting delay, in report units, to include. Only used by
+\code{get_nth_reported_cases()}.}
 }
 \value{
-A \code{tbl.now} containing the following columns:
+A \code{count-cumulative} \code{tbl_now} with one row per event date (and
+stratum), containing:
 \itemize{
-\item \code{event_date} The date the event happened. Its numerical version is \code{.event_num}.
-\item \code{report_date} The date of the selected report for events happening on \code{event_date}. Its numerical version is \code{.report_num}.
-\item \code{n} The number of events reported for \code{event_date} at the selected point.
-\item \code{.delay} The delay of the selected report for that \code{event_date}.
-\item Other columns that include the strata or the censoring indicators and the temporal effects for that event.
+\item the event-date column -- when the cases happened. Its numeric version is \code{.event_num}.
+\item the report-date column -- the report that was selected for that event date. Its numeric version is \code{.report_num}.
+\item \code{n} -- the number of cases reported for that event date at the selected point.
+\item \code{.delay} -- the delay of the selected report.
+\item any strata, censoring indicator and temporal-effect columns the object carried.
 }
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 }
 \details{
-Functions that extract, for each \code{event_date} (and stratum), the number of
-cases reported at a particular point in the reporting process:
+The same event date has more than one count, depending on when you look. A
+week of dengue onsets might show 12 cases the day reporting starts, 40 a week
+later, and 47 once everything has arrived. These functions let you pick which
+of those numbers you want.
 \itemize{
-\item \code{get_initial_reported_cases()} — the count as \strong{first} observed (the
-earliest report for that event date).
-\item \code{get_latest_reported_cases()} — the count as \strong{latest} observed (the most
-recent report; the current best estimate of the incidence).
-\item \code{get_nth_reported_cases()} — the cumulative count observed \strong{within a given
-delay}. \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} With \code{delay = 0} you get the
-cases reported at delay 0 (the initial snapshot when reporting starts at
-delay 0); \code{delay = 1} adds those reported at delay 1, and so on. \code{delay = Inf}
-(or the maximum delay) is identical to \code{get_latest_reported_cases()}.
+\item \code{get_initial_reported_cases()} -- the count as \strong{first} seen: the earliest
+report for that event date. This is what a dashboard would have shown you at
+the time, and it is always an undercount.
+\item \code{get_latest_reported_cases()} -- the count as \strong{latest} seen: the most
+recent report. This is the current best estimate of what really happened,
+and it is what you score a nowcast against.
+\item \code{get_nth_reported_cases()} -- the count accumulated \strong{within a given
+delay}. \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} \code{delay = 0} gives the cases
+reported on the event date itself, \code{delay = 1} adds those reported one
+period later, and so on. \code{delay = Inf} is the same as
+\code{get_latest_reported_cases()}.
 }
+
+The gap between the first and the latest count \emph{is} the reporting delay
+problem that nowcasting exists to solve.
 }
 \examples{
 data(denguedat)
@@ -57,13 +65,26 @@ dengue <- tbl_now(denguedat,
   verbose = FALSE
 )
 
-# Gets the first reported cases (what as initially thought of to be the incidence)
-get_initial_reported_cases(dengue)
+# What the surveillance system showed the very first time it reported each
+# week -- an undercount, because the late reports had not arrived yet.
+first <- get_initial_reported_cases(dengue)
+first
 
-# Gets the latest reported cases (what is now thought of to be the incidence)
-get_latest_reported_cases(dengue)
+# What it shows now, after all the corrections.
+latest <- get_latest_reported_cases(dengue)
+latest
 
-# Gets the cases reported within a delay of at most 2 weeks
+# The difference between them is what a nowcast tries to predict.
+sum(latest$n) - sum(first$n)
+
+# Everything known within two weeks of onset.
 get_nth_reported_cases(dengue, delay = 2)
 
+}
+\seealso{
+\link[=confirmation_counts]{get_latest_confirmed()} and friends for the same idea on
+the confirmation process; \code{\link[=to_count]{to_count()}} for the underlying data shapes;
+\code{\link[=score_nowcast]{score_nowcast()}}, which uses the latest counts as truth;
+\link[=nowcast_summary_components]{reporting_completeness()} for the same
+information as a proportion.
 }

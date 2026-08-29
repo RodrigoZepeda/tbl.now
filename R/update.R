@@ -1,9 +1,16 @@
-#' Update a `tbl_now`
+#' Append newly arrived data to a `tbl_now`
 #'
 #' @description `r lifecycle::badge('experimental')`
 #'
-#' Updates a `tbl_now` object with new observations
-#' either from another `tbl_now` or a `data.frame`
+#' Surveillance data does not arrive once; it arrives every week. `update()`
+#' takes a `tbl_now` and a batch of newer rows -- as another `tbl_now` or as a
+#' plain `data.frame` -- and returns a single object containing both, still
+#' knowing everything the original knew about itself.
+#'
+#' It also moves `now` forward, because the new rows may carry a later report
+#' than the object had seen. That is the difference between this and
+#' [dplyr::bind_rows()], which would give you back a plain data frame with no
+#' idea what a nowcast is.
 #'
 #' @param object A `tbl_now` object
 #' @param ... Additional arguments to pass to `tbl_now`
@@ -27,19 +34,32 @@
 #'
 #' @return A `tbl_now` object with all the properties of `object`
 #'
+#' @seealso
+#' [update_now()][add] to move `now` without adding rows;
+#' [tbl_now()] for the attributes that are carried over;
+#' [add()] and [change()][add] to edit those attributes instead of the data.
+#'
 #' @examples
 #' data(denguedat)
-#' initial_data <- denguedat[1:500, ]
-#' update_data <- denguedat[501:1000, ]
 #'
-#' initial_tbl <- tbl_now(denguedat,
+#' # Pretend the first 500 rows are what you had last week ...
+#' initial_tbl <- tbl_now(denguedat[1:500, ],
 #'   event_date = "onset_week",
 #'   report_date = "report_week", strata = "gender",
 #'   verbose = FALSE
 #' )
+#' nrow(initial_tbl)
+#' get_now(initial_tbl)
 #'
-#' # Update collapses everything into a single data.frame
-#' update(initial_tbl, new_data = update_data)
+#' # ... and these arrived since.
+#' new_rows <- denguedat[501:1000, ]
+#'
+#' # The result has both, keeps `gender` as a stratum, and has moved `now`
+#' # forward to the latest report it has now seen.
+#' updated <- update(initial_tbl, new_data = new_rows)
+#' nrow(updated)
+#' get_strata(updated)
+#' get_now(updated)
 #'
 #' @export
 update.tbl_now <- function(object, ..., new_data,
