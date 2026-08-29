@@ -95,12 +95,12 @@ result is self-documenting when several runs are bound together.}
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Runs an \strong{autocorrelation-robust monotonic-trend test} on the per-period,
 count-weighted delay summaries, to answer "do delays drift over time?" in a
 way that respects the fact that a delay series is correlated with itself.
-
+}
+\details{
 For each requested \code{stat} (and each stratum) it builds the per-event-date
 series of that statistic and tests it for a monotonic trend with the
 \pkg{modifiedmk} package, which corrects the Mann-Kendall variance for serial

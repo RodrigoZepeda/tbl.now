@@ -65,15 +65,15 @@ A \pkg{ggplot2} object.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Draws a \strong{rolling fan chart} of the count-weighted reporting-delay
 distribution indexed by \strong{event date}: a solid line for the rolling median,
 a dashed line for the rolling mean, and two shaded bands (the 25-75\% and
 10-90\% quantile ranges). Reading it left to right answers "do delays drift?"
 — a rising/falling centre line is \emph{location} drift, widening/narrowing bands
 are \emph{spread} drift.
-
+}
+\details{
 Because recent event dates have not had time to be fully reported, their delay
 summaries are downward-biased (only short delays are observable yet). That
 immature region — event dates after the \code{level} incompleteness cutoff — is

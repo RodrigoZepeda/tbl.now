@@ -1,12 +1,13 @@
 #' Reported cases at a chosen point in the reporting process
 #'
-#' `r lifecycle::badge("stable")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' The same event date has more than one count, depending on when you look. A
 #' week of dengue onsets might show 12 cases the day reporting starts, 40 a week
 #' later, and 47 once everything has arrived. These functions let you pick which
 #' of those numbers you want.
 #'
+#' @details
 #' * `get_initial_reported_cases()` -- the count as **first** seen: the earliest
 #'   report for that event date. This is what a dashboard would have shown you at
 #'   the time, and it is always an undercount.

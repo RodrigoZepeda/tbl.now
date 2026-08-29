@@ -9,13 +9,23 @@
 
 \item{...}{Unused.}
 
-\item{type}{Either \code{"quantiles"} (default) or \code{"draws"}.}
+\item{type}{Either \code{"quantiles"} (default) for the tidy quantile predictions,
+or \code{"draws"} for the posterior draws.}
 }
 \value{
-A \code{tibble}.
+A \code{tibble}. For \code{type = "quantiles"}, one row per event date,
+stratum and quantile level, with the quantile level in \code{.quantile_level} and
+the predicted count in \code{.value}. For \code{type = "draws"}, one row per draw.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+Turns a fitted nowcast into an ordinary \code{tibble} you can plot, join or write
+out: one row per event date and quantile level by default, or one row per
+posterior draw with \code{type = "draws"}.
+
+Not every engine keeps draws. When the backend returned only summarised
+quantiles, \code{type = "draws"} has nothing to give you.
 }
 \details{
 Registered in \code{.onLoad()} rather than assigned with
@@ -27,9 +37,6 @@ default argument -- so the copy makes \verb{R CMD check} report \pkg{pkgconfig} 
 an undeclared \code{::} import of a package this one never uses. Plain S3
 registration dispatches on \code{class(x)}, which for an S7 object is
 \code{"tbl.now::tbl_nowcast"}, and copies nothing.
-
-Returns the tidy quantile predictions (the \code{predictions} property), or the
-posterior draws when \code{type = "draws"}.
 }
 \examples{
 predictions <- data.frame(
@@ -39,4 +46,9 @@ predictions <- data.frame(
 nc <- tbl_nowcast(predictions = predictions, method = "toy", event_date = "onset_week")
 tibble::as_tibble(nc)
 
+}
+\seealso{
+\link[=tidy.tbl_nowcast]{tidy()} for the same content with the engine's metadata
+attached; \link[=autoplot.tbl_nowcast]{autoplot()} to plot it;
+\code{\link[=score_nowcast]{score_nowcast()}} to score it against observed counts.
 }

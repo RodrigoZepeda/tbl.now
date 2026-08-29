@@ -496,8 +496,15 @@ remove_confirmation <- function(x) {
 #'
 #' @param x A `tbl_now` with a confirmation process (see [add_confirmation()]).
 #'
+#' @param delay For `get_nth_confirmed()`, a single non-negative number (or
+#'   `Inf`): the longest confirmation delay to count, in confirmation units.
+#'
 #' @return A `tibble` with the event-date column, the strata columns and a count
 #'   column named after the object's own `case_count` (or `n` for a line list).
+#'
+#' `get_initial_confirmed()` and `get_nth_confirmed()` answer the same three
+#' questions at an earlier point in the process: what was confirmed by the first
+#' result to arrive, and what was confirmed within a given delay.
 #'
 #' @section Which date the count is indexed by:
 #'
@@ -507,8 +514,11 @@ remove_confirmation <- function(x) {
 #' `get_confirmation_date(x)` yourself -- that is a different question (how busy
 #' was the laboratory) and this package does not silently answer it.
 #'
-#' @seealso [get_latest_reported_cases()], [add_confirmation()],
-#'   [diagnose_confirmation_delay()].
+#' @seealso
+#' [get_latest_reported_cases()][get_latest_first] for the same counts on the
+#' reporting process; [add_confirmation()][confirmation_setters] to attach a
+#' confirmation; [confirmation_delay] for how long resolution takes;
+#' [plot_confirmation_status()] to see confirmed, retracted and pending over time.
 #'
 #' @examples
 #' cases <- data.frame(
@@ -523,9 +533,15 @@ remove_confirmation <- function(x) {
 #'   data_type = "linelist", verbose = FALSE
 #' )
 #'
-#' get_latest_reported_cases(flu)   # everything reported
-#' get_latest_confirmed(flu)        # only the positives
-#' get_net_confirmed(flu)           # positives minus withdrawals
+#' # Three answers to "how many cases were there?".
+#' get_latest_reported_cases(flu) # everything reported
+#' get_latest_confirmed(flu) # only the positives
+#' get_net_confirmed(flu) # positives minus withdrawals
+#'
+#' # And the same question asked at an earlier point in the process: what was
+#' # confirmed by the first result to come back, and within one day of report.
+#' get_initial_confirmed(flu)
+#' get_nth_confirmed(flu, delay = 1)
 #'
 #' @name confirmation_counts
 NULL
@@ -643,8 +659,13 @@ get_net_confirmed <- function(x) {
 #' in the `dropped` attribute of the result. A negative confirmation delay means
 #' the record is confirmed before it was reported, which the timeline forbids.
 #'
-#' @seealso [add_confirmation()], [diagnose_drift()] for the same question
-#'   about the *reporting* delay over time.
+#' @seealso
+#' [add_confirmation()][confirmation_setters] to attach a confirmation process;
+#' [censor_confirmation_delays_above()][censor_delays_above] for resolutions that
+#' never arrive; [confirmation_counts] for counting the outcomes;
+#' [diagnose_drift()] for the same question about the *reporting* delay over time.
+#' The [*Describing and diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+#' puts this alongside the other checks.
 #'
 #' @examples
 #' cases <- data.frame(
@@ -660,7 +681,12 @@ get_net_confirmed <- function(x) {
 #'   data_type = "linelist", verbose = FALSE
 #' )
 #'
+#' # Retractions here come back about four days later than confirmations, and
+#' # the test says so.
 #' diagnose_confirmation_delay(flu)
+#'
+#' # The same comparison as a picture.
+#' plot_confirmation_delay(flu)
 #'
 #' @name confirmation_delay
 NULL

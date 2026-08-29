@@ -30,8 +30,7 @@ A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Shows total cases by \strong{event date} (when the cases occurred), facetted by
 stratum when present. The mirror image of \code{\link[=plot_reporting_process]{plot_reporting_process()}} (which is
 by \emph{report} date): a real epidemic is smooth, so a lone spike here would be a

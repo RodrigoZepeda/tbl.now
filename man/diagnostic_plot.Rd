@@ -49,8 +49,7 @@ A \pkg{patchwork} object, or a single plot when one panel is selected
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Lays out a gallery of complementary views of a \code{tbl_now}'s reporting process,
 all aimed at spotting reporting artefacts -- especially \emph{batch reporting}. Each
 view is also available on its own (see \strong{See also}); \code{diagnostic_plot()} picks

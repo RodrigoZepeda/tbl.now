@@ -43,8 +43,7 @@ A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Tiles over (event date, delay), filled by the reported count. Cells that are
 \strong{observable but empty} (a genuine reported zero) are drawn in a muted blue;
 cells that are \strong{not yet reportable} (report date beyond \code{now}, the upper-right

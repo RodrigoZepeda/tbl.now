@@ -24,7 +24,7 @@
 
 #' The transport discriminant of a reporting series
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Computes, for every report date, the two coordinates of [diagnose_batches()]'s
 #' conservation law -- the **deficit** (the *transport* axis: how many reports the
@@ -32,6 +32,7 @@
 #' axis: the window total relative to its baseline) -- together with their robust
 #' standardised versions `transport_z` and `creation_z`.
 #'
+#' @details
 #' A batch *moves* reports later without creating them, so it leaves a positive
 #' deficit while conserving the window total (`transport_z` large, `creation_z`
 #' near 0). A genuine surge *creates* reports, lifting the window total without a

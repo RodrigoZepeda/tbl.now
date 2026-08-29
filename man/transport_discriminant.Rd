@@ -37,14 +37,14 @@ stratum), with columns \code{report_date}, \code{stratum}, \code{reported}, \cod
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Computes, for every report date, the two coordinates of \code{\link[=diagnose_batches]{diagnose_batches()}}'s
 conservation law -- the \strong{deficit} (the \emph{transport} axis: how many reports the
 preceding window is missing) and the window \strong{discriminant} (the \emph{creation}
 axis: the window total relative to its baseline) -- together with their robust
 standardised versions \code{transport_z} and \code{creation_z}.
-
+}
+\details{
 A batch \emph{moves} reports later without creating them, so it leaves a positive
 deficit while conserving the window total (\code{transport_z} large, \code{creation_z}
 near 0). A genuine surge \emph{creates} reports, lifting the window total without a

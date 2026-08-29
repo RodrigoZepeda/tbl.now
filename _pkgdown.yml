@@ -85,7 +85,6 @@ reference:
   contents:
   - temporal_effects
   - add_temporal_effects
-  - compute_temporal_effects
 
 - title: The confirmation process
   desc: The optional third date, and the outcomes it carries.

@@ -201,7 +201,7 @@
 
 #' Visualise whether the reporting-delay distribution drifts over time
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Draws a **rolling fan chart** of the count-weighted reporting-delay
 #' distribution indexed by **event date**: a solid line for the rolling median,
@@ -210,6 +210,7 @@
 #' — a rising/falling centre line is *location* drift, widening/narrowing bands
 #' are *spread* drift.
 #'
+#' @details
 #' Because recent event dates have not had time to be fully reported, their delay
 #' summaries are downward-biased (only short delays are observable yet). That
 #' immature region — event dates after the `level` incompleteness cutoff — is
@@ -460,12 +461,13 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
 
 #' Test whether the reporting-delay distribution drifts over time
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Runs an **autocorrelation-robust monotonic-trend test** on the per-period,
 #' count-weighted delay summaries, to answer "do delays drift over time?" in a
 #' way that respects the fact that a delay series is correlated with itself.
 #'
+#' @details
 #' For each requested `stat` (and each stratum) it builds the per-event-date
 #' series of that statistic and tests it for a monotonic trend with the
 #' \pkg{modifiedmk} package, which corrects the Mann-Kendall variance for serial
@@ -738,7 +740,7 @@ diagnose_drift <- function(x, ...,
 
 #' Detect an abrupt change point in the reporting-delay distribution
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Complements [diagnose_drift()]. Where that tests for a *gradual* monotonic
 #' trend, this tests for a **single abrupt shift** (e.g. a reporting-system change

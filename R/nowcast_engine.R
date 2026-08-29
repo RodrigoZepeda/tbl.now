@@ -263,12 +263,24 @@ print.nowcast_engine <- function(x, ...) {
 #'
 #' @description `r lifecycle::badge('experimental')`
 #'
+#' Tests whether an object is a nowcasting engine -- the specification built by
+#' [engine()] that says which modelling package to use and how to configure it.
+#' A bare package name is *not* an engine, which is what this is usually used to
+#' check.
+#'
 #' @param x An object.
 #'
-#' @return `TRUE` or `FALSE`.
+#' @return A single `TRUE` or `FALSE`.
+#'
+#' @seealso
+#' [engine()] to build one; [nowcast_engines] for the engines that ship with the
+#' package; [run_nowcast()], which takes one.
 #'
 #' @examples
+#' # Built by engine(): yes.
 #' is_nowcast_engine(engine("baselinenowcast"))
+#'
+#' # The name of a package on its own: no.
 #' is_nowcast_engine("baselinenowcast")
 #'
 #' @export

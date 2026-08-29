@@ -91,8 +91,7 @@ relevance by.}
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Complements \code{\link[=diagnose_drift]{diagnose_drift()}}. Where that tests for a \emph{gradual} monotonic
 trend, this tests for a \strong{single abrupt shift} (e.g. a reporting-system change
 on some date) in the per-period delay summaries, using \strong{Pettitt's}

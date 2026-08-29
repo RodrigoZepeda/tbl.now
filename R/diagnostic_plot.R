@@ -59,7 +59,7 @@
 
 #' Plot the reporting process
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Shows total reports by **report date** (when the reports arrived), facetted by
 #' stratum when present.
@@ -92,7 +92,7 @@ plot_reporting_process <- function(x, plotly = FALSE, axis = c("report", "confir
 
 #' Plot the epidemic process
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Shows total cases by **event date** (when the cases occurred), facetted by
 #' stratum when present. The mirror image of [plot_reporting_process()] (which is
@@ -171,7 +171,7 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "confirm
 
 #' Plot the reporting triangle
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Tiles over (event date, delay), filled by the reported count. Cells that are
 #' **observable but empty** (a genuine reported zero) are drawn in a muted blue;
@@ -368,7 +368,7 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 
 #' Plot the per-date delay profiles
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' One translucent curve per date (see `by`) giving that date's share of reports
 #' at each delay, coloured by its mean delay. A batch is a lone right-shifted
@@ -453,7 +453,7 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
 
 #' Plot the transport-discriminant plane
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Places each report date by its creation score (x) and transport / deficit
 #' score (y) from [transport_discriminant()], shading the region that decides the
@@ -545,7 +545,7 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, palette = .tbl_n
 
 #' Diagnostic plots of the reporting process
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Lays out a gallery of complementary views of a `tbl_now`'s reporting process,
 #' all aimed at spotting reporting artefacts -- especially *batch reporting*. Each

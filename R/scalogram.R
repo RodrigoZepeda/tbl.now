@@ -24,7 +24,7 @@
 
 #' Plot the reporting or epidemic scalogram
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' A **wavelet scalogram** splits a count series, at every moment, into fast
 #' wiggles (short periods, at the bottom) and slow swings (long periods, at the
@@ -34,6 +34,7 @@
 #' cases arrive smoothly. Periods are measured in the object's own time step (days,
 #' weeks, ...), so the series is analysed on its integer grid, not forced to days.
 #'
+#' @details
 #' This uses a **window-inner** scalogram (\pkg{wavScalogram}, `border_effects =
 #' "INNER"`): it is computed from the observed data only, with **no border
 #' padding**. That matters for surveillance / nowcasting, where the usual periodic

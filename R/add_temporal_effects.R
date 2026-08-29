@@ -1,9 +1,24 @@
-#' Add temporal effect coding to a `tbl_now`
+#' Attach calendar effects to a `tbl_now`, and turn them into columns
 #'
 #' @description `r lifecycle::badge("stable")`
 #'
-#' Takes a `tbl_now` or a `data.frame` and adds the temporal effects `t_effect` as
-#' columns
+#' These are the second and third steps of using calendar structure in a nowcast.
+#' First you write down which patterns you want with [temporal_effects()]; then:
+#'
+#' * `add_temporal_effects()` **records** that request on the object. Nothing is
+#'   computed and no columns appear -- the specification is stored lazily, so it
+#'   survives filtering and joining without going stale.
+#' * `compute_temporal_effects()` **materialises** it, building one column per
+#'   effect from the object's dates.
+#'
+#' The split matters because the columns depend on the data. If you computed them
+#' first and then filtered, or changed the event-date column, the columns would
+#' silently describe the wrong rows. Recording the request and computing it at the
+#' end avoids that.
+#'
+#' Call `add_temporal_effects()` more than once to accumulate several
+#' specifications on the same object; `compute_temporal_effects()` builds all of
+#' them.
 #'
 #' @param x A `tbl_now` object or a `data.frame`.
 #'
@@ -22,48 +37,73 @@
 #' @param t_effects A [temporal_effects()] object codifying the
 #' temporal effects to be used.
 #'
-#' @param name_prefix What preffix to add to the column names
+#' @param name_prefix Character. Prefix for the names of the created columns.
 #'
-#' @param overwrite If `TRUE` ignores that the columns already exist and overwrites them.
-#' If `FALSE` it throws an errors if the columns it is creating already exist (default).
+#' @param overwrite Logical. When `TRUE`, columns that already exist are
+#' overwritten. When `FALSE` (the default) an existing column of the same name is
+#' an error, so an accidental second computation cannot silently replace your data.
 #'
 #' @param ... Additional arguments (unused)
 #'
 #' @inheritParams is_weekday
 #'
 #'
-#' @return A `tbl_now` or `data.frame` containing all of the effects as new columns.
+#' @return
+#' `add_temporal_effects()` returns the object with the specification recorded.
+#' For a `tbl_now` **no columns are added**; for a plain `data.frame`, which has
+#' nowhere to record a specification, the columns are computed immediately.
+#'
+#' `compute_temporal_effects()` returns a `tbl_now` with one column per effect
+#' appended. The specification is kept, so it still prints; the names of the
+#' columns just created are available from
+#' [get_temporal_effect_cols()][nowcast_data_getters].
 #'
 #' @examples
 #' data(denguedat)
-#'
-#' # Get disease
-#' disease_data <- tbl_now(denguedat,
+#' dengue <- tbl_now(denguedat,
 #'   event_date = "onset_week",
 #'   report_date = "report_week",
-#'   strata = "gender"
+#'   strata = "gender",
+#'   verbose = FALSE
 #' )
 #'
-#' # Add an effect for epidemiological week
-#' disease_data <- disease_data |>
+#' # Step 1-2: say you want a week-of-year effect, and record it.
+#' dengue <- dengue |>
 #'   add_temporal_effects(t_effects = temporal_effects(week_of_year = TRUE))
 #'
-#' # Use the compute to calculate them
-#' disease_data |> compute_temporal_effects()
+#' # The request is stored, but no column has been built yet.
+#' get_temporal_effects(dengue)
+#' get_temporal_effect_cols(dengue)
 #'
-#' # Use replace to change them
-#' disease_data |>
-#'   replace_temporal_effects(t_effects = temporal_effects(seasons = 52))
+#' # Step 3: materialise it.
+#' computed <- compute_temporal_effects(dengue)
+#' get_temporal_effect_cols(computed)
+#' head(computed[[get_temporal_effect_cols(computed)[1]]])
 #'
-#' # Use remove to delete them
-#' disease_data |> remove_temporal_effects()
+#' # Specifications accumulate, so you can add a second pattern ...
+#' both <- dengue |>
+#'   add_temporal_effects(t_effects = temporal_effects(month_of_year = TRUE))
+#' get_temporal_effect_cols(compute_temporal_effects(both))
+#'
+#' # ... swap the whole specification for another ...
+#' dengue |>
+#'   replace_temporal_effects(t_effects = temporal_effects(seasons = 52)) |>
+#'   get_temporal_effects()
+#'
+#' # ... or forget it entirely.
+#' dengue |>
+#'   remove_temporal_effects() |>
+#'   get_temporal_effects()
+#'
 #' @name add_temporal_effects
 #'
 #' @seealso
-#' [temporal_effects()] to build the specification;
-#' [compute_temporal_effects()] to materialise the columns;
-#' [replace_temporal_effects()][add] and [remove_temporal_effects()][add] to
-#' swap or drop it; [add()] for the other attribute setters.
+#' [temporal_effects()] to build the specification, and for what each effect means;
+#' [replace_temporal_effects()][add] and [remove_temporal_effects()][add] to swap
+#' or drop it; [get_temporal_effects()][nowcast_data_getters] and
+#' [get_temporal_effect_cols()][nowcast_data_getters] to read back the request and
+#' the columns; [calendar_effect_plots] to see the patterns;
+#' [add()] for the other attribute setters.
 #'
 #' @export
 add_temporal_effects <- function(x, t_effects = NULL, overwrite = FALSE, ...) {

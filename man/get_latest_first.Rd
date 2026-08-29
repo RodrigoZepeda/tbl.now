@@ -33,12 +33,13 @@ stratum), containing:
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
-}
-\details{
+
 The same event date has more than one count, depending on when you look. A
 week of dengue onsets might show 12 cases the day reporting starts, 40 a week
 later, and 47 once everything has arrived. These functions let you pick which
 of those numbers you want.
+}
+\details{
 \itemize{
 \item \code{get_initial_reported_cases()} -- the count as \strong{first} seen: the earliest
 report for that event date. This is what a dashboard would have shown you at

@@ -10,13 +10,25 @@ is_nowcast_engine(x)
 \item{x}{An object.}
 }
 \value{
-\code{TRUE} or \code{FALSE}.
+A single \code{TRUE} or \code{FALSE}.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+Tests whether an object is a nowcasting engine -- the specification built by
+\code{\link[=engine]{engine()}} that says which modelling package to use and how to configure it.
+A bare package name is \emph{not} an engine, which is what this is usually used to
+check.
 }
 \examples{
+# Built by engine(): yes.
 is_nowcast_engine(engine("baselinenowcast"))
+
+# The name of a package on its own: no.
 is_nowcast_engine("baselinenowcast")
 
+}
+\seealso{
+\code{\link[=engine]{engine()}} to build one; \link{nowcast_engines} for the engines that ship with the
+package; \code{\link[=run_nowcast]{run_nowcast()}}, which takes one.
 }

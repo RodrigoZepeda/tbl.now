@@ -142,12 +142,31 @@ tbl_nowcast <- S7::new_class(
 #'
 #' @description `r lifecycle::badge('experimental')`
 #'
+#' Tests whether an object is a fitted nowcast -- the thing [run_nowcast()]
+#' returns -- rather than the data a nowcast is fitted to (for which see
+#' [is_tbl_now()][validate_tbl_now]).
+#'
 #' @param x An object.
 #'
-#' @return `TRUE` when `x` is a [tbl_nowcast], `FALSE` otherwise.
+#' @return A single `TRUE` when `x` is a [tbl_nowcast], `FALSE` otherwise.
+#'
+#' @seealso
+#' [tbl_nowcast] for the class itself; [run_nowcast()] which produces one;
+#' [is_tbl_now()][validate_tbl_now] for the input side.
 #'
 #' @examples
+#' # A number is not a nowcast.
 #' is_tbl_nowcast(1)
+#'
+#' # The object run_nowcast() returns is.
+#' predictions <- data.frame(
+#'   onset_week = as.Date("2020-01-05"),
+#'   .quantile_level = c(0.5, 0.9), .value = c(10, 14)
+#' )
+#' nc <- tbl_nowcast(
+#'   predictions = predictions, method = "toy", event_date = "onset_week"
+#' )
+#' is_tbl_nowcast(nc)
 #'
 #' @export
 is_tbl_nowcast <- function(x) {
@@ -231,14 +250,27 @@ S7::method(print, tbl_nowcast) <- function(x, ..., n = 6) {
 #' registration dispatches on `class(x)`, which for an S7 object is
 #' `"tbl.now::tbl_nowcast"`, and copies nothing.
 #'
-#' Returns the tidy quantile predictions (the `predictions` property), or the
-#' posterior draws when `type = "draws"`.
+#' @description
+#' Turns a fitted nowcast into an ordinary `tibble` you can plot, join or write
+#' out: one row per event date and quantile level by default, or one row per
+#' posterior draw with `type = "draws"`.
+#'
+#' Not every engine keeps draws. When the backend returned only summarised
+#' quantiles, `type = "draws"` has nothing to give you.
 #'
 #' @param x A [tbl_nowcast].
 #' @param ... Unused.
-#' @param type Either `"quantiles"` (default) or `"draws"`.
+#' @param type Either `"quantiles"` (default) for the tidy quantile predictions,
+#'   or `"draws"` for the posterior draws.
 #'
-#' @return A `tibble`.
+#' @return A `tibble`. For `type = "quantiles"`, one row per event date,
+#' stratum and quantile level, with the quantile level in `.quantile_level` and
+#' the predicted count in `.value`. For `type = "draws"`, one row per draw.
+#'
+#' @seealso
+#' [tidy()][tidy.tbl_nowcast] for the same content with the engine's metadata
+#' attached; [autoplot()][autoplot.tbl_nowcast] to plot it;
+#' [score_nowcast()] to score it against observed counts.
 #'
 #' @examples
 #' predictions <- data.frame(

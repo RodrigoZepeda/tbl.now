@@ -2,7 +2,7 @@
 % Please edit documentation in R/temporal_effects.R
 \name{temporal_effects}
 \alias{temporal_effects}
-\title{Temporal Effects Class}
+\title{Calendar effects to include in a nowcast}
 \usage{
 temporal_effects(
   day_of_week = FALSE,
@@ -58,9 +58,14 @@ before a weekend instead: \code{weekend_lags = -1} flags the Friday, and
 To model both sides of the same break, add two specifications (see the
 examples).}
 
-\item{seasons}{Vector. Either \code{integer(0)} (no seasonal effects) or a positive-numeric
-vector where each entry is the number of seasons (cycles) to model. The actual Fourier
-period for the i-th entry is \code{seasons[i] * season_length[i]}.}
+\item{seasons}{Vector. Smooth (Fourier) seasonality, as opposed to one
+indicator per calendar unit. Either \code{integer(0)} (no seasonal effects) or a
+positive-numeric vector, each entry giving the number of periods in one cycle.
+The Fourier period of the i-th entry is \code{seasons[i] * season_length[i]}.
+
+In weekly data, \code{seasons = 52} is a yearly wave. Several entries fit several
+waves at once, so \code{seasons = c(7, 365)} in daily data fits a weekly and a
+yearly cycle together.}
 
 \item{season_length}{Either a single positive number or a vector of the same length as
 \code{seasons}. Specifies the duration (in data units) of each season cycle. Defaults to \code{1},
@@ -73,13 +78,34 @@ For example, to model 52-week annual seasonality in \strong{daily} data set
 \item{holidays}{Either \code{NULL} or an \code{\link[almanac:rcalendar]{almanac::rcalendar()}} specifying how to calculate holidays.}
 }
 \value{
-An object of class \code{temporal_effects}.
+An object of class \code{temporal_effects}: a specification, not data. Hand it to
+\code{\link[=tbl_now]{tbl_now()}}'s \code{t_effects} argument or to \code{\link[=add_temporal_effects]{add_temporal_effects()}}.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
-The \code{temporal_effects} class specifies which temporal covariates or effects
-should be included in a nowcasting model (e.g., day of week, month, holidays, etc.).
+Reporting follows the calendar. Fewer cases are entered at the weekend, almost
+none over Christmas, and the backlog clears in the days afterwards. Disease
+itself follows the calendar too -- dengue peaks in the rainy season, influenza
+in winter. A nowcast that ignores this will overestimate a Monday and
+underestimate the Tuesday that follows.
+
+\code{temporal_effects()} writes down which of those patterns you want a model to
+account for. It does not compute anything: it is a specification you hand to
+\code{\link[=tbl_now]{tbl_now()}} or \code{\link[=add_temporal_effects]{add_temporal_effects()}}, and the columns are only built when
+\code{\link[=compute_temporal_effects]{compute_temporal_effects()}} is called.
+
+The patterns available are:
+\itemize{
+\item \strong{Position in the week or month} -- \code{day_of_week}, \code{weekend},
+\code{day_of_month}.
+\item \strong{Position in the year} -- \code{week_of_year}, \code{month_of_year}.
+\item \strong{Smooth seasonality} -- \code{seasons}, which fits Fourier terms rather than
+one indicator per period. Use this when you believe the pattern is a smooth
+wave rather than 52 unrelated weeks.
+\item \strong{Holidays, and the days around them} -- \code{holidays}, \code{holiday_lags} and
+\code{weekend_lags}, which capture the shutdown and the catch-up that follows it.
+}
 }
 \details{
 US Federal holidays can be passed by providing the \code{\link[almanac:cal_us_federal]{almanac::cal_us_federal()}} calendar.
@@ -95,10 +121,10 @@ temporal_effects(holidays = cal_us_federal())
 
 \code{holidays} accepts \strong{any} \code{\link[almanac:rcalendar]{almanac::rcalendar()}}.
 
-A calendar is a set of \emph{recurrence rules}, so you describe how
-a holiday is constructed . say "the fourth Thursday of November", and
-\pkg{almanac} generates it for every year. In general, you should avoid
-hardcoding specific dates (like "18/11/2021").
+A calendar is a set of \emph{recurrence rules}: you describe how a holiday is
+constructed -- "the fourth Thursday of November" -- and \pkg{almanac} generates
+it for every year. Avoid hardcoding specific dates such as \code{"2021-11-18"},
+which will be wrong next year.
 
 A calendar has four building blocks:
 \itemize{
@@ -192,9 +218,6 @@ Sunday and moves \emph{forward} to Mon Jul 5.
 \item \strong{Christmas 2027 is observed on Fri Dec 24}, and New Year's Day 2028 is
 pulled back to Fri Dec 31 2027 — so it appears in the 2027 events, not 2028.
 }
-
-\strong{Note} NYC's Lincoln's Birthday is a floating holiday so
-consider removing from here.
 }
 }
 
@@ -245,4 +268,12 @@ if (rlang::is_installed("almanac")) {
     add_temporal_effects(temporal_effects(holidays = cal, holiday_lags = -2)) |>
     add_temporal_effects(temporal_effects(holidays = cal, holiday_lags = 2))
 }
+}
+\seealso{
+\code{\link[=add_temporal_effects]{add_temporal_effects()}} to attach a specification to a \code{tbl_now}, and
+\code{\link[=compute_temporal_effects]{compute_temporal_effects()}} to turn it into columns;
+\link[=nowcast_data_getters]{get_temporal_effects()} to read it back;
+\link{calendar_effect_plots} to see the patterns in your data before deciding which
+to model; \code{\link[=is_weekday]{is_weekday()}} for the weekend definition these use;
+\code{\link[almanac:rcalendar]{almanac::rcalendar()}} for building holiday calendars.
 }

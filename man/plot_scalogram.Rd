@@ -46,8 +46,7 @@ A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 A \strong{wavelet scalogram} splits a count series, at every moment, into fast
 wiggles (short periods, at the bottom) and slow swings (long periods, at the
 top), and shows the energy at each as a heat map. A \strong{batch} -- a sudden
@@ -55,7 +54,8 @@ one-step burst of reports -- lights up as a bright \strong{short-period ridge} i
 \emph{reporting} scalogram that the \emph{epidemic} (event) scalogram lacks, since real
 cases arrive smoothly. Periods are measured in the object's own time step (days,
 weeks, ...), so the series is analysed on its integer grid, not forced to days.
-
+}
+\details{
 This uses a \strong{window-inner} scalogram (\pkg{wavScalogram}, \code{border_effects = "INNER"}): it is computed from the observed data only, with \strong{no border
 padding}. That matters for surveillance / nowcasting, where the usual periodic
 or zero padding would fabricate structure exactly at the most recent ("now")

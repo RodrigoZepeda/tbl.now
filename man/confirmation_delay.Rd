@@ -67,10 +67,19 @@ flu <- tbl_now(cases,
   data_type = "linelist", verbose = FALSE
 )
 
+# Retractions here come back about four days later than confirmations, and
+# the test says so.
 diagnose_confirmation_delay(flu)
+
+# The same comparison as a picture.
+plot_confirmation_delay(flu)
 
 }
 \seealso{
-\code{\link[=add_confirmation]{add_confirmation()}}, \code{\link[=diagnose_drift]{diagnose_drift()}} for the same question
-about the \emph{reporting} delay over time.
+\link[=confirmation_setters]{add_confirmation()} to attach a confirmation process;
+\link[=censor_delays_above]{censor_confirmation_delays_above()} for resolutions that
+never arrive; \link{confirmation_counts} for counting the outcomes;
+\code{\link[=diagnose_drift]{diagnose_drift()}} for the same question about the \emph{reporting} delay over time.
+The \href{https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html}{\emph{Describing and diagnosing a tbl_now} article}
+puts this alongside the other checks.
 }

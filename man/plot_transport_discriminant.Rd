@@ -27,13 +27,13 @@ A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Places each report date by its creation score (x) and transport / deficit
 score (y) from \code{\link[=transport_discriminant]{transport_discriminant()}}, shading the region that decides the
 batch call. Surges are not distinguished here (they fold into the quiet
 background) since only the batch call is of interest.
-
+}
+\details{
 Only the \code{\link[=diagnose_batches]{diagnose_batches()}}-confirmed batches (Benjamini-Hochberg-corrected) are
 coloured red; the dashed lines and shaded region are a reference for where a
 batch sits (deficit cleared, and significant), not the flagging rule. The most

@@ -26,6 +26,10 @@ cases per event date had been resolved within a week of being reported".}
 \value{
 A \code{tibble} with the event-date column, the strata columns and a count
 column named after the object's own \code{case_count} (or \code{n} for a line list).
+
+\code{get_initial_confirmed()} and \code{get_nth_confirmed()} answer the same three
+questions at an earlier point in the process: what was confirmed by the first
+result to arrive, and what was confirmed within a given delay.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -71,12 +75,20 @@ flu <- tbl_now(cases,
   data_type = "linelist", verbose = FALSE
 )
 
-get_latest_reported_cases(flu)   # everything reported
-get_latest_confirmed(flu)        # only the positives
-get_net_confirmed(flu)           # positives minus withdrawals
+# Three answers to "how many cases were there?".
+get_latest_reported_cases(flu) # everything reported
+get_latest_confirmed(flu) # only the positives
+get_net_confirmed(flu) # positives minus withdrawals
+
+# And the same question asked at an earlier point in the process: what was
+# confirmed by the first result to come back, and within one day of report.
+get_initial_confirmed(flu)
+get_nth_confirmed(flu, delay = 1)
 
 }
 \seealso{
-\code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}}, \code{\link[=add_confirmation]{add_confirmation()}},
-\code{\link[=diagnose_confirmation_delay]{diagnose_confirmation_delay()}}.
+\link[=get_latest_first]{get_latest_reported_cases()} for the same counts on the
+reporting process; \link[=confirmation_setters]{add_confirmation()} to attach a
+confirmation; \link{confirmation_delay} for how long resolution takes;
+\code{\link[=plot_confirmation_status]{plot_confirmation_status()}} to see confirmed, retracted and pending over time.
 }
