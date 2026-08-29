@@ -76,14 +76,21 @@ different quantities.
 # Fitting needs Stan and takes minutes, so the fit itself is wrapped in
 # \donttest{}; the conversion above it runs.
 data(denguedat)
-nowobj <- tbl_now(denguedat,
+# A short window: fitting a delay distribution does not need twenty years of
+# data, and Stan is slow.
+recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+nowobj <- tbl_now(recent,
   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 )
 
-\donttest{
+# `target = "estimate_dist"` gives the censored linelist EpiNow2 wants: one
+# row per case, each date as the interval it is known to fall in.
 delays <- tbl_now_to_EpiNow2(nowobj,
-  target = "estimate_truncation", verbose = FALSE, quiet = TRUE
+  target = "estimate_dist", verbose = FALSE, quiet = TRUE
 )
+head(delays)
+
+\donttest{
 fit <- EpiNow2::estimate_dist(delays)
 
 # One row per fitted parameter, plus the delay's own mean and sd.

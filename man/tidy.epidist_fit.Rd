@@ -71,7 +71,10 @@ cannot be sure which method will win.
 # Fitting needs Stan and takes minutes, so the fit itself is wrapped in
 # \donttest{}; everything above it runs.
 data(denguedat)
-nowobj <- tbl_now(denguedat,
+# A short window: fitting a delay distribution does not need twenty years of
+# data, and Stan is slow.
+recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+nowobj <- tbl_now(recent,
   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 )
 
