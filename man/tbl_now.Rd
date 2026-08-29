@@ -124,7 +124,14 @@ and strata)}
 and \code{align_weeks = TRUE} it ensures that all weeks start in a Sunday so that
 week differences and \code{.delays} are all integer.}
 
-\item{...}{Additional metadata to be stored as attributes.}
+\item{...}{Additional metadata to be stored as attributes on the object. Use
+this for provenance you want to travel with the data -- \code{data_source},
+\code{citation}, \code{population} -- and read it back with \code{\link[=tbl_now_attributes]{tbl_now_attributes()}}.
+
+Because anything unmatched lands here, a misspelled argument name would
+otherwise be accepted in silence. Names close enough to a real argument to be
+a typo (\code{case_col} for \code{case_count}, \code{stata} for \code{strata}) warn instead; the
+warning is safe to ignore if the name really was metadata.}
 }
 \value{
 An object of class \code{tbl_now}: the input \code{data} as a \code{tibble}, carrying

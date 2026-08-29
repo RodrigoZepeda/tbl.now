@@ -123,7 +123,14 @@
 #' and `align_weeks = TRUE` it ensures that all weeks start in a Sunday so that
 #' week differences and `.delays` are all integer.
 #'
-#' @param ... Additional metadata to be stored as attributes.
+#' @param ... Additional metadata to be stored as attributes on the object. Use
+#' this for provenance you want to travel with the data -- `data_source`,
+#' `citation`, `population` -- and read it back with [tbl_now_attributes()].
+#'
+#' Because anything unmatched lands here, a misspelled argument name would
+#' otherwise be accepted in silence. Names close enough to a real argument to be
+#' a typo (`case_col` for `case_count`, `stata` for `strata`) warn instead; the
+#' warning is safe to ignore if the name really was metadata.
 #'
 #' @section Attributes:
 #'
@@ -512,6 +519,12 @@ tbl_now <- function(data,
   # Capture all other attributes
   other_attrs <- list(...)
 
+  # `...` is a deliberate escape hatch for extra metadata, but it also swallows
+  # misspelled argument names in silence -- `case_col = "n"` sets a useless
+  # attribute and leaves the data typed as a linelist. Warn when an unmatched
+  # name is close enough to a real one to be a typo.
+  .warn_near_miss_dots(names(other_attrs))
+
   # === 3. Attribute Assignment ===
   data <- dplyr::as_tibble(data)
 
@@ -701,4 +714,52 @@ tbl_now <- function(data,
 
   data[[new_col_name]] <- new_vals
   return(data)
+}
+
+#' Warn when a name passed through `...` looks like a misspelled argument
+#'
+#' `tbl_now()` keeps unmatched `...` names as user metadata, which means a typo
+#' in a real argument name is accepted without complaint. This flags the names
+#' that are within a small edit distance of one of `tbl_now()`'s own arguments,
+#' which is the case that is almost never intentional.
+#'
+#' @param dot_names Character vector of names supplied through `...`.
+#'
+#' @return `NULL`, invisibly. Called for the warning.
+#'
+#' @keywords internal
+#' @noRd
+.warn_near_miss_dots <- function(dot_names) {
+  if (length(dot_names) == 0) {
+    return(invisible(NULL))
+  }
+  dot_names <- dot_names[nzchar(dot_names)]
+  if (length(dot_names) == 0) {
+    return(invisible(NULL))
+  }
+
+  known <- setdiff(names(formals(tbl_now)), c("data", "...", "verbose"))
+
+  # A typo is short-range: at most a third of the longer of the two names, capped
+  # at three edits. Scaling by the LONGER name is what lets `case_col` reach
+  # `case_count` (distance 3) while `data_source` stays clear of `data_type`
+  # (distance 5). Only the single closest argument is offered.
+  for (supplied in dot_names) {
+    distances <- utils::adist(supplied, known)[1, ]
+    budgets <- pmin(3L, pmax(1L, floor(pmax(nchar(supplied), nchar(known)) / 3)))
+    # Typos rarely change the first letter, and requiring it to match is what
+    # keeps `source` from being read as a misspelling of `force`.
+    same_initial <- substr(known, 1, 1) == substr(supplied, 1, 1)
+    hits <- known[distances <= budgets & same_initial & known != supplied]
+    if (length(hits) == 0) next
+    closest <- hits[which.min(distances[known %in% hits])]
+    cli::cli_warn(c(
+      "{.arg {supplied}} is not an argument of {.fn tbl_now}; it was stored as
+       metadata instead.",
+      "i" = "Did you mean {.arg {closest}}?",
+      "!" = "If {.arg {supplied}} really is metadata you meant to attach, this
+             warning is safe to ignore."
+    ))
+  }
+  invisible(NULL)
 }

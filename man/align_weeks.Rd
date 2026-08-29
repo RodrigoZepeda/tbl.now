@@ -7,24 +7,24 @@
 \alias{week_2_date}
 \title{Put weekly data on a common weekday}
 \usage{
-align_weeks(.data, align_on_day = 1, type = "epi", ...)
+align_weeks(.data, align_on_day = 7, type = "epi", ...)
 
 \method{align_weeks}{data.frame}(
   .data,
-  align_on_day = 1,
+  align_on_day = 7,
   type = "epi",
   ...,
   date_col,
   new_date_col = NULL
 )
 
-\method{align_weeks}{tbl_now}(.data, align_on_day = 1, type = "epi", ...)
+\method{align_weeks}{tbl_now}(.data, align_on_day = 7, type = "epi", ...)
 
 week_2_date(
   .data,
   week_col,
   year_col,
-  align_on_day = 1,
+  align_on_day = 7,
   week_fun = lubridate::epiweek,
   year_fun = lubridate::epiyear,
   date_col_name = "date"
@@ -33,9 +33,11 @@ week_2_date(
 \arguments{
 \item{.data}{A \code{data.frame}, tibble or \code{tbl_now}.}
 
-\item{align_on_day}{Integer 1-7 giving the weekday to align to, in
-\code{\link[lubridate:wday]{lubridate::wday()}} numbering (\strong{1 = Sunday}, 7 = Saturday). Defaults to
-Sunday, the usual start of an epidemiological week.}
+\item{align_on_day}{Integer 1-7 giving the weekday to align to, in ISO
+numbering: \strong{1 = Monday}, 2 = Tuesday, ..., \strong{7 = Sunday}. This is
+\code{\link[lubridate:wday]{lubridate::wday()}} with \code{week_start = 1}, the same convention
+\code{\link[=is_weekday]{is_weekday()}} uses. Defaults to \code{7} (Sunday), the start of an
+epidemiological week.}
 
 \item{type}{Either \code{"epi"} (default) or \code{"iso"}, choosing whether week and
 year are read with \code{\link[lubridate:epiweek]{lubridate::epiweek()}} or \code{\link[lubridate:isoweek]{lubridate::isoweek()}}.}
@@ -97,14 +99,6 @@ which convention to use: \code{"epi"} uses \code{\link[lubridate:epiweek]{lubrid
 Useful whenever week boundaries differ between systems or between years,
 which is the normal state of affairs for epiweek and ISO week data.
 }
-\section{A warning about weekday numbers}{
-
-\code{align_on_day} uses \code{\link[lubridate:wday]{lubridate::wday()}}'s \strong{default} numbering, in which
-\strong{1 = Sunday} and 7 = Saturday. This is \emph{not} the numbering
-\code{\link[=is_weekday]{is_weekday()}} uses for its \code{weekend_days} argument, which is \code{week_start = 1}
-(1 = Monday). If you are passing weekday numbers to both, check each one.
-}
-
 \examples{
 ## ---- Plain data frames ------------------------------------------------
 
@@ -117,8 +111,8 @@ aligned <- align_weeks(df, date_col = date)
 aligned
 weekdays(aligned$date_aligned)
 
-# Or to Tuesday (3 = Tuesday, because 1 = Sunday).
-align_weeks(df, date_col = date, align_on_day = 3)
+# Or to Tuesday. Weekday numbers are ISO: 1 = Monday, so Tuesday is 2.
+align_weeks(df, date_col = date, align_on_day = 2)
 
 ## ---- A tbl_now: making the delays whole numbers -------------------------
 
@@ -157,7 +151,7 @@ week_2_date(df,
 }
 \seealso{
 \code{\link[=tbl_now]{tbl_now()}}, whose \code{align_weeks = TRUE} argument does this at construction
-time; \code{\link[=is_weekday]{is_weekday()}} (but mind the different weekday numbering);
+time; \code{\link[=is_weekday]{is_weekday()}}, which numbers weekdays the same way;
 \code{\link[=complete_zeroes]{complete_zeroes()}} for filling the weeks where nothing was reported;
 \code{\link[=temporal_effects]{temporal_effects()}} for using week-of-year as a model term.
 }

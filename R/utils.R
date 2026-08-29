@@ -2,7 +2,7 @@
 #'
 #' Checks if attribute exists in object and returns `default` if not
 #'
-#' `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('experimental')`
 #'
 #' @param x An object with attribute `name`
 #' @param name The name of the attribute in `x`
@@ -40,17 +40,11 @@ attr_default <- function(x, name, default = NULL) {
 #' @return A logical vector, `TRUE` where the date is a weekday and `FALSE` where
 #' it falls on the weekend.
 #'
-#' @section A warning about weekday numbers:
-#' The numeric form of `weekend_days` counts from **Monday** (1 = Monday). The
-#' `align_on_day` argument of [align_weeks()] counts from **Sunday**
-#' (1 = Sunday). They are different conventions; check each call separately, or
-#' use the character form here, which is unambiguous.
-#'
 #' @seealso
 #' [temporal_effects()] and [add_temporal_effects()], which use this to build the
 #' day-of-week and weekend terms a model can fit;
 #' [plot_day_of_week_effects()][calendar_effect_plots] to see the effect in the
-#' data; [align_weeks()] for putting weekly data on a common weekday.
+#' data; [align_weeks()], whose `align_on_day` uses this same ISO numbering.
 #'
 #' @examples
 #' is_weekday(as.Date("2020-04-22")) # TRUE (Wed)

@@ -30,14 +30,6 @@ strongest and most predictable patterns in surveillance data. This tells you
 which days are which, and lets you say what "weekend" means -- it is Friday
 and Saturday in much of the Middle East, and Sunday alone in some countries.
 }
-\section{A warning about weekday numbers}{
-
-The numeric form of \code{weekend_days} counts from \strong{Monday} (1 = Monday). The
-\code{align_on_day} argument of \code{\link[=align_weeks]{align_weeks()}} counts from \strong{Sunday}
-(1 = Sunday). They are different conventions; check each call separately, or
-use the character form here, which is unambiguous.
-}
-
 \examples{
 is_weekday(as.Date("2020-04-22")) # TRUE (Wed)
 is_weekday(as.Date("2020-04-19")) # FALSE (Sun)
@@ -57,5 +49,5 @@ is_weekday(as.Date("2020-04-20"), weekend_days = c(7, 1))
 \code{\link[=temporal_effects]{temporal_effects()}} and \code{\link[=add_temporal_effects]{add_temporal_effects()}}, which use this to build the
 day-of-week and weekend terms a model can fit;
 \link[=calendar_effect_plots]{plot_day_of_week_effects()} to see the effect in the
-data; \code{\link[=align_weeks]{align_weeks()}} for putting weekly data on a common weekday.
+data; \code{\link[=align_weeks]{align_weeks()}}, whose \code{align_on_day} uses this same ISO numbering.
 }

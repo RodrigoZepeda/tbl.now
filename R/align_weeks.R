@@ -24,17 +24,13 @@
 #' [lubridate::epiyear()], `"iso"` uses [lubridate::isoweek()] /
 #' [lubridate::isoyear()].
 #'
-#' @section A warning about weekday numbers:
-#' `align_on_day` uses [lubridate::wday()]'s **default** numbering, in which
-#' **1 = Sunday** and 7 = Saturday. This is *not* the numbering
-#' [is_weekday()] uses for its `weekend_days` argument, which is `week_start = 1`
-#' (1 = Monday). If you are passing weekday numbers to both, check each one.
-#'
 #' @param .data A `data.frame`, tibble or `tbl_now`.
 #'
-#' @param align_on_day Integer 1-7 giving the weekday to align to, in
-#' [lubridate::wday()] numbering (**1 = Sunday**, 7 = Saturday). Defaults to
-#' Sunday, the usual start of an epidemiological week.
+#' @param align_on_day Integer 1-7 giving the weekday to align to, in ISO
+#' numbering: **1 = Monday**, 2 = Tuesday, ..., **7 = Sunday**. This is
+#' [lubridate::wday()] with `week_start = 1`, the same convention
+#' [is_weekday()] uses. Defaults to `7` (Sunday), the start of an
+#' epidemiological week.
 #'
 #' @param type Either `"epi"` (default) or `"iso"`, choosing whether week and
 #'   year are read with [lubridate::epiweek()] or [lubridate::isoweek()].
@@ -72,7 +68,7 @@
 #'
 #' @seealso
 #' [tbl_now()], whose `align_weeks = TRUE` argument does this at construction
-#' time; [is_weekday()] (but mind the different weekday numbering);
+#' time; [is_weekday()], which numbers weekdays the same way;
 #' [complete_zeroes()] for filling the weeks where nothing was reported;
 #' [temporal_effects()] for using week-of-year as a model term.
 #'
@@ -88,8 +84,8 @@
 #' aligned
 #' weekdays(aligned$date_aligned)
 #'
-#' # Or to Tuesday (3 = Tuesday, because 1 = Sunday).
-#' align_weeks(df, date_col = date, align_on_day = 3)
+#' # Or to Tuesday. Weekday numbers are ISO: 1 = Monday, so Tuesday is 2.
+#' align_weeks(df, date_col = date, align_on_day = 2)
 #'
 #' ## ---- A tbl_now: making the delays whole numbers -------------------------
 #'
@@ -127,7 +123,7 @@
 #'
 #' @name align_weeks
 #' @export
-align_weeks <- function(.data, align_on_day = 1, type = "epi", ...) {
+align_weeks <- function(.data, align_on_day = 7, type = "epi", ...) {
   UseMethod("align_weeks")
 }
 
@@ -135,7 +131,7 @@ align_weeks <- function(.data, align_on_day = 1, type = "epi", ...) {
 #' @export
 #' @rdname align_weeks
 align_weeks.data.frame <- function(.data,
-                                   align_on_day = 1,
+                                   align_on_day = 7,
                                    type = "epi",
                                    ...,
                                    date_col,
@@ -180,7 +176,7 @@ align_weeks.data.frame <- function(.data,
 
 #' @export
 #' @rdname align_weeks
-align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
+align_weeks.tbl_now <- function(.data, align_on_day = 7, type = "epi", ...) {
   event_col <- get_event_date(.data)
   report_col <- get_report_date(.data)
   # The THIRD date has to be aligned too. Left on its own weekday grid the
@@ -274,7 +270,7 @@ align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
 week_2_date <- function(.data,
                         week_col,
                         year_col,
-                        align_on_day = 1,
+                        align_on_day = 7,
                         week_fun = lubridate::epiweek,
                         year_fun = lubridate::epiyear,
                         date_col_name = "date") {
@@ -316,7 +312,7 @@ week_2_date <- function(.data,
     dplyr::mutate(
       !!as.symbol(week_col) := week_fun(!!as.symbol(date_col_name)),
       !!as.symbol(year_col) := year_fun(!!as.symbol(date_col_name)),
-      !!as.symbol("day_of_week") := lubridate::wday(!!as.symbol(date_col_name), label = FALSE)
+      !!as.symbol("day_of_week") := lubridate::wday(!!as.symbol(date_col_name), label = FALSE, week_start = 1)
     ) |>
     dplyr::filter(!!as.symbol("day_of_week") == align_on_day) |>
     dplyr::select(-!!as.symbol("day_of_week"))

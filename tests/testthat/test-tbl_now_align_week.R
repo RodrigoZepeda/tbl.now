@@ -71,17 +71,18 @@ test_that("align_weeks works with and without quotes", {
 test_that("align_weeks aligns dates to the specified weekday", {
   test_data <- setup_test_data()
 
-  # Align to Sunday (1)
-  out_sun <- align_weeks(test_data$mixed_weekdays, date_col = date, align_on_day = 1)
-  expect_true(all(lubridate::wday(out_sun$date_aligned) == 1))
+  # ISO numbering: 1 = Monday ... 7 = Sunday
+  # Align to Sunday (7)
+  out_sun <- align_weeks(test_data$mixed_weekdays, date_col = date, align_on_day = 7)
+  expect_true(all(lubridate::wday(out_sun$date_aligned, week_start = 1) == 7))
 
-  # Align to Monday (2)
-  out_mon <- align_weeks(test_data$mixed_weekdays, date_col = date, align_on_day = 2)
-  expect_true(all(lubridate::wday(out_mon$date_aligned) == 2))
+  # Align to Monday (1)
+  out_mon <- align_weeks(test_data$mixed_weekdays, date_col = date, align_on_day = 1)
+  expect_true(all(lubridate::wday(out_mon$date_aligned, week_start = 1) == 1))
 
-  # Align to Tuesday (3)
-  out_tue <- align_weeks(test_data$mixed_weekdays, date_col = date, align_on_day = 3)
-  expect_true(all(lubridate::wday(out_tue$date_aligned) == 3))
+  # Align to Tuesday (2)
+  out_tue <- align_weeks(test_data$mixed_weekdays, date_col = date, align_on_day = 2)
+  expect_true(all(lubridate::wday(out_tue$date_aligned, week_start = 1) == 2))
 })
 
 test_that("align_weeks supports both epi and iso week types", {
@@ -219,11 +220,11 @@ test_that("align_weeks.tbl_now aligns both event and report dates", {
     verbose = FALSE
   )
 
-  result <- align_weeks(flu_tbl, align_on_day = 1)
+  result <- align_weeks(flu_tbl, align_on_day = 7)
 
-  # Both dates should be aligned to Sunday (1)
-  expect_true(all(lubridate::wday(result[[get_event_date(result)]]) == 1))
-  expect_true(all(lubridate::wday(result[[get_report_date(result)]]) == 1))
+  # Both dates should be aligned to Sunday (7 in ISO numbering)
+  expect_true(all(lubridate::wday(result[[get_event_date(result)]], week_start = 1) == 7))
+  expect_true(all(lubridate::wday(result[[get_report_date(result)]], week_start = 1) == 7))
 })
 
 test_that("align_weeks.tbl_now produces integer delays", {
@@ -282,8 +283,8 @@ test_that("align_weeks.tbl_now works with different align_on_day values", {
   # Test multiple alignment days
   for (day in 1:7) {
     result <- align_weeks(dengue_tbl, align_on_day = day)
-    expect_true(all(lubridate::wday(result[[get_event_date(result)]]) == day))
-    expect_true(all(lubridate::wday(result[[get_report_date(result)]]) == day))
+    expect_true(all(lubridate::wday(result[[get_event_date(result)]], week_start = 1) == day))
+    expect_true(all(lubridate::wday(result[[get_report_date(result)]], week_start = 1) == day))
   }
 })
 
@@ -356,7 +357,7 @@ test_that("week_2_date aligns to the correct weekday", {
       align_on_day = day
     )
 
-    expect_true(all(lubridate::wday(out$date) == day))
+    expect_true(all(lubridate::wday(out$date, week_start = 1) == day))
   }
 })
 
