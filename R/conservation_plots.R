@@ -37,6 +37,14 @@
   )
 }
 
+#' Does this `tbl_now` carry any strata?
+#'
+#' @param x A `tbl_now` object.
+#'
+#' @return `TRUE` when the object declares at least one stratum.
+#'
+#' @keywords internal
+#' @noRd
 .batch_has_strata <- function(x) length(get_strata(x)) > 0L
 
 #' Report dates (and strata) that `diagnose_batches()` confirms as batches.

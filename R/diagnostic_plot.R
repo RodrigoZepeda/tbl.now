@@ -13,6 +13,19 @@
 .DIAG_ZERO_COLOUR <- "#C4D5DE"
 
 # --- shared count scales, so every count legend looks the same ---------------
+
+#' The count colour scale shared by every diagnostic panel
+#'
+#' Defined once so that a count means the same colour in every plot the gallery
+#' draws.
+#'
+#' @param palette A named colour palette (see `.tbl_now_palette()`).
+#' @param aesthetic Which aesthetic to build the scale for.
+#'
+#' @return A \pkg{ggplot2} scale.
+#'
+#' @keywords internal
+#' @noRd
 .diag_count_scale <- function(palette, aesthetic = c("fill", "colour")) {
   aesthetic <- match.arg(aesthetic)
   fun <- if (aesthetic == "fill") ggplot2::scale_fill_gradient else ggplot2::scale_colour_gradient
@@ -20,6 +33,14 @@
       trans = "sqrt", labels = scales::label_comma())
 }
 
+#' A y axis with thousands separators
+#'
+#' Case counts run to five and six figures, which are unreadable unquoted.
+#'
+#' @return A \pkg{ggplot2} scale.
+#'
+#' @keywords internal
+#' @noRd
 .diag_comma_axis <- function() ggplot2::scale_y_continuous(labels = scales::label_comma())
 
 #' Shared context (increments, units, now, delay cap) for the diagnostic panels.

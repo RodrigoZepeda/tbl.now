@@ -302,7 +302,6 @@ diagnose_batches <- function(x,
 #'   `.stratum`.
 #' @keywords internal
 #' @noRd
-
 .batch_report_increments <- function(data, axis = c("report", "confirmation")) {
   axis <- match.arg(axis)
   observations <- as.data.frame(data)
