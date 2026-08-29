@@ -62,6 +62,19 @@ The draw-keeping backends -- \code{baselinenowcast}, \code{diseasenowcasting},
 ensemble weights derived from one. Defaults to the method name. Give one
 when the same package appears twice with different settings, which is the
 whole reason two \code{diseasenowcasting} models can be weighted separately.}
+
+\item{engine}{An \code{\link[=engine]{engine()}} object -- the modelling package plus its
+arguments. S3 dispatch is on its class, so a backend for \code{"mypackage"} is a
+function called \code{nowcast_fit.mypackage()}. The whole engine arrives, not
+just its name, so \code{engine$args}, \code{engine$label} and the rest are available
+to a backend that wants them.}
+
+\item{x}{A \code{tbl_now} object.}
+
+\item{verbose}{Logical. Whether the backend (and the converters feeding it)
+should be chatty.}
+
+\item{fit}{The object returned by \code{\link[=nowcast_fit]{nowcast_fit()}}.}
 }
 \value{
 A \code{nowcast_engine} object, as \code{\link[=engine]{engine()}} returns, that

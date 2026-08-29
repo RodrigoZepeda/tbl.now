@@ -39,6 +39,8 @@
 #' @param spread Non-negative number setting the width of the interval, as a
 #'   fraction of the point estimate. `0` gives a point mass at the median.
 #' @inheritParams engine
+#' @inheritParams nowcast_fit
+#' @inheritParams nowcast_tidy
 #'
 #' @return A `nowcast_engine` object, as [engine()] returns, that
 #'   [run_nowcast()] and [nowcast_backtest()] accept.
