@@ -160,7 +160,8 @@ arguments of that package's own entry point spelled out, so the ones that
 matter are visible in the signature and a typo is an error rather than a
 silently ignored extra.
 
-\code{vignette("nowcasting-models")} documents each package's own API; this page
+The \href{https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html}{\emph{One dataset, many nowcasts} article}
+documents each package's own API; this page
 is about driving it through \code{\link[=run_nowcast]{run_nowcast()}}.
 }
 \examples{

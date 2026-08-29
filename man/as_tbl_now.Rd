@@ -45,13 +45,13 @@ as_tbl_now(object, ...)
 \item{...}{Additional arguments forwarded to the relevant \verb{tbl_now_from_*()}
 converter (and therefore to \code{\link[=tbl_now]{tbl_now()}}).}
 
-\item{event_date, report_date}{The event- and report-date columns. For
-\code{data.frame}, \code{data.table} and \code{tbl_now} inputs these are
+\item{event_date, report_date}{The event- and report-date columns, as
 \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
-expressions, so a bare column name works. For a \code{tbl_ts} (tsibble) they must
-be given as \strong{character strings}, and \code{event_date} defaults to the tsibble
-index. They are \strong{not} arguments of the package-conversion methods
-(epinowcast, baselinenowcast, epidist), which carry their own date mapping.}
+expressions -- a bare column name or a string both work. Used for
+\code{data.frame}, \code{data.table}, \code{tbl_ts} (tsibble) and \code{tbl_now} inputs; for a
+tsibble, \code{event_date} defaults to the index. They are \strong{not} arguments of
+the package-conversion methods (epinowcast, baselinenowcast, epidist), which
+carry their own date mapping.}
 }
 \value{
 A \code{tbl_now} object.
@@ -92,15 +92,17 @@ be supplied here too.
 data(denguedat)
 as_tbl_now(denguedat, event_date = "onset_week", report_date = "report_week")
 
-# For an object built by another nowcasting package you do not name them,
+# For an object built by another nowcasting package you often do not name them,
 # because that format already fixes which column is the event date and which
 # is the report date. Here we send a tbl_now out to tsibble and bring it back.
 if (requireNamespace("tsibble", quietly = TRUE)) {
   ndata <- tbl_now(denguedat,
     event_date = onset_week, report_date = report_week, verbose = FALSE
   )
-  ts <- tbl_now_to_tsibble(ndata)
-  as_tbl_now(ts, event_date = "onset_week", report_date = "report_week")
+  ts <- suppressWarnings(tbl_now_to_tsibble(ndata, verbose = FALSE))
+
+  # Bare names and strings both work.
+  as_tbl_now(ts, event_date = onset_week, report_date = report_week)
 }
 
 }

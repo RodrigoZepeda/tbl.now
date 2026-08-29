@@ -58,4 +58,10 @@ tn <- tbl_now(
 )
 tn
 }
-\keyword{covid}
+\seealso{
+\code{\link[=tbl_now]{tbl_now()}} to declare the date columns; \link[=tbl_now_summary]{summary()} and
+\code{\link[=diagnose]{diagnose()}} to inspect the result; the package's other datasets --
+\link{denguedat}, \link{mpoxdat}, \link{flusight}, \link{covid_colombia}, \link{covid_us} and
+\link{hai_bucaramanga}.
+}
+\keyword{datasets}

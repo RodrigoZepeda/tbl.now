@@ -76,7 +76,7 @@
 
 #' @rdname nowcast_fit
 #' @export
-nowcast_fit.diseasenowcasting <- function(method, x, ...,
+nowcast_fit.diseasenowcasting <- function(engine, x, ...,
                                           quantile_levels = nowcast_quantile_levels(),
                                           verbose = TRUE) {
   .need_pkg("diseasenowcasting")
@@ -111,7 +111,7 @@ nowcast_fit.diseasenowcasting <- function(method, x, ...,
 
 #' @rdname nowcast_tidy
 #' @export
-nowcast_tidy.diseasenowcasting <- function(method, fit, x, ..., quantile_levels) {
+nowcast_tidy.diseasenowcasting <- function(engine, fit, x, ..., quantile_levels) {
   prediction <- stats::predict(fit)
 
   event_col <- get_event_date(x)
@@ -165,7 +165,7 @@ nowcast_tidy.diseasenowcasting <- function(method, fit, x, ..., quantile_levels)
 
 #' @rdname nowcast_fit
 #' @export
-nowcast_fit.baselinenowcast <- function(method, x, ..., draws = 1000,
+nowcast_fit.baselinenowcast <- function(engine, x, ..., draws = 1000,
                                         delays_unit = NULL,
                                         quantile_levels = nowcast_quantile_levels(),
                                         verbose = TRUE) {
@@ -214,7 +214,7 @@ nowcast_fit.baselinenowcast <- function(method, x, ..., draws = 1000,
 
 #' @rdname nowcast_tidy
 #' @export
-nowcast_tidy.baselinenowcast <- function(method, fit, x, ..., quantile_levels) {
+nowcast_tidy.baselinenowcast <- function(engine, fit, x, ..., quantile_levels) {
   event_col <- get_event_date(x)
 
   tidy_one <- function(samples) {
@@ -247,7 +247,7 @@ nowcast_tidy.baselinenowcast <- function(method, fit, x, ..., quantile_levels) {
 
 #' @rdname nowcast_fit
 #' @export
-nowcast_fit.epinowcast <- function(method, x, ..., preprocess_args = list(),
+nowcast_fit.epinowcast <- function(engine, x, ..., preprocess_args = list(),
                                    quantile_levels = nowcast_quantile_levels(),
                                    verbose = TRUE) {
   .need_pkg("epinowcast")
@@ -265,7 +265,7 @@ nowcast_fit.epinowcast <- function(method, x, ..., preprocess_args = list(),
 
 #' @rdname nowcast_tidy
 #' @export
-nowcast_tidy.epinowcast <- function(method, fit, x, ..., quantile_levels) {
+nowcast_tidy.epinowcast <- function(engine, fit, x, ..., quantile_levels) {
   event_col <- get_event_date(x)
   strata_cols <- get_strata(x) %||% character(0)
 
@@ -314,7 +314,7 @@ nowcast_tidy.epinowcast <- function(method, fit, x, ..., quantile_levels) {
 
 #' @rdname nowcast_fit
 #' @export
-nowcast_fit.NobBS <- function(method, x, ..., specs = list(),
+nowcast_fit.NobBS <- function(engine, x, ..., specs = list(),
                               quantile_levels = nowcast_quantile_levels(),
                               verbose = TRUE) {
   .need_pkg("NobBS")
@@ -355,7 +355,7 @@ nowcast_fit.NobBS <- function(method, x, ..., specs = list(),
 
 #' @rdname nowcast_tidy
 #' @export
-nowcast_tidy.NobBS <- function(method, fit, x, ..., quantile_levels) {
+nowcast_tidy.NobBS <- function(engine, fit, x, ..., quantile_levels) {
   event_col <- get_event_date(x)
   strata_cols <- get_strata(x) %||% character(0)
 
@@ -611,7 +611,7 @@ nowcast_tidy.NobBS <- function(method, fit, x, ..., quantile_levels) {
 
 #' @rdname nowcast_fit
 #' @export
-nowcast_fit.surveillance <- function(method, x, ..., when = NULL, D = NULL,
+nowcast_fit.surveillance <- function(engine, x, ..., when = NULL, D = NULL,
                                      fit_method = "bayes.notrunc.bnb",
                                      control = list(),
                                      quantile_levels = nowcast_quantile_levels(),
@@ -722,7 +722,7 @@ nowcast_fit.surveillance <- function(method, x, ..., when = NULL, D = NULL,
 
 #' @rdname nowcast_tidy
 #' @export
-nowcast_tidy.surveillance <- function(method, fit, x, ..., quantile_levels) {
+nowcast_tidy.surveillance <- function(engine, fit, x, ..., quantile_levels) {
   fits <- if (inherits(fit, "surveillance_strata")) fit else list(all = fit)
 
   tidied <- dplyr::bind_rows(lapply(names(fits), function(label) {
@@ -738,7 +738,7 @@ nowcast_tidy.surveillance <- function(method, fit, x, ..., quantile_levels) {
 
 #' @rdname nowcast_fit
 #' @export
-nowcast_fit.EpiNow2 <- function(method, x, ..., convert_args = list(), # nolint: object_name_linter.
+nowcast_fit.EpiNow2 <- function(engine, x, ..., convert_args = list(), # nolint: object_name_linter.
                                 quantile_levels = nowcast_quantile_levels(),
                                 verbose = TRUE) {
   .need_pkg("EpiNow2")
@@ -809,7 +809,7 @@ nowcast_fit.EpiNow2 <- function(method, x, ..., convert_args = list(), # nolint:
 
 #' @rdname nowcast_tidy
 #' @export
-nowcast_tidy.EpiNow2 <- function(method, fit, x, ..., quantile_levels) { # nolint: object_name_linter.
+nowcast_tidy.EpiNow2 <- function(engine, fit, x, ..., quantile_levels) { # nolint: object_name_linter.
   event_col <- get_event_date(x)
   strata_cols <- get_strata(x) %||% character(0)
 

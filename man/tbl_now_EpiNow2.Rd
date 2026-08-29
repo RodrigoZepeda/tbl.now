@@ -39,7 +39,10 @@ windows rather than on a grid.}
 
 \item{verbose}{Logical. Print the choices that were made.}
 
-\item{quiet}{Logical. If \code{TRUE}, suppress the lossy-conversion warning.}
+\item{quiet}{Logical. A \emph{different} channel from \code{verbose}: \code{verbose}
+controls the informational summary of what the conversion did, while \code{quiet}
+suppresses the lossy-conversion warning. Set both to keep a conversion
+entirely silent.}
 
 \item{data}{A \link{tbl_now_epinow2_snapshots}, or a plain list of \code{date}/\code{confirm}
 data frames (e.g. \code{EpiNow2::example_truncated}), in which case

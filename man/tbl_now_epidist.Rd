@@ -54,7 +54,9 @@ covariate columns (\code{to}).}
 of the censoring windows. If \code{NULL} (default) it is derived from the
 \code{tbl_now} \code{event_units}.}
 
-\item{quiet}{Logical. If \code{TRUE}, suppress the lossy-conversion warning emitted
+\item{quiet}{Logical. A \emph{different} channel from \code{verbose}: \code{verbose}
+controls the informational summary of what the conversion did, while \code{quiet}
+suppresses the lossy-conversion \strong{warning} emitted
 by \code{tbl_now_to_epidist()}.}
 }
 \value{
@@ -197,4 +199,16 @@ get_data_type(nowagg)
 # ... and back to an epidist_aggregate_data (auto-detected from the counts)
 tbl_now_to_epidist(nowagg)
 \dontshow{\}) # examplesIf}
+}
+\seealso{
+\link{confirmation_setters} and \link{confirmation_delay}, since \pkg{epidist} is about
+delay distributions and a \code{tbl_now} may carry two of them;
+\code{\link[=censor_delays_above]{censor_delays_above()}} for the long delays that would otherwise dominate a
+fitted distribution;
+\link[=tidy.epidist_fit]{tidy()} for the fitted result.
+\code{\link[=as_tbl_now]{as_tbl_now()}} for the generic that dispatches to the \verb{*_from_*()} side;
+\code{\link[=run_nowcast]{run_nowcast()}}, which does the conversion for you when you fit through an
+\code{\link[=engine]{engine()}}. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html}{\emph{One dataset, many nowcasts} article}
+fits the same data with every supported package.
 }

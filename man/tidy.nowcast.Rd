@@ -136,3 +136,13 @@ fit <- baselinenowcast::baselinenowcast(
 tidy(fit)
 \dontshow{\}) # examplesIf}
 }
+\seealso{
+\code{\link[=run_nowcast]{run_nowcast()}} and \link[=tidy.tbl_nowcast]{tidy()}, which give you this shape
+without needing to call the modelling package yourself;
+\link[=tidy.nowcast_backtest]{tidy()} for a backtest;
+\code{\link[=tidy.epidist_fit]{tidy.epidist_fit()}} and \code{\link[=tidy.estimate_dist]{tidy.estimate_dist()}} for fitted \emph{delay
+distributions} rather than case counts;
+\code{\link[=score_nowcast]{score_nowcast()}} to score the result. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html}{\emph{One dataset, many nowcasts} article}
+shows each engine's native output next to this one.
+}

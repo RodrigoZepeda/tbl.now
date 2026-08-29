@@ -154,7 +154,6 @@ reference:
   - nowcast_weights
   - nowcast_backtest
   - score_nowcast
-  - as_scoringutils
 
 - title: Converters
   desc: Out to the modelling packages, and back again.
@@ -187,8 +186,6 @@ reference:
   contents:
   - as_tibble.tbl_now
   - assign_tbl
-  - names_tbl_now
-  - money_tbl_now
 
 - title: Datasets
   contents:

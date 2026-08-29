@@ -1315,7 +1315,9 @@
 #' @param preprocess If `TRUE` (default) returns an `enw_preprocess_data`
 #'   object; if `FALSE` returns the completed observation `data.table`.
 #' @param verbose Logical. Print the choices that were made.
-#' @param quiet Logical. If `TRUE`, suppress the lossy-conversion warning emitted
+#' @param quiet Logical. A *different* channel from `verbose`: `verbose`
+#'   controls the informational summary of what the conversion did, while `quiet`
+#'   suppresses the lossy-conversion **warning** emitted
 #'   by `tbl_now_to_epinowcast()` (see the Round-trip section).
 #' @param ... Additional arguments forwarded to [as_tbl_now()] (for `from`)
 #'   or to [epinowcast::enw_preprocess_data()] (for `to`).
@@ -1394,6 +1396,17 @@
 #'
 #' @inheritSection tbl_now_baselinenowcast Negative delays
 #' @inheritSection tbl_now_baselinenowcast Censored delays
+#' @seealso
+#' [engine_epinowcast()][nowcast_engines] to fit through this package rather than
+#' converting by hand; [align_weeks()], because \pkg{epinowcast} lays its grid out
+#' in whole timesteps; [complete_zeroes()] to fill the grid;
+#' [tidy()][tidy.nowcast] for the fitted result.
+#' [as_tbl_now()] for the generic that dispatches to the `*_from_*()` side;
+#' [run_nowcast()], which does the conversion for you when you fit through an
+#' [engine()]. The
+#' [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' fits the same data with every supported package.
+#'
 #' @name tbl_now_epinowcast
 #' @export
 tbl_now_from_epinowcast <- function(data, ...,
@@ -1598,6 +1611,18 @@ tbl_now_from_epinowcast <- function(data, ...,
 #' [tbl_now_to_epidist()] is the exception and keeps the flag: estimating a
 #' delay distribution is the one job that can use it.
 #'
+#' @seealso
+#' [engine_baselinenowcast()][nowcast_engines] to fit through this package
+#' rather than converting by hand;
+#' [to_count()], because a reporting triangle needs non-negative increments and
+#' de-accumulating a revised cumulative series can produce negative ones;
+#' [complete_zeroes()] to fill the grid first.
+#' [as_tbl_now()] for the generic that dispatches to the `*_from_*()` side;
+#' [run_nowcast()], which does the conversion for you when you fit through an
+#' [engine()]. The
+#' [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' fits the same data with every supported package.
+#'
 #' @name tbl_now_baselinenowcast
 #' @export
 tbl_now_from_baselinenowcast <- function(data, ...,
@@ -1667,7 +1692,9 @@ tbl_now_from_baselinenowcast <- function(data, ...,
 #'
 #' @param data A `data.table`.
 #' @param x A `tbl_now` object.
-#' @param event_date,report_date Column names (passed to [as_tbl_now()]).
+#' @param event_date,report_date The event- and report-date columns, as
+#'   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#'   expressions: a bare column name or a string both work.
 #' @param verbose Logical. Print the choices that were made.
 #' @param ... Forwarded to [as_tbl_now()] (`from`) or
 #'   [data.table::as.data.table()] (`to`).
@@ -1681,6 +1708,17 @@ tbl_now_from_baselinenowcast <- function(data, ...,
 #'   event_date = "onset_week",
 #'   report_date = "report_week", verbose = FALSE
 #' )
+#' @seealso
+#' [as.data.table()][tbl_now_coercion_methods], the \pkg{data.table} method that
+#' calls this; [as_tibble()][as_tibble.tbl_now] and
+#' [as_tsibble()][tbl_now_coercion_methods] for the other exits from the class;
+#' [tbl_now()] to build one from the result.
+#' [as_tbl_now()] for the generic that dispatches to the `*_from_*()` side;
+#' [run_nowcast()], which does the conversion for you when you fit through an
+#' [engine()]. The
+#' [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' fits the same data with every supported package.
+#'
 #' @name tbl_now_data_table
 #' @export
 tbl_now_from_data_table <- function(data, event_date, report_date, ...,
@@ -1691,7 +1729,16 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
     )
   }
 
+  # Capture before coercion so a bare column name resolves against the data,
+  # the way it does everywhere else in the package. Strings keep working:
+  # tidy-select accepts them.
+  event_quo <- rlang::enquo(event_date)
+  report_quo <- rlang::enquo(report_date)
+
   observations <- as.data.frame(data)
+
+  event_date <- .converter_select_one(event_quo, observations, "event_date")
+  report_date <- .converter_select_one(report_quo, observations, "report_date")
 
   result <- .build_tbl_now(
     observations,
@@ -1768,7 +1815,9 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'   of the censoring windows. If `NULL` (default) it is derived from the
 #'   `tbl_now` `event_units`.
 #' @param verbose Logical. Print the choices that were made.
-#' @param quiet Logical. If `TRUE`, suppress the lossy-conversion warning emitted
+#' @param quiet Logical. A *different* channel from `verbose`: `verbose`
+#'   controls the informational summary of what the conversion did, while `quiet`
+#'   suppresses the lossy-conversion **warning** emitted
 #'   by `tbl_now_to_epidist()`.
 #' @param ... Forwarded to [as_tbl_now()] (`from`) or to the relevant epidist
 #'   constructor (`to`).
@@ -1853,6 +1902,18 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' arguments against a 9-argument signature). The latent model is unaffected but
 #' expands counts to **one row per case**, so it is only practical on a short
 #' window. Check the epidist issue tracker for the current status.
+#'
+#' @seealso
+#' [confirmation_setters] and [confirmation_delay], since \pkg{epidist} is about
+#' delay distributions and a `tbl_now` may carry two of them;
+#' [censor_delays_above()] for the long delays that would otherwise dominate a
+#' fitted distribution;
+#' [tidy()][tidy.epidist_fit] for the fitted result.
+#' [as_tbl_now()] for the generic that dispatches to the `*_from_*()` side;
+#' [run_nowcast()], which does the conversion for you when you fit through an
+#' [engine()]. The
+#' [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' fits the same data with every supported package.
 #'
 #' @name tbl_now_epidist
 #' @export
@@ -1973,9 +2034,13 @@ tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
 #'
 #' @param data A `tbl_ts` (tsibble).
 #' @param x A `tbl_now` object.
-#' @param event_date Column name of the event date (for `from`); defaults to the
+#' @param event_date The event-date column (for `from`), as a
+#'   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#'   expression -- a bare column name or a string. Defaults to the
 #'   tsibble index.
-#' @param report_date Column name of the report date (required for `from`).
+#' @param report_date The report-date column (required for `from`), as a
+#'   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#'   expression -- a bare column name or a string.
 #' @param strata Optional character vector of strata columns (`from`). If `NULL`
 #'   (default) the tsibble key columns other than the date columns are used.
 #' @param index For `to`: which date becomes the tsibble index, `"event_date"`
@@ -1996,13 +2061,39 @@ tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
 #' ts   <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
 #' back <- tbl_now_from_tsibble(ts, report_date = "report_week", verbose = FALSE)
 #' @inheritSection tbl_now_baselinenowcast Censored delays
+#' @seealso
+#' [as_tsibble()][tbl_now_coercion_methods], the \pkg{tsibble} method that calls
+#' this; [to_count()], since a tsibble needs unique index/key rows and a line list
+#' has to be aggregated first; [align_weeks()] for regular weekly indexes.
+#' [as_tbl_now()] for the generic that dispatches to the `*_from_*()` side;
+#' [run_nowcast()], which does the conversion for you when you fit through an
+#' [engine()]. The
+#' [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' fits the same data with every supported package.
+#'
 #' @name tbl_now_tsibble
 #' @export
 tbl_now_from_tsibble <- function(data, report_date, event_date = NULL,
                                  strata = NULL, ..., verbose = TRUE) {
   .need_pkg("tsibble")
-  if (missing(report_date) || is.null(report_date)) {
+  if (missing(report_date)) {
     cli::cli_abort("Please supply the {.arg report_date} column name.")
+  }
+
+  # Resolved with tidy-select so a bare column name works here as it does in
+  # `tbl_now()`. Strings keep working, because tidy-select accepts them.
+  report_date <- .converter_select_one(
+    rlang::enquo(report_date), as.data.frame(data), "report_date"
+  )
+  event_quo <- rlang::enquo(event_date)
+  if (!rlang::quo_is_null(event_quo)) {
+    event_date <- .converter_select_one(
+      event_quo, as.data.frame(data), "event_date"
+    )
+  }
+  strata_quo <- rlang::enquo(strata)
+  if (!rlang::quo_is_null(strata_quo)) {
+    strata <- .converter_select_many(strata_quo, as.data.frame(data))
   }
 
   # `event_date` defaults to the tsibble index.
@@ -2605,7 +2696,10 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #' @param report_dates For `from`: a `Date` vector, one per snapshot, saying when
 #'   each was taken. Read from the object's attribute when it has one.
 #' @param verbose Logical. Print the choices that were made.
-#' @param quiet Logical. If `TRUE`, suppress the lossy-conversion warning.
+#' @param quiet Logical. A *different* channel from `verbose`: `verbose`
+#'   controls the informational summary of what the conversion did, while `quiet`
+#'   suppresses the lossy-conversion warning. Set both to keep a conversion
+#'   entirely silent.
 #' @param ... Forwarded to [as_tbl_now()] (`from`); unused (`to`).
 #'
 #' @return For `to`, a `data.frame` or a [tbl_now_epinow2_snapshots], according to
@@ -2981,6 +3075,25 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 #' @return `print()` returns `x` invisibly.
 #'
 #' @seealso [tbl_now_to_EpiNow2()], [as_tbl_now()]
+#'
+#' @examples
+#' data(denguedat)
+#' dengue <- tbl_now(denguedat[1:3000, ],
+#'   event_date = onset_week, report_date = report_week, verbose = FALSE
+#' )
+#'
+#' # A stack of snapshots: what the series looked like at each of several past
+#' # report dates. EpiNow2::estimate_truncation() uses these to learn how much
+#' # the most recent counts are still going to grow.
+#' snaps <- tbl_now_to_EpiNow2(dengue,
+#'   target = "estimate_truncation", verbose = FALSE, quiet = TRUE
+#' )
+#'
+#' # Printing summarises the stack rather than dumping every snapshot.
+#' snaps
+#'
+#' length(snaps)
+#' head(snaps[[1]])
 #'
 #' @name tbl_now_epinow2_snapshots
 NULL
@@ -3992,6 +4105,24 @@ get_surveillance_range <- function(x, ..., from = NULL, to = NULL, by = NULL) {
 #'
 #' @seealso [tbl_now_to_baselinenowcast()], [as_tbl_now()]
 #'
+#' @examples
+#' data(denguedat)
+#' dengue <- tbl_now(denguedat[1:3000, ],
+#'   event_date = onset_week, report_date = report_week, verbose = FALSE
+#' )
+#'
+#' # One reporting triangle per stratum, in the shape baselinenowcast wants.
+#' triangles <- suppressWarnings(
+#'   tbl_now_to_baselinenowcast(dengue, format = "triangle_list", verbose = FALSE)
+#' )
+#'
+#' # Printing summarises the set rather than dumping every matrix.
+#' triangles
+#'
+#' # It is a list underneath, so the usual accessors work.
+#' length(triangles)
+#' names(triangles)
+#'
 #' @name tbl_now_triangle_list
 NULL
 
@@ -4129,6 +4260,23 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
 #'
 #' @seealso [tbl_now_to_surveillance()], [as_tbl_now()], [tbl_now_triangle_list]
 #'
+#' @examples
+#' data(denguedat)
+#' dengue <- tbl_now(denguedat[1:3000, ],
+#'   event_date = onset_week, report_date = report_week, verbose = FALSE
+#' )
+#'
+#' # One line list per stratum, in the shape surveillance::nowcast() wants.
+#' linelists <- tbl_now_to_surveillance(dengue,
+#'   format = "linelist_list", verbose = FALSE
+#' )
+#'
+#' # Printing summarises the set rather than dumping every data frame.
+#' linelists
+#'
+#' length(linelists)
+#' head(linelists[[1]])
+#'
 #' @name tbl_now_surveillance_list
 NULL
 
@@ -4248,6 +4396,32 @@ as_tbl_now.tbl_now_surveillance_list <- function(object, ...) {
 #'
 #' @return The object produced by the corresponding `tbl_now_to_*()` converter.
 #'
+#' @seealso
+#' The `tbl_now_to_*()` functions these delegate to, which take the arguments:
+#' [tbl_now_to_epinowcast()], [tbl_now_to_baselinenowcast()],
+#' [tbl_now_to_epidist()], [tbl_now_to_tsibble()], [tbl_now_to_data_table()];
+#' [as_tbl_now()] to come back the other way;
+#' [as_tibble()][as_tibble.tbl_now] to drop to a plain tibble.
+#'
+#' @examples
+#' data(denguedat)
+#' dengue <- tbl_now(denguedat[1:3000, ],
+#'   event_date = onset_week, report_date = report_week, verbose = FALSE
+#' )
+#'
+#' # These are S3 methods, so the other package's own verb works directly on a
+#' # `tbl_now` -- no explicit converter call needed.
+#' if (requireNamespace("tsibble", quietly = TRUE)) {
+#'   suppressWarnings(tsibble::as_tsibble(dengue))
+#' }
+#'
+#' if (requireNamespace("data.table", quietly = TRUE)) {
+#'   head(data.table::as.data.table(dengue))
+#' }
+#'
+#' # Use the `tbl_now_to_*()` function itself when you need its arguments; these
+#' # methods take none beyond `verbose`.
+#'
 #' @name tbl_now_coercion_methods
 NULL
 
@@ -4279,4 +4453,45 @@ as_tsibble.tbl_now <- function(x, ..., verbose = FALSE) {
 #' @exportS3Method data.table::as.data.table
 as.data.table.tbl_now <- function(x, ..., verbose = FALSE) {
   tbl_now_to_data_table(x, ..., verbose = verbose)
+}
+
+#' Resolve one tidy-select column name inside a converter
+#'
+#' The `tbl_now_from_*()` converters historically took character strings while
+#' `tbl_now()` took tidy-select. These two helpers close that gap: a bare column
+#' name, a string, or a tidy-select helper all resolve to a single column name.
+#'
+#' @param quo A quosure captured with [rlang::enquo()].
+#' @param data The data frame to resolve against.
+#' @param arg Name of the argument, for the error message.
+#'
+#' @return A single column name.
+#'
+#' @keywords internal
+#' @noRd
+.converter_select_one <- function(quo, data, arg) {
+  selected <- .tbl_now_eval_select(quo, data)
+  if (length(selected) != 1) {
+    cli::cli_abort(
+      "{.arg {arg}} must select exactly one column; it selected {length(selected)}."
+    )
+  }
+  colnames(data)[selected]
+}
+
+#' Resolve several tidy-select column names inside a converter
+#'
+#' @param quo A quosure captured with [rlang::enquo()].
+#' @param data The data frame to resolve against.
+#'
+#' @return A character vector of column names, possibly empty.
+#'
+#' @keywords internal
+#' @noRd
+.converter_select_many <- function(quo, data) {
+  selected <- .tbl_now_eval_select(quo, data)
+  if (length(selected) == 0) {
+    return(NULL)
+  }
+  colnames(data)[selected]
 }

@@ -214,3 +214,15 @@ nowobj <- tbl_now_from_baselinenowcast(rt)
 identical(rt, tbl_now_to_baselinenowcast(nowobj))
 \dontshow{\}) # examplesIf}
 }
+\seealso{
+\link[=nowcast_engines]{engine_baselinenowcast()} to fit through this package
+rather than converting by hand;
+\code{\link[=to_count]{to_count()}}, because a reporting triangle needs non-negative increments and
+de-accumulating a revised cumulative series can produce negative ones;
+\code{\link[=complete_zeroes]{complete_zeroes()}} to fill the grid first.
+\code{\link[=as_tbl_now]{as_tbl_now()}} for the generic that dispatches to the \verb{*_from_*()} side;
+\code{\link[=run_nowcast]{run_nowcast()}}, which does the conversion for you when you fit through an
+\code{\link[=engine]{engine()}}. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html}{\emph{One dataset, many nowcasts} article}
+fits the same data with every supported package.
+}

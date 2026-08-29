@@ -97,6 +97,16 @@
 #' )
 #' tidy(fit)
 #'
+#' @seealso
+#' [run_nowcast()] and [tidy()][tidy.tbl_nowcast], which give you this shape
+#' without needing to call the modelling package yourself;
+#' [tidy()][tidy.nowcast_backtest] for a backtest;
+#' [tidy.epidist_fit()] and [tidy.estimate_dist()] for fitted *delay
+#' distributions* rather than case counts;
+#' [score_nowcast()] to score the result. The
+#' [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' shows each engine's native output next to this one.
+#'
 #' @name tidy.nowcast
 NULL
 
@@ -777,8 +787,31 @@ tidy.estimate_truncation <- function(x, probs = NULL, ...) {
 #' @returns A tibble with `term`, `estimate`, `conf.low`, `conf.high`, `level`
 #'   and `engine`.
 #'
-#' @seealso [tidy.epidist_fit()] for the \pkg{epidist} equivalent,
-#'   [tbl_now_to_EpiNow2()] for the conversion.
+#' @seealso
+#' [tidy.epidist_fit()] for the \pkg{epidist} equivalent, and the note above on
+#' why their `sd` values differ slightly;
+#' [tbl_now_to_EpiNow2()] for the conversion;
+#' [tidy()][tidy.nowcast] for tidying a *case-count* nowcast rather than a delay
+#' distribution; [confirmation_delay] for the delay this is estimating.
+#'
+#' @examplesIf requireNamespace("EpiNow2", quietly = TRUE)
+#' # Fitting needs Stan and takes minutes, so the fit itself is wrapped in
+#' # \donttest{}; the conversion above it runs.
+#' data(denguedat)
+#' nowobj <- tbl_now(denguedat,
+#'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
+#' )
+#'
+#' \donttest{
+#' delays <- tbl_now_to_EpiNow2(nowobj,
+#'   target = "estimate_truncation", verbose = FALSE, quiet = TRUE
+#' )
+#' fit <- EpiNow2::estimate_dist(delays)
+#'
+#' # One row per fitted parameter, plus the delay's own mean and sd.
+#' tidy(fit)
+#' tidy(fit, probs = c(0.05, 0.95))
+#' }
 #'
 #' @rdname tidy.estimate_dist
 #' @exportS3Method generics::tidy
@@ -1011,18 +1044,26 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
 #' @seealso [tidy.nowcast()] for the case-count nowcast engines,
 #'   [tbl_now_to_epidist()] for the conversion.
 #'
-#' @examplesIf FALSE
-#' # Fitting needs Stan, so this is not run.
+#' @examplesIf requireNamespace("epidist", quietly = TRUE)
+#' # Fitting needs Stan and takes minutes, so the fit itself is wrapped in
+#' # \donttest{}; everything above it runs.
 #' data(denguedat)
 #' nowobj <- tbl_now(denguedat,
 #'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 #' )
-#' fit <- tbl_now_to_epidist(nowobj) |>
+#'
+#' # The conversion itself is quick, and is what tidy() will later summarise.
+#' converted <- suppressWarnings(tbl_now_to_epidist(nowobj, verbose = FALSE))
+#' head(converted)
+#'
+#' \donttest{
+#' fit <- converted |>
 #'   epidist::as_epidist_marginal_model() |>
 #'   epidist::epidist()
 #'
 #' tidy(fit)
 #' tidy(fit, probs = c(0.05, 0.95))
+#' }
 #'
 #' @rdname tidy.epidist_fit
 #' @exportS3Method generics::tidy

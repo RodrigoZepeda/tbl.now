@@ -88,7 +88,6 @@ levels its members happened to share.
 }
 
 \examples{
-\donttest{
 data(denguedat)
 
 # A short recent window keeps the example quick.
@@ -97,17 +96,53 @@ dengue <- tbl_now(recent,
   event_date = onset_week, report_date = report_week, verbose = FALSE
 )
 
+# A backtest needs a model. The engine below is a deliberately naive one
+# defined on the spot -- it carries the latest reported count forward -- so
+# that this example needs no modelling package installed.
+nowcast_fit.carry_forward <- function(engine, x, ..., quantile_levels,
+                                      verbose = TRUE) {
+  counts <- get_latest_reported_cases(x)
+  list(dates = counts[[get_event_date(x)]], value = counts[["n"]])
+}
+nowcast_tidy.carry_forward <- function(engine, fit, x, ..., quantile_levels) {
+  predictions <- tidyr::expand_grid(
+    event_date = fit$dates, .quantile_level = quantile_levels
+  )
+  predictions$.value <- rep(fit$value, each = length(quantile_levels))
+  names(predictions)[1] <- get_event_date(x)
+  list(predictions = predictions)
+}
+registerS3method("nowcast_fit", "carry_forward", nowcast_fit.carry_forward)
+registerS3method("nowcast_tidy", "carry_forward", nowcast_tidy.carry_forward)
+
+# Refit at two past `now` dates and score each against what is known now.
+bt <- nowcast_backtest(dengue,
+  engine("carry_forward", label = "carry forward"),
+  now_dates = as.Date(c("2010-10-04", "2010-11-15")),
+  verbose = FALSE
+)
+head(bt$scores)
+
+# Naming several engines compares them on identical data and dates.
+bt$methods
+
+# With a real model the call is the same, with a real engine.
+\donttest{
 if (requireNamespace("baselinenowcast", quietly = TRUE)) {
-  bt <- nowcast_backtest(dengue,
+  nowcast_backtest(dengue,
     engine_baselinenowcast(draws = 100),
     now_dates = as.Date("2010-11-15"), verbose = FALSE
-  )
-  bt$scores
+  )$scores
 }
 }
 
 }
 \seealso{
-\code{\link[=engine]{engine()}}, \code{\link[=nowcast_weights]{nowcast_weights()}}, \code{\link[=nowcast_ensemble]{nowcast_ensemble()}},
-\code{\link[=score_nowcast]{score_nowcast()}}
+\code{\link[=engine]{engine()}} to specify each model being compared, and its \code{min_date} argument,
+which matters here because \code{now} moves between fits;
+\code{\link[=score_nowcast]{score_nowcast()}} for the scores computed at each \code{now};
+\code{\link[=nowcast_weights]{nowcast_weights()}} to turn the result into ensemble weights, and
+\code{\link[=nowcast_ensemble]{nowcast_ensemble()}} to use them. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html}{\emph{One call, many models} article}
+compares several packages this way.
 }

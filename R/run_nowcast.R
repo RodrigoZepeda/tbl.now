@@ -9,7 +9,7 @@
 #
 # Adding a backend therefore means writing two S3 methods; nothing in tbl.now
 # needs to change and the methods can live in any package. See
-# `vignette("custom-nowcast-models")`.
+# the "Adding your own nowcasting model" article.
 
 #' Built-in method aliases
 #'
@@ -50,10 +50,11 @@
 #' `"mypackage"` is a function called `nowcast_fit.mypackage()`. It can live in
 #' any package.
 #'
-#' @param method A [engine()] object. (The argument is called `method` for
-#'   historical reasons and because that is what it selects; what arrives is the
-#'   engine, so `method$args`, `method$label` and the rest are available to a
-#'   backend that wants them.)
+#' @param engine An [engine()] object -- the modelling package plus its
+#'   arguments. S3 dispatch is on its class, so a backend for `"mypackage"` is a
+#'   function called `nowcast_fit.mypackage()`. The whole engine arrives, not
+#'   just its name, so `engine$args`, `engine$label` and the rest are available
+#'   to a backend that wants them.
 #' @param x A `tbl_now` object.
 #' @param ... Arguments passed straight to the underlying modelling function.
 #'   [run_nowcast()] splices the engine's own arguments in here.
@@ -86,16 +87,17 @@
 #'   put whatever the tidying step will need into it.
 #'
 #' @seealso [nowcast_tidy()], [run_nowcast()], [list_nowcast_methods()] and
-#'   `vignette("custom-nowcast-models")` for a worked example of a new backend.
+#'   the [*Adding your own nowcasting model* article](https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html)
+#'   for a worked example of a new backend.
 #'
 #' @examples
 #' # A minimal backend: two S3 methods and you are done.
-#' nowcast_fit.constant <- function(method, x, ..., quantile_levels, verbose = TRUE) {
+#' nowcast_fit.constant <- function(engine, x, ..., quantile_levels, verbose = TRUE) {
 #'   counts <- get_latest_reported_cases(x)
 #'   list(dates = counts[[get_event_date(x)]], value = counts[[ncol(counts)]])
 #' }
 #'
-#' nowcast_tidy.constant <- function(method, fit, x, ..., quantile_levels) {
+#' nowcast_tidy.constant <- function(engine, fit, x, ..., quantile_levels) {
 #'   predictions <- tidyr::expand_grid(
 #'     event_date = fit$dates, .quantile_level = quantile_levels
 #'   )
@@ -105,21 +107,22 @@
 #' }
 #'
 #' @export
-nowcast_fit <- function(method, x, ..., quantile_levels = nowcast_quantile_levels(),
+nowcast_fit <- function(engine, x, ..., quantile_levels = nowcast_quantile_levels(),
                         verbose = TRUE) {
   UseMethod("nowcast_fit")
 }
 
 #' @rdname nowcast_fit
 #' @export
-nowcast_fit.default <- function(method, x, ..., quantile_levels = nowcast_quantile_levels(),
+nowcast_fit.default <- function(engine, x, ..., quantile_levels = nowcast_quantile_levels(),
                                 verbose = TRUE) {
-  name <- if (is.list(method) && !is.null(method$name)) method$name else class(method)[1]
+  name <- if (is.list(engine) && !is.null(engine$name)) engine$name else class(engine)[1]
   cli::cli_abort(c(
     "No nowcasting method called {.val {name}} is registered.",
     "i" = "Available methods: {.val {list_nowcast_methods()}}.",
     "i" = "To add your own, define {.fn nowcast_fit.{name}} and \\
-           {.fn nowcast_tidy.{name}}. See {.code vignette(\"custom-nowcast-models\")}."
+           {.fn nowcast_tidy.{name}}.",
+    "i" = "See {.url https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html}."
   ))
 }
 
@@ -131,7 +134,7 @@ nowcast_fit.default <- function(method, x, ..., quantile_levels = nowcast_quanti
 #' It receives the object the modelling package returned and must express its
 #' predictions in the tidy format tbl.now uses everywhere else.
 #'
-#' @param method A [engine()] object.
+#' @param engine An [engine()] object; see [nowcast_fit()].
 #' @param fit The object returned by [nowcast_fit()].
 #' @param x The `tbl_now` the nowcast was produced from.
 #' @param ... Not forwarded by [run_nowcast()], which passes the user's `...` to
@@ -162,14 +165,14 @@ nowcast_fit.default <- function(method, x, ..., quantile_levels = nowcast_quanti
 #' methods(nowcast_tidy)
 #'
 #' @export
-nowcast_tidy <- function(method, fit, x, ..., quantile_levels) {
+nowcast_tidy <- function(engine, fit, x, ..., quantile_levels) {
   UseMethod("nowcast_tidy")
 }
 
 #' @rdname nowcast_tidy
 #' @export
-nowcast_tidy.default <- function(method, fit, x, ..., quantile_levels) {
-  name <- if (is.list(method) && !is.null(method$name)) method$name else class(method)[1]
+nowcast_tidy.default <- function(engine, fit, x, ..., quantile_levels) {
+  name <- if (is.list(engine) && !is.null(engine$name)) engine$name else class(engine)[1]
   cli::cli_abort(c(
     "{.fn nowcast_fit.{name}} exists but {.fn nowcast_tidy.{name}} does not.",
     "i" = "A backend needs both: one to fit the model, one to standardise its output."
@@ -188,9 +191,19 @@ nowcast_tidy.default <- function(method, fit, x, ..., quantile_levels) {
 #'   backing package is installed are returned. Set to `FALSE` to see every
 #'   registered method.
 #'
-#' @return A character vector of method names.
+#' @return A character vector of method names, suitable for passing to
+#' [engine()].
+#'
+#' @seealso
+#' [engine()] to turn one of these names into a configured model;
+#' [nowcast_engines] for the engines that ship with the package;
+#' [nowcast_fit()] and [nowcast_tidy()], the two functions a new method must
+#' define. The
+#' [*Adding your own nowcasting model* article](https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html)
+#' walks through writing one.
 #'
 #' @examples
+#' # What can this installation actually fit right now?
 #' list_nowcast_methods()
 #'
 #' # Including methods whose modelling package is not installed
@@ -403,12 +416,16 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #'
 #' @return A [tbl_nowcast] object.
 #'
-#' @seealso [engine()] and [nowcast_engines] to specify a model,
-#'   [nowcast_ensemble()] to combine several nowcasts, [nowcast_backtest()] to
-#'   score them, and [nowcast_fit()] to add a backend.
+#' @seealso
+#' [engine()] and [nowcast_engines] to specify which model to fit and how;
+#' [autoplot()][autoplot.tbl_nowcast] and [tidy()][tidy.tbl_nowcast] to look at
+#' the result; [nowcast_ensemble()] to combine several nowcasts;
+#' [nowcast_backtest()] and [score_nowcast()] to find out whether they are any
+#' good; [nowcast_fit()] and [nowcast_tidy()] to add a backend of your own. The
+#' [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' fits the same data with every supported package.
 #'
 #' @examples
-#' \donttest{
 #' data(denguedat)
 #'
 #' # A short recent window keeps the example quick.
@@ -417,6 +434,37 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #'   event_date = onset_week, report_date = report_week, verbose = FALSE
 #' )
 #'
+#' # Every nowcast goes the same way: describe the model with `engine()`, then
+#' # hand it and the data to `run_nowcast()`. The engine below is a deliberately
+#' # naive one defined on the spot -- it simply carries the latest reported count
+#' # forward -- so that this example needs no modelling package installed.
+#' nowcast_fit.carry_forward <- function(engine, x, ..., quantile_levels,
+#'                                       verbose = TRUE) {
+#'   counts <- get_latest_reported_cases(x)
+#'   list(dates = counts[[get_event_date(x)]], value = counts[["n"]])
+#' }
+#' nowcast_tidy.carry_forward <- function(engine, fit, x, ..., quantile_levels) {
+#'   predictions <- tidyr::expand_grid(
+#'     event_date = fit$dates, .quantile_level = quantile_levels
+#'   )
+#'   predictions$.value <- rep(fit$value, each = length(quantile_levels))
+#'   names(predictions)[1] <- get_event_date(x)
+#'   list(predictions = predictions)
+#' }
+#'
+#' # Methods defined outside a package need registering so that dispatch finds
+#' # them; inside a package `@export` on the method does this for you.
+#' registerS3method("nowcast_fit", "carry_forward", nowcast_fit.carry_forward)
+#' registerS3method("nowcast_tidy", "carry_forward", nowcast_tidy.carry_forward)
+#'
+#' nc <- run_nowcast(dengue, engine("carry_forward"), verbose = FALSE)
+#' nc
+#'
+#' # The result is a tbl_nowcast: one row per event date and quantile level.
+#' head(tibble::as_tibble(nc))
+#'
+#' # A real model is the same call with a real engine.
+#' \donttest{
 #' if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 #'   nc <- run_nowcast(dengue, engine_baselinenowcast(draws = 100), verbose = FALSE)
 #'   nc

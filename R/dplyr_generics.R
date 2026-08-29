@@ -214,23 +214,73 @@ is_tbl_now <- function(x) {
   inherits(x, "tbl_now") && tbl_now_can_reconstruct(x)
 }
 
-#' Subset function for `tbl_now`
+#' Base R operations on a `tbl_now`
 #'
 #' @description `r lifecycle::badge("stable")`
 #'
-#' Accesors to `tbl_now` elements (rows and columns) as if
-#' it was a data.frame
+#' A [tbl_now()] is a `tibble` with extra attributes recording which column is
+#' the event date, which is the report date, and so on. These methods make sure
+#' those attributes survive ordinary base-R manipulation, so that `x[1:10, ]`,
+#' `names(x) <- ...` and `x$new <- ...` give you back a `tbl_now` rather than a
+#' bare data frame.
+#'
+#' You never call them directly -- they are what makes the operators work.
 #'
 #' @details
-#' If the subsetting invalidates the class then a `data.frame`
-#' is returned.
+#' When an operation leaves the object unable to describe a nowcast -- because it
+#' dropped or renamed the event-date column, say -- the class cannot honestly be
+#' kept. In that case the result is **demoted** to a plain data frame (with a
+#' warning), rather than pretending to still be a `tbl_now`. Attributes that are
+#' still meaningful are preserved on the way down.
 #'
-#' @param x A `tbl_now` object
-#' @inheritParams base::subset
+#' The same applies to `dplyr` verbs, through
+#' [dplyr_reconstruct()][dplyr::dplyr_extending].
 #'
-#' @return A `tbl_now` object or a `data.frame`
+#' @param x A `tbl_now` object.
+#' @param name For `$<-`, the column being assigned to.
+#' @param value For `names<-` and `$<-`, the replacement value.
+#' @param ... Passed to the underlying `[` method: rows and columns to keep.
+#'
+#' @return A `tbl_now` object, or a plain data frame when the operation
+#' invalidated the class.
+#'
+#' @seealso
+#' [tbl_now()] for the attributes being preserved;
+#' [tbl_now_attributes()] to check what survived;
+#' [as_tibble()][as_tibble.tbl_now] to drop the class on purpose;
+#' [validate_tbl_now()] to confirm the result is still well formed.
+#'
+#' @examples
+#' data(denguedat)
+#' dengue <- tbl_now(denguedat,
+#'   event_date = onset_week, report_date = report_week,
+#'   strata = gender, verbose = FALSE
+#' )
+#'
+#' # Subsetting rows keeps the class and everything it knows.
+#' small <- dengue[1:10, ]
+#' class(small)[1]
+#' get_event_date(small)
+#'
+#' # So does adding a column with `$<-`.
+#' dengue$season <- ifelse(
+#'   lubridate::month(dengue$onset_week) %in% 6:11, "wet", "dry"
+#' )
+#' class(dengue)[1]
+#'
+#' # And renaming an unimportant column with `names<-`.
+#' renamed <- dengue
+#' names(renamed)[names(renamed) == "season"] <- "period"
+#' get_event_date(renamed)
+#'
+#' # But dropping the event date leaves nothing a nowcast could use, so the
+#' # object is demoted to a plain tibble instead of lying about itself.
+#' demoted <- suppressWarnings(dengue[, c("report_week", "gender")])
+#' class(demoted)[1]
+#'
 #' @name assign_tbl
-#' @export
+#' @aliases names_tbl_now money_tbl_now
+NULL
 
 #' @rdname assign_tbl
 #' @export
@@ -246,58 +296,28 @@ is_tbl_now <- function(x) {
   tbl_now_reconstruct(out, x)
 }
 
-#' Set names on `tbl_now` class
-#'
-#' @description `r lifecycle::badge("experimental")`
-#'
-#' Function for modifying the names of a `tbl_now`
-#'
-#' @details If the modifying the names invalidates the `tbl_now` object
-#' the subsetting will return a data frame with the other attributes of the
-#' class preserved.
-#'
-#' @inheritParams base::names
-#'
-#' @return A `tbl_now` object or a `data.frame`
-#' @name names_tbl_now
-#' @export
-
-#' @rdname names_tbl_now
+#' @rdname assign_tbl
 #' @export
 `names<-.tbl_now` <- function(x, value) {
   out <- NextMethod()
   tbl_now_reconstruct(out, x)
 }
 
-#' @rdname names_tbl_now
+#' @rdname assign_tbl
 #' @export
 `names<-.grouped_tbl_now` <- function(x, value) {
   out <- NextMethod()
   tbl_now_reconstruct(out, x)
 }
 
-#' Set accessor for `tbl_now` class
-#'
-#' @description `r lifecycle::badge("stable")`
-#'
-#' Accessor for `tbl_now` columns
-#'
-#' @param x A `tbl_now` object
-#'
-#' @inheritParams base::Extract
-#'
-#' @return A `tbl_now` object or a `data.frame`
-#' @name money_tbl_now
-#' @export
-
-#' @rdname money_tbl_now
+#' @rdname assign_tbl
 #' @export
 `$<-.tbl_now` <- function(x, name, value) {
   out <- NextMethod()
   tbl_now_reconstruct(out, x)
 }
 
-#' @rdname money_tbl_now
+#' @rdname assign_tbl
 #' @export
 `$<-.grouped_tbl_now` <- function(x, name, value) {
   out <- NextMethod()

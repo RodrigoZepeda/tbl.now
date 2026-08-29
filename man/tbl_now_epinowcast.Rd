@@ -66,7 +66,9 @@ this \code{TRUE} would synthesise NA-reference padding rows the data never had.}
 \item{preprocess}{If \code{TRUE} (default) returns an \code{enw_preprocess_data}
 object; if \code{FALSE} returns the completed observation \code{data.table}.}
 
-\item{quiet}{Logical. If \code{TRUE}, suppress the lossy-conversion warning emitted
+\item{quiet}{Logical. A \emph{different} channel from \code{verbose}: \code{verbose}
+controls the informational summary of what the conversion did, while \code{quiet}
+suppresses the lossy-conversion \strong{warning} emitted
 by \code{tbl_now_to_epinowcast()} (see the Round-trip section).}
 }
 \value{
@@ -206,4 +208,15 @@ tbl_epi <- tbl_now_from_epinowcast(pobs)
 preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
 }
 \dontshow{\}) # examplesIf}
+}
+\seealso{
+\link[=nowcast_engines]{engine_epinowcast()} to fit through this package rather than
+converting by hand; \code{\link[=align_weeks]{align_weeks()}}, because \pkg{epinowcast} lays its grid out
+in whole timesteps; \code{\link[=complete_zeroes]{complete_zeroes()}} to fill the grid;
+\link[=tidy.nowcast]{tidy()} for the fitted result.
+\code{\link[=as_tbl_now]{as_tbl_now()}} for the generic that dispatches to the \verb{*_from_*()} side;
+\code{\link[=run_nowcast]{run_nowcast()}}, which does the conversion for you when you fit through an
+\code{\link[=engine]{engine()}}. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html}{\emph{One dataset, many nowcasts} article}
+fits the same data with every supported package.
 }

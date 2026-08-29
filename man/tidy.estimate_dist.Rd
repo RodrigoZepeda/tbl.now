@@ -71,7 +71,31 @@ delay distribution's own moments, matching \code{\link[=tidy.epidist_fit]{tidy.e
 different quantities.
 }
 
+\examples{
+\dontshow{if (requireNamespace("EpiNow2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+# Fitting needs Stan and takes minutes, so the fit itself is wrapped in
+# \donttest{}; the conversion above it runs.
+data(denguedat)
+nowobj <- tbl_now(denguedat,
+  event_date = "onset_week", report_date = "report_week", verbose = FALSE
+)
+
+\donttest{
+delays <- tbl_now_to_EpiNow2(nowobj,
+  target = "estimate_truncation", verbose = FALSE, quiet = TRUE
+)
+fit <- EpiNow2::estimate_dist(delays)
+
+# One row per fitted parameter, plus the delay's own mean and sd.
+tidy(fit)
+tidy(fit, probs = c(0.05, 0.95))
+}
+\dontshow{\}) # examplesIf}
+}
 \seealso{
-\code{\link[=tidy.epidist_fit]{tidy.epidist_fit()}} for the \pkg{epidist} equivalent,
-\code{\link[=tbl_now_to_EpiNow2]{tbl_now_to_EpiNow2()}} for the conversion.
+\code{\link[=tidy.epidist_fit]{tidy.epidist_fit()}} for the \pkg{epidist} equivalent, and the note above on
+why their \code{sd} values differ slightly;
+\code{\link[=tbl_now_to_EpiNow2]{tbl_now_to_EpiNow2()}} for the conversion;
+\link[=tidy.nowcast]{tidy()} for tidying a \emph{case-count} nowcast rather than a delay
+distribution; \link{confirmation_delay} for the delay this is estimating.
 }

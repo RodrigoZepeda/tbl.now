@@ -27,17 +27,34 @@
 #'
 #' ```r
 #' hub_levels <- c(0.01, 0.025, seq(0.05, 0.95, by = 0.05), 0.975, 0.99)
-#' run_nowcast(x, "baselinenowcast", quantile_levels = hub_levels)
+#' run_nowcast(x, engine("baselinenowcast", quantile_levels = hub_levels))
 #' ```
+#'
+#' The levels live on the [engine()], not on [run_nowcast()], because for some
+#' backends they are a fit-time model argument rather than a way of summarising
+#' afterwards.
 #'
 #' Backends that expose draws can honour any levels you ask for. Ones that report
 #' a point estimate and a single interval (`"surveillance"`, `"EpiNow2"`) cannot,
 #' and say so rather than interpolating.
 #'
-#' @return A numeric vector of probabilities in `(0, 1)`, sorted increasingly.
+#' @return A numeric vector of nine probabilities in `(0, 1)`, sorted
+#' increasingly.
+#'
+#' @seealso
+#' [engine()], whose `quantile_levels` argument this is the default for;
+#' [run_nowcast()] and [nowcast_backtest()], which report at these levels;
+#' [score_nowcast()] and [as_scoringutils()], which score them.
 #'
 #' @examples
 #' nowcast_quantile_levels()
+#'
+#' # The 50%, 80%, 90% and 95% central intervals, as lower/upper pairs.
+#' matrix(nowcast_quantile_levels()[-5], ncol = 2)
+#'
+#' # Ask an engine for something else -- here the full forecast-hub set.
+#' hub_levels <- c(0.01, 0.025, seq(0.05, 0.95, by = 0.05), 0.975, 0.99)
+#' engine("baselinenowcast", quantile_levels = hub_levels)
 #'
 #' @export
 nowcast_quantile_levels <- function() {

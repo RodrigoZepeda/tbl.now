@@ -8,7 +8,7 @@
 # A deliberately controllable backend: predict the eventual counts, offset by
 # `bias` and spread by `spread`, so a "good" and a "bad" model differ by one
 # argument.
-nowcast_fit.scoretoy <- function(method, x, ..., bias = 0, spread = 1,
+nowcast_fit.scoretoy <- function(engine, x, ..., bias = 0, spread = 1,
                                  quantile_levels = nowcast_quantile_levels(),
                                  verbose = TRUE) {
   list(
@@ -17,7 +17,7 @@ nowcast_fit.scoretoy <- function(method, x, ..., bias = 0, spread = 1,
   )
 }
 
-nowcast_tidy.scoretoy <- function(method, fit, x, ..., quantile_levels) {
+nowcast_tidy.scoretoy <- function(engine, fit, x, ..., quantile_levels) {
   predictions <- fit$observed |>
     dplyr::reframe(
       !!fit$event_col := rep(.data[[fit$event_col]], each = length(quantile_levels)),

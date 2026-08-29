@@ -172,3 +172,52 @@ failures, 0 errors**.
   (the future, which is what a nowcast fills in) rather than just drawing it.
 
 All 14 plot examples run in 21.6s combined.
+
+### Sections 9-14 — Fitting, Ensembles, Converters, Tidying, dplyr, Datasets
+
+**Naming fixes applied:**
+* `nowcast_fit(method=)` / `nowcast_tidy(method=)` -> **`engine=`**. The docs admitted
+  the problem in a parenthesis ("the argument is called `method` for historical
+  reasons"): `engine()`'s own page defines an engine as "the object `nowcast_fit()` and
+  `nowcast_tidy()` dispatch on", and that is what arrives. Renamed in the 2 generics,
+  the 14 built-in methods, the tests and the custom-backends article. No method body
+  used the name -- it was a pure dispatch placeholder. `tools::checkS3methods()` is
+  clean and the extension point still works end to end.
+* `engine(method=)` and `list_nowcast_methods()` **keep** "method": in the package's
+  vocabulary a *method* is the name of a backend and an *engine* is that name plus its
+  arguments. That distinction is coherent and worth preserving.
+* `tbl_now_from_data_table()` and `tbl_now_from_tsibble()` now accept **tidy-select**
+  (a bare column name) as well as strings, matching `tbl_now()` and the rest of the
+  package. `as_tbl_now.data.table()` and `as_tbl_now.tbl_ts()` were evaluating the
+  promise instead of forwarding it, so bare names failed there too; both now embrace.
+  Strings keep working -- tidy-select accepts them -- so nothing breaks.
+* The three converters that carry **both** `verbose` and `quiet` now say what the
+  difference is (`verbose` = the conversion summary, `quiet` = the lossy-conversion
+  warning) rather than leaving the reader to guess.
+
+**Examples that could not run.** The scoring and fitting half of the package had *no*
+executable documentation: `run_nowcast()`, `nowcast_backtest()`, `nowcast_weights()`,
+`score_nowcast()` and `as_scoringutils()` all had their only examples inside
+`\donttest{}` behind `requireNamespace()`. Each now leads with a runnable example --
+scoring is demonstrated by building the nowcast and its truth by hand, and fitting by a
+five-line `carry_forward` engine defined in the example itself, which doubles as
+documentation of the extension point. The real-model versions are kept underneath.
+
+**`if (FALSE)` eliminated.** `tidy.epidist_fit` and `tidy.nowcast_backtest` used
+`@examplesIf FALSE`, which renders as `\dontshow{if (FALSE) ...}`. The backtest example
+is now genuinely runnable; the epidist one guards on the package and wraps only the
+Stan fit in `\donttest{}`. No `if (FALSE)` remains anywhere in `man/`.
+
+**Merges:** `as_scoringutils` -> `score_nowcast`; `plot_reporting_process` ->
+`plot_epidemic_process`; `names_tbl_now` and `money_tbl_now` -> `assign_tbl` (three
+pages describing three operators that all do one thing: keep the class alive).
+
+**Datasets:** `denguedat` and `mpoxdat` had `\format{A data frame.}` and an example
+that was only `data(denguedat)`. All six now describe every column with its type, and
+show the data becoming a `tbl_now`. `mpoxdat` described itself as "line-list data with
+each row representing case counts" -- it is count data. Two "Its a" -> "It is a".
+Keywords standardised to `datasets` (they were `dengue`, `mpox`, `flu influenza`,
+`covid`).
+
+Note: dataset pages use `\format`, not `\value` -- `\value` is for functions, and
+`R CMD check`'s value check skips `\docType{data}`.

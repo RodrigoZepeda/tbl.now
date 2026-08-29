@@ -11,24 +11,24 @@
 \alias{nowcast_tidy.default}
 \title{Standardise a fitted nowcast}
 \usage{
-\method{nowcast_tidy}{diseasenowcasting}(method, fit, x, ..., quantile_levels)
+\method{nowcast_tidy}{diseasenowcasting}(engine, fit, x, ..., quantile_levels)
 
-\method{nowcast_tidy}{baselinenowcast}(method, fit, x, ..., quantile_levels)
+\method{nowcast_tidy}{baselinenowcast}(engine, fit, x, ..., quantile_levels)
 
-\method{nowcast_tidy}{epinowcast}(method, fit, x, ..., quantile_levels)
+\method{nowcast_tidy}{epinowcast}(engine, fit, x, ..., quantile_levels)
 
-\method{nowcast_tidy}{NobBS}(method, fit, x, ..., quantile_levels)
+\method{nowcast_tidy}{NobBS}(engine, fit, x, ..., quantile_levels)
 
-\method{nowcast_tidy}{surveillance}(method, fit, x, ..., quantile_levels)
+\method{nowcast_tidy}{surveillance}(engine, fit, x, ..., quantile_levels)
 
-\method{nowcast_tidy}{EpiNow2}(method, fit, x, ..., quantile_levels)
+\method{nowcast_tidy}{EpiNow2}(engine, fit, x, ..., quantile_levels)
 
-nowcast_tidy(method, fit, x, ..., quantile_levels)
+nowcast_tidy(engine, fit, x, ..., quantile_levels)
 
-\method{nowcast_tidy}{default}(method, fit, x, ..., quantile_levels)
+\method{nowcast_tidy}{default}(engine, fit, x, ..., quantile_levels)
 }
 \arguments{
-\item{method}{A \code{\link[=engine]{engine()}} object.}
+\item{engine}{An \code{\link[=engine]{engine()}} object; see \code{\link[=nowcast_fit]{nowcast_fit()}}.}
 
 \item{fit}{The object returned by \code{\link[=nowcast_fit]{nowcast_fit()}}.}
 

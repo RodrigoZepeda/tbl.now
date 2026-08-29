@@ -25,9 +25,13 @@ tbl_now_to_tsibble(
 \arguments{
 \item{data}{A \code{tbl_ts} (tsibble).}
 
-\item{report_date}{Column name of the report date (required for \code{from}).}
+\item{report_date}{The report-date column (required for \code{from}), as a
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
+expression -- a bare column name or a string.}
 
-\item{event_date}{Column name of the event date (for \code{from}); defaults to the
+\item{event_date}{The event-date column (for \code{from}), as a
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
+expression -- a bare column name or a string. Defaults to the
 tsibble index.}
 
 \item{strata}{Optional character vector of strata columns (\code{from}). If \code{NULL}
@@ -95,4 +99,14 @@ nowobj <- tbl_now(denguedat,
 ts   <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
 back <- tbl_now_from_tsibble(ts, report_date = "report_week", verbose = FALSE)
 \dontshow{\}) # examplesIf}
+}
+\seealso{
+\link[=tbl_now_coercion_methods]{as_tsibble()}, the \pkg{tsibble} method that calls
+this; \code{\link[=to_count]{to_count()}}, since a tsibble needs unique index/key rows and a line list
+has to be aggregated first; \code{\link[=align_weeks]{align_weeks()}} for regular weekly indexes.
+\code{\link[=as_tbl_now]{as_tbl_now()}} for the generic that dispatches to the \verb{*_from_*()} side;
+\code{\link[=run_nowcast]{run_nowcast()}}, which does the conversion for you when you fit through an
+\code{\link[=engine]{engine()}}. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html}{\emph{One dataset, many nowcasts} article}
+fits the same data with every supported package.
 }

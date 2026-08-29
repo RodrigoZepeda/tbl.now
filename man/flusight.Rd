@@ -5,7 +5,16 @@
 \alias{flusight}
 \title{flusight: NHSN Weekly Hospital Respiratory Data from FluSight}
 \format{
-A data frame with 452,567 rows and 4 variables.
+A data frame with 452,567 rows and 4 variables:
+\describe{
+\item{as_of}{\code{Date}. The date this row's value was published -- the
+\emph{report} date. The same week appears many times, once per publication.}
+\item{target_end_date}{\code{Date}. The week being reported on -- the \emph{event}
+date.}
+\item{location_name}{\code{character}. US state or territory.}
+\item{observation}{\code{numeric}. Hospital admissions reported for that week as
+of that publication date.}
+}
 }
 \usage{
 data(flusight)
@@ -50,10 +59,32 @@ upstream file yourself you will still see the duplicates and should
 
 \examples{
 data(flusight)
+head(flusight)
+
+# This is count data: one row per (week, publication date, state).
+nrow(flusight)
+length(unique(flusight$location_name))
+
+# One state is enough to see the reporting process.
+texas <- flusight[flusight$location_name == "Texas", ]
+flu <- tbl_now(texas,
+  event_date = target_end_date, report_date = as_of,
+  case_count = observation, verbose = FALSE
+)
+flu
+
+# `as_of` is not always the same weekday, so some delays are not whole weeks.
+# `align_weeks()` fixes that.
+mean(flu$.delay != round(flu$.delay))
 }
 \references{
 Target data from Flusight. Online:
 \url{https://github.com/cdcepi/FluSight-forecast-hub/blob/main/target-data/time-series.csv}
 }
-\keyword{flu}
-\keyword{influenza}
+\seealso{
+\code{\link[=tbl_now]{tbl_now()}} to declare the date columns; \link[=tbl_now_summary]{summary()} and
+\code{\link[=diagnose]{diagnose()}} to inspect the result; the package's other datasets --
+\link{denguedat}, \link{mpoxdat}, \link{flusight}, \link{covid_colombia}, \link{covid_us} and
+\link{hai_bucaramanga}.
+}
+\keyword{datasets}

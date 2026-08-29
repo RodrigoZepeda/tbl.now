@@ -274,7 +274,7 @@ The fitting step estimates the multiplier pool. Notice how much of it is spent
 asking the object about itself rather than doing arithmetic.
 
 ```{r fit-method}
-nowcast_fit.delay_ratio <- function(method, x, ..., max_delay = NULL,
+nowcast_fit.delay_ratio <- function(engine, x, ..., max_delay = NULL,
                                     quantile_levels, verbose = TRUE) {
 
   event_col <- get_event_date(x)
@@ -346,7 +346,7 @@ The tidying step applies the pool. This model produces quantiles directly, so it
 fills `predictions` and leaves `draws` as `NULL`.
 
 ```{r tidy-method}
-nowcast_tidy.delay_ratio <- function(method, fit, x, ..., quantile_levels) {
+nowcast_tidy.delay_ratio <- function(engine, fit, x, ..., quantile_levels) {
 
   event_col <- get_event_date(x)
   strata    <- get_strata(x)
@@ -502,7 +502,7 @@ The fitting step is unchanged, so reuse it — this is ordinary S3, and a method
 just a function:
 
 ```{r boot-fit}
-nowcast_fit.delay_ratio_boot <- function(method, x, ..., n_draws = 1000,
+nowcast_fit.delay_ratio_boot <- function(engine, x, ..., n_draws = 1000,
                                          quantile_levels, verbose = TRUE) {
   fit <- nowcast_fit.delay_ratio(
     method, x, ..., quantile_levels = quantile_levels, verbose = verbose
@@ -514,7 +514,7 @@ nowcast_fit.delay_ratio_boot <- function(method, x, ..., n_draws = 1000,
 ```
 
 ```{r boot-tidy}
-nowcast_tidy.delay_ratio_boot <- function(method, fit, x, ..., quantile_levels) {
+nowcast_tidy.delay_ratio_boot <- function(engine, fit, x, ..., quantile_levels) {
 
   event_col <- get_event_date(x)
   strata    <- get_strata(x)

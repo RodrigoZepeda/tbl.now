@@ -5,7 +5,13 @@
 \alias{denguedat}
 \title{denguedat: Dengue fever individual-level reporting data from Puerto Rico}
 \format{
-A data frame.
+A data frame with 52,987 rows (one per case) and 3 variables:
+\describe{
+\item{onset_week}{\code{Date}. The week symptoms began -- the \emph{event} date.}
+\item{report_week}{\code{Date}. The week the case reached the surveillance
+system -- the \emph{report} date. Always on or after \code{onset_week}.}
+\item{gender}{\code{character}. \code{"Male"} or \code{"Female"}. Synthetic; see the note.}
+}
 }
 \usage{
 data(denguedat)
@@ -25,14 +31,34 @@ of "Male"/"Female").
 }
 \note{
 Data originally from the \code{NobBS} package. While \code{onset_week} and \code{report_week} correspond to
-actual observed data the \code{gender} was constructed exclusively for the examples of \code{NobBS}. Its
-a synthetic (simulated) variable and does not correspond to any reality.
+actual observed data the \code{gender} was constructed exclusively for the examples of \code{NobBS}. It
+is a synthetic (simulated) variable and does not correspond to any reality.
 }
 \examples{
 data(denguedat)
+head(denguedat)
+
+# The two dates every nowcast needs. Weekly data, twenty years of it.
+range(denguedat$onset_week)
+
+# Declaring them turns the data frame into a tbl_now.
+dengue <- tbl_now(denguedat,
+  event_date = onset_week, report_date = report_week,
+  strata = gender, verbose = FALSE
+)
+dengue
+
+# Most cases arrive within a week or two of onset; a few take much longer.
+summary(as.numeric(dengue$.delay))
 }
 \references{
 MCGOUGH, Sarah F., et al. Nowcasting by Bayesian Smoothing: A flexible, generalizable model for
 real-time epidemic tracking. PLoS computational biology, 2020, vol. 16, no 4, p. e1007735.
 }
-\keyword{dengue}
+\seealso{
+\code{\link[=tbl_now]{tbl_now()}} to declare the date columns; \link[=tbl_now_summary]{summary()} and
+\code{\link[=diagnose]{diagnose()}} to inspect the result; the package's other datasets --
+\link{denguedat}, \link{mpoxdat}, \link{flusight}, \link{covid_colombia}, \link{covid_us} and
+\link{hai_bucaramanga}.
+}
+\keyword{datasets}

@@ -78,5 +78,10 @@ nowcast_ensemble(toy("a", 0), toy("b", 4), weights = c(a = 0.75, b = 0.25), verb
 
 }
 \seealso{
-\code{\link[=run_nowcast]{run_nowcast()}}, \code{\link[=nowcast_backtest]{nowcast_backtest()}}, \code{\link[=nowcast_weights]{nowcast_weights()}}
+\code{\link[=run_nowcast]{run_nowcast()}} to produce the nowcasts being combined;
+\code{\link[=nowcast_backtest]{nowcast_backtest()}} and \code{\link[=nowcast_weights]{nowcast_weights()}} to decide how much to trust each
+one, instead of weighting them equally;
+\code{\link[=score_nowcast]{score_nowcast()}} to check the ensemble beats its members. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html}{\emph{One call, many models} article}
+builds one end to end.
 }

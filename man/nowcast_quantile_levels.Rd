@@ -7,7 +7,8 @@
 nowcast_quantile_levels()
 }
 \value{
-A numeric vector of probabilities in \verb{(0, 1)}, sorted increasingly.
+A numeric vector of nine probabilities in \verb{(0, 1)}, sorted
+increasingly.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -25,8 +26,12 @@ interpolation. Pass \code{quantile_levels} explicitly when you need the full hub
 set:
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{hub_levels <- c(0.01, 0.025, seq(0.05, 0.95, by = 0.05), 0.975, 0.99)
-run_nowcast(x, "baselinenowcast", quantile_levels = hub_levels)
+run_nowcast(x, engine("baselinenowcast", quantile_levels = hub_levels))
 }\if{html}{\out{</div>}}
+
+The levels live on the \code{\link[=engine]{engine()}}, not on \code{\link[=run_nowcast]{run_nowcast()}}, because for some
+backends they are a fit-time model argument rather than a way of summarising
+afterwards.
 
 Backends that expose draws can honour any levels you ask for. Ones that report
 a point estimate and a single interval (\code{"surveillance"}, \code{"EpiNow2"}) cannot,
@@ -35,4 +40,16 @@ and say so rather than interpolating.
 \examples{
 nowcast_quantile_levels()
 
+# The 50\%, 80\%, 90\% and 95\% central intervals, as lower/upper pairs.
+matrix(nowcast_quantile_levels()[-5], ncol = 2)
+
+# Ask an engine for something else -- here the full forecast-hub set.
+hub_levels <- c(0.01, 0.025, seq(0.05, 0.95, by = 0.05), 0.975, 0.99)
+engine("baselinenowcast", quantile_levels = hub_levels)
+
+}
+\seealso{
+\code{\link[=engine]{engine()}}, whose \code{quantile_levels} argument this is the default for;
+\code{\link[=run_nowcast]{run_nowcast()}} and \code{\link[=nowcast_backtest]{nowcast_backtest()}}, which report at these levels;
+\code{\link[=score_nowcast]{score_nowcast()}} and \code{\link[=as_scoringutils]{as_scoringutils()}}, which score them.
 }

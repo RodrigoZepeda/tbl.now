@@ -212,12 +212,44 @@ tidy_tbl_nowcast <- function(x, probs = NULL, ...) {
 #'   `" | "`-pasted strata otherwise, so `(method, now, stratum, event_date)` is
 #'   a unique key.
 #'
-#' @seealso [nowcast_backtest()], [nowcast_weights()]
+#' @seealso
+#' [nowcast_backtest()], which produces the object being tidied;
+#' [nowcast_weights()] to turn the same scores into ensemble weights;
+#' [score_nowcast()] for scoring a single nowcast;
+#' [tidy()][tidy.tbl_nowcast] for a fitted nowcast rather than a backtest.
 #'
-#' @examplesIf FALSE
-#' # A backtest refits every method once per date, so this is not run.
-#' bt <- nowcast_backtest(dengue, engine_baselinenowcast())
-#' tidy(bt)
+#' @examples
+#' data(denguedat)
+#' recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+#' dengue <- tbl_now(recent,
+#'   event_date = onset_week, report_date = report_week, verbose = FALSE
+#' )
+#'
+#' # A deliberately naive engine defined on the spot, so that this example needs
+#' # no modelling package installed.
+#' nowcast_fit.carry_forward <- function(engine, x, ..., quantile_levels,
+#'                                       verbose = TRUE) {
+#'   counts <- get_latest_reported_cases(x)
+#'   list(dates = counts[[get_event_date(x)]], value = counts[["n"]])
+#' }
+#' nowcast_tidy.carry_forward <- function(engine, fit, x, ..., quantile_levels) {
+#'   predictions <- tidyr::expand_grid(
+#'     event_date = fit$dates, .quantile_level = quantile_levels
+#'   )
+#'   predictions$.value <- rep(fit$value, each = length(quantile_levels))
+#'   names(predictions)[1] <- get_event_date(x)
+#'   list(predictions = predictions)
+#' }
+#' registerS3method("nowcast_fit", "carry_forward", nowcast_fit.carry_forward)
+#' registerS3method("nowcast_tidy", "carry_forward", nowcast_tidy.carry_forward)
+#'
+#' bt <- nowcast_backtest(dengue,
+#'   engine("carry_forward", label = "carry forward"),
+#'   now_dates = as.Date(c("2010-10-04", "2010-11-15")), verbose = FALSE
+#' )
+#'
+#' # One tidy row per method, `now` date, stratum and event date.
+#' head(tidy(bt))
 #'
 #' @exportS3Method generics::tidy
 tidy.nowcast_backtest <- function(x, ...) {

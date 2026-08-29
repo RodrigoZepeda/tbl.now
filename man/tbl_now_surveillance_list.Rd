@@ -53,6 +53,24 @@ back as a \code{"linelist"} (one row per case, so the totals are unchanged but t
 \code{case_count} column is gone), and materialised temporal-effect columns come
 back as ordinary columns rather than as a spec.
 }
+\examples{
+data(denguedat)
+dengue <- tbl_now(denguedat[1:3000, ],
+  event_date = onset_week, report_date = report_week, verbose = FALSE
+)
+
+# One line list per stratum, in the shape surveillance::nowcast() wants.
+linelists <- tbl_now_to_surveillance(dengue,
+  format = "linelist_list", verbose = FALSE
+)
+
+# Printing summarises the set rather than dumping every data frame.
+linelists
+
+length(linelists)
+head(linelists[[1]])
+
+}
 \seealso{
 \code{\link[=tbl_now_to_surveillance]{tbl_now_to_surveillance()}}, \code{\link[=as_tbl_now]{as_tbl_now()}}, \link{tbl_now_triangle_list}
 }

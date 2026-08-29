@@ -12,7 +12,8 @@ backing package is installed are returned. Set to \code{FALSE} to see every
 registered method.}
 }
 \value{
-A character vector of method names.
+A character vector of method names, suitable for passing to
+\code{\link[=engine]{engine()}}.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -22,9 +23,18 @@ namespace, so any backend you (or another package) defined shows up here as
 soon as it is loaded.
 }
 \examples{
+# What can this installation actually fit right now?
 list_nowcast_methods()
 
 # Including methods whose modelling package is not installed
 list_nowcast_methods(installed_only = FALSE)
 
+}
+\seealso{
+\code{\link[=engine]{engine()}} to turn one of these names into a configured model;
+\link{nowcast_engines} for the engines that ship with the package;
+\code{\link[=nowcast_fit]{nowcast_fit()}} and \code{\link[=nowcast_tidy]{nowcast_tidy()}}, the two functions a new method must
+define. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html}{\emph{Adding your own nowcasting model} article}
+walks through writing one.
 }

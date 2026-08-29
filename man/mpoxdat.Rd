@@ -5,7 +5,15 @@
 \alias{mpoxdat}
 \title{mpoxdat: Mpox reporting data from the 2022 New York City outbreak}
 \format{
-A data frame.
+A data frame with 1,417 rows and 4 variables:
+\describe{
+\item{dx_date}{\code{Date}. Specimen collection date of the first positive
+result -- the \emph{event} date.}
+\item{dx_report_date}{\code{Date}. When the Health Department received that
+result -- the \emph{report} date.}
+\item{race}{\code{character}. Synthetic; see the note.}
+\item{n}{\code{integer}. Number of cases with that combination.}
+}
 }
 \usage{
 data(mpoxdat)
@@ -18,7 +26,8 @@ diagnosis or illness onset from July 8 through September 30, 2022 were included.
 dataset was aggregated and pre-processed as described in the note below.
 }
 \details{
-This is line-list data with each row representing case counts. The columns are as follows:
+This is \strong{count} data: each row holds the number of cases sharing a
+diagnosis date, a report date and a race. The columns are as follows:
 \itemize{
 \item \code{dx_date}: is the specimen collection date of the first positive mpox laboratory result,
 \item \code{dx_report_date}: is the date the report of first positive mpox laboratory result was received by the NYC Health Department,
@@ -30,15 +39,33 @@ which follow what has been reported for the US Census.
 }
 \note{
 While \code{dx_date}, \code{dx_report_date} and \code{n} correspond to actual observed data the \code{race} was
-constructed exclusively for the examples of this package. Its a synthetic (simulated) variable
-and does not correspond to any reality.
+constructed exclusively for the examples of this package. It is a synthetic (simulated)
+variable and does not correspond to any reality.
 }
 \examples{
 data(mpoxdat)
+head(mpoxdat)
+
+# Count data, and daily rather than weekly -- unlike denguedat.
+mpox <- tbl_now(mpoxdat,
+  event_date = dx_date, report_date = dx_report_date,
+  case_count = n, strata = race, verbose = FALSE
+)
+mpox
+
+# A short, sharp outbreak: about three months of data.
+range(mpoxdat$dx_date)
+sum(mpoxdat$n)
 }
 \references{
 ROHRER, Rebecca, et al. Nowcasting to Monitor Real-Time Mpox Trends During the 2022
 Outbreak in New York City: Evaluation Using Reportable Disease Data Stratified by Race
 or Ethnicity. Online Journal of Public Health Informatics, 2025, vol. 17, no 1, p. e56495.
 }
-\keyword{mpox}
+\seealso{
+\code{\link[=tbl_now]{tbl_now()}} to declare the date columns; \link[=tbl_now_summary]{summary()} and
+\code{\link[=diagnose]{diagnose()}} to inspect the result; the package's other datasets --
+\link{denguedat}, \link{mpoxdat}, \link{flusight}, \link{covid_colombia}, \link{covid_us} and
+\link{hai_bucaramanga}.
+}
+\keyword{datasets}

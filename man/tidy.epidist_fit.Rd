@@ -67,18 +67,26 @@ cannot be sure which method will win.
 }
 
 \examples{
-\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
-# Fitting needs Stan, so this is not run.
+\dontshow{if (requireNamespace("epidist", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+# Fitting needs Stan and takes minutes, so the fit itself is wrapped in
+# \donttest{}; everything above it runs.
 data(denguedat)
 nowobj <- tbl_now(denguedat,
   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 )
-fit <- tbl_now_to_epidist(nowobj) |>
+
+# The conversion itself is quick, and is what tidy() will later summarise.
+converted <- suppressWarnings(tbl_now_to_epidist(nowobj, verbose = FALSE))
+head(converted)
+
+\donttest{
+fit <- converted |>
   epidist::as_epidist_marginal_model() |>
   epidist::epidist()
 
 tidy(fit)
 tidy(fit, probs = c(0.05, 0.95))
+}
 \dontshow{\}) # examplesIf}
 }
 \seealso{

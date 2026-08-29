@@ -98,9 +98,12 @@
 #'   Retrieved 2026-08-17. Column names and categorical values translated from
 #'   Spanish; see `data-raw/hai_bucaramanga.R` for the mapping.
 #'
-#' @seealso [covid_colombia] for a second Colombian surveillance dataset,
-#'   [diagnose_drift()] and [diagnose_changepoint()] for the delay
-#'   diagnostics this dataset is well suited to.
+#' @seealso
+#' [tbl_now()] to declare the date columns, and
+#' [add_confirmation()][confirmation_setters] for the third one this dataset
+#' has; [diagnose()] and [diagnose_drift()], which this dataset is deliberately
+#' messy enough to exercise; the package's other datasets -- [denguedat],
+#' [mpoxdat], [flusight], [covid_colombia] and [covid_us].
 #'
 #' @examples
 #' data(hai_bucaramanga)

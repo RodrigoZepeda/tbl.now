@@ -13,7 +13,9 @@ tbl_now_to_data_table(x, ..., verbose = TRUE)
 \arguments{
 \item{data}{A \code{data.table}.}
 
-\item{event_date, report_date}{Column names (passed to \code{\link[=as_tbl_now]{as_tbl_now()}}).}
+\item{event_date, report_date}{The event- and report-date columns, as
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
+expressions: a bare column name or a string both work.}
 
 \item{...}{Forwarded to \code{\link[=as_tbl_now]{as_tbl_now()}} (\code{from}) or
 \code{\link[data.table:as.data.table]{data.table::as.data.table()}} (\code{to}).}
@@ -43,4 +45,15 @@ nowobj <- tbl_now_from_data_table(dt,
   report_date = "report_week", verbose = FALSE
 )
 \dontshow{\}) # examplesIf}
+}
+\seealso{
+\link[=tbl_now_coercion_methods]{as.data.table()}, the \pkg{data.table} method that
+calls this; \link[=as_tibble.tbl_now]{as_tibble()} and
+\link[=tbl_now_coercion_methods]{as_tsibble()} for the other exits from the class;
+\code{\link[=tbl_now]{tbl_now()}} to build one from the result.
+\code{\link[=as_tbl_now]{as_tbl_now()}} for the generic that dispatches to the \verb{*_from_*()} side;
+\code{\link[=run_nowcast]{run_nowcast()}}, which does the conversion for you when you fit through an
+\code{\link[=engine]{engine()}}. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html}{\emph{One dataset, many nowcasts} article}
+fits the same data with every supported package.
 }

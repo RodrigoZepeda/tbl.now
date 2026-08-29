@@ -199,9 +199,21 @@
 #'
 #' @description `r lifecycle::badge('experimental')`
 #'
-#' Computes the weighted interval score (WIS), the absolute error of the median
-#' and the 50%/90% interval coverage of a [tbl_nowcast], one row per event date
-#' (and stratum).
+#' A nowcast is a claim about numbers that are not in yet. Once the late reports
+#' arrive you can ask how good the claim was, and these two functions are the two
+#' ways of asking.
+#'
+#' * `score_nowcast()` scores it here: the **weighted interval score** (WIS,
+#'   lower is better), the absolute error of the median, and whether the truth
+#'   fell inside the 50% and 90% intervals -- one row per event date and stratum.
+#' * `as_scoringutils()` hands the same comparison to \pkg{scoringutils}, in the
+#'   long format that package expects, so you can use its full battery of scores
+#'   and its plots.
+#'
+#' In both cases `truth` is a `tbl_now` seen *later*, once the reports the
+#' nowcast was predicting have actually arrived. The observed counts are read
+#' from it with [get_latest_reported_cases()][get_latest_first], so there is no
+#' column to name.
 #'
 #' @param x A [tbl_nowcast] object.
 #' @param truth The `tbl_now` the nowcast is scored against -- normally the
@@ -215,17 +227,62 @@
 #'   `NULL` (default) uses the `tbl_now` the nowcast was built from, which is
 #'   only meaningful when that object still holds the later reports.
 #'
-#' @return A `tibble` with the event-date column, the strata columns and the
-#'   columns `.observed`, `wis`, `ae_median`, `coverage_50` and `coverage_90`.
+#' @return
+#' `score_nowcast()` returns a `tibble` with the event-date column, the strata
+#' columns, and the columns `.observed`, `wis`, `ae_median`, `coverage_50` and
+#' `coverage_90` -- one row per event date and stratum.
+#'
+#' `as_scoringutils()` returns a long `tibble` with the columns `observed`,
+#' `predicted`, `quantile_level` and `model`, plus the event date and strata as
+#' forecast units -- one row per quantile, ready for
+#' `scoringutils::as_forecast_quantile()`.
 #'
 #' @references
 #' Bracher, J., Ray, E. L., Gneiting, T., & Reich, N. G. (2021). Evaluating
 #' epidemic forecasts in an interval format. *PLoS Computational Biology*,
 #' 17(2), e1008618.
 #'
-#' @seealso [nowcast_backtest()], [as_scoringutils()]
+#' @seealso
+#' [nowcast_backtest()] to score many nowcasts at many `now` dates at once;
+#' [nowcast_weights()] to turn those scores into ensemble weights;
+#' [get_latest_reported_cases()][get_latest_first], which is how the truth is
+#' read off `truth`; [nowcast_quantile_levels()] for the levels being scored.
 #'
 #' @examples
+#' # A nowcast and the truth it should be judged against. Both are built by
+#' # hand here so that the example needs no modelling package; in practice `nc`
+#' # comes from run_nowcast() and `truth` is the same data seen later, once the
+#' # late reports have arrived.
+#' truth_df <- data.frame(
+#'   onset  = rep(as.Date("2024-03-04") + 7 * (0:3), each = 3),
+#'   report = rep(as.Date("2024-03-04") + 7 * (0:3), each = 3) + c(0, 7, 14),
+#'   n      = c(5, 3, 2, 8, 4, 1, 6, 5, 3, 9, 2, 2)
+#' )
+#' truth <- tbl_now(truth_df,
+#'   event_date = onset, report_date = report, case_count = n,
+#'   data_type = "count-incidence", verbose = FALSE
+#' )
+#'
+#' # What eventually turned out to be true for each week.
+#' get_latest_reported_cases(truth)
+#'
+#' # A nowcast that predicted 8 / 10 / 13 for every week.
+#' levels <- c(0.25, 0.5, 0.75)
+#' preds <- tidyr::expand_grid(
+#'   onset = unique(truth_df$onset), .quantile_level = levels
+#' )
+#' preds$.value <- rep(c(8, 10, 13), times = 4)
+#' nc <- tbl_nowcast(predictions = preds, method = "toy", event_date = "onset")
+#'
+#' # Lower `wis` is better. `coverage_50` says whether the truth fell inside
+#' # the 50% interval, which it should about half the time.
+#' score_nowcast(nc, truth = truth)
+#'
+#' # The same comparison handed to scoringutils instead, one row per quantile.
+#' head(as_scoringutils(nc, truth = truth))
+#'
+#' # With a real model, `truth` is the full object and the nowcast is fitted to
+#' # a snapshot of it taken at an earlier `now`.
 #' \donttest{
 #' data(denguedat)
 #'
@@ -333,11 +390,16 @@ score_nowcast <- function(x, truth = NULL) {
 #' ensemble weighted from such a backtest would silently fall back to whatever
 #' levels its members happened to share.
 #'
-#' @seealso [engine()], [nowcast_weights()], [nowcast_ensemble()],
-#'   [score_nowcast()]
+#' @seealso
+#' [engine()] to specify each model being compared, and its `min_date` argument,
+#' which matters here because `now` moves between fits;
+#' [score_nowcast()] for the scores computed at each `now`;
+#' [nowcast_weights()] to turn the result into ensemble weights, and
+#' [nowcast_ensemble()] to use them. The
+#' [*One call, many models* article](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html)
+#' compares several packages this way.
 #'
 #' @examples
-#' \donttest{
 #' data(denguedat)
 #'
 #' # A short recent window keeps the example quick.
@@ -346,12 +408,43 @@ score_nowcast <- function(x, truth = NULL) {
 #'   event_date = onset_week, report_date = report_week, verbose = FALSE
 #' )
 #'
+#' # A backtest needs a model. The engine below is a deliberately naive one
+#' # defined on the spot -- it carries the latest reported count forward -- so
+#' # that this example needs no modelling package installed.
+#' nowcast_fit.carry_forward <- function(engine, x, ..., quantile_levels,
+#'                                       verbose = TRUE) {
+#'   counts <- get_latest_reported_cases(x)
+#'   list(dates = counts[[get_event_date(x)]], value = counts[["n"]])
+#' }
+#' nowcast_tidy.carry_forward <- function(engine, fit, x, ..., quantile_levels) {
+#'   predictions <- tidyr::expand_grid(
+#'     event_date = fit$dates, .quantile_level = quantile_levels
+#'   )
+#'   predictions$.value <- rep(fit$value, each = length(quantile_levels))
+#'   names(predictions)[1] <- get_event_date(x)
+#'   list(predictions = predictions)
+#' }
+#' registerS3method("nowcast_fit", "carry_forward", nowcast_fit.carry_forward)
+#' registerS3method("nowcast_tidy", "carry_forward", nowcast_tidy.carry_forward)
+#'
+#' # Refit at two past `now` dates and score each against what is known now.
+#' bt <- nowcast_backtest(dengue,
+#'   engine("carry_forward", label = "carry forward"),
+#'   now_dates = as.Date(c("2010-10-04", "2010-11-15")),
+#'   verbose = FALSE
+#' )
+#' head(bt$scores)
+#'
+#' # Naming several engines compares them on identical data and dates.
+#' bt$methods
+#'
+#' # With a real model the call is the same, with a real engine.
+#' \donttest{
 #' if (requireNamespace("baselinenowcast", quietly = TRUE)) {
-#'   bt <- nowcast_backtest(dengue,
+#'   nowcast_backtest(dengue,
 #'     engine_baselinenowcast(draws = 100),
 #'     now_dates = as.Date("2010-11-15"), verbose = FALSE
-#'   )
-#'   bt$scores
+#'   )$scores
 #' }
 #' }
 #'
@@ -599,10 +692,13 @@ print.nowcast_backtest <- function(x, ...) {
 #'
 #' @return A named numeric vector of weights summing to 1.
 #'
-#' @seealso [nowcast_backtest()], [nowcast_ensemble()]
+#' @seealso
+#' [nowcast_backtest()], which produces the scores these weights come from;
+#' [nowcast_ensemble()], which consumes them;
+#' [engine()]'s `label` argument, which is what tells two configurations of the
+#' same package apart in the result.
 #'
 #' @examples
-#' \donttest{
 #' data(denguedat)
 #'
 #' # A short recent window keeps the example quick.
@@ -611,14 +707,39 @@ print.nowcast_backtest <- function(x, ...) {
 #'   event_date = onset_week, report_date = report_week, verbose = FALSE
 #' )
 #'
-#' if (requireNamespace("baselinenowcast", quietly = TRUE)) {
-#'   bt <- nowcast_backtest(dengue,
-#'     engine_baselinenowcast(draws = 100),
-#'     now_dates = as.Date("2010-11-15"), verbose = FALSE
+#' # A backtest needs a model. The engine below is a deliberately naive one
+#' # defined on the spot -- it carries the latest reported count forward -- so
+#' # that this example needs no modelling package installed.
+#' nowcast_fit.carry_forward <- function(engine, x, ..., quantile_levels,
+#'                                       verbose = TRUE) {
+#'   counts <- get_latest_reported_cases(x)
+#'   list(dates = counts[[get_event_date(x)]], value = counts[["n"]])
+#' }
+#' nowcast_tidy.carry_forward <- function(engine, fit, x, ..., quantile_levels) {
+#'   predictions <- tidyr::expand_grid(
+#'     event_date = fit$dates, .quantile_level = quantile_levels
 #'   )
-#'   nowcast_weights(bt)
+#'   predictions$.value <- rep(fit$value, each = length(quantile_levels))
+#'   names(predictions)[1] <- get_event_date(x)
+#'   list(predictions = predictions)
 #' }
-#' }
+#' registerS3method("nowcast_fit", "carry_forward", nowcast_fit.carry_forward)
+#' registerS3method("nowcast_tidy", "carry_forward", nowcast_tidy.carry_forward)
+#'
+#' # Two engines that differ only in label, so the backtest can weight them.
+#' bt <- nowcast_backtest(dengue,
+#'   engine("carry_forward", label = "carry forward"),
+#'   engine("carry_forward", label = "carry forward (copy)"),
+#'   now_dates = as.Date(c("2010-10-04", "2010-11-15")),
+#'   verbose = FALSE
+#' )
+#'
+#' # Weights sum to one. Two identical models score identically and so split it
+#' # evenly; a better model would take a larger share.
+#' nowcast_weights(bt)
+#' sum(nowcast_weights(bt))
+#'
+#' # Hand them to nowcast_ensemble() to pool the nowcasts they came from.
 #'
 #' @export
 nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"), ...) {
@@ -729,44 +850,7 @@ nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"
   stats::setNames(weights / sum(weights), methods)
 }
 
-#' Export a nowcast in `scoringutils` format
-#'
-#' @description `r lifecycle::badge('experimental')`
-#'
-#' Reshapes a [tbl_nowcast] (and its observed counts) into the long
-#' quantile format `scoringutils::as_forecast_quantile()` expects, so that the
-#' full \pkg{scoringutils} score suite can be applied.
-#'
-#' @param x A [tbl_nowcast] object.
-#' @param truth The `tbl_now` the nowcast is scored against, or `NULL` to reuse
-#'   the nowcast's own source data. Passed to [score_nowcast()]; see there. The
-#'   observed counts are read off the object with [get_case_count()] -- a line
-#'   list is aggregated first -- so there is no column to name.
-#'
-#' @return A `tibble` with the columns `observed`, `predicted`, `quantile_level`
-#'   and `model`, plus the event date and strata as forecast units.
-#'
-#' @seealso [score_nowcast()]
-#'
-#' @examples
-#' \donttest{
-#' data(denguedat)
-#'
-#' recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
-#' dengue <- tbl_now(recent,
-#'   event_date = onset_week, report_date = report_week, verbose = FALSE
-#' )
-#' snapshot <- change_now(
-#'   dplyr::filter(dengue, report_week <= as.Date("2010-10-04")),
-#'   now = as.Date("2010-10-04")
-#' )
-#'
-#' if (requireNamespace("baselinenowcast", quietly = TRUE)) {
-#'   nc <- run_nowcast(snapshot, engine_baselinenowcast(draws = 100), verbose = FALSE)
-#'   as_scoringutils(nc, truth = dengue)
-#' }
-#' }
-#'
+#' @rdname score_nowcast
 #' @export
 as_scoringutils <- function(x, truth = NULL) {
   .assert_tbl_nowcast(x)

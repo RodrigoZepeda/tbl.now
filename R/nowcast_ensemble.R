@@ -48,7 +48,13 @@
 #' @return A [tbl_nowcast] whose `fit` property is the list of member nowcasts
 #'   and whose `metadata` holds the `weights` and the combination `type`.
 #'
-#' @seealso [run_nowcast()], [nowcast_backtest()], [nowcast_weights()]
+#' @seealso
+#' [run_nowcast()] to produce the nowcasts being combined;
+#' [nowcast_backtest()] and [nowcast_weights()] to decide how much to trust each
+#' one, instead of weighting them equally;
+#' [score_nowcast()] to check the ensemble beats its members. The
+#' [*One call, many models* article](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html)
+#' builds one end to end.
 #'
 #' @examples
 #' toy <- function(method, shift) {

@@ -33,7 +33,6 @@ Turns the retrospective scores of a \code{\link[=nowcast_backtest]{nowcast_backt
 weights for \code{\link[=nowcast_ensemble]{nowcast_ensemble()}}.
 }
 \examples{
-\donttest{
 data(denguedat)
 
 # A short recent window keeps the example quick.
@@ -42,16 +41,44 @@ dengue <- tbl_now(recent,
   event_date = onset_week, report_date = report_week, verbose = FALSE
 )
 
-if (requireNamespace("baselinenowcast", quietly = TRUE)) {
-  bt <- nowcast_backtest(dengue,
-    engine_baselinenowcast(draws = 100),
-    now_dates = as.Date("2010-11-15"), verbose = FALSE
+# A backtest needs a model. The engine below is a deliberately naive one
+# defined on the spot -- it carries the latest reported count forward -- so
+# that this example needs no modelling package installed.
+nowcast_fit.carry_forward <- function(engine, x, ..., quantile_levels,
+                                      verbose = TRUE) {
+  counts <- get_latest_reported_cases(x)
+  list(dates = counts[[get_event_date(x)]], value = counts[["n"]])
+}
+nowcast_tidy.carry_forward <- function(engine, fit, x, ..., quantile_levels) {
+  predictions <- tidyr::expand_grid(
+    event_date = fit$dates, .quantile_level = quantile_levels
   )
-  nowcast_weights(bt)
+  predictions$.value <- rep(fit$value, each = length(quantile_levels))
+  names(predictions)[1] <- get_event_date(x)
+  list(predictions = predictions)
 }
-}
+registerS3method("nowcast_fit", "carry_forward", nowcast_fit.carry_forward)
+registerS3method("nowcast_tidy", "carry_forward", nowcast_tidy.carry_forward)
+
+# Two engines that differ only in label, so the backtest can weight them.
+bt <- nowcast_backtest(dengue,
+  engine("carry_forward", label = "carry forward"),
+  engine("carry_forward", label = "carry forward (copy)"),
+  now_dates = as.Date(c("2010-10-04", "2010-11-15")),
+  verbose = FALSE
+)
+
+# Weights sum to one. Two identical models score identically and so split it
+# evenly; a better model would take a larger share.
+nowcast_weights(bt)
+sum(nowcast_weights(bt))
+
+# Hand them to nowcast_ensemble() to pool the nowcasts they came from.
 
 }
 \seealso{
-\code{\link[=nowcast_backtest]{nowcast_backtest()}}, \code{\link[=nowcast_ensemble]{nowcast_ensemble()}}
+\code{\link[=nowcast_backtest]{nowcast_backtest()}}, which produces the scores these weights come from;
+\code{\link[=nowcast_ensemble]{nowcast_ensemble()}}, which consumes them;
+\code{\link[=engine]{engine()}}'s \code{label} argument, which is what tells two configurations of the
+same package apart in the result.
 }

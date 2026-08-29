@@ -4,14 +4,14 @@
 
 # A deterministic backend: predict the counts reported so far, with a fixed
 # multiplicative spread.
-nowcast_fit.testtoy <- function(method, x, ..., spread = 1.2,
+nowcast_fit.testtoy <- function(engine, x, ..., spread = 1.2,
                                 quantile_levels = nowcast_quantile_levels(),
                                 verbose = TRUE) {
   observed <- tbl.now:::.eventual_counts(x)
   list(observed = observed, spread = spread, event_col = get_event_date(x))
 }
 
-nowcast_tidy.testtoy <- function(method, fit, x, ..., quantile_levels) {
+nowcast_tidy.testtoy <- function(engine, fit, x, ..., quantile_levels) {
   n_draws <- 200
   draws <- fit$observed |>
     dplyr::reframe(
@@ -87,7 +87,7 @@ test_that("a backend with no nowcast_tidy() method is reported as such", {
   x <- toy_tbl_now()
   # Register only half a backend, in this test's environment
   local({
-    nowcast_fit.halfdone <- function(method, x, ..., quantile_levels, verbose = TRUE) 1
+    nowcast_fit.halfdone <- function(engine, x, ..., quantile_levels, verbose = TRUE) 1
     registerS3method("nowcast_fit", "halfdone", nowcast_fit.halfdone,
       envir = asNamespace("tbl.now")
     )

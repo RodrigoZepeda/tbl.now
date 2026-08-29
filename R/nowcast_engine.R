@@ -72,7 +72,8 @@
 #' @return An object of class `c(method, "nowcast_engine")`.
 #'
 #' @seealso [run_nowcast()], [nowcast_backtest()], [list_nowcast_methods()], and
-#'   `vignette("custom-nowcast-models")` for writing a backend of your own.
+#'   the [*Adding your own nowcasting model* article](https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html)
+#'   for writing a backend of your own.
 #'
 #' @examples
 #' engine("baselinenowcast", draws = 500)
@@ -362,7 +363,8 @@ is_nowcast_engine <- function(x) {
 #' matter are visible in the signature and a typo is an error rather than a
 #' silently ignored extra.
 #'
-#' `vignette("nowcasting-models")` documents each package's own API; this page
+#' The [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' documents each package's own API; this page
 #' is about driving it through [run_nowcast()].
 #'
 #' @inheritParams engine

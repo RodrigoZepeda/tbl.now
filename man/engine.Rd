@@ -80,5 +80,6 @@ engine("diseasenowcasting", label = "default")
 }
 \seealso{
 \code{\link[=run_nowcast]{run_nowcast()}}, \code{\link[=nowcast_backtest]{nowcast_backtest()}}, \code{\link[=list_nowcast_methods]{list_nowcast_methods()}}, and
-\code{vignette("custom-nowcast-models")} for writing a backend of your own.
+the \href{https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html}{\emph{Adding your own nowcasting model} article}
+for writing a backend of your own.
 }

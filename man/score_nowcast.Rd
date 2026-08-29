@@ -2,9 +2,12 @@
 % Please edit documentation in R/nowcast_score.R
 \name{score_nowcast}
 \alias{score_nowcast}
+\alias{as_scoringutils}
 \title{Score a nowcast against observed data}
 \usage{
 score_nowcast(x, truth = NULL)
+
+as_scoringutils(x, truth = NULL)
 }
 \arguments{
 \item{x}{A \link{tbl_nowcast} object.}
@@ -21,17 +24,70 @@ special handling.
 only meaningful when that object still holds the later reports.}
 }
 \value{
-A \code{tibble} with the event-date column, the strata columns and the
-columns \code{.observed}, \code{wis}, \code{ae_median}, \code{coverage_50} and \code{coverage_90}.
+\code{score_nowcast()} returns a \code{tibble} with the event-date column, the strata
+columns, and the columns \code{.observed}, \code{wis}, \code{ae_median}, \code{coverage_50} and
+\code{coverage_90} -- one row per event date and stratum.
+
+\code{as_scoringutils()} returns a long \code{tibble} with the columns \code{observed},
+\code{predicted}, \code{quantile_level} and \code{model}, plus the event date and strata as
+forecast units -- one row per quantile, ready for
+\code{scoringutils::as_forecast_quantile()}.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Computes the weighted interval score (WIS), the absolute error of the median
-and the 50\%/90\% interval coverage of a \link{tbl_nowcast}, one row per event date
-(and stratum).
+A nowcast is a claim about numbers that are not in yet. Once the late reports
+arrive you can ask how good the claim was, and these two functions are the two
+ways of asking.
+\itemize{
+\item \code{score_nowcast()} scores it here: the \strong{weighted interval score} (WIS,
+lower is better), the absolute error of the median, and whether the truth
+fell inside the 50\% and 90\% intervals -- one row per event date and stratum.
+\item \code{as_scoringutils()} hands the same comparison to \pkg{scoringutils}, in the
+long format that package expects, so you can use its full battery of scores
+and its plots.
+}
+
+In both cases \code{truth} is a \code{tbl_now} seen \emph{later}, once the reports the
+nowcast was predicting have actually arrived. The observed counts are read
+from it with \link[=get_latest_first]{get_latest_reported_cases()}, so there is no
+column to name.
 }
 \examples{
+# A nowcast and the truth it should be judged against. Both are built by
+# hand here so that the example needs no modelling package; in practice `nc`
+# comes from run_nowcast() and `truth` is the same data seen later, once the
+# late reports have arrived.
+truth_df <- data.frame(
+  onset  = rep(as.Date("2024-03-04") + 7 * (0:3), each = 3),
+  report = rep(as.Date("2024-03-04") + 7 * (0:3), each = 3) + c(0, 7, 14),
+  n      = c(5, 3, 2, 8, 4, 1, 6, 5, 3, 9, 2, 2)
+)
+truth <- tbl_now(truth_df,
+  event_date = onset, report_date = report, case_count = n,
+  data_type = "count-incidence", verbose = FALSE
+)
+
+# What eventually turned out to be true for each week.
+get_latest_reported_cases(truth)
+
+# A nowcast that predicted 8 / 10 / 13 for every week.
+levels <- c(0.25, 0.5, 0.75)
+preds <- tidyr::expand_grid(
+  onset = unique(truth_df$onset), .quantile_level = levels
+)
+preds$.value <- rep(c(8, 10, 13), times = 4)
+nc <- tbl_nowcast(predictions = preds, method = "toy", event_date = "onset")
+
+# Lower `wis` is better. `coverage_50` says whether the truth fell inside
+# the 50\% interval, which it should about half the time.
+score_nowcast(nc, truth = truth)
+
+# The same comparison handed to scoringutils instead, one row per quantile.
+head(as_scoringutils(nc, truth = truth))
+
+# With a real model, `truth` is the full object and the nowcast is fitted to
+# a snapshot of it taken at an earlier `now`.
 \donttest{
 data(denguedat)
 
@@ -59,5 +115,8 @@ epidemic forecasts in an interval format. \emph{PLoS Computational Biology},
 17(2), e1008618.
 }
 \seealso{
-\code{\link[=nowcast_backtest]{nowcast_backtest()}}, \code{\link[=as_scoringutils]{as_scoringutils()}}
+\code{\link[=nowcast_backtest]{nowcast_backtest()}} to score many nowcasts at many \code{now} dates at once;
+\code{\link[=nowcast_weights]{nowcast_weights()}} to turn those scores into ensemble weights;
+\link[=get_latest_first]{get_latest_reported_cases()}, which is how the truth is
+read off \code{truth}; \code{\link[=nowcast_quantile_levels]{nowcast_quantile_levels()}} for the levels being scored.
 }

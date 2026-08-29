@@ -12,7 +12,7 @@
 \title{Fit a nowcast with one modelling package}
 \usage{
 \method{nowcast_fit}{diseasenowcasting}(
-  method,
+  engine,
   x,
   ...,
   quantile_levels = nowcast_quantile_levels(),
@@ -20,7 +20,7 @@
 )
 
 \method{nowcast_fit}{baselinenowcast}(
-  method,
+  engine,
   x,
   ...,
   draws = 1000,
@@ -30,7 +30,7 @@
 )
 
 \method{nowcast_fit}{epinowcast}(
-  method,
+  engine,
   x,
   ...,
   preprocess_args = list(),
@@ -39,7 +39,7 @@
 )
 
 \method{nowcast_fit}{NobBS}(
-  method,
+  engine,
   x,
   ...,
   specs = list(),
@@ -48,7 +48,7 @@
 )
 
 \method{nowcast_fit}{surveillance}(
-  method,
+  engine,
   x,
   ...,
   when = NULL,
@@ -60,7 +60,7 @@
 )
 
 \method{nowcast_fit}{EpiNow2}(
-  method,
+  engine,
   x,
   ...,
   convert_args = list(),
@@ -69,7 +69,7 @@
 )
 
 nowcast_fit(
-  method,
+  engine,
   x,
   ...,
   quantile_levels = nowcast_quantile_levels(),
@@ -77,7 +77,7 @@ nowcast_fit(
 )
 
 \method{nowcast_fit}{default}(
-  method,
+  engine,
   x,
   ...,
   quantile_levels = nowcast_quantile_levels(),
@@ -85,10 +85,11 @@ nowcast_fit(
 )
 }
 \arguments{
-\item{method}{A \code{\link[=engine]{engine()}} object. (The argument is called \code{method} for
-historical reasons and because that is what it selects; what arrives is the
-engine, so \code{method$args}, \code{method$label} and the rest are available to a
-backend that wants them.)}
+\item{engine}{An \code{\link[=engine]{engine()}} object -- the modelling package plus its
+arguments. S3 dispatch is on its class, so a backend for \code{"mypackage"} is a
+function called \code{nowcast_fit.mypackage()}. The whole engine arrives, not
+just its name, so \code{engine$args}, \code{engine$label} and the rest are available
+to a backend that wants them.}
 
 \item{x}{A \code{tbl_now} object.}
 
@@ -146,12 +147,12 @@ any package.
 }
 \examples{
 # A minimal backend: two S3 methods and you are done.
-nowcast_fit.constant <- function(method, x, ..., quantile_levels, verbose = TRUE) {
+nowcast_fit.constant <- function(engine, x, ..., quantile_levels, verbose = TRUE) {
   counts <- get_latest_reported_cases(x)
   list(dates = counts[[get_event_date(x)]], value = counts[[ncol(counts)]])
 }
 
-nowcast_tidy.constant <- function(method, fit, x, ..., quantile_levels) {
+nowcast_tidy.constant <- function(engine, fit, x, ..., quantile_levels) {
   predictions <- tidyr::expand_grid(
     event_date = fit$dates, .quantile_level = quantile_levels
   )
@@ -163,5 +164,6 @@ nowcast_tidy.constant <- function(method, fit, x, ..., quantile_levels) {
 }
 \seealso{
 \code{\link[=nowcast_tidy]{nowcast_tidy()}}, \code{\link[=run_nowcast]{run_nowcast()}}, \code{\link[=list_nowcast_methods]{list_nowcast_methods()}} and
-\code{vignette("custom-nowcast-models")} for a worked example of a new backend.
+the \href{https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html}{\emph{Adding your own nowcasting model} article}
+for a worked example of a new backend.
 }
