@@ -127,13 +127,39 @@ week differences and \code{.delays} are all integer.}
 \item{...}{Additional metadata to be stored as attributes.}
 }
 \value{
-An object of class \code{tbl_now}.
+An object of class \code{tbl_now}: the input \code{data} as a \code{tibble}, carrying
+extra attributes that record which columns hold the event date, report date,
+strata, covariates and so on, plus the \code{now} of the nowcast. List them with
+\code{\link[=tbl_now_attributes]{tbl_now_attributes()}}.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-A special \code{tibble} class that includes information for the nowcast.
-See the Attributes section for more information.
+Surveillance data arrives late. A case that happened on Monday may only reach
+the surveillance system on Thursday, so counts for the most recent days always
+look artificially low. \emph{Nowcasting} corrects that artifact: it estimates how
+many cases have already happened but have not been reported yet.
+
+To do that, a model needs two dates for every case -- when it \strong{happened}
+(\code{event_date}) and when it was \strong{reported} (\code{report_date}) -- together with
+the date you are standing on (\code{now}). \code{tbl_now()} takes an ordinary
+\code{data.frame} and records which of its columns play those roles, so you only
+have to say it once.
+
+The result still behaves like a \code{tibble}: \code{dplyr} verbs, \code{$}, \code{[} and
+\code{ggplot2} keep working, and every \code{tbl.now} function knows where to find the
+dates without being told again.
+}
+\details{
+The minimum you must supply is \code{event_date} and \code{report_date} (or one of them
+plus a \code{delay} column, from which the other is reconstructed). Everything else
+is optional and can be added later with \code{\link[=add_strata]{add_strata()}}, \code{\link[=add_covariates]{add_covariates()}},
+\code{\link[=add_confirmation]{add_confirmation()}} and the rest of the \code{\link[=add]{add()}} family.
+
+Once the object exists the usual path is \link[=tbl_now_summary]{summary()} to see
+what is in the data, \code{\link[=diagnose]{diagnose()}} to see what is wrong with it,
+\link[=autoplot.tbl_now]{autoplot()} to look at it, and \code{\link[=run_nowcast]{run_nowcast()}} to fit a
+model. \code{vignette("tbl.now")} walks through that path end to end.
 }
 \section{Attributes}{
 
@@ -152,10 +178,12 @@ by the \code{\link[=validate_tbl_now]{validate_tbl_now()}} function:
 \item{is_censored}{Column indicating whether the measurement is noisy (only upper bound) or not.}
 \item{event_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}. Corresponds to the units of \code{event_date}}
 \item{report_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}. Corresponds to the units of \code{report_date}}
-\item{repot_num}{Column where the \code{report_date} was transformed to numeric values}
-\item{event_num}{Column where the \code{event_date} was transformed to numeric values}
 \item{data_type}{Either \code{linelist}, \code{count-incidence} or \code{count-cumulative} depending on whether it is linelist data
 or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)}
+\item{confirmation_date}{Name of the column with the (optional) third date: when the report was resolved.}
+\item{confirmation_type}{Name of the column saying what that resolution was (\code{"confirmed"}, \code{"retracted"}, \code{"pending"}).}
+\item{confirmation_units}{Units of \code{confirmation_date}, resolved like \code{report_units}.}
+\item{computed_temporal_effect_cols}{Names of the temporal-effect columns that have actually been materialised in the data by \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}.}
 }
 
 You can  list all \code{tbl_now} related attributes in a specific \code{tbl_now} with \code{\link[=tbl_now_attributes]{tbl_now_attributes()}}.
@@ -245,42 +273,48 @@ data-types.
 }
 
 \examples{
-# The `tbl_now` is a data.frame with additional attributes
+# `denguedat` is a linelist: one row per dengue case, with the week symptoms
+# began (`onset_week`) and the week the case reached the surveillance system
+# (`report_week`).
 data(denguedat)
-ndata <- denguedat |>
-  tbl_now(
-    event_date = onset_week, report_date = report_week,
-    strata = gender
-  )
+head(denguedat)
 
-# You can see that it documents the `event_date`, `report_date`, `strata`,
-# `covariates` as well as the `now`.
-ndata
-
-
-# A `tbl_now` is an extension of a `tibble` which means normal
-# `data.frame` operations are permitted
-ndata$newcolumn <- "something"
-ndata
-
-# Like removing a column
-ndata[, -4]
-
-# Like selecting
-ndata[1:10, ]
-
-# You can also apply all dplyr functions:
-ndata |>
-  dplyr::filter(report_week <= as.Date("1991-01-02", format = "\%Y-\%m-\%d"))
-
-# Removing an important column automatically transforms to tibble
-# losing its property
-suppressWarnings(
-  ndata |>
-    dplyr::select(-onset_week)
+# Tell tbl.now which column plays which role. `now` defaults to the last
+# event date seen in the data.
+ndata <- tbl_now(denguedat,
+  event_date = onset_week,
+  report_date = report_week,
+  strata = gender
 )
 
-# Removing strata just changes the overall structure
+# Printing reports back the roles it recorded, and the `now` it chose.
+ndata
+
+# A `tbl_now` is still a tibble, so ordinary manipulation works ...
+ndata$newcolumn <- "something"
+ndata[1:10, ]
+
+# ... including dplyr verbs.
+ndata |>
+  dplyr::filter(report_week <= as.Date("1991-01-02"))
+
+# Dropping a strata column simply forgets that stratum.
 ndata |> dplyr::select(-gender)
 
+# But dropping a column the class depends on demotes the object back to a
+# plain tibble (with a warning): without an event date it can no longer
+# describe a nowcast.
+suppressWarnings(
+  ndata |> dplyr::select(-onset_week)
+)
+
+}
+\seealso{
+\code{\link[=as_tbl_now]{as_tbl_now()}} to convert an object created by another nowcasting package;
+\code{\link[=to_count]{to_count()}} to move between linelist and aggregated count data;
+\code{\link[=tbl_now_attributes]{tbl_now_attributes()}} to list what the object recorded;
+\code{\link[=validate_tbl_now]{validate_tbl_now()}} and \code{\link[=diagnose]{diagnose()}} to check it;
+\link[=tbl_now_summary]{summary()} to describe it;
+\link[=autoplot.tbl_now]{autoplot()} to plot it;
+\code{\link[=run_nowcast]{run_nowcast()}} to fit a nowcast.
 }

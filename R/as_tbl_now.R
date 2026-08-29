@@ -29,26 +29,44 @@
 #' be supplied here too.
 #'
 #' @param object An object to convert to a `tbl_now`.
-#' @param event_date,report_date For `data.frame` / `data.table` / `tbl_ts`
-#'   (and `tbl_now`) inputs, the [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
-#'   event- and report-date columns. They are **not** arguments of the
-#'   package-conversion methods (epinowcast, baselinenowcast, epidist), which
-#'   carry their own date mapping.
+#' @param event_date,report_date The event- and report-date columns. For
+#'   `data.frame`, `data.table` and `tbl_now` inputs these are
+#'   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#'   expressions, so a bare column name works. For a `tbl_ts` (tsibble) they must
+#'   be given as **character strings**, and `event_date` defaults to the tsibble
+#'   index. They are **not** arguments of the package-conversion methods
+#'   (epinowcast, baselinenowcast, epidist), which carry their own date mapping.
 #' @param ... Additional arguments forwarded to the relevant `tbl_now_from_*()`
 #'   converter (and therefore to [tbl_now()]).
 #'
 #' @return A `tbl_now` object.
 #'
-#' @seealso [tbl_now_from_epinowcast()], [tbl_now_from_baselinenowcast()],
-#'   [tbl_now_from_epidist()], [tbl_now_from_tsibble()],
-#'   [tbl_now_from_data_table()]
+#' @seealso
+#' [tbl_now()] to build one from scratch; the converters this dispatches to --
+#' [tbl_now_from_epinowcast()], [tbl_now_from_baselinenowcast()],
+#' [tbl_now_from_epidist()], [tbl_now_from_tsibble()],
+#' [tbl_now_from_data_table()] -- and the `tbl_now_to_*()` functions that go the
+#' other way. The
+#' [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' shows the round trip against each modelling package.
 #'
 #' @examples
-#' # Convert a data.frame to tbl_now
+#' # For a plain data.frame this is a synonym for tbl_now(): you name the
+#' # columns yourself.
 #' data(denguedat)
 #' as_tbl_now(denguedat, event_date = "onset_week", report_date = "report_week")
 #'
-#' @md
+#' # For an object built by another nowcasting package you do not name them,
+#' # because that format already fixes which column is the event date and which
+#' # is the report date. Here we send a tbl_now out to tsibble and bring it back.
+#' if (requireNamespace("tsibble", quietly = TRUE)) {
+#'   ndata <- tbl_now(denguedat,
+#'     event_date = onset_week, report_date = report_week, verbose = FALSE
+#'   )
+#'   ts <- tbl_now_to_tsibble(ndata)
+#'   as_tbl_now(ts, event_date = "onset_week", report_date = "report_week")
+#' }
+#'
 #' @export
 as_tbl_now <- function(object, ...) {
   UseMethod("as_tbl_now")

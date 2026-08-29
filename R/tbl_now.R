@@ -2,8 +2,31 @@
 #'
 #' @description `r lifecycle::badge('experimental')`
 #'
-#' A special `tibble` class that includes information for the nowcast.
-#' See the Attributes section for more information.
+#' Surveillance data arrives late. A case that happened on Monday may only reach
+#' the surveillance system on Thursday, so counts for the most recent days always
+#' look artificially low. *Nowcasting* corrects that artifact: it estimates how
+#' many cases have already happened but have not been reported yet.
+#'
+#' To do that, a model needs two dates for every case -- when it **happened**
+#' (`event_date`) and when it was **reported** (`report_date`) -- together with
+#' the date you are standing on (`now`). `tbl_now()` takes an ordinary
+#' `data.frame` and records which of its columns play those roles, so you only
+#' have to say it once.
+#'
+#' The result still behaves like a `tibble`: `dplyr` verbs, `$`, `[` and
+#' `ggplot2` keep working, and every `tbl.now` function knows where to find the
+#' dates without being told again.
+#'
+#' @details
+#' The minimum you must supply is `event_date` and `report_date` (or one of them
+#' plus a `delay` column, from which the other is reconstructed). Everything else
+#' is optional and can be added later with [add_strata()], [add_covariates()],
+#' [add_confirmation()] and the rest of the [add()] family.
+#'
+#' Once the object exists the usual path is [summary()][tbl_now_summary] to see
+#' what is in the data, [diagnose()] to see what is wrong with it,
+#' [autoplot()][autoplot.tbl_now] to look at it, and [run_nowcast()] to fit a
+#' model. `vignette("tbl.now")` walks through that path end to end.
 #'
 #' @param data A `data.frame` or `tibble` to be converted.
 #'
@@ -118,10 +141,12 @@
 #'   \item{is_censored}{Column indicating whether the measurement is noisy (only upper bound) or not.}
 #'   \item{event_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `event_date`}
 #'   \item{report_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `report_date`}
-#'   \item{repot_num}{Column where the `report_date` was transformed to numeric values}
-#'   \item{event_num}{Column where the `event_date` was transformed to numeric values}
 #'   \item{data_type}{Either `linelist`, `count-incidence` or `count-cumulative` depending on whether it is linelist data
 #'   or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)}
+#'   \item{confirmation_date}{Name of the column with the (optional) third date: when the report was resolved.}
+#'   \item{confirmation_type}{Name of the column saying what that resolution was (`"confirmed"`, `"retracted"`, `"pending"`).}
+#'   \item{confirmation_units}{Units of `confirmation_date`, resolved like `report_units`.}
+#'   \item{computed_temporal_effect_cols}{Names of the temporal-effect columns that have actually been materialised in the data by [compute_temporal_effects()].}
 #' }
 #'
 #' You can  list all `tbl_now` related attributes in a specific `tbl_now` with [tbl_now_attributes()].
@@ -190,48 +215,56 @@
 #' data-types.
 #'
 #' @examples
-#' # The `tbl_now` is a data.frame with additional attributes
+#' # `denguedat` is a linelist: one row per dengue case, with the week symptoms
+#' # began (`onset_week`) and the week the case reached the surveillance system
+#' # (`report_week`).
 #' data(denguedat)
-#' ndata <- denguedat |>
-#'   tbl_now(
-#'     event_date = onset_week, report_date = report_week,
-#'     strata = gender
-#'   )
+#' head(denguedat)
 #'
-#' # You can see that it documents the `event_date`, `report_date`, `strata`,
-#' # `covariates` as well as the `now`.
-#' ndata
-#'
-#'
-#' # A `tbl_now` is an extension of a `tibble` which means normal
-#' # `data.frame` operations are permitted
-#' ndata$newcolumn <- "something"
-#' ndata
-#'
-#' # Like removing a column
-#' ndata[, -4]
-#'
-#' # Like selecting
-#' ndata[1:10, ]
-#'
-#' # You can also apply all dplyr functions:
-#' ndata |>
-#'   dplyr::filter(report_week <= as.Date("1991-01-02", format = "%Y-%m-%d"))
-#'
-#' # Removing an important column automatically transforms to tibble
-#' # losing its property
-#' suppressWarnings(
-#'   ndata |>
-#'     dplyr::select(-onset_week)
+#' # Tell tbl.now which column plays which role. `now` defaults to the last
+#' # event date seen in the data.
+#' ndata <- tbl_now(denguedat,
+#'   event_date = onset_week,
+#'   report_date = report_week,
+#'   strata = gender
 #' )
 #'
-#' # Removing strata just changes the overall structure
+#' # Printing reports back the roles it recorded, and the `now` it chose.
+#' ndata
+#'
+#' # A `tbl_now` is still a tibble, so ordinary manipulation works ...
+#' ndata$newcolumn <- "something"
+#' ndata[1:10, ]
+#'
+#' # ... including dplyr verbs.
+#' ndata |>
+#'   dplyr::filter(report_week <= as.Date("1991-01-02"))
+#'
+#' # Dropping a strata column simply forgets that stratum.
 #' ndata |> dplyr::select(-gender)
 #'
-#' @return An object of class `tbl_now`.
+#' # But dropping a column the class depends on demotes the object back to a
+#' # plain tibble (with a warning): without an event date it can no longer
+#' # describe a nowcast.
+#' suppressWarnings(
+#'   ndata |> dplyr::select(-onset_week)
+#' )
+#'
+#' @return An object of class `tbl_now`: the input `data` as a `tibble`, carrying
+#' extra attributes that record which columns hold the event date, report date,
+#' strata, covariates and so on, plus the `now` of the nowcast. List them with
+#' [tbl_now_attributes()].
+#'
+#' @seealso
+#' [as_tbl_now()] to convert an object created by another nowcasting package;
+#' [to_count()] to move between linelist and aggregated count data;
+#' [tbl_now_attributes()] to list what the object recorded;
+#' [validate_tbl_now()] and [diagnose()] to check it;
+#' [summary()][tbl_now_summary] to describe it;
+#' [autoplot()][autoplot.tbl_now] to plot it;
+#' [run_nowcast()] to fit a nowcast.
 #'
 #' @export
-#' @md
 tbl_now <- function(data,
                     event_date = NULL,
                     report_date = NULL,

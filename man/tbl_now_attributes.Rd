@@ -2,22 +2,28 @@
 % Please edit documentation in R/utils.R
 \name{tbl_now_attributes}
 \alias{tbl_now_attributes}
-\title{Show the names of the attributes of a \code{tbl_now}}
+\title{List what a \code{tbl_now} was told about itself}
 \usage{
 tbl_now_attributes(x)
 }
 \arguments{
-\item{x}{A \code{tbl_now} object}
+\item{x}{A \code{\link[=tbl_now]{tbl_now()}} object.}
 }
 \value{
-A named list with the attributes that are specific to the \code{tbl_now}
-class (i.e. those not shared with a plain \code{tibble}).
+A named list of the attributes specific to the \code{tbl_now} class (those
+not shared with a plain \code{tibble}). Attributes are only present when they were
+set, so an object with no strata has no \code{strata} element.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
-Shows exclusively the attributes of a \code{tbl_now} that are not part
-of the attributes of a \code{tibble} (or a grouped tibble).
+A \code{\link[=tbl_now]{tbl_now()}} remembers which of its columns is the event date, which is the
+report date, which are strata, and so on. That information is stored as
+attributes on the object. \code{tbl_now_attributes()} shows you those, and only
+those -- the bookkeeping attributes every \code{tibble} carries are left out.
+
+Use it when you want to check what an object thinks it is, especially after a
+long \code{dplyr} pipeline.
 }
 \examples{
 data(denguedat)
@@ -26,10 +32,20 @@ df_now <- tbl_now(denguedat,
   report_date = report_week, strata = gender, verbose = FALSE
 )
 
-# Attributes gets all attributes
+# `attributes()` returns everything, including tibble internals like `names`
+# and `row.names`.
 attributes(df_now) |> names()
 
-# tbl_now_attributes gets only those associated to the `tbl_now` class
+# `tbl_now_attributes()` returns only what makes it a tbl_now.
 tbl_now_attributes(df_now) |> names()
 
+# And their values: the roles it recorded, plus the `now` of the nowcast.
+tbl_now_attributes(df_now)[c("event_date", "report_date", "strata", "now")]
+
+}
+\seealso{
+\code{\link[=tbl_now]{tbl_now()}} and its \emph{Attributes} section for what each attribute means; the
+\link[=nowcast_data_getters]{getters} for reading one attribute at a time;
+\code{\link[=change]{change()}} and \code{\link[=add]{add()}} for setting them; \code{\link[=validate_tbl_now]{validate_tbl_now()}} to check they
+are coherent.
 }

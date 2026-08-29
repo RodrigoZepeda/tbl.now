@@ -2,27 +2,43 @@
 % Please edit documentation in R/dplyr_generics.R
 \name{validate_tbl_now}
 \alias{validate_tbl_now}
-\title{Validate a tbl_now object}
+\alias{is_tbl_now}
+\title{Check that an object is a valid \code{tbl_now}}
 \usage{
 validate_tbl_now(x, warn_non_uniqueness = FALSE, warn_now = TRUE)
+
+is_tbl_now(x)
 }
 \arguments{
-\item{x}{An object to validate}
+\item{x}{An object to check.}
 
 \item{warn_non_uniqueness}{(optional) Logical. Whether to throw a warning if data
 has multiple observations for same event and report date (conditional on covariates
 and strata)}
 
-\item{warn_now}{Boolean. Whether to warn if now is before last report or too far in the future.}
+\item{warn_now}{Boolean. Whether to warn if \code{now} falls before the last report
+date, or unreasonably far into the future.}
 }
 \value{
-Returns \code{TRUE} invisibly or throws an error. Called for its side effects.
+\code{is_tbl_now()} returns a single \code{TRUE} or \code{FALSE}.
+
+\code{validate_tbl_now()} returns \code{TRUE} invisibly; it is called for the error or
+warning it raises when the object is malformed.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Checks that an object is a properly constructed \code{tbl_now}
-with all required attributes and valid data.
+Two ways of asking the same question -- \emph{is this object a well-formed
+\code{\link[=tbl_now]{tbl_now()}}?}
+\itemize{
+\item \code{is_tbl_now()} answers quietly with \code{TRUE} or \code{FALSE}. Use it in an \code{if}.
+\item \code{validate_tbl_now()} answers loudly: it stops with an error explaining what
+is wrong, and warns about the merely suspicious. Use it when you want the
+pipeline to halt rather than carry on with a broken object.
+}
+
+Neither checks whether the data are \emph{good} -- only whether the object is put
+together correctly. For the quality of the data itself, use \code{\link[=diagnose]{diagnose()}}.
 }
 \details{
 \code{validate_tbl_now()} and \code{\link[=diagnose]{diagnose()}} share one implementation. This function
@@ -38,13 +54,22 @@ ndata <- tbl_now(denguedat,
   report_date = "report_week", verbose = FALSE
 )
 
-# Validate without errors
+# A well-formed object passes both checks.
+is_tbl_now(ndata)
 validate_tbl_now(ndata)
 
-# Validate with errors (wrapped in try() since this intentionally errors)
+# A plain data.frame is not a tbl_now ...
+is_tbl_now(data.frame(x = 1:3))
+
+# ... and asking for validation says so, with a reason. (Wrapped in try()
+# because it is meant to fail here.)
 try(validate_tbl_now(data.frame(x = 1:3)))
 
 }
 \seealso{
-\code{\link[=diagnose]{diagnose()}} for the same findings as a tibble.
+\code{\link[=diagnose]{diagnose()}} for the same findings returned as a tibble, plus the softer
+notes; \code{\link[=tbl_now]{tbl_now()}} to build a valid object; \code{\link[=tbl_now_attributes]{tbl_now_attributes()}} to see what
+it recorded. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html}{\emph{Describing and diagnosing a tbl_now} article}
+explains what each finding means.
 }

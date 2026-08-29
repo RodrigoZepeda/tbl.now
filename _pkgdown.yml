@@ -58,7 +58,6 @@ reference:
   contents:
   - tbl_now
   - as_tbl_now
-  - is_tbl_now
   - validate_tbl_now
   - tbl_now_attributes
   - to_count

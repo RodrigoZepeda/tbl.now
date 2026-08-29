@@ -5,19 +5,32 @@
 # <https://github.com/joshwlambert/ExtendDataFrames/blob/main/R/subset-reconstruct.R>
 
 
-#' Validate a tbl_now object
+#' Check that an object is a valid `tbl_now`
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
-#' Checks that an object is a properly constructed `tbl_now`
-#' with all required attributes and valid data.
+#' Two ways of asking the same question -- *is this object a well-formed
+#' [tbl_now()]?*
 #'
-#' @param x An object to validate
+#' * `is_tbl_now()` answers quietly with `TRUE` or `FALSE`. Use it in an `if`.
+#' * `validate_tbl_now()` answers loudly: it stops with an error explaining what
+#'   is wrong, and warns about the merely suspicious. Use it when you want the
+#'   pipeline to halt rather than carry on with a broken object.
+#'
+#' Neither checks whether the data are *good* -- only whether the object is put
+#' together correctly. For the quality of the data itself, use [diagnose()].
+#'
+#' @param x An object to check.
 #'
 #' @inheritParams tbl_now
-#' @param warn_now Boolean. Whether to warn if now is before last report or too far in the future.
+#' @param warn_now Boolean. Whether to warn if `now` falls before the last report
+#'   date, or unreasonably far into the future.
 #'
-#' @return Returns `TRUE` invisibly or throws an error. Called for its side effects.
+#' @return
+#' `is_tbl_now()` returns a single `TRUE` or `FALSE`.
+#'
+#' `validate_tbl_now()` returns `TRUE` invisibly; it is called for the error or
+#' warning it raises when the object is malformed.
 #'
 #' @details
 #' `validate_tbl_now()` and [diagnose()] share one implementation. This function
@@ -26,7 +39,12 @@
 #' additionally reports the `note`-level observations that would make every
 #' `dplyr` verb noisy if they were emitted here.
 #'
-#' @seealso [diagnose()] for the same findings as a tibble.
+#' @seealso
+#' [diagnose()] for the same findings returned as a tibble, plus the softer
+#' notes; [tbl_now()] to build a valid object; [tbl_now_attributes()] to see what
+#' it recorded. The
+#' [*Describing and diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+#' explains what each finding means.
 #'
 #' @examples
 #' data(denguedat)
@@ -35,10 +53,15 @@
 #'   report_date = "report_week", verbose = FALSE
 #' )
 #'
-#' # Validate without errors
+#' # A well-formed object passes both checks.
+#' is_tbl_now(ndata)
 #' validate_tbl_now(ndata)
 #'
-#' # Validate with errors (wrapped in try() since this intentionally errors)
+#' # A plain data.frame is not a tbl_now ...
+#' is_tbl_now(data.frame(x = 1:3))
+#'
+#' # ... and asking for validation says so, with a reason. (Wrapped in try()
+#' # because it is meant to fail here.)
 #' try(validate_tbl_now(data.frame(x = 1:3)))
 #'
 #' @export
@@ -185,24 +208,7 @@ tbl_now_reconstruct_internal <- function(data, template) {
   return(data)
 }
 
-#' Check if an object is a tbl_now
-#'
-#' @description `r lifecycle::badge("experimental")`
-#'
-#' Checks if object x is a `tbl.now`
-#'
-#' @param x any R object
-#'
-#' @return (boolean) `TRUE` if object is a `tbl_now`
-#' `FALSE` if not.
-#'
-#'
-#' @examples
-#' is_tbl_now(data.frame(x = 1:3))
-#'
-#' xval <- data.frame(x = 1:3)
-#' class(xval) <- c("tbl_now", "data.frame")
-#' is_tbl_now(xval)
+#' @rdname validate_tbl_now
 #' @export
 is_tbl_now <- function(x) {
   inherits(x, "tbl_now") && tbl_now_can_reconstruct(x)

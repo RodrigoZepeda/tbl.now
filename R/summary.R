@@ -537,7 +537,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 #' `weights` are case counts. The mean and standard deviation are the weighted
 #' versions, defined so that they equal what expanding the counts to one row
 #' per case and calling [mean()] / [stats::sd()] would give. The quantiles come
-#' from [.tbl_now_weighted_quantile()], the estimator the package's plots
+#' from `.tbl_now_weighted_quantile()`, the estimator the package's plots
 #' already use, so the table and the figures agree.
 #'
 #' @param values Numeric vector.

@@ -62,7 +62,8 @@ set \code{is_censored = TRUE}.}
 for the attribute. In the case of \code{covariates} and \code{strata} argument \code{...} can
 refer to multiple columns.}
 
-\item{warn_now}{Boolean. Whether to warn if now is before last report or too far in the future.}
+\item{warn_now}{Boolean. Whether to warn if \code{now} falls before the last report
+date, or unreasonably far into the future.}
 
 \item{warn_non_uniqueness}{(optional) Logical. Whether to throw a warning if data
 has multiple observations for same event and report date (conditional on covariates

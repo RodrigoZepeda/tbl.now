@@ -1,34 +1,49 @@
-#' Transform an object to count data
+#' Convert between linelist and aggregated count data
 #'
 #' @description `r lifecycle::badge("stable")`
-#' Transforms a `tbl.now` between count data types:
-#' * `linelist`: to `count-incidence` or `count-cumulative`
-#' * `count-incidence`: to `count-cumulative`
-#' * `count-cumulative`: to `count-incidence`
+#'
+#' Surveillance data comes in three shapes, and different nowcasting packages
+#' want different ones. `to_count()` moves a [tbl_now()] between them:
+#'
+#' * **`linelist`** -- one row per case. The most detailed shape.
+#' * **`count-incidence`** -- one row per (event date, report date) pair, holding
+#'   the number of cases reported *on exactly that report date*.
+#' * **`count-cumulative`** -- the same grid, but holding the number of cases
+#'   known *up to and including* that report date. This is the shape most public
+#'   dashboards publish.
+#'
+#' You can go from `linelist` to either count shape, and back and forth between
+#' the two count shapes. You cannot go back to `linelist`: once cases have been
+#' added up, the individual rows are gone.
 #'
 #' @details
-#' This is an S3 generic. This package provides methods for the
-#' following classes:
+#' This is an S3 generic. The package provides a method for `tbl_now` objects,
+#' which aggregates into the `case_count` column, creating one named `n` when the
+#' object does not already have one.
 #'
-#' * `tbl_now`: takes a `tbl_now` object and creates a new column with
-#' name `n` of counts of observations if `data_type = "linelist"`.
+#' Aggregation sums over every column the object has *not* been told about, so a
+#' column you care about should be declared as a strata or covariate first (see
+#' [add_strata()]) or it will be summed away.
 #'
+#' @section Statistical details:
 #' Converting `count-cumulative` to `count-incidence` **de-accumulates** the
 #' series: within each event date (and grouping), ordered by report date, the
-#' incremental count is the cumulative total minus the previous one. Because
-#' cumulative totals can be revised *downward*, an increment can be **negative**;
-#' callers that need non-negative increments (for example
-#' [tbl_now_to_baselinenowcast()]) must handle or refuse that case.
+#' increment is that cumulative total minus the previous one. Because published
+#' cumulative totals are sometimes revised *downward*, an increment can be
+#' **negative**. That is not a bug -- it is a retraction showing through -- but
+#' code that requires non-negative counts (for example
+#' [tbl_now_to_baselinenowcast()]) must handle or refuse it.
 #'
-#' @param x Data to be transformed from `linelist` to count data
+#' @param x A [tbl_now()] object to convert.
 #'
-#' @param to Either `linelist`, `count-incidence` or `count-cumulative`
-#' the resulting data-type to be created.
+#' @param to Character. The data type to produce: `"linelist"`,
+#'   `"count-incidence"` or `"count-cumulative"`. Defaults to the object's
+#'   current type, i.e. no change.
 #'
-#' @param ... Additional arguments
+#' @param ... Additional arguments passed to methods.
 #'
-#' @note `linelist` data cannot be reconstructed from `count-*` data. Trying
-#' this will throw an error as you cannot un-count aggregated data.
+#' @note `linelist` data cannot be reconstructed from `count-*` data. Asking for
+#' it throws an error, because aggregated data cannot be un-counted.
 #'
 #' @return A `tbl_now` object of the requested `to` data type, with the counts
 #' aggregated into the `case_count` column.
@@ -41,18 +56,26 @@
 #'   strata = "gender"
 #' )
 #'
-#' to_count(ndata, to = "count-incidence")
+#' # A linelist has one row per case ...
+#' nrow(ndata)
 #'
-#' data("covid_colombia")
-#' suppressWarnings({
-#'   ndata <- tbl_now(covid_colombia,
-#'     event_date = "notification_date",
-#'     report_date = "diagnosis_date",
-#'     case_count = "n",
-#'     strata = "sex"
-#'   )
-#'   to_count(ndata, to = "count-cumulative")
-#' })
+#' # ... which becomes one row per (onset week, report week, gender), with the
+#' # number of cases in `n`.
+#' counts <- to_count(ndata, to = "count-incidence")
+#' counts
+#'
+#' # Cumulative totals instead: how many cases for that onset week were known by
+#' # each report week. Within an onset week these only ever go up.
+#' to_count(counts, to = "count-cumulative")
+#'
+#' # Going back to a linelist is impossible -- the individual cases are gone.
+#' try(to_count(counts, to = "linelist"))
+#'
+#' @seealso
+#' [tbl_now()] and its *Data types* section for what each shape means;
+#' [get_data_type()] to ask an object which shape it currently is;
+#' [complete_zeroes()] to fill in the (event, report) pairs where nothing was
+#' reported; [get_latest_reported_cases()] to pull out the most recent counts.
 #'
 #' @export
 to_count <- function(x, to = NULL, ...) {

@@ -254,20 +254,6 @@ diagnose_batches <- function(data,
 # Step 1: one signed count per (event date, report date, stratum)
 # =============================================================================
 
-#' Reduce a `tbl_now` to signed counts indexed by (event, report, stratum).
-#'
-#' Handles the three `tbl.now` data types uniformly:
-#' * `"linelist"` -- one item per row, so the count is `1`;
-#' * `"count-incidence"` -- the case-count column *is* the count;
-#' * `"count-cumulative"` -- the case-count column is a running total, so it is
-#'   differenced within each (event, stratum) into signed increments.  The
-#'   increment attached to a report date is the change the report announced,
-#'   which may be negative when a report revises a total downward.
-#'
-#' @returns A data frame with `.event_date`, `.report_date`, `.delay`, `.count`,
-#'   `.stratum`.
-#' @keywords internal
-#' @noRd
 #' Resolve the confirmation column for a batch scan
 #'
 #' @param data A `tbl_now`.
@@ -287,6 +273,21 @@ diagnose_batches <- function(data,
   }
   confirmation_col
 }
+
+#' Reduce a `tbl_now` to signed counts indexed by (event, report, stratum).
+#'
+#' Handles the three `tbl.now` data types uniformly:
+#' * `"linelist"` -- one item per row, so the count is `1`;
+#' * `"count-incidence"` -- the case-count column *is* the count;
+#' * `"count-cumulative"` -- the case-count column is a running total, so it is
+#'   differenced within each (event, stratum) into signed increments.  The
+#'   increment attached to a report date is the change the report announced,
+#'   which may be negative when a report revises a total downward.
+#'
+#' @returns A data frame with `.event_date`, `.report_date`, `.delay`, `.count`,
+#'   `.stratum`.
+#' @keywords internal
+#' @noRd
 
 .batch_report_increments <- function(data, axis = c("report", "confirmation")) {
   axis <- match.arg(axis)
