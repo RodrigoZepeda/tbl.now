@@ -18,22 +18,39 @@ attr_default <- function(x, name, default = NULL) {
   if (is.null(val)) default else val
 }
 
-#' Check whether a date is a weekday vs weekend (international definition)
+#' Is a date a weekday or a weekend?
 #'
 #' @description `r lifecycle::badge('stable')`
 #'
-#' Function that checks whether a date object is a weekday or weekend.
+#' Reporting almost always slows down at the weekend, which is one of the
+#' strongest and most predictable patterns in surveillance data. This tells you
+#' which days are which, and lets you say what "weekend" means -- it is Friday
+#' and Saturday in much of the Middle East, and Sunday alone in some countries.
 #'
-#' @param date A Date (or POSIXt) object.
-#' @param weekend_days A character or numeric vector defining weekend days.
+#' @param date A Date (or POSIXt) object. May be a vector.
+#' @param weekend_days A character or numeric vector defining which days count as
+#'   the weekend. Defaults to Saturday and Sunday.
 #'
-#'   * Numeric: must be integers in 1-7 corresponding to [lubridate::wday()] when `week_start = 1`.
+#'   * Character: day names or abbreviations, case-insensitive --
+#'     `c("Mon", "Tuesday", "wed", ...)`.
 #'
-#'   * Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
-#'   Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).
+#'   * Numeric: integers 1-7 in [lubridate::wday()] numbering with
+#'     `week_start = 1`, so **1 = Monday** and 7 = Sunday.
 #'
+#' @return A logical vector, `TRUE` where the date is a weekday and `FALSE` where
+#' it falls on the weekend.
 #'
-#' @return A logical vector: TRUE if weekday, FALSE if weekend.
+#' @section A warning about weekday numbers:
+#' The numeric form of `weekend_days` counts from **Monday** (1 = Monday). The
+#' `align_on_day` argument of [align_weeks()] counts from **Sunday**
+#' (1 = Sunday). They are different conventions; check each call separately, or
+#' use the character form here, which is unambiguous.
+#'
+#' @seealso
+#' [temporal_effects()] and [add_temporal_effects()], which use this to build the
+#' day-of-week and weekend terms a model can fit;
+#' [plot_day_of_week_effects()][calendar_effect_plots] to see the effect in the
+#' data; [align_weeks()] for putting weekly data on a common weekday.
 #'
 #' @examples
 #' is_weekday(as.Date("2020-04-22")) # TRUE (Wed)

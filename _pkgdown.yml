@@ -78,8 +78,6 @@ reference:
   - align_weeks
   - complete_zeroes
   - censor_delays_above
-  - censor_confirmation_delays_above
-  - week_2_date
   - is_weekday
 
 - title: Temporal effects

@@ -50,11 +50,13 @@ use \code{date_col}.}
 
 \item{name_prefix}{What preffix to add to the column names}
 
-\item{weekend_days}{A character or numeric vector defining weekend days.
+\item{weekend_days}{A character or numeric vector defining which days count as
+the weekend. Defaults to Saturday and Sunday.
 \itemize{
-\item Numeric: must be integers in 1-7 corresponding to \code{\link[lubridate:wday]{lubridate::wday()}} when \code{week_start = 1}.
-\item Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
-Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).
+\item Character: day names or abbreviations, case-insensitive --
+\code{c("Mon", "Tuesday", "wed", ...)}.
+\item Numeric: integers 1-7 in \code{\link[lubridate:wday]{lubridate::wday()}} numbering with
+\code{week_start = 1}, so \strong{1 = Monday} and 7 = Sunday.
 }}
 
 \item{date_type}{Either \code{event_date} (default) or \code{report_date}

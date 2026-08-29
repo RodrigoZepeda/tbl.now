@@ -2,12 +2,12 @@
 % Please edit documentation in R/complete_zeroes.R
 \name{complete_zeroes}
 \alias{complete_zeroes}
-\title{Complete with zeroes}
+\title{Fill in the days when nothing was reported}
 \usage{
 complete_zeroes(x, max_delay = NULL, until = NULL)
 }
 \arguments{
-\item{x}{A \code{tbl.now} object.}
+\item{x}{A \code{tbl_now} object.}
 
 \item{max_delay}{Maximum delay to fill. For example if set to 5 it will complete
 with 0's all reports with delays 0 to 4. But will not fill other delays (say 6)}
@@ -23,15 +23,28 @@ has no effect beyond the \code{now}: an event date later than the \code{now} can
 carry any report on or before it, so no row would survive for it.}
 }
 \value{
-A \code{tbl.now} object with the same columns that includes
-the \code{0} observations in the \code{case_count}.
+A \code{tbl_now} object with the same columns as \code{x}, plus the rows that
+were implicitly zero, carrying \code{0} in the \code{case_count} column. The data type
+is preserved.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Takes a \code{tbl.now} object and completes observations
-for event_dates or report_dates that have not been registered
-(by each strata) with a 0.
+Surveillance data records what happened, not what didn't. If no dengue case
+with onset on 3 January was reported on 5 January, there is simply no row for
+that combination -- which is \emph{not} the same as a row saying zero, even though
+it means the same thing.
+
+Most nowcasting models need the difference spelled out. They work on a
+complete rectangle of (event date x report date) cells, and a missing cell is
+ambiguous: it could be a genuine zero, or a delay so long the report has not
+arrived yet. \code{complete_zeroes()} writes the genuine zeros in explicitly, for
+every stratum, leaving only the not-yet-reported cells absent.
+}
+\details{
+Zeros are only filled where a report \emph{could} have arrived: cells with a report
+date on or before the event date's \code{now}, and within \code{max_delay}. Filling
+beyond that would invent observations from the future.
 }
 \examples{
 ndata <- dplyr::tibble(
@@ -53,11 +66,15 @@ ndata <- tbl_now(ndata,
   verbose = FALSE, strata = sex, case_count = n, data_type = "count-incidence"
 )
 
-# Notice that ndata has no 2020-01-03 event date
-ndata
+# Nothing happened on 2020-01-03, so the data has no row for it at all.
+sort(unique(ndata$event))
 
-# But complete zeroes adds it with a 0
-complete_zeroes(ndata)
+# complete_zeroes() writes that absence down as an explicit zero, for every
+# stratum, so a model can tell "no cases" from "not reported yet".
+filled <- complete_zeroes(ndata)
+sort(unique(filled$event))
+nrow(ndata)
+nrow(filled)
 
 # Also works for count-cumulative
 ndata |>
@@ -65,4 +82,10 @@ ndata |>
   complete_zeroes() |>
   dplyr::arrange(event, sex, report)
 
+}
+\seealso{
+\code{\link[=to_count]{to_count()}} for the data shapes this operates on;
+\code{\link[=censor_delays_above]{censor_delays_above()}} for the opposite problem, delays that are too long;
+\code{\link[=diagnose_missing]{diagnose_missing()}} and \code{\link[=diagnose_truncation]{diagnose_truncation()}} to find the gaps first;
+\code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}} to see the rectangle being filled.
 }

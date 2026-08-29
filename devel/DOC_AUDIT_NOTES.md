@@ -67,3 +67,61 @@ Fixed:
 * `confirmation_getters` example only ever showed the getters returning `NULL`; it now
   attaches a confirmation and shows them returning something. `confirmation_setters`
   now exercises `change_confirmation()` and the `confirmation_type` column.
+
+### Section 3 — Reshaping
+
+Fixed:
+* **Bug in the `align_weeks` example:** it passed `case_col = "observation"` to
+  `tbl_now()`. There is no such argument — `tbl_now()`'s is `case_count` — so the
+  value was swallowed by `...`, stored as a stray attribute, and the count data was
+  built as a **linelist**. See the open question on `...` below.
+* `align_weeks` `@details` ended mid-sentence ("...(if applied to a `tbl_now`) or").
+* The `align_weeks` example indexed `flutbl[413484, ".delay"]` — a magic row number —
+  to make its point. Replaced with the share of non-integer delays, which states the
+  point directly. Also subset to one state: **15.4s -> 1.5s**.
+* `week_2_date` folded onto the `align_weeks` page; `censor_confirmation_delays_above`
+  folded onto `censor_delays_above` (exact counterparts).
+* `complete_zeroes` and `is_weekday` rewritten around why a practitioner would reach
+  for them.
+
+**Naming fixes applied** (see the consistency survey below):
+* `censor_delays_above(data=)` and `censor_confirmation_delays_above(data=)` -> `x`.
+* `censor_delays_above(quiet=)` and `censor_confirmation_delays_above(quiet=)` ->
+  `verbose=`, default `TRUE`. Tests updated.
+
+**Conflict documented, not silently changed:**
+* `align_weeks(align_on_day=)` numbers weekdays from **Sunday** (`lubridate::wday()`
+  default); `is_weekday(weekend_days=)` numbers them from **Monday**
+  (`week_start = 1`). Both are now documented explicitly and cross-warn in a shared
+  "A warning about weekday numbers" section. Changing either silently would shift
+  existing user results by a day with no error, so this is left as a decision for the
+  maintainer.
+
+## Parameter-consistency survey (whole package, 148 exported functions)
+
+First argument: `x` in 116. Deviations and the verdict on each:
+
+| Function(s) | First arg | Verdict |
+|---|---|---|
+| `tbl_now()`, `tbl_now_from_*()` (6) | `data` | **Keep** — input is not a `tbl_now` yet. |
+| `align_weeks()`, `week_2_date()` | `.data` | **Keep** — tidyverse convention for data-frame verbs; consistent with each other. |
+| `as_tbl_now()`, `autoplot()` | `object` | **Keep** — fixed by the S3 generics. |
+| `is_weekday()` | `date` | **Keep** — takes a Date, not a `tbl_now`. |
+| `list_nowcast_methods()`, `nowcast_weights()`, `engine_*()`, `nowcast_ensemble()` | various | **Keep** — do not take a `tbl_now`. |
+| `censor_delays_above()`, `censor_confirmation_delays_above()` | `data` | **FIXED -> `x`** |
+| `diagnose_batches()`, `diagnose_batch_shape()`, `simulate_batch()`, `transport_discriminant()` | `data` | **TO FIX -> `x`** (Diagnosing section) |
+| `engine()`, `nowcast_fit()`, `nowcast_tidy()` | `method` | **TO FIX -> `engine`** (Fitting section) — leftover from the removed `nowcast_method()`. |
+
+Other shared names:
+* `verbose` (20 functions) vs `quiet` (5). The three converters that have **both**
+  use them for different channels (`verbose` = the conversion summary, `quiet` = the
+  lossy-conversion warning); document that distinction rather than merge them.
+* `axis` (16), `max_delay` (9), `alpha` (4), `by` (7) are used consistently.
+* `level` (3, credible-interval width) vs `quantile_levels` (10, the vector of
+  quantiles). Different things; names are fine but must be distinguished in prose.
+
+## Open question for the maintainer
+`tbl_now(...)` stores unmatched arguments as attributes, so a **misspelled argument
+name is accepted silently** — that is how `case_col = "observation"` slipped into a
+shipped example and mis-typed the data. Worth considering a warning for unknown names
+that are near-misses of real ones. Behaviour change, so not done in this pass.

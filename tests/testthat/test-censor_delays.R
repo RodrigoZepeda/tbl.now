@@ -20,7 +20,7 @@ make_delay_data <- function(is_censored = FALSE) {
 }
 
 test_that("censor_delays_above flags long delays and creates the column", {
-  out <- censor_delays_above(make_delay_data(), max_delay = 60, quiet = TRUE)
+  out <- censor_delays_above(make_delay_data(), max_delay = 60, verbose = FALSE)
 
   expect_true(is_tbl_now(out))
   expect_equal(get_is_censored(out), ".is_censored")
@@ -30,23 +30,23 @@ test_that("censor_delays_above flags long delays and creates the column", {
 
 test_that("censor_delays_above merges with existing censoring (never un-censors)", {
   out <- censor_delays_above(make_delay_data(is_censored = TRUE),
-    max_delay = 60, quiet = TRUE
+    max_delay = 60, verbose = FALSE
   )
   expect_equal(get_is_censored(out), "flag")
   # row 1 was already censored; row 4 newly censored; both stay TRUE
   expect_equal(out[["flag"]], c(TRUE, FALSE, FALSE, TRUE))
 })
 
-test_that("censor_delays_above emits an informative message unless quiet", {
+test_that("censor_delays_above emits an informative message unless verbose = FALSE", {
   expect_message(
     censor_delays_above(make_delay_data(), max_delay = 60),
     "censored"
   )
-  expect_silent(censor_delays_above(make_delay_data(), max_delay = 60, quiet = TRUE))
+  expect_silent(censor_delays_above(make_delay_data(), max_delay = 60, verbose = FALSE))
 })
 
 test_that("censor_delays_above flags nothing when max_delay is large", {
-  out <- censor_delays_above(make_delay_data(), max_delay = 1000, quiet = TRUE)
+  out <- censor_delays_above(make_delay_data(), max_delay = 1000, verbose = FALSE)
   expect_false(any(out[[".is_censored"]]))
 })
 
@@ -61,7 +61,7 @@ test_that("censor_delays_above works on count data via the .delay column", {
     data_type = "count-incidence", event_units = "weeks",
     report_units = "weeks", verbose = FALSE
   )
-  out <- censor_delays_above(tn, max_delay = 4, quiet = TRUE) # > 4 weeks
+  out <- censor_delays_above(tn, max_delay = 4, verbose = FALSE) # > 4 weeks
   expect_true(is_tbl_now(out))
   expect_equal(sum(out[[get_is_censored(out)]]), 1L)
 })

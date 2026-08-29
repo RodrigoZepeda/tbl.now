@@ -845,48 +845,11 @@ get_initial_confirmed <- function(x) {
   .count_by_outcome(x, "get_initial_confirmed", net = FALSE, within_delay = 0)
 }
 
-#' Mark long confirmation delays as censored
-#'
-#' @description `r lifecycle::badge("experimental")`
-#'
-#' The confirmation counterpart of [censor_delays_above()]. A case still waiting
-#' for a laboratory result long after it was reported is, in practice, never
-#' going to be resolved -- and treating its delay as a real observation drags
-#' the estimated delay distribution to the right. This marks those cases as
-#' **pending** rather than letting an implausible delay stand.
-#'
-#' @param data A `tbl_now` with a confirmation process.
-#' @param max_delay Longest confirmation delay to keep, in the object's
-#'   confirmation units.
-#' @param quiet Suppress the summary message.
-#'
-#' @return A `tbl_now`. Rows beyond `max_delay` have their
-#'   `confirmation_type` set to `"pending"` and their confirmation date set to
-#'   `NA`, because a resolution you refuse to believe is not a resolution.
-#'
-#' @seealso [censor_delays_above()] for the reporting delay,
-#'   [diagnose_confirmation_delay()].
-#'
-#' @examples
-#' cases <- data.frame(
-#'   onset = as.Date("2021-01-04") + 0:4,
-#'   visit = as.Date("2021-01-05") + 0:4,
-#'   result = as.Date("2021-01-05") + 0:4 + c(1, 2, 1, 90, 2),
-#'   outcome = rep("confirmed", 5)
-#' )
-#' flu <- tbl_now(cases,
-#'   event_date = onset, report_date = visit,
-#'   confirmation_date = result, confirmation_type = outcome,
-#'   data_type = "linelist", verbose = FALSE
-#' )
-#'
-#' # The 90-day resolution becomes "pending" again.
-#' table(censor_confirmation_delays_above(flu, 30)[["outcome"]])
-#'
+#' @rdname censor_delays_above
 #' @export
-censor_confirmation_delays_above <- function(data, max_delay, quiet = FALSE) {
-  .assert_tbl_now(data, "censor_confirmation_delays_above")
-  if (!has_confirmation(data)) {
+censor_confirmation_delays_above <- function(x, max_delay, verbose = TRUE) {
+  .assert_tbl_now(x, "censor_confirmation_delays_above")
+  if (!has_confirmation(x)) {
     cli::cli_abort(c(
       "{.fn censor_confirmation_delays_above} needs a confirmation process.",
       "i" = "Attach one with {.fn add_confirmation}."
@@ -896,30 +859,30 @@ censor_confirmation_delays_above <- function(data, max_delay, quiet = FALSE) {
     cli::cli_abort("{.arg max_delay} must be a single non-negative number.")
   }
 
-  delays <- data[[".confirmation_delay"]]
+  delays <- x[[".confirmation_delay"]]
   too_long <- is.finite(delays) & delays > max_delay
 
   if (any(too_long)) {
-    confirmation_col <- get_confirmation_date(data)
-    type_col <- get_confirmation_type(data)
+    confirmation_col <- get_confirmation_date(x)
+    type_col <- get_confirmation_type(x)
     # Both together: a `confirmation_type` of "confirmed" with no date is the
     # contradiction `tbl_now()` warns about, so the outcome goes back to
     # "pending" at the same time as the date is removed.
-    data[[confirmation_col]][too_long] <- NA
-    data[[type_col]][too_long] <- "pending"
-    data[[".confirmation_num"]][too_long] <- NA_real_
-    data[[".confirmation_delay"]][too_long] <- NA_real_
+    x[[confirmation_col]][too_long] <- NA
+    x[[type_col]][too_long] <- "pending"
+    x[[".confirmation_num"]][too_long] <- NA_real_
+    x[[".confirmation_delay"]][too_long] <- NA_real_
   }
 
-  if (!isTRUE(quiet)) {
+  if (isTRUE(verbose)) {
     cli::cli_inform(c(
       "i" = paste0(
         "Returned {sum(too_long)} case{?s} with a confirmation delay > ",
-        "{max_delay} {get_confirmation_units(data)} to {.val pending}."
+        "{max_delay} {get_confirmation_units(x)} to {.val pending}."
       )
     ))
   }
-  data
+  x
 }
 
 #' How much of each day has been resolved
