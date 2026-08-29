@@ -237,3 +237,41 @@ Includes the full test suite (OK), all examples on the default path (77s) and wi
 S3 generic-method consistency after the `method` -> `engine` rename, missing
 documentation entries, code/documentation mismatches, `\usage` sections and Rd
 contents -- all OK.
+
+## ISO weekday change — impact verification
+
+`align_weeks(align_on_day =)` was renumbered from Sunday-first to ISO (1 = Monday).
+Checked that nothing outside the tests moved.
+
+**1. Who passes `align_on_day` at all.** A grep over the whole repo (excluding
+`docs/`): only `tests/testthat/test-tbl_now_align_week.R`, which was updated with the
+change. No vignette, article, `data-raw/` script, README or R source passes it. The
+two indirect users go through the default:
+
+* `vignettes/tbl.now.Rmd:1216` — `align_weeks(df, date_col = date)`
+* `data-raw/converter_matrix.R:75` — `tbl_now(..., align_weeks = TRUE)`
+
+**2. Byte-comparison of every default path.** A worktree at `8d7a35b~1` (pre-change)
+and the current tree were run over the same inputs and the results compared with
+`identical()`:
+
+| path | n | result |
+|---|---|---|
+| `align_weeks(df, date_col=)`, the vignette's call | 401 | identical |
+| `type = "epi"` / `type = "iso"` | 401 each | identical |
+| `align_weeks(<tbl_now>)` — event, report, `.delay`, `now` | 4000 | identical |
+| `tbl_now(align_weeks = TRUE)` on FluSight Texas | 8539 | identical |
+| confirmation-date alignment | 42 | identical |
+| `week_2_date()` | 52 | identical |
+
+**3. The vignette's own chunk**, run verbatim under both versions, produces the same
+three rows and the same `Sunday` labels. Its prose ("Align to Sundays") still holds.
+
+**4. `R CMD check`** re-built the vignette outputs: OK.
+
+**5. `is_weekday()` was not changed** — it already numbered from Monday. No vignette,
+README or `data-raw/` script passes numeric `weekend_days`; the one vignette call
+(`tbl.now.Rmd:978`) uses the character default.
+
+**Migration for an explicit caller:** subtract one, wrapping 1 to 7.
+Old `1`(Sun)→`7`, `2`(Mon)→`1`, `3`(Tue)→`2`, ... `7`(Sat)→`6`.
