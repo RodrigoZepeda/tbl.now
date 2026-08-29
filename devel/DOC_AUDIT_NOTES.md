@@ -302,3 +302,15 @@ It is **not** a code regression:
 
 Worth remembering when a `data.table`-backed engine test fails for no reason: clear
 the temp directory before believing it.
+
+### Re-run on a clean temp directory
+
+```
+Status: OK
+Duration: 20m 25.3s
+0 errors | 0 warnings | 0 notes
+```
+
+examples 77s OK · `--run-donttest` 216s OK · tests `[24m/14m]` OK · vignettes
+re-built OK. No per-example timing table, i.e. **no example exceeds 5s** — the run
+before the Stan examples were trimmed named four, the worst at 87s.
