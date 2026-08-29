@@ -155,3 +155,20 @@ was told that `data` must be a `tbl_now`. Both renamed. 108 batch tests pass.
 
 Full test suite after the weekday-numbering and near-miss-warning changes: **0
 failures, 0 errors**.
+
+### Section 8 — Plots
+
+* `plot_reporting_process()` and `plot_epidemic_process()` merged onto one page.
+  Identical signatures, mirror images: the entire diagnostic idea is *comparing* them
+  (a spike in the reporting process with nothing under it in the epidemic process is a
+  batch), and that is invisible when they sit on separate pages.
+* `autoplot.tbl_now` had **no `@seealso` at all** — the entry point to the whole
+  plotting side of the package, with no way out of it.
+* The other 13 plot pages had `@seealso` blocks that were bare link lists
+  (`[diagnostic_plot()].`). Rewritten so each link says what it is for, and so the two
+  galleries — `autoplot()` for the case counts, `diagnostic_plot()` for the reporting
+  process — are named as such from every panel.
+* `plot_reporting_triangle`'s example now says what the blank upper-right wedge is
+  (the future, which is what a nowcast fills in) rather than just drawing it.
+
+All 14 plot examples run in 21.6s combined.

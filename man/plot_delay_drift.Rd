@@ -90,5 +90,9 @@ plot_delay_drift(dengue)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=diagnose_drift]{diagnose_drift()}}, \code{\link[=diagnose_changepoint]{diagnose_changepoint()}}, \code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}}
+\code{\link[=diagnose_drift]{diagnose_drift()}} for the formal trend test behind this picture, and
+\code{\link[=diagnose_changepoint]{diagnose_changepoint()}} for an abrupt shift rather than a gradual one;
+\code{\link[=plot_delay_distribution]{plot_delay_distribution()}} for the delay pooled over the whole period;
+\link[=autoplot.tbl_now]{autoplot()} and \code{\link[=diagnostic_plot]{diagnostic_plot()}} for the galleries this
+belongs to.
 }

@@ -57,12 +57,27 @@
 # Epidemic and reporting processes
 # =============================================================================
 
-#' Plot the reporting process
+#' The epidemic process and the reporting process
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
-#' Shows total reports by **report date** (when the reports arrived), facetted by
-#' stratum when present.
+#' The same cases, counted on two different clocks. Comparing the two is the
+#' single most useful thing you can do to tell a real outbreak from a reporting
+#' artifact.
+#'
+#' * `plot_epidemic_process()` counts by **event date** -- when the cases
+#'   actually happened. Epidemics grow and shrink smoothly, so this curve should
+#'   be smooth.
+#' * `plot_reporting_process()` counts by **report date** -- when news of them
+#'   arrived. Reporting is administrative, so this curve is spiky: weekends,
+#'   holidays and backlog releases all show up here.
+#'
+#' A lone spike in the reporting process with nothing under it in the epidemic
+#' process is a **batch** -- a day the system cleared its inbox, not a day people
+#' got sick. A spike in both is a genuine surge.
+#'
+#' @details
+#' Both are facetted by stratum when the object has strata.
 #'
 #' @param x A [tbl_now()] object.
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget (hover,
@@ -71,16 +86,31 @@
 #' @param axis Which time axis to draw: `"report"` (default) or
 #'   `"confirmation"`. On the confirmation axis the picture answers the
 #'   laboratory's version of the question -- when results arrived, rather than
-#'   when reports did. Needs a confirmation process (see [add_confirmation()]);
-#'   cases still `"pending"` have no confirmation date and are left out.
+#'   when reports did. Needs a confirmation process (see
+#'   [add_confirmation()][confirmation_setters]); cases still `"pending"` have no
+#'   confirmation date and are left out.
+#'
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
-#' @seealso [diagnostic_plot()].
+#'
+#' @seealso
+#' [diagnostic_plot()], which draws these alongside the rest of the
+#' reporting-process gallery; [plot_observed_cases()] for the epidemic process
+#' with the incompleteness cutoff marked; [plot_scalogram()] to separate the two
+#' processes by timescale; [diagnose_batches()] to test a suspicious spike rather
+#' than eyeball it.
+#'
 #' @examples
 #' data(denguedat)
 #' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+#'
+#' # When cases happened: smooth, because epidemics are.
+#' plot_epidemic_process(dn)
+#'
+#' # When news of them arrived: spikier, because reporting is administrative.
 #' plot_reporting_process(dn)
+#'
+#' @name plot_epidemic_process
 #' @export
-#' @md
 plot_reporting_process <- function(x, plotly = FALSE, axis = c("report", "confirmation"),
                                    palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
@@ -90,32 +120,8 @@ plot_reporting_process <- function(x, plotly = FALSE, axis = c("report", "confir
   .as_plotly(.diag_build_process(inc, ctx, palette, axis = "report"), plotly)
 }
 
-#' Plot the epidemic process
-#'
-#' @description `r lifecycle::badge("experimental")`
-#'
-#' Shows total cases by **event date** (when the cases occurred), facetted by
-#' stratum when present. The mirror image of [plot_reporting_process()] (which is
-#' by *report* date): a real epidemic is smooth, so a lone spike here would be a
-#' surge, not a reporting artefact.
-#'
-#' @param x A [tbl_now()] object.
-#' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget instead of a
-#'   static plot. Default `FALSE`.
-#' @param palette A named colour palette. Defaults to the package palette.
-#' @param axis Which time axis to draw: `"report"` (default) or
-#'   `"confirmation"`. On the confirmation axis the picture answers the
-#'   laboratory's version of the question -- when results arrived, rather than
-#'   when reports did. Needs a confirmation process (see [add_confirmation()]);
-#'   cases still `"pending"` have no confirmation date and are left out.
-#' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
-#' @seealso [plot_reporting_process()], [diagnostic_plot()].
-#' @examples
-#' data(denguedat)
-#' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
-#' plot_epidemic_process(dn)
+#' @rdname plot_epidemic_process
 #' @export
-#' @md
 plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "confirmation"),
                                   palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
@@ -198,10 +204,19 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "confirm
 #'   when reports did. Needs a confirmation process (see [add_confirmation()]);
 #'   cases still `"pending"` have no confirmation date and are left out.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
-#' @seealso [diagnostic_plot()].
+#' @seealso
+#' [plot_reporting_hexamap()] for the same grid drawn so that event date, report
+#' date and delay are all read the same way; [plot_delay_profiles()] for one
+#' curve per date instead of a grid; [complete_zeroes()] to fill the cells that
+#' are genuinely zero; [diagnostic_plot()] for the whole gallery.
+#'
 #' @examples
 #' data(denguedat)
 #' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+#'
+#' # Rows are event dates, columns are delays. The blank upper-right wedge is
+#' # the future: those reports cannot have arrived yet. That wedge is what a
+#' # nowcast fills in.
 #' plot_reporting_triangle(dn)
 #' @export
 #' @md
@@ -389,7 +404,12 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 #'   measured from the report.) Needs a confirmation process (see
 #'   [add_confirmation()]); cases still `"pending"` are left out.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
-#' @seealso [diagnostic_plot()].
+#' @seealso
+#' [plot_delay_distribution()] for the pooled delay distribution rather than one
+#' curve per date; [plot_delay_drift()] for whether those curves move over time;
+#' [diagnose_batch_shape()] for the test behind the eyeball;
+#' [diagnostic_plot()] for the whole gallery.
+#'
 #' @examples
 #' data(denguedat)
 #' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
@@ -475,7 +495,11 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
 #'   static plot. Default `FALSE`.
 #' @param palette A named colour palette. Defaults to the package palette.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
-#' @seealso [transport_discriminant()], [diagnostic_plot()].
+#' @seealso
+#' [transport_discriminant()] for the numbers behind the plane;
+#' [diagnose_batches()] for the hypothesis test that flags the red points;
+#' [plot_reporting_process()][plot_epidemic_process] for the series they come
+#' from; [diagnostic_plot()] for the whole gallery.
 #' @examples
 #' data(denguedat)
 #' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
@@ -577,8 +601,13 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, palette = .tbl_n
 #' @returns A \pkg{patchwork} object, or a single plot when one panel is selected
 #'   (or a \pkg{plotly} widget when `plotly = TRUE`).
 #'
-#' @seealso [plot_reporting_process()], [plot_epidemic_process()],
-#'   [plot_reporting_triangle()], [plot_delay_profiles()], [plot_delay_drift()],
+#' @seealso
+#' Every panel is also a function of its own:
+#' [plot_reporting_process()][plot_epidemic_process] and
+#' [plot_epidemic_process()] (when reports arrived, versus when cases happened),
+#' [plot_reporting_triangle()] (the full event-by-delay grid),
+#' [plot_delay_profiles()] (each date's delay curve),
+#' [plot_delay_drift()] (whether delays are getting longer),
 #'   [plot_transport_discriminant()], [plot_scalogram()].
 #'
 #' @examplesIf requireNamespace("patchwork", quietly = TRUE)

@@ -50,5 +50,8 @@ dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
 plot_delay_profiles(dn)
 }
 \seealso{
-\code{\link[=diagnostic_plot]{diagnostic_plot()}}.
+\code{\link[=plot_delay_distribution]{plot_delay_distribution()}} for the pooled delay distribution rather than one
+curve per date; \code{\link[=plot_delay_drift]{plot_delay_drift()}} for whether those curves move over time;
+\code{\link[=diagnose_batch_shape]{diagnose_batch_shape()}} for the test behind the eyeball;
+\code{\link[=diagnostic_plot]{diagnostic_plot()}} for the whole gallery.
 }

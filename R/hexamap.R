@@ -59,7 +59,10 @@
 #' @references Jalal, H. and Burke, D. S. (2020). Hexamaps for Age-Period-Cohort
 #'   Data Visualization. *Epidemiology* **31**, e47-e49.
 #'
-#' @seealso [plot_reporting_triangle()], [diagnostic_plot()].
+#' @seealso
+#' [plot_reporting_triangle()] for the same data on ordinary axes, where the
+#' third quantity has to be read off the diagonals; [diagnostic_plot()] for the
+#' whole gallery.
 #'
 #' @examples
 #' data(denguedat)

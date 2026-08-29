@@ -81,5 +81,7 @@ Jalal, H. and Burke, D. S. (2020). Hexamaps for Age-Period-Cohort
 Data Visualization. \emph{Epidemiology} \strong{31}, e47-e49.
 }
 \seealso{
-\code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}}, \code{\link[=diagnostic_plot]{diagnostic_plot()}}.
+\code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}} for the same data on ordinary axes, where the
+third quantity has to be read off the diagonals; \code{\link[=diagnostic_plot]{diagnostic_plot()}} for the
+whole gallery.
 }

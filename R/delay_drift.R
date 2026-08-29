@@ -248,7 +248,12 @@
 #'   [add_confirmation()]); cases still `"pending"` are left out.
 #' @return A \pkg{ggplot2} object.
 #'
-#' @seealso [diagnose_drift()], [diagnose_changepoint()], [autoplot.tbl_now()]
+#' @seealso
+#' [diagnose_drift()] for the formal trend test behind this picture, and
+#' [diagnose_changepoint()] for an abrupt shift rather than a gradual one;
+#' [plot_delay_distribution()] for the delay pooled over the whole period;
+#' [autoplot()][autoplot.tbl_now] and [diagnostic_plot()] for the galleries this
+#' belongs to.
 #'
 #' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
 #' data(denguedat)
@@ -602,8 +607,12 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
 #' When a decision matters, run the default first and confirm a borderline
 #' result with `method = "block-bootstrap"` on a restricted window.
 #'
-#' @seealso [diagnose_changepoint()] for abrupt shifts,
-#'   [plot_delay_drift()] to visualise the series being tested.
+#' @seealso
+#' [diagnose_changepoint()] for an abrupt shift rather than a gradual trend;
+#' [plot_delay_drift()] to see the series being tested;
+#' [censor_delays_above()] once you decide some delays are not to be believed;
+#' [diagnose_signposts()][nowcast_diagnose_components], which tells you when this
+#' test is worth running.
 #'
 #' @examplesIf requireNamespace("modifiedmk", quietly = TRUE)
 #' data(denguedat)
@@ -825,8 +834,10 @@ diagnose_drift <- function(x, ...,
 #' Unlike [diagnose_drift()], this test has no third-party dependency and no
 #' meaningful runtime cost, so it is cheap to run routinely.
 #'
-#' @seealso [diagnose_drift()] for gradual trends,
-#'   [plot_delay_drift()] to visualise the series and mark detected changes.
+#' @seealso
+#' [diagnose_drift()] for a gradual trend rather than a single break;
+#' [plot_delay_drift()] to see the series and where the break was found;
+#' [diagnose_batches()] for a one-day spike rather than a lasting shift.
 #'
 #' @examples
 #' data(denguedat)

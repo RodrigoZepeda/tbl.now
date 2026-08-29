@@ -55,8 +55,15 @@ read off one plot. A batch is a single report date, i.e. one such diagonal.
 \examples{
 data(denguedat)
 dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+
+# Rows are event dates, columns are delays. The blank upper-right wedge is
+# the future: those reports cannot have arrived yet. That wedge is what a
+# nowcast fills in.
 plot_reporting_triangle(dn)
 }
 \seealso{
-\code{\link[=diagnostic_plot]{diagnostic_plot()}}.
+\code{\link[=plot_reporting_hexamap]{plot_reporting_hexamap()}} for the same grid drawn so that event date, report
+date and delay are all read the same way; \code{\link[=plot_delay_profiles]{plot_delay_profiles()}} for one
+curve per date instead of a grid; \code{\link[=complete_zeroes]{complete_zeroes()}} to fill the cells that
+are genuinely zero; \code{\link[=diagnostic_plot]{diagnostic_plot()}} for the whole gallery.
 }

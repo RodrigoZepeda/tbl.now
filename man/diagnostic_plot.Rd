@@ -65,7 +65,11 @@ diagnostic_plot(dn, panels = c("triangle", "transport"))
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=plot_reporting_process]{plot_reporting_process()}}, \code{\link[=plot_epidemic_process]{plot_epidemic_process()}},
-\code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}}, \code{\link[=plot_delay_profiles]{plot_delay_profiles()}}, \code{\link[=plot_delay_drift]{plot_delay_drift()}},
+Every panel is also a function of its own:
+\link[=plot_epidemic_process]{plot_reporting_process()} and
+\code{\link[=plot_epidemic_process]{plot_epidemic_process()}} (when reports arrived, versus when cases happened),
+\code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}} (the full event-by-delay grid),
+\code{\link[=plot_delay_profiles]{plot_delay_profiles()}} (each date's delay curve),
+\code{\link[=plot_delay_drift]{plot_delay_drift()}} (whether delays are getting longer),
 \code{\link[=plot_transport_discriminant]{plot_transport_discriminant()}}, \code{\link[=plot_scalogram]{plot_scalogram()}}.
 }

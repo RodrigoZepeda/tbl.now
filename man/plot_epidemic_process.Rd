@@ -2,8 +2,16 @@
 % Please edit documentation in R/diagnostic_plot.R
 \name{plot_epidemic_process}
 \alias{plot_epidemic_process}
-\title{Plot the epidemic process}
+\alias{plot_reporting_process}
+\title{The epidemic process and the reporting process}
 \usage{
+plot_reporting_process(
+  x,
+  plotly = FALSE,
+  axis = c("report", "confirmation"),
+  palette = .tbl_now_palette()
+)
+
 plot_epidemic_process(
   x,
   plotly = FALSE,
@@ -14,14 +22,15 @@ plot_epidemic_process(
 \arguments{
 \item{x}{A \code{\link[=tbl_now]{tbl_now()}} object.}
 
-\item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget instead of a
-static plot. Default \code{FALSE}.}
+\item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget (hover,
+zoom) instead of a static \pkg{ggplot2} plot. Default \code{FALSE}.}
 
 \item{axis}{Which time axis to draw: \code{"report"} (default) or
 \code{"confirmation"}. On the confirmation axis the picture answers the
 laboratory's version of the question -- when results arrived, rather than
-when reports did. Needs a confirmation process (see \code{\link[=add_confirmation]{add_confirmation()}});
-cases still \code{"pending"} have no confirmation date and are left out.}
+when reports did. Needs a confirmation process (see
+\link[=confirmation_setters]{add_confirmation()}); cases still \code{"pending"} have no
+confirmation date and are left out.}
 
 \item{palette}{A named colour palette. Defaults to the package palette.}
 }
@@ -31,16 +40,40 @@ A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Shows total cases by \strong{event date} (when the cases occurred), facetted by
-stratum when present. The mirror image of \code{\link[=plot_reporting_process]{plot_reporting_process()}} (which is
-by \emph{report} date): a real epidemic is smooth, so a lone spike here would be a
-surge, not a reporting artefact.
+The same cases, counted on two different clocks. Comparing the two is the
+single most useful thing you can do to tell a real outbreak from a reporting
+artifact.
+\itemize{
+\item \code{plot_epidemic_process()} counts by \strong{event date} -- when the cases
+actually happened. Epidemics grow and shrink smoothly, so this curve should
+be smooth.
+\item \code{plot_reporting_process()} counts by \strong{report date} -- when news of them
+arrived. Reporting is administrative, so this curve is spiky: weekends,
+holidays and backlog releases all show up here.
+}
+
+A lone spike in the reporting process with nothing under it in the epidemic
+process is a \strong{batch} -- a day the system cleared its inbox, not a day people
+got sick. A spike in both is a genuine surge.
+}
+\details{
+Both are facetted by stratum when the object has strata.
 }
 \examples{
 data(denguedat)
 dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+
+# When cases happened: smooth, because epidemics are.
 plot_epidemic_process(dn)
+
+# When news of them arrived: spikier, because reporting is administrative.
+plot_reporting_process(dn)
+
 }
 \seealso{
-\code{\link[=plot_reporting_process]{plot_reporting_process()}}, \code{\link[=diagnostic_plot]{diagnostic_plot()}}.
+\code{\link[=diagnostic_plot]{diagnostic_plot()}}, which draws these alongside the rest of the
+reporting-process gallery; \code{\link[=plot_observed_cases]{plot_observed_cases()}} for the epidemic process
+with the incompleteness cutoff marked; \code{\link[=plot_scalogram]{plot_scalogram()}} to separate the two
+processes by timescale; \code{\link[=diagnose_batches]{diagnose_batches()}} to test a suspicious spike rather
+than eyeball it.
 }

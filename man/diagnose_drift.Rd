@@ -185,6 +185,9 @@ diagnose_drift(dengue)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=diagnose_changepoint]{diagnose_changepoint()}} for abrupt shifts,
-\code{\link[=plot_delay_drift]{plot_delay_drift()}} to visualise the series being tested.
+\code{\link[=diagnose_changepoint]{diagnose_changepoint()}} for an abrupt shift rather than a gradual trend;
+\code{\link[=plot_delay_drift]{plot_delay_drift()}} to see the series being tested;
+\code{\link[=censor_delays_above]{censor_delays_above()}} once you decide some delays are not to be believed;
+\link[=nowcast_diagnose_components]{diagnose_signposts()}, which tells you when this
+test is worth running.
 }

@@ -138,6 +138,7 @@ diagnose_changepoint(dengue)
 
 }
 \seealso{
-\code{\link[=diagnose_drift]{diagnose_drift()}} for gradual trends,
-\code{\link[=plot_delay_drift]{plot_delay_drift()}} to visualise the series and mark detected changes.
+\code{\link[=diagnose_drift]{diagnose_drift()}} for a gradual trend rather than a single break;
+\code{\link[=plot_delay_drift]{plot_delay_drift()}} to see the series and where the break was found;
+\code{\link[=diagnose_batches]{diagnose_batches()}} for a one-day spike rather than a lasting shift.
 }

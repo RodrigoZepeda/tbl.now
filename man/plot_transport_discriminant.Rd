@@ -47,5 +47,8 @@ dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
 plot_transport_discriminant(dn)
 }
 \seealso{
-\code{\link[=transport_discriminant]{transport_discriminant()}}, \code{\link[=diagnostic_plot]{diagnostic_plot()}}.
+\code{\link[=transport_discriminant]{transport_discriminant()}} for the numbers behind the plane;
+\code{\link[=diagnose_batches]{diagnose_batches()}} for the hypothesis test that flags the red points;
+\link[=plot_epidemic_process]{plot_reporting_process()} for the series they come
+from; \code{\link[=diagnostic_plot]{diagnostic_plot()}} for the whole gallery.
 }

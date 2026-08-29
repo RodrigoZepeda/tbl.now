@@ -70,5 +70,9 @@ plot_scalogram(dn, type = "reporting")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=plot_reporting_process]{plot_reporting_process()}}, \code{\link[=plot_epidemic_process]{plot_epidemic_process()}}, \code{\link[=diagnostic_plot]{diagnostic_plot()}}.
+\link[=plot_epidemic_process]{plot_reporting_process()} and
+\code{\link[=plot_epidemic_process]{plot_epidemic_process()}} for the two series this decomposes;
+\code{\link[=plot_cycles]{plot_cycles()}} for the same idea pooled over time (a periodogram) rather than
+resolved moment by moment; \code{\link[=diagnose_batches]{diagnose_batches()}} to test a short-period ridge;
+\code{\link[=diagnostic_plot]{diagnostic_plot()}} for the whole gallery.
 }

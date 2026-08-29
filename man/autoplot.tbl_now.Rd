@@ -188,3 +188,15 @@ autoplot(dengue, delay_distribution_xlim = c(0, 10))
 }
 \dontshow{\}) # examplesIf}
 }
+\seealso{
+\code{\link[=diagnostic_plot]{diagnostic_plot()}} for the companion gallery, which looks at the \emph{reporting
+process} -- when reports arrived and whether any of it is artificial -- rather
+than at the case counts;
+the panels here as standalone functions: \code{\link[=plot_observed_cases]{plot_observed_cases()}},
+\code{\link[=plot_delay_distribution]{plot_delay_distribution()}}, \code{\link[=plot_cycles]{plot_cycles()}}, \link{calendar_effect_plots} and
+\code{\link[=plot_delay_drift]{plot_delay_drift()}};
+\link[=tbl_now_summary]{summary()} and \code{\link[=diagnose]{diagnose()}} for the same information as
+tables. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html}{\emph{Describing and diagnosing a tbl_now} article}
+reads the panels one at a time.
+}

@@ -62,7 +62,12 @@
 #'   cases still `"pending"` have no confirmation date and are left out.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
 #'
-#' @seealso [plot_reporting_process()], [plot_epidemic_process()], [diagnostic_plot()].
+#' @seealso
+#' [plot_reporting_process()][plot_epidemic_process] and
+#' [plot_epidemic_process()] for the two series this decomposes;
+#' [plot_cycles()] for the same idea pooled over time (a periodogram) rather than
+#' resolved moment by moment; [diagnose_batches()] to test a short-period ridge;
+#' [diagnostic_plot()] for the whole gallery.
 #'
 #' @examplesIf requireNamespace("wavScalogram", quietly = TRUE)
 #' data(denguedat)

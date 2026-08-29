@@ -128,7 +128,6 @@ reference:
   - plot_epidemic_process
   - plot_observed_cases
   - plot_reporting_hexamap
-  - plot_reporting_process
   - plot_reporting_triangle
   - plot_scalogram
   - plot_transport_discriminant

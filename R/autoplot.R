@@ -2122,6 +2122,18 @@ ggplot2::autoplot
 #' # Zoom the delay panel to delays of 0-10 weeks
 #' autoplot(dengue, delay_distribution_xlim = c(0, 10))
 #' }
+#' @seealso
+#' [diagnostic_plot()] for the companion gallery, which looks at the *reporting
+#' process* -- when reports arrived and whether any of it is artificial -- rather
+#' than at the case counts;
+#' the panels here as standalone functions: [plot_observed_cases()],
+#' [plot_delay_distribution()], [plot_cycles()], [calendar_effect_plots] and
+#' [plot_delay_drift()];
+#' [summary()][tbl_now_summary] and [diagnose()] for the same information as
+#' tables. The
+#' [*Describing and diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+#' reads the panels one at a time.
+#'
 #' @importFrom rlang .data
 #' @importFrom ggplot2 autoplot
 #' @exportS3Method ggplot2::autoplot
