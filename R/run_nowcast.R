@@ -187,6 +187,10 @@ nowcast_tidy.default <- function(engine, fit, x, ..., quantile_levels) {
 #' namespace, so any backend you (or another package) defined shows up here as
 #' soon as it is loaded.
 #'
+#' `"example"` in the list is [example_engine()], the toy used to keep this
+#' package's examples runnable. It is not a nowcasting method -- ignore it when
+#' choosing one.
+#'
 #' @param installed_only Logical. When `TRUE` (default) only the methods whose
 #'   backing package is installed are returned. Set to `FALSE` to see every
 #'   registered method.
@@ -203,7 +207,8 @@ nowcast_tidy.default <- function(engine, fit, x, ..., quantile_levels) {
 #' walks through writing one.
 #'
 #' @examples
-#' # What can this installation actually fit right now?
+#' # What can this installation actually fit right now? ("example" is the toy
+#' # engine, not a method you would nowcast with.)
 #' list_nowcast_methods()
 #'
 #' # Including methods whose modelling package is not installed

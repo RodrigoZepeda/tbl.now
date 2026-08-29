@@ -21,9 +21,14 @@ A character vector of method names, suitable for passing to
 Scans the S3 methods registered for \code{\link[=nowcast_fit]{nowcast_fit()}} in every loaded
 namespace, so any backend you (or another package) defined shows up here as
 soon as it is loaded.
+
+\code{"example"} in the list is \code{\link[=example_engine]{example_engine()}}, the toy used to keep this
+package's examples runnable. It is not a nowcasting method -- ignore it when
+choosing one.
 }
 \examples{
-# What can this installation actually fit right now?
+# What can this installation actually fit right now? ("example" is the toy
+# engine, not a method you would nowcast with.)
 list_nowcast_methods()
 
 # Including methods whose modelling package is not installed
