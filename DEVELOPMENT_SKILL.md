@@ -581,12 +581,23 @@ problem.
   by the package: mocking a base generic like `summary()` is safe, because the
   mock goes in base's table and the package's own entry is never touched.
 * **A test file that passes alone is not isolated.** That leak was invisible for
-  as long as nothing downstream used the thing it broke. When adding a test that
-  really calls a suggested package, run it after the files that sort before it,
-  not just on its own:
-  ```r
-  for (f in earlier_files) test_file(f); test_file("the-new-one.R")
-  ```
+  as long as nothing downstream used the thing it broke. `devel/audit_test_isolation.R`
+  now checks the whole suite for it: it runs every file in one process, as
+  testthat does, and diffs the namespace and S3 tables of all fifteen watched
+  packages between files. Audited 2026-08-28 — **zero removals across 58 files**;
+  the two changes it does report are benign and documented in the script.
+* **Validate a leak audit against a known leak before believing a clean run.**
+  An audit that cannot see the bug reports "all clear" exactly as cheerfully as
+  one that can. Three sensitivity checks of that script came back empty for three
+  different wrong reasons — comparing only the S3 table when the symptom was
+  elsewhere, reverting the fix in a way that stopped the mock installing at all,
+  and taking `git show HEAD:` for the pre-fix file after the fix had been
+  committed. The clean result only meant something once restoring
+  `435efad:tests/testthat/test-converter-epinow2.R` made it fail.
+* **`identical()` and `body()` disagree with "same function" over `srcref`.** Two
+  copies of one function read from source twice compare unequal under both, and
+  it means nothing. Compare `deparse()` (and `formals()`) instead — that is what
+  separates a re-sourced closure from a genuine replacement.
 * **A findings message is a template, not a string.** `.diagnose_text()` returns
   a deferred object so that a finding below the reporting floor is never
   formatted. `paste()` on one forces it (and returns something useless);
