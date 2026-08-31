@@ -501,9 +501,14 @@ Another practical notes from other data we have analyzed:
 - End-to-end tutorial on real, messy surveillance data — cleaning,
   diagnostics and nowcasting:
   <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
-- Tutorial on detecting batches and other reporting-delay artifacts:
+- Tutorial on diagnosing problems with your dataset, detecting batches
+  and other reporting-delay artifacts:
   <https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html>
-- Comparing nowcasting engines on one dataset:
+- Using different nowcasting engines for the same dataset:
   <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
+- Ensemble nowcasting across different engines
+  <https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html>
+- Adding your own nowcasting model
+  <https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html>
 - Package reference:
   <https://rodrigozepeda.github.io/tbl.now/reference/>

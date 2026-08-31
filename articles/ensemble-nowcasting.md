@@ -1017,21 +1017,25 @@ method may assume about the `tbl_now` it is handed, how to reuse the
 converters instead of reshaping by hand, a complete worked back-end that
 needs no modelling package, and what shipping one in a package involves.
 
-## See also
+## Learning more
 
-- `vignette("custom-nowcast-models")` — writing your own back-end, in
-  full.
-- `vignette("nowcasting-models")` — the same packages, driven by hand
-  through the converters.
-- [`?run_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md),
-  [`?nowcast_ensemble`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md),
-  [`?nowcast_backtest`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
-- [`?tidy.tbl_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.tbl_nowcast.md)
-  — the table every nowcast tidies into.
-- [`?nowcast_fit`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_fit.md)
-  and
-  [`?nowcast_tidy`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_tidy.md)
-  — the extension contract in reference form.
+- Introduction vignette:
+  <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
+  the full anatomy of a `tbl_now`, data types, and temporal effects.
+- End-to-end tutorial on real, messy surveillance data — cleaning,
+  diagnostics and nowcasting:
+  <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
+- Tutorial on diagnosing problems with your dataset, detecting batches
+  and other reporting-delay artifacts:
+  <https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html>
+- Using different nowcasting engines for the same dataset:
+  <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
+- Ensemble nowcasting across different engines
+  <https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html>
+- Adding your own nowcasting model
+  <https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html>
+- Package reference:
+  <https://rodrigozepeda.github.io/tbl.now/reference/>
 
 ## References
 

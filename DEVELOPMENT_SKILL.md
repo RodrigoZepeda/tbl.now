@@ -1113,3 +1113,20 @@ In count data an `NA` count means *not yet observed*; a `0` means
 counts them in the `unobserved_cells` coverage row, so the drop is
 visible rather than silent. This was found by running against
 `flusight`: one `NA` turned every total in the table into `NA`.
+
+## Documenting
+
+Add the following at the end of every article or vignette:
+` ``{r learning-more, echo=FALSE, results="asis"} cat( knitr::knit_child( system.file("fragments", "learning-more.Rmd", package = "tbl.now"), quiet = TRUE ), sep = "\n" )`` `
+Note that the fragment is looked up by ABSOLUTE path via system.file(),
+never by a relative one. pkgdown/rmarkdown render into an intermediates
+directory under tempdir() and copy relative resources alongside; a path
+containing “../..” escapes that directory (“cannot create file
+‘/tmp/RtmpXXX/../../man/…’”), which fails wherever tempdir() sits near
+the filesystem root – as it does on CI.
+[`system.file()`](https://rdrr.io/r/base/system.file.html) also works
+under pkgload::load_all(), which shims it to find inst/ in the source
+tree.
+
+Every new article or vignette should be referenced in the
+`learning-more.Rmd` that is linked above.

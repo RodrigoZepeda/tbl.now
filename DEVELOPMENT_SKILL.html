@@ -489,6 +489,11 @@
 <p>In count data an <code>NA</code> count means <em>not yet observed</em>; a <code>0</code> means <em>observed, and it was zero</em>. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> drops the <code>NA</code>s and counts them in the <code>unobserved_cells</code> coverage row, so the drop is visible rather than silent. This was found by running against <code>flusight</code>: one <code>NA</code> turned every total in the table into <code>NA</code>.</p>
 </div>
 </div>
+<div class="section level2">
+<h2 id="documenting">Documenting<a class="anchor" aria-label="anchor" href="#documenting"></a></h2>
+<p>Add the following at the end of every article or vignette: <code> <code>{r learning-more, echo=FALSE, results="asis"} cat(   knitr::knit_child(     system.file("fragments", "learning-more.Rmd", package = "tbl.now"),     quiet = TRUE   ),   sep = "\n" )</code> </code> Note that the fragment is looked up by ABSOLUTE path via system.file(), never by a relative one. pkgdown/rmarkdown render into an intermediates directory under tempdir() and copy relative resources alongside; a path containing “../..” escapes that directory (“cannot create file ‘/tmp/RtmpXXX/../../man/…’”), which fails wherever tempdir() sits near the filesystem root – as it does on CI. <code><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file()</a></code> also works under pkgload::load_all(), which shims it to find inst/ in the source tree.</p>
+<p>Every new article or vignette should be referenced in the <code>learning-more.Rmd</code> that is linked above.</p>
+</div>
 </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
