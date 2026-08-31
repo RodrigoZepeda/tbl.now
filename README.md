@@ -18,15 +18,6 @@ status](https://www.r-pkg.org/badges/version/tbl.now)](https://CRAN.R-project.or
 extension of the [`tibble()`](https://tibble.tidyverse.org/) for
 storing, validating, and manipulating epidemiological nowcasting data.
 It standardizes the representation of event dates, report dates, strata,
-temporal covariates, and data types (linelist and cumulative), ensuring
-that downstream models within the
-[`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/)
-ecosystem can rely on a consistent interface.
-
-[`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) rovides an
-extension of the [`tibble()`](https://tibble.tidyverse.org/) for
-storing, validating, and manipulating epidemiological nowcasting data.
-It standardizes the representation of event dates, report dates, strata,
 temporal covariates, etc and in a way that is compatible with many
 frameworks including diseasenowcasting, epinowcast, NobBS, surveillance,
 EpiNow2, and more.
@@ -377,7 +368,7 @@ pak::pkg_install("RodrigoZepeda/tbl.now")
 and checkout our articles starting with the
 [Introduction](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html):
 
-<!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit here only. Blank lines inside this comment would leak as &#10; into the rendered README, so keep it to one line. Callers locate this file with system.file("fragments", ...) rather than a relative path: rmarkdown renders into a temp intermediates directory and copies relative resources alongside, so a "../.." path escapes that directory and fails on CI. Links are absolute so they resolve on both GitHub and pkgdown. -->
+<!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit on `learning.more.Rmd`.-->
 
 ## Learning more
 
@@ -387,9 +378,14 @@ and checkout our articles starting with the
 - End-to-end tutorial on real, messy surveillance data — cleaning,
   diagnostics and nowcasting:
   <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
-- Tutorial on detecting batches and other reporting-delay artifacts:
+- Tutorial on diagnosing problems with your dataset, detecting batches
+  and other reporting-delay artifacts:
   <https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html>
-- Comparing nowcasting engines on one dataset:
+- Using different nowcasting engines for the same dataset:
   <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
+- Ensemble nowcasting across different engines
+  <https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html>
+- Adding your own nowcasting model
+  <https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html>
 - Package reference:
   <https://rodrigozepeda.github.io/tbl.now/reference/>

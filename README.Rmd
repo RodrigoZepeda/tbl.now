@@ -12,6 +12,7 @@ knitr::opts_chunk$set(
   out.width = "100%"
 )
 options(tibble.width = Inf, width = 160, pillar.width = 160)
+set.seed(247865)
 ```
 
 # Tibble now (tbl.now) <a href="https://rodrigozepeda.github.io/tbl.now/"><img src="man/figures/logo.png" align="right" height="139" alt="tbl.now website" /></a>
@@ -23,9 +24,8 @@ options(tibble.width = Inf, width = 160, pillar.width = 160)
 [![R-CMD-check](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-[`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) provides an extension of the [`tibble()`](https://tibble.tidyverse.org/) for storing, validating, and manipulating epidemiological nowcasting data. It standardizes the representation of event dates, report dates, strata, temporal covariates, and data types (linelist and cumulative), ensuring that downstream models within the [`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/) ecosystem can rely on a consistent interface.
 
-[`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) rovides an extension of the [`tibble()`](https://tibble.tidyverse.org/) for storing, validating, and manipulating epidemiological nowcasting data. It standardizes the representation of event dates, report dates, strata, temporal covariates,  etc and in a way that is compatible with many frameworks including diseasenowcasting, epinowcast, NobBS, surveillance, EpiNow2, and more. 
+[`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) provides an extension of the [`tibble()`](https://tibble.tidyverse.org/) for storing, validating, and manipulating epidemiological nowcasting data. It standardizes the representation of event dates, report dates, strata, temporal covariates,  etc and in a way that is compatible with many frameworks including diseasenowcasting, epinowcast, NobBS, surveillance, EpiNow2, and more. 
 
 Specifically a `tbl_now` is a data structure that keeps track of the following attributes relevant for a nowcasting excercise so that all `dplyr` transformations (i.e. the ones from tidyverse) keep track of the relevant nowcasting variables:
 
@@ -169,13 +169,6 @@ pak::pkg_install("RodrigoZepeda/tbl.now")
 and checkout our articles starting with the [Introduction](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html):
 
 ```{r learning-more, echo=FALSE, results="asis"}
-# The fragment is looked up by ABSOLUTE path via system.file(), never by a
-# relative one. pkgdown/rmarkdown render into an intermediates directory under
-# tempdir() and copy relative resources alongside; a path containing "../.."
-# escapes that directory ("cannot create file '/tmp/RtmpXXX/../../man/...'"),
-# which fails wherever tempdir() sits near the filesystem root -- as it does on
-# CI. `system.file()` also works under pkgload::load_all(), which shims it to
-# find inst/ in the source tree.
 cat(
   knitr::knit_child(
     system.file("fragments", "learning-more.Rmd", package = "tbl.now"),
