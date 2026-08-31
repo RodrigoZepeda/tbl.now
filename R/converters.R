@@ -3073,7 +3073,7 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 #'
 #' @seealso [tbl_now_to_EpiNow2()], [as_tbl_now()]
 #'
-#' @examples
+#' @examplesIf requireNamespace("EpiNow2", quietly = TRUE)
 #' data(denguedat)
 #' dengue <- tbl_now(denguedat[1:3000, ],
 #'   event_date = onset_week, report_date = report_week, verbose = FALSE
@@ -4102,7 +4102,7 @@ get_surveillance_range <- function(x, ..., from = NULL, to = NULL, by = NULL) {
 #'
 #' @seealso [tbl_now_to_baselinenowcast()], [as_tbl_now()]
 #'
-#' @examples
+#' @examplesIf requireNamespace("baselinenowcast", quietly = TRUE)
 #' data(denguedat)
 #' dengue <- tbl_now(denguedat[1:3000, ],
 #'   event_date = onset_week, report_date = report_week, verbose = FALSE
@@ -4257,7 +4257,7 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
 #'
 #' @seealso [tbl_now_to_surveillance()], [as_tbl_now()], [tbl_now_triangle_list]
 #'
-#' @examples
+#' @examplesIf requireNamespace("surveillance", quietly = TRUE)
 #' data(denguedat)
 #' dengue <- tbl_now(denguedat[1:3000, ],
 #'   event_date = onset_week, report_date = report_week, verbose = FALSE

@@ -36,6 +36,7 @@ be recovered from it. Printing also distinguishes it from the superficially
 similar list \code{\link[EpiNow2:estimate_secondary]{EpiNow2::estimate_secondary()}} does \emph{not} take.
 }
 \examples{
+\dontshow{if (requireNamespace("EpiNow2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
 dengue <- tbl_now(denguedat[1:3000, ],
   event_date = onset_week, report_date = report_week, verbose = FALSE
@@ -53,7 +54,7 @@ snaps
 
 length(snaps)
 head(snaps[[1]])
-
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=tbl_now_to_EpiNow2]{tbl_now_to_EpiNow2()}}, \code{\link[=as_tbl_now]{as_tbl_now()}}

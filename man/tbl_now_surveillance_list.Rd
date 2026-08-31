@@ -54,6 +54,7 @@ back as a \code{"linelist"} (one row per case, so the totals are unchanged but t
 back as ordinary columns rather than as a spec.
 }
 \examples{
+\dontshow{if (requireNamespace("surveillance", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
 dengue <- tbl_now(denguedat[1:3000, ],
   event_date = onset_week, report_date = report_week, verbose = FALSE
@@ -69,7 +70,7 @@ linelists
 
 length(linelists)
 head(linelists[[1]])
-
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=tbl_now_to_surveillance]{tbl_now_to_surveillance()}}, \code{\link[=as_tbl_now]{as_tbl_now()}}, \link{tbl_now_triangle_list}
