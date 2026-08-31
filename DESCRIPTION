@@ -1,7 +1,7 @@
 Package: tbl.now
 Type: Package
 Title: Tidy Extension for Nowcasting
-Version: 0.15.0
+Version: 0.17.0
 Authors@R: 
     c(person("Rodrigo", "Zepeda-Tello", , "rzepeda17@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-4471-5270")),
@@ -24,23 +24,27 @@ Suggests:
     baselinenowcast,
     data.table,
     epidist,
-    EpiNow2,
+    EpiNow2 (>= 1.9.0),
     epinowcast,
     knitr,
     modifiedmk,
+    NobBS,
     patchwork,
     plotly,
     rmarkdown,
+    surveillance,
     testthat (>= 3.0.0),
     tsibble,
     wavScalogram,
     WaveletComp
 Additional_repositories:
-    https://epinowcast.r-universe.dev
+    https://epinowcast.r-universe.dev,
+    https://davisvaughan.r-universe.dev
 Config/testthat/edition: 3
 Config/testthat/parallel: false
 Imports:
     cli,
+    generics,
     dplyr,
     ggplot2,
     lifecycle,

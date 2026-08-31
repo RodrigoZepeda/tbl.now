@@ -75,9 +75,10 @@
 #' @seealso [autoplot.tbl_now()], [plot_cycles()], [plot_delay_distribution()],
 #'   [plot_observed_cases()].
 #'
-#' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
+#' @examplesIf requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("almanac", quietly = TRUE)
 #' data(denguedat)
-#' dengue_now <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+#' # First few years only, to keep the example quick; the full data works the same.
+#' dengue_now <- tbl_now(denguedat[1:10000, ], onset_week, report_week, verbose = FALSE)
 #'
 #' # How the cases vary by epidemiological week
 #' plot_week_of_year_effects(dengue_now)
@@ -117,7 +118,7 @@ NULL
 #' @rdname calendar_effect_plots
 #' @export
 plot_day_of_week_effects <- function(x, type = c("epidemic", "report"),
-                                     measure = c("normalized", "percent"), ...) {
+                                     measure = c("percent", "normalized"), ...) {
   .tbl_now_plot_panel(x, .tbl_now_effect_key("weekday", match.arg(type)),
                       measure = match.arg(measure), ...)
 }
@@ -125,7 +126,7 @@ plot_day_of_week_effects <- function(x, type = c("epidemic", "report"),
 #' @rdname calendar_effect_plots
 #' @export
 plot_week_of_year_effects <- function(x, type = c("epidemic", "report"),
-                                      measure = c("normalized", "percent"), ...) {
+                                      measure = c("percent", "normalized"), ...) {
   .tbl_now_plot_panel(x, .tbl_now_effect_key("week", match.arg(type)),
                       measure = match.arg(measure), ...)
 }
@@ -133,7 +134,7 @@ plot_week_of_year_effects <- function(x, type = c("epidemic", "report"),
 #' @rdname calendar_effect_plots
 #' @export
 plot_month_of_year_effects <- function(x, type = c("epidemic", "report"),
-                                       measure = c("normalized", "percent"), ...) {
+                                       measure = c("percent", "normalized"), ...) {
   .tbl_now_plot_panel(x, .tbl_now_effect_key("month", match.arg(type)),
                       measure = match.arg(measure), ...)
 }
@@ -141,7 +142,7 @@ plot_month_of_year_effects <- function(x, type = c("epidemic", "report"),
 #' @rdname calendar_effect_plots
 #' @export
 plot_holiday_effects <- function(x, type = c("epidemic", "report"),
-                                 measure = c("normalized", "percent"), ...) {
+                                 measure = c("percent", "normalized"), ...) {
   .tbl_now_plot_panel(x, .tbl_now_effect_key("holiday", match.arg(type)),
                       measure = match.arg(measure), ...)
 }
@@ -149,7 +150,7 @@ plot_holiday_effects <- function(x, type = c("epidemic", "report"),
 #' @rdname calendar_effect_plots
 #' @export
 plot_holiday_lag_effects <- function(x, type = c("epidemic", "report"),
-                                     measure = c("normalized", "percent"), ...) {
+                                     measure = c("percent", "normalized"), ...) {
   .tbl_now_plot_panel(x, .tbl_now_effect_key("holiday_lag", match.arg(type)),
                       measure = match.arg(measure), ...)
 }

@@ -11,7 +11,7 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
-options(tibble.width = Inf)
+options(tibble.width = Inf, width = 160, pillar.width = 160)
 ```
 
 # Tibble now (tbl.now) <a href="https://rodrigozepeda.github.io/tbl.now/"><img src="man/figures/logo.png" align="right" height="139" alt="tbl.now website" /></a>
@@ -47,7 +47,7 @@ library(almanac) # Suggested for holiday effects
 
 ## A minimal example
 
-Suppose you have a dataset where n cases reported on report_date belong to events occurring on event_date:
+Suppose you have a dataset where `n` cases reported on `report_date` belong to events occurring on `event_date`:
 
 ```{r}
 df <- tibble(
@@ -73,15 +73,15 @@ df_now
 
 `tbl_now()` automatically:
 
-+ infers that the **data type** is linelist (one row per event)
++ infers that the **data type** is _count-incidence_ (each report-event combination has a case count of how many were recorded for that specific mix).
 
-+ determines the **date units** (daily event and report frequencies)
++ determines the **date units** as _daily_ for both event and report frequencies.
 
-+ computes numerical versions of the dates: `.event_num`, `.report_num`, and `.delay`
++ computes numerical versions of the dates: `.event_num`, `.report_num`, and `.delay` (difference between event and report times)
 
 + sets the **now** to the most recent reporting date
 
-Use it like any tibble:
+You can use it like any tibble:
 
 ```{r}
 df_now |>
@@ -91,7 +91,7 @@ df_now |>
 
 > **Note** Linelist, count-incidence and count-cumulative data is available for a `tbl_now`. See the [data types](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html#data-types) section of `tbl_now()` for more information. 
 
-## Adding strata
+### Adding strata
 
 If strata was given, the [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) can easily tag the corresponding strata. 
 
@@ -112,7 +112,7 @@ df_now |>
 
 The object now records `"sex"` as a stratification variable, preserved through downstream operations.
 
-## Adding temporal effects
+### Adding temporal effects
 
 Temporal covariates help nowcasting models incorporate weekly seasonality, holiday effects, etc. Define the effects:
 
@@ -142,7 +142,7 @@ df_now |>
   compute_temporal_effects()
 ```
 
-You can also attach effects related to the `report_date`:
+You can also attach effects related to the `report_date` via the `date_type` argument:
 
 ```{r}
 r_eff <- temporal_effects(day_of_week = TRUE)
@@ -151,9 +151,10 @@ df_now |>
   add_temporal_effects(r_eff, date_type = "report_date")
 ```
 
-## Working with the “now”
+### Working with the “now”
 
-You may override the default now to perform historical evaluation:
+You may override the default now to perform historical evaluation or because your
+most recent cases are zeroes via `change_now`:
 
 ```{r}
 df_pruned <- df_now |>
@@ -161,7 +162,7 @@ df_pruned <- df_now |>
   change_now(ymd("2023-12-26"))
 ```
 
-Retrieve the current active nowcast horizon:
+You can retrieve the current now with `get_now`:
 
 ```{r}
 get_now(df_pruned)
@@ -173,7 +174,7 @@ get_now(df_pruned)
 The [autoplot()](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html) method gives a quick diagnostic overview of a `tbl_now`. 
 
 
-```{r autoplot,fig.width=9, fig.height=8, message=FALSE, warning=FALSE}
+```{r autoplot,fig.width=10, fig.height=12, message=FALSE, warning=FALSE}
 library(ggplot2)
 library(patchwork)
 data("mpoxdat")
@@ -188,7 +189,7 @@ mpoxdat_now <- tbl_now(mpoxdat,
 autoplot(mpoxdat_now)
 ```
 
-## Diagnosing reporting problems
+### Diagnosing reporting problems
 
 `tbl.now` also diagnoses common reporting artefacts directly from the
 data.
@@ -196,15 +197,14 @@ data.
 ### Does the reporting delay drift over time?
 
 The `plot_delay_drift()` function draws a rolling fan chart of the delay 
-distribution, while `test_delay_drift()` and `test_delay_changepoint()` test 
-for a gradual trend or an abrupt change.
+distribution:
 
 ```{r}
 data("covid_colombia")
 
-covidat_now <- covid_colombia %>%
+covidat_now <- covid_colombia |>
   filter(notification_date <= as.Date("2021/01/01"), 
-         diagnosis_date    <= as.Date("2021/01/01")) %>% 
+         diagnosis_date    <= as.Date("2021/01/01")) |>
   tbl_now(
     event_date  = notification_date,
     report_date = diagnosis_date,
@@ -217,44 +217,51 @@ covidat_now <- covid_colombia %>%
 plot_delay_drift(covidat_now, changepoint = TRUE)
 ```
 
-We can see that the delay does change in time varying a lot at the beginning of the epidemic (before April) then stabilizing between April and July, and finally shifting downwards around August. The **changepoint** option uses [Pettitt's test](https://doi.org/10.2307/2346729) to identify **one** changepoint in the data. It can be recovered  with `test_delay_changepoint()`:
+We can see that the delay does change in time varying a lot at the beginning of the epidemic (before April) then stabilizing between April and July, and finally shifting downwards around August. The same result can be observed with `test_delay_drift()` which checks, statistically, via a modified Mann-Kendall test, whether there is a drift in the delay:
 
-```{r}
+```{r, warning=FALSE}
+test_delay_drift(covidat_now, method = "yue-pilon")
+```
+
+
+The **changepoint** option uses [Pettitt's test](https://doi.org/10.2307/2346729) to identify **one** changepoint in the data. It can be recovered  with `test_delay_changepoint()`:
+
+```{r, warning=FALSE}
 test_delay_changepoint(covidat_now)
 ```
 
-As context, on August 10th 2020 the [Colombian government anounced the massive use of antigen testing](https://www.semana.com/que-son-las-pruebas-de-antigeno-y-quien-las-provee-en-colombia/692542/) for COVID-19 and in August 25th implemented the **PRASS programme]**which shifted the sampling and reporting paradigm for the country (_Osorio Saldarriga et al_). These are the changes potentially identified by `test_delay_changepoint()`. 
+As context, on August 10th 2020 the [Colombian government anounced the massive use of antigen testing](https://www.semana.com/que-son-las-pruebas-de-antigeno-y-quien-las-provee-en-colombia/692542/) for COVID-19 and in August 25th implemented the **PRASS programme** which shifted the sampling and reporting paradigm for the country (_Osorio Saldarriga et al_). These are the changes potentially identified by `test_delay_changepoint()`. 
 
-> [!NOTE]
-> Pettitt's test in `test_delay_changepoint()` detects only one change point: the largest one. If your data has more than one changepoint break your data into chuncks and run the test for each of them. 
-
+::: {.alert .alert-warning}
+Pettitt's test in `test_delay_changepoint()` detects only one change point: the largest one. If your data has more than one changepoint break your data into chunks and run the test for each of them. 
+:::
 
 ### Batch reporting
 
 Some systems might withhold results and then release their backlog at once. 
 Such *batches* displace reports along the report axis by first _not presenting 
-them in time_ and then reporting all in bulk. Batches do not create new cases they just shift their report dates to a later period. 
+them in time_ and then reporting all in bulk. Batches do not create new cases they just shift their report dates to a later period (see the [corresponding article for more information](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html)). 
 
 The `batch_test()` function uses this idea to identify batches. The confidence level can be set with `alpha`. For example here we set a level of 80%:
 
 ```{r batches, warning=FALSE, eval = FALSE}
-covidat_now %>% 
-  remove_all_strata() %>% 
+covidat_now |>
+  remove_all_strata() |>
   batch_test(period = 7, alpha = 0.2) 
 ```
 
 ```{r batches2, warning=FALSE, echo = FALSE}
-covidat_now %>% 
-  remove_all_strata() %>% 
-  batch_test(period = 7, alpha = 0.2) %>% 
-  arrange(desc(batch)) %>% 
+covidat_now |>
+  remove_all_strata() |>
+  batch_test(period = 7, alpha = 0.2) |>
+  arrange(desc(batch)) |>
   select(report_date, reported, baseline, p_transport_bh, batch, everything())
 ```
 
 
-Additional batch detection tools can be found in the [corresponding article](https://rodrigozepeda.github.io/tbl.now/articles/Example.html).
+Additional batch detection tools can be found in the [batch-reporting article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html).
 
-## Extreme delays
+### Extreme delays
 
 Extreme delays can be censored with the `censor_delays_above()` function that
 assigns upper bounds to the delay. In the following data frame for example,
@@ -276,12 +283,22 @@ censor_delays_above(tn, max_delay = 60)
 ```
 
 
-## Learning more
-
-+ Introduction vignette: [https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html)
-+ Full walk-through with real CDC Flusight data: [https://rodrigozepeda.github.io/tbl.now/articles/Example.html](https://rodrigozepeda.github.io/tbl.now/articles/Example.html) 
-+ Tutorial on detecting batches and other reporting-delay artifacts: [https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html) 
-+ Package reference: [https://rodrigozepeda.github.io/tbl.now/reference/](https://rodrigozepeda.github.io/tbl.now/reference/)
+```{r learning-more, echo=FALSE, results="asis"}
+# The fragment is looked up by ABSOLUTE path via system.file(), never by a
+# relative one. pkgdown/rmarkdown render into an intermediates directory under
+# tempdir() and copy relative resources alongside; a path containing "../.."
+# escapes that directory ("cannot create file '/tmp/RtmpXXX/../../man/...'"),
+# which fails wherever tempdir() sits near the filesystem root -- as it does on
+# CI. `system.file()` also works under pkgload::load_all(), which shims it to
+# find inst/ in the source tree.
+cat(
+  knitr::knit_child(
+    system.file("fragments", "learning-more.Rmd", package = "tbl.now"),
+    quiet = TRUE
+  ),
+  sep = "\n"
+)
+```
 
 
 

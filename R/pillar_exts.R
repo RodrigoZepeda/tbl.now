@@ -63,7 +63,7 @@ tbl_format_footer.tbl_now <- function(x, ...) {
     cli::cli_rule()
     cli::cli_text("Now: {.val {get_now(x)}} | Event date: {.val {get_event_date(x)}} | Report date: {.val {get_report_date(x)}}")
     if (length(get_is_censored(x)) > 0) {
-      cli::cli_text("Right-censored indicator: {.val {get_is_censored(x)}}")
+      cli::cli_text("left-censored indicator: {.val {get_is_censored(x)}}")
     }
     if (get_num_strata(x) > 0) {
       cli::cli_text("Strata: {.val {get_strata(x)}}")

@@ -12,15 +12,17 @@ tbl_now_from_baselinenowcast(
   reference_date = "reference_date",
   report_date = "report_date",
   count = "count",
-  delays_unit = "days",
+  delays_unit = NULL,
   verbose = TRUE
 )
 
 tbl_now_to_baselinenowcast(
   x,
   ...,
-  format = c("matrix", "long"),
+  format = c("matrix", "long", "triangle_list"),
   delays_unit = NULL,
+  complete = "auto",
+  negatives = c("redistribute", "error"),
   verbose = TRUE
 )
 }
@@ -28,26 +30,58 @@ tbl_now_to_baselinenowcast(
 \item{data}{A long \code{data.frame} or a \code{reporting_triangle} matrix.}
 
 \item{...}{Forwarded to \code{\link[=as_tbl_now]{as_tbl_now()}} (\code{from}) or
-\code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}} (\code{to}, matrix format).}
+\code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}} (\code{to}, triangle formats).}
 
 \item{reference_date, report_date, count}{Column names (long format only).}
 
 \item{delays_unit}{Unit of the delay axis of the reporting triangle, one of
-\code{"days"} or \code{"weeks"}. For \code{tbl_now_from_baselinenowcast()} this says how to
-read an input matrix's delay columns and defaults to \code{"days"}. For
-\code{tbl_now_to_baselinenowcast()} (matrix format only) it defaults to \code{NULL},
-meaning it is \strong{inferred} from the object's time units when the event and
-report units agree and are \code{"days"} or \code{"weeks"}; otherwise you must supply
-it explicitly.}
+\code{"days"} or \code{"weeks"}. Both directions default to \code{NULL}, meaning it is
+worked out for you. For \code{tbl_now_from_baselinenowcast()} that means reading
+the input matrix's own \code{delays_unit} attribute (falling back to \code{"days"}
+when it has none); a supplied value always wins. For
+\code{tbl_now_to_baselinenowcast()} (triangle formats only) it is \strong{inferred}
+from the object's time units when the event and report units agree and are
+\code{"days"} or \code{"weeks"}; otherwise you must supply it explicitly.}
 
 \item{verbose}{Logical. Print the choices that were made.}
 
 \item{x}{A \code{tbl_now} object.}
 
-\item{format}{For \code{to}: \code{"matrix"} (default) or \code{"long"}.}
+\item{format}{For \code{to}, one of:
+\itemize{
+\item \code{"matrix"} (default) -- a single \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}}
+matrix. A triangle has no strata dimension, so any strata are \strong{pooled}
+(with a warning).
+\item \code{"long"} -- a tidy data frame, which can also carry the strata,
+covariates, temporal-effect columns and the censoring indicator.
+\item \code{"triangle_list"} -- one reporting triangle \strong{per stratum}, as a
+\link{tbl_now_triangle_list}. Use this instead of pooling when you want a
+nowcast per stratum. With no strata attached the result is still a list,
+of length one and named \code{"all"}, so the return type never depends on
+whether strata happen to be present. Unlike splitting the long format
+yourself, the delay unit and the strata are taken from the object, and
+\code{\link[=as_tbl_now]{as_tbl_now()}} can rebuild a \code{tbl_now} from the result.
+}}
+
+\item{complete}{For \code{to} with a triangle format: fill event periods that have
+no reports at all with zeroes, out to the object's \code{\link[=get_now]{get_now()}}, via
+\code{\link[=complete_zeroes]{complete_zeroes()}}. \code{"auto"} (the default) does this for \strong{line-list}
+input only, so you do not have to remember
+\code{to_count() |> complete_zeroes()} first. Count data is left exactly as
+supplied, because it \emph{can} distinguish an observed zero from a cell that
+could not be observed yet (\code{NA}) and filling those would claim reporting was
+complete when it was not. \code{TRUE} / \code{FALSE} force either behaviour. Ignored
+for \code{format = "long"}.}
+
+\item{negatives}{How to handle the negative increments that appear when
+\code{count-cumulative} data is de-accumulated (a downward revision).
+\code{"redistribute"} (default) absorbs each negative into earlier delays with
+\code{\link[baselinenowcast:preprocess_negative_values]{baselinenowcast::preprocess_negative_values()}}, which is what that
+function exists for; \code{"error"} refuses cumulative input instead.}
 }
 \value{
-A \code{tbl_now} (\code{from}), or a \code{data.frame}/\code{reporting_triangle} (\code{to}).
+A \code{tbl_now} (\code{from}), or a \code{data.frame}, \code{reporting_triangle} or
+\link{tbl_now_triangle_list} (\code{to}), according to \code{format}.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -66,7 +100,7 @@ covariates, the censoring indicator and any materialised temporal-effect
 columns (see \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}); the matrix holds only the three
 core columns. A single reporting-triangle matrix has no strata dimension, so
 \code{format = "matrix"} \strong{pools} any strata (summing the counts) with a warning;
-build one triangle per stratum (from the long format) to nowcast each stratum.
+use \code{format = "triangle_list"} to get one triangle per stratum instead.
 }
 \section{Round-trip}{
 
@@ -84,6 +118,81 @@ the \code{tbl_now()}.
 
 On the way back, \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}} fills the
 in-triangle cells with \code{0} unless they are marked in the tibble as \code{NA}.
+}
+
+\section{Sparse same-period reporting (weekly data especially)}{
+
+
+\code{baselinenowcast} divides each observed row by the share of the delay
+distribution that should have arrived by now. When almost nothing is reported
+in the same period as the event, that share is tiny for the most recent row
+and the estimate explodes: on a weekly line list where \code{P(delay = 0)} is about
+\strong{0.05}, a final row holding a single case became an estimate of \strong{257 with
+an upper bound of 1584} against a truth of 15.
+
+Completing the triangle to the \code{now} \emph{always} leaves a final row observable
+only at delay 0, so no choice of cut-off avoids it. Check the delay PMF before
+trusting the newest rows:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{pmf <- baselinenowcast::estimate_delay(triangle)
+pmf[1]   # share expected to arrive in the same period
+}\if{html}{\out{</div>}}
+
+If it is small, follow \code{baselinenowcast}'s own advice and truncate "to an
+earlier reference time to ensure a nowcast, not a forecast, is being
+produced" -- drop trailing rows whose expected observed share is below, say,
+10\%. Daily data with substantial same-day reporting does not have this
+problem.
+}
+
+\section{Capping the delay axis}{
+
+
+The triangle gets one column per delay, so a single long straggler makes it
+very wide and the fit very slow: capping delays at 30 days on a daily series
+took a fit from \strong{314s to 50s} for a tail carrying under 1\% of cases. Unlike
+\code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}} there is no \code{max_delay} argument here, so cap with a
+filter before converting:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{x |> dplyr::filter(.delay <= 30) |> tbl_now_to_baselinenowcast()
+}\if{html}{\out{</div>}}
+}
+
+\section{Negative delays}{
+
+
+A reporting triangle is indexed by delay from \strong{0}, so a report that arrived
+\emph{before} its event has no cell to go in.
+\code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}} drops it, and the cell then reads
+\code{0} -- indistinguishable from an observed zero. Both triangle formats
+therefore \strong{warn}, naming how many rows and cases go, so the loss is not
+silent; \code{format = "long"} is a tidy data frame with no delay axis and keeps
+them. \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}} drops them the same way, and warns the same
+way.
+
+Filter first if you want to decide what happens:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{x |> dplyr::filter(.delay >= 0) |> tbl_now_to_baselinenowcast()
+}\if{html}{\out{</div>}}
+}
+
+\section{Censored delays}{
+
+
+A censoring indicator that is a property of the \strong{case} rather than of the
+delay -- an administrative "this date is only an upper bound" mark, say --
+puts a censored and an uncensored row in the same
+\verb{(event_date, report_date)} cell. A reporting triangle has one slot per cell,
+so the extra dimension has to go before the conversion. It is removed
+automatically, with a warning either way:
+\itemize{
+\item \strong{count data}: the counts are summed over the flag, leaving case totals
+unchanged;
+\item \strong{line lists}: the column is dropped, leaving one row per case.
+}
+
+\code{\link[=tbl_now_to_epidist]{tbl_now_to_epidist()}} is the exception and keeps the flag: estimating a
+delay distribution is the one job that can use it.
 }
 
 \examples{

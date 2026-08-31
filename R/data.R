@@ -44,11 +44,27 @@
 #' *target_end_date* given the information known until week *as_of*. Note
 #' that *as_of* is always one week ahead of *target_end_date*.
 #'
-#' This is count data. The columns are as follows:
-#' * `as_of`: The
-#' * `target_end_date`: The date where the case happened
-#' * `observation`: Case counts for those dates
-#' * `location_name`: State, district or territory
+#' This is count data with 452,567 rows and 4 columns:
+#' * `as_of`: The report date -- the date the snapshot was taken, i.e. what was
+#'   known as of that week.
+#' * `target_end_date`: The event date -- the week the admissions occurred.
+#' * `location_name`: State, district or territory (53 levels).
+#' * `observation`: Case counts for those dates. `NA` for 1,152 rows.
+#'
+#' Together, `as_of`, `target_end_date` and `location_name` form a unique key.
+#'
+#' @section Duplicate rows removed:
+#'
+#' The upstream FluSight `time-series.csv` ships exact duplicate rows -- 39,139
+#' of them in this snapshot. They were dropped with [dplyr::distinct()] before
+#' the dataset was saved (issue #25), taking it from 491,706 to 452,567 rows.
+#'
+#' The removal is lossless: every repeated
+#' (`as_of`, `target_end_date`, `location_name`) key carried an *identical*
+#' `observation`, with no conflicting values anywhere in the file, so no
+#' information was discarded and the key became unique. If you download the
+#' upstream file yourself you will still see the duplicates and should
+#' `distinct()` them before use.
 #'
 #' @references
 #' Target data from Flusight. Online:
@@ -58,7 +74,7 @@
 #'
 #' @usage data(flusight)
 #'
-#' @format A data frame.
+#' @format A data frame with 452,567 rows and 4 variables.
 #'
 #' @keywords flu influenza
 #'

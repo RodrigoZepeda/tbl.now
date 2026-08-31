@@ -514,10 +514,13 @@ test_that("align_weeks preserves covariates and temporal effects", {
   expect_true(length(get_temporal_effects(result)) > 0)
 })
 
-test_that("Example from vignette works correctly", {
+test_that("weekly flusight object aligns correctly", {
   data(flusight)
 
-  # This is the example from Example.Rmd
+  # This started life as the worked example in the old FluSight Example.Rmd,
+  # which has since been rewritten around `hai_bucaramanga`. The test is kept
+  # because it exercises weekly alignment on real data, not because the vignette
+  # still contains it.
   flutbl <- tbl_now(flusight[1:1000, ],
     event_date = "target_end_date",
     report_date = "as_of",

@@ -251,10 +251,13 @@ test_that("temporal_effects handles large season values", {
 # Tests for print.temporal_effects()
 # ============================================================================
 
+# NOTE: these capture with `capture.output()`, not `cli::cli_fmt()`. A print
+# method writes to STDOUT; `cli_fmt()` only captures cli *message* output, so it
+# would silently see nothing now that the method uses the `cat_*()` family.
 test_that("print.temporal_effects displays header", {
   t_eff <- temporal_effects(day_of_week = TRUE)
 
-  output <- cli::cli_fmt(print(t_eff))
+  output <- capture.output(print(t_eff))
 
   expect_true(any(grepl("Temporal Effects", output)))
 })
@@ -262,7 +265,7 @@ test_that("print.temporal_effects displays header", {
 test_that("print.temporal_effects shows single effect", {
   t_eff <- temporal_effects(day_of_week = TRUE)
 
-  output <- cli::cli_fmt(print(t_eff))
+  output <- capture.output(print(t_eff))
 
   expect_true(any(grepl("day_of_week", output)))
   expect_false(any(grepl("weekend", output)))
@@ -276,7 +279,7 @@ test_that("print.temporal_effects shows multiple effects", {
     week_of_year = TRUE
   )
 
-  output <- cli::cli_fmt(print(t_eff))
+  output <- capture.output(print(t_eff))
 
   expect_true(any(grepl("day_of_week", output)))
   expect_true(any(grepl("weekend", output)))
@@ -287,7 +290,7 @@ test_that("print.temporal_effects shows multiple effects", {
 test_that("print.temporal_effects shows seasons", {
   t_eff <- temporal_effects(seasons = c(7, 52, 365))
 
-  output <- cli::cli_fmt(print(t_eff))
+  output <- capture.output(print(t_eff))
 
   expect_true(any(grepl("season", output)))
   expect_true(any(grepl("7", output)))
@@ -301,7 +304,7 @@ test_that("print.temporal_effects shows holidays", {
   cal <- almanac::rcalendar(almanac::hol_christmas())
   t_eff <- temporal_effects(holidays = cal)
 
-  output <- cli::cli_fmt(print(t_eff))
+  output <- capture.output(print(t_eff))
 
   expect_true(any(grepl("holiday", output, ignore.case = TRUE)))
 })
@@ -311,7 +314,7 @@ test_that("print.temporal_effects shows US federal holidays", {
 
   t_eff <- temporal_effects(holidays = almanac::cal_us_federal())
 
-  output <- cli::cli_fmt(print(t_eff))
+  output <- capture.output(print(t_eff))
 
   expect_true(any(grepl("holiday", output, ignore.case = TRUE)))
 })
@@ -319,7 +322,7 @@ test_that("print.temporal_effects shows US federal holidays", {
 test_that("print.temporal_effects shows no effects message", {
   t_eff <- temporal_effects()
 
-  output <- cli::cli_fmt(print(t_eff))
+  output <- capture.output(print(t_eff))
 
   expect_true(any(grepl("No temporal effects", output)))
 })
@@ -337,7 +340,7 @@ test_that("print.temporal_effects shows all effects", {
     holidays = almanac::cal_us_federal()
   )
 
-  output <- cli::cli_fmt(print(t_eff))
+  output <- capture.output(print(t_eff))
 
   expect_true(any(grepl("day_of_week", output)))
   expect_true(any(grepl("weekend", output)))

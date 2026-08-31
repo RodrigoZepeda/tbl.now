@@ -103,9 +103,25 @@ plot_reporting_hexamap <- function(x, max_delay = NULL, complete = FALSE,
   # requested delay range would exceed it, lower the delay cap (keeping the low
   # delays where the reports are) and tell the user.
   if (nrow(cells) > max_cells) {
-    ord   <- order(cells$d)
-    d_cut <- cells$d[ord][max_cells]
+    # Keep the largest delay whose whole band still fits under the cap. Taking
+    # the delay at position `max_cells` and keeping `d <= that` does NOT bound
+    # the result: every cell sharing that delay comes along too, so a wide band
+    # at the cut overshoots.
+    per_delay <- table(cells$d)
+    fits      <- which(cumsum(per_delay) <= max_cells)
+    d_cut     <- if (length(fits)) {
+      as.integer(names(per_delay)[max(fits)])
+    } else {
+      min(cells$d)
+    }
     cells <- cells[cells$d <= d_cut, , drop = FALSE]
+
+    # If even the shortest delay alone overflows the cap there is no delay cut
+    # that helps, so trim the remaining cells outright rather than silently
+    # exceeding a documented bound.
+    if (nrow(cells) > max_cells) {
+      cells <- cells[order(cells$d, cells$.event_date), , drop = FALSE][seq_len(max_cells), ]
+    }
     cli::cli_inform(c("i" = "Capped the delay axis at {d_cut} {report_unit} to keep \\
                              {.arg max_cells} = {max_cells} hexagons; raise {.arg max_cells} \\
                              or set {.arg max_delay} to change this."))

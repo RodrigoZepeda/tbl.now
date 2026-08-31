@@ -857,9 +857,10 @@
 
 #' Panel: case-count calendar effect (boxplots)
 #'
-#' With `measure = "normalized"` (the default) the boxes show each event date's
-#' reported cases divided by the overall mean, so 1 marks an average level. With
-#' `measure = "percent"` they show the **share of cases** falling in each calendar
+#' With `measure = "normalized"` the boxes show each event date's reported cases
+#' divided by the overall mean, so 1 marks an average level. With
+#' `measure = "percent"` (what `autoplot()` defaults to) they show the
+#' **share of cases** falling in each calendar
 #' group, one observation per calendar block (a week for the day-of-week panel, a
 #' year for the week-of-year one), so the median and IQR read directly as "x% of
 #' the cases happen at the weekend".
@@ -944,7 +945,7 @@
 
 #' Panel: reporting-delay calendar effect (boxplots)
 #'
-#' With `measure = "normalized"` (the default) the boxes show the case-count
+#' With `measure = "normalized"` the boxes show the case-count
 #' weighted **mean reporting delay** per event date, divided by the overall mean
 #' delay, grouped by calendar unit: this reveals whether the delay itself has a
 #' day-of-week, week-of-year or month-of-year pattern (a "delay effect"). With
@@ -2066,10 +2067,10 @@ ggplot2::autoplot
 #'   week-of-year, month-of-year, holiday and holiday-lag panels; every other
 #'   panel ignores it).
 #'
-#'   * `"normalized"` (default) — the value divided by its overall mean, so `1`
+#'   * `"normalized"`  — the value divided by its overall mean, so `1`
 #'     (the dashed line) marks an average level. Case-count panels normalize the
 #'     cases per event date; delay panels normalize the mean reporting delay.
-#'   * `"percent"` — the **share of cases** falling in each group, as a
+#'   * `"percent"` (default) — the **share of cases** falling in each group, as a
 #'     percentage, so the box reads directly as "10% of cases at the weekend
 #'     versus 90% on weekdays" with the IQR around it. One observation per
 #'     calendar block: the seven weekdays (and the day types) are shared out
@@ -2126,7 +2127,7 @@ ggplot2::autoplot
 #' @exportS3Method ggplot2::autoplot
 autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
                              strata = NULL,
-                             measure = c("normalized", "percent"),
+                             measure = c("percent", "normalized"),
                              level = 0.95, plotly = FALSE,
                              palette = .tbl_now_palette(),
                              delay_distribution_xlim = NULL,

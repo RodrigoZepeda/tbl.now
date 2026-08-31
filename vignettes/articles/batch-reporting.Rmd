@@ -63,7 +63,7 @@ batch_day <- 15
 backlog_volume <- sum(data$ideal[backlog_days])
 
 # Build the "real" curve with the batch effect
-data <- data %>%
+data <- data |>
   mutate(
     real = ideal,
     # Simulate the reporting drop
@@ -200,7 +200,7 @@ what it would have looked back then.
 ```{r data}
 data(covid_us)
 
-covid_early <- covid_us %>% 
+covid_early <- covid_us |>
   filter(cdc_case_earliest_dt < as.Date("2020-09-01") &
            cdc_report_dt < as.Date("2020-09-01"))
 
@@ -507,13 +507,13 @@ releases together with their `deficit` (how depleted the days just before were) 
 `delta` (how little the window total actually changed).
 
 ```{r screen-sim, eval = FALSE}
-batch_test(ideal) %>%
+batch_test(ideal) |>
   filter(batch)
 ```
 
 ```{r screen-sim2, echo = FALSE}
-batch_test(ideal) %>%
-  filter(batch) %>%
+batch_test(ideal) |>
+  filter(batch) |>
   select(report_date, reported, baseline, deficit, delta, p_transport_bh, batch)
 ```
 
@@ -524,14 +524,14 @@ preceded by a matching deficit. The clearest is **10 June 2020**, nearly ten tim
 its baseline:
 
 ```{r screen-covid, eval = FALSE}
-batch_test(tn, period = 7) %>% 
+batch_test(tn, period = 7) |>
   filter(batch)
 ```
 
 ```{r screen-covid2, echo = FALSE}
-batch_test(tn, period = 7) %>%
-  filter(batch) %>%
-  select(report_date, reported, baseline, deficit, delta, p_transport_bh, batch) %>%
+batch_test(tn, period = 7) |>
+  filter(batch) |>
+  select(report_date, reported, baseline, deficit, delta, p_transport_bh, batch) |>
   arrange(desc(reported))
 ```
 
@@ -613,3 +613,20 @@ Another practical notes from other data we have analyzed:
 + In general, **surges** (real new cases) seem harder to identify of that **batches** (moved reports).
 + Batches are very difficult to identify in low-incidence scenarios.  
 + Batches very close to the now are difficult to identify without additional modeling hypotheses.  
+
+```{r learning-more, echo=FALSE, results="asis"}
+# The fragment is looked up by ABSOLUTE path via system.file(), never by a
+# relative one. pkgdown/rmarkdown render into an intermediates directory under
+# tempdir() and copy relative resources alongside; a path containing "../.."
+# escapes that directory ("cannot create file '/tmp/RtmpXXX/../../man/...'"),
+# which fails wherever tempdir() sits near the filesystem root -- as it does on
+# CI. `system.file()` also works under pkgload::load_all(), which shims it to
+# find inst/ in the source tree.
+cat(
+  knitr::knit_child(
+    system.file("fragments", "learning-more.Rmd", package = "tbl.now"),
+    quiet = TRUE
+  ),
+  sep = "\n"
+)
+```

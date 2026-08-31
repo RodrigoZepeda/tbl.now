@@ -989,15 +989,29 @@ test_that("tbl_now_to_baselinenowcast warns + coerces linelist input", {
   )
 })
 
-test_that("tbl_now_to_baselinenowcast errors on count-cumulative input", {
+test_that("tbl_now_to_baselinenowcast de-accumulates count-cumulative input", {
   skip_on_cran()
   skip_if_not_installed("baselinenowcast")
-  # Cumulative totals can be revised downward, so de-accumulating them would give
-  # negative incidence; the converter must refuse rather than produce nonsense.
+  # Cumulative totals get revised downward, so de-accumulating them gives
+  # NEGATIVE increments. That is not a reason to refuse: baselinenowcast's
+  # `preprocess_negative_values()` exists to absorb them into earlier delays.
+  cumul <- to_count(make_incidence_now(), to = "count-cumulative")
+  expect_warning(
+    long <- tbl_now_to_baselinenowcast(cumul, format = "long", verbose = FALSE,
+                                       quiet = TRUE),
+    "De-accumulating"
+  )
+  expect_s3_class(long, "data.frame")
+  expect_true(all(c("reference_date", "report_date", "count") %in% names(long)))
+})
+
+test_that("tbl_now_to_baselinenowcast can still refuse cumulative input", {
+  skip_on_cran()
+  skip_if_not_installed("baselinenowcast")
   cumul <- to_count(make_incidence_now(), to = "count-cumulative")
   expect_error(
-    tbl_now_to_baselinenowcast(cumul, format = "long", verbose = FALSE,
-                               quiet = TRUE),
+    tbl_now_to_baselinenowcast(cumul, negatives = "error", format = "long",
+                               verbose = FALSE, quiet = TRUE),
     "count-cumulative"
   )
 })
@@ -1259,12 +1273,30 @@ make_rich_now <- function() {
           event_units = "weeks", report_units = "weeks", verbose = FALSE)
 }
 
-test_that("tbl_now_to_baselinenowcast long keeps covariates and is_censored", {
+test_that("tbl_now_to_baselinenowcast long keeps covariates", {
   skip_on_cran()
   skip_if_not_installed("baselinenowcast")
-  long <- tbl_now_to_baselinenowcast(make_rich_now(), format = "long",
-                                     verbose = FALSE, quiet = TRUE)
-  expect_true(all(c("temp", "flag") %in% names(long)))
+  long <- suppressWarnings(
+    tbl_now_to_baselinenowcast(make_rich_now(), format = "long",
+                               verbose = FALSE, quiet = TRUE)
+  )
+  expect_true("temp" %in% names(long))
+  # Every baselinenowcast format ends in a triangle, which has one slot per
+  # cell and nowhere to record a delay that is only an upper bound, so the
+  # censoring indicator is collapsed away first.
+  expect_false("flag" %in% names(long))
+})
+
+test_that("tbl_now_to_baselinenowcast warns when it collapses censoring", {
+  skip_on_cran()
+  skip_if_not_installed("baselinenowcast")
+  expect_warning(
+    suppressMessages(
+      tbl_now_to_baselinenowcast(make_rich_now(), format = "long",
+                                 verbose = FALSE, quiet = TRUE)
+    ),
+    "summing counts over"
+  )
 })
 
 test_that("tbl_now_to_baselinenowcast matrix keeps only the core columns", {
@@ -1278,13 +1310,16 @@ test_that("tbl_now_to_baselinenowcast matrix keeps only the core columns", {
   expect_s3_class(mx, "reporting_triangle")
 })
 
-test_that("tbl_now_to_tsibble keeps covariates/is_censored as measurements", {
+test_that("tbl_now_to_tsibble keeps covariates as measurements", {
   skip_on_cran()
   skip_if_not_installed("tsibble")
-  ts <- tbl_now_to_tsibble(make_rich_now(), verbose = FALSE)
-  expect_true(all(c("temp", "flag") %in% names(ts)))
-  # they are measurement columns, NOT part of the key
-  expect_false(any(c("temp", "flag") %in% tsibble::key_vars(ts)))
+  ts <- suppressWarnings(tbl_now_to_tsibble(make_rich_now(), verbose = FALSE))
+  expect_true("temp" %in% names(ts))
+  # a measurement column, NOT part of the key
+  expect_false("temp" %in% tsibble::key_vars(ts))
+  # A tsibble needs a unique index/key combination, which is exactly what a
+  # censoring indicator breaks, so it is collapsed away first.
+  expect_false("flag" %in% names(ts))
 })
 
 test_that("tbl_now_to_data_table keeps every column", {
@@ -1753,4 +1788,147 @@ test_that("tbl_now_to_epinowcast passes strata as grouping", {
     tbl_now_to_epinowcast(tn, verbose = FALSE, quiet = TRUE)
   ))
   expect_equal(length(unique(enw$metareference[[1]]$.group)), 2L)
+})
+
+# format = "triangle_list" ------------------------------------------------------
+
+make_strata_tbl_now <- function() {
+  data(denguedat, envir = environment())
+  denguedat |>
+    dplyr::filter(onset_week >= as.Date("2010-01-01")) |>
+    tbl_now(
+      event_date = onset_week, report_date = report_week,
+      strata = gender, data_type = "linelist", verbose = FALSE
+    )
+}
+
+test_that("format = 'triangle_list' returns one triangle per stratum", {
+  skip_if_not_installed("baselinenowcast")
+  x  <- make_strata_tbl_now()
+  tl <- suppressWarnings(
+    tbl_now_to_baselinenowcast(x, format = "triangle_list", verbose = FALSE)
+  )
+
+  expect_s3_class(tl, "tbl_now_triangle_list")
+  # Thin class: it must still behave as a plain list.
+  expect_true(is.list(tl))
+  expect_setequal(names(tl), unique(as.character(x$gender)))
+  for (triangle in tl) expect_s3_class(triangle, "reporting_triangle")
+  expect_equal(attr(tl, "strata_cols"), "gender")
+  expect_equal(attr(tl, "now"), get_now(x))
+})
+
+test_that("format = 'triangle_list' is length-1 and named 'all' without strata", {
+  skip_if_not_installed("baselinenowcast")
+  x <- remove_all_strata(make_strata_tbl_now())
+  tl <- suppressWarnings(
+    tbl_now_to_baselinenowcast(x, format = "triangle_list", verbose = FALSE)
+  )
+
+  # The return type must not depend on whether strata happen to be attached.
+  expect_s3_class(tl, "tbl_now_triangle_list")
+  expect_length(tl, 1L)
+  expect_named(tl, "all")
+})
+
+test_that("as_tbl_now() rebuilds a tbl_now from a triangle list, strata and all", {
+  skip_if_not_installed("baselinenowcast")
+  x  <- make_strata_tbl_now()
+  tl <- suppressWarnings(
+    tbl_now_to_baselinenowcast(x, format = "triangle_list", verbose = FALSE)
+  )
+  back <- as_tbl_now(tl)
+
+  expect_true(is_tbl_now(back))
+  expect_equal(get_strata(back), "gender")
+  expect_equal(get_now(back), get_now(x))
+  expect_equal(get_event_units(back), get_event_units(x))
+  expect_setequal(unique(as.character(back$gender)), unique(as.character(x$gender)))
+
+  # No cases gained or lost, per stratum.
+  original <- x |> as.data.frame() |> dplyr::count(gender, name = "n")
+  rebuilt  <- back |>
+    as.data.frame() |>
+    dplyr::summarise(n = sum(count, na.rm = TRUE), .by = gender)
+  expect_equal(
+    rebuilt$n[order(rebuilt$gender)],
+    as.numeric(original$n[order(original$gender)])
+  )
+})
+
+test_that("a weekly reporting triangle survives the round-trip through as_tbl_now()", {
+  skip_if_not_installed("baselinenowcast")
+  # Regression: `delays_unit` was not read from the triangle's own attribute, so
+  # weekly delays were expanded as days and `as_tbl_now()` aborted with
+  # "report_units must be coarser than or equal to event_units".
+  x <- remove_all_strata(make_strata_tbl_now())
+  triangle <- suppressWarnings(tbl_now_to_baselinenowcast(x, verbose = FALSE))
+  expect_equal(attr(triangle, "delays_unit"), "weeks")
+
+  back <- suppressWarnings(suppressMessages(as_tbl_now(triangle)))
+  expect_true(is_tbl_now(back))
+  expect_equal(get_event_units(back), "weeks")
+  expect_equal(
+    max(as.numeric(back$report_date - back$reference_date)),
+    max(as.numeric(x$report_week - x$onset_week))
+  )
+})
+
+
+# tbl_now_to_nobbs() -----------------------------------------------------------
+# NobBS counts ROWS, so count data must be expanded to one row per case. Handing
+# it counts directly is silently wrong rather than an error, which is exactly why
+# the converter exists.
+
+test_that("tbl_now_to_nobbs() expands counts to one row per case", {
+  skip_if_not_installed("NobBS")
+  data(denguedat, envir = environment())
+  ll <- tbl_now(
+    denguedat,
+    event_date = "onset_week", report_date = "report_week",
+    data_type = "linelist", verbose = FALSE
+  )
+  counts <- to_count(ll, to = "count-incidence")
+
+  out <- suppressWarnings(suppressMessages(
+    tbl_now_to_nobbs(counts, verbose = FALSE)
+  ))
+
+  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(out), sum(counts[[get_case_count(counts)]]))
+  expect_named(out, c("onset_date", "report_date"))
+  expect_s3_class(out$onset_date, "Date")
+  expect_s3_class(out$report_date, "Date")
+})
+
+test_that("tbl_now_to_nobbs() leaves a line list at one row per case", {
+  skip_if_not_installed("NobBS")
+  data(denguedat, envir = environment())
+  ll <- tbl_now(
+    denguedat,
+    event_date = "onset_week", report_date = "report_week",
+    data_type = "linelist", verbose = FALSE
+  )
+  out <- suppressWarnings(suppressMessages(
+    tbl_now_to_nobbs(ll, verbose = FALSE)
+  ))
+  expect_equal(nrow(out), nrow(denguedat))
+})
+
+test_that("tbl_now_to_nobbs() carries strata for a per-stratum loop", {
+  skip_if_not_installed("NobBS")
+  x <- make_strata_tbl_now()
+  out <- suppressWarnings(suppressMessages(
+    tbl_now_to_nobbs(x, verbose = FALSE)
+  ))
+  expect_true(all(get_strata(x) %in% names(out)))
+})
+
+test_that("tbl_now_to_nobbs() honours custom column names", {
+  skip_if_not_installed("NobBS")
+  x <- make_strata_tbl_now()
+  out <- suppressWarnings(suppressMessages(
+    tbl_now_to_nobbs(x, event_col = "onset", report_col = "rep", verbose = FALSE)
+  ))
+  expect_true(all(c("onset", "rep") %in% names(out)))
 })

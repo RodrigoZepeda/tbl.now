@@ -13,12 +13,232 @@
   background-color: #C55F53 !important;
 }
 
+/* --------------------------------------------------------------------------
+   Navbar dropdowns (the "Articles" menu).
+
+   Bootstrap 5 renders these as `.dropdown-menu`, NOT `.submenu`, so the old
+   `.submenu` rules never matched and the menu fell through to the Bootswatch
+   "flatly" default, which is near-black. Both selectors are kept below so the
+   styling survives a pkgdown/Bootstrap version bump.
+
+   Target: a pale tint of the plot palette's `light_red` (#e78b7f) with the
+   `near_black` (#262626) text used elsewhere in the package.
+   -------------------------------------------------------------------------- */
+.navbar .dropdown-menu,
 .navbar .submenu {
-  background-color: #B85348 !important; /* Changes the background color */
+  background-color: #f9e6e2 !important;
+  border: 1px solid #e78b7f !important;
+  box-shadow: 0 0.5rem 1rem rgba(38, 38, 38, 0.15);
 }
 
+.navbar .dropdown-menu .dropdown-item,
+.navbar .submenu .dropdown-item {
+  color: #262626 !important;
+}
+
+.navbar .dropdown-menu .dropdown-item:hover,
+.navbar .dropdown-menu .dropdown-item:focus,
+.navbar .submenu .dropdown-item:hover,
+.navbar .submenu .dropdown-item:focus {
+  background-color: #e78b7f !important;
+  color: #262626 !important;
+}
+
+.navbar .dropdown-menu .dropdown-item.active,
+.navbar .dropdown-menu .dropdown-item:active {
+  background-color: #B85348 !important;
+  color: #ffffff !important;
+}
+
+/* Section headers and separators inside the dropdown. */
+.navbar .dropdown-menu .dropdown-header {
+  color: #8a4038 !important;
+  font-weight: 600;
+}
+
+.navbar .dropdown-menu .dropdown-divider {
+  border-top-color: #e78b7f !important;
+}
+
+/* The pale treatment is legible in both themes, so dark mode keeps it rather
+   than reverting to the dark Bootswatch default. */
+[data-bs-theme="dark"] .navbar .dropdown-menu,
 [data-bs-theme="dark"] .navbar .submenu {
-  background-color: #C55F53 !important; /* Changes the background color */
+  background-color: #f4ddd9 !important;
+  border-color: #C55F53 !important;
+}
+
+[data-bs-theme="dark"] .navbar .dropdown-menu .dropdown-item,
+[data-bs-theme="dark"] .navbar .submenu .dropdown-item {
+  color: #262626 !important;
+}
+
+/* --------------------------------------------------------------------------
+   Navbar search box, matched to the Articles dropdown above.
+
+   pkgdown's search is the Algolia autocomplete widget: `#search-input` is the
+   box itself and the results render into `.aa-dropdown-menu` / `.aa-suggestion`
+   (NOT a Bootstrap `.dropdown-menu`), so the results list has to be styled
+   separately or it stays on the Bootswatch default while the box turns pale.
+   -------------------------------------------------------------------------- */
+.navbar #search-input,
+.navbar #search-input.form-control {
+  background-color: #f9e6e2 !important;
+  color: #262626 !important;
+  border: 1px solid #e78b7f !important;
+}
+
+.navbar #search-input::placeholder {
+  color: #a9675d !important;
+  opacity: 1; /* Firefox dims placeholders by default. */
+}
+
+.navbar #search-input:focus {
+  background-color: #fdf3f1 !important;
+  border-color: #B85348 !important;
+  box-shadow: 0 0 0 0.2rem rgba(184, 83, 72, 0.3) !important;
+}
+
+/* Results list. */
+.aa-dropdown-menu {
+  background-color: #f9e6e2 !important;
+  border: 1px solid #e78b7f !important;
+  box-shadow: 0 0.5rem 1rem rgba(38, 38, 38, 0.15);
+}
+
+.aa-dropdown-menu .aa-suggestion {
+  color: #262626 !important;
+}
+
+.aa-dropdown-menu .aa-suggestion:hover,
+.aa-dropdown-menu .aa-suggestion.aa-cursor {
+  background-color: #e78b7f !important;
+  color: #262626 !important;
+}
+
+/* mark.js wraps matched terms in <mark>; the default yellow clashes with the
+   pale red ground. */
+.aa-dropdown-menu .aa-suggestion mark {
+  background-color: #B85348 !important;
+  color: #ffffff !important;
+  padding: 0 0.15em;
+  border-radius: 2px;
+}
+
+/* "No results found" and the dimmed context line under each hit. */
+.aa-dropdown-menu .aa-suggestion .search-details,
+.aa-dropdown-menu .aa-suggestion .autocomplete-item {
+  color: #6d4a44 !important;
+}
+
+/* NO `[data-bs-theme="dark"]` override for the search box or its results.
+   pkgdown stamps `data-bs-theme="dark"` on the <nav class="navbar"> ELEMENT
+   itself, so that navbar text stays light on the coloured bar. Anything nested
+   inside the navbar — which includes `.aa-dropdown-menu` — therefore matches
+   `[data-bs-theme="dark"] ...` on *every* page, light mode included. A
+   dark-mode variant here would permanently mis-colour the results list and
+   leave it a different shade from the Articles menu. The single pale palette
+   above is legible in both themes, so it is used unconditionally.
+
+   (The `.navbar .dropdown-menu` dark rule further up is fine: it needs a themed
+   ANCESTOR of `.navbar`, which only exists when the page itself is dark.) */
+
+
+/* --------------------------------------------------------------------------
+   Callout boxes written as pandoc fenced divs, e.g.
+
+       ::: {.alert .alert-info}
+       **TIP**: ...
+       :::
+
+   Bootstrap's default `.alert-info` is a blue that belongs to no part of this
+   package's palette, so it is restyled into the sage green used for the
+   epidemic/event-date process in the plots.
+   -------------------------------------------------------------------------- */
+.alert-info {
+  background-color: #eaf1ea !important;
+  border: 1px solid #A8BFA9 !important;
+  border-left: 4px solid #5F7E62 !important;
+  color: #262626 !important;
+  border-radius: 4px;
+}
+
+/* Headings, bold lead-ins ("**TIP**") and links inside the callout. */
+.alert-info strong,
+.alert-info b,
+.alert-info h1, .alert-info h2, .alert-info h3,
+.alert-info h4, .alert-info h5, .alert-info h6 {
+  color: #334335 !important;
+}
+
+.alert-info a {
+  color: #5F7E62 !important;
+  text-decoration: underline;
+}
+
+.alert-info a:hover {
+  color: #334335 !important;
+}
+
+/* Inline code inside the callout: the page-wide `code` rule paints a pale sage
+   background that disappears against the callout, so lift it slightly. */
+.alert-info code {
+  background-color: #dbe4db !important;
+  color: #262626 !important;
+}
+
+/* The callout is legible in both themes, so dark mode keeps the same palette
+   rather than reverting to the Bootswatch default. */
+[data-bs-theme="dark"] .alert-info {
+  background-color: #e3ece3 !important;
+  border-color: #A8BFA9 !important;
+  border-left-color: #5F7E62 !important;
+  color: #262626 !important;
+}
+
+[data-bs-theme="dark"] .alert-info strong,
+[data-bs-theme="dark"] .alert-info b {
+  color: #334335 !important;
+}
+
+
+/* `.alert-warning` callouts use the attenuated red the plots use for intervals
+   (`light_red`, #e78b7f), so the two callout kinds are distinguishable at a
+   glance and both stay inside the package palette. */
+.alert-warning {
+  background-color: #fbeeeb !important;
+  border: 1px solid #e78b7f !important;
+  border-left: 4px solid #e78b7f !important;
+  color: #262626 !important;
+  border-radius: 4px;
+}
+
+.alert-warning strong,
+.alert-warning b,
+.alert-warning h1, .alert-warning h2, .alert-warning h3,
+.alert-warning h4, .alert-warning h5, .alert-warning h6 {
+  color: #a9675d !important;
+}
+
+.alert-warning a {
+  color: #a9675d !important;
+  text-decoration: underline;
+}
+
+/* Inline code keeps the page-wide sage green here. The callout's own tint is
+   red, and a red-on-red chip read as a coloured square rather than as code, so
+   this deliberately does NOT follow the callout the way `.alert-info code`
+   does (there the lift stays within the same green family). */
+.alert-warning code {
+  background-color: #ebefeb !important;
+  color: #262626 !important;
+}
+
+[data-bs-theme="dark"] .alert-warning {
+  background-color: #f7e4e0 !important;
+  border-color: #e78b7f !important;
+  border-left-color: #e78b7f !important;
+  color: #262626 !important;
 }
 
 
@@ -57,6 +277,57 @@ code {
   border-radius: 4px;
 }
 
+/* --------------------------------------------------------------------------
+   Code blocks must SCROLL sideways, never wrap.
+
+   Two separate jobs, and mixing them is what produced a stray empty scrollbar
+   track ("a rectangle") under every chunk:
+
+     1. NO WRAPPING -- pkgdown/Bootstrap set `white-space: pre-wrap` on `code`
+        inside `pre`, which beats a bare `pre` rule and folds long lines. That
+        has to be pinned on every layer, `code` included.
+     2. SCROLLING -- must be set ONLY on the container (`div.sourceCode`, `pre`).
+        Putting `overflow-x` on the inner `<code>` as well makes it a second
+        scroll container, and each one reserves a horizontal scrollbar gutter
+        even when there is nothing to scroll.
+   -------------------------------------------------------------------------- */
+
+/* 1. Nothing wraps, at any level. */
+div.sourceCode,
+div.sourceCode pre,
+pre.sourceCode,
+pre.sourceCode code,
+pre code.sourceCode,
+pre code.hljs,
+.section pre,
+.section pre code {
+  white-space: pre !important;
+  word-wrap: normal !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+/* 2. Only the container scrolls. */
+div.sourceCode,
+pre.sourceCode,
+.section pre {
+  overflow-x: auto !important;
+}
+
+/* The inner <code> stays inline and never scrolls, so no second gutter. */
+div.sourceCode pre code,
+pre.sourceCode code,
+.section pre code {
+  overflow: visible !important;
+}
+
+pre, pre code {
+  white-space: pre;
+  padding-right: 1rem;
+  overflow: auto;
+  word-wrap: normal;
+}
+
 /* Background color for code chunks/blocks */
 pre.src, pre.r, div.sourceCode {
   background-color: #ebefeb !important;
@@ -75,4 +346,26 @@ pre, .markdown-body pre, pre code, .output pre {
 /* Ensure the container background matches seamlessly */
 div.pre {
   background-color: #ebefeb !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   Figure captions: centred, smaller and grey, so they read as a caption rather
+   than as body text.
+   -------------------------------------------------------------------------- */
+.figure > .caption,
+.figure figcaption,
+p.caption,
+figcaption {
+  text-align: center !important;
+  font-size: 0.875rem !important;
+  color: #6b7280 !important;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+/* Keep the figure itself centred with its caption. */
+.figure,
+figure {
+  text-align: center;
 }

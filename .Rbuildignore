@@ -2,6 +2,8 @@
 ^.*\.Renviron$
 ^\.Rproj\.user$
 ^LICENSE\.md$
+^Rplots\.pdf$
+^tests/testthat/_problems$
 ^cran-comments\.md$
 ^README\.Rmd$
 ^\.DS_Store$
@@ -22,6 +24,7 @@
 ^\.covrignore$
 ^\.positai$
 ^\.claude$
-^SKILL.md$
+^SKILL\.md$
+^DEVELOPMENT_SKILL\.md$
 ^BATCH_DETECTION_EXPLAINED\.md$
 ^paper$

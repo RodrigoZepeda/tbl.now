@@ -143,6 +143,43 @@ delay 74, so its \code{max_confirm} is 11 in \code{pobs} and 7 after the round-t
 }
 }
 
+\section{Negative delays}{
+
+
+A reporting triangle is indexed by delay from \strong{0}, so a report that arrived
+\emph{before} its event has no cell to go in.
+\code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}} drops it, and the cell then reads
+\code{0} -- indistinguishable from an observed zero. Both triangle formats
+therefore \strong{warn}, naming how many rows and cases go, so the loss is not
+silent; \code{format = "long"} is a tidy data frame with no delay axis and keeps
+them. \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}} drops them the same way, and warns the same
+way.
+
+Filter first if you want to decide what happens:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{x |> dplyr::filter(.delay >= 0) |> tbl_now_to_baselinenowcast()
+}\if{html}{\out{</div>}}
+}
+
+\section{Censored delays}{
+
+
+A censoring indicator that is a property of the \strong{case} rather than of the
+delay -- an administrative "this date is only an upper bound" mark, say --
+puts a censored and an uncensored row in the same
+\verb{(event_date, report_date)} cell. A reporting triangle has one slot per cell,
+so the extra dimension has to go before the conversion. It is removed
+automatically, with a warning either way:
+\itemize{
+\item \strong{count data}: the counts are summed over the flag, leaving case totals
+unchanged;
+\item \strong{line lists}: the column is dropped, leaving one row per case.
+}
+
+\code{\link[=tbl_now_to_epidist]{tbl_now_to_epidist()}} is the exception and keeps the flag: estimating a
+delay distribution is the one job that can use it.
+}
+
 \examples{
 \dontshow{if (requireNamespace("epinowcast", quietly = TRUE) & requireNamespace("data.table", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 # Preprocessing epinowcast data is slow, so this is wrapped in \donttest{}.

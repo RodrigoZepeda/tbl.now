@@ -232,6 +232,13 @@ test_that("tbl_now throws warning when repeated rows", {
     ) |>
     dplyr::select(-epiweek_as_of, -epiyear_as_of, -day)
 
+  # `flusight` used to ship exact duplicate rows and this test relied on them.
+  # They were removed in issue #25, so the repeated event-report combinations
+  # are now created explicitly. This test is about how `tbl_now()` handles
+  # repeated rows, not about the dataset happening to contain them -- do not
+  # re-couple it to the data.
+  flusight <- dplyr::bind_rows(flusight, dplyr::slice_head(flusight, n = 500))
+
   expect_warning(
     tbl_now(flusight,
       event_date = "target_end_date",
