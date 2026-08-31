@@ -3,43 +3,82 @@
 on:
   push:
     branches: [main]
-    paths-ignore:
+    paths-ignore: &not_package
       - 'pkgdown/**'
       - '_pkgdown.yml'
-      - '.github/**'
       - 'README.md'
       - 'README.Rmd'
       - 'SKILL.md'
+      - 'DEVELOPMENT_SKILL.md'
+      - 'BATCH_DETECTION_EXPLAINED.md'
+      - 'NEWS.md'
+      - 'cran-comments.md'
       - '*.Rproj'
       - 'Dockerfile'
       - 'codecov.yml'
+      - '.covrignore'
       - '.gitignore'
       - 'devel/**'
-      - 'pkgdown/**'
-      - 'inst/figures/hex.png'
+      - 'data-raw/**'
+      - 'paper/**'
+      - 'presentations/**'
+      - 'vignettes/articles/**'
+      - 'inst/figures/**'
   pull_request:
-    paths-ignore:
-      - 'pkgdown/**'
-      - '_pkgdown.yml'
-      - '.github/**'
-      - 'README.md'
-      - 'README.Rmd'
-      - 'SKILL.md'
-      - '*.Rproj'
-      - 'Dockerfile'
-      - 'codecov.yml'
-      - '.gitignore'
-      - 'devel/**'
-      - 'pkgdown/**'
-      - 'inst/figures/hex.png'
-
+    paths-ignore: *not_package
+  schedule:
+    - cron: '13 4 * * 1'   # Mondays 04:13 UTC - full matrix regression run
+  workflow_dispatch:
 
 name: R-CMD-check.yaml
 
 permissions: read-all
 
+concurrency:
+  group: R-CMD-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  # Decide how wide the check matrix needs to be for this event:
+  #   * schedule / workflow_dispatch -> full cross-platform matrix
+  #   * pull_request touching compiled/tested code -> full matrix
+  #   * everything else (push to main, vignette/doc-only PR) -> Linux release only
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      config: ${{ steps.decide.outputs.config }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          full='[{"os":"macos-latest","r":"release"},{"os":"windows-latest","r":"release"},{"os":"ubuntu-latest","r":"devel","http-user-agent":"release"},{"os":"ubuntu-latest","r":"release"}]'
+          linux='[{"os":"ubuntu-latest","r":"release"}]'
+          config="$linux"
+          case "$EVENT" in
+            schedule|workflow_dispatch)
+              config="$full" ;;
+            pull_request)
+              if changed="$(git diff --name-only "$BASE...$HEAD")"; then
+                echo "changed files:"; echo "$changed"
+                if printf '%s\n' "$changed" | grep -qE '^(R/|src/|tests/|inst/|data/|DESCRIPTION|NAMESPACE|\.github/workflows/R-CMD-check\.yaml)'; then
+                  config="$full"
+                fi
+              else
+                echo "git diff failed; running the full matrix to be safe"
+                config="$full"
+              fi ;;
+          esac
+          echo "config=$config" >> "$GITHUB_OUTPUT"
+
   R-CMD-check:
+    needs: matrix
     runs-on: ${{ matrix.config.os }}
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
@@ -47,11 +86,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config:
-          - {os: macos-latest,   r: 'release'}
-          - {os: windows-latest, r: 'release'}
-          - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
-          - {os: ubuntu-latest,   r: 'release'}          
+        config: ${{ fromJSON(needs.matrix.outputs.config) }}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}

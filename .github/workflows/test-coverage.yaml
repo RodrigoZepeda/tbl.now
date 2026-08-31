@@ -3,39 +3,38 @@
 on:
   push:
     branches: [main]
-    paths-ignore:
+    paths-ignore: &not_covered
       - 'pkgdown/**'
       - '_pkgdown.yml'
-      - '.github/**'
       - 'README.md'
       - 'README.Rmd'
       - 'SKILL.md'
+      - 'DEVELOPMENT_SKILL.md'
+      - 'BATCH_DETECTION_EXPLAINED.md'
+      - 'NEWS.md'
+      - 'cran-comments.md'
       - '*.Rproj'
       - 'Dockerfile'
       - 'codecov.yml'
+      - '.covrignore'
       - '.gitignore'
       - 'devel/**'
-      - 'pkgdown/**'
-      - 'inst/figures/hex.png'
+      - 'data-raw/**'
+      - 'paper/**'
+      - 'presentations/**'
+      - 'inst/figures/**'
+      # coverage never exercises vignettes (real or pkgdown articles)
+      - 'vignettes/**'
   pull_request:
-    paths-ignore:
-      - 'pkgdown/**'
-      - '_pkgdown.yml'
-      - '.github/**'
-      - 'README.md'
-      - 'README.Rmd'
-      - 'SKILL.md'
-      - '*.Rproj'
-      - 'Dockerfile'
-      - 'codecov.yml'
-      - '.gitignore'
-      - 'devel/**'
-      - 'pkgdown/**'
-      - 'inst/figures/hex.png'
+    paths-ignore: *not_covered
 
 name: test-coverage.yaml
 
 permissions: read-all
+
+concurrency:
+  group: test-coverage-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test-coverage:

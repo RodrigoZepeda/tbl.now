@@ -3,7 +3,17 @@
 on:
   push:
     branches: [main, master]
+    paths-ignore: &not_site
+      - 'tests/**'
+      - 'data-raw/**'
+      - 'devel/**'
+      - 'paper/**'
+      - 'presentations/**'
+      - '.covrignore'
+      - 'codecov.yml'
+      - '.gitignore'
   pull_request:
+    paths-ignore: *not_site
   release:
     types: [published]
   workflow_dispatch:
@@ -15,9 +25,10 @@ permissions: read-all
 jobs:
   pkgdown:
     runs-on: ubuntu-latest
-    # Only restrict concurrency for non-PR jobs
+    # Only restrict concurrency for non-PR jobs; cancel superseded PR builds
     concurrency:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     permissions:
