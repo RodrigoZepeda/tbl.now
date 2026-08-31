@@ -827,13 +827,14 @@ assume about the `tbl_now` it is handed, how to reuse the converters instead of
 reshaping by hand, a complete worked back-end that needs no modelling package,
 and what shipping one in a package involves.
 
-## See also
-
-* `vignette("custom-nowcast-models")` — writing your own back-end, in full.
-* `vignette("nowcasting-models")` — the same packages, driven by hand through
-  the converters.
-* `?run_nowcast`, `?nowcast_ensemble`, `?nowcast_backtest`.
-* `?tidy.tbl_nowcast` — the table every nowcast tidies into.
-* `?nowcast_fit` and `?nowcast_tidy` — the extension contract in reference form.
+```{r learning-more, echo=FALSE, results="asis"}
+cat(
+  knitr::knit_child(
+    system.file("fragments", "learning-more.Rmd", package = "tbl.now"),
+    quiet = TRUE
+  ),
+  sep = "\n"
+)
+```
 
 ## References
