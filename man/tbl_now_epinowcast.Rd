@@ -187,12 +187,16 @@ delay distribution is the one job that can use it.
 library(data.table)
 library(epinowcast)
 
+## CRAN asks examples to use at most two cores; data.table would otherwise
+## take every one it can find.
+data.table::setDTthreads(2)
+
 # epinowcast's own example data: German COVID-19 hospitalisations by age.
 obs <- germany_covid19_hosp[location == "DE"][, location := NULL]
 
-# A few months and a short delay keep the example quick; preprocessing the
-# whole series with `max_delay = 40` takes several seconds.
-recent <- obs[reference_date >= as.Date("2021-09-01")]
+## A few weeks and a short delay keep the example quick; preprocessing the whole
+## series with `max_delay = 40` costs about ten times as much CPU.
+recent <- obs[reference_date >= as.Date("2021-10-15")]
 pobs <- epinowcast::enw_preprocess_data(recent, max_delay = 10, by = "age_group")
 
 # From the data.table input format ...
