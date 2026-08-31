@@ -381,3 +381,24 @@ but a comment that did not use `::` notation.
 code and `##` as prose -- the base R convention, which `?lm` follows. The audit's prose
 comments used `#`, taking the count from 15 files to 36. Converted 67 lines across 26
 files inside `@examples` blocks; no prose changed, only the marker.
+
+### Final verification (2026-08-31)
+
+`R CMD check --as-cran --no-manual` on the finished tree:
+
+```
+Status: OK
+Duration: 18m 51.5s
+0 errors | 0 warnings | 0 notes
+```
+
+examples `[145s/146s]` OK · tests `[25m/14m]` OK · vignettes re-built `[29s]` OK.
+
+Example timing table: **one** entry, `tidy.epidist_fit` at 60.5s (see above -- it is
+irreducible, and CRAN does not run it because `epidist` is not on CRAN). Before this
+pass the table named four, up to 87s.
+
+`checktor`: 18 diagnostics, 17 pass. The one that does not is `diagnose_package_size`,
+which measures the source directory (14 GB of gitignored CDC source data in `devel/`)
+rather than the built tarball (**1.3 MB**). `diagnose_documentation_issues` is clean on
+every count except its own `unexported_example_ns` regex bug.
