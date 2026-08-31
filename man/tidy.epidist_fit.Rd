@@ -67,18 +67,33 @@ cannot be sure which method will win.
 }
 
 \examples{
-\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
-# Fitting needs Stan, so this is not run.
+\dontshow{if (requireNamespace("epidist", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
-nowobj <- tbl_now(denguedat,
+# A short window: fitting a delay distribution does not need twenty years of
+# data, and Stan is slow.
+recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+nowobj <- tbl_now(recent,
   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 )
-fit <- tbl_now_to_epidist(nowobj) |>
-  epidist::as_epidist_marginal_model() |>
-  epidist::epidist()
 
-tidy(fit)
-tidy(fit, probs = c(0.05, 0.95))
+## The conversion itself is quick, and is what tidy() will later summarise.
+converted <- suppressWarnings(tbl_now_to_epidist(nowobj, verbose = FALSE))
+head(converted)
+
+# Fitting compiles a Stan model, so this takes about a minute even on a short
+## chain. `try()` guards the case where \pkg{epidist} is installed but its Stan
+# toolchain is not; use \pkg{brms}'s defaults for real work.
+fit <- try(
+  converted |>
+    epidist::as_epidist_marginal_model() |>
+    epidist::epidist(chains = 1, iter = 200, refresh = 0),
+  silent = TRUE
+)
+
+if (!inherits(fit, "try-error")) {
+  print(tidy(fit))
+  print(tidy(fit, probs = c(0.05, 0.95)))
+}
 \dontshow{\}) # examplesIf}
 }
 \seealso{

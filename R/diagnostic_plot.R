@@ -13,6 +13,19 @@
 .DIAG_ZERO_COLOUR <- "#C4D5DE"
 
 # --- shared count scales, so every count legend looks the same ---------------
+
+#' The count colour scale shared by every diagnostic panel
+#'
+#' Defined once so that a count means the same colour in every plot the gallery
+#' draws.
+#'
+#' @param palette A named colour palette (see `.tbl_now_palette()`).
+#' @param aesthetic Which aesthetic to build the scale for.
+#'
+#' @return A \pkg{ggplot2} scale.
+#'
+#' @keywords internal
+#' @noRd
 .diag_count_scale <- function(palette, aesthetic = c("fill", "colour")) {
   aesthetic <- match.arg(aesthetic)
   fun <- if (aesthetic == "fill") ggplot2::scale_fill_gradient else ggplot2::scale_colour_gradient
@@ -20,16 +33,32 @@
       trans = "sqrt", labels = scales::label_comma())
 }
 
+#' A y axis with thousands separators
+#'
+#' Case counts run to five and six figures, which are unreadable unquoted.
+#'
+#' @return A \pkg{ggplot2} scale.
+#'
+#' @keywords internal
+#' @noRd
 .diag_comma_axis <- function() ggplot2::scale_y_continuous(labels = scales::label_comma())
 
 #' Shared context (increments, units, now, delay cap) for the diagnostic panels.
 #' @keywords internal
 #' @noRd
-.diag_context <- function(x, increments, max_delay = NULL) {
-  report_unit <- get_report_units(x) %||% "days"
+.diag_context <- function(x, increments, max_delay = NULL, axis = "report") {
+  # On the confirmation axis every "report" in these pictures is a confirmation,
+  # so the unit and the wording follow the axis rather than being hard-coded.
+  report_unit <- if (identical(axis, "confirmation")) {
+    get_confirmation_units(x) %||% get_report_units(x) %||% "days"
+  } else {
+    get_report_units(x) %||% "days"
+  }
   event_unit  <- get_event_units(x) %||% "days"
   list(
     has_strata  = length(get_strata(x)) > 0L,
+    axis        = axis,
+    arrival     = if (identical(axis, "confirmation")) "confirmation" else "report",
     report_unit = report_unit,
     event_unit  = event_unit,
     unit_days   = .tbl_now_units_to_days(report_unit),
@@ -49,56 +78,76 @@
 # Epidemic and reporting processes
 # =============================================================================
 
-#' Plot the reporting process
+#' The epidemic process and the reporting process
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
-#' Shows total reports by **report date** (when the reports arrived), facetted by
-#' stratum when present.
+#' The same cases, counted on two different clocks. Comparing the two is the
+#' single most useful thing you can do to tell a real outbreak from a reporting
+#' artifact.
+#'
+#' * `plot_epidemic_process()` counts by **event date** -- when the cases
+#'   actually happened. Epidemics grow and shrink smoothly, so this curve should
+#'   be smooth.
+#' * `plot_reporting_process()` counts by **report date** -- when news of them
+#'   arrived. Reporting is administrative, so this curve is spiky: weekends,
+#'   holidays and backlog releases all show up here.
+#'
+#' A lone spike in the reporting process with nothing under it in the epidemic
+#' process is a **batch** -- a day the system cleared its inbox, not a day people
+#' got sick. A spike in both is a genuine surge.
+#'
+#' @details
+#' Both are facetted by stratum when the object has strata.
 #'
 #' @param x A [tbl_now()] object.
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget (hover,
 #'   zoom) instead of a static \pkg{ggplot2} plot. Default `FALSE`.
 #' @param palette A named colour palette. Defaults to the package palette.
+#' @param axis Which time axis to draw: `"report"` (default) or
+#'   `"confirmation"`. On the confirmation axis the picture answers the
+#'   laboratory's version of the question -- when results arrived, rather than
+#'   when reports did. Needs a confirmation process (see
+#'   [add_confirmation()][confirmation_setters]); cases still `"pending"` have no
+#'   confirmation date and are left out.
+#'
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
-#' @seealso [diagnostic_plot()].
+#'
+#' @seealso
+#' [diagnostic_plot()], which draws these alongside the rest of the
+#' reporting-process gallery; [plot_observed_cases()] for the epidemic process
+#' with the incompleteness cutoff marked; [plot_scalogram()] to separate the two
+#' processes by timescale; [diagnose_batches()] to test a suspicious spike rather
+#' than eyeball it.
+#'
 #' @examples
 #' data(denguedat)
 #' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+#'
+#' # When cases happened: smooth, because epidemics are.
+#' plot_epidemic_process(dn)
+#'
+#' # When news of them arrived: spikier, because reporting is administrative.
 #' plot_reporting_process(dn)
+#'
+#' @name plot_epidemic_process
 #' @export
-#' @md
-plot_reporting_process <- function(x, plotly = FALSE, palette = .tbl_now_palette()) {
+plot_reporting_process <- function(x, plotly = FALSE, axis = c("report", "confirmation"),
+                                   palette = .tbl_now_palette()) {
+  axis <- match.arg(axis)
   .diag_check(x)
-  inc <- .batch_report_increments(x)
+  inc <- .batch_report_increments(x, axis = axis)
   ctx <- .diag_context(x, inc)
   .as_plotly(.diag_build_process(inc, ctx, palette, axis = "report"), plotly)
 }
 
-#' Plot the epidemic process
-#'
-#' `r lifecycle::badge("experimental")`
-#'
-#' Shows total cases by **event date** (when the cases occurred), facetted by
-#' stratum when present. The mirror image of [plot_reporting_process()] (which is
-#' by *report* date): a real epidemic is smooth, so a lone spike here would be a
-#' surge, not a reporting artefact.
-#'
-#' @param x A [tbl_now()] object.
-#' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget instead of a
-#'   static plot. Default `FALSE`.
-#' @param palette A named colour palette. Defaults to the package palette.
-#' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
-#' @seealso [plot_reporting_process()], [diagnostic_plot()].
-#' @examples
-#' data(denguedat)
-#' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
-#' plot_epidemic_process(dn)
+#' @rdname plot_epidemic_process
 #' @export
-#' @md
-plot_epidemic_process <- function(x, plotly = FALSE, palette = .tbl_now_palette()) {
+plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "confirmation"),
+                                  palette = .tbl_now_palette()) {
+  axis <- match.arg(axis)
   .diag_check(x)
-  inc <- .batch_report_increments(x)
+  inc <- .batch_report_increments(x, axis = axis)
   ctx <- .diag_context(x, inc)
   .as_plotly(.diag_build_process(inc, ctx, palette, axis = "event"), plotly)
 }
@@ -149,7 +198,7 @@ plot_epidemic_process <- function(x, plotly = FALSE, palette = .tbl_now_palette(
 
 #' Plot the reporting triangle
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Tiles over (event date, delay), filled by the reported count. Cells that are
 #' **observable but empty** (a genuine reported zero) are drawn in a muted blue;
@@ -166,30 +215,46 @@ plot_epidemic_process <- function(x, plotly = FALSE, palette = .tbl_now_palette(
 #'   draw as the third (report-date) axis. `0` disables it. Default `6`.
 #' @param mark_batches Integer: additionally highlight this many of the biggest
 #'   batch stripes with a stronger dashed diagonal labelled by report date. `0`
-#'   (default) disables it. Found cheaply from volume spikes, not [batch_test()].
+#'   (default) disables it. Found cheaply from volume spikes, not [diagnose_batches()].
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget instead of a
 #'   static plot. Default `FALSE`.
 #' @param palette A named colour palette. Defaults to the package palette.
+#' @param axis Which time axis to draw: `"report"` (default) or
+#'   `"confirmation"`. On the confirmation axis the picture answers the
+#'   laboratory's version of the question -- when results arrived, rather than
+#'   when reports did. Needs a confirmation process (see [add_confirmation()]);
+#'   cases still `"pending"` have no confirmation date and are left out.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
-#' @seealso [diagnostic_plot()].
+#' @seealso
+#' [plot_reporting_hexamap()] for the same grid drawn so that event date, report
+#' date and delay are all read the same way; [plot_delay_profiles()] for one
+#' curve per date instead of a grid; [complete_zeroes()] to fill the cells that
+#' are genuinely zero; [diagnostic_plot()] for the whole gallery.
+#'
 #' @examples
 #' data(denguedat)
 #' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+#'
+#' # Rows are event dates, columns are delays. The blank upper-right wedge is
+#' # the future: those reports cannot have arrived yet. That wedge is what a
+#' # nowcast fills in.
 #' plot_reporting_triangle(dn)
 #' @export
 #' @md
 plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
                                     mark_batches = 0L, plotly = FALSE,
+                                    axis = c("report", "confirmation"),
                                     palette = .tbl_now_palette()) {
+  axis <- match.arg(axis)
   .diag_check(x)
-  inc <- .batch_report_increments(x)
-  ctx <- .diag_context(x, inc, max_delay)
+  inc <- .batch_report_increments(x, axis = axis)
+  ctx <- .diag_context(x, inc, max_delay, axis = axis)
   .as_plotly(.diag_build_triangle(inc, ctx, palette, report_ticks = report_ticks,
                                   mark_batches = mark_batches), plotly)
 }
 
 #' Report dates whose volume spikes above a local median: the obvious batch
-#' stripes, found cheaply (no `batch_test()`), so the triangle can annotate them.
+#' stripes, found cheaply (no `diagnose_batches()`), so the triangle can annotate them.
 #' @keywords internal
 #' @noRd
 .diag_batch_stripes <- function(increments, k) {
@@ -322,8 +387,12 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
     .diag_count_scale(palette, "fill") +
     ggplot2::labs(
       x = "Event date", y = sprintf("Delay (%s)", ctx$report_unit),
-      title = "Reporting triangle",
-      subtitle = "Event date (x), delay (y) and report date (diagonal)"
+      title = if (identical(ctx$arrival, "confirmation")) {
+        "Confirmation triangle"
+      } else {
+        "Reporting triangle"
+      },
+      subtitle = sprintf("Event date (x), delay (y) and %s date (diagonal)", ctx$arrival)
     ) +
     .tbl_now_theme(palette)
   .diag_facet(panel, ctx$has_strata)
@@ -335,7 +404,7 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 
 #' Plot the per-date delay profiles
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' One translucent curve per date (see `by`) giving that date's share of reports
 #' at each delay, coloured by its mean delay. A batch is a lone right-shifted
@@ -348,8 +417,20 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget instead of a
 #'   static plot. Default `FALSE`.
 #' @param palette A named colour palette. Defaults to the package palette.
+#' @param axis Which time axis the delay is measured to: `"report"` (default)
+#'   or `"confirmation"`. Both are measured *from the event*, so the two are
+#'   directly comparable -- run each in turn and the gap between them is the
+#'   time the laboratory adds. (This is not the same quantity as the
+#'   `.confirmation_delay` column, which is the laboratory's own turnaround,
+#'   measured from the report.) Needs a confirmation process (see
+#'   [add_confirmation()]); cases still `"pending"` are left out.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
-#' @seealso [diagnostic_plot()].
+#' @seealso
+#' [plot_delay_distribution()] for the pooled delay distribution rather than one
+#' curve per date; [plot_delay_drift()] for whether those curves move over time;
+#' [diagnose_batch_shape()] for the test behind the eyeball;
+#' [diagnostic_plot()] for the whole gallery.
+#'
 #' @examples
 #' data(denguedat)
 #' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
@@ -357,11 +438,13 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 #' @export
 #' @md
 plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
-                                plotly = FALSE, palette = .tbl_now_palette()) {
+                                plotly = FALSE, axis = c("report", "confirmation"),
+                                palette = .tbl_now_palette()) {
   by <- match.arg(by)
+  axis <- match.arg(axis)
   .diag_check(x)
-  inc <- .batch_report_increments(x)
-  ctx <- .diag_context(x, inc, max_delay)
+  inc <- .batch_report_increments(x, axis = axis)
+  ctx <- .diag_context(x, inc, max_delay, axis = axis)
   .as_plotly(.diag_build_profiles(inc, ctx, by, palette), plotly)
 }
 
@@ -387,8 +470,13 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
   )) +
     ggplot2::geom_line(colour = palette[["dark_green"]], alpha = 0.15, linewidth = 0.4) +
     ggplot2::labs(
-      x = sprintf("Delay (%s)", ctx$report_unit), y = "Share of the date's reports",
-      title = "Delay profiles",
+      x = sprintf("Delay (%s)", ctx$report_unit),
+      y = sprintf("Share of the date's %ss", ctx$arrival),
+      title = if (identical(ctx$arrival, "confirmation")) {
+        "Confirmation delay profiles"
+      } else {
+        "Delay profiles"
+      },
       caption = paste(
         "Each faint line is one date's reporting-delay distribution.",
         "\nMost lines peak at short delays (fast reporting); a lone line pushed to the",
@@ -406,7 +494,7 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
 
 #' Plot the transport-discriminant plane
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Places each report date by its creation score (x) and transport / deficit
 #' score (y) from [transport_discriminant()], shading the region that decides the
@@ -414,7 +502,7 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
 #' background) since only the batch call is of interest.
 #'
 #' @details
-#' Only the [batch_test()]-confirmed batches (Benjamini-Hochberg-corrected) are
+#' Only the [diagnose_batches()]-confirmed batches (Benjamini-Hochberg-corrected) are
 #' coloured red; the dashed lines and shaded region are a reference for where a
 #' batch sits (deficit cleared, and significant), not the flagging rule. The most
 #' extreme-looking points (far left, far up) are *holds* -- windows still depleted
@@ -428,7 +516,11 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
 #'   static plot. Default `FALSE`.
 #' @param palette A named colour palette. Defaults to the package palette.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
-#' @seealso [transport_discriminant()], [diagnostic_plot()].
+#' @seealso
+#' [transport_discriminant()] for the numbers behind the plane;
+#' [diagnose_batches()] for the hypothesis test that flags the red points;
+#' [plot_reporting_process()][plot_epidemic_process] for the series they come
+#' from; [diagnostic_plot()] for the whole gallery.
 #' @examples
 #' data(denguedat)
 #' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
@@ -448,7 +540,7 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, palette = .tbl_n
   z_star <- stats::qnorm(1 - attr(td, "alpha"))
   red    <- palette[["accent_red"]]
 
-  # Colour ONLY the batch_test()-confirmed batches (BH-corrected `batch`), not
+  # Colour ONLY the diagnose_batches()-confirmed batches (BH-corrected `batch`), not
   # the raw per-point classification: at level alpha the raw quadrants paint
   # ~10-20% of points batch/surge/hold by construction, ignoring multiplicity and
   # the heavy autocorrelation of the window statistics. The dashed lines and the
@@ -498,7 +590,7 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, palette = .tbl_n
 
 #' Diagnostic plots of the reporting process
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
 #' Lays out a gallery of complementary views of a `tbl_now`'s reporting process,
 #' all aimed at spotting reporting artefacts -- especially *batch reporting*. Each
@@ -520,11 +612,23 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, palette = .tbl_n
 #'   stacked) instead of a static \pkg{patchwork}. Default `FALSE`.
 #' @param palette A named colour palette. Defaults to the package palette.
 #'
+#' @param axis Which time axis the delay is measured to: `"report"` (default)
+#'   or `"confirmation"`. Both are measured *from the event*, so the two are
+#'   directly comparable -- run each in turn and the gap between them is the
+#'   time the laboratory adds. (This is not the same quantity as the
+#'   `.confirmation_delay` column, which is the laboratory's own turnaround,
+#'   measured from the report.) Needs a confirmation process (see
+#'   [add_confirmation()]); cases still `"pending"` are left out.
 #' @returns A \pkg{patchwork} object, or a single plot when one panel is selected
 #'   (or a \pkg{plotly} widget when `plotly = TRUE`).
 #'
-#' @seealso [plot_reporting_process()], [plot_epidemic_process()],
-#'   [plot_reporting_triangle()], [plot_delay_profiles()], [plot_delay_drift()],
+#' @seealso
+#' Every panel is also a function of its own:
+#' [plot_reporting_process()][plot_epidemic_process] and
+#' [plot_epidemic_process()] (when reports arrived, versus when cases happened),
+#' [plot_reporting_triangle()] (the full event-by-delay grid),
+#' [plot_delay_profiles()] (each date's delay curve),
+#' [plot_delay_drift()] (whether delays are getting longer),
 #'   [plot_transport_discriminant()], [plot_scalogram()].
 #'
 #' @examplesIf requireNamespace("patchwork", quietly = TRUE)
@@ -540,16 +644,18 @@ diagnostic_plot <- function(x,
                             max_delay = NULL,
                             ...,
                             plotly    = FALSE,
+                            axis      = c("report", "confirmation"),
                             palette   = .tbl_now_palette()) {
   by <- match.arg(by)
+  axis <- match.arg(axis)
   .diag_check(x)
   keys <- .diag_resolve_panels(panels)
   if (length(keys) > 1L && !isTRUE(plotly) && !requireNamespace("patchwork", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg patchwork} is required to combine panels.")
   }
 
-  inc <- .batch_report_increments(x)
-  ctx <- .diag_context(x, inc, max_delay)
+  inc <- .batch_report_increments(x, axis = axis)
+  ctx <- .diag_context(x, inc, max_delay, axis = axis)
   dots <- list(...)
 
   # `...` may carry batch controls (lookback, period, alpha, ...); route to each
@@ -562,9 +668,11 @@ diagnostic_plot <- function(x,
       triangle    = .diag_build_triangle(inc, ctx, palette),
       profiles    = .diag_build_profiles(inc, ctx, by, palette),
       transport   = .diag_build_transport(
-        do.call(transport_discriminant, c(list(x), pass(transport_discriminant))), palette
+        do.call(transport_discriminant, c(list(x, axis = axis), pass(transport_discriminant))),
+        palette
       ),
-      delay_drift = plot_delay_drift(x, by_strata = ctx$has_strata, palette = palette)
+      delay_drift = plot_delay_drift(x, by_strata = ctx$has_strata, axis = axis,
+                                     palette = palette)
     )
   }
 

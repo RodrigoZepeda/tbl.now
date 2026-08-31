@@ -35,6 +35,27 @@ The class exists because a bare list of \code{date}/\code{confirm} frames does n
 be recovered from it. Printing also distinguishes it from the superficially
 similar list \code{\link[EpiNow2:estimate_secondary]{EpiNow2::estimate_secondary()}} does \emph{not} take.
 }
+\examples{
+\dontshow{if (requireNamespace("EpiNow2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+data(denguedat)
+dengue <- tbl_now(denguedat[1:3000, ],
+  event_date = onset_week, report_date = report_week, verbose = FALSE
+)
+
+# A stack of snapshots: what the series looked like at each of several past
+## report dates. EpiNow2::estimate_truncation() uses these to learn how much
+# the most recent counts are still going to grow.
+snaps <- tbl_now_to_EpiNow2(dengue,
+  target = "estimate_truncation", verbose = FALSE, quiet = TRUE
+)
+
+# Printing summarises the stack rather than dumping every snapshot.
+snaps
+
+length(snaps)
+head(snaps[[1]])
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 \code{\link[=tbl_now_to_EpiNow2]{tbl_now_to_EpiNow2()}}, \code{\link[=as_tbl_now]{as_tbl_now()}}
 }

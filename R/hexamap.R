@@ -49,12 +49,20 @@
 #' @param trans Fill transform for the count scale. Default `"sqrt"`.
 #' @param palette A named colour palette. Defaults to the package palette.
 #'
+#' @param axis Which time axis to draw: `"report"` (default) or
+#'   `"confirmation"`. On the confirmation axis the picture answers the
+#'   laboratory's version of the question -- when results arrived, rather than
+#'   when reports did. Needs a confirmation process (see [add_confirmation()]);
+#'   cases still `"pending"` have no confirmation date and are left out.
 #' @returns A \pkg{ggplot2} object.
 #'
 #' @references Jalal, H. and Burke, D. S. (2020). Hexamaps for Age-Period-Cohort
 #'   Data Visualization. *Epidemiology* **31**, e47-e49.
 #'
-#' @seealso [plot_reporting_triangle()], [diagnostic_plot()].
+#' @seealso
+#' [plot_reporting_triangle()] for the same data on ordinary axes, where the
+#' third quantity has to be read off the diagonals; [diagnostic_plot()] for the
+#' whole gallery.
 #'
 #' @examples
 #' data(denguedat)
@@ -66,7 +74,9 @@
 plot_reporting_hexamap <- function(x, max_delay = NULL, complete = FALSE,
                                    iso = NULL, iso_minor = NULL,
                                    format = "%d/%b/%y", max_cells = 12000L,
-                                   trans = "sqrt", palette = .tbl_now_palette()) {
+                                   trans = "sqrt", axis = c("report", "confirmation"),
+                                   palette = .tbl_now_palette()) {
+  axis <- match.arg(axis)
   .diag_check(x)
   report_unit <- get_report_units(x) %||% "days"
   unit_days   <- .tbl_now_units_to_days(report_unit)
@@ -74,14 +84,14 @@ plot_reporting_hexamap <- function(x, max_delay = NULL, complete = FALSE,
   xin <- x
   if (isTRUE(complete)) {
     if (identical(get_data_type(x), "linelist")) xin <- to_count(x, to = "count-incidence")
-    inc0   <- .batch_report_increments(xin)
+    inc0   <- .batch_report_increments(xin, axis = axis)
     now0   <- get_now(x) %||% max(inc0$.report_date, na.rm = TRUE)
     min_ev <- min(inc0$.event_date, na.rm = TRUE)
     full_d <- max_delay %||% as.integer(round((as.numeric(now0) - as.numeric(min_ev)) / unit_days))
     xin    <- suppressWarnings(complete_zeroes(xin, max_delay = full_d))
   }
 
-  inc  <- .batch_report_increments(xin)
+  inc  <- .batch_report_increments(xin, axis = axis)
   lo   <- min(inc$.event_date, na.rm = TRUE)
   now  <- get_now(x) %||% max(inc$.report_date, na.rm = TRUE)
   grid <- seq(lo, max(inc$.report_date, na.rm = TRUE), by = as.character(report_unit))

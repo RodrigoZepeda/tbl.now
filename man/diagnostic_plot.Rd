@@ -11,6 +11,7 @@ diagnostic_plot(
   max_delay = NULL,
   ...,
   plotly = FALSE,
+  axis = c("report", "confirmation"),
   palette = .tbl_now_palette()
 )
 }
@@ -32,6 +33,14 @@ at the delay covering 99\% of reported mass.}
 \item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget (the panels
 stacked) instead of a static \pkg{patchwork}. Default \code{FALSE}.}
 
+\item{axis}{Which time axis the delay is measured to: \code{"report"} (default)
+or \code{"confirmation"}. Both are measured \emph{from the event}, so the two are
+directly comparable -- run each in turn and the gap between them is the
+time the laboratory adds. (This is not the same quantity as the
+\code{.confirmation_delay} column, which is the laboratory's own turnaround,
+measured from the report.) Needs a confirmation process (see
+\code{\link[=add_confirmation]{add_confirmation()}}); cases still \code{"pending"} are left out.}
+
 \item{palette}{A named colour palette. Defaults to the package palette.}
 }
 \value{
@@ -40,8 +49,7 @@ A \pkg{patchwork} object, or a single plot when one panel is selected
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Lays out a gallery of complementary views of a \code{tbl_now}'s reporting process,
 all aimed at spotting reporting artefacts -- especially \emph{batch reporting}. Each
 view is also available on its own (see \strong{See also}); \code{diagnostic_plot()} picks
@@ -57,7 +65,11 @@ diagnostic_plot(dn, panels = c("triangle", "transport"))
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=plot_reporting_process]{plot_reporting_process()}}, \code{\link[=plot_epidemic_process]{plot_epidemic_process()}},
-\code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}}, \code{\link[=plot_delay_profiles]{plot_delay_profiles()}}, \code{\link[=plot_delay_drift]{plot_delay_drift()}},
+Every panel is also a function of its own:
+\link[=plot_epidemic_process]{plot_reporting_process()} and
+\code{\link[=plot_epidemic_process]{plot_epidemic_process()}} (when reports arrived, versus when cases happened),
+\code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}} (the full event-by-delay grid),
+\code{\link[=plot_delay_profiles]{plot_delay_profiles()}} (each date's delay curve),
+\code{\link[=plot_delay_drift]{plot_delay_drift()}} (whether delays are getting longer),
 \code{\link[=plot_transport_discriminant]{plot_transport_discriminant()}}, \code{\link[=plot_scalogram]{plot_scalogram()}}.
 }

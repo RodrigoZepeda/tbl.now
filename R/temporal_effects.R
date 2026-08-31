@@ -1,9 +1,28 @@
-#' Temporal Effects Class
+#' Calendar effects to include in a nowcast
 #'
 #' @description `r lifecycle::badge('stable')`
 #'
-#' The `temporal_effects` class specifies which temporal covariates or effects
-#' should be included in a nowcasting model (e.g., day of week, month, holidays, etc.).
+#' Reporting follows the calendar. Fewer cases are entered at the weekend, almost
+#' none over Christmas, and the backlog clears in the days afterwards. Disease
+#' itself follows the calendar too -- dengue peaks in the rainy season, influenza
+#' in winter. A nowcast that ignores this will overestimate a Monday and
+#' underestimate the Tuesday that follows.
+#'
+#' `temporal_effects()` writes down which of those patterns you want a model to
+#' account for. It does not compute anything: it is a specification you hand to
+#' [tbl_now()] or [add_temporal_effects()], and the columns are only built when
+#' [compute_temporal_effects()] is called.
+#'
+#' The patterns available are:
+#'
+#' * **Position in the week or month** -- `day_of_week`, `weekend`,
+#'   `day_of_month`.
+#' * **Position in the year** -- `week_of_year`, `month_of_year`.
+#' * **Smooth seasonality** -- `seasons`, which fits Fourier terms rather than
+#'   one indicator per period. Use this when you believe the pattern is a smooth
+#'   wave rather than 52 unrelated weeks.
+#' * **Holidays, and the days around them** -- `holidays`, `holiday_lags` and
+#'   `weekend_lags`, which capture the shutdown and the catch-up that follows it.
 #'
 #' @param day_of_week Logical. Whether to include an effect for each of the seven days of the week.
 #' @param weekend Logical. Whether to include an effect for the weekend vs the weekday.
@@ -40,9 +59,14 @@
 #' To model both sides of the same break, add two specifications (see the
 #' examples).
 #'
-#' @param seasons Vector. Either `integer(0)` (no seasonal effects) or a positive-numeric
-#' vector where each entry is the number of seasons (cycles) to model. The actual Fourier
-#' period for the i-th entry is `seasons[i] * season_length[i]`.
+#' @param seasons Vector. Smooth (Fourier) seasonality, as opposed to one
+#' indicator per calendar unit. Either `integer(0)` (no seasonal effects) or a
+#' positive-numeric vector, each entry giving the number of periods in one cycle.
+#' The Fourier period of the i-th entry is `seasons[i] * season_length[i]`.
+#'
+#' In weekly data, `seasons = 52` is a yearly wave. Several entries fit several
+#' waves at once, so `seasons = c(7, 365)` in daily data fits a weekly and a
+#' yearly cycle together.
 #'
 #' @param season_length Either a single positive number or a vector of the same length as
 #' `seasons`. Specifies the duration (in data units) of each season cycle. Defaults to `1`,
@@ -67,10 +91,10 @@
 #'
 #' `holidays` accepts **any** [`almanac::rcalendar()`].
 #'
-#' A calendar is a set of *recurrence rules*, so you describe how
-#' a holiday is constructed . say "the fourth Thursday of November", and
-#'  \pkg{almanac} generates it for every year. In general, you should avoid
-#'  hardcoding specific dates (like "18/11/2021").
+#' A calendar is a set of *recurrence rules*: you describe how a holiday is
+#' constructed -- "the fourth Thursday of November" -- and \pkg{almanac} generates
+#' it for every year. Avoid hardcoding specific dates such as `"2021-11-18"`,
+#' which will be wrong next year.
 #'
 #' A calendar has four building blocks:
 #'
@@ -168,25 +192,31 @@
 #' * **Christmas 2027 is observed on Fri Dec 24**, and New Year's Day 2028 is
 #'   pulled back to Fri Dec 31 2027 — so it appears in the 2027 events, not 2028.
 #'
-#' **Note** NYC's Lincoln's Birthday is a floating holiday so
-#' consider removing from here.
-#'
 #' @return
-#' An object of class `temporal_effects`.
+#' An object of class `temporal_effects`: a specification, not data. Hand it to
+#' [tbl_now()]'s `t_effects` argument or to [add_temporal_effects()].
+#'
+#' @seealso
+#' [add_temporal_effects()] to attach a specification to a `tbl_now`, and
+#' [compute_temporal_effects()] to turn it into columns;
+#' [get_temporal_effects()][nowcast_data_getters] to read it back;
+#' [calendar_effect_plots] to see the patterns in your data before deciding which
+#' to model; [is_weekday()] for the weekend definition these use;
+#' [`almanac::rcalendar()`] for building holiday calendars.
 #'
 #' @examples
 #' temporal_effects(day_of_week = TRUE, week_of_year = TRUE)
 #'
-#' # Annual seasonality in weekly data (period = 52 weeks)
+#' ## Annual seasonality in weekly data (period = 52 weeks)
 #' temporal_effects(seasons = 52)
 #'
-#' # Annual seasonality in daily data (52 weeks x 7 days = 364-day period)
+#' ## Annual seasonality in daily data (52 weeks x 7 days = 364-day period)
 #' temporal_effects(seasons = 52, season_length = 7)
 #'
 #' # After-weekend effect: flag the first two working days after a weekend
 #' temporal_effects(weekend = TRUE, weekend_lags = 2)
 #'
-#' # Before-weekend effect: flag the last working day before a weekend (Friday)
+#' ## Before-weekend effect: flag the last working day before a weekend (Friday)
 #' temporal_effects(weekend = TRUE, weekend_lags = -1)
 #'
 #' if (rlang::is_installed("almanac")) {
@@ -200,7 +230,7 @@
 #'   temporal_effects(holidays = cal, holiday_lags = -2)
 #'
 #'   # A calendar of your own: write a rule for the holiday, not a date, and
-#'   # almanac generates it for every year (see "Using a different holiday
+#'   ## almanac generates it for every year (see "Using a different holiday
 #'   # calendar" above for a full local calendar).
 #'   lincolns_birthday <- almanac::yearly() |>
 #'     almanac::recur_on_month_of_year("February") |>
@@ -221,7 +251,6 @@
 #'     add_temporal_effects(temporal_effects(holidays = cal, holiday_lags = -2)) |>
 #'     add_temporal_effects(temporal_effects(holidays = cal, holiday_lags = 2))
 #' }
-#' @md
 #' @export
 temporal_effects <- S7::new_class(
   "temporal_effects",

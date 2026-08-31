@@ -1,6 +1,6 @@
 # =============================================================================
 # The creation-vs-transport score panel (and the detrended machinery it shares
-# with batch_test()).
+# with diagnose_batches()).
 #
 # The two window scores are put on the detrended, deseasonalised, standardised
 # residual -- observed minus the package's own robust baseline (a trend smooth
@@ -15,15 +15,16 @@
 
 #' Detrended, deseasonalised, standardised residual series.
 #'
-#' Reuses `batch_test()`'s registration: `baseline_global` is a robust trend
+#' Reuses `diagnose_batches()`'s registration: `baseline_global` is a robust trend
 #' smooth optionally multiplied by weekday factors (`period`), so the residual
 #' `reported - baseline_global` has the trend and the reporting calendar removed.
 #' Standardising by the quasi-Poisson SE makes the series scale-free. Also carries
 #' the window statistics standardised as `creation_z` and `transport_z`.
 #' @keywords internal
 #' @noRd
-.batch_detrended <- function(data, lookback, baseline_window, period) {
-  reg  <- .batch_registration(data, lookback, baseline_window, period)
+.batch_detrended <- function(data, lookback, baseline_window, period,
+                             axis = "report") {
+  reg  <- .batch_registration(data, lookback, baseline_window, period, axis = axis)
   disp <- .batch_dispersion(reg)
   dplyr::mutate(
     reg,
@@ -36,9 +37,17 @@
   )
 }
 
+#' Does this `tbl_now` carry any strata?
+#'
+#' @param x A `tbl_now` object.
+#'
+#' @return `TRUE` when the object declares at least one stratum.
+#'
+#' @keywords internal
+#' @noRd
 .batch_has_strata <- function(x) length(get_strata(x)) > 0L
 
-#' Report dates (and strata) that `batch_test()` confirms as batches.
+#' Report dates (and strata) that `diagnose_batches()` confirms as batches.
 #'
 #' Marks the dates the *test itself* flags -- with its null model and
 #' Benjamini-Hochberg multiplicity control -- not per-point threshold crossings,
@@ -46,24 +55,25 @@
 #' Returns a two-column frame (`report_date`, `.stratum`).
 #' @keywords internal
 #' @noRd
-.batch_confirmed <- function(x, lookback, baseline_window, period, alpha) {
-  screened <- suppressWarnings(batch_test(
+.batch_confirmed <- function(x, lookback, baseline_window, period, alpha,
+                             axis = "report") {
+  screened <- suppressWarnings(diagnose_batches(
     x, lookback = lookback, baseline_window = baseline_window,
-    period = period, alpha = alpha
+    period = period, alpha = alpha, axis = axis
   ))
   confirmed <- screened[screened$batch %in% TRUE, c("report_date", "stratum"), drop = FALSE]
   names(confirmed)[match("stratum", names(confirmed))] <- ".stratum"
   dplyr::as_tibble(confirmed)
 }
 
-#' Shared preparation: the detrended registration, the batch_test()-confirmed
+#' Shared preparation: the detrended registration, the diagnose_batches()-confirmed
 #' rows, and the reference level.
 #' @keywords internal
 #' @noRd
 .conservation_prep <- function(x, lookback = 7L, baseline_window = NULL,
-                               period = NULL, alpha = 0.05) {
-  reg       <- .batch_detrended(x, as.integer(lookback), baseline_window, period)
-  confirmed <- .batch_confirmed(x, as.integer(lookback), baseline_window, period, alpha)
+                               period = NULL, alpha = 0.05, axis = "report") {
+  reg       <- .batch_detrended(x, as.integer(lookback), baseline_window, period, axis)
+  confirmed <- .batch_confirmed(x, as.integer(lookback), baseline_window, period, alpha, axis)
   list(
     reg        = reg,
     flagged    = dplyr::semi_join(reg, confirmed, by = c("report_date", ".stratum")),
@@ -123,7 +133,7 @@
       caption = paste(
         "Both are z-scores: (observed minus expected) in standard deviations. A big batch",
         "\ngenuinely sits hundreds of SDs out, so the axis is signed-log -- the dashed +/- band",
-        "\nis the ordinary range. Grey verticals = batch_test()-confirmed batch dates."
+        "\nis the ordinary range. Grey verticals = diagnose_batches()-confirmed batch dates."
       )
     ) +
     .tbl_now_theme(palette) +

@@ -71,7 +71,45 @@ delay distribution's own moments, matching \code{\link[=tidy.epidist_fit]{tidy.e
 different quantities.
 }
 
+\examples{
+\dontshow{if (requireNamespace("EpiNow2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+data(denguedat)
+# A short window: fitting a delay distribution does not need twenty years of
+# data, and Stan is slow.
+recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+nowobj <- tbl_now(recent,
+  event_date = "onset_week", report_date = "report_week", verbose = FALSE
+)
+
+# `target = "estimate_dist"` gives the censored linelist EpiNow2 wants: one
+# row per case, each date as the interval it is known to fall in.
+delays <- tbl_now_to_EpiNow2(nowobj,
+  target = "estimate_dist", verbose = FALSE, quiet = TRUE
+)
+head(delays)
+
+# A short chain keeps the example quick -- use EpiNow2's defaults for real
+## work. `try()` guards the case where EpiNow2 is installed but its Stan
+# toolchain is not.
+fit <- try(
+  EpiNow2::estimate_dist(
+    delays,
+    stan = EpiNow2::stan_opts(samples = 100, chains = 1)
+  ),
+  silent = TRUE
+)
+
+# One row per fitted parameter, plus the delay's own mean and sd.
+if (!inherits(fit, "try-error")) {
+  print(tidy(fit))
+  print(tidy(fit, probs = c(0.05, 0.95)))
+}
+\dontshow{\}) # examplesIf}
+}
 \seealso{
-\code{\link[=tidy.epidist_fit]{tidy.epidist_fit()}} for the \pkg{epidist} equivalent,
-\code{\link[=tbl_now_to_EpiNow2]{tbl_now_to_EpiNow2()}} for the conversion.
+\code{\link[=tidy.epidist_fit]{tidy.epidist_fit()}} for the \pkg{epidist} equivalent, and the note above on
+why their \code{sd} values differ slightly;
+\code{\link[=tbl_now_to_EpiNow2]{tbl_now_to_EpiNow2()}} for the conversion;
+\link[=tidy.nowcast]{tidy()} for tidying a \emph{case-count} nowcast rather than a delay
+distribution; \link{confirmation_delay} for the delay this is estimating.
 }

@@ -10,6 +10,8 @@ tbl_now_to_nobbs(
   ...,
   event_col = "onset_date",
   report_col = "report_date",
+  strata_col = "strata",
+  strata_sep = " | ",
   verbose = TRUE
 )
 }
@@ -21,6 +23,13 @@ tbl_now_to_nobbs(
 \item{event_col, report_col}{Names the two date columns should take in the
 result. The defaults match the arguments of \code{\link[NobBS:NobBS]{NobBS::NobBS()}}.}
 
+\item{strata_col}{Name of the single stratifying column to add, holding every
+declared stratum pasted together. This is what \code{\link[NobBS:NobBS.strat]{NobBS::NobBS.strat()}}'s own
+\code{strata} argument takes. \code{NULL} leaves it out. Ignored when the object
+declares no strata.}
+
+\item{strata_sep}{Separator used to paste the strata into \code{strata_col}.}
+
 \item{verbose}{Print what the conversion did. The \code{units} line prints the
 string \code{\link[NobBS:NobBS]{NobBS::NobBS()}} itself accepts (\code{"1 day"} or \code{"1 week"}), not the
 object's own \code{"days"} / \code{"weeks"}, so it can be pasted straight into the
@@ -28,8 +37,8 @@ call.}
 }
 \value{
 A \code{data.frame} with one row per case, ready for \code{\link[NobBS:NobBS]{NobBS::NobBS()}}.
-The strata, covariates and temporal-effect columns ride along so a
-per-stratum loop can split on them.
+The strata, covariates and temporal-effect columns ride along, plus the
+single pasted \code{strata_col} that \code{\link[NobBS:NobBS.strat]{NobBS::NobBS.strat()}} takes.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -45,6 +54,27 @@ Trim \strong{before} converting when the series is long: the expansion is one ro
 per case, and \code{NobBS()}'s own \code{moving_window} only limits what it \emph{fits}, not
 what it is handed.
 }
+\section{Stratified nowcasts}{
+
+
+\code{\link[NobBS:NobBS.strat]{NobBS::NobBS.strat()}} fits one nowcast per stratum, and its \code{strata}
+argument names \strong{one} column. A \code{tbl_now} may declare several -- age group
+and region, say -- and "nowcast each age-group-and-region separately" is a
+single stratum as far as NobBS is concerned. So the declared columns are also
+pasted into one \code{strata} column, which you hand straight to \code{NobBS.strat()}:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{nb <- tbl_now_to_nobbs(x, verbose = FALSE)
+NobBS::NobBS.strat(nb, now = get_now(x), units = "1 day",
+                   onset_date = "onset_date", report_date = "report_date",
+                   strata = "strata")
+}\if{html}{\out{</div>}}
+
+The original columns are kept alongside it, so a hand-rolled per-stratum loop
+can still split on them. Choose a separator your stratum values do not
+contain: \code{run_nowcast()} splits the label back into the original columns when
+it tidies the fit.
+}
+
 \section{Units NobBS can model}{
 
 

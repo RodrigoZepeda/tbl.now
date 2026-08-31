@@ -1,12 +1,24 @@
-#' Complete with zeroes
+#' Fill in the days when nothing was reported
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
-#' Takes a `tbl.now` object and completes observations
-#' for event_dates or report_dates that have not been registered
-#' (by each strata) with a 0.
+#' Surveillance data records what happened, not what didn't. If no dengue case
+#' with onset on 3 January was reported on 5 January, there is simply no row for
+#' that combination -- which is *not* the same as a row saying zero, even though
+#' it means the same thing.
 #'
-#' @param x A `tbl.now` object.
+#' Most nowcasting models need the difference spelled out. They work on a
+#' complete rectangle of (event date x report date) cells, and a missing cell is
+#' ambiguous: it could be a genuine zero, or a delay so long the report has not
+#' arrived yet. `complete_zeroes()` writes the genuine zeros in explicitly, for
+#' every stratum, leaving only the not-yet-reported cells absent.
+#'
+#' @details
+#' Zeros are only filled where a report *could* have arrived: cells with a report
+#' date on or before the event date's `now`, and within `max_delay`. Filling
+#' beyond that would invent observations from the future.
+#'
+#' @param x A `tbl_now` object.
 #' @param max_delay Maximum delay to fill. For example if set to 5 it will complete
 #' with 0's all reports with delays 0 to 4. But will not fill other delays (say 6)
 #' @param until Event date to complete up to. `NULL` (the default) completes to
@@ -19,8 +31,15 @@
 #'   has no effect beyond the `now`: an event date later than the `now` cannot
 #'   carry any report on or before it, so no row would survive for it.
 #'
-#' @return A `tbl.now` object with the same columns that includes
-#' the `0` observations in the `case_count`.
+#' @return A `tbl_now` object with the same columns as `x`, plus the rows that
+#' were implicitly zero, carrying `0` in the `case_count` column. The data type
+#' is preserved.
+#'
+#' @seealso
+#' [to_count()] for the data shapes this operates on;
+#' [censor_delays_above()] for the opposite problem, delays that are too long;
+#' [diagnose_missing()] and [diagnose_truncation()] to find the gaps first;
+#' [plot_reporting_triangle()] to see the rectangle being filled.
 #'
 #' @examples
 #' ndata <- dplyr::tibble(
@@ -42,11 +61,15 @@
 #'   verbose = FALSE, strata = sex, case_count = n, data_type = "count-incidence"
 #' )
 #'
-#' # Notice that ndata has no 2020-01-03 event date
-#' ndata
+#' # Nothing happened on 2020-01-03, so the data has no row for it at all.
+#' sort(unique(ndata$event))
 #'
-#' # But complete zeroes adds it with a 0
-#' complete_zeroes(ndata)
+#' ## complete_zeroes() writes that absence down as an explicit zero, for every
+#' # stratum, so a model can tell "no cases" from "not reported yet".
+#' filled <- complete_zeroes(ndata)
+#' sort(unique(filled$event))
+#' nrow(ndata)
+#' nrow(filled)
 #'
 #' # Also works for count-cumulative
 #' ndata |>
@@ -132,17 +155,11 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
     )
   }
 
-  # Check units to fill 0's
-  if (get_event_units(x) == "weeks") {
-    units_by <- "1 week"
-  } else if (get_event_units(x) == "days") {
-    units_by <- "1 day"
-  } else if (get_event_units(x) == "numeric") {
-    units_by <- 1
-  }
-
   # Create a table with all dates
-  event_dates <- dplyr::tibble(!!as.symbol(get_event_date(x)) := seq(min_event, max_event, by = units_by))
+  event_dates <- dplyr::tibble(
+    !!as.symbol(get_event_date(x)) :=
+      .tbl_now_date_seq(min_event, max_event, get_event_units(x))
+  )
 
   event_dict <- event_dates |>
     dplyr::mutate(.event_num_new = 0:(dplyr::n() - 1))

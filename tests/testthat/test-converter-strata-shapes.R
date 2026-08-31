@@ -158,6 +158,213 @@ test_that("every column back-end carries both stratifying columns", {
   }
 })
 
+# --- the ONE-column back-ends -------------------------------------------------
+#
+# Carrying the columns along is not enough for a back-end whose stratified entry
+# point names a SINGLE column: `NobBS::NobBS.strat(strata = )` takes one name,
+# `EpiNow2::regional_epinow()` takes one `region`, and `surveillance::nowcast()`
+# takes none at all, so a stratified fit there means splitting the line list.
+# For those three the converter has to hand back the pasted column itself --
+# otherwise there is no argument the user can write.
+#
+# This is the case the test above does NOT cover, and did not catch.
+
+test_that("tbl_now_to_nobbs emits the single column NobBS.strat takes", {
+  skip_if_not_installed("NobBS")
+  x  <- awkward_strata_tbl_now()
+  nb <- q(tbl_now_to_nobbs(x, verbose = FALSE))
+
+  expect_true("strata" %in% names(nb))
+  # One label per observed combination -- and the empty "never" level is not one.
+  expect_setequal(unique(nb$strata), awkward_strata_totals()$label)
+  # The label describes its OWN row, which is what stops two strata swapping.
+  expect_equal(nb$strata, paste(nb$g1, nb$g2, sep = " | "))
+})
+
+test_that("tbl_now_to_surveillance emits a column to split the line list on", {
+  skip_if_not_installed("surveillance")
+  x   <- awkward_strata_tbl_now()
+  sur <- q(tbl_now_to_surveillance(x, verbose = FALSE))
+
+  expect_true("strata" %in% names(sur))
+  expect_equal(sur$strata, paste(sur$g1, sur$g2, sep = " | "))
+  # Splitting on it must reproduce each stratum's own case total.
+  totals <- vapply(split(sur, sur$strata), nrow, integer(1))
+  truth  <- awkward_strata_totals()
+  expect_equal(unname(totals[truth$label]), truth$total)
+})
+
+test_that("linelist_list pairs each line list with its own stratum's cases", {
+  skip_if_not_installed("surveillance")
+  x      <- awkward_strata_tbl_now()
+  pieces <- q(tbl_now_to_surveillance(x, format = "linelist_list",
+                                      verbose = FALSE))
+  truth  <- awkward_strata_totals()
+
+  expect_s3_class(pieces, "tbl_now_surveillance_list")
+  expect_true(is.list(pieces))
+  expect_setequal(names(pieces), truth$label)
+
+  # The counts have to be attached to the right label, not merely present: the
+  # totals are powers of ten per group, so a swap is arithmetically obvious.
+  expect_equal(
+    vapply(pieces[truth$label], nrow, integer(1)),
+    stats::setNames(as.integer(truth$total), truth$label)
+  )
+  # Each piece is a plain frame surveillance::nowcast() can take unchanged.
+  expect_true(all(c("dHospital", "dReport", "g1", "g2") %in% names(pieces[[1]])))
+  expect_s3_class(pieces[[1]], "data.frame")
+})
+
+test_that("linelist_list is a length-one list when there are no strata", {
+  skip_if_not_installed("surveillance")
+  x <- q(remove_all_strata(awkward_strata_tbl_now()))
+  pieces <- q(tbl_now_to_surveillance(x, format = "linelist_list",
+                                      verbose = FALSE))
+
+  # The return TYPE must not depend on whether strata happen to be attached --
+  # otherwise the caller's `lapply()` has to branch on it.
+  expect_named(pieces, "all")
+  expect_equal(nrow(pieces[[1]]), sum(awkward_strata_totals()$total))
+})
+
+test_that("linelist_list round-trips back to a tbl_now with its strata", {
+  skip_if_not_installed("surveillance")
+  x      <- awkward_strata_tbl_now()
+  pieces <- q(tbl_now_to_surveillance(x, format = "linelist_list",
+                                      verbose = FALSE))
+  back   <- q(as_tbl_now(pieces))
+
+  expect_true(is_tbl_now(back))
+  # The dates come back under the names the tbl_now used, not surveillance's.
+  expect_equal(get_event_date(back), "ev")
+  expect_equal(get_report_date(back), "rp")
+  expect_setequal(get_strata(back), c("g1", "g2"))
+  expect_equal(get_now(back), get_now(x))
+  # Counts expanded to rows, so the line list holds one row per case.
+  expect_equal(nrow(back), sum(awkward_strata_totals()$total))
+  # The derived label is dropped: it duplicates g1/g2 and declaring it would
+  # make the strata set wrong.
+  expect_false("strata" %in% names(back))
+})
+
+test_that("tbl_now_to_EpiNow2 emits the single `region` regional_epinow takes", {
+  skip_if_not_installed("EpiNow2")
+  x   <- awkward_strata_tbl_now()
+  reg <- q(tbl_now_to_EpiNow2(x, target = "regional_epinow",
+                              verbose = FALSE, quiet = TRUE))
+
+  expect_true("region" %in% names(reg))
+  expect_setequal(unique(reg$region), awkward_strata_totals()$label)
+  totals <- vapply(split(reg$confirm, reg$region), sum, numeric(1))
+  truth  <- awkward_strata_totals()
+  expect_equal(unname(totals[truth$label]), truth$total)
+})
+
+test_that("the pasted separator is user-chosen", {
+  skip_if_not_installed("NobBS")
+  skip_if_not_installed("surveillance")
+  x <- awkward_strata_tbl_now()
+
+  nb <- q(tbl_now_to_nobbs(x, strata_sep = "/", verbose = FALSE))
+  expect_setequal(unique(nb$strata), c("alpha/x", "alpha/y", "zulu/x", "zulu/y"))
+
+  sur <- q(tbl_now_to_surveillance(x, strata_col = "who", strata_sep = "_",
+                                   verbose = FALSE))
+  expect_true("who" %in% names(sur))
+  expect_false("strata" %in% names(sur))
+
+  # `NULL` opts out entirely: a caller who only wants the original columns.
+  expect_false("strata" %in% names(
+    q(tbl_now_to_nobbs(x, strata_col = NULL, verbose = FALSE))
+  ))
+})
+
+test_that("a stratum value holding the separator aborts rather than mispastes", {
+  skip_if_not_installed("NobBS")
+  d <- data.frame(
+    ev = as.Date("2024-01-01") + c(0, 1),
+    rp = as.Date("2024-01-02") + c(0, 1),
+    g1 = c("a | b", "c"),
+    g2 = c("x", "y")
+  )
+  x <- tbl_now(d, event_date = "ev", report_date = "rp",
+               strata = c("g1", "g2"), verbose = FALSE)
+
+  # "a | b" + "x" and "a" + "b | x" paste to the same label. Splitting it back
+  # apart in `tidy()` would attach the estimate to the wrong stratum, so this
+  # has to fail loudly -- and say which argument fixes it.
+  expect_error(q(tbl_now_to_nobbs(x, verbose = FALSE)), "strata_sep")
+  expect_setequal(
+    unique(q(tbl_now_to_nobbs(x, strata_sep = "@@", verbose = FALSE))$strata),
+    c("a | b@@x", "c@@y")
+  )
+})
+
+test_that("the pasted column refuses to overwrite an existing one", {
+  skip_if_not_installed("NobBS")
+  d <- data.frame(
+    ev     = as.Date("2024-01-01") + c(0, 1),
+    rp     = as.Date("2024-01-02") + c(0, 1),
+    g1     = c("a", "c"),
+    strata = c("keep", "me")
+  )
+  x <- tbl_now(d, event_date = "ev", report_date = "rp",
+               strata = "g1", covariates = "strata", verbose = FALSE)
+
+  expect_error(q(tbl_now_to_nobbs(x, verbose = FALSE)), "already a column")
+  # Naming it something else is the documented way out.
+  out <- q(tbl_now_to_nobbs(x, strata_col = ".stratum", verbose = FALSE))
+  expect_equal(out$strata, c("keep", "me"))
+  expect_equal(out$.stratum, c("a", "c"))
+})
+
+test_that("a single stratum still gets the pasted column, as its own values", {
+  skip_if_not_installed("NobBS")
+  d <- data.frame(
+    ev = as.Date("2024-01-01") + c(0, 1),
+    rp = as.Date("2024-01-02") + c(0, 1),
+    g1 = factor(c("zulu", "alpha"), levels = c("alpha", "zulu"))
+  )
+  x <- tbl_now(d, event_date = "ev", report_date = "rp", strata = "g1",
+               verbose = FALSE)
+  nb <- q(tbl_now_to_nobbs(x, verbose = FALSE))
+
+  # Data order, not factor order: row 1 is "zulu".
+  expect_equal(nb$strata, c("zulu", "alpha"))
+})
+
+# --- the MANY-column back-ends ------------------------------------------------
+#
+# The mirror image: these accept a vector of columns, so pasting would be the
+# mistake. This pins that they get the columns THEMSELVES.
+
+test_that("the many-column back-ends take the columns, not a pasted label", {
+  x <- awkward_strata_tbl_now()
+
+  # epidist keeps its strata as ordinary columns for the model formula.
+  if (requireNamespace("epidist", quietly = TRUE)) {
+    ed <- q(tbl_now_to_epidist(x, verbose = FALSE))
+    expect_true(all(c("g1", "g2") %in% names(ed)))
+    expect_false("strata" %in% names(ed))
+  }
+
+  # tsibble puts every stratum in the key.
+  if (requireNamespace("tsibble", quietly = TRUE)) {
+    ts <- q(tbl_now_to_tsibble(x, verbose = FALSE))
+    expect_true(all(c("g1", "g2") %in% tsibble::key_vars(ts)))
+    expect_false("strata" %in% names(ts))
+  }
+
+  # data.table is a straight hand-off.
+  if (requireNamespace("data.table", quietly = TRUE)) {
+    dt <- q(tbl_now_to_data_table(x, verbose = FALSE))
+    expect_true(all(c("g1", "g2") %in% names(dt)))
+    expect_false("strata" %in% names(dt))
+  }
+})
+
+
 test_that("epinowcast gets one group per observed strata combination", {
   skip_on_cran()
   skip_if_not_installed("epinowcast")

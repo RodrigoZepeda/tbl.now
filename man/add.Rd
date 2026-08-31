@@ -2,19 +2,84 @@
 % Please edit documentation in R/adders_changers_and_removers.R
 \name{add}
 \alias{add}
+\alias{change}
+\alias{remove}
+\alias{change_now}
+\alias{update_now}
+\alias{change_event_date}
+\alias{change_report_date}
+\alias{change_case_count}
+\alias{change_is_censored}
+\alias{remove_is_censored}
 \alias{add_is_censored}
+\alias{change_strata}
+\alias{remove_strata}
 \alias{add_strata}
+\alias{remove_all_strata}
+\alias{change_covariates}
+\alias{remove_covariates}
 \alias{add_covariates}
-\title{Add attributes to a \code{tbl_now} object}
+\alias{remove_all_covariates}
+\alias{replace_temporal_effects}
+\alias{remove_temporal_effects}
+\title{Set, change and remove the attributes of a \code{tbl_now}}
 \usage{
+change_now(x, now = NULL)
+
+update_now(x)
+
+change_event_date(x, event_date)
+
+change_report_date(x, report_date)
+
+change_case_count(x, case_count)
+
+change_is_censored(x, is_censored)
+
+remove_is_censored(x)
+
 add_is_censored(x, is_censored)
+
+change_strata(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
+
+remove_strata(x, ...)
 
 add_strata(x, ...)
 
+remove_all_strata(x)
+
+change_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
+
+remove_covariates(x, ...)
+
 add_covariates(x, ...)
+
+remove_all_covariates(x)
+
+replace_temporal_effects(x, t_effects)
+
+remove_temporal_effects(x)
 }
 \arguments{
-\item{x}{A \code{tbl_now} object}
+\item{x}{A \code{tbl_now} object.}
+
+\item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
+nowcast. If no \code{now} is given then the function automatically uses the last
+\code{event_date}.}
+
+\item{event_date}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
+name of the column containing the event date. Optional when \code{delay} is
+provided together with \code{report_date}; the event date will be computed as
+\code{report_date - delay}.}
+
+\item{report_date}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
+name of the column containing the report date. Optional when \code{delay} is
+provided together with \code{event_date}; the report date will be computed as
+\code{event_date + delay}.}
+
+\item{case_count}{(optional) \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL}
+Name of the column with the case counts if \code{data_type} is "count-incidence"
+or "count-cumulative".}
 
 \item{is_censored}{(optional)
 \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL} (default).
@@ -25,42 +90,172 @@ set \code{is_censored = FALSE} but if the \code{report_date} corresponds to an e
 and is only an upper bound of the real report date
 set \code{is_censored = TRUE}.}
 
-\item{...}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} with the columns
-for the attribute. In the case of \code{covariates} and \code{strata} argument \code{...} can
-refer to multiple columns.}
+\item{...}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
+columns for the attribute being set. For \code{strata} and \code{covariates} this may
+name several columns at once.}
+
+\item{warn_now}{Boolean. Whether to warn if \code{now} falls before the last report
+date, or unreasonably far into the future.}
+
+\item{warn_non_uniqueness}{(optional) Logical. Whether to throw a warning if data
+has multiple observations for same event and report date (conditional on covariates
+and strata)}
+
+\item{t_effects}{(optional) Either \code{NULL} (default), a \code{\link[=temporal_effects]{temporal_effects()}} object
+or a character vector with the names of the columns containing the temporal effects.}
 }
 \value{
-A \code{tbl_now} object with updated attributes
+A \code{tbl_now} object with the attribute updated. The data are returned
+unchanged; only what the object records about itself differs.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
-Functions to add attributes to a \code{tbl_now} object.
+A \code{\link[=tbl_now]{tbl_now()}} remembers which of its columns are the event date, the report
+date, the strata, and so on. These functions edit that memory after the object
+has been built -- useful when new columns appear part-way through a pipeline,
+or when you want to nowcast the same data broken down a different way.
+
+There are three verbs, and they differ only in what they do to what is already
+recorded:
+\itemize{
+\item \strong{\verb{add_*()}} keeps what is there and adds to it. \code{add_strata(x, age_group)}
+on an object already stratified by gender leaves you stratified by both.
+\item \strong{\verb{change_*()}} replaces it. \code{change_strata(x, age_group)} on the same
+object leaves you stratified by age group \emph{only}.
+\item \strong{\verb{remove_*()}} takes it away. \code{remove_all_strata(x)} forgets every
+stratum; \code{remove_strata(x, gender)} forgets just that one.
+}
+
+Nothing here touches the data itself. Renaming an attribute does not rename,
+create or delete a column -- it only changes which existing column the object
+treats as playing that role.
 }
 \details{
-Variable selection can be used with the
-auxiliary dplyr verbs such as \code{\link[dplyr:starts_with]{dplyr::starts_with()}}, \code{\link[dplyr:all_of]{dplyr::all_of()}},
-and \code{\link[dplyr:where]{dplyr::where()}}. See \code{\link[dplyr:select]{dplyr::select()}} for additional info.
+Columns are chosen with
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}, so
+a bare column name works, and so do the helpers
+\code{\link[dplyr:starts_with]{dplyr::starts_with()}}, \code{\link[dplyr:all_of]{dplyr::all_of()}} and \code{\link[dplyr:where]{dplyr::where()}}. See
+\code{\link[dplyr:select]{dplyr::select()}} for the full set.
+
+\code{update_now()} deserves a note of its own. The \code{now} of a nowcast is the day
+you are standing on, and it does \strong{not} move when you filter the data -- an
+object filtered down to 1992 still believes \code{now} is 2010, which is usually
+not what you want. \code{update_now()} resets it to the latest date actually
+present:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{data(denguedat)
+ndata <- tbl_now(denguedat,
+  event_date = onset_week, report_date = report_week, verbose = FALSE
+)
+
+# `now` is in 2010, because the data runs that far.
+get_now(ndata)
+#> [1] "2010-12-20"
+
+# Filtering the data does not move it ...
+ndata_1992 <- ndata |>
+  dplyr::filter(
+    onset_week <= as.Date("1992/01/01") & report_week <= as.Date("1992/01/01")
+  )
+get_now(ndata_1992)
+#> [1] "2010-12-20"
+
+# ... but `update_now()` does.
+get_now(update_now(ndata_1992))
+#> [1] "1991-12-30"
+}\if{html}{\out{</div>}}
 }
 \examples{
 data(denguedat)
 ndata <- tbl_now(denguedat,
   event_date = onset_week,
   report_date = report_week,
+  strata = gender,
   verbose = FALSE
 )
 
-# Add strata
-ndata <- ndata |> add_strata(dplyr::starts_with("gender"))
-ndata
+## ---- Strata: add, change, remove ------------------------------------
 
-# Add covariates
+ndata$age_group <- sample(c("<18", "18-60", "60+"), nrow(ndata), replace = TRUE)
+
+## `add_strata()` keeps gender and adds age group.
+get_strata(add_strata(ndata, age_group))
+
+## `change_strata()` replaces gender with age group.
+get_strata(change_strata(ndata, age_group))
+
+## `remove_strata()` drops one; `remove_all_strata()` drops the lot.
+get_strata(remove_strata(ndata, gender))
+get_strata(remove_all_strata(add_strata(ndata, age_group)))
+
+## ---- Covariates behave the same way ---------------------------------
+
+# Covariates influence the nowcast but are not of interest in themselves.
 ndata$temperature <- rnorm(nrow(ndata), 25, 4)
 ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
 ndata <- ndata |> add_covariates(temperature, humidity)
-ndata
+get_covariates(ndata)
+
+ndata |>
+  remove_covariates(humidity) |>
+  get_covariates()
+
+## ---- Pointing an attribute at a different column ---------------------
+
+## Suppose onset was recorded a day late and you correct it. `change_event_date()`
+# tells the object to use the corrected column instead.
+ndata$corrected_onset <- ndata$onset_week - lubridate::days(1)
+ndata <- ndata |> change_event_date(corrected_onset)
+get_event_date(ndata)
+
+## ---- The censoring indicator -----------------------------------------
+
+## TRUE means the report date is only an upper bound (e.g. a backlog dump).
+ndata$is_censored <- FALSE
+ndata <- ndata |> add_is_censored(is_censored)
+get_is_censored(ndata)
+ndata <- remove_is_censored(ndata)
+
+## ---- `now` -----------------------------------------------------------
+
+# Set it by hand ...
+get_now(change_now(ndata, now = as.Date("2011-01-01")))
+
+# ... or snap it back to the latest date actually observed.
+get_now(update_now(ndata))
+
+## ---- Count data: which column holds the counts ------------------------
+
+counts <- to_count(ndata, to = "count-incidence")
+counts |>
+  dplyr::mutate(inflated = round(1.15 * n)) |>
+  change_case_count(inflated) |>
+  get_case_count()
+
+## ---- Temporal effects --------------------------------------------------
+
+# Recorded lazily: `replace_*` swaps the specification, `remove_*` forgets it.
+ndata <- ndata |>
+  add_temporal_effects(
+    t_effects = temporal_effects(week_of_year = TRUE, month_of_year = TRUE)
+  )
+get_temporal_effects(ndata)
+
+ndata |>
+  replace_temporal_effects(t_effects = temporal_effects(seasons = 52)) |>
+  get_temporal_effects()
+
+ndata |>
+  remove_temporal_effects() |>
+  get_temporal_effects()
 
 }
 \seealso{
-\code{\link[=add_temporal_effects]{add_temporal_effects()}} \link{change} \link{remove}
+\code{\link[=tbl_now]{tbl_now()}} for setting these when the object is first built;
+the \link[=nowcast_data_getters]{getters} for reading them back;
+\code{\link[=tbl_now_attributes]{tbl_now_attributes()}} to list them all at once;
+\link[=confirmation_setters]{add_confirmation()} for the third-date attributes;
+\code{\link[=add_temporal_effects]{add_temporal_effects()}} and \code{\link[=temporal_effects]{temporal_effects()}} for calendar structure;
+\link[=update.tbl_now]{update()} for appending new rows rather than editing attributes.
 }

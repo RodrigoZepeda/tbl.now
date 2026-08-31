@@ -5,24 +5,29 @@
 \title{The transport discriminant of a reporting series}
 \usage{
 transport_discriminant(
-  data,
+  x,
   lookback = 7L,
   baseline_window = NULL,
   period = NULL,
-  alpha = 0.05
+  alpha = 0.05,
+  axis = c("report", "confirmation")
 )
 }
 \arguments{
-\item{data}{A \code{\link[=tbl_now]{tbl_now()}} object.}
+\item{x}{A \code{\link[=tbl_now]{tbl_now()}} object.}
 
 \item{lookback}{Integer window half-width \code{k} (report-grid steps) over which the
 deficit is accumulated. Default \code{7} (a week of daily reporting).}
 
 \item{baseline_window, period}{Baseline controls, passed through to the same
-machinery as \code{\link[=batch_test]{batch_test()}}. \code{period} (e.g. \code{7}) absorbs a scheduled weekly
+machinery as \code{\link[=diagnose_batches]{diagnose_batches()}}. \code{period} (e.g. \code{7}) absorbs a scheduled weekly
 reporting cadence.}
 
 \item{alpha}{Level for the \code{classification} labels. Default \code{0.05}.}
+
+\item{axis}{Which time axis to scan for arrivals: \code{"report"} (default) or
+\code{"confirmation"}. Needs a confirmation process (see \code{\link[=add_confirmation]{add_confirmation()}});
+cases still \code{"pending"} are left out.}
 }
 \value{
 A tibble of class \code{transport_discriminant}, one row per (report date,
@@ -32,14 +37,14 @@ stratum), with columns \code{report_date}, \code{stratum}, \code{reported}, \cod
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
-Computes, for every report date, the two coordinates of \code{\link[=batch_test]{batch_test()}}'s
+
+Computes, for every report date, the two coordinates of \code{\link[=diagnose_batches]{diagnose_batches()}}'s
 conservation law -- the \strong{deficit} (the \emph{transport} axis: how many reports the
 preceding window is missing) and the window \strong{discriminant} (the \emph{creation}
 axis: the window total relative to its baseline) -- together with their robust
 standardised versions \code{transport_z} and \code{creation_z}.
-
+}
+\details{
 A batch \emph{moves} reports later without creating them, so it leaves a positive
 deficit while conserving the window total (\code{transport_z} large, \code{creation_z}
 near 0). A genuine surge \emph{creates} reports, lifting the window total without a
@@ -48,7 +53,7 @@ separates a backlog release from an epidemic surge: a point sits in the
 \strong{batch} corner when its transport score is large and its creation score is
 not. A negative \code{creation_z} with no transport is a hold in progress (the
 window is depleted and nothing has been released yet). The \code{classification}
-column applies these labels at level \code{alpha}, exactly as in \code{\link[=batch_test]{batch_test()}}.
+column applies these labels at level \code{alpha}, exactly as in \code{\link[=diagnose_batches]{diagnose_batches()}}.
 }
 \examples{
 data(denguedat)
@@ -58,6 +63,6 @@ td[td$batch, ]
 
 }
 \seealso{
-\code{\link[=batch_test]{batch_test()}} for the hypothesis test, \code{\link[=diagnostic_plot]{diagnostic_plot()}} to plot
+\code{\link[=diagnose_batches]{diagnose_batches()}} for the hypothesis test, \code{\link[=diagnostic_plot]{diagnostic_plot()}} to plot
 this plane.
 }

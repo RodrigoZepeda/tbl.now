@@ -1,13 +1,60 @@
-#' @title Getters for tbl_now attributes
+#' @title Read what a `tbl_now` was told about itself
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
-#' Functions that extract the attributes from a `tbl_now` object.
-#' Each function returns a specific attribute (e.g. event date, strata, covariates, etc).
+#' When you build a [tbl_now()] you tell it which column is the event date, which
+#' is the report date, which are strata, and so on. These functions read that
+#' information back.
+#'
+#' They are how the rest of the package -- and any modelling code you write
+#' yourself -- finds the right columns without hard-coding names. Rather than
+#' assuming a column is called `onset_week`, write
+#' `x[[get_event_date(x)]]` and your code works on any `tbl_now`.
+#'
+#' @details
+#' Most of these return a **column name**, not the column itself. To get the
+#' values, index with the name: `x[[get_event_date(x)]]`.
+#'
+#' A getter returns `NULL` when the object was never told about that attribute,
+#' so `is.null(get_strata(x))` is the test for "unstratified". The two counting
+#' helpers, `get_num_strata()` and `get_num_covariates()`, return `0` instead,
+#' which is usually easier to work with.
 #'
 #' @param x A `tbl_now` object.
 #'
-#' @return The requested attribute (character, date, logical, etc.).
+#' @return
+#' A column name, a count, or a metadata value, depending on the function:
+#'
+#' \describe{
+#'   \item{`get_event_date()`, `get_report_date()`}{Character. The name of the
+#'     column holding the date the event happened / was reported.}
+#'   \item{`get_case_count()`}{Character, or `NULL` for linelist data. The name
+#'     of the column holding the number of cases.}
+#'   \item{`get_strata()`, `get_covariates()`}{Character vector of column names,
+#'     or `NULL` when there are none.}
+#'   \item{`get_num_strata()`, `get_num_covariates()`}{Integer count, `0` when
+#'     there are none.}
+#'   \item{`get_is_censored()`}{Character, or `NULL`. The name of the column
+#'     flagging reports whose date is only an upper bound.}
+#'   \item{`get_now()`}{The `Date` (or number) the nowcast is anchored on.}
+#'   \item{`get_event_units()`, `get_report_units()`}{One of `"days"`,
+#'     `"weeks"`, `"months"`, `"years"` or `"numeric"` -- the grid each date
+#'     lives on.}
+#'   \item{`get_data_type()`}{One of `"linelist"`, `"count-incidence"` or
+#'     `"count-cumulative"`. See [to_count()].}
+#'   \item{`get_temporal_effects()`}{The [temporal_effects()] specification the
+#'     object carries, or `NULL`. This is the *request*, not the data.}
+#'   \item{`get_temporal_effect_cols()`}{Character vector of the temporal-effect
+#'     columns actually materialised in the data by
+#'     [compute_temporal_effects()]; `character(0)` when none have been.}
+#' }
+#'
+#' @seealso
+#' [tbl_now_attributes()] to get all of them at once;
+#' [add()], [change()][add] and [remove()][add] to set them;
+#' [confirmation_getters] for the third-date attributes;
+#' [get_latest_reported_cases()][get_latest_first] and friends for reading the
+#' counts rather than the metadata.
 #'
 #' @examples
 #' data(denguedat)
@@ -21,41 +68,43 @@
 #'   ) |>
 #'   compute_temporal_effects()
 #'
-#' # Get the event date
+#' # The two dates every nowcast needs.
 #' get_event_date(ndata)
-#'
-#' # Get the report date
 #' get_report_date(ndata)
 #'
-#' # Get strata
+#' # Use the name to reach the column, so the code does not depend on it.
+#' head(ndata[[get_event_date(ndata)]])
+#'
+#' # Strata are groups you want separate nowcasts for; covariates are not.
 #' get_strata(ndata)
+#' get_num_strata(ndata)
 #'
-#' # Get covariates
+#' ## Nothing was declared a covariate, so this is NULL (and the count is 0).
 #' get_covariates(ndata)
+#' get_num_covariates(ndata)
 #'
-#' # Get is censored
+#' # Likewise for a censoring indicator that was never supplied.
 #' get_is_censored(ndata)
 #'
-#' # Get the now
+#' # The as-of moment, and the calendar grid the dates live on.
 #' get_now(ndata)
-#'
-#' # Get the report units
+#' get_event_units(ndata)
 #' get_report_units(ndata)
 #'
-#' # Get the event units
-#' get_event_units(ndata)
-#'
-#' # Get the data type
+#' # Linelist means one row per case; there is no count column yet.
 #' get_data_type(ndata)
-#'
-#' # Get the column with cases
 #' get_case_count(ndata)
 #'
-#' # Get temporal effects
+#' ## After to_count() there is one.
+#' counts <- to_count(ndata, to = "count-incidence")
+#' get_data_type(counts)
+#' get_case_count(counts)
+#'
+#' # The temporal-effects request, versus the columns it actually produced.
 #' get_temporal_effects(ndata)
+#' get_temporal_effect_cols(ndata)
 #'
 #' @name nowcast_data_getters
-#' @md
 NULL
 
 #' @rdname nowcast_data_getters
@@ -171,9 +220,17 @@ get_protected_cols <- function(x) {
 #'
 #' @keywords internal
 #' @noRd
-get_protected_generated_cols <- function(x) {
-  # Return the protected columns from x
-  c(".event_num", ".report_num", ".delay")
+get_protected_generated_cols <- function(x = NULL) {
+  # Return the protected columns from x. The confirmation pair only exists when
+  # the object was told about a confirmation date, so `x` is needed to know
+  # whether to include it -- but the argument stays OPTIONAL, because this used
+  # to take none and a caller that does not have the object in hand should get
+  # the three columns every `tbl_now` has.
+  base_columns <- c(".event_num", ".report_num", ".delay")
+  if (is.null(x)) {
+    return(base_columns)
+  }
+  c(base_columns, .confirmation_generated_cols(x))
 }
 
 #' Protected columns supplied by the user
@@ -190,7 +247,12 @@ get_protected_generated_cols <- function(x) {
 #' @noRd
 get_protected_given_cols <- function(x) {
   # Return the protected columns from x
-  protected_cols <- c("event_date" = get_event_date(x), "report_date" = get_report_date(x), "is_censored" = get_is_censored(x))
+  protected_cols <- c(
+    "event_date" = get_event_date(x), "report_date" = get_report_date(x),
+    "is_censored" = get_is_censored(x),
+    "confirmation_date" = get_confirmation_date(x),
+    "confirmation_type" = get_confirmation_type(x)
+  )
 
   if (!is.null(get_data_type(x)) && grepl("count", get_data_type(x))) {
     protected_cols <- c(protected_cols, "case_count" = get_case_count(x))

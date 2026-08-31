@@ -9,6 +9,7 @@ plot_delay_profiles(
   by = c("report", "event"),
   max_delay = NULL,
   plotly = FALSE,
+  axis = c("report", "confirmation"),
   palette = .tbl_now_palette()
 )
 }
@@ -23,6 +24,14 @@ covering 99\% of reported mass.}
 \item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget instead of a
 static plot. Default \code{FALSE}.}
 
+\item{axis}{Which time axis the delay is measured to: \code{"report"} (default)
+or \code{"confirmation"}. Both are measured \emph{from the event}, so the two are
+directly comparable -- run each in turn and the gap between them is the
+time the laboratory adds. (This is not the same quantity as the
+\code{.confirmation_delay} column, which is the laboratory's own turnaround,
+measured from the report.) Needs a confirmation process (see
+\code{\link[=add_confirmation]{add_confirmation()}}); cases still \code{"pending"} are left out.}
+
 \item{palette}{A named colour palette. Defaults to the package palette.}
 }
 \value{
@@ -30,8 +39,7 @@ A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 One translucent curve per date (see \code{by}) giving that date's share of reports
 at each delay, coloured by its mean delay. A batch is a lone right-shifted
 (long-delay) curve.
@@ -42,5 +50,8 @@ dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
 plot_delay_profiles(dn)
 }
 \seealso{
-\code{\link[=diagnostic_plot]{diagnostic_plot()}}.
+\code{\link[=plot_delay_distribution]{plot_delay_distribution()}} for the pooled delay distribution rather than one
+curve per date; \code{\link[=plot_delay_drift]{plot_delay_drift()}} for whether those curves move over time;
+\code{\link[=diagnose_batch_shape]{diagnose_batch_shape()}} for the test behind the eyeball;
+\code{\link[=diagnostic_plot]{diagnostic_plot()}} for the whole gallery.
 }

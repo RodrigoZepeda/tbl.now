@@ -37,9 +37,10 @@ tidy(x, ...)
 \verb{q*} column per probability. Only available for engines that expose draws.}
 
 \item{engine}{Optional string naming the engine. Needed only for the shapes
-that arrive as an \strong{unclassed list} -- a \pkg{NobBS} fit, or a list of
-per-stratum \pkg{baselinenowcast} fits -- which are otherwise recognised by
-their structure.}
+that arrive as an \strong{unclassed list} -- a \pkg{NobBS} fit, an
+\code{\link[EpiNow2:regional_epinow]{EpiNow2::regional_epinow()}} result, or a per-stratum list of
+\pkg{baselinenowcast} or \code{\link[surveillance:nowcast]{surveillance::nowcast()}} fits -- which are
+otherwise recognised by their structure.}
 
 \item{level}{Interval width to report for an engine that does not say what it
 produced. Only used by the \pkg{NobBS} branch (see \code{level} under \emph{Value});
@@ -134,4 +135,14 @@ fit <- baselinenowcast::baselinenowcast(
 )
 tidy(fit)
 \dontshow{\}) # examplesIf}
+}
+\seealso{
+\code{\link[=run_nowcast]{run_nowcast()}} and \link[=tidy.tbl_nowcast]{tidy()}, which give you this shape
+without needing to call the modelling package yourself;
+\link[=tidy.nowcast_backtest]{tidy()} for a backtest;
+\code{\link[=tidy.epidist_fit]{tidy.epidist_fit()}} and \code{\link[=tidy.estimate_dist]{tidy.estimate_dist()}} for fitted \emph{delay
+distributions} rather than case counts;
+\code{\link[=score_nowcast]{score_nowcast()}} to score the result. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html}{\emph{One dataset, many nowcasts} article}
+shows each engine's native output next to this one.
 }

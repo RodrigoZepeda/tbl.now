@@ -44,7 +44,7 @@ plot_creation_transport <- function(x,
     palette[["medium_green"]], palette, xlab = "Report date",
     caption = paste(
       "A batch: the transport panel spikes above the dashed band while creation stays flat.",
-      "\nA surge: the other way round. Red points = batch_test()-confirmed batches. The axis",
+      "\nA surge: the other way round. Red points = diagnose_batches()-confirmed batches. The axis",
       "\nis signed-log because a big batch sits hundreds of standard deviations out."))
 
   tbl.now:::.combine_panels(list(p_transport, p_creation), plotly = plotly, ncol = 1,
@@ -136,7 +136,7 @@ plot_conservation_dashboard <- function(x,
   patchwork::wrap_plots(list(p_ct, p_score), ncol = 1) +
     patchwork::plot_annotation(
       title = "Conservation dashboard",
-      subtitle = "The two window scores, then their difference; red = batch_test()-confirmed batches",
+      subtitle = "The two window scores, then their difference; red = diagnose_batches()-confirmed batches",
       theme = ggplot2::theme(
         plot.title = ggplot2::element_text(face = "bold", colour = palette[["near_black"]])
       )

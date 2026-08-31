@@ -238,7 +238,13 @@ test_that("add_temporal_effects.data.frame adds day_of_month column", {
     name_prefix = ".event"
   )
   expect_true(".event_day_of_month" %in% colnames(result))
-  expect_equal(result[[".event_day_of_month"]], lubridate::day(d$event))
+  # A FACTOR since 0.21.0 -- a calendar position handed to a model as a number
+  # says the 28th is 28 times the 1st. The labels are still the day numbers.
+  expect_s3_class(result[[".event_day_of_month"]], "factor")
+  expect_equal(
+    as.integer(as.character(result[[".event_day_of_month"]])),
+    as.integer(lubridate::day(d$event))
+  )
 })
 
 test_that("add_temporal_effects.data.frame adds weekend column", {

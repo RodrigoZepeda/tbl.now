@@ -11,6 +11,7 @@ plot_scalogram(
   wname = "PAUL",
   format = "\%d/\%b/\%y",
   plotly = FALSE,
+  axis = c("report", "confirmation"),
   palette = .tbl_now_palette()
 )
 }
@@ -32,6 +33,12 @@ Default \code{"\%d/\%b/\%y"}.}
 \item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget instead of a
 static plot. Default \code{FALSE}.}
 
+\item{axis}{Which time axis to draw: \code{"report"} (default) or
+\code{"confirmation"}. On the confirmation axis the picture answers the
+laboratory's version of the question -- when results arrived, rather than
+when reports did. Needs a confirmation process (see \code{\link[=add_confirmation]{add_confirmation()}});
+cases still \code{"pending"} have no confirmation date and are left out.}
+
 \item{palette}{A named colour palette. Defaults to the package palette.}
 }
 \value{
@@ -39,8 +46,7 @@ A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 A \strong{wavelet scalogram} splits a count series, at every moment, into fast
 wiggles (short periods, at the bottom) and slow swings (long periods, at the
 top), and shows the energy at each as a heat map. A \strong{batch} -- a sudden
@@ -48,7 +54,8 @@ one-step burst of reports -- lights up as a bright \strong{short-period ridge} i
 \emph{reporting} scalogram that the \emph{epidemic} (event) scalogram lacks, since real
 cases arrive smoothly. Periods are measured in the object's own time step (days,
 weeks, ...), so the series is analysed on its integer grid, not forced to days.
-
+}
+\details{
 This uses a \strong{window-inner} scalogram (\pkg{wavScalogram}, \code{border_effects = "INNER"}): it is computed from the observed data only, with \strong{no border
 padding}. That matters for surveillance / nowcasting, where the usual periodic
 or zero padding would fabricate structure exactly at the most recent ("now")
@@ -63,5 +70,9 @@ plot_scalogram(dn, type = "reporting")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=plot_reporting_process]{plot_reporting_process()}}, \code{\link[=plot_epidemic_process]{plot_epidemic_process()}}, \code{\link[=diagnostic_plot]{diagnostic_plot()}}.
+\link[=plot_epidemic_process]{plot_reporting_process()} and
+\code{\link[=plot_epidemic_process]{plot_epidemic_process()}} for the two series this decomposes;
+\code{\link[=plot_cycles]{plot_cycles()}} for the same idea pooled over time (a periodogram) rather than
+resolved moment by moment; \code{\link[=diagnose_batches]{diagnose_batches()}} to test a short-period ridge;
+\code{\link[=diagnostic_plot]{diagnostic_plot()}} for the whole gallery.
 }

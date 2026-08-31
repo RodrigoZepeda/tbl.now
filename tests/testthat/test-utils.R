@@ -6,17 +6,24 @@ test_that("test it returns the attributes correctly", {
     report_date = report_week, strata = gender, verbose = FALSE
   )
 
-  # Attributes gets all attributes
-  df_atr <- attributes(df_now) |> names()
+  # `tbl_now_attributes()` is everything the object carries that a bare tibble
+  # does not -- including the OPTIONAL ones.
+  #
+  # Until 0.21.0 it diffed against a default `tbl_now`, so any attribute the
+  # default did not happen to carry was silently missing from the listing:
+  # `strata`, `covariates`, and every confirmation attribute. That is precisely
+  # what somebody calls this function to check, so the omission was the bug.
+  listed <- names(tbl_now_attributes(df_now))
+  tibble_attributes <- names(attributes(dplyr::tibble(denguedat)))
 
-  # Remove optional attributes
-  tbl_atr <- c(attributes(dplyr::tibble(denguedat)) |> names(), "strata", "covariates")
-
-  # tbl_now_attributes gets only those associated to the `tbl_now` class
-  expect_equal(
-    names(tbl_now_attributes(df_now)),
-    df_atr[which(!(df_atr %in% tbl_atr))]
+  expect_setequal(
+    listed,
+    setdiff(names(attributes(df_now)), tibble_attributes)
   )
+  # `strata` was declared here, so it must be listed. (`covariates` was not
+  # declared, so the object never gained the attribute at all.)
+  expect_true("strata" %in% listed)
+  expect_false(any(tibble_attributes %in% listed))
 })
 
 test_that("is_weekday works with default weekend (Sat-Sun)", {

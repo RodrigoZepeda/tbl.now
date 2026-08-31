@@ -483,27 +483,106 @@
   )
 }
 
-#' Collapse a `tbl_now`'s strata into the single `region` column EpiNow2 takes
+#' Paste several stratifying columns into the one label column a back-end takes
 #'
-#' [EpiNow2::regional_epinow()] takes one `region` column. A `tbl_now` may carry
-#' several stratifying columns, so they are pasted `" | "`-separated -- the same
-#' convention as `tbl_now_to_baselinenowcast(format = "triangle_list")`'s names
-#' and `.epinowcast_stratum()`.
+#' Several back-ends stratify by ONE column: [NobBS::NobBS.strat()] takes a
+#' single `strata` name, [EpiNow2::regional_epinow()] a single `region`, and
+#' [surveillance::nowcast()] takes none at all, so a stratified analysis there
+#' means splitting the line list yourself. A `tbl_now` may declare any number of
+#' stratifying columns, and their interaction -- "nowcast each observed
+#' combination separately" -- is exactly what those back-ends mean by one
+#' stratum. This pastes them into that label.
+#'
+#' The separator has to be recoverable, because [tidy()] splits the label back
+#' into the original columns. If a stratum VALUE already contains the separator
+#' the split is ambiguous, and a silently mispaired stratum is worse than a
+#' failed conversion -- so that aborts, naming the separator to choose instead.
 #'
 #' @param data A data frame carrying the strata columns.
 #' @param strata_cols Character vector of stratifying column names.
+#' @param sep Separator to paste with.
+#' @param fn Calling function, for the error message.
+#' @param argument The name of the separator argument to point the user at.
 #'
 #' @return A character vector of labels, one per row; all `"all"` when there are
 #'   no strata.
 #'
 #' @keywords internal
 #' @noRd
-.epinow2_region <- function(data, strata_cols) {
+.paste_strata_labels <- function(data, strata_cols, sep = " | ",
+                                 fn = NULL, argument = "strata_sep") {
   if (length(strata_cols) == 0L) {
     return(rep("all", nrow(data)))
   }
-  do.call(
-    paste, c(unname(as.list(data[strata_cols])), sep = " | ")
+  values <- unname(as.list(data[strata_cols]))
+  if (any(vapply(
+    values,
+    function(column) any(grepl(sep, as.character(column), fixed = TRUE)),
+    logical(1)
+  ))) {
+    cli::cli_abort(c(
+      "Cannot combine strata {.val {strata_cols}}{if (is.null(fn)) '' else \
+       paste0(' in ', fn)}.",
+      "i" = "They are pasted {.val {sep}}-separated into a single label, and a \
+             stratum value already contains that separator -- the label could \
+             not be split back apart.",
+      "i" = "Choose a separator the values do not contain, with \
+             {.arg {argument}}."
+    ))
+  }
+  do.call(paste, c(values, sep = sep))
+}
+
+#' Add the single pasted strata column a one-column back-end takes
+#'
+#' Shared by [tbl_now_to_nobbs()] and [tbl_now_to_surveillance()]. Refuses to
+#' overwrite a column that is already there: silently replacing a declared
+#' covariate called `strata` would lose data.
+#'
+#' @param data The line list being built.
+#' @param strata_cols Character vector of stratifying column names.
+#' @param strata_col Name for the new column, or `NULL` to add nothing.
+#' @param strata_sep Separator to paste with.
+#' @param fn Calling function, for the messages.
+#'
+#' @return `data`, with the column added when there was anything to add.
+#'
+#' @keywords internal
+#' @noRd
+.add_strata_column <- function(data, strata_cols, strata_col, strata_sep, fn) {
+  if (length(strata_cols) == 0L || is.null(strata_col)) {
+    return(data)
+  }
+  if (strata_col %in% names(data) && !strata_col %in% strata_cols) {
+    cli::cli_abort(c(
+      "{.arg strata_col} {.val {strata_col}} is already a column of {.arg x}.",
+      "i" = "{.fn {fn}} would overwrite it with the pasted strata label.",
+      "i" = "Choose another name with {.arg strata_col}, or drop the column \
+             with {.arg strata_col = NULL}."
+    ))
+  }
+  data[[strata_col]] <- .paste_strata_labels(
+    data, strata_cols, sep = strata_sep, fn = paste0(fn, "()")
+  )
+  data
+}
+
+#' Collapse a `tbl_now`'s strata into the single `region` column EpiNow2 takes
+#'
+#' [EpiNow2::regional_epinow()] takes one `region` column, pasted `" | "`-
+#' separated -- the same convention as
+#' `tbl_now_to_baselinenowcast(format = "triangle_list")`'s names and
+#' `.epinowcast_stratum()`.
+#'
+#' @inheritParams .paste_strata_labels
+#'
+#' @return A character vector of labels, one per row.
+#'
+#' @keywords internal
+#' @noRd
+.epinow2_region <- function(data, strata_cols, sep = " | ") {
+  .paste_strata_labels(
+    data, strata_cols, sep = sep, fn = "tbl_now_to_EpiNow2()"
   )
 }
 
@@ -517,9 +596,12 @@
 #'
 #' The primary event spans `[event_date, event_date + w]`, where `w` matches the
 #' object's time unit. The secondary spans `[report_date, report_date + w]`
-#' normally, and the left-censored `[origin, report_date]` for a row flagged by
-#' `is_censored` -- the `tbl_now` convention that a censored report is only known
-#' to lie in `[0, report_date]`, with `origin` the earliest event date.
+#' normally, and the left-censored `[event_date, report_date]` for a row flagged
+#' by `is_censored` -- the `tbl_now` convention that a censored report is known
+#' only to have happened at or before its report date. The lower bound is that
+#' row's OWN event: a delay cannot be negative, and bounding by the earliest
+#' event in the data (as this did before 0.20.0) starts the window before the
+#' case existed.
 #'
 #' @param x A `tbl_now`.
 #' @param censoring_window Optional width in days; `NULL` derives it from
@@ -541,9 +623,6 @@
   } else {
     censoring_window
   }
-  # Delay time 0 is the earliest primary (event) date.
-  origin <- min(obs[[event_col]], na.rm = TRUE)
-
   censored <- if (!is.null(censored_col)) {
     as.logical(obs[[censored_col]])
   } else {
@@ -554,7 +633,15 @@
   out <- dplyr::tibble(
     pdate_lwr = obs[[event_col]],
     pdate_upr = obs[[event_col]] + win,
-    sdate_lwr = dplyr::if_else(censored, origin, obs[[report_col]]),
+    # A censored report is known only to have happened at or before its report
+    # date -- so the window is [event_date, report_date]. It is bounded BELOW by
+    # the event, not by the earliest event in the data: a delay cannot be
+    # negative, and a global origin makes the window start before the case
+    # existed for every row except the very first. \pkg{epidist} rejects that
+    # outright ("Assertion on 'data$stime_lwr' failed: not >= 0"), and
+    # `EpiNow2::estimate_dist()` would fit a delay distribution with mass below
+    # zero.
+    sdate_lwr = dplyr::if_else(censored, obs[[event_col]], obs[[report_col]]),
     sdate_upr = dplyr::if_else(censored, obs[[report_col]], obs[[report_col]] + win)
   )
 
@@ -568,10 +655,13 @@
   # When observation STOPPED is a different quantity, and it is `obs_date` --
   # handled by the callers, which set it to the end of the `now` period.
 
-  # Both packages require strictly positive widths; a censored report sitting on
-  # the origin would collapse to zero width.
+  # Both packages require strictly positive widths, and a censored report in the
+  # same period as its event collapses to zero. Widen UPWARD: the report is then
+  # known to lie somewhere in that period, `[event, event + win)`. Widening
+  # downward instead (the old behaviour) pushed the lower bound before the event
+  # and produced the negative delays described above.
   collapsed <- out$sdate_upr <= out$sdate_lwr
-  out$sdate_lwr[collapsed] <- out$sdate_upr[collapsed] - win
+  out$sdate_upr[collapsed] <- out$sdate_lwr[collapsed] + win
 
   list(data = out, width = win, censored = censored)
 }
@@ -848,6 +938,184 @@
 }
 
 
+#' Drop reports whose delay is beyond a cap
+#'
+#' Counted the way [tbl_now_to_epinowcast()] counts it, so the same number means
+#' the same triangle in both: `max_delay` is the NUMBER of delay periods kept,
+#' i.e. delays `0` to `max_delay - 1`, measured in the object's report units.
+#' `NULL` keeps every delay, which is `max(.delay) + 1` periods.
+#'
+#' Capping is a modelling choice rather than a workaround: one straggler with a
+#' 330-day delay gives the triangle 331 columns, almost all of them empty, and
+#' costs minutes of fitting for no gain.
+#'
+#' @param x A `tbl_now` object.
+#' @param max_delay A single positive whole number, or `NULL`.
+#' @param fn Name of the calling converter, for messages.
+#' @param verbose Logical.
+#'
+#' @return A `tbl_now`, filtered when a cap was given.
+#'
+#' @keywords internal
+#' @noRd
+.cap_max_delay <- function(x, max_delay, fn, verbose = TRUE) {
+  if (is.null(max_delay)) {
+    return(x)
+  }
+  if (!is.numeric(max_delay) || length(max_delay) != 1L || is.na(max_delay) ||
+        max_delay < 1 || max_delay != round(max_delay)) {
+    cli::cli_abort(
+      "{.arg max_delay} must be a single whole number of at least 1, or {.code NULL}."
+    )
+  }
+
+  delays <- dplyr::pull(x, ".delay")
+  keep <- is.na(delays) | delays < max_delay
+  dropped <- sum(!keep, na.rm = TRUE)
+
+  if (dropped == 0) {
+    return(x)
+  }
+  out <- dplyr::filter(x, !!rlang::sym(".delay") < !!max_delay | is.na(!!rlang::sym(".delay")))
+
+  if (isTRUE(verbose)) {
+    cli::cli_inform(c(
+      "i" = cli::format_inline(paste0(
+        "{.fn {fn}}: kept delays 0-{max_delay - 1} ",
+        "({get_report_units(x)}), dropping {dropped} row{?s}."
+      ))
+    ))
+  }
+  out
+}
+
+#' Warn that declared covariates did not survive a conversion
+#'
+#' A covariate is a promise: the user declared it because they want the model to
+#' use it. Several targets have nowhere to put one -- a reporting triangle has
+#' only (event, delay) cells, and \pkg{EpiNow2}'s series is `date`/`confirm` --
+#' so the column is dropped. Silently dropping it means the user believes a
+#' covariate is in the model when it is not, which is the worst of the three
+#' possible outcomes.
+#'
+#' Materialised temporal-effect columns count as covariates here: they are
+#' exactly the case where somebody has asked for an effect and would otherwise
+#' never learn it was ignored.
+#'
+#' @param x A `tbl_now` object.
+#' @param fn Name of the calling converter, for the message.
+#' @param kept Character vector of covariate columns that DID survive.
+#' @param advice Optional extra bullet: what the user can do instead.
+#'
+#' @return `NULL`, invisibly.
+#'
+#' @keywords internal
+#' @noRd
+.warn_dropped_covariates <- function(x, fn, kept = character(0), advice = NULL) {
+  declared <- c(
+    get_covariates(x) %||% character(0),
+    get_temporal_effect_cols(x) %||% character(0)
+  )
+  dropped <- setdiff(unique(declared), kept)
+  if (length(dropped) == 0) {
+    return(invisible(NULL))
+  }
+
+  message <- c(
+    cli::format_inline(paste0(
+      "{.fn {fn}}: {length(dropped)} declared covariate{?s} ",
+      "({.val {dropped}}) {?is/are} not carried into this format."
+    ))
+  )
+  if (!is.null(advice)) message <- c(message, "i" = advice)
+  message <- c(
+    message,
+    "i" = "The model will not see {cli::qty(length(dropped))}{?it/them}."
+  )
+  cli::cli_warn(message)
+  invisible(NULL)
+}
+
+#' Columns a `tbl_now` carries but was never told about
+#'
+#' Everything that is neither protected (the dates, the count, the censoring
+#' flag, the generated `.event_num`/`.report_num`/`.delay`) nor declared as a
+#' stratum, a covariate or a materialised temporal effect.
+#'
+#' `covid_colombia` is the motivating case: it carries `sex`, and an object
+#' built without `strata = sex` therefore has TWO rows per
+#' `(notification_date, diagnosis_date)` cell. A reporting triangle, a `tsibble`
+#' key and an epinowcast observation table all have exactly one slot per cell,
+#' so the extra dimension has to go somewhere before the conversion can happen.
+#'
+#' @param x A `tbl_now` object.
+#'
+#' @return A character vector of column names, possibly empty.
+#'
+#' @keywords internal
+#' @noRd
+.undeclared_cols <- function(x) {
+  known <- c(
+    get_protected_cols(x),
+    get_strata(x) %||% character(0),
+    get_covariates(x) %||% character(0),
+    get_temporal_effect_cols(x) %||% character(0)
+  )
+  setdiff(colnames(x), known)
+}
+
+#' Pool a `tbl_now` over the columns it was never told about
+#'
+#' A converter should not make the caller aggregate first. `to_count()` already
+#' sums over every column that is neither declared nor protected, so this is
+#' just "call it when there is something to pool, and say so".
+#'
+#' Line lists are left alone: one row IS one case there, so there is nothing to
+#' sum, and collapsing would destroy the individual records the target package
+#' is being handed.
+#'
+#' The message is deliberately `verbose`-only rather than a warning. It fires on
+#' ordinary, correct usage -- any dataset with a column you did not declare --
+#' and a warning on the common path trains people to ignore warnings.
+#'
+#' @param x A `tbl_now` object.
+#' @param fn Name of the calling converter, for the message.
+#' @param verbose Logical.
+#'
+#' @return A `tbl_now`, aggregated when there was anything to aggregate.
+#'
+#' @keywords internal
+#' @noRd
+.pool_undeclared <- function(x, fn, verbose = TRUE) {
+  extra <- .undeclared_cols(x)
+  if (length(extra) == 0 || identical(get_data_type(x), "linelist")) {
+    return(x)
+  }
+
+  before <- nrow(x)
+  pooled <- suppressWarnings(suppressMessages(
+    to_count(x, to = get_data_type(x))
+  ))
+
+  if (isTRUE(verbose)) {
+    # NB: built with paste0(), not cli's `\\` continuation -- `format_inline()`
+    # does not strip those and would print them literally. `cli::qty()` supplies
+    # the quantity for a plural marker that has no `{}` of its own before it.
+    cli::cli_inform(c(
+      "i" = cli::format_inline(paste0(
+        "{.fn {fn}}: pooled over {length(extra)} undeclared ",
+        "column{?s} ({.val {extra}}); {before} rows -> {nrow(pooled)}."
+      )),
+      "i" = cli::format_inline(paste0(
+        "{cli::qty(length(extra))}Declare {?it/them} with {.fn add_strata} ",
+        "to nowcast {?it/them} separately."
+      ))
+    ))
+  }
+
+  pooled
+}
+
 #' Collapse the censoring indicator before a conversion
 #'
 #' A censoring flag that is a per-case property rather than a function of the
@@ -1047,7 +1315,9 @@
 #' @param preprocess If `TRUE` (default) returns an `enw_preprocess_data`
 #'   object; if `FALSE` returns the completed observation `data.table`.
 #' @param verbose Logical. Print the choices that were made.
-#' @param quiet Logical. If `TRUE`, suppress the lossy-conversion warning emitted
+#' @param quiet Logical. A *different* channel from `verbose`: `verbose`
+#'   controls the informational summary of what the conversion did, while `quiet`
+#'   suppresses the lossy-conversion **warning** emitted
 #'   by `tbl_now_to_epinowcast()` (see the Round-trip section).
 #' @param ... Additional arguments forwarded to [as_tbl_now()] (for `from`)
 #'   or to [epinowcast::enw_preprocess_data()] (for `to`).
@@ -1100,32 +1370,44 @@
 #'   delay 74, so its `max_confirm` is 11 in `pobs` and 7 after the round-trip.)
 #'
 #' @examplesIf requireNamespace("epinowcast", quietly = TRUE) & requireNamespace("data.table", quietly = TRUE)
-#' # Preprocessing epinowcast data is slow, so this is wrapped in \donttest{}.
-#' \donttest{
 #' library(data.table)
 #' library(epinowcast)
 #'
-#' #Read data from epinowcast
-#' obs  <- germany_covid19_hosp[location == "DE"]
+#' ## CRAN asks examples to use at most two cores; data.table would otherwise
+#' ## take every one it can find.
+#' data.table::setDTthreads(2)
 #'
-#' #Remove unused column
-#' obs  <- obs[, location := NULL]
+#' # epinowcast's own example data: German COVID-19 hospitalisations by age.
+#' obs <- germany_covid19_hosp[location == "DE"][, location := NULL]
 #'
-#' #Pre-process data
-#' pobs <- epinowcast::enw_preprocess_data(obs, max_delay = 40, by = "age_group")
+#' ## A few weeks and a short delay keep the example quick; preprocessing the whole
+#' ## series with `max_delay = 40` costs about ten times as much CPU.
+#' recent <- obs[reference_date >= as.Date("2021-10-15")]
+#' pobs <- epinowcast::enw_preprocess_data(recent, max_delay = 10, by = "age_group")
 #'
 #' # From the data.table input format ...
-#' nowobj <- tbl_now_from_epinowcast(obs, strata = c("age_group"))
+#' nowobj <- tbl_now_from_epinowcast(recent, strata = c("age_group"))
+#' nowobj
 #'
-#' # ... or from a preprocessed epinowcast object
+#' # ... or from a preprocessed epinowcast object.
 #' tbl_epi <- tbl_now_from_epinowcast(pobs)
 #'
-#' #You can also convert to epinowcast preprocess data format
+#' # And back out again.
 #' preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
-#' }
 #'
 #' @inheritSection tbl_now_baselinenowcast Negative delays
 #' @inheritSection tbl_now_baselinenowcast Censored delays
+#' @seealso
+#' [engine_epinowcast()][nowcast_engines] to fit through this package rather than
+#' converting by hand; [align_weeks()], because \pkg{epinowcast} lays its grid out
+#' in whole timesteps; [complete_zeroes()] to fill the grid;
+#' [tidy()][tidy.nowcast] for the fitted result.
+#' [as_tbl_now()] for the generic that dispatches to the `*_from_*()` side;
+#' [run_nowcast()], which does the conversion for you when you fit through an
+#' [engine()]. The
+#' [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' fits the same data with every supported package.
+#'
 #' @name tbl_now_epinowcast
 #' @export
 tbl_now_from_epinowcast <- function(data, ...,
@@ -1198,6 +1480,12 @@ tbl_now_from_epinowcast <- function(data, ...,
 #'   `tbl_now_to_baselinenowcast()` (triangle formats only) it is **inferred**
 #'   from the object's time units when the event and report units agree and are
 #'   `"days"` or `"weeks"`; otherwise you must supply it explicitly.
+#' @param max_delay Number of delay periods to keep, in the object's report
+#'   units: `max_delay = 30` keeps delays `0` to `29`, giving a 30-column
+#'   triangle. Counted exactly as [tbl_now_to_epinowcast()] counts it, so the
+#'   same number means the same triangle in both. `NULL` (default) keeps every
+#'   delay -- which is fine on a short tail and expensive on a long one (see
+#'   *Cost of a long delay tail*).
 #' @param format For `to`, one of:
 #'   * `"matrix"` (default) -- a single [baselinenowcast::as_reporting_triangle()]
 #'     matrix. A triangle has no strata dimension, so any strata are **pooled**
@@ -1254,7 +1542,7 @@ tbl_now_from_epinowcast <- function(data, ...,
 #' # Convert to a tbl_now
 #' nowobj <- tbl_now_from_baselinenowcast(rt)
 #'
-#' # The matrix round-trip is faithful (not-yet-observed `NA` cells are kept).
+#' ## The matrix round-trip is faithful (not-yet-observed `NA` cells are kept).
 #' identical(rt, tbl_now_to_baselinenowcast(nowobj))
 #' @section Sparse same-period reporting (weekly data especially):
 #'
@@ -1284,12 +1572,11 @@ tbl_now_from_epinowcast <- function(data, ...,
 #'
 #' The triangle gets one column per delay, so a single long straggler makes it
 #' very wide and the fit very slow: capping delays at 30 days on a daily series
-#' took a fit from **314s to 50s** for a tail carrying under 1% of cases. Unlike
-#' [tbl_now_to_epinowcast()] there is no `max_delay` argument here, so cap with a
-#' filter before converting:
+#' took a fit from **314s to 50s** for a tail carrying under 1% of cases. Use
+#' `max_delay`, which counts the way [tbl_now_to_epinowcast()]'s does:
 #'
 #' ```r
-#' x |> dplyr::filter(.delay <= 30) |> tbl_now_to_baselinenowcast()
+#' tbl_now_to_baselinenowcast(x, max_delay = 30)   # delays 0-29, 30 columns
 #' ```
 #'
 #' @section Negative delays:
@@ -1324,6 +1611,18 @@ tbl_now_from_epinowcast <- function(data, ...,
 #'
 #' [tbl_now_to_epidist()] is the exception and keeps the flag: estimating a
 #' delay distribution is the one job that can use it.
+#'
+#' @seealso
+#' [engine_baselinenowcast()][nowcast_engines] to fit through this package
+#' rather than converting by hand;
+#' [to_count()], because a reporting triangle needs non-negative increments and
+#' de-accumulating a revised cumulative series can produce negative ones;
+#' [complete_zeroes()] to fill the grid first.
+#' [as_tbl_now()] for the generic that dispatches to the `*_from_*()` side;
+#' [run_nowcast()], which does the conversion for you when you fit through an
+#' [engine()]. The
+#' [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' fits the same data with every supported package.
 #'
 #' @name tbl_now_baselinenowcast
 #' @export
@@ -1394,7 +1693,9 @@ tbl_now_from_baselinenowcast <- function(data, ...,
 #'
 #' @param data A `data.table`.
 #' @param x A `tbl_now` object.
-#' @param event_date,report_date Column names (passed to [as_tbl_now()]).
+#' @param event_date,report_date The event- and report-date columns, as
+#'   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#'   expressions: a bare column name or a string both work.
 #' @param verbose Logical. Print the choices that were made.
 #' @param ... Forwarded to [as_tbl_now()] (`from`) or
 #'   [data.table::as.data.table()] (`to`).
@@ -1408,6 +1709,17 @@ tbl_now_from_baselinenowcast <- function(data, ...,
 #'   event_date = "onset_week",
 #'   report_date = "report_week", verbose = FALSE
 #' )
+#' @seealso
+#' [as.data.table()][tbl_now_coercion_methods], the \pkg{data.table} method that
+#' calls this; [as_tibble()][as_tibble.tbl_now] and
+#' [as_tsibble()][tbl_now_coercion_methods] for the other exits from the class;
+#' [tbl_now()] to build one from the result.
+#' [as_tbl_now()] for the generic that dispatches to the `*_from_*()` side;
+#' [run_nowcast()], which does the conversion for you when you fit through an
+#' [engine()]. The
+#' [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' fits the same data with every supported package.
+#'
 #' @name tbl_now_data_table
 #' @export
 tbl_now_from_data_table <- function(data, event_date, report_date, ...,
@@ -1418,7 +1730,16 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
     )
   }
 
+  # Capture before coercion so a bare column name resolves against the data,
+  # the way it does everywhere else in the package. Strings keep working:
+  # tidy-select accepts them.
+  event_quo <- rlang::enquo(event_date)
+  report_quo <- rlang::enquo(report_date)
+
   observations <- as.data.frame(data)
+
+  event_date <- .converter_select_one(event_quo, observations, "event_date")
+  report_date <- .converter_select_one(report_quo, observations, "report_date")
 
   result <- .build_tbl_now(
     observations,
@@ -1468,9 +1789,11 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'   or `censoring_window` if supplied);
 #' * the secondary event spans `[report_date, report_date + w]` normally, but
 #'   for rows flagged by `is_censored` it is left-censored to
-#'   `[origin, report_date]` (with `origin` the earliest `event_date`, i.e.
+#'   `[event_date, report_date]` (the report is known only to have happened at
+#'   or before its report date, and cannot precede the event, i.e.
 #'   epidist time 0) — encoding the `tbl_now` convention that a censored report
-#'   is only known to lie in `[0, report_date]`.
+#'   is known only to have happened at or before its report date, so the window
+#'   is `[event_date, report_date]`.
 #'
 #' The strata, the covariate columns and any materialised temporal-effect columns
 #' (holidays, Fourier terms, calendar effects; see [compute_temporal_effects()])
@@ -1493,7 +1816,9 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'   of the censoring windows. If `NULL` (default) it is derived from the
 #'   `tbl_now` `event_units`.
 #' @param verbose Logical. Print the choices that were made.
-#' @param quiet Logical. If `TRUE`, suppress the lossy-conversion warning emitted
+#' @param quiet Logical. A *different* channel from `verbose`: `verbose`
+#'   controls the informational summary of what the conversion did, while `quiet`
+#'   suppresses the lossy-conversion **warning** emitted
 #'   by `tbl_now_to_epidist()`.
 #' @param ... Forwarded to [as_tbl_now()] (`from`) or to the relevant epidist
 #'   constructor (`to`).
@@ -1502,7 +1827,7 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'   `epidist_aggregate_data` object (`to`).
 #'
 #' @examplesIf requireNamespace("epidist", quietly = TRUE)
-#' # --- Linelist epidist data (one row per case) ---
+#' ## --- Linelist epidist data (one row per case) ---
 #' ll <- epidist::as_epidist_linelist_data(
 #'   data.frame(
 #'     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-02")),
@@ -1516,7 +1841,7 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' # ... and back to an epidist_linelist_data
 #' tbl_now_to_epidist(nowll)
 #'
-#' # --- Aggregate epidist data (counts in an `n` column) ---
+#' ## --- Aggregate epidist data (counts in an `n` column) ---
 #' agg <- epidist::as_epidist_aggregate_data(
 #'   data.frame(
 #'     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
@@ -1525,10 +1850,10 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'   ),
 #'   n = "n", pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
 #' )
-#' # -> a count-incidence tbl_now (case_count = "n") ...
+#' ## -> a count-incidence tbl_now (case_count = "n") ...
 #' nowagg <- tbl_now_from_epidist(agg)
 #' get_data_type(nowagg)
-#' # ... and back to an epidist_aggregate_data (auto-detected from the counts)
+#' ## ... and back to an epidist_aggregate_data (auto-detected from the counts)
 #' tbl_now_to_epidist(nowagg)
 #' @section Delays of zero, and the lognormal:
 #'
@@ -1578,6 +1903,18 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' arguments against a 9-argument signature). The latent model is unaffected but
 #' expands counts to **one row per case**, so it is only practical on a short
 #' window. Check the epidist issue tracker for the current status.
+#'
+#' @seealso
+#' [confirmation_setters] and [confirmation_delay], since \pkg{epidist} is about
+#' delay distributions and a `tbl_now` may carry two of them;
+#' [censor_delays_above()] for the long delays that would otherwise dominate a
+#' fitted distribution;
+#' [tidy()][tidy.epidist_fit] for the fitted result.
+#' [as_tbl_now()] for the generic that dispatches to the `*_from_*()` side;
+#' [run_nowcast()], which does the conversion for you when you fit through an
+#' [engine()]. The
+#' [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' fits the same data with every supported package.
 #'
 #' @name tbl_now_epidist
 #' @export
@@ -1641,10 +1978,16 @@ tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
   is_censored_col <- NULL
   if (secondary_upper %in% colnames(observations) &&
       primary_upper %in% colnames(observations)) {
-    origin <- min(observations[[primary]], na.rm = TRUE)
     window <- as.numeric(observations[[primary_upper]] - observations[[primary]])
     gap    <- as.numeric(observations[[secondary_upper]] - observations[[secondary]])
-    censored <- (observations[[secondary]] == origin) & (gap > window)
+    # A censored row's secondary window starts at its OWN primary event -- the
+    # earliest a report could have happened -- and runs to the report date, so
+    # it is wider than one observation period. An uncensored row's window is
+    # `[report, report + window)`, which starts later than the event unless the
+    # report landed on the event date itself; that one case is genuinely
+    # ambiguous and is read as uncensored.
+    censored <- (observations[[secondary]] == observations[[primary]]) &
+      (gap > window)
     censored[is.na(censored)] <- FALSE
     if (any(censored)) {
       observations[[secondary]][censored] <- observations[[secondary_upper]][censored]
@@ -1692,9 +2035,13 @@ tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
 #'
 #' @param data A `tbl_ts` (tsibble).
 #' @param x A `tbl_now` object.
-#' @param event_date Column name of the event date (for `from`); defaults to the
+#' @param event_date The event-date column (for `from`), as a
+#'   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#'   expression -- a bare column name or a string. Defaults to the
 #'   tsibble index.
-#' @param report_date Column name of the report date (required for `from`).
+#' @param report_date The report-date column (required for `from`), as a
+#'   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#'   expression -- a bare column name or a string.
 #' @param strata Optional character vector of strata columns (`from`). If `NULL`
 #'   (default) the tsibble key columns other than the date columns are used.
 #' @param index For `to`: which date becomes the tsibble index, `"event_date"`
@@ -1715,13 +2062,39 @@ tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
 #' ts   <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
 #' back <- tbl_now_from_tsibble(ts, report_date = "report_week", verbose = FALSE)
 #' @inheritSection tbl_now_baselinenowcast Censored delays
+#' @seealso
+#' [as_tsibble()][tbl_now_coercion_methods], the \pkg{tsibble} method that calls
+#' this; [to_count()], since a tsibble needs unique index/key rows and a line list
+#' has to be aggregated first; [align_weeks()] for regular weekly indexes.
+#' [as_tbl_now()] for the generic that dispatches to the `*_from_*()` side;
+#' [run_nowcast()], which does the conversion for you when you fit through an
+#' [engine()]. The
+#' [*One dataset, many nowcasts* article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+#' fits the same data with every supported package.
+#'
 #' @name tbl_now_tsibble
 #' @export
 tbl_now_from_tsibble <- function(data, report_date, event_date = NULL,
                                  strata = NULL, ..., verbose = TRUE) {
   .need_pkg("tsibble")
-  if (missing(report_date) || is.null(report_date)) {
+  if (missing(report_date)) {
     cli::cli_abort("Please supply the {.arg report_date} column name.")
+  }
+
+  # Resolved with tidy-select so a bare column name works here as it does in
+  # `tbl_now()`. Strings keep working, because tidy-select accepts them.
+  report_date <- .converter_select_one(
+    rlang::enquo(report_date), as.data.frame(data), "report_date"
+  )
+  event_quo <- rlang::enquo(event_date)
+  if (!rlang::quo_is_null(event_quo)) {
+    event_date <- .converter_select_one(
+      event_quo, as.data.frame(data), "event_date"
+    )
+  }
+  strata_quo <- rlang::enquo(strata)
+  if (!rlang::quo_is_null(strata_quo)) {
+    strata <- .converter_select_many(strata_quo, as.data.frame(data))
   }
 
   # `event_date` defaults to the tsibble index.
@@ -1873,6 +2246,13 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
   .assert_tbl_now(x, "tbl_now_to_epinowcast")
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_epinowcast")
   .need_pkg("epinowcast")
+  .warn_dropped_covariates(
+    x, "tbl_now_to_epinowcast",
+    advice = "{.pkg epinowcast} builds its own reference/report metadata
+              ({.val day_of_week}, {.val day}, {.val week}, {.val month}) and
+              does not carry extra columns. Use those in a module formula, e.g.
+              {.code enw_reference(~ 1 + day_of_week, data = pobs)}."
+  )
   .warn_lossy_conversion("epinowcast", quiet)
   # Warn before the cumulative coercion below: `to_count()` re-derives the grid
   # from delay 0, so afterwards the negative rows are simply not there any more.
@@ -1995,11 +2375,18 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
 #' @export
 tbl_now_to_baselinenowcast <- function(x, ...,
                                        format = c("matrix", "long", "triangle_list"),
-                                       delays_unit = NULL, complete = "auto",
+                                       delays_unit = NULL, max_delay = NULL,
+                                       complete = "auto",
                                        negatives = c("redistribute", "error"),
                                        verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_baselinenowcast")
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_baselinenowcast")
+  # A reporting triangle has ONE slot per (event, report) cell, so a column the
+  # object was never told about -- `sex` in `covid_colombia` -- leaves two rows
+  # per cell and the conversion fails outright. Pool it here rather than making
+  # the caller aggregate first.
+  x <- .pool_undeclared(x, "tbl_now_to_baselinenowcast", verbose = verbose)
+  x <- .cap_max_delay(x, max_delay, "tbl_now_to_baselinenowcast", verbose = verbose)
   format <- match.arg(format)
   negatives <- match.arg(negatives)
 
@@ -2095,6 +2482,15 @@ tbl_now_to_baselinenowcast <- function(x, ...,
   # triangle, which has one slot per cell and nowhere to record a delay that is
   # only an upper bound, so `.tbl_now_collapse_censoring()` has already summed
   # the counts over it.
+  if (!identical(format, "long")) {
+    .warn_dropped_covariates(
+      x, "tbl_now_to_baselinenowcast",
+      advice = "A reporting triangle has only (event date, delay) cells, with
+                nowhere to put a covariate. {.code format = \"long\"} keeps them
+                as columns."
+    )
+  }
+
   extra_cols <- if (format == "long") {
     c(strata_cols, covariate_cols, temporal_cols)
   } else if (format == "triangle_list") {
@@ -2167,7 +2563,7 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 
     # Split into one group per observed strata combination. With no strata the
     # result is still a list -- of length one, named "all" (the same convention
-    # `test_delay_drift()` uses) -- so the return type never depends on whether
+    # `diagnose_drift()` uses) -- so the return type never depends on whether
     # strata happen to be attached.
     if (length(strata_cols) > 0) {
       strata_frame <- as.data.frame(long_data)[, strata_cols, drop = FALSE]
@@ -2301,7 +2697,10 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #' @param report_dates For `from`: a `Date` vector, one per snapshot, saying when
 #'   each was taken. Read from the object's attribute when it has one.
 #' @param verbose Logical. Print the choices that were made.
-#' @param quiet Logical. If `TRUE`, suppress the lossy-conversion warning.
+#' @param quiet Logical. A *different* channel from `verbose`: `verbose`
+#'   controls the informational summary of what the conversion did, while `quiet`
+#'   suppresses the lossy-conversion warning. Set both to keep a conversion
+#'   entirely silent.
 #' @param ... Forwarded to [as_tbl_now()] (`from`); unused (`to`).
 #'
 #' @return For `to`, a `data.frame` or a [tbl_now_epinow2_snapshots], according to
@@ -2340,11 +2739,11 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #' nowobj <- tbl_now(denguedat[1:2000, ],
 #'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 #' )
-#' # A single daily series for estimate_infections() -- the weekly data is laid
+#' ## A single daily series for estimate_infections() -- the weekly data is laid
 #' # on EpiNow2's daily grid.
 #' head(tbl_now_to_EpiNow2(nowobj, verbose = FALSE, quiet = TRUE))
 #'
-#' # Snapshots for estimate_truncation(), which uses the report dimension.
+#' ## Snapshots for estimate_truncation(), which uses the report dimension.
 #' snaps <- tbl_now_to_EpiNow2(nowobj,
 #'   target = "estimate_truncation", verbose = FALSE, quiet = TRUE
 #' )
@@ -2376,6 +2775,14 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
   if (target == "estimate_dist") {
     return(.epinow2_dist_data(x, verbose = verbose))
   }
+
+  .warn_dropped_covariates(
+    x, "tbl_now_to_EpiNow2",
+    advice = "The series targets are {.val date}/{.val confirm} only.
+              {.fn EpiNow2::estimate_infections} takes its covariate-like
+              structure through {.arg gp}, {.arg rt} and {.arg obs}, not through
+              columns."
+  )
 
   .epinow2_series_data(
     x, target = target, snapshots = snapshots, accumulate = accumulate,
@@ -2670,6 +3077,25 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 #'
 #' @seealso [tbl_now_to_EpiNow2()], [as_tbl_now()]
 #'
+#' @examplesIf requireNamespace("EpiNow2", quietly = TRUE)
+#' data(denguedat)
+#' dengue <- tbl_now(denguedat[1:3000, ],
+#'   event_date = onset_week, report_date = report_week, verbose = FALSE
+#' )
+#'
+#' # A stack of snapshots: what the series looked like at each of several past
+#' ## report dates. EpiNow2::estimate_truncation() uses these to learn how much
+#' # the most recent counts are still going to grow.
+#' snaps <- tbl_now_to_EpiNow2(dengue,
+#'   target = "estimate_truncation", verbose = FALSE, quiet = TRUE
+#' )
+#'
+#' # Printing summarises the stack rather than dumping every snapshot.
+#' snaps
+#'
+#' length(snaps)
+#' head(snaps[[1]])
+#'
 #' @name tbl_now_epinow2_snapshots
 NULL
 
@@ -2800,12 +3226,23 @@ as_tbl_now.tbl_now_epinow2_snapshots <- function(object, ...) {
   event_col  <- attr(object, "event_col")
   report_col <- attr(object, "report_col")
 
-  result <- tbl_now_from_EpiNow2(object, ..., verbose = FALSE)
+  # `verbose` goes through `dots`, not alongside `...`: passing both makes
+  # `as_tbl_now(x, verbose = FALSE)` fail with "formal argument 'verbose'
+  # matched by multiple actual arguments". Quiet by default, but the caller
+  # still wins.
+  dots <- list(...)
+  if (is.null(dots$verbose)) dots$verbose <- FALSE
+  result <- do.call(tbl_now_from_EpiNow2, c(list(object), dots))
 
   # Back to the caller's own column names.
   out <- dplyr::as_tibble(result)
   names(out)[names(out) == "reference_date"] <- event_col
   names(out)[names(out) == "report_date"]    <- report_col
+
+  # Same trap again, and this is the one that actually bit: `verbose` fixed in
+  # the list AND present in `list(...)`.
+  rebuild <- dots
+  if (is.null(rebuild$now)) rebuild$now <- attr(object, "now")
 
   do.call(
     tbl_now,
@@ -2815,11 +3252,9 @@ as_tbl_now.tbl_now_epinow2_snapshots <- function(object, ...) {
         event_date  = event_col,
         report_date = report_col,
         case_count  = "count",
-        data_type   = "count-incidence",
-        now         = attr(object, "now"),
-        verbose     = FALSE
+        data_type   = "count-incidence"
       ),
-      list(...)
+      rebuild
     )
   )
 }
@@ -3014,6 +3449,10 @@ tbl_now_to_epidist <- function(x, ...,
 tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
                                verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_tsibble")
+  # A `tsibble` is invalid unless (key, index) is unique, and an undeclared
+  # column puts two rows in the same slot. Pool it away, as the other converters
+  # now do.
+  x <- .pool_undeclared(x, "tbl_now_to_tsibble", verbose = verbose)
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_tsibble")
   .need_pkg("tsibble")
   index <- match.arg(index)
@@ -3149,11 +3588,36 @@ tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
 #' @param x A `tbl_now`.
 #' @param event_col,report_col Names the two date columns should take in the
 #'   result. The defaults match the arguments of [NobBS::NobBS()].
+#' @param strata_col Name of the single stratifying column to add, holding every
+#'   declared stratum pasted together. This is what [NobBS::NobBS.strat()]'s own
+#'   `strata` argument takes. `NULL` leaves it out. Ignored when the object
+#'   declares no strata.
+#' @param strata_sep Separator used to paste the strata into `strata_col`.
 #' @param verbose Print what the conversion did. The `units` line prints the
 #'   string [NobBS::NobBS()] itself accepts (`"1 day"` or `"1 week"`), not the
 #'   object's own `"days"` / `"weeks"`, so it can be pasted straight into the
 #'   call.
 #' @param ... Unused, for extensibility.
+#'
+#' @section Stratified nowcasts:
+#'
+#' [NobBS::NobBS.strat()] fits one nowcast per stratum, and its `strata`
+#' argument names **one** column. A `tbl_now` may declare several -- age group
+#' and region, say -- and "nowcast each age-group-and-region separately" is a
+#' single stratum as far as NobBS is concerned. So the declared columns are also
+#' pasted into one `strata` column, which you hand straight to `NobBS.strat()`:
+#'
+#' ```r
+#' nb <- tbl_now_to_nobbs(x, verbose = FALSE)
+#' NobBS::NobBS.strat(nb, now = get_now(x), units = "1 day",
+#'                    onset_date = "onset_date", report_date = "report_date",
+#'                    strata = "strata")
+#' ```
+#'
+#' The original columns are kept alongside it, so a hand-rolled per-stratum loop
+#' can still split on them. Choose a separator your stratum values do not
+#' contain: `run_nowcast()` splits the label back into the original columns when
+#' it tidies the fit.
 #'
 #' @section Units NobBS can model:
 #'
@@ -3165,8 +3629,8 @@ tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
 #' dates. Aggregate to days or weeks first (see [align_weeks()]).
 #'
 #' @returns A `data.frame` with one row per case, ready for [NobBS::NobBS()].
-#'   The strata, covariates and temporal-effect columns ride along so a
-#'   per-stratum loop can split on them.
+#'   The strata, covariates and temporal-effect columns ride along, plus the
+#'   single pasted `strata_col` that [NobBS::NobBS.strat()] takes.
 #'
 #' @seealso [tbl_now_to_surveillance()], [tbl_now_to_epinowcast()]
 #'
@@ -3181,7 +3645,9 @@ tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
 #' @name tbl_now_nobbs
 #' @export
 tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
-                             report_col = "report_date", verbose = TRUE) {
+                             report_col = "report_date",
+                             strata_col = "strata", strata_sep = " | ",
+                             verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_nobbs")
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_nobbs")
 
@@ -3214,12 +3680,26 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
   linelist[[event_col]]  <- as.Date(linelist[[event_col]])
   linelist[[report_col]] <- as.Date(linelist[[report_col]])
 
+  # `NobBS.strat()` takes ONE column name, so the declared strata are pasted
+  # into one here rather than left for the caller to work out. The originals
+  # stay put: a hand-rolled per-stratum loop still wants them.
+  stratified <- length(strata_cols) > 0 && !is.null(strata_col)
+  linelist <- .add_strata_column(
+    linelist, strata_cols, strata_col, strata_sep, "tbl_now_to_nobbs"
+  )
+
   if (verbose) {
     cli::cli_h3("Converting {.cls tbl_now} into a {.pkg NobBS} line list")
     cli::cli_ul()
     cli::cli_li("{.arg onset_date} <- {.val {event_col}}")
     cli::cli_li("{.arg report_date} <- {.val {report_col}}")
     cli::cli_li("{.arg units} <- {.val {nobbs_units}}")
+    if (stratified) {
+      cli::cli_li(
+        "{.arg strata} <- {.val {strata_col}} \\
+         ({.val {strata_cols}}, {.val {strata_sep}}-separated)"
+      )
+    }
     cli::cli_li("rows (one per case): {.val {nrow(linelist)}}")
     cli::cli_end()
   }
@@ -3238,6 +3718,11 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #' exactly that data frame, renaming the two dates to \pkg{surveillance}'s own
 #' defaults so the result can be passed straight through.
 #'
+#' With `format = "linelist_list"` it returns **one line list per stratum** as a
+#' [tbl_now_surveillance_list], ready to `lapply()` over --
+#' [surveillance::nowcast()] has no strata argument, so a stratified analysis is
+#' one fit per stratum and this saves splitting by hand.
+#'
 #' With `format = "sts"` it instead returns the observed epidemic curve as an
 #' [surveillance::sts] object via [surveillance::linelist2sts()], which is what
 #' \pkg{surveillance}'s plotting and outbreak-detection verbs consume.
@@ -3250,9 +3735,15 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #'   in the result. Default to \pkg{surveillance}'s own `"dHospital"` and
 #'   `"dReport"`, so [surveillance::nowcast()] finds them without further
 #'   arguments.
-#' @param format `"linelist"` (default) for the data frame
-#'   [surveillance::nowcast()] expects, or `"sts"` for an
-#'   [surveillance::sts] object of the observed curve.
+#' @param format One of
+#'   * `"linelist"` (default) -- the single data frame
+#'     [surveillance::nowcast()] expects;
+#'   * `"linelist_list"` -- one line list **per stratum**, as a
+#'     [tbl_now_surveillance_list]. Still a plain list, so it goes straight into
+#'     `lapply()`; length one and named `"all"` when the object declares no
+#'     strata, so the return type does not depend on whether strata happen to be
+#'     attached;
+#'   * `"sts"` -- an [surveillance::sts] object of the observed curve.
 #' @param aggregate_by Aggregation interval, e.g. `"1 week"`. `NULL` (default)
 #'   derives it from the object's event units (`"days"` -> `"1 day"`, `"weeks"`
 #'   -> `"1 week"`, `"months"` -> `"1 month"`, `"years"` -> `"1 year"`), and
@@ -3260,14 +3751,19 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #'   calendar dates [surveillance::linelist2sts()] needs. Pass a value
 #'   explicitly to override, including on a numeric grid if you know what the
 #'   index steps mean.
+#' @param strata_col Name of a single column to add, holding every declared
+#'   stratum pasted together, for splitting the line list into one fit per
+#'   stratum. `NULL` leaves it out. Ignored when the object declares no strata.
+#' @param strata_sep Separator used to paste the strata into `strata_col`.
 #' @param verbose Logical. Print the choices that were made.
 #' @param ... Forwarded to [surveillance::linelist2sts()] when
 #'   `format = "sts"`; ignored otherwise.
 #'
-#' @return A `data.frame` line list (`format = "linelist"`) or an
+#' @return A `data.frame` line list (`format = "linelist"`), a
+#'   [tbl_now_surveillance_list] (`format = "linelist_list"`) or an
 #'   [surveillance::sts] object (`format = "sts"`).
 #'
-#' @seealso [tbl_now_to_epinowcast()]
+#' @seealso [tbl_now_to_epinowcast()], [tbl_now_surveillance_list]
 #'
 #' @examplesIf requireNamespace("surveillance", quietly = TRUE)
 #' data(denguedat)
@@ -3282,6 +3778,32 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #'
 #' @inheritSection tbl_now_baselinenowcast Censored delays
 
+#' @section Stratified nowcasts:
+#'
+#' [surveillance::nowcast()] models one series and has no strata argument, so a
+#' stratified analysis means fitting each stratum separately.
+#' `format = "linelist_list"` does the splitting, so the fit is an `lapply()`:
+#'
+#' ```r
+#' pieces <- tbl_now_to_surveillance(x, format = "linelist_list", verbose = FALSE)
+#' fits <- lapply(pieces, function(piece) {
+#'   surveillance::nowcast(
+#'     now = get_now(x), when = get_surveillance_when(x),
+#'     data = piece, dEventCol = "dHospital", dReportCol = "dReport",
+#'     control = list(dRange = get_surveillance_range(x))
+#'   )
+#' })
+#' ```
+#'
+#' The `control$dRange` comes from the **whole object**, not from the piece:
+#' every stratum has to be laid on the same time axis, or a stratum whose first
+#' case arrived late starts its own time on a different day.
+#'
+#' The default `format = "linelist"` keeps the same information in one frame:
+#' the declared strata are pasted into a single `strata` column, so
+#' `split(sur, sur$strata)` reproduces the list. The original columns are kept
+#' alongside it, so you can split on them instead.
+#'
 #' @section Cost of expanding counts:
 #'
 #' \pkg{surveillance} counts rows, so `count-incidence` input is expanded to one
@@ -3293,8 +3815,11 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #' @export
 tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
                                     report_col = "dReport",
-                                    format = c("linelist", "sts"),
-                                    aggregate_by = NULL, verbose = TRUE) {
+                                    format = c("linelist", "linelist_list",
+                                               "sts"),
+                                    aggregate_by = NULL,
+                                    strata_col = "strata", strata_sep = " | ",
+                                    verbose = TRUE) {
   .assert_tbl_now(x, "tbl_now_to_surveillance")
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_surveillance")
   .need_pkg("surveillance")
@@ -3334,6 +3859,15 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
   linelist[[event_col]]  <- as.Date(linelist[[event_col]])
   linelist[[report_col]] <- as.Date(linelist[[report_col]])
 
+  # `surveillance::nowcast()` has no strata argument at all: a stratified
+  # analysis means splitting the line list and fitting each piece. One column
+  # holding the whole combination is what `split()` wants, so it is built here
+  # rather than left to the caller.
+  stratified <- length(strata_cols) > 0 && !is.null(strata_col)
+  linelist <- .add_strata_column(
+    linelist, strata_cols, strata_col, strata_sep, "tbl_now_to_surveillance"
+  )
+
   if (verbose) {
     cli::cli_h3("Converting {.cls tbl_now} into a {.pkg surveillance} line list")
     cli::cli_ul()
@@ -3341,6 +3875,12 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
     cli::cli_li("{.arg dReportCol} <- {.val {report_col}}")
     cli::cli_li("{.arg aggregate.by} <- {.val {aggregate_by}}")
     cli::cli_li("{.arg now} <- {.val {as.character(get_now(x))}}")
+    if (stratified) {
+      cli::cli_li(
+        "{.field {strata_col}} <- {.val {strata_cols}}, \\
+         {.val {strata_sep}}-separated (split on it for a fit per stratum)"
+      )
+    }
     cli::cli_end()
   }
 
@@ -3350,11 +3890,185 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
     ))
   }
 
+  if (format == "linelist_list") {
+    # Split on the strata VALUES rather than on `strata_col`: that column is
+    # optional (`strata_col = NULL` drops it) and the list has to come out the
+    # same either way. With no strata the labels are all "all", so the result is
+    # still a LIST -- of length one -- and the return type never depends on
+    # whether strata happen to be attached.
+    labels <- .paste_strata_labels(
+      linelist, strata_cols, sep = strata_sep, fn = "tbl_now_to_surveillance()"
+    )
+    pieces <- lapply(
+      split(seq_len(nrow(linelist)), labels),
+      function(rows) {
+        piece <- linelist[rows, , drop = FALSE]
+        rownames(piece) <- NULL
+        piece
+      }
+    )
+    return(structure(
+      pieces,
+      class             = "tbl_now_surveillance_list",
+      strata_cols       = strata_cols,
+      covariate_cols    = covariate_cols,
+      strata_sep        = strata_sep,
+      # The pasted label column, when there is one. `as_tbl_now()` drops it: it
+      # is derived from `strata_cols`, which are still there.
+      strata_col        = if (stratified) strata_col else NULL,
+      now               = get_now(x),
+      # BOTH pairs are needed. The first says what the columns are called in the
+      # frames -- what `dEventCol`/`dReportCol` must be given; the second what
+      # they were called in the `tbl_now`, so `as_tbl_now()` can put them back.
+      event_col         = event_col,
+      report_col        = report_col,
+      source_event_col  = event_date_col,
+      source_report_col = report_date_col,
+      event_units       = get_event_units(x),
+      report_units      = get_report_units(x),
+      aggregate_by      = aggregate_by
+    ))
+  }
+
   linelist
 }
 
 
 
+
+
+#' The date grids [surveillance::nowcast()] needs
+#'
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' [surveillance::nowcast()] takes three dates and two date *grids*, and none of
+#' them have defaults you can rely on. These two helpers build the grids from the
+#' `tbl_now` itself, so the object stays the single source of truth for what
+#' "now" is and how wide a time step is:
+#'
+#' * `get_surveillance_when()` -- the dates you want **estimated**, passed as
+#'   `when`. The most recent `length` steps up to and including [get_now()].
+#' * `get_surveillance_range()` -- the **whole** time axis the model is laid on,
+#'   passed as `control$dRange`. Every step from the first event to `now`.
+#'
+#' ```r
+#' sur_fit <- surveillance::nowcast(
+#'   now  = get_now(x),
+#'   when = get_surveillance_when(x, length = 30),
+#'   data = tbl_now_to_surveillance(x, verbose = FALSE),
+#'   dEventCol = "dHospital", dReportCol = "dReport",
+#'   control = list(dRange = get_surveillance_range(x))
+#' )
+#' ```
+#'
+#' @section Why `dRange` has to be given explicitly:
+#'
+#' Left to itself, [surveillance::nowcast()] infers the time axis from the data
+#' it was handed -- and a **line list cannot express a zero**. A day on which
+#' nothing was reported has no rows, so it is not in the line list, so it is not
+#' in the inferred axis. That is exactly the situation at the `now` edge, which
+#' is the part you are nowcasting: the last few days are quiet precisely because
+#' their reports have not arrived yet, and the axis silently stops short of
+#' `now`. Passing `dRange` states the grid instead of letting it be guessed, so
+#' the quiet days at the end are modelled as zeros observed so far rather than
+#' as days that do not exist.
+#'
+#' This is also why [complete_zeroes()] is no help here: it can only add zero
+#' *counts*, and a line list has no count column to put a zero in.
+#'
+#' @param x A `tbl_now`.
+#' @param length Number of time steps to estimate, counting back from `to`. The
+#'   result has `length` elements, the last of which is `to`.
+#' @param from First date of the grid. Defaults to the earliest event date in
+#'   `x`.
+#' @param to Last date of the grid. Defaults to [get_now()].
+#' @param by Step, as a [seq.Date()] `by` string (`"1 day"`, `"1 week"`, ...).
+#'   Defaults to the object's own event units.
+#' @param ... Unused, for extensibility.
+#'
+#' @returns A `Date` vector, in increasing order.
+#'
+#' @seealso [tbl_now_to_surveillance()], [get_now()], [get_event_units()]
+#'
+#' @examplesIf requireNamespace("surveillance", quietly = TRUE)
+#' data(denguedat)
+#' nowobj <- tbl_now(denguedat,
+#'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
+#' )
+#' get_surveillance_when(nowobj, length = 4)
+#' range(get_surveillance_range(nowobj))
+#'
+#' @name surveillance_grids
+NULL
+
+#' @rdname surveillance_grids
+#' @export
+get_surveillance_when <- function(x, length = 30L, ..., to = NULL, by = NULL) {
+  .assert_tbl_now(x, "get_surveillance_when")
+  if (!is.numeric(length) || length(length) != 1L || is.na(length) ||
+        length < 1) {
+    cli::cli_abort(
+      "{.arg length} must be a single positive number, not {.val {length}}."
+    )
+  }
+  by <- by %||% .surveillance_aggregate_by(get_event_units(x))
+  to <- .surveillance_grid_date(to %||% get_now(x), "to")
+
+  # `seq()` counting BACK from `to` rather than forward from a computed start:
+  # on months the two disagree (a month is not a fixed number of days), and it
+  # is the `now` end of the grid that has to land exactly.
+  grid <- seq(to, by = paste0("-", by), length.out = as.integer(length))
+  sort(grid)
+}
+
+#' @rdname surveillance_grids
+#' @export
+get_surveillance_range <- function(x, ..., from = NULL, to = NULL, by = NULL) {
+  .assert_tbl_now(x, "get_surveillance_range")
+  by <- by %||% .surveillance_aggregate_by(get_event_units(x))
+  to <- .surveillance_grid_date(to %||% get_now(x), "to")
+
+  from <- from %||% suppressWarnings(min(x[[get_event_date(x)]], na.rm = TRUE))
+  if (!is.finite(unclass(from))) {
+    cli::cli_abort(c(
+      "{.arg x} has no non-missing event date to start the grid from.",
+      "i" = "Pass {.arg from} explicitly."
+    ))
+  }
+  from <- .surveillance_grid_date(from, "from")
+
+  if (from > to) {
+    cli::cli_abort(c(
+      "{.arg from} ({.val {as.character(from)}}) is after {.arg to} \
+       ({.val {as.character(to)}}).",
+      "i" = "{.arg to} defaults to {.fn get_now}, so this means every event \
+             date in {.arg x} sits after its own {.field now}."
+    ))
+  }
+
+  seq(from, to, by = by)
+}
+
+#' Coerce one end of a surveillance date grid, insisting on a real date
+#'
+#' @param value The value given for that end of the grid.
+#' @param argument Its argument name, for the error message.
+#'
+#' @return A length-1 `Date`.
+#'
+#' @keywords internal
+#' @noRd
+.surveillance_grid_date <- function(value, argument) {
+  if (length(value) != 1L || is.na(value)) {
+    cli::cli_abort(
+      "{.arg {argument}} must be a single non-missing date, not \
+       {.val {value}}."
+    )
+  }
+  # A numeric grid is caught upstream by `.surveillance_aggregate_by()`, so
+  # anything reaching here should already be a date.
+  as.Date(value)
+}
 
 
 # tbl_now_triangle_list ---------------------------------------------------------
@@ -3391,6 +4105,24 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
 #' @return `print()` returns `x` invisibly.
 #'
 #' @seealso [tbl_now_to_baselinenowcast()], [as_tbl_now()]
+#'
+#' @examplesIf requireNamespace("baselinenowcast", quietly = TRUE)
+#' data(denguedat)
+#' dengue <- tbl_now(denguedat[1:3000, ],
+#'   event_date = onset_week, report_date = report_week, verbose = FALSE
+#' )
+#'
+#' # One reporting triangle per stratum, in the shape baselinenowcast wants.
+#' triangles <- suppressWarnings(
+#'   tbl_now_to_baselinenowcast(dengue, format = "triangle_list", verbose = FALSE)
+#' )
+#'
+#' # Printing summarises the set rather than dumping every matrix.
+#' triangles
+#'
+#' # It is a list underneath, so the usual accessors work.
+#' length(triangles)
+#' names(triangles)
 #'
 #' @name tbl_now_triangle_list
 NULL
@@ -3457,6 +4189,9 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
 
   dots <- list(...)
   if (is.null(dots$now)) dots$now <- attr(object, "now")
+  # Same trap as `as_tbl_now.tbl_now_epinow2_snapshots()`: `verbose` must be
+  # defaulted INTO `dots`, never passed beside them.
+  if (is.null(dots$verbose)) dots$verbose <- FALSE
 
   result <- do.call(
     tbl_now,
@@ -3467,8 +4202,7 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
         report_date = report_col,
         case_count  = "count",
         data_type   = "count-incidence",
-        strata      = if (length(strata_cols) > 0) strata_cols else NULL,
-        verbose     = FALSE
+        strata      = if (length(strata_cols) > 0) strata_cols else NULL
       ),
       dots
     )
@@ -3477,6 +4211,159 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
   .drop_zero_counts(result)
 }
 
+
+# tbl_now_surveillance_list ----------------------------------------------------
+
+#' One \pkg{surveillance} line list per stratum
+#'
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' The object returned by
+#' `tbl_now_to_surveillance(x, format = "linelist_list")`: one individual-level
+#' line list per observed combination of the object's strata, together with the
+#' metadata needed to rebuild a `tbl_now` from it.
+#'
+#' It is a **thin** class -- it is still a list of plain data frames, so
+#' `lapply()`, `[[` and friends work as usual:
+#'
+#' ```r
+#' pieces <- tbl_now_to_surveillance(x, format = "linelist_list")
+#' lapply(pieces, function(piece) {
+#'   surveillance::nowcast(
+#'     now = get_now(x), when = get_surveillance_when(x),
+#'     data = piece, dEventCol = "dHospital", dReportCol = "dReport",
+#'     control = list(dRange = get_surveillance_range(x))
+#'   )
+#' })
+#' ```
+#'
+#' The class exists for the same reason [tbl_now_triangle_list] does: printing
+#' says plainly that these are strata rather than something else shaped like a
+#' list of line lists, and it carries the `now`, the units and the original
+#' date-column names, none of which survive in a bare `split()`.
+#'
+#' `now` and the time grid are deliberately **not** baked into each piece. The
+#' grid must come from the whole object ([get_surveillance_range()]), not from
+#' the piece: every stratum has to be laid on the same axis, or a stratum whose
+#' first case arrived late starts its own time on a different day.
+#'
+#' `as_tbl_now()` binds the pieces back together and restores the original
+#' date-column names, the strata and the covariates. Two things do **not**
+#' survive, because they are not in the line list to survive: count input comes
+#' back as a `"linelist"` (one row per case, so the totals are unchanged but the
+#' `case_count` column is gone), and materialised temporal-effect columns come
+#' back as ordinary columns rather than as a spec.
+#'
+#' @param x A `tbl_now_surveillance_list`.
+#' @param ... Ignored.
+#'
+#' @return `print()` returns `x` invisibly.
+#'
+#' @seealso [tbl_now_to_surveillance()], [as_tbl_now()], [tbl_now_triangle_list]
+#'
+#' @examplesIf requireNamespace("surveillance", quietly = TRUE)
+#' data(denguedat)
+#' dengue <- tbl_now(denguedat[1:3000, ],
+#'   event_date = onset_week, report_date = report_week, verbose = FALSE
+#' )
+#'
+#' ## One line list per stratum, in the shape surveillance::nowcast() wants.
+#' linelists <- tbl_now_to_surveillance(dengue,
+#'   format = "linelist_list", verbose = FALSE
+#' )
+#'
+#' # Printing summarises the set rather than dumping every data frame.
+#' linelists
+#'
+#' length(linelists)
+#' head(linelists[[1]])
+#'
+#' @name tbl_now_surveillance_list
+NULL
+
+#' @rdname tbl_now_surveillance_list
+#' @exportS3Method base::print
+print.tbl_now_surveillance_list <- function(x, ...) {
+  # NOTE: a print method must write to STDOUT. The `cli_*()` family emits
+  # *messages*, so its output disappears under `message = FALSE`, `sink()` or
+  # `capture.output()`. The `cat_*()` family is the stdout counterpart.
+  strata_cols <- attr(x, "strata_cols")
+
+  cli::cat_rule(
+    left = cli::format_inline(
+      "{length(x)} {.pkg surveillance} line list{?s} from a {.cls tbl_now}"
+    )
+  )
+  cli::cat_bullet(c(
+    if (length(strata_cols) > 0) {
+      cli::format_inline("One per stratum ({.val {strata_cols}}): {.val {names(x)}}")
+    } else {
+      cli::format_inline("No strata; a single line list named {.val all}")
+    },
+    # NB: paste0(), not cli's `\\` line continuation -- `format_inline()` does
+    # not strip those, so the backslash would be printed literally.
+    cli::format_inline(paste0(
+      "Date columns: {.val {attr(x, 'event_col')}} (event), ",
+      "{.val {attr(x, 'report_col')}} (report)"
+    )),
+    cli::format_inline("Rows each: {.val {unname(vapply(x, nrow, integer(1)))}}"),
+    cli::format_inline("Now: {.val {as.character(attr(x, 'now'))}}")
+  ))
+  cli::cat_line(cli::format_inline(paste0(
+    "{cli::symbol$info} {.fn lapply} over this, passing ",
+    "{.code control$dRange = get_surveillance_range(x)} from the WHOLE object ",
+    "so every stratum shares one time axis."
+  )))
+  invisible(x)
+}
+
+#' @rdname as_tbl_now
+#' @export
+as_tbl_now.tbl_now_surveillance_list <- function(object, ...) {
+  strata_cols    <- attr(object, "strata_cols")
+  covariate_cols <- attr(object, "covariate_cols")
+  event_col      <- attr(object, "event_col")
+  report_col     <- attr(object, "report_col")
+
+  linelist <- do.call(rbind, unname(lapply(object, as.data.frame)))
+  rownames(linelist) <- NULL
+
+  # Back to the caller's own column names. The pasted `strata` label is dropped:
+  # the strata columns it was built from are still there, and keeping both would
+  # declare a column that duplicates the others.
+  names(linelist)[match(event_col, names(linelist))]  <-
+    attr(object, "source_event_col")
+  names(linelist)[match(report_col, names(linelist))] <-
+    attr(object, "source_report_col")
+  strata_col <- attr(object, "strata_col")
+  if (!is.null(strata_col) && !strata_col %in% strata_cols) {
+    linelist <- linelist[, setdiff(names(linelist), strata_col), drop = FALSE]
+  }
+
+  dots <- list(...)
+  # Same trap as `as_tbl_now.tbl_now_triangle_list()`: `verbose` and the rest
+  # must be defaulted INTO `dots`, never passed beside them, or a caller who
+  # supplies one gets a duplicated formal.
+  if (is.null(dots$now)) dots$now <- attr(object, "now")
+  if (is.null(dots$verbose)) dots$verbose <- FALSE
+  if (is.null(dots$event_units)) dots$event_units <- attr(object, "event_units")
+  if (is.null(dots$report_units)) dots$report_units <- attr(object, "report_units")
+
+  do.call(
+    tbl_now,
+    c(
+      list(
+        linelist,
+        event_date  = attr(object, "source_event_col"),
+        report_date = attr(object, "source_report_col"),
+        data_type   = "linelist",
+        strata      = if (length(strata_cols) > 0) strata_cols else NULL,
+        covariates  = if (length(covariate_cols) > 0) covariate_cols else NULL
+      ),
+      dots
+    )
+  )
+}
 
 
 # 4. S3 methods on other packages' coercion generics------
@@ -3510,6 +4397,32 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
 #'
 #' @return The object produced by the corresponding `tbl_now_to_*()` converter.
 #'
+#' @seealso
+#' The `tbl_now_to_*()` functions these delegate to, which take the arguments:
+#' [tbl_now_to_epinowcast()], [tbl_now_to_baselinenowcast()],
+#' [tbl_now_to_epidist()], [tbl_now_to_tsibble()], [tbl_now_to_data_table()];
+#' [as_tbl_now()] to come back the other way;
+#' [as_tibble()][as_tibble.tbl_now] to drop to a plain tibble.
+#'
+#' @examples
+#' data(denguedat)
+#' dengue <- tbl_now(denguedat[1:3000, ],
+#'   event_date = onset_week, report_date = report_week, verbose = FALSE
+#' )
+#'
+#' # These are S3 methods, so the other package's own verb works directly on a
+#' # `tbl_now` -- no explicit converter call needed.
+#' if (requireNamespace("tsibble", quietly = TRUE)) {
+#'   suppressWarnings(tsibble::as_tsibble(dengue))
+#' }
+#'
+#' if (requireNamespace("data.table", quietly = TRUE)) {
+#'   head(data.table::as.data.table(dengue))
+#' }
+#'
+#' ## Use the `tbl_now_to_*()` function itself when you need its arguments; these
+#' # methods take none beyond `verbose`.
+#'
 #' @name tbl_now_coercion_methods
 NULL
 
@@ -3541,4 +4454,45 @@ as_tsibble.tbl_now <- function(x, ..., verbose = FALSE) {
 #' @exportS3Method data.table::as.data.table
 as.data.table.tbl_now <- function(x, ..., verbose = FALSE) {
   tbl_now_to_data_table(x, ..., verbose = verbose)
+}
+
+#' Resolve one tidy-select column name inside a converter
+#'
+#' The `tbl_now_from_*()` converters historically took character strings while
+#' `tbl_now()` took tidy-select. These two helpers close that gap: a bare column
+#' name, a string, or a tidy-select helper all resolve to a single column name.
+#'
+#' @param quo A quosure captured with [rlang::enquo()].
+#' @param data The data frame to resolve against.
+#' @param arg Name of the argument, for the error message.
+#'
+#' @return A single column name.
+#'
+#' @keywords internal
+#' @noRd
+.converter_select_one <- function(quo, data, arg) {
+  selected <- .tbl_now_eval_select(quo, data)
+  if (length(selected) != 1) {
+    cli::cli_abort(
+      "{.arg {arg}} must select exactly one column; it selected {length(selected)}."
+    )
+  }
+  colnames(data)[selected]
+}
+
+#' Resolve several tidy-select column names inside a converter
+#'
+#' @param quo A quosure captured with [rlang::enquo()].
+#' @param data The data frame to resolve against.
+#'
+#' @return A character vector of column names, possibly empty.
+#'
+#' @keywords internal
+#' @noRd
+.converter_select_many <- function(quo, data) {
+  selected <- .tbl_now_eval_select(quo, data)
+  if (length(selected) == 0) {
+    return(NULL)
+  }
+  colnames(data)[selected]
 }

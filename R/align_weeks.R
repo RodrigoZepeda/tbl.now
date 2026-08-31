@@ -1,82 +1,129 @@
-#' Align weeks to a common weekday
-#'
+#' Put weekly data on a common weekday
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
-#' Aligns all dates in either a `data.frame` or a `tbl.now` so that week
-#' boundaries occur on a specified day of the week. This is useful in the
-#' context of nowcasting for cases when weekly reports are changed from say
-#' Wednesday to Thursday so that delays don't have a decimal point.
+#' Weekly surveillance data is rarely as tidy as it looks. The same series may be
+#' stamped with a Wednesday one year and a Thursday the next, or event dates may
+#' fall on a Sunday while reports fall on a Saturday. When that happens the delay
+#' between the two stops being a whole number of weeks -- you get delays of 2.86
+#' weeks -- and most nowcasting models, which count in whole periods, either
+#' refuse the data or quietly round it.
+#'
+#' `align_weeks()` snaps every date to the same weekday, so week differences come
+#' out as integers. `week_2_date()` solves the neighbouring problem: you have
+#' epiweek (or ISO week) *numbers* rather than dates, and need real dates to build
+#' a `tbl_now` from.
 #'
 #' @details
-#' In some cases, to calculate the delay of information, what matters is the
-#' week distance (reports from week 3 in week 7) and not the specific date distance
-#' (reports from Saturday of week 3 vs Monday in week 7). The `align_weeks`
-#' function ensures that all week reports are aligned to the same day of the week
-#' (if applied to a `tbl_now`) or
+#' Applied to a `data.frame`, `align_weeks()` adds an aligned copy of the column
+#' you name. Applied to a `tbl_now`, it aligns the event and report dates
+#' together and recomputes the delay, so the object stays coherent.
 #'
+#' Epi weeks and ISO weeks disagree about where a year starts, so `type` picks
+#' which convention to use: `"epi"` uses [lubridate::epiweek()] /
+#' [lubridate::epiyear()], `"iso"` uses [lubridate::isoweek()] /
+#' [lubridate::isoyear()].
 #'
-#' @note
-#' This is also useful when working with epiweeks
-#' or isoweeks where week boundaries may differ between systems or years
+#' @param .data A `data.frame`, tibble or `tbl_now`.
 #'
-#' @param .data A `data.frame` or tibble.
+#' @param align_on_day Integer 1-7 giving the weekday to align to, in ISO
+#' numbering: **1 = Monday**, 2 = Tuesday, ..., **7 = Sunday**. This is
+#' [lubridate::wday()] with `week_start = 1`, the same convention
+#' [is_weekday()] uses. Defaults to `7` (Sunday), the start of an
+#' epidemiological week.
 #'
-#' @param align_on_day Integer 1–7 indicating the weekday to align to.
-#' Uses [lubridate::wday()] numbering (1 = Sunday, 7 = Saturday).
+#' @param type Either `"epi"` (default) or `"iso"`, choosing whether week and
+#'   year are read with [lubridate::epiweek()] or [lubridate::isoweek()].
 #'
-#' @param type Either `"epi"` (default) or `"iso"`. Determines
-#'   which week/year functions to use whether [lubridate::epiweek()] or
-#'   [lubridate::isoweek()]
+#' @param ... Additional arguments passed to methods.
 #'
-#' @param ... Additional arguments to pass to function
+#' @param date_col For the `data.frame` method, the
+#' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#' column holding the dates to align.
 #'
-#' @param date_col A [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) column
-#' name containing dates.
+#' @param new_date_col Name for the aligned column. Defaults to
+#' `\{date_col\}_aligned`.
 #'
-#' @param new_date_col Name of the new aligned date column to be created. By default
-#' it creates a column named `\{date_col\}_aligned` where `date_col` corresponds
-#' to the column name passed to that parameter.
+#' @param week_col,year_col For `week_2_date()`, the
+#' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#' columns holding the week number and the year.
 #'
-#' @return A tibble identical to `.data` but with an added aligned date column.
+#' @param week_fun,year_fun For `week_2_date()`, the functions defining the week
+#' convention: [lubridate::epiweek()]/[lubridate::epiyear()] (the default) or
+#' [lubridate::isoweek()]/[lubridate::isoyear()].
+#'
+#' @param date_col_name For `week_2_date()`, the name of the date column to
+#' create.
+#'
+#' @return
+#' `align_weeks()` returns its input with an aligned date column added
+#' (`data.frame` method), or a `tbl_now` whose dates have been aligned and whose
+#' `.delay` has been recomputed.
+#'
+#' `week_2_date()` returns the input `data.frame` with a new date column
+#' appended.
+#'
+#' @note Useful whenever week boundaries differ between systems or between years,
+#' which is the normal state of affairs for epiweek and ISO week data.
+#'
+#' @seealso
+#' [tbl_now()], whose `align_weeks = TRUE` argument does this at construction
+#' time; [is_weekday()], which numbers weekdays the same way;
+#' [complete_zeroes()] for filling the weeks where nothing was reported;
+#' [temporal_effects()] for using week-of-year as a model term.
 #'
 #' @examples
-#' # DATA.FRAMES:
-#' # The function aligns weekly data to be "reported" on the same day of the week
-#' df <- data.frame(
-#'   date = as.Date(c("2020-10-31", "2022-11-07", "2022-11-13"))
-#' )
+#' ## ---- Plain data frames ------------------------------------------------
 #'
-#' # Align to Sundays
-#' align_weeks(df, date_col = date)
+#' # Three dates falling on different weekdays.
+#' df <- data.frame(date = as.Date(c("2022-11-02", "2022-11-07", "2022-11-13")))
+#' weekdays(df$date)
 #'
-#' # Align to Tuesday
-#' align_weeks(df, date_col = date, align_on_day = 3)
+#' # Snap them all back to the Sunday that starts their week.
+#' aligned <- align_weeks(df, date_col = date)
+#' aligned
+#' weekdays(aligned$date_aligned)
 #'
-#' ## TBL_NOWS
-#' # If not used you can see the delay has decimal points because
-#' # reports (`as_of`) are sometimes on Saturday and sometimes Wednesday
+#' # Or to Tuesday. Weekday numbers are ISO: 1 = Monday, so Tuesday is 2.
+#' align_weeks(df, date_col = date, align_on_day = 2)
+#'
+#' ## ---- A tbl_now: making the delays whole numbers -------------------------
+#'
 #' data(flusight)
 #'
-#' # Get the table
-#' flutbl <- tbl_now(flusight,
+#' # One state is enough to see the problem.
+#' texas <- flusight[flusight$location_name == "Texas", ]
+#' flutbl <- tbl_now(texas,
 #'   event_date = "target_end_date",
-#'   report_date = "as_of", case_col = "observation",
-#'   strata = c("location_name")
+#'   report_date = "as_of", case_count = "observation",
+#'   strata = "location_name", verbose = FALSE
 #' )
 #'
-#' # See that some delays have decimals
-#' suppressWarnings(as.numeric(flutbl[413484, ".delay"]))
+#' # `as_of` is sometimes a Saturday and sometimes a Wednesday, so some delays
+#' # land between whole weeks.
+#' mean(flutbl$.delay != round(flutbl$.delay))
 #'
-#' # Align the weeks so that they all start on Sunday
-#' flutbl <- flutbl |> align_weeks()
+#' # After aligning, every delay is a whole number of weeks.
+#' flutbl <- align_weeks(flutbl)
+#' mean(flutbl$.delay != round(flutbl$.delay))
 #'
-#' # Delayed decimals are now integer as all weeks start in Sunday!
-#' suppressWarnings(as.numeric(flutbl[413484, ".delay"]))
+#' ## ---- Week numbers instead of dates --------------------------------------
+#'
+#' # Data reported as "week 1 of 2024" and so on, with no usable date column.
+#' df <- data.frame(
+#'   epidemiological_week = 1:5,
+#'   epidemiological_year = rep(2024, 5)
+#' )
+#'
+#' ## week_2_date() turns those into the Sunday that starts each epiweek.
+#' week_2_date(df,
+#'   week_col = epidemiological_week,
+#'   year_col = epidemiological_year
+#' )
 #'
 #' @name align_weeks
 #' @export
-align_weeks <- function(.data, align_on_day = 1, type = "epi", ...) {
+align_weeks <- function(.data, align_on_day = 7, type = "epi", ...) {
   UseMethod("align_weeks")
 }
 
@@ -84,7 +131,7 @@ align_weeks <- function(.data, align_on_day = 1, type = "epi", ...) {
 #' @export
 #' @rdname align_weeks
 align_weeks.data.frame <- function(.data,
-                                   align_on_day = 1,
+                                   align_on_day = 7,
                                    type = "epi",
                                    ...,
                                    date_col,
@@ -129,13 +176,25 @@ align_weeks.data.frame <- function(.data,
 
 #' @export
 #' @rdname align_weeks
-align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
+align_weeks.tbl_now <- function(.data, align_on_day = 7, type = "epi", ...) {
   event_col <- get_event_date(.data)
   report_col <- get_report_date(.data)
+  # The THIRD date has to be aligned too. Left on its own weekday grid the
+  # confirmation delay comes out fractional -- the same trap `.delay` has, and
+  # the reason this function exists.
+  confirmation_col <- get_confirmation_date(.data)
 
   .data <- .data |>
     align_weeks.data.frame(date_col = event_col, align_on_day = align_on_day, type = type, new_date_col = paste0("temp_", event_col)) |>
     align_weeks.data.frame(date_col = report_col, align_on_day = align_on_day, type = type, new_date_col = paste0("temp_", report_col))
+
+  if (!is.null(confirmation_col)) {
+    .data <- align_weeks.data.frame(
+      .data,
+      date_col = confirmation_col, align_on_day = align_on_day, type = type,
+      new_date_col = paste0("temp_", confirmation_col)
+    )
+  }
 
   # Throws the warning that its forcing conversion to tibble which we don't need
   suppressWarnings({
@@ -143,7 +202,10 @@ align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
       dplyr::select(
         -!!as.symbol(event_col), -!!as.symbol(report_col), -!!as.symbol(".delay"),
         -!!as.symbol(".event_num"), -!!as.symbol(".report_num")
-      )
+      ) |>
+      dplyr::select(-dplyr::any_of(c(
+        confirmation_col, ".confirmation_num", ".confirmation_delay"
+      )))
   })
 
   # Recalculate the now:
@@ -154,10 +216,34 @@ align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
   ) |>
     dplyr::pull(!!as.symbol("new_now"))
 
-  result <- .data |>
+  renamed <- .data |>
     dplyr::rename(!!as.symbol(event_col) := !!as.symbol(paste0("temp_", event_col))) |>
-    dplyr::rename(!!as.symbol(report_col) := !!as.symbol(paste0("temp_", report_col))) |>
-    as_tbl_now(
+    dplyr::rename(!!as.symbol(report_col) := !!as.symbol(paste0("temp_", report_col)))
+  if (!is.null(confirmation_col)) {
+    renamed <- dplyr::rename(
+      renamed,
+      !!as.symbol(confirmation_col) := !!as.symbol(paste0("temp_", confirmation_col))
+    )
+  }
+
+  confirmation_args <- if (is.null(confirmation_col)) {
+    list()
+  } else {
+    type_col <- get_confirmation_type(.data)
+    list(
+      confirmation_date = confirmation_col,
+      confirmation_type = if (!is.null(type_col) && type_col %in% colnames(renamed)) {
+        type_col
+      } else {
+        NULL
+      },
+      confirmation_units = get_confirmation_units(.data) %||% "auto"
+    )
+  }
+
+  result <- do.call(as_tbl_now, c(
+    list(
+      renamed,
       event_date = event_col, report_date = report_col, align_weeks = FALSE,
       verbose = FALSE,
       data_type = get_data_type(.data),
@@ -168,7 +254,9 @@ align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
       event_units = get_event_units(.data),
       report_units = get_report_units(.data),
       now = new_now
-    )
+    ),
+    confirmation_args
+  ))
 
   # Preserve the lazy temporal-effects spec (computed cols are invalidated by
   # the date-realignment so they are intentionally dropped)
@@ -177,46 +265,12 @@ align_weeks.tbl_now <- function(.data, align_on_day = 1, type = "epi", ...) {
 }
 
 
-#' Convert epidemiological (or ISO) week/year to aligned dates
-#'
-#' @description `r lifecycle::badge('experimental')`
-#'
-#' Takes week numbers and year numbers and returns the date corresponding
-#' to a specified weekday within that week. This is typically used for
-#' aligning epiweek or isoweek data to a consistent weekday.
-#'
-#' @param .data A data.frame or tibble.
-#' @param week_col [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) column
-#' name containing epidemiological week numbers.
-#' @param year_col [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) column
-#' name containing epidemiological year numbers.
-#' @param align_on_day Integer 1–7 ([lubridate::wday()] numbering) indicating
-#'   the weekday to align to.
-#' @param week_fun Function that extracts week numbers from a date
-#'   (either [lubridate::epiweek()], [lubridate::isoweek()]).
-#' @param year_fun Function that extracts the epidemiological/ISO year from
-#' a date (either [lubridate::epiyear()] or [lubridate::isoyear()]).
-#' @param date_col_name Name of the resulting date column.
-#'
-#' @return The given `data.frame` with a new date column appended.
-#'
-#' @examples
-#' df <- data.frame(
-#'   epidemiological_week = 1:5,
-#'   epidemiological_year = rep(2024, 5)
-#' )
-#'
-#' df |>
-#'   week_2_date(
-#'     week_col = epidemiological_week,
-#'     year_col = epidemiological_year
-#'   )
-#'
+#' @rdname align_weeks
 #' @export
 week_2_date <- function(.data,
                         week_col,
                         year_col,
-                        align_on_day = 1,
+                        align_on_day = 7,
                         week_fun = lubridate::epiweek,
                         year_fun = lubridate::epiyear,
                         date_col_name = "date") {
@@ -258,7 +312,7 @@ week_2_date <- function(.data,
     dplyr::mutate(
       !!as.symbol(week_col) := week_fun(!!as.symbol(date_col_name)),
       !!as.symbol(year_col) := year_fun(!!as.symbol(date_col_name)),
-      !!as.symbol("day_of_week") := lubridate::wday(!!as.symbol(date_col_name), label = FALSE)
+      !!as.symbol("day_of_week") := lubridate::wday(!!as.symbol(date_col_name), label = FALSE, week_start = 1)
     ) |>
     dplyr::filter(!!as.symbol("day_of_week") == align_on_day) |>
     dplyr::select(-!!as.symbol("day_of_week"))

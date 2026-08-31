@@ -39,7 +39,10 @@ windows rather than on a grid.}
 
 \item{verbose}{Logical. Print the choices that were made.}
 
-\item{quiet}{Logical. If \code{TRUE}, suppress the lossy-conversion warning.}
+\item{quiet}{Logical. A \emph{different} channel from \code{verbose}: \code{verbose}
+controls the informational summary of what the conversion did, while \code{quiet}
+suppresses the lossy-conversion warning. Set both to keep a conversion
+entirely silent.}
 
 \item{data}{A \link{tbl_now_epinow2_snapshots}, or a plain list of \code{date}/\code{confirm}
 data frames (e.g. \code{EpiNow2::example_truncated}), in which case
@@ -115,11 +118,11 @@ data(denguedat)
 nowobj <- tbl_now(denguedat[1:2000, ],
   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 )
-# A single daily series for estimate_infections() -- the weekly data is laid
+## A single daily series for estimate_infections() -- the weekly data is laid
 # on EpiNow2's daily grid.
 head(tbl_now_to_EpiNow2(nowobj, verbose = FALSE, quiet = TRUE))
 
-# Snapshots for estimate_truncation(), which uses the report dimension.
+## Snapshots for estimate_truncation(), which uses the report dimension.
 snaps <- tbl_now_to_EpiNow2(nowobj,
   target = "estimate_truncation", verbose = FALSE, quiet = TRUE
 )

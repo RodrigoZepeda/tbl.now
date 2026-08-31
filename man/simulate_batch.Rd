@@ -5,7 +5,7 @@
 \title{Inject a batch into a \code{tbl_now} by withholding and then releasing reports}
 \usage{
 simulate_batch(
-  data,
+  x,
   closed_dates,
   held_fraction = 1,
   drop_unreleased = TRUE,
@@ -13,7 +13,7 @@ simulate_batch(
 )
 }
 \arguments{
-\item{data}{A \code{\link[=tbl_now]{tbl_now()}} object.}
+\item{x}{A \code{\link[=tbl_now]{tbl_now()}} object.}
 
 \item{closed_dates}{A vector of report dates on which the reporting system is
 closed. Must be coercible to the class of the report-date column.}
@@ -43,7 +43,7 @@ Simulates a reporting system that is \strong{closed} on a given set of report da
 and releases its accumulated backlog on the next open date.  Reports keep
 their event dates and merely move \emph{later} on the report axis, so no cases are
 created or destroyed -- the defining property of a batch.  Useful for checking
-that \code{\link[=batch_test]{batch_test()}} and \code{\link[=batch_shape_test]{batch_shape_test()}} recover a batch you planted.
+that \code{\link[=diagnose_batches]{diagnose_batches()}} and \code{\link[=diagnose_batch_shape]{diagnose_batch_shape()}} recover a batch you planted.
 }
 \details{
 A batch is a \strong{transport}: it moves an item's report date later while leaving
@@ -76,8 +76,7 @@ the later one survives: it is that report date's final word on the total.
 }
 
 \examples{
-library(tbl.now)
-data(denguedat, package = "tbl.now")
+data(denguedat)
 
 dengue_tbl <- tbl_now(
   denguedat,
@@ -87,11 +86,25 @@ dengue_tbl <- tbl_now(
   verbose     = FALSE
 )
 
-# Close the reporting desk for three consecutive weeks
+# Pretend the reporting desk was shut for three consecutive weeks: everything
+# that would have been reported then is held, and released together afterwards.
 closed <- as.Date(c("1990-06-04", "1990-06-11", "1990-06-18"))
 batched_tbl <- simulate_batch(dengue_tbl, closed_dates = closed, verbose = FALSE)
 
+# No cases are lost -- they are only moved later in the reporting process.
+nrow(dengue_tbl)
+nrow(batched_tbl)
+
+# Which is the point: you now have data with a batch you planted yourself, so
+# you can check whether the screen finds it.
+found <- suppressWarnings(diagnose_batches(batched_tbl, lookback = 2))
+found$report_date[found$batch]
+
 }
 \seealso{
-\code{\link[=batch_test]{batch_test()}}, \code{\link[=batch_shape_test]{batch_shape_test()}}
+\code{\link[=diagnose_batches]{diagnose_batches()}} and \code{\link[=diagnose_batch_shape]{diagnose_batch_shape()}}, the tests this exists to
+validate; \code{\link[=censor_delays_above]{censor_delays_above()}} for recording a real batch rather than
+planting one. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html}{\emph{Diagnosing reporting batches} article}
+uses this to calibrate the screen.
 }

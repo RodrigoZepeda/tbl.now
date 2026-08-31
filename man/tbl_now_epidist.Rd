@@ -54,7 +54,9 @@ covariate columns (\code{to}).}
 of the censoring windows. If \code{NULL} (default) it is derived from the
 \code{tbl_now} \code{event_units}.}
 
-\item{quiet}{Logical. If \code{TRUE}, suppress the lossy-conversion warning emitted
+\item{quiet}{Logical. A \emph{different} channel from \code{verbose}: \code{verbose}
+controls the informational summary of what the conversion did, while \code{quiet}
+suppresses the lossy-conversion \strong{warning} emitted
 by \code{tbl_now_to_epidist()}.}
 }
 \value{
@@ -98,9 +100,11 @@ it builds an \code{epidist_aggregate_data} when \code{x} holds counts and an
 or \code{censoring_window} if supplied);
 \item the secondary event spans \verb{[report_date, report_date + w]} normally, but
 for rows flagged by \code{is_censored} it is left-censored to
-\verb{[origin, report_date]} (with \code{origin} the earliest \code{event_date}, i.e.
+\verb{[event_date, report_date]} (the report is known only to have happened at
+or before its report date, and cannot precede the event, i.e.
 epidist time 0) — encoding the \code{tbl_now} convention that a censored report
-is only known to lie in \verb{[0, report_date]}.
+is known only to have happened at or before its report date, so the window
+is \verb{[event_date, report_date]}.
 }
 
 The strata, the covariate columns and any materialised temporal-effect columns
@@ -166,7 +170,7 @@ window. Check the epidist issue tracker for the current status.
 
 \examples{
 \dontshow{if (requireNamespace("epidist", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-# --- Linelist epidist data (one row per case) ---
+## --- Linelist epidist data (one row per case) ---
 ll <- epidist::as_epidist_linelist_data(
   data.frame(
     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-02")),
@@ -180,7 +184,7 @@ get_data_type(nowll)
 # ... and back to an epidist_linelist_data
 tbl_now_to_epidist(nowll)
 
-# --- Aggregate epidist data (counts in an `n` column) ---
+## --- Aggregate epidist data (counts in an `n` column) ---
 agg <- epidist::as_epidist_aggregate_data(
   data.frame(
     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
@@ -189,10 +193,22 @@ agg <- epidist::as_epidist_aggregate_data(
   ),
   n = "n", pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
 )
-# -> a count-incidence tbl_now (case_count = "n") ...
+## -> a count-incidence tbl_now (case_count = "n") ...
 nowagg <- tbl_now_from_epidist(agg)
 get_data_type(nowagg)
-# ... and back to an epidist_aggregate_data (auto-detected from the counts)
+## ... and back to an epidist_aggregate_data (auto-detected from the counts)
 tbl_now_to_epidist(nowagg)
 \dontshow{\}) # examplesIf}
+}
+\seealso{
+\link{confirmation_setters} and \link{confirmation_delay}, since \pkg{epidist} is about
+delay distributions and a \code{tbl_now} may carry two of them;
+\code{\link[=censor_delays_above]{censor_delays_above()}} for the long delays that would otherwise dominate a
+fitted distribution;
+\link[=tidy.epidist_fit]{tidy()} for the fitted result.
+\code{\link[=as_tbl_now]{as_tbl_now()}} for the generic that dispatches to the \verb{*_from_*()} side;
+\code{\link[=run_nowcast]{run_nowcast()}}, which does the conversion for you when you fit through an
+\code{\link[=engine]{engine()}}. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html}{\emph{One dataset, many nowcasts} article}
+fits the same data with every supported package.
 }

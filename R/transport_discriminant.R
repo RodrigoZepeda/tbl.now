@@ -1,7 +1,7 @@
 # =============================================================================
 # transport_discriminant(): the (deficit W, discriminant Delta) pair per date
 #
-# batch_test()'s conservation law lives in a plane. For each report date it
+# diagnose_batches()'s conservation law lives in a plane. For each report date it
 # forms two quantities on a leave-window-out baseline:
 #
 #   * the deficit  W = sum_{j<r} (mu_j - R_j)  -- reports the preceding window is
@@ -18,20 +18,21 @@
 #   W ~ 0        nothing                surge
 #   W >> 0        batch            batch and surge
 #
-# transport_discriminant() returns that plane; batch_test() is the same
+# transport_discriminant() returns that plane; diagnose_batches() is the same
 # machinery turned into hypothesis tests.
 # =============================================================================
 
 #' The transport discriminant of a reporting series
 #'
-#' `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("experimental")`
 #'
-#' Computes, for every report date, the two coordinates of [batch_test()]'s
+#' Computes, for every report date, the two coordinates of [diagnose_batches()]'s
 #' conservation law -- the **deficit** (the *transport* axis: how many reports the
 #' preceding window is missing) and the window **discriminant** (the *creation*
 #' axis: the window total relative to its baseline) -- together with their robust
 #' standardised versions `transport_z` and `creation_z`.
 #'
+#' @details
 #' A batch *moves* reports later without creating them, so it leaves a positive
 #' deficit while conserving the window total (`transport_z` large, `creation_z`
 #' near 0). A genuine surge *creates* reports, lifting the window total without a
@@ -40,22 +41,25 @@
 #' **batch** corner when its transport score is large and its creation score is
 #' not. A negative `creation_z` with no transport is a hold in progress (the
 #' window is depleted and nothing has been released yet). The `classification`
-#' column applies these labels at level `alpha`, exactly as in [batch_test()].
+#' column applies these labels at level `alpha`, exactly as in [diagnose_batches()].
 #'
-#' @param data A [tbl_now()] object.
+#' @param x A [tbl_now()] object.
 #' @param lookback Integer window half-width `k` (report-grid steps) over which the
 #'   deficit is accumulated. Default `7` (a week of daily reporting).
 #' @param baseline_window,period Baseline controls, passed through to the same
-#'   machinery as [batch_test()]. `period` (e.g. `7`) absorbs a scheduled weekly
+#'   machinery as [diagnose_batches()]. `period` (e.g. `7`) absorbs a scheduled weekly
 #'   reporting cadence.
 #' @param alpha Level for the `classification` labels. Default `0.05`.
 #'
+#' @param axis Which time axis to scan for arrivals: `"report"` (default) or
+#'   `"confirmation"`. Needs a confirmation process (see [add_confirmation()]);
+#'   cases still `"pending"` are left out.
 #' @returns A tibble of class `transport_discriminant`, one row per (report date,
 #'   stratum), with columns `report_date`, `stratum`, `reported`, `baseline`,
 #'   `window_total`, `spike` (reported minus baseline), `deficit`, `delta`,
 #'   `transport_z`, `creation_z`, `classification` and `batch`.
 #'
-#' @seealso [batch_test()] for the hypothesis test, [diagnostic_plot()] to plot
+#' @seealso [diagnose_batches()] for the hypothesis test, [diagnostic_plot()] to plot
 #'   this plane.
 #'
 #' @examples
@@ -66,13 +70,15 @@
 #'
 #' @export
 #' @md
-transport_discriminant <- function(data,
+transport_discriminant <- function(x,
                                     lookback        = 7L,
                                     baseline_window = NULL,
                                     period          = NULL,
-                                    alpha           = 0.05) {
+                                    alpha           = 0.05,
+                                    axis            = c("report", "confirmation")) {
+  axis <- match.arg(axis)
   .batch_experimental_warning("transport_discriminant")
-  .batch_check_tbl_now(data)
+  .batch_check_tbl_now(x)
 
   lookback <- as.integer(lookback)
   if (lookback < 1L) {
@@ -82,7 +88,7 @@ transport_discriminant <- function(data,
     cli::cli_abort("`alpha` must lie strictly between 0 and 1. Got {alpha}.")
   }
 
-  registration <- .batch_registration(data, lookback, baseline_window, period)
+  registration <- .batch_registration(x, lookback, baseline_window, period, axis = axis)
   dispersion   <- .batch_dispersion(registration)
 
   registration <- dplyr::mutate(
@@ -92,7 +98,7 @@ transport_discriminant <- function(data,
     creation_z  = .data$delta   / sqrt(dispersion * .data$window_scale)
   )
 
-  # Reuse batch_test's robust p-values and quadrant classification so the labels
+  # Reuse diagnose_batches's robust p-values and quadrant classification so the labels
   # match the test exactly.
   registration <- .batch_add_p_values(registration, "robust")
   registration <- .batch_classify(registration, alpha)

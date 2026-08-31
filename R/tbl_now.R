@@ -2,8 +2,31 @@
 #'
 #' @description `r lifecycle::badge('experimental')`
 #'
-#' A special `tibble` class that includes information for the nowcast.
-#' See the Attributes section for more information.
+#' Surveillance data arrives late. A case that happened on Monday may only reach
+#' the surveillance system on Thursday, so counts for the most recent days always
+#' look artificially low. *Nowcasting* corrects that artifact: it estimates how
+#' many cases have already happened but have not been reported yet.
+#'
+#' To do that, a model needs two dates for every case -- when it **happened**
+#' (`event_date`) and when it was **reported** (`report_date`) -- together with
+#' the date you are standing on (`now`). `tbl_now()` takes an ordinary
+#' `data.frame` and records which of its columns play those roles, so you only
+#' have to say it once.
+#'
+#' The result still behaves like a `tibble`: `dplyr` verbs, `$`, `[` and
+#' `ggplot2` keep working, and every `tbl.now` function knows where to find the
+#' dates without being told again.
+#'
+#' @details
+#' The minimum you must supply is `event_date` and `report_date` (or one of them
+#' plus a `delay` column, from which the other is reconstructed). Everything else
+#' is optional and can be added later with [add_strata()], [add_covariates()],
+#' [add_confirmation()] and the rest of the [add()] family.
+#'
+#' Once the object exists the usual path is [summary()][tbl_now_summary] to see
+#' what is in the data, [diagnose()] to see what is wrong with it,
+#' [autoplot()][autoplot.tbl_now] to look at it, and [run_nowcast()] to fit a
+#' model. `vignette("tbl.now")` walks through that path end to end.
 #'
 #' @param data A `data.frame` or `tibble` to be converted.
 #'
@@ -66,6 +89,27 @@
 #' "count-incidence" or "count-cumulative". See section below for
 #' an explanation on data types.
 #'
+#' @param confirmation_date (optional)
+#' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#' column holding a **third** date: the day the report was resolved. Influenza is
+#' the picture to keep in mind -- symptoms begin (the event), the patient sees a
+#' doctor (the report), and days later a swab comes back. The assumed timeline is
+#' `event_date <= report_date <= confirmation_date <= now`. Leave `NULL` (the
+#' default) for the usual two-date object. See [add_confirmation()].
+#'
+#' @param confirmation_type (optional)
+#' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#' column saying what the resolution *was*: `"confirmed"`, `"retracted"` (it was
+#' reported, but it is not a case after all), `"pending"` or `NA`. **`"pending"`
+#' means reported and still waiting**, so it carries no confirmation date --
+#' which is a different thing from a result that was never recorded (`NA`). A
+#' confirmation date with no type warns rather than guessing, because a date
+#' alone cannot say whether the case was confirmed or retracted.
+#'
+#' @param confirmation_units (optional) Character. Either `"auto"` (default),
+#' `"days"`, `"weeks"`, `"months"`, `"years"` or `"numeric"` -- the grid the
+#' confirmation date lives on, resolved the same way as `report_units`.
+#'
 #' @param verbose (optional) Logical. Whether to throw a message. Default = `TRUE`.
 #'
 #' @param force (optional) Logical. Whether to force computation overwriting pre-existing variables.
@@ -79,7 +123,14 @@
 #' and `align_weeks = TRUE` it ensures that all weeks start in a Sunday so that
 #' week differences and `.delays` are all integer.
 #'
-#' @param ... Additional metadata to be stored as attributes.
+#' @param ... Additional metadata to be stored as attributes on the object. Use
+#' this for provenance you want to travel with the data -- `data_source`,
+#' `citation`, `population` -- and read it back with [tbl_now_attributes()].
+#'
+#' Because anything unmatched lands here, a misspelled argument name would
+#' otherwise be accepted in silence. Names close enough to a real argument to be
+#' a typo (`case_col` for `case_count`, `stata` for `strata`) warn instead; the
+#' warning is safe to ignore if the name really was metadata.
 #'
 #' @section Attributes:
 #'
@@ -97,10 +148,12 @@
 #'   \item{is_censored}{Column indicating whether the measurement is noisy (only upper bound) or not.}
 #'   \item{event_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `event_date`}
 #'   \item{report_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `report_date`}
-#'   \item{repot_num}{Column where the `report_date` was transformed to numeric values}
-#'   \item{event_num}{Column where the `event_date` was transformed to numeric values}
 #'   \item{data_type}{Either `linelist`, `count-incidence` or `count-cumulative` depending on whether it is linelist data
 #'   or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)}
+#'   \item{confirmation_date}{Name of the column with the (optional) third date: when the report was resolved.}
+#'   \item{confirmation_type}{Name of the column saying what that resolution was (`"confirmed"`, `"retracted"`, `"pending"`).}
+#'   \item{confirmation_units}{Units of `confirmation_date`, resolved like `report_units`.}
+#'   \item{computed_temporal_effect_cols}{Names of the temporal-effect columns that have actually been materialised in the data by [compute_temporal_effects()].}
 #' }
 #'
 #' You can  list all `tbl_now` related attributes in a specific `tbl_now` with [tbl_now_attributes()].
@@ -169,48 +222,56 @@
 #' data-types.
 #'
 #' @examples
-#' # The `tbl_now` is a data.frame with additional attributes
+#' # `denguedat` is a linelist: one row per dengue case, with the week symptoms
+#' ## began (`onset_week`) and the week the case reached the surveillance system
+#' ## (`report_week`).
 #' data(denguedat)
-#' ndata <- denguedat |>
-#'   tbl_now(
-#'     event_date = onset_week, report_date = report_week,
-#'     strata = gender
-#'   )
+#' head(denguedat)
 #'
-#' # You can see that it documents the `event_date`, `report_date`, `strata`,
-#' # `covariates` as well as the `now`.
-#' ndata
-#'
-#'
-#' # A `tbl_now` is an extension of a `tibble` which means normal
-#' # `data.frame` operations are permitted
-#' ndata$newcolumn <- "something"
-#' ndata
-#'
-#' # Like removing a column
-#' ndata[, -4]
-#'
-#' # Like selecting
-#' ndata[1:10, ]
-#'
-#' # You can also apply all dplyr functions:
-#' ndata |>
-#'   dplyr::filter(report_week <= as.Date("1991-01-02", format = "%Y-%m-%d"))
-#'
-#' # Removing an important column automatically transforms to tibble
-#' # losing its property
-#' suppressWarnings(
-#'   ndata |>
-#'     dplyr::select(-onset_week)
+#' # Tell tbl.now which column plays which role. `now` defaults to the last
+#' # event date seen in the data.
+#' ndata <- tbl_now(denguedat,
+#'   event_date = onset_week,
+#'   report_date = report_week,
+#'   strata = gender
 #' )
 #'
-#' # Removing strata just changes the overall structure
+#' # Printing reports back the roles it recorded, and the `now` it chose.
+#' ndata
+#'
+#' # A `tbl_now` is still a tibble, so ordinary manipulation works ...
+#' ndata$newcolumn <- "something"
+#' ndata[1:10, ]
+#'
+#' # ... including dplyr verbs.
+#' ndata |>
+#'   dplyr::filter(report_week <= as.Date("1991-01-02"))
+#'
+#' # Dropping a strata column simply forgets that stratum.
 #' ndata |> dplyr::select(-gender)
 #'
-#' @return An object of class `tbl_now`.
+#' # But dropping a column the class depends on demotes the object back to a
+#' ## plain tibble (with a warning): without an event date it can no longer
+#' # describe a nowcast.
+#' suppressWarnings(
+#'   ndata |> dplyr::select(-onset_week)
+#' )
+#'
+#' @return An object of class `tbl_now`: the input `data` as a `tibble`, carrying
+#' extra attributes that record which columns hold the event date, report date,
+#' strata, covariates and so on, plus the `now` of the nowcast. List them with
+#' [tbl_now_attributes()].
+#'
+#' @seealso
+#' [as_tbl_now()] to convert an object created by another nowcasting package;
+#' [to_count()] to move between linelist and aggregated count data;
+#' [tbl_now_attributes()] to list what the object recorded;
+#' [validate_tbl_now()] and [diagnose()] to check it;
+#' [summary()][tbl_now_summary] to describe it;
+#' [autoplot()][autoplot.tbl_now] to plot it;
+#' [run_nowcast()] to fit a nowcast.
 #'
 #' @export
-#' @md
 tbl_now <- function(data,
                     event_date = NULL,
                     report_date = NULL,
@@ -219,6 +280,9 @@ tbl_now <- function(data,
                     covariates = NULL,
                     case_count = NULL,
                     is_censored = NULL,
+                    confirmation_date = NULL,
+                    confirmation_type = NULL,
+                    confirmation_units = "auto",
                     now = NULL,
                     event_units = "auto",
                     report_units = "auto",
@@ -249,6 +313,8 @@ tbl_now <- function(data,
   covariates_quo <- rlang::enquo(covariates)
   case_count_quo <- rlang::enquo(case_count)
   is_censored_quo <- rlang::enquo(is_censored)
+  confirmation_date_quo <- rlang::enquo(confirmation_date)
+  confirmation_type_quo <- rlang::enquo(confirmation_type)
 
   # Get event date column
   if (!rlang::quo_is_null(event_date_quo)) {
@@ -341,6 +407,28 @@ tbl_now <- function(data,
 
   is_censored_select <- .tbl_now_eval_select(is_censored_quo, data)
   is_censored <- colnames(data)[is_censored_select]
+
+  confirmation_date_select <- .tbl_now_eval_select(confirmation_date_quo, data)
+  confirmation_date <- colnames(data)[confirmation_date_select]
+  if (length(confirmation_date) == 0) confirmation_date <- NULL
+
+  confirmation_type_select <- .tbl_now_eval_select(confirmation_type_quo, data)
+  confirmation_type <- colnames(data)[confirmation_type_select]
+  if (length(confirmation_type) == 0) confirmation_type <- NULL
+
+  if (is.null(confirmation_date) && !is.null(confirmation_type)) {
+    cli::cli_abort(c(
+      "{.arg confirmation_type} was given without a {.arg confirmation_date}.",
+      "i" = "An outcome needs a date to sit on. Supply both, or neither."
+    ))
+  }
+
+  # Fill in / validate the outcome column, and check the timeline.
+  resolved_confirmation <- .resolve_confirmation_type(
+    data, confirmation_date, confirmation_type, verbose = verbose
+  )
+  data <- resolved_confirmation$data
+  confirmation_type <- resolved_confirmation$confirmation_type
   if (length(is_censored) == 0) is_censored <- NULL
 
   strata_select <- .tbl_now_eval_select(strata_quo, data)
@@ -392,11 +480,32 @@ tbl_now <- function(data,
   # Infer automatic variables------
 
   # Infer the now
-  now <- infer_now(data, now = now, event_date = event_date, report_date = report_date)
+  # The event <= report <= confirmation timeline is checked by
+  # `validate_tbl_now()` at the end of this function, through the same findings
+  # engine `diagnose()` uses. Checking it here as well would warn twice.
+
+  # A confirmation is an OBSERVATION, so it moves the `now` forward exactly as a
+  # report does: the as-of moment is the last thing anybody knew.
+  now <- infer_now(data,
+    now = now, event_date = event_date, report_date = report_date,
+    confirmation_date = confirmation_date
+  )
 
   # Infer the date_units whether it is daily, weekly, monthly or yearly
   event_units <- infer_units(data, date_column = event_date, date_units = event_units)
   report_units <- infer_units(data, date_column = report_date, date_units = report_units)
+  confirmation_units <- if (is.null(confirmation_date)) {
+    NULL
+  } else {
+    # Early in an outbreak there may be only one confirmation, or none, and a
+    # single date has no spacing to infer a grid from. Fall back to the REPORT
+    # units rather than refusing the object: the confirmation lives on the same
+    # calendar as the report it resolves.
+    tryCatch(
+      infer_units(data, date_column = confirmation_date, date_units = confirmation_units),
+      error = function(e) report_units
+    )
+  }
 
   # Get whether data is count or line data
   data_type <- infer_data_type(data,
@@ -409,6 +518,12 @@ tbl_now <- function(data,
 
   # Capture all other attributes
   other_attrs <- list(...)
+
+  # `...` is a deliberate escape hatch for extra metadata, but it also swallows
+  # misspelled argument names in silence -- `case_col = "n"` sets a useless
+  # attribute and leaves the data typed as a linelist. Warn when an unmatched
+  # name is close enough to a real one to be a typo.
+  .warn_near_miss_dots(names(other_attrs))
 
   # === 3. Attribute Assignment ===
   data <- dplyr::as_tibble(data)
@@ -424,6 +539,9 @@ tbl_now <- function(data,
   attr(data, "report_units") <- report_units
   attr(data, "data_type") <- data_type
   attr(data, "is_censored") <- is_censored
+  attr(data, "confirmation_date") <- confirmation_date
+  attr(data, "confirmation_type") <- confirmation_type
+  attr(data, "confirmation_units") <- confirmation_units
 
   # Add all other attributes from ...
   for (attr_name in names(other_attrs)) {
@@ -448,6 +566,17 @@ tbl_now <- function(data,
     event_units = event_units, report_units = report_units,
     force = force
   )
+
+  # `.confirmation_num` sits on the SAME anchor as `.event_num`/`.report_num`
+  # (the earliest event date), so the three are directly comparable, and
+  # `.confirmation_delay` is the report-to-resolution time.
+  if (!is.null(confirmation_date)) {
+    data <- .add_confirmation_num(
+      data,
+      event_date = event_date, confirmation_date = confirmation_date,
+      confirmation_units = confirmation_units, force = force
+    )
+  }
 
 
   # === 4. Class Assignment ===
@@ -585,4 +714,52 @@ tbl_now <- function(data,
 
   data[[new_col_name]] <- new_vals
   return(data)
+}
+
+#' Warn when a name passed through `...` looks like a misspelled argument
+#'
+#' `tbl_now()` keeps unmatched `...` names as user metadata, which means a typo
+#' in a real argument name is accepted without complaint. This flags the names
+#' that are within a small edit distance of one of `tbl_now()`'s own arguments,
+#' which is the case that is almost never intentional.
+#'
+#' @param dot_names Character vector of names supplied through `...`.
+#'
+#' @return `NULL`, invisibly. Called for the warning.
+#'
+#' @keywords internal
+#' @noRd
+.warn_near_miss_dots <- function(dot_names) {
+  if (length(dot_names) == 0) {
+    return(invisible(NULL))
+  }
+  dot_names <- dot_names[nzchar(dot_names)]
+  if (length(dot_names) == 0) {
+    return(invisible(NULL))
+  }
+
+  known <- setdiff(names(formals(tbl_now)), c("data", "...", "verbose"))
+
+  # A typo is short-range: at most a third of the longer of the two names, capped
+  # at three edits. Scaling by the LONGER name is what lets `case_col` reach
+  # `case_count` (distance 3) while `data_source` stays clear of `data_type`
+  # (distance 5). Only the single closest argument is offered.
+  for (supplied in dot_names) {
+    distances <- utils::adist(supplied, known)[1, ]
+    budgets <- pmin(3L, pmax(1L, floor(pmax(nchar(supplied), nchar(known)) / 3)))
+    # Typos rarely change the first letter, and requiring it to match is what
+    # keeps `source` from being read as a misspelling of `force`.
+    same_initial <- substr(known, 1, 1) == substr(supplied, 1, 1)
+    hits <- known[distances <= budgets & same_initial & known != supplied]
+    if (length(hits) == 0) next
+    closest <- hits[which.min(distances[known %in% hits])]
+    cli::cli_warn(c(
+      "{.arg {supplied}} is not an argument of {.fn tbl_now}; it was stored as
+       metadata instead.",
+      "i" = "Did you mean {.arg {closest}}?",
+      "!" = "If {.arg {supplied}} really is metadata you meant to attach, this
+             warning is safe to ignore."
+    ))
+  }
+  invisible(NULL)
 }

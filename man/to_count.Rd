@@ -3,19 +3,20 @@
 \name{to_count}
 \alias{to_count}
 \alias{to_count.tbl_now}
-\title{Transform an object to count data}
+\title{Convert between linelist and aggregated count data}
 \usage{
 to_count(x, to = NULL, ...)
 
 \method{to_count}{tbl_now}(x, to = NULL, ...)
 }
 \arguments{
-\item{x}{Data to be transformed from \code{linelist} to count data}
+\item{x}{A \code{\link[=tbl_now]{tbl_now()}} object to convert.}
 
-\item{to}{Either \code{linelist}, \code{count-incidence} or \code{count-cumulative}
-the resulting data-type to be created.}
+\item{to}{Character. The data type to produce: \code{"linelist"},
+\code{"count-incidence"} or \code{"count-cumulative"}. Defaults to the object's
+current type, i.e. no change.}
 
-\item{...}{Additional arguments}
+\item{...}{Additional arguments passed to methods.}
 }
 \value{
 A \code{tbl_now} object of the requested \code{to} data type, with the counts
@@ -23,32 +24,46 @@ aggregated into the \code{case_count} column.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
-Transforms a \code{tbl.now} between count data types:
+
+Surveillance data comes in three shapes, and different nowcasting packages
+want different ones. \code{to_count()} moves a \code{\link[=tbl_now]{tbl_now()}} between them:
 \itemize{
-\item \code{linelist}: to \code{count-incidence} or \code{count-cumulative}
-\item \code{count-incidence}: to \code{count-cumulative}
-\item \code{count-cumulative}: to \code{count-incidence}
+\item \strong{\code{linelist}} -- one row per case. The most detailed shape.
+\item \strong{\code{count-incidence}} -- one row per (event date, report date) pair, holding
+the number of cases reported \emph{on exactly that report date}.
+\item \strong{\code{count-cumulative}} -- the same grid, but holding the number of cases
+known \emph{up to and including} that report date. This is the shape most public
+dashboards publish.
 }
+
+You can go from \code{linelist} to either count shape, and back and forth between
+the two count shapes. You cannot go back to \code{linelist}: once cases have been
+added up, the individual rows are gone.
 }
 \details{
-This is an S3 generic. This package provides methods for the
-following classes:
-\itemize{
-\item \code{tbl_now}: takes a \code{tbl_now} object and creates a new column with
-name \code{n} of counts of observations if \code{data_type = "linelist"}.
+This is an S3 generic. The package provides a method for \code{tbl_now} objects,
+which aggregates into the \code{case_count} column, creating one named \code{n} when the
+object does not already have one.
+
+Aggregation sums over every column the object has \emph{not} been told about, so a
+column you care about should be declared as a strata or covariate first (see
+\code{\link[=add_strata]{add_strata()}}) or it will be summed away.
 }
+\note{
+\code{linelist} data cannot be reconstructed from \verb{count-*} data. Asking for
+it throws an error, because aggregated data cannot be un-counted.
+}
+\section{Statistical details}{
 
 Converting \code{count-cumulative} to \code{count-incidence} \strong{de-accumulates} the
 series: within each event date (and grouping), ordered by report date, the
-incremental count is the cumulative total minus the previous one. Because
-cumulative totals can be revised \emph{downward}, an increment can be \strong{negative};
-callers that need non-negative increments (for example
-\code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast()}}) must handle or refuse that case.
+increment is that cumulative total minus the previous one. Because published
+cumulative totals are sometimes revised \emph{downward}, an increment can be
+\strong{negative}. That is not a bug -- it is a retraction showing through -- but
+code that requires non-negative counts (for example
+\code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast()}}) must handle or refuse it.
 }
-\note{
-\code{linelist} data cannot be reconstructed from \verb{count-*} data. Trying
-this will throw an error as you cannot un-count aggregated data.
-}
+
 \examples{
 data(denguedat)
 ndata <- tbl_now(denguedat,
@@ -57,16 +72,25 @@ ndata <- tbl_now(denguedat,
   strata = "gender"
 )
 
-to_count(ndata, to = "count-incidence")
+# A linelist has one row per case ...
+nrow(ndata)
 
-data("covidat")
-suppressWarnings({
-  ndata <- tbl_now(covidat,
-    event_date = "date_of_symptom_onset",
-    report_date = "date_of_registry",
-    strata = "sex"
-  )
-  to_count(ndata)
-})
+## ... which becomes one row per (onset week, report week, gender), with the
+# number of cases in `n`.
+counts <- to_count(ndata, to = "count-incidence")
+counts
 
+# Cumulative totals instead: how many cases for that onset week were known by
+# each report week. Within an onset week these only ever go up.
+to_count(counts, to = "count-cumulative")
+
+# Going back to a linelist is impossible -- the individual cases are gone.
+try(to_count(counts, to = "linelist"))
+
+}
+\seealso{
+\code{\link[=tbl_now]{tbl_now()}} and its \emph{Data types} section for what each shape means;
+\code{\link[=get_data_type]{get_data_type()}} to ask an object which shape it currently is;
+\code{\link[=complete_zeroes]{complete_zeroes()}} to fill in the (event, report) pairs where nothing was
+reported; \code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}} to pull out the most recent counts.
 }

@@ -16,7 +16,7 @@
 \alias{get_temporal_effect_cols}
 \alias{get_is_censored}
 \alias{get_case_count}
-\title{Getters for tbl_now attributes}
+\title{Read what a \code{tbl_now} was told about itself}
 \usage{
 get_event_date(x)
 
@@ -50,13 +50,52 @@ get_case_count(x)
 \item{x}{A \code{tbl_now} object.}
 }
 \value{
-The requested attribute (character, date, logical, etc.).
+A column name, a count, or a metadata value, depending on the function:
+
+\describe{
+\item{\code{get_event_date()}, \code{get_report_date()}}{Character. The name of the
+column holding the date the event happened / was reported.}
+\item{\code{get_case_count()}}{Character, or \code{NULL} for linelist data. The name
+of the column holding the number of cases.}
+\item{\code{get_strata()}, \code{get_covariates()}}{Character vector of column names,
+or \code{NULL} when there are none.}
+\item{\code{get_num_strata()}, \code{get_num_covariates()}}{Integer count, \code{0} when
+there are none.}
+\item{\code{get_is_censored()}}{Character, or \code{NULL}. The name of the column
+flagging reports whose date is only an upper bound.}
+\item{\code{get_now()}}{The \code{Date} (or number) the nowcast is anchored on.}
+\item{\code{get_event_units()}, \code{get_report_units()}}{One of \code{"days"},
+\code{"weeks"}, \code{"months"}, \code{"years"} or \code{"numeric"} -- the grid each date
+lives on.}
+\item{\code{get_data_type()}}{One of \code{"linelist"}, \code{"count-incidence"} or
+\code{"count-cumulative"}. See \code{\link[=to_count]{to_count()}}.}
+\item{\code{get_temporal_effects()}}{The \code{\link[=temporal_effects]{temporal_effects()}} specification the
+object carries, or \code{NULL}. This is the \emph{request}, not the data.}
+\item{\code{get_temporal_effect_cols()}}{Character vector of the temporal-effect
+columns actually materialised in the data by
+\code{\link[=compute_temporal_effects]{compute_temporal_effects()}}; \code{character(0)} when none have been.}
+}
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Functions that extract the attributes from a \code{tbl_now} object.
-Each function returns a specific attribute (e.g. event date, strata, covariates, etc).
+When you build a \code{\link[=tbl_now]{tbl_now()}} you tell it which column is the event date, which
+is the report date, which are strata, and so on. These functions read that
+information back.
+
+They are how the rest of the package -- and any modelling code you write
+yourself -- finds the right columns without hard-coding names. Rather than
+assuming a column is called \code{onset_week}, write
+\code{x[[get_event_date(x)]]} and your code works on any \code{tbl_now}.
+}
+\details{
+Most of these return a \strong{column name}, not the column itself. To get the
+values, index with the name: \code{x[[get_event_date(x)]]}.
+
+A getter returns \code{NULL} when the object was never told about that attribute,
+so \code{is.null(get_strata(x))} is the test for "unstratified". The two counting
+helpers, \code{get_num_strata()} and \code{get_num_covariates()}, return \code{0} instead,
+which is usually easier to work with.
 }
 \examples{
 data(denguedat)
@@ -70,37 +109,47 @@ ndata <- denguedat |>
   ) |>
   compute_temporal_effects()
 
-# Get the event date
+# The two dates every nowcast needs.
 get_event_date(ndata)
-
-# Get the report date
 get_report_date(ndata)
 
-# Get strata
+# Use the name to reach the column, so the code does not depend on it.
+head(ndata[[get_event_date(ndata)]])
+
+# Strata are groups you want separate nowcasts for; covariates are not.
 get_strata(ndata)
+get_num_strata(ndata)
 
-# Get covariates
+## Nothing was declared a covariate, so this is NULL (and the count is 0).
 get_covariates(ndata)
+get_num_covariates(ndata)
 
-# Get is censored
+# Likewise for a censoring indicator that was never supplied.
 get_is_censored(ndata)
 
-# Get the now
+# The as-of moment, and the calendar grid the dates live on.
 get_now(ndata)
-
-# Get the report units
+get_event_units(ndata)
 get_report_units(ndata)
 
-# Get the event units
-get_event_units(ndata)
-
-# Get the data type
+# Linelist means one row per case; there is no count column yet.
 get_data_type(ndata)
-
-# Get the column with cases
 get_case_count(ndata)
 
-# Get temporal effects
-get_temporal_effects(ndata)
+## After to_count() there is one.
+counts <- to_count(ndata, to = "count-incidence")
+get_data_type(counts)
+get_case_count(counts)
 
+# The temporal-effects request, versus the columns it actually produced.
+get_temporal_effects(ndata)
+get_temporal_effect_cols(ndata)
+
+}
+\seealso{
+\code{\link[=tbl_now_attributes]{tbl_now_attributes()}} to get all of them at once;
+\code{\link[=add]{add()}}, \link[=add]{change()} and \link[=add]{remove()} to set them;
+\link{confirmation_getters} for the third-date attributes;
+\link[=get_latest_first]{get_latest_reported_cases()} and friends for reading the
+counts rather than the metadata.
 }

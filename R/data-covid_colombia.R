@@ -31,8 +31,14 @@
 #'   SIVIGILA open-data platform and pre-processed for the diseasenowcasting
 #'   benchmarking study.
 #'
+#' @seealso
+#' [tbl_now()] to declare the date columns; [summary()][tbl_now_summary] and
+#' [diagnose()] to inspect the result; the package's other datasets --
+#' [denguedat], [mpoxdat], [flusight], [covid_colombia], [covid_us] and
+#' [hai_bucaramanga].
+#'
 #' @examples
-#' # Build a stratified tbl_now (event = notification, report = diagnosis,
+#' ## Build a stratified tbl_now (event = notification, report = diagnosis,
 #' # strata = sex).  Pipe through temporal effects for day-of-week covariates.
 #' if (requireNamespace("tbl.now", quietly = TRUE)) {
 #'   tn <- tbl.now::tbl_now(

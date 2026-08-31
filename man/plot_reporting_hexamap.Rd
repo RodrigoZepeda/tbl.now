@@ -13,6 +13,7 @@ plot_reporting_hexamap(
   format = "\%d/\%b/\%y",
   max_cells = 12000L,
   trans = "sqrt",
+  axis = c("report", "confirmation"),
   palette = .tbl_now_palette()
 )
 }
@@ -35,6 +36,12 @@ Default \code{"\%d/\%b/\%y"}.}
 \item{max_cells}{Safety cap on the number of hexagons. Default \code{12000}.}
 
 \item{trans}{Fill transform for the count scale. Default \code{"sqrt"}.}
+
+\item{axis}{Which time axis to draw: \code{"report"} (default) or
+\code{"confirmation"}. On the confirmation axis the picture answers the
+laboratory's version of the question -- when results arrived, rather than
+when reports did. Needs a confirmation process (see \code{\link[=add_confirmation]{add_confirmation()}});
+cases still \code{"pending"} have no confirmation date and are left out.}
 
 \item{palette}{A named colour palette. Defaults to the package palette.}
 }
@@ -74,5 +81,7 @@ Jalal, H. and Burke, D. S. (2020). Hexamaps for Age-Period-Cohort
 Data Visualization. \emph{Epidemiology} \strong{31}, e47-e49.
 }
 \seealso{
-\code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}}, \code{\link[=diagnostic_plot]{diagnostic_plot()}}.
+\code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}} for the same data on ordinary axes, where the
+third quantity has to be read off the diagonals; \code{\link[=diagnostic_plot]{diagnostic_plot()}} for the
+whole gallery.
 }

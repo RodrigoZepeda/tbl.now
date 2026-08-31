@@ -10,6 +10,52 @@
 
 Provides a 'tbl_now' class for temporal data for performing nowcasts. The 'tbl_now' allows for easy manipulation of event dates, report dates, strata and covariates for implementing different nowcasting models while at the same time permitting ease of use with 'dplyr' functions.
 }
+\details{
+Surveillance data arrives late. A case that happened on Monday may not reach
+the system until Thursday, so the most recent counts always look lower than
+they will turn out to be. \strong{Nowcasting} corrects that: it estimates how many
+cases have already happened but have not been reported yet.
+
+\code{tbl.now} is the tidy scaffolding around that problem. You declare which
+columns hold the event date, the report date and anything else that matters
+once, and everything else -- describing, diagnosing, plotting, fitting,
+scoring -- follows from that declaration.
+}
+\section{The workflow}{
+
+\enumerate{
+\item \strong{Declare.} \code{\link[=tbl_now]{tbl_now()}} turns a \code{data.frame} into a \code{tbl_now}, or
+\code{\link[=as_tbl_now]{as_tbl_now()}} converts an object from another nowcasting package. The
+result is still a \code{tibble}, so \code{dplyr} keeps working.
+\item \strong{Describe.} \link[=tbl_now_summary]{summary()} says what is in the data;
+\link[=autoplot.tbl_now]{autoplot()} draws it.
+\item \strong{Diagnose.} \code{\link[=diagnose]{diagnose()}} says what is \emph{wrong} with it, and points at the
+statistical tests worth running -- \code{\link[=diagnose_drift]{diagnose_drift()}} for delays that are
+getting longer, \code{\link[=diagnose_batches]{diagnose_batches()}} for backlog releases,
+\code{\link[=diagnostic_plot]{diagnostic_plot()}} for the reporting process as a picture.
+\item \strong{Reshape.} \code{\link[=to_count]{to_count()}}, \code{\link[=complete_zeroes]{complete_zeroes()}}, \code{\link[=align_weeks]{align_weeks()}} and
+\code{\link[=censor_delays_above]{censor_delays_above()}} put the data on the grid a model needs.
+\item \strong{Fit.} \code{\link[=run_nowcast]{run_nowcast()}} takes the data and an \code{\link[=engine]{engine()}} -- one interface
+over \pkg{epinowcast}, \pkg{baselinenowcast}, \pkg{NobBS},
+\pkg{EpiNow2}, \pkg{surveillance} and \pkg{diseasenowcasting}. Write your
+own with \code{\link[=nowcast_fit]{nowcast_fit()}} and \code{\link[=nowcast_tidy]{nowcast_tidy()}}.
+\item \strong{Check.} \code{\link[=score_nowcast]{score_nowcast()}} and \code{\link[=nowcast_backtest]{nowcast_backtest()}} say whether the
+nowcast was any good; \code{\link[=nowcast_ensemble]{nowcast_ensemble()}} combines several.
+}
+
+\code{vignette("tbl.now")} walks through this end to end. The
+\href{https://rodrigozepeda.github.io/tbl.now/}{package website} carries longer
+articles on the modelling packages, batch reporting, ensembles and writing
+your own backend.
+}
+
+\section{Datasets}{
+
+Six surveillance datasets ship with the package for experimenting:
+\link{denguedat}, \link{mpoxdat}, \link{flusight}, \link{covid_colombia}, \link{covid_us} and
+\link{hai_bucaramanga} -- the last deliberately messy, for the diagnostics.
+}
+
 \seealso{
 Useful links:
 \itemize{

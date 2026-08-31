@@ -470,6 +470,151 @@ incomplete"). `autoplot()` works on **all three data types**, including
 
 ---
 
+## Skill: summarise a `tbl_now` (`summary`)
+
+`summary()` on a `tbl_now` returns a **tibble**, one row per statistic of one
+quantity of one stratum, rather than `summary.data.frame()`'s column listing.
+Read the block you want with `dplyr::filter()`.
+
+```r
+summary(tn)                              # everything
+summary(tn) |> dplyr::filter(component == "delay")
+summary(tn, by_strata = FALSE)           # pooled rows only
+```
+
+Columns: `component`, `quantity`, `stratum`, then `n`, `total`, `mean`, `sd`,
+`min`, `q25`, `q50`, `q75`, `q90`, `max`, `prop_zero`, `prop`, `value`,
+`date_min`, `date_max`. A row uses the columns that apply to it and leaves the
+rest `NA`. `stratum` is `"all"` for the pooled rows.
+
+`component` is one of:
+
+| component | rows |
+|---|---|
+| `cases` | counts per event / report / confirmation date, and per confirmation outcome; plus `censored_per_*_date` when there is a censoring flag |
+| `delay` | `event_to_report`, `event_to_confirmation`, `report_to_confirmation`, split by outcome when there is more than one |
+| `zero_run` | lengths of the runs of consecutive zero dates, per axis |
+| `composition` | shares: `censored`, `confirmation_type = ...`, `strata = ...`, `covariate: <col> = <level>` (in `prop`) |
+| `autocorrelation` | lag-*k* correlation of each case series (in `value`) |
+| `completeness` | share of each event date's eventual total arrived by delay *d* |
+| `coverage` | `total_cases`, the date ranges, `now`, `max_delay`, the triangle cell counts and occupancy, `now_gap_*` |
+| `growth` | ratio of each event date's running total from one delay to the next (`count-cumulative` only) |
+
+Each block is also its own exported function, returning the same schema, so they
+stack with `dplyr::bind_rows()`:
+
+```r
+cases_per_date(tn, axis = "event")       # "event" / "report" / "confirmation"
+delay_summary(tn, delay = "event_to_report")
+zero_run_summary(tn, axis = "event")
+prop_censored(tn); prop_strata(tn)
+prop_confirmation_type(tn); prop_covariate_levels(tn)
+case_autocorrelation(tn, lags = 1)
+date_ranges(tn); triangle_occupancy(tn)
+reporting_completeness(tn, delays = 0:7)
+cumulative_growth(tn, k = 7)
+```
+
+Three things to know before reading the numbers:
+
+- **The grids run to `now`, not to the last row.** A date with no rows is a
+  **zero**, not an absence — which is what makes `prop_zero` and the zero-run
+  lengths mean anything, and why a **line list** summarises to exactly the same
+  numbers as its counts. The grid is *global*, so a stratum whose cases start
+  late shows its leading zeros and the strata stay comparable. So does the
+  triangle-occupancy denominator.
+- **Quantiles are inverse-ECDF (type 1)**, not `stats::quantile()`'s default:
+  `q50` is the smallest value whose cumulative weight reaches `0.5`. Same
+  estimator as `autoplot()` / `diagnose_drift()`, so the table matches the
+  figures. `mean`/`sd` are the ordinary case-weighted ones (equal to expanding
+  the counts to one row per case).
+- **`NA` counts are dropped** as not-yet-observed cells (an `NA` is "not seen
+  yet", a `0` is "seen, and it was zero"). The `unobserved_cells` coverage row
+  counts them, so the drop is visible rather than silent.
+- **`count-cumulative` gets no `delay` rows.** `delay_summary()` errors on it —
+  a cumulative total is not additive across delays. Use the `growth` rows, or
+  `to_count(x, to = "count-incidence")` first (remembering that de-accumulating
+  can produce negative increments).
+
+`report_to_confirmation` is the **laboratory's turnaround, measured from the
+report**; `event_to_confirmation` is measured from the event, so it is directly
+comparable with `event_to_report`. They are different quantities.
+
+---
+
+## Skill: health-check a `tbl_now` (`diagnose`)
+
+`summary()` describes the object; `diagnose()` looks for what is **wrong** with
+it. It returns a tibble of findings sorted worst first, and it is **structural
+and deterministic** — it runs no statistical test.
+
+```r
+diagnose(tn)                                   # everything, worst first
+diagnose(tn) |> dplyr::filter(status <= "note")  # only what needs acting on
+diagnose(tn, checks = "units")                 # one block
+diagnose(tn, by_strata = FALSE)                # pooled rows only
+
+# The offending rows are carried, so you can go straight to them:
+bad <- diagnose(tn) |> dplyr::filter(check == "ordering")
+tn[bad$rows[[1]], ]
+```
+
+Columns: `check`, `scope`, `stratum`, `status`, `n_affected`, `n_total`,
+`prop`, `message`, `hint`, `rows` (a list-column of row indices into `tn`).
+
+`status` is an **ordered factor**, worst first, which is why the tibble sorts
+itself and why `status <= "note"` reads as "anything worth acting on":
+
+| status | meaning |
+|---|---|
+| `error` | `validate_tbl_now()` aborts on it |
+| `warning` | `validate_tbl_now()` warns about it |
+| `note` | a `diagnose()`-only observation. **Never promoted to a warning**: `validate_tbl_now()` runs on every dplyr verb, and a new warning there would make construction noisy for data that has always been accepted |
+| `ok` | the check ran and found nothing |
+| `not_run` | a signpost: the question needs a statistical test, and `message` is the call that answers it |
+| `skipped` | could not be assessed (no confirmation process, wrong data type, package not installed) |
+
+`check` is one of:
+
+| check | what it looks for |
+|---|---|
+| `declarations` | attribute types, the columns they name, role collisions, **undeclared columns**, temporal effects added but never materialised |
+| `ordering` | `event <= report <= confirmation`, including the transitive leg a missing `report_date` would otherwise hide |
+| `missing` | `NA`s per column and per stratum. An `NA` **count** is reported *neutrally* — in a triangle it means *not yet observed*, which is correct data |
+| `duplicates` | rows repeating on the full key (including the confirmation columns). Defaults **on** here, unlike `validate_tbl_now()` |
+| `units` | the declared units against each other, against the calendar the dates land on, and against the `.delay` they produce |
+| `negatives` | negative incidence counts, and the negative increments a downward revision leaves when cumulative data is de-accumulated |
+| `now` | anything dated after `now`, and the gap from the last observation to `now` |
+| `truncation` | how many recent event dates are still immature, and how much of their eventual total has not arrived |
+| `strata` | the smallest and the sparsest stratum (named, **not** thresholded), and the confirmations still pending |
+| `signposts` | the four questions `diagnose()` refuses to answer |
+
+Each block is also its own exported function, same schema, so they stack with
+`dplyr::bind_rows()` — and `diagnose(x)` *is* that bind:
+
+```r
+diagnose_declarations(tn); diagnose_ordering(tn); diagnose_missing(tn)
+diagnose_duplicates(tn);   diagnose_units(tn);    diagnose_negatives(tn)
+diagnose_now(tn);          diagnose_truncation(tn)
+diagnose_strata(tn);       diagnose_signposts(tn)
+```
+
+Three things to know:
+
+- **It never runs a test.** Drift and batching are statements about a
+  *distribution*; answering them means choosing a method, a window and a
+  multiplicity correction. `diagnose()` emits `not_run` rows carrying the call
+  instead: `diagnose_drift(x, axis =)` and `diagnose_batches(x, axis =)`.
+- **Outage detection is deliberately absent.** A `tbl_now` does not carry the
+  zeroes, so a quiet Sunday and a three-week outage are structurally identical.
+  The descriptive answer is `zero_run_summary()`; the inferential one is
+  `diagnose_batches()`.
+- **`validate_tbl_now()` is the same engine, presented as conditions.** One
+  implementation: `diagnose()` returns the findings as data, `validate_tbl_now()`
+  aborts on the `error`s and warns about the `warning`s.
+
+---
+
 ## Skill: diagnose reporting-delay drift & change points
 
 Ask whether the reporting delay is **stable over time** before trusting a fixed
@@ -480,10 +625,10 @@ delay model. All are experimental and index by event date.
 plot_delay_drift(tn, window = 7, by_strata = FALSE, changepoint = FALSE)
 
 # Gradual monotonic trend (autocorrelation-robust Mann-Kendall; needs `modifiedmk`)
-test_delay_drift(tn, stat = c("median", "spread"))   # location AND dispersion
+diagnose_drift(tn, stat = c("median", "spread"))   # location AND dispersion
 
 # Abrupt shift (Pettitt change-point test; no extra dependency)
-test_delay_changepoint(tn, stat = c("median", "spread"))
+diagnose_changepoint(tn, stat = c("median", "spread"))
 ```
 
 - **`plot_delay_drift()`** — solid = rolling median, dashed = rolling mean, bands =
@@ -491,12 +636,12 @@ test_delay_changepoint(tn, stat = c("median", "spread"))
   weekly). The recent, not-yet-complete region (after the `level` incompleteness
   cutoff) is **shaded grey** — do not read it as drift. `changepoint = TRUE` marks
   the estimated median change point. Supports `by_strata`.
-- **`test_delay_drift()`** returns a tidy tibble (per `stat` × stratum) with the
+- **`diagnose_drift()`** returns a tidy tibble (per `stat` × stratum) with the
   Kendall `tau`, Sen's slope, `p_value` and a `drift` verdict; `method` is
   `"hamed-rao"` (default), `"yue-pilon"` or `"block-bootstrap"`. Tests a *location*
   (`"median"`/`"mean"`) and a *dispersion* (`"iqr"`/`"spread"`) statistic — drift
   can be in either. Runs on **mature** data only (`mature_only = TRUE`).
-- **`test_delay_changepoint()`** returns the estimated `changepoint` date, the
+- **`diagnose_changepoint()`** returns the estimated `changepoint` date, the
   `before`/`after` level, the `shift`, and a `changepoint_detected` verdict.
 - Both test functions **emit an experimental `cli` warning** and treat a flag as a
   *potential* trend change / change point, not a confirmed one.
@@ -517,7 +662,7 @@ and distinct from an epidemic surge by construction.
 
 ```r
 # 1) Volume screen over the report axis (per report date x stratum)
-scr <- batch_test(tn, lookback = 3, alpha = 0.05)
+scr <- diagnose_batches(tn, lookback = 3, alpha = 0.05)
 scr[scr$batch, ]            # the flagged report dates
 # LEAN output (v0.13.0): report_date, stratum, reported, baseline,
 #   deficit (reports missing beforehand -> batch), delta (window total minus
@@ -528,15 +673,15 @@ scr[scr$batch, ]            # the flagged report dates
 
 # 2) Shape test: did ONE report date draw from unusually OLD event dates?
 #    (complements the volume screen; `at` must be an observed report date)
-batch_shape_test(tn, at = as.Date("2010-05-24"),
+diagnose_batch_shape(tn, at = as.Date("2010-05-24"),
                  permute = "items")   # use "blocks" if counts are overdispersed
 
 # 3) Validate a detector: plant a known batch and check it is recovered
 planted <- simulate_batch(tn, closed_dates = as.Date(c("2010-05-10","2010-05-17")))
-batch_test(planted)
+diagnose_batches(planted)
 ```
 
-- **`batch_test()`** — the transport test conditions on the window total, so its
+- **`diagnose_batches()`** — the transport test conditions on the window total, so its
   size does **not** depend on the unknown incidence; the local baseline is refit
   from report dates *outside* each candidate window (Siegel's repeated median,
   robust to the episode). `null_model = "auto"` is **overdispersion-aware**: it uses
@@ -551,7 +696,7 @@ batch_test(planted)
   -> `period=52` (reads `get_temporal_effects(x)` list; each spec is `list(t_effects=<S7>,
   date_type,...)`, access via `spec$t_effects@day_of_week`). User `period` wins (informs on
   disagreement). Daily data + no temporal effect + no period -> `cli_inform` suggests period=7.**
-- **`batch_shape_test()`** — a one-sided rank-sum on the delays at `at` vs
+- **`diagnose_batch_shape()`** — a one-sided rank-sum on the delays at `at` vs
   neighbouring report dates; **exactly distribution-free** when incidence is
   locally log-linear and counts are Poisson. `permute = "blocks"` for overdispersed
   (NB) counts; `guard` omits dates adjacent to `at` (a batch's own deficit sits
@@ -614,16 +759,16 @@ batch_test(planted)
   the gallery space — batch score conflates holds+big-dumps so unreliable). Other devel:
   `plot_rotated_triangle` (`devel/rotated_triangle.R`), `plot_ternary_reporting`/`plot_ternary_transport`
   (`devel/ternary_plots.R`), `plot_transport_timeline`/`plot_delay_band_ternary` (`devel/removed_plots.R`).
-  IMPORTANT gotcha in `batch_test()`'s classification: `hold_or_deletion` OVERRIDES
+  IMPORTANT gotcha in `diagnose_batches()`'s classification: `hold_or_deletion` OVERRIDES
   `batch`/`surge` whenever creation_z < -z_star, REGARDLESS of transport_z — so the
   most extreme top-left points are holds, not batches. Also: `plot_transport_discriminant`
   colours RED only BH-confirmed batches (`td$batch`), NOT the raw per-point
   `classification` (which over-identifies ~10-20% at alpha by construction).
 - **`transport_discriminant(x, lookback=, period=, alpha=)`** — the plane behind
-  `batch_test()`: per report date the deficit `W` (transport) and `Δ = S − M`
+  `diagnose_batches()`: per report date the deficit `W` (transport) and `Δ = S − M`
   (creation), standardised as `transport_z` / `creation_z`, plus the quadrant
   `classification`. A batch = high transport, ~0 creation (top-left). **DEFAULT
-  lookback = 7L** (changed from 3L, 2026-07-10) for batch_test/transport_discriminant.
+  lookback = 7L** (changed from 3L, 2026-07-10) for diagnose_batches/transport_discriminant.
   Discriminant shaded region labelled "Potential batch region";
   confirmed batches get bold white-on-red date labels (y_hi has +18% headroom so labels
   aren't clipped). Devel plot_creation_transport titles "(a batch)"/"(a surge)" — NO question marks.
@@ -639,7 +784,7 @@ batch_test(planted)
   > `plot_conservation_dashboard` (3 standardised series), `plot_reporting_lag` (mean
   > delay vs a local band) — are clearest when batches are LARGE relative to the noise
   > (e.g. `covid_us`, where they read beautifully). On small overdispersed counts they
-  > can be noisy — there the transport-discriminant scatter + `batch_test()` are the
+  > can be noisy — there the transport-discriminant scatter + `diagnose_batches()` are the
   > robust batch story. All three mark only BH-confirmed batches in red.
   - **`covid_us`** dataset — CDC COVID-19 case surveillance, 2020-2021 events aggregated
     event×report (no strata), built to DEMONSTRATE batch reporting (huge right-skewed
@@ -647,7 +792,7 @@ batch_test(planted)
     "Finding batch reporting…" article + `data-raw/covid_us.R` (duckdb over the 14GB source).
 
 > The older `detect_report_batches()` / `plot_report_batches()` are **removed** —
-> use `batch_test()` + `batch_shape_test()`.
+> use `diagnose_batches()` + `diagnose_batch_shape()`.
 
 ---
 
@@ -680,13 +825,13 @@ so a converted object round-trips straight back.
 | Package | from | to | Mapping |
 |---------|:---:|:---:|---------|
 | epinowcast | ✅ | ✅ | `reference_date`/`report_date`/`confirm` ↔ count-cumulative. `from` accepts the raw long input, a preprocessed `enw_preprocess_data` object, **or** a fitted `epinowcast` object (grouping auto-detected). `to` builds the preprocessed `enw_preprocess_data` object (or the completed-input `data.table` with `preprocess = FALSE`) |
-| baselinenowcast | ✅ | ✅ | long df **or** reporting-triangle matrix ↔ count-incidence; `to` has `format = c("matrix","long","triangle_list")` — **`"matrix"` is the default**; `"triangle_list"` returns ONE TRIANGLE PER STRATUM as a thin `tbl_now_triangle_list` (still a plain list, so `lapply()` works), length-1 and named `"all"` when there are no strata, and `as_tbl_now()` rebuilds a `tbl_now` from it with the strata recoded. `to`'s `delays_unit` defaults to `NULL` and is **inferred** from the object units (equal event/report units of `"days"`/`"weeks"`) for the matrix format, else supply it. Refuses `count-cumulative` input (would need to de-accumulate to possibly-negative increments) |
-| EpiNow2 | ❌ | ✅ | `to` only. `model = "estimate_infections"` (default) → a single `date`/`confirm` series for `estimate_infections()`/`epinow()`. `model = "estimate_truncation"` → a list of `date`/`confirm` snapshots (one per report date) for `estimate_truncation()`, which *does* use the report dimension |
+| baselinenowcast | ✅ | ✅ | long df **or** reporting-triangle matrix ↔ count-incidence; `to` has `max_delay =` (delay periods kept, counted as in `tbl_now_to_epinowcast()`: `30` → delays 0–29) and `format = c("matrix","long","triangle_list")` — **`"matrix"` is the default**; `"triangle_list"` returns ONE TRIANGLE PER STRATUM as a thin `tbl_now_triangle_list` (still a plain list, so `lapply()` works), length-1 and named `"all"` when there are no strata, and `as_tbl_now()` rebuilds a `tbl_now` from it with the strata recoded. `to`'s `delays_unit` defaults to `NULL` and is **inferred** from the object units (equal event/report units of `"days"`/`"weeks"`) for the matrix format, else supply it. Refuses `count-cumulative` input (would need to de-accumulate to possibly-negative increments) |
+| EpiNow2 | ✅ | ✅ | `to` takes `target =`, named for the EpiNow2 function the result is passed to: `"estimate_infections"` (default, a `date`/`confirm` series, also what `epinow()` takes), `"regional_epinow"` (the same plus a `region` column from the strata), `"estimate_truncation"` (a list of `date`/`confirm` snapshots, one per report date — the one model that uses the report dimension), `"estimate_dist"` (the interval-censored delay frame). `from` inverts the snapshot form only. **EpiNow2 models a DAILY process and has no `timestep`**, so `accumulate = "auto"` lays non-daily data on its grid |
 | data.table | ✅ | ✅ | `tbl_now_from_data_table()` / `tbl_now_to_data_table()` (underscores) |
 | epidist | ✅ | ✅ | epidist 0.4.0 interval-censored dates; `format = "linelist"` uses lower bounds as dates, `format = "interval"` attaches upper bounds as covariates |
 | tsibble | ✅ | ✅ | `to` builds a `tbl_ts` (index defaults to `report_date`, key = other date + strata); `from` needs `event_date`, recovers strata from the key |
-| surveillance | ❌ | ✅ | `to` only. Builds the individual-level line list `surveillance::nowcast()` takes, renaming the dates to its own `dHospital`/`dReport` defaults. `format = "sts"` returns the observed curve as an `sts` object instead. Count input is expanded back to one row per case |
-| nowcaster | ❌ | ✅ | `to` only. Builds the line list `nowcaster::nowcasting_inla()` takes (`date_onset`/`date_report`). **Strata are encoded for you**: it emits a numeric `stratum_code` column, and `get_nowcaster_strata()` returns the `bins_age` breaks to pass alongside it, because `age_col` must be numeric despite the help calling it a "stratum column" |
+| NobBS | ❌ | ✅ | `to` only. Builds the line list `NobBS::NobBS()` takes (`onset_date`/`report_date`). **NobBS counts ROWS**, so count input is expanded to one row per case — handing it counts directly nowcasts 1,174 rows as 1,174 cases when they carry 50,160. Daily or weekly grids only |
+| surveillance | ❌ | ✅ | `to` only. Builds the individual-level line list `surveillance::nowcast()` takes, renaming the dates to its own `dHospital`/`dReport` defaults. `format = c("linelist","linelist_list","sts")` — **`"linelist"` is the default**; `"linelist_list"` returns ONE LINE LIST PER STRATUM as a thin `tbl_now_surveillance_list` (still a plain list, so `lapply()` works), length-1 and named `"all"` when there are no strata, and `as_tbl_now()` rebuilds a `tbl_now` from it (as a `linelist`, since counts were expanded); `"sts"` returns the observed curve as an `sts` object instead. Count input is expanded back to one row per case |
 
 ```r
 nowobj <- tbl_now_from_epinowcast(epinowcast::germany_covid19_hosp,
@@ -694,6 +839,156 @@ nowobj <- tbl_now_from_epinowcast(epinowcast::germany_covid19_hosp,
 ts     <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
 back   <- as_tbl_now(ts, event_date = "reference_date")   # round-trip
 ```
+
+> **You do not have to aggregate first.** A column the object was never told
+> about — `sex` in `covid_colombia` — puts two rows in every `(event, report)`
+> cell. Every `tbl_now_to_*()` converter **pools undeclared columns for you**
+> via `to_count()`, so case totals are preserved and no `group_by()` is needed.
+> `tbl_now()` still *warns* that the cells are non-unique; that is information,
+> not a fault. **`distinct()` does not fix it** — those rows are distinct, they
+> differ in `sex` — and on data with genuine repeats it deletes cases. Declare
+> the column (`strata = sex`) when you want it modelled separately.
+> Line lists are never pooled: one row is already one case.
+
+---
+
+## Skill: fit several models at once and ensemble them (`run_nowcast`)
+
+The converters are one front door: convert, fit, `tidy()`. `run_nowcast()` is the
+other: it does all three in one call and always returns a **`tbl_nowcast`**, the
+shape `nowcast_ensemble()` and `score_nowcast()` need in order to compare models
+at all. Both stay supported — reach for the converter when you want to pass that
+package's own arguments or inspect what it was handed.
+
+`run_nowcast(x, engine, verbose =)` takes an **engine**: the model AND every
+argument it needs. **The data and `verbose` are the ONLY things outside it** — a
+bare method string is an error (0.27.0; before that it was `run_nowcast(x,
+"NobBS", max_D = 10)` and an argument that missed its backend vanished silently).
+
+```r
+nc <- run_nowcast(x, engine_baselinenowcast(draws = 1000))
+
+list_nowcast_methods()          # what is available in this session
+list_nowcast_methods(installed_only = FALSE)
+```
+
+One constructor per package, each naming that package's own arguments, plus the
+general `engine(method, ...)` for anything else (including your own backend):
+
+| engine | fits | key named args | needs |
+|---|---|---|---|
+| `engine_diseasenowcasting()` | `diseasenowcasting::nowcast()`, straight off the `tbl_now` | `model`, `type`, `n_draws` | — |
+| `engine_baselinenowcast()` | one reporting triangle, or one **per stratum** | `draws`, `delays_unit` | — |
+| `engine_epinowcast()` | `epinowcast::epinowcast()` | `preprocess_args`, `expectation`, `reference`, `report`, `fit` | Stan |
+| `engine_nobbs()` | `NobBS()`, or `NobBS.strat()` when strata are declared | `max_D`, `moving_window`, `specs` | JAGS |
+| `engine_surveillance()` | `surveillance::nowcast()`, **one fit per stratum** | `D`, `when`, `fit_method`, `control` | — |
+| `engine_epinow2()` | `estimate_infections()`, or `regional_epinow()` when strata are declared | `generation_time`, `delays`, `truncation`, `rt`, `stan`, `convert_args` | Stan |
+| `engine(method, ...)` | any registered method, yours included | — | — |
+
+Every engine also takes:
+
+- **`min_date`** — how much history to fit on. `NULL` (default) = the whole
+  series; a **`Date`** = a fixed cut; a **number** = the last *n* periods before
+  `get_now(x)`, **in the object's own units**. Per engine on purpose:
+  `baselinenowcast`/`diseasenowcasting` take a long series happily, while
+  `epinowcast`/`EpiNow2` scale with the number of reference dates. In a
+  `nowcast_backtest()` prefer the number: `now` moves, so a fixed `Date` makes
+  the window grow as the backtest walks forward. It trims the **event axis**, not
+  `now`, and the trimmed object is what the result carries.
+- **`quantile_levels`** — default `nowcast_quantile_levels()`. It lives on the
+  engine because for `NobBS` it is a **fit-time** argument (it lands in
+  `specs$quantiles`; NobBS keeps no draws, so a level it was not asked for is
+  unrecoverable), and `surveillance` reports a fixed set and warns. The
+  draw-keeping engines (`baselinenowcast`, `diseasenowcasting`, `epinowcast`,
+  `EpiNow2`) answer any level after the fact.
+- **`label`** — its name in a `nowcast_backtest()`, defaulting to the method.
+  This is how one package appears twice with different settings.
+
+What comes back:
+
+```r
+nc                          # print: method, now, dates, strata, quantile levels
+as_tibble(nc)               # the quantile predictions (long)
+as_tibble(nc, type = "draws")  # the draws, where the backend has them
+tidy(nc)                    # the standard event_date/stratum/estimate/... table
+autoplot(nc)                # green fan chart (a nowcast is the epidemic process)
+nc@fit                      # the backend's OWN object, untouched
+```
+
+### Scoring
+
+```r
+score_nowcast(nc, truth = x_full)   # wis, ae_median, coverage_50, coverage_90
+as_scoringutils(nc, truth = x_full) # hand it to scoringutils instead
+```
+
+`truth` is the **full `tbl_now`** (the one that still holds the reports which
+arrived after the nowcast's `now`), or `NULL` to reuse the nowcast's own source
+data. There is **no `observed_col`** (removed 0.27.0): the observed counts are
+read off the object with `get_case_count()`, and a **line list is aggregated
+first**, so a bare data frame is refused rather than guessed at.
+`nowcast_truth()` was un-exported in
+0.19.0: it was `get_latest_reported_cases()` reshaped, and the reshaping now
+happens inside the scoring functions.
+
+Score against data the model had not seen: snapshot at a past `now`, fit there,
+score against the full series.
+
+### Ensembles
+
+```r
+members <- list(a = run_nowcast(x, engine_baselinenowcast()),
+                b = run_nowcast(x, engine_diseasenowcasting()))
+
+nowcast_ensemble(members)                              # quantile average
+nowcast_ensemble(members, type = "linear_pool")        # pool the draws
+nowcast_ensemble(members, weights = c(a = 0.7, b = 0.3))
+```
+
+- **`type = "quantile"`** (default) averages the members' values level by level.
+  Always applies, and tends to be **narrower** than the members.
+- **`type = "linear_pool"`** pools their draws into a mixture. Usually **wider**
+  and better calibrated, and it **errors** if any member has no draws (`NobBS`
+  and `surveillance` do not) rather than quietly dropping it.
+- Members must share the event-date column and the strata. Levels not shared by
+  every member are dropped, with a warning — no member is silently discarded.
+
+### Learning the weights
+
+```r
+bt <- nowcast_backtest(x_full,
+                       engine_baselinenowcast(),
+                       engine_nobbs(max_D = 10),
+                       now_dates = as.Date(c("2010-08-01", "2010-09-01")),
+                       seed = 20260824)
+tidy(bt)                                   # one row per (method, now, target)
+nowcast_weights(bt, type = "inverse_score")  # w proportional to 1 / mean WIS
+nowcast_ensemble(members, weights = "inverse_score", backtest = bt)
+```
+
+`nowcast_backtest(x, ...)` takes the engines variadically (or one list of them);
+their `label`s must be unique and their `quantile_levels` must all agree, or it
+errors. It is `length(engines) x length(now_dates)` model fits — keep
+`now_dates` short with Bayesian members. **Pass `seed`**: it seeds immediately
+before each fit, so a fit depends only on which fit it is. One `set.seed()`
+before the whole backtest silently moves every other fit the moment you drop a
+method or refit one date.
+
+### Adding your own model
+
+Two S3 methods, in any package:
+
+```r
+nowcast_fit.mymodel  <- function(method, x, ..., quantile_levels, verbose = TRUE) { ... }
+nowcast_tidy.mymodel <- function(method, fit, x, ..., quantile_levels) {
+  list(predictions = NULL, draws = <event_date, strata, .draw, .value>)
+}
+```
+
+Return `draws` where you can — the quantiles are derived for you, and it is what
+`type = "linear_pool"` needs. Return `predictions` (`<event_date>`, strata,
+`.quantile_level`, `.value`) otherwise. One of the two may be `NULL`, not both.
+See `vignette("ensemble-nowcasting")`.
 
 ---
 
@@ -715,17 +1010,30 @@ entry (named after the probability: `0.025` → `q2.5`).
 
 Supported: `diseasenowcasting` (pass `predict(fit)`), `baselinenowcast`
 (`output_type = "samples"`), `epinowcast`, `NobBS`, `surveillance` (`stsNC`),
-`nowcaster`.
+`EpiNow2` — **and the `tbl_nowcast` that `run_nowcast()` / `nowcast_ensemble()`
+return**, so a nowcast fitted through the one-call front door reads exactly like
+one fitted by hand.
 
 - **`level` is not decoration.** It records the width each engine's interval
   actually has. `epinowcast` reports a q5–q95 band (**90%**) by default while the
   others report 95%; without it you would compare the two as if identical.
-- **`probs` only works where draws exist** (`diseasenowcasting`,
-  `baselinenowcast`, `epinowcast`). The others report a fixed summary set and
-  **error** rather than approximate.
+- **`probs` only works where draws exist.** Through `run_nowcast()` that is
+  `diseasenowcasting`, `baselinenowcast`, `epinowcast` and `EpiNow2` (the last
+  since 0.27.0, via `get_predictions(format = "sample")`). `NobBS` and
+  `surveillance` report a fixed summary set and **error** rather than
+  approximate. Note `tidy()` called on a **bare** `estimate_infections` object
+  still reads its summary, so `probs` there is a different question.
+- **On a `tbl_nowcast`, `level` is read off the object.** It is the width of the
+  widest **symmetric** pair of quantile levels the nowcast actually carries:
+  `0.95` for the default `nowcast_quantile_levels()`, `0.8` for
+  `c(0.1, 0.5, 0.9)`, and `NA` (with `NA` bounds) when no symmetric pair exists.
+  `engine` is the method, or the ensemble's name.
+- **`tidy()` also works on a `nowcast_backtest`**, giving one row per (method,
+  `now` date, target) with `wis`, `ae_median` and the coverage flags — ready for
+  `dplyr` or `ggplot2`.
 - **`library(broom)` overwrites `tbl.now`'s `tidy.list()` method**, which is what
-  `NobBS` and `nowcaster` fits dispatch on. Qualify as `tbl.now::tidy(...)` when
-  broom is attached.
+  `NobBS` fits and per-stratum `baselinenowcast` lists dispatch on. Qualify as
+  `tbl.now::tidy(...)` when broom is attached.
 - **`diseasenowcasting` needs >= 2.1.0 for a bare `tidy(fit)`.** From 2.1.0 it
   re-exports the shared generic and supplies its own method, so `tidy(fit)`
   returns the nowcast and `model_parameters()` returns the parameter table.
@@ -740,7 +1048,7 @@ Supported: `diseasenowcasting` (pass `predict(fit)`), `baselinenowcast`
   There is no `event_date`. Beware dispatch: the fit is
   `c("brmsfit", "epidist_fit")`, so a loaded `broom.mixed` matches first.
 - **Engines without draws can still give you quantiles — ask at fit time.**
-  `tidy(probs =)` errors for `NobBS`, `nowcaster` and `surveillance`, but
+  `tidy(probs =)` errors for `NobBS` and `surveillance`, but
   `NobBS(specs = list(quantiles = c(0.1, 0.5, 0.9)))` computes them during the
   fit and returns `q_0.1` / `q_0.5` / `q_0.9` columns on `$estimates`; join them
   onto `tidy()` output by date.
@@ -748,8 +1056,9 @@ Supported: `diseasenowcasting` (pass `predict(fit)`), `baselinenowcast`
   slot at the width `control$alpha` sets (95% by default). You do NOT need the
   JAGS-backed `bayes.trunc`/`bayes.trunc.ddcp` methods to get uncertainty;
   `lawless` and `unif` may leave the slot empty, and then the bounds are `NA`.
-- **`NobBS` and `nowcaster` return unclassed lists**, so they are told apart by
-  structure; pass `engine =` if that ever fails.
+- **`NobBS`, `regional_epinow()` and a per-stratum `baselinenowcast` list all
+  arrive as unclassed lists**, so they are told apart by structure; pass
+  `engine =` if that ever fails.
 - **`tidy()` does NOT re-grid.** Engines that bin onto their own week starts keep
   them. Snapping silently would hide a real difference between packages.
 - The generic comes from `generics`, so it composes with `broom` rather than
@@ -822,12 +1131,42 @@ get_initial_reported_cases(x) / get_latest_reported_cases(x)
 get_nth_reported_cases(x, delay)          # cumulative count within a given delay
 ```
 
+## Reference: nowcasting & ensembles (all experimental)
+
+```r
+run_nowcast(x, engine = engine_diseasenowcasting(), verbose = TRUE)  # -> tbl_nowcast
+engine(method, ..., min_date =, quantile_levels =, label =)
+engine_diseasenowcasting/baselinenowcast/epinowcast/nobbs/surveillance/epinow2(...)
+is_nowcast_engine(x)
+list_nowcast_methods(installed_only = TRUE)
+nowcast_quantile_levels()                       # the hub levels, the default
+tbl_nowcast(predictions =, draws =, ...)        # the constructor (for backends/tests)
+is_tbl_nowcast(x)
+
+nowcast_ensemble(..., type =, weights =, backtest =, n_draws =, name =)
+score_nowcast(nc, truth =) / as_scoringutils(nc, truth =)  # truth = the full tbl_now
+nowcast_backtest(x, <engines>, now_dates =, seed =) / nowcast_weights(bt, type =)
+
+nowcast_fit(method, x, ...) / nowcast_tidy(method, fit, x, ...)  # extension points
+engine("nobbs")                                 # -> the dispatch object
+```
+
 ## Reference: diagnostics & batches (all experimental)
 
 ```r
+summary(x, by_strata =)                   # the whole summary, as a tibble
+diagnose(x, checks =, by_strata =)        # the structural health check
+diagnose_declarations/ordering/missing/duplicates/units/negatives(x)
+diagnose_now/truncation/strata/signposts(x)
+cases_per_date(x, axis =) / delay_summary(x, delay =) / zero_run_summary(x, axis =)
+prop_censored(x) / prop_strata(x) / prop_confirmation_type(x) / prop_covariate_levels(x)
+case_autocorrelation(x, lags =) / date_ranges(x) / triangle_occupancy(x)
+reporting_completeness(x, delays =) / cumulative_growth(x, k =)
 autoplot(x, panels =, by_strata =)        # multi-panel diagnostic (patchwork)
-plot_delay_drift(x) / test_delay_drift(x) / test_delay_changepoint(x)
-batch_test(x) / batch_shape_test(x, at =) / simulate_batch(x, closed_dates =)
+autoplot(nc, levels =, show_reported =)   # nowcast fan: reported counts as grey
+                                          #   COLUMNS one period wide, fan over them
+plot_delay_drift(x) / diagnose_drift(x) / diagnose_changepoint(x)
+diagnose_batches(x) / diagnose_batch_shape(x, at =) / simulate_batch(x, closed_dates =)
 transport_discriminant(x)                 # deficit W vs discriminant Delta, per report date
 diagnostic_plot(x, panels =, by =)        # reporting-process gallery (reporting/triangle/profiles/delay_drift/transport)
 ```
@@ -835,9 +1174,12 @@ diagnostic_plot(x, panels =, by =)        # reporting-process gallery (reporting
 ## Reference: package data
 
 ```r
-data(flusight)    # flu data in the United States (count-cumulative)
-data(denguedat)   # dengue surveillance linelist (weekly, Puerto Rico)
-data(mpoxdat)     # mpox count-incidence data (has a `race` stratum + `n` counts)
+data(denguedat)        # dengue surveillance linelist (weekly, Puerto Rico)
+data(flusight)         # flu in the United States (count-cumulative)
+data(mpoxdat)          # mpox count-incidence (a `race` column + `n` counts)
+data(covid_colombia)   # daily COVID-19 counts, Colombia (a `sex` column + `n`)
+data(covid_us)         # daily COVID-19 counts, US CDC -- the batch-dump example
+data(hai_bucaramanga)  # healthcare-associated infections; deliberately messy
 ```
 
 ---
@@ -856,23 +1198,36 @@ data(mpoxdat)     # mpox count-incidence data (has a `race` stratum + `n` counts
 - `rowwise()` is **unsupported**.
 - For weekly data with fractional `.delay`, use `align_weeks`.
 - Count data types **require** a `case_count` column.
-- `batch_shape_test(at =)` needs `at` to be an **observed report date**; the volume
-  screen `batch_test()` scans them all.
-- `test_delay_drift()` needs the `modifiedmk` package (a Suggests); the batch and
+- `diagnose_batch_shape(at =)` needs `at` to be an **observed report date**; the volume
+  screen `diagnose_batches()` scans them all.
+- `diagnose_drift()` needs the `modifiedmk` package (a Suggests); the batch and
   drift diagnostics all print an experimental warning.
 - `detect_report_batches()` / `plot_report_batches()` were **removed** —
-  use `batch_test()` + `batch_shape_test()`.
+  use `diagnose_batches()` + `diagnose_batch_shape()`.
 - **A zero period is invisible in a line list.** An event date with no reports has
   no rows, so engines that build their time grid from the rows they are handed
   stop short of the `now`. `complete_zeroes()` fixes this for *count*-shaped
   converters (`baselinenowcast`, `epinowcast`); for line-list engines the padding
   evaporates (a zero-count row expands to zero rows) and you must give the grid
   another way — `control$dRange` in `surveillance`.
-- **`nowcaster` takes its last observable week from the last EVENT, not the last
-  report** (`Tmax <- max(date_onset)`, then `Y <- ifelse(Time + delay > Tmax.id,
-  NA, Y)`). If your final event period has no same-period report then
-  `max(event) < max(report)` and it silently discards a whole diagonal of real
-  reports — the symptom is a nowcast **below** counts you have already observed.
-  Check `max(event_date) == max(report_date)` after aggregating to your time unit.
-- `tidy(fit, probs =)` **errors** for `NobBS`, `nowcaster` and `surveillance`:
-  they keep no draws, so an arbitrary quantile would be an approximation.
+- `tidy(fit, probs =)` **errors** for `NobBS` and `surveillance`: they keep no
+  draws, so an arbitrary quantile would be an approximation. The same is true of
+  a quantile-only `tbl_nowcast`.
+- **`NobBS`'s `moving_window` counts EVENT PERIODS and must not exceed the
+  history you hand it.** Ask for more and it pads its grid backwards and returns
+  **zero for every date, with no error** — which reads as a catastrophic score
+  rather than as the misconfiguration it is.
+- **`EpiNow2::estimate_infections()` defaults to NO reporting delay**
+  (`delay_opts()` is `Fixed(0)`) and a one-day generation time (`gt_opts()` is
+  `Fixed(1)`). Those defaults describe a process with nothing to nowcast; pass
+  `generation_time =` and `delays =` yourself.
+- **`nowcaster` is no longer supported** (dropped in 0.16.0, and its
+  `run_nowcast()` backend in 0.18.0). `tbl_now_to_nowcaster()`,
+  `get_nowcaster_strata()` and a `"nowcaster"` engine do not exist.
+- **A `run_nowcast()` backend that reports only a point estimate and one
+  interval cannot honour arbitrary `quantile_levels`.** `engine_surveillance()`
+  warns and returns the three levels it does have (the median and the two tails
+  of its own interval) rather than interpolating the rest. **`EpiNow2` no longer
+  does** (0.27.0): `nowcast_tidy.EpiNow2()` reads the posterior samples with
+  `EpiNow2::get_predictions(format = "sample")` instead of the fit's
+  `lower_<pct>`/`upper_<pct>` summary, so it reports any level and keeps draws.

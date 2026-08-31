@@ -39,6 +39,26 @@ one triangle per stratum. Passing this object there would be accepted and
 would silently treat your strata as successive points in time. Printing the
 object says plainly what it is, so the mistake is visible rather than silent.
 }
+\examples{
+\dontshow{if (requireNamespace("baselinenowcast", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+data(denguedat)
+dengue <- tbl_now(denguedat[1:3000, ],
+  event_date = onset_week, report_date = report_week, verbose = FALSE
+)
+
+# One reporting triangle per stratum, in the shape baselinenowcast wants.
+triangles <- suppressWarnings(
+  tbl_now_to_baselinenowcast(dengue, format = "triangle_list", verbose = FALSE)
+)
+
+# Printing summarises the set rather than dumping every matrix.
+triangles
+
+# It is a list underneath, so the usual accessors work.
+length(triangles)
+names(triangles)
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 \code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast()}}, \code{\link[=as_tbl_now]{as_tbl_now()}}
 }

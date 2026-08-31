@@ -46,3 +46,30 @@ with \code{format = "aggregate"}.
 \item \code{as.data.table()} (\pkg{data.table}) wraps \code{\link[=tbl_now_to_data_table]{tbl_now_to_data_table()}}.
 }
 }
+\examples{
+data(denguedat)
+dengue <- tbl_now(denguedat[1:3000, ],
+  event_date = onset_week, report_date = report_week, verbose = FALSE
+)
+
+# These are S3 methods, so the other package's own verb works directly on a
+# `tbl_now` -- no explicit converter call needed.
+if (requireNamespace("tsibble", quietly = TRUE)) {
+  suppressWarnings(tsibble::as_tsibble(dengue))
+}
+
+if (requireNamespace("data.table", quietly = TRUE)) {
+  head(data.table::as.data.table(dengue))
+}
+
+## Use the `tbl_now_to_*()` function itself when you need its arguments; these
+# methods take none beyond `verbose`.
+
+}
+\seealso{
+The \verb{tbl_now_to_*()} functions these delegate to, which take the arguments:
+\code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}, \code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast()}},
+\code{\link[=tbl_now_to_epidist]{tbl_now_to_epidist()}}, \code{\link[=tbl_now_to_tsibble]{tbl_now_to_tsibble()}}, \code{\link[=tbl_now_to_data_table]{tbl_now_to_data_table()}};
+\code{\link[=as_tbl_now]{as_tbl_now()}} to come back the other way;
+\link[=as_tibble.tbl_now]{as_tibble()} to drop to a plain tibble.
+}

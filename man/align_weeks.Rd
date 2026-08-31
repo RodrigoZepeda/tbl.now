@@ -4,94 +4,154 @@
 \alias{align_weeks}
 \alias{align_weeks.data.frame}
 \alias{align_weeks.tbl_now}
-\title{Align weeks to a common weekday}
+\alias{week_2_date}
+\title{Put weekly data on a common weekday}
 \usage{
-align_weeks(.data, align_on_day = 1, type = "epi", ...)
+align_weeks(.data, align_on_day = 7, type = "epi", ...)
 
 \method{align_weeks}{data.frame}(
   .data,
-  align_on_day = 1,
+  align_on_day = 7,
   type = "epi",
   ...,
   date_col,
   new_date_col = NULL
 )
 
-\method{align_weeks}{tbl_now}(.data, align_on_day = 1, type = "epi", ...)
+\method{align_weeks}{tbl_now}(.data, align_on_day = 7, type = "epi", ...)
+
+week_2_date(
+  .data,
+  week_col,
+  year_col,
+  align_on_day = 7,
+  week_fun = lubridate::epiweek,
+  year_fun = lubridate::epiyear,
+  date_col_name = "date"
+)
 }
 \arguments{
-\item{.data}{A \code{data.frame} or tibble.}
+\item{.data}{A \code{data.frame}, tibble or \code{tbl_now}.}
 
-\item{align_on_day}{Integer 1–7 indicating the weekday to align to.
-Uses \code{\link[lubridate:wday]{lubridate::wday()}} numbering (1 = Sunday, 7 = Saturday).}
+\item{align_on_day}{Integer 1-7 giving the weekday to align to, in ISO
+numbering: \strong{1 = Monday}, 2 = Tuesday, ..., \strong{7 = Sunday}. This is
+\code{\link[lubridate:wday]{lubridate::wday()}} with \code{week_start = 1}, the same convention
+\code{\link[=is_weekday]{is_weekday()}} uses. Defaults to \code{7} (Sunday), the start of an
+epidemiological week.}
 
-\item{type}{Either \code{"epi"} (default) or \code{"iso"}. Determines
-which week/year functions to use whether \code{\link[lubridate:epiweek]{lubridate::epiweek()}} or
-\code{\link[lubridate:isoweek]{lubridate::isoweek()}}}
+\item{type}{Either \code{"epi"} (default) or \code{"iso"}, choosing whether week and
+year are read with \code{\link[lubridate:epiweek]{lubridate::epiweek()}} or \code{\link[lubridate:isoweek]{lubridate::isoweek()}}.}
 
-\item{...}{Additional arguments to pass to function}
+\item{...}{Additional arguments passed to methods.}
 
-\item{date_col}{A \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} column
-name containing dates.}
+\item{date_col}{For the \code{data.frame} method, the
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
+column holding the dates to align.}
 
-\item{new_date_col}{Name of the new aligned date column to be created. By default
-it creates a column named \verb{\\\{date_col\\\}_aligned} where \code{date_col} corresponds
-to the column name passed to that parameter.}
+\item{new_date_col}{Name for the aligned column. Defaults to
+\verb{\\\{date_col\\\}_aligned}.}
+
+\item{week_col, year_col}{For \code{week_2_date()}, the
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
+columns holding the week number and the year.}
+
+\item{week_fun, year_fun}{For \code{week_2_date()}, the functions defining the week
+convention: \code{\link[lubridate:epiweek]{lubridate::epiweek()}}/\code{\link[lubridate:epiyear]{lubridate::epiyear()}} (the default) or
+\code{\link[lubridate:isoweek]{lubridate::isoweek()}}/\code{\link[lubridate:isoyear]{lubridate::isoyear()}}.}
+
+\item{date_col_name}{For \code{week_2_date()}, the name of the date column to
+create.}
 }
 \value{
-A tibble identical to \code{.data} but with an added aligned date column.
+\code{align_weeks()} returns its input with an aligned date column added
+(\code{data.frame} method), or a \code{tbl_now} whose dates have been aligned and whose
+\code{.delay} has been recomputed.
+
+\code{week_2_date()} returns the input \code{data.frame} with a new date column
+appended.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Aligns all dates in either a \code{data.frame} or a \code{tbl.now} so that week
-boundaries occur on a specified day of the week. This is useful in the
-context of nowcasting for cases when weekly reports are changed from say
-Wednesday to Thursday so that delays don't have a decimal point.
+Weekly surveillance data is rarely as tidy as it looks. The same series may be
+stamped with a Wednesday one year and a Thursday the next, or event dates may
+fall on a Sunday while reports fall on a Saturday. When that happens the delay
+between the two stops being a whole number of weeks -- you get delays of 2.86
+weeks -- and most nowcasting models, which count in whole periods, either
+refuse the data or quietly round it.
+
+\code{align_weeks()} snaps every date to the same weekday, so week differences come
+out as integers. \code{week_2_date()} solves the neighbouring problem: you have
+epiweek (or ISO week) \emph{numbers} rather than dates, and need real dates to build
+a \code{tbl_now} from.
 }
 \details{
-In some cases, to calculate the delay of information, what matters is the
-week distance (reports from week 3 in week 7) and not the specific date distance
-(reports from Saturday of week 3 vs Monday in week 7). The \code{align_weeks}
-function ensures that all week reports are aligned to the same day of the week
-(if applied to a \code{tbl_now}) or
+Applied to a \code{data.frame}, \code{align_weeks()} adds an aligned copy of the column
+you name. Applied to a \code{tbl_now}, it aligns the event and report dates
+together and recomputes the delay, so the object stays coherent.
+
+Epi weeks and ISO weeks disagree about where a year starts, so \code{type} picks
+which convention to use: \code{"epi"} uses \code{\link[lubridate:epiweek]{lubridate::epiweek()}} /
+\code{\link[lubridate:epiyear]{lubridate::epiyear()}}, \code{"iso"} uses \code{\link[lubridate:isoweek]{lubridate::isoweek()}} /
+\code{\link[lubridate:isoyear]{lubridate::isoyear()}}.
 }
 \note{
-This is also useful when working with epiweeks
-or isoweeks where week boundaries may differ between systems or years
+Useful whenever week boundaries differ between systems or between years,
+which is the normal state of affairs for epiweek and ISO week data.
 }
 \examples{
-# DATA.FRAMES:
-# The function aligns weekly data to be "reported" on the same day of the week
-df <- data.frame(
-  date = as.Date(c("2020-10-31", "2022-11-07", "2022-11-13"))
-)
+## ---- Plain data frames ------------------------------------------------
 
-# Align to Sundays
-align_weeks(df, date_col = date)
+# Three dates falling on different weekdays.
+df <- data.frame(date = as.Date(c("2022-11-02", "2022-11-07", "2022-11-13")))
+weekdays(df$date)
 
-# Align to Tuesday
-align_weeks(df, date_col = date, align_on_day = 3)
+# Snap them all back to the Sunday that starts their week.
+aligned <- align_weeks(df, date_col = date)
+aligned
+weekdays(aligned$date_aligned)
 
-## TBL_NOWS
-# If not used you can see the delay has decimal points because
-# reports (`as_of`) are sometimes on Saturday and sometimes Wednesday
+# Or to Tuesday. Weekday numbers are ISO: 1 = Monday, so Tuesday is 2.
+align_weeks(df, date_col = date, align_on_day = 2)
+
+## ---- A tbl_now: making the delays whole numbers -------------------------
+
 data(flusight)
 
-# Get the table
-flutbl <- tbl_now(flusight,
+# One state is enough to see the problem.
+texas <- flusight[flusight$location_name == "Texas", ]
+flutbl <- tbl_now(texas,
   event_date = "target_end_date",
-  report_date = "as_of", case_col = "observation",
-  strata = c("location_name")
+  report_date = "as_of", case_count = "observation",
+  strata = "location_name", verbose = FALSE
 )
 
-# See that some delays have decimals
-suppressWarnings(as.numeric(flutbl[413484, ".delay"]))
+# `as_of` is sometimes a Saturday and sometimes a Wednesday, so some delays
+# land between whole weeks.
+mean(flutbl$.delay != round(flutbl$.delay))
 
-# Align the weeks so that they all start on Sunday
-flutbl <- flutbl |> align_weeks()
+# After aligning, every delay is a whole number of weeks.
+flutbl <- align_weeks(flutbl)
+mean(flutbl$.delay != round(flutbl$.delay))
 
-# Delayed decimals are now integer as all weeks start in Sunday!
-suppressWarnings(as.numeric(flutbl[413484, ".delay"]))
+## ---- Week numbers instead of dates --------------------------------------
 
+# Data reported as "week 1 of 2024" and so on, with no usable date column.
+df <- data.frame(
+  epidemiological_week = 1:5,
+  epidemiological_year = rep(2024, 5)
+)
+
+## week_2_date() turns those into the Sunday that starts each epiweek.
+week_2_date(df,
+  week_col = epidemiological_week,
+  year_col = epidemiological_year
+)
+
+}
+\seealso{
+\code{\link[=tbl_now]{tbl_now()}}, whose \code{align_weeks = TRUE} argument does this at construction
+time; \code{\link[=is_weekday]{is_weekday()}}, which numbers weekdays the same way;
+\code{\link[=complete_zeroes]{complete_zeroes()}} for filling the weeks where nothing was reported;
+\code{\link[=temporal_effects]{temporal_effects()}} for using week-of-year as a model term.
 }

@@ -15,6 +15,7 @@ plot_delay_drift(
   changepoint = FALSE,
   level = 0.95,
   plotly = FALSE,
+  axis = c("report", "confirmation"),
   palette = .tbl_now_palette()
 )
 }
@@ -41,13 +42,21 @@ stratum (faceted).}
 \item{changepoint}{Logical (default \code{FALSE}). When \code{TRUE}, mark the estimated
 abrupt change point of the \strong{median} delay (Pettitt's test, on mature data)
 with a vertical line, when one is detected (p < 0.05). See
-\code{\link[=test_delay_changepoint]{test_delay_changepoint()}}.}
+\code{\link[=diagnose_changepoint]{diagnose_changepoint()}}.}
 
 \item{level}{Completeness level for the immature-region shading (default
 \code{0.95}; see \code{\link[=autoplot]{autoplot()}}).}
 
 \item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget instead of a
 static plot. Default \code{FALSE}.}
+
+\item{axis}{Which time axis the delay is measured to: \code{"report"} (default)
+or \code{"confirmation"}. Both are measured \emph{from the event}, so the two are
+directly comparable -- run each in turn and the gap between them is the
+time the laboratory adds. (This is not the same quantity as the
+\code{.confirmation_delay} column, which is the laboratory's own turnaround,
+measured from the report.) Needs a confirmation process (see
+\code{\link[=add_confirmation]{add_confirmation()}}); cases still \code{"pending"} are left out.}
 
 \item{palette}{A named colour palette (defaults to the package palette).}
 }
@@ -56,20 +65,20 @@ A \pkg{ggplot2} object.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Draws a \strong{rolling fan chart} of the count-weighted reporting-delay
 distribution indexed by \strong{event date}: a solid line for the rolling median,
 a dashed line for the rolling mean, and two shaded bands (the 25-75\% and
 10-90\% quantile ranges). Reading it left to right answers "do delays drift?"
 — a rising/falling centre line is \emph{location} drift, widening/narrowing bands
 are \emph{spread} drift.
-
+}
+\details{
 Because recent event dates have not had time to be fully reported, their delay
 summaries are downward-biased (only short delays are observable yet). That
 immature region — event dates after the \code{level} incompleteness cutoff — is
 \strong{shaded grey} and should not be read as drift. Pair the plot with
-\code{\link[=test_delay_drift]{test_delay_drift()}} for a formal test.
+\code{\link[=diagnose_drift]{diagnose_drift()}} for a formal test.
 }
 \examples{
 \dontshow{if (requireNamespace("ggplot2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
@@ -81,5 +90,9 @@ plot_delay_drift(dengue)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=test_delay_drift]{test_delay_drift()}}, \code{\link[=test_delay_changepoint]{test_delay_changepoint()}}, \code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}}
+\code{\link[=diagnose_drift]{diagnose_drift()}} for the formal trend test behind this picture, and
+\code{\link[=diagnose_changepoint]{diagnose_changepoint()}} for an abrupt shift rather than a gradual one;
+\code{\link[=plot_delay_distribution]{plot_delay_distribution()}} for the delay pooled over the whole period;
+\link[=autoplot.tbl_now]{autoplot()} and \code{\link[=diagnostic_plot]{diagnostic_plot()}} for the galleries this
+belongs to.
 }

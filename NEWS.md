@@ -1,3 +1,1035 @@
+# tbl.now 0.27.0
+
+## Breaking: a nowcast is specified with an `engine()`
+
+`run_nowcast()` and `nowcast_backtest()` used to take a method **name** plus a
+`...` (and, for the backtest, a `method_args` list of lists keyed by label). Both
+failed the same silent way: an argument that missed its backend simply vanished,
+and you got a fitted model at its default with nothing on the object to say so.
+
+An **engine** is one modelling package plus every argument it needs:
+
+```r
+run_nowcast(x, engine_nobbs(max_D = 10, moving_window = 64))
+
+nowcast_backtest(x,
+  engine_baselinenowcast(draws = 1000),
+  engine_nobbs(max_D = 10),
+  now_dates = dates, seed = 20260824
+)
+```
+
+* One constructor per supported package -- `engine_diseasenowcasting()`,
+  `engine_baselinenowcast()`, `engine_epinowcast()`, `engine_nobbs()`,
+  `engine_surveillance()`, `engine_epinow2()` -- each **naming** that package's
+  own arguments, so they are visible in the signature and a typo is an error at
+  the call rather than a default nobody notices. `...` still carries anything a
+  named argument does not cover.
+* `engine(method, ...)` is the general constructor and works for any registered
+  method, including a backend you wrote yourself.
+* **The data and `verbose` are the only arguments outside the engine.**
+  `quantile_levels` moved onto it, because for `NobBS` it is a *fit-time* model
+  argument (it lands in `specs$quantiles`, and NobBS keeps no draws, so a level
+  it was never asked for cannot be recovered) rather than a way of summarising
+  afterwards.
+* `nowcast_backtest(x, ...)` now takes the engines **variadically**, or as one
+  list. `methods` and `method_args` are gone. An engine's `label` is its name in
+  the result; labels must be unique, and every engine must report the **same**
+  quantile levels -- the WIS averages over the levels reported, so mismatched
+  engines are not scoring the same quantity.
+* `nowcast_method()` is **removed**. The engine is the object `nowcast_fit()` and
+  `nowcast_tidy()` dispatch on, so an existing backend needs no change; write
+  `engine("mymodel")` where you wrote `nowcast_method("mymodel")`.
+* A bare method string is an error that names the constructor to use.
+
+## New: `min_date`, per engine
+
+Every engine takes `min_date`, saying how much history to fit on:
+
+| `min_date` | means |
+|---|---|
+| `NULL` (default) | the whole series |
+| a `Date` | keep event dates on or after it |
+| a number | keep the last *n* periods before `now`, in the object's own units |
+
+It is per engine on purpose. `baselinenowcast` and `diseasenowcasting` take a
+long series in their stride, while `epinowcast` and `EpiNow2` scale with the
+number of reference dates and are best given a window -- so one global `filter()`
+over all of them was the wrong tool.
+
+Prefer the **number** inside a `nowcast_backtest()`: `now` moves between fits, so
+a fixed calendar cut makes the fitted window grow as the backtest walks forward
+and the last fit is trained on more data than the first.
+
+`min_date` trims the **event axis**, not `now`, and the trimmed object is what
+the result carries -- so `score_nowcast()` and `autoplot()`'s reported counts
+describe the series the model was actually shown.
+
+## Breaking: `score_nowcast()` / `as_scoringutils()` take a `tbl_now` as `truth`
+
+`observed_col` is **removed**, and a plain data frame is no longer accepted. The
+`tbl_now` already knows which column holds the observed counts -- it is
+`get_case_count()`, or the count `to_count()` produces from a line list -- so
+naming it was a burden on the caller and the old default (*"the last column that
+is neither the event date nor a stratum"*) was a guess that could mis-score
+silently.
+
+```r
+score_nowcast(nc, truth = dengue)     # the FULL tbl_now, line list or counts
+as_scoringutils(nc, truth = dengue)
+```
+
+## Breaking: argument names made consistent
+
+A documentation audit read every exported function and found the same argument
+wearing different names in different places. 116 of the 148 exports already took
+`x` first; these were the exceptions.
+
+* **`nowcast_fit()` and `nowcast_tidy()` take `engine`, not `method`.** This is
+  the one that affects code outside the package: if you wrote a backend, rename
+  the first argument of your methods.
+
+  ```r
+  # before
+  nowcast_fit.mymodel  <- function(method, x, ..., quantile_levels, verbose) { }
+  nowcast_tidy.mymodel <- function(method, fit, x, ..., quantile_levels) { }
+
+  # after
+  nowcast_fit.mymodel  <- function(engine, x, ..., quantile_levels, verbose) { }
+  nowcast_tidy.mymodel <- function(engine, fit, x, ..., quantile_levels) { }
+  ```
+
+  What arrives has always been the engine -- `engine()`'s own documentation
+  defines an engine as "the object `nowcast_fit()` and `nowcast_tidy()` dispatch
+  on" -- and the old name was left over from the removed `nowcast_method()`. The
+  argument is only a dispatch handle, so no method body needed changing;
+  `R CMD check`'s S3 consistency check will flag yours until you rename it.
+
+  `engine(method = )` and `list_nowcast_methods()` **keep** "method", where it
+  correctly means the *name* of a backend rather than a configured engine.
+
+* **`data` becomes `x`** in `diagnose_batches()`, `diagnose_batch_shape()`,
+  `simulate_batch()`, `transport_discriminant()`, `censor_delays_above()` and
+  `censor_confirmation_delays_above()`. Positional calls are unaffected. Two
+  internal helpers also named `data` in their error messages, so
+  `diagnose_batches(x = <not a tbl_now>)` used to complain about an argument that
+  did not exist.
+
+* **`quiet` becomes `verbose`** in `censor_delays_above()` and
+  `censor_confirmation_delays_above()`, with the sense inverted and defaulting to
+  `TRUE`, matching the twenty other functions that control messaging this way.
+  Write `verbose = FALSE` where you wrote `quiet = TRUE`.
+
+  The converters that carry **both** `verbose` and `quiet` keep both: they are
+  different channels -- `verbose` is the conversion summary, `quiet` is the
+  lossy-conversion warning -- and the documentation now says so.
+
+## Breaking: `align_weeks()` numbers weekdays the ISO way
+
+`align_weeks(align_on_day = )` counted weekdays from Sunday while
+`is_weekday(weekend_days = )` counted them from Monday. `align_weeks()` now uses
+ISO numbering too -- **1 = Monday ... 7 = Sunday** -- so the two agree.
+`is_weekday()` is unchanged.
+
+**The default is unchanged.** It becomes `7`, which is still Sunday, so
+`align_weeks(x)` -- and `tbl_now(..., align_weeks = TRUE)`, which is where nearly
+everyone meets it -- behaves exactly as before. Only an explicit `align_on_day`
+changes meaning, and the migration is to subtract one, wrapping `1` to `7`:
+
+| you wrote | you meant | now write |
+|---|---|---|
+| `1` | Sunday | `7` |
+| `2` | Monday | `1` |
+| `3` | Tuesday | `2` |
+| ... | ... | ... |
+| `7` | Saturday | `6` |
+
+## New: `example_engine()`, a toy engine for examples
+
+Every real engine needs its modelling package, so every example that fitted a
+nowcast sat inside `\donttest{}` behind a `requireNamespace()` guard -- and none
+of them ran on a default check. `example_engine()` needs nothing, is
+deterministic, and returns in milliseconds, so the examples for `run_nowcast()`,
+`nowcast_backtest()`, `nowcast_weights()`, `score_nowcast()` and `tidy()` on a
+backtest now show real output.
+
+It is not a nowcasting method. It ignores the reporting delay entirely --
+reporting the counts that have arrived and putting a `spread`-wide band around
+them -- so it under-predicts recent dates by construction. That is useful to
+*see* and useless to rely on; the examples say so. Its source is also the
+shortest complete `nowcast_fit()` / `nowcast_tidy()` pair in the package, if you
+are writing a backend.
+
+## New: `tbl_now()` warns on misspelled argument names
+
+`tbl_now()` keeps unmatched `...` names as user metadata, which meant a typo in a
+real argument name was accepted in silence. `case_col = "n"` set a useless
+attribute and left count data typed as a line list -- as it had been doing in one
+of this package's own examples.
+
+Names close enough to a real argument to be a typo now warn and name the intended
+one. Deliberate metadata (`data_source`, `citation`, `population`) stays silent:
+a match needs a shared first letter and an edit distance under a third of the
+longer name, which is what keeps `source` from being read as a misspelling of
+`force`.
+
+## `autoplot()` on a nowcast draws the reported counts as columns
+
+The cases reported so far were points floating in the middle of the fan, which
+reads as a second estimate. They are now grey **columns** under it, so they read
+as a count measured from zero and the correction the nowcast applies is the
+visible gap between the top of a bar and the band. The bars are one period wide,
+taken from `get_event_units()`.
+
+## `EpiNow2` keeps its draws
+
+`nowcast_tidy.EpiNow2()` now reads the posterior samples with
+`EpiNow2::get_predictions(format = "sample")` instead of the fit's
+`lower_<pct>`/`upper_<pct>` summary. Before, EpiNow2 could report only a median
+and the two tails of whatever `CrIs` it happened to be fitted with -- three
+levels -- so `quantile_levels` could not be honoured, `tidy(probs =)` was an
+error, and it could not join a `type = "linear_pool"` ensemble. It now does all
+three. The summary path remains as a fallback for a fit `get_predictions()`
+cannot read.
+
+This has a visible knock-on: an ensemble containing EpiNow2 now shares all nine
+of `nowcast_quantile_levels()` rather than collapsing to three.
+
+## Performance: `tbl_now()` and every `dplyr` verb on one
+
+No behaviour changed, but the class got substantially cheaper. `tbl_now()` is
+about **3x faster** and `validate_tbl_now()` -- which runs on every `dplyr`
+verb via `tbl_now_reconstruct()` -- about **4x**.
+
+Almost all of the cost was building findings that were then discarded.
+`validate_tbl_now()` reports at `floor = "note"`, so on a clean object it
+formatted eleven `cli` messages and showed one; formatting is the expensive part
+(a hint interpolating a vector of row numbers costs ~15 ms), and each finding
+also built its own one-row tibble (~2 ms).
+
+* `.diagnose_text()` now returns a **template** rather than a formatted string,
+  and `.diagnose_finalise()` filters by the reporting floor *before* formatting,
+  so only a finding somebody will read is paid for.
+* Findings are plain lists until `.diagnose_finalise()` assembles the one tibble
+  the caller sees.
+
+`diagnose()` returns exactly the same tibble, and `validate_tbl_now()` the same
+conditions.
+
+## Documentation
+
+Every reference page was read once, function by function, for an audience of
+public-health practitioners first and statisticians second.
+
+* **Eleven defects**, most of them found by running examples that had never been
+  run. `tbl_now()` documented two attributes that do not exist (`repot_num` --
+  a typo -- and `event_num`) and omitted four that do. The `align_weeks` example
+  passed `case_col =`, which `...` swallowed, building count data as a line list.
+  The `change` example referenced an undefined object that only survived because
+  R never forced the promise. `update()`'s example built from the whole dataset
+  and then "updated" it with rows it already held.
+* **Fifteen pages shipped with an empty Description.** A block opening with a bare
+  `` `r lifecycle::badge()` `` paragraph gets that badge as its *entire*
+  `@description`, pushing the prose into Details; `?diagnose_drift` and fourteen
+  others showed a badge and nothing else, in the help viewer and in the reference
+  index.
+* **Article links.** `vignettes/articles` is `.Rbuildignore`d, so
+  `vignette("nowcasting-models")` and `vignette("custom-nowcast-models")` resolved
+  to nothing in an installed package. All article references now use URLs.
+* **Ten pages merged into five**, with aliases preserved so `?change` and existing
+  links still resolve: `change` and `remove` onto `add`;
+  `plot_reporting_process` onto `plot_epidemic_process`; `names_tbl_now` and
+  `money_tbl_now` onto `assign_tbl`; `as_scoringutils` onto `score_nowcast`;
+  `censor_confirmation_delays_above` onto `censor_delays_above`; `is_tbl_now` onto
+  `validate_tbl_now`; `week_2_date` onto `align_weeks`;
+  `compute_temporal_effects` onto `add_temporal_effects`.
+* Every exported topic now has `@seealso`, `@return` and a runnable example; every
+  internal function carries `@noRd`. Both `@examplesIf FALSE` blocks are gone, and
+  nothing in `man/` contains `if (FALSE)` or `\dontrun{}`.
+* `?tbl.now` was the DESCRIPTION text and nothing else. It now lays out the
+  workflow -- declare, describe, diagnose, reshape, fit, check -- with a link into
+  each step.
+* Three slow examples trimmed: `align_weeks` ran the whole 452,567-row FluSight
+  table (15.4s to 1.5s), `tbl_now_summary` computed `summary()` four times over,
+  and both Stan examples fitted on twenty years of dengue data.
+
+* `vignette("ensemble-nowcasting")` gains a figure of **the ensemble against each
+  of its members**, and a section on `min_date` explaining why the engines are
+  not all shown the same data.
+* `data-raw/ensemble_comparison.R` fits both Stan back-ends with **approximate
+  inference** (`epinowcast` through `enw_pathfinder()`, `EpiNow2` through
+  `stan_opts(method = "pathfinder")`), so the article rebuilds in minutes rather
+  than overnight. The article says so, so no member's band is mistaken for that
+  package's tuned answer.
+* It also **no longer fits three epidemics.** It scored every member on mpox and
+  covid as well as dengue and cached the result as `forecasts`; no chunk in the
+  article ever read that table, and it was roughly two thirds of the run time.
+* `DEVELOPMENT_SKILL.md` records why the CRAN test path cannot be measured with
+  `testthat::test_local()`, and `devel/TEST_SPEEDUP_BRIEF.md` is a standalone
+  brief on the suite's runtime with measured per-file timings.
+
+# tbl.now 0.26.0
+
+## One `surveillance` line list per stratum
+
+`tbl_now_to_surveillance()` gains `format = "linelist_list"`, which returns one
+line list **per stratum** as a `tbl_now_surveillance_list` instead of one frame
+with a pasted `strata` column. `surveillance::nowcast()` has no strata argument,
+so a stratified analysis is one fit per stratum, and the split no longer has to
+be done by hand:
+
+```r
+pieces <- tbl_now_to_surveillance(x, format = "linelist_list")
+lapply(pieces, function(piece) surveillance::nowcast(data = piece, ...))
+```
+
+It mirrors `tbl_now_to_baselinenowcast(format = "triangle_list")` throughout: the
+result is a **plain list**, so `lapply()`, `[[` and friends work unchanged; it is
+length one and named `"all"` when the object declares no strata, so the return
+type never depends on whether strata happen to be attached; it prints what it is;
+and `as_tbl_now()` binds it back into a `tbl_now`, restoring the original
+date-column names, the strata and the covariates. Count input comes back as a
+`"linelist"` -- one row per case, totals unchanged -- because that is what a
+`surveillance` line list holds.
+
+`format = "linelist"` remains the default and is unchanged.
+
+## Documentation
+
+* The `surveillance` and `NobBS` sections of
+  `vignette("nowcasting-models")` now say that the credible interval **is** in
+  their figures and is simply too narrow to see: the median band over the plotted
+  window is under 1% of the estimate for both, against 37% for `epinowcast`. The
+  numbers quoted are computed from the cached `tidy()` tables rather than typed.
+* `EpiNow2` gained the nowcast-vs-truth figure every other engine's section
+  already had.
+* The `surveillance` section fits its strata through the new
+  `format = "linelist_list"`.
+
+# tbl.now 0.25.0
+
+## A vignette on writing your own back-end
+
+`vignette("custom-nowcast-models")` is the full account of the `nowcast_fit()` /
+`nowcast_tidy()` contract: what a method may assume about the `tbl_now` it is
+handed (get the column names from the getters, work on `.event_num`/`.delay`
+rather than the calendar, run the grid to `get_now()`, remember that a line list
+cannot hold a zero), how to reuse the `tbl_now_to_*()` converters and
+`as_tbl_now()` instead of reshaping by hand, and what shipping a back-end in a
+package involves.
+
+The worked example is a **delay-ratio nowcast**: for each delay it takes the
+median of the factor by which past mature event dates grew from that delay to
+their eventual total, and applies the empirical quantiles of that factor to the
+counts reported so far. It needs no modelling package, so the article runs every
+line of its own code -- including the scoring, the backtest and the ensemble --
+and it is written twice, once returning `predictions` and once returning `draws`,
+to show both branches of the contract.
+
+`vignette("ensemble-nowcasting")`'s section 4 now points here instead of carrying
+its own smaller version of the same material.
+
+## Bug fixes
+
+* `autoplot()` on a `tbl_nowcast` drew **only the 50% band**. The tails of each
+  central interval were matched to the requested width by exact equality, and
+  `(1 - (1 - 2 * 0.05)) / 2` is not `0.05`, so every other band came out as an
+  `NA` ribbon and was silently dropped by `ggplot2`. The default nine quantile
+  levels now draw all four bands, and `levels =` is matched with a tolerance too.
+
+## Documentation
+
+* `?nowcast_tidy` said its `...` was "available to your own" methods. It is not:
+  `run_nowcast()` forwards the user's `...` to `nowcast_fit()` only, so anything
+  the tidying step needs has to travel inside the fit object. Both help pages now
+  say so.
+
+# tbl.now 0.24.0
+
+## `diagnose()`: a structural health check
+
+`summary()` describes a `tbl_now`; `diagnose()` looks for what is **wrong** with
+it. One row is one finding, sorted worst first, and the offending row indices
+come with it:
+
+```r
+findings <- diagnose(dengue_now)
+findings |> dplyr::filter(status <= "note")
+
+bad <- findings |> dplyr::filter(check == "ordering")
+dengue_now[bad$rows[[1]], ]
+```
+
+Ten checks: `declarations` (attribute types, the columns they name, role
+collisions, columns the object was never told about, temporal effects added but
+never materialised), `ordering` (`event <= report <= confirmation`, including
+the transitive leg that a missing `report_date` would otherwise hide),
+`missing`, `duplicates`, `units`, `negatives`, `now`, `truncation`, `strata` and
+`signposts`. Each is also an exported function of its own -- see
+`?nowcast_diagnose_components` -- and `diagnose(x)` is exactly the
+`dplyr::bind_rows()` of them.
+
+`status` is an **ordered factor**, worst first, which is why the tibble sorts
+itself and why `status <= "note"` reads as "anything worth acting on":
+`error` > `warning` > `note` > `ok` > `not_run` > `skipped`.
+
+Four decisions worth knowing about:
+
+* **It runs no statistical test, ever.** Whether the reporting delay drifts, and
+  whether reports arrive in batches, are statements about a *distribution*.
+  Answering them means choosing a method, a maturity window and a multiplicity
+  correction, and `diagnose()` has no business choosing those on your behalf. It
+  emits `not_run` rows carrying the call instead -- `diagnose_drift(x, axis =)`
+  and `diagnose_batches(x, axis =)`.
+* **Reporting outages are deliberately not detected.** A `tbl_now` does not
+  carry the zeroes, so an absent row means "nothing was reported" and a quiet
+  Sunday is structurally identical to a three-week outage. Telling them apart
+  requires asking whether a run of zero-arrival dates is improbably long, which
+  is a test. The descriptive answer is `zero_run_summary()`; the inferential one
+  is `diagnose_batches()`.
+* **An `NA` count is reported neutrally.** In a reporting triangle it means
+  *not yet observed* -- correct data, and the thing that tells a nowcast the
+  cell is still open -- so `diagnose_missing()` counts it without calling it a
+  defect. An `NA` *date* is a different matter and stays a warning.
+* **`diagnose_strata()` uses no thresholds.** "Too small to fit separately"
+  depends on the engine and on the epidemic, so it names the extremes -- the
+  smallest stratum, its case count and its share; the sparsest stratum and how
+  much of the event grid it leaves empty -- and lets you judge.
+
+## `validate_tbl_now()` is the same engine, presented as conditions
+
+`validate_tbl_now()` no longer has a check list of its own. It calls the
+findings engine and re-emits the result as the `cli` conditions it has always
+emitted: it aborts on the `error`s and warns about the `warning`s. One
+implementation, two presentations.
+
+What that changes for you:
+
+* **`validate_tbl_now()` now warns when a confirmation precedes its report.**
+  That check existed, but only ran at construction, so an object that acquired
+  the problem later never mentioned it again. `tbl_now()` no longer runs it
+  separately, so it warns once rather than twice.
+* Everything else aborts and warns exactly as before, including
+  `warn_non_uniqueness`, which stays `FALSE` there. `diagnose()` defaults it
+  `TRUE`.
+* A `note` is never emitted as a warning. `validate_tbl_now()` runs inside every
+  `dplyr` verb, and turning a `diagnose()` observation into a warning there
+  would make construction noisy for data the class has always accepted.
+* **One warning was reworded.** The missing-date warning said "*N* rows have
+  NULL or NA values in column `event_date = "event_date"`" -- it printed the
+  literal string rather than the column, and a column cannot hold `NULL`. It now
+  reads "*N* rows have NA values in the event_date column `"onset_week"`".
+
+## Breaking: the statistical tests take the `diagnose_` prefix
+
+The five tests are named for what they are for rather than for the fact that
+they are tests. **The old names are gone**, not deprecated:
+
+| was | is now |
+|---|---|
+| `test_delay_drift()` | `diagnose_drift()` |
+| `test_delay_changepoint()` | `diagnose_changepoint()` |
+| `test_confirmation_delay()` | `diagnose_confirmation_delay()` |
+| `batch_test()` | `diagnose_batches()` |
+| `batch_shape_test()` | `diagnose_batch_shape()` |
+
+The S3 class `batch_test`, and with it `print.batch_test()`, is renamed to
+`diagnose_batches` to match.
+
+## Documentation and website
+
+`summary()` and `diagnose()` are now documented where people actually meet the
+package:
+
+* **A new article**, *Describing and diagnosing a `tbl_now`*, treats the two as
+  one workflow: what the schema means, what the six statuses mean, why `skipped`
+  is not `ok`, and why `diagnose()` refuses to run a statistical test.
+* **The worked example article is restructured.** It now builds the `tbl_now`
+  *before* cleaning and lets `diagnose()` report the defects, rather than
+  checking for them by hand and hoping the list was complete. The hand-written
+  cleaning is still there — it is now the *fix* for what was reported, and it
+  keeps the one check `diagnose()` deliberately will not do for a line list
+  (deduplicating on a record id).
+* **The README and the introductory vignette** gain a compact section on each.
+* **The reference index is now explicit.** `_pkgdown.yml` gained a `reference:`
+  section grouping every exported topic, so `summary()`, `diagnose()` and their
+  components are findable rather than buried in one alphabetical list. Note for
+  contributors: `pkgdown` now **fails the build** on an exported topic that is
+  not listed. `pkgdown::check_pkgdown()` catches it without building the site.
+
+### Fixed: the light/dark switch never rendered
+
+`template: light-switch: true` was set and `lightswitch.js` was being loaded,
+but the site had no toggle. The control is a navbar **component**, and
+`_pkgdown.yml` named an explicit `navbar: structure: right:` that replaced
+pkgdown's default `[search, github, lightswitch]` without listing it. The script
+loaded, the button did not exist, and nothing errored. `lightswitch` is now
+listed explicitly.
+
+# tbl.now 0.23.0
+
+## `summary()` describes the object the way a nowcaster reads it
+
+`summary()` on a `tbl_now` now returns a tibble rather than the column-by-column
+listing `summary.data.frame()` produces, which said nothing about the structure
+the class exists to carry. One row is one statistic of one quantity of one
+stratum:
+
+```r
+summary(dengue_now) |> dplyr::filter(component == "delay")
+```
+
+It covers the case counts on each of the object's time axes (event, report and,
+where there is one, confirmation), the delay distributions between them, the
+lengths of the runs of zero dates, the compositional shares (censored, per
+confirmation outcome, per stratum, per categorical covariate level), the lag-1
+autocorrelation of each series, the reporting-completeness curve, the totals,
+the date ranges and `now`, and how full the reporting triangle is.
+
+Three decisions worth knowing about:
+
+* **The date grids run to `now`, not to the last row present.** "Cases per event
+  date" is a statement about a calendar; a date with no rows is a zero, not an
+  absence. This is what makes `prop_zero` and the zero-run lengths mean
+  anything, and it is why a **line list** -- which cannot represent a zero --
+  summarises to exactly the same numbers as its counts. The grid is *global*, so
+  a stratum whose cases start late shows its leading zeros and the strata stay
+  comparable. So does the triangle-occupancy denominator.
+* **Quantiles are the inverse-ECDF (type 1) estimator**, not
+  `stats::quantile()`'s default: `q50` is the smallest value whose cumulative
+  weight reaches `0.5`. This is the estimator `autoplot()` and
+  `test_delay_drift()` already use, so the table and the figures agree, and it
+  always returns a delay that was actually observed. The mean and standard
+  deviation are the ordinary case-weighted ones, equal to expanding the counts
+  to one row per case.
+* **Not-yet-observed cells are dropped.** An `NA` count means the cell has not
+  been observed yet, unlike a `0`, which was observed and was zero. Those rows
+  carry no cases and are excluded, rather than turning every total they touch
+  into `NA` -- which is what `flusight` did to an earlier draft. The
+  `"unobserved_cells"` coverage row says how many were dropped.
+* **`count-cumulative` data gets no delay rows.** A cumulative total is not
+  additive across delays, so a case-weighted delay distribution would be
+  meaningless; `delay_summary()` refuses it outright and points at `to_count()`.
+  The new `"growth"` rows take its place, giving the ratio of each event date's
+  running total from one delay to the next.
+
+## Every block of the summary is its own function
+
+`summary()` is exactly the `bind_rows()` of these, and each returns the same
+schema, so they stack:
+
+`cases_per_date()`, `delay_summary()`, `zero_run_summary()`, `prop_censored()`,
+`prop_confirmation_type()`, `prop_strata()`, `prop_covariate_levels()`,
+`case_autocorrelation()`, `date_ranges()`, `triangle_occupancy()`,
+`reporting_completeness()` and `cumulative_growth()`.
+
+`delay_summary()` names the three delays explicitly -- `"event_to_report"`,
+`"event_to_confirmation"` and `"report_to_confirmation"` -- because the first
+two are measured from the event and the last is the laboratory's own turnaround,
+measured from the report, and confusing them is a documented hazard.
+
+## Internal
+
+One date-grid helper replaces three inlined copies of the same
+`seq(from, to, by = <units>)` logic, including the one in `complete_zeroes()`
+that only knew about days and weeks.
+
+# tbl.now 0.22.0
+
+## The back-ends that stratify by ONE column
+
+`NobBS::NobBS.strat()` takes a single `strata` column name,
+`EpiNow2::regional_epinow()` a single `region`, and `surveillance::nowcast()`
+takes no strata argument at all. A `tbl_now` may declare several stratifying
+columns, and their interaction -- "nowcast each observed combination separately"
+-- is exactly one stratum to those back-ends. The converters now build that
+column, so there is an argument to write:
+
+* `tbl_now_to_nobbs()` and `tbl_now_to_surveillance()` gain `strata_col`
+  (default `"strata"`) and `strata_sep` (default `" | "`). The declared strata
+  are pasted into that one column, which `NobBS.strat(strata = "strata")` takes
+  directly and which `split()` splits a `surveillance` line list on. The
+  original columns ride along unchanged, and `strata_col = NULL` opts out.
+* Pasting is refused rather than fudged when a **stratum value already contains
+  the separator**: the label could not be split back apart, and a nowcast
+  silently attached to the wrong stratum is worse than a failed conversion. The
+  error names `strata_sep`. `tbl_now_to_EpiNow2(target = "regional_epinow")`
+  gained the same check, which it did not have.
+* Writing into an existing column is refused too, so a declared covariate
+  called `strata` is not overwritten.
+
+Previously `tbl_now_to_nobbs()` handed back the strata as ordinary columns and
+nothing else, so there was no way to call `NobBS.strat()` on a multiply
+stratified object at all. `run_nowcast(x, "NobBS")` had its own copy of the
+pasting logic; it now uses the converter's column, so the two cannot disagree.
+
+`tidy()` also learned the last per-stratum shape it did not know: a list of
+`stsNC` fits, which is what `split()`-ing a `surveillance` line list and looping
+produces.
+
+## `tidy()` returns the quantiles a NobBS fit was asked for
+
+`NobBS` keeps no draws, so `tidy(fit, probs = ...)` refused every `probs`
+outright. But `NobBS(specs = list(quantiles = c(0.1, 0.5, 0.9)))` computes those
+levels at fit time and puts them in `estimates` -- reading them back is a
+lookup, not an approximation, and refusing it made the documented workflow
+("ask at fit time, then request them with `probs`") impossible to complete.
+
+`tidy()` now returns them. A level the fit was **not** asked for still aborts,
+because that one really is unrecoverable, and the message now names the missing
+levels and the `specs = list(quantiles = ...)` call that would have produced
+them.
+
+## The two date grids `surveillance::nowcast()` needs
+
+* `get_surveillance_when(x, length = 30)` -- the dates to estimate, the most
+  recent `length` steps ending exactly at `get_now()`.
+* `get_surveillance_range(x)` -- the whole time axis, passed as
+  `control$dRange`.
+
+Both read the step off the object's own event units and abort on a `"numeric"`
+grid rather than anchoring integer indices at the 1970 epoch. `dRange` matters
+more than it looks: left to itself `nowcast()` infers the axis from the line
+list it was handed, and **a line list cannot express a zero** -- the quiet days
+at the `now` edge have no rows, so the inferred axis stops short of exactly the
+days being nowcast.
+
+## The article now runs the code it shows
+
+`vignettes/articles/nowcasting-models.Rmd` displayed cached results next to code
+that a separate script, `data-raw/nowcast_comparison.R`, kept its own copy of.
+The two drifted, invisibly, because the article never ran what it printed.
+
+`data-raw/nowcast_models_precompute.R` replaces it: it `knitr::purl()`s the
+article, runs the article's own chunks with the fits live, and reads the
+displayed objects back out by name. The code that produced every number is now
+literally the code printed above it. Renaming an object in the article stops the
+script with a list of what is missing instead of quietly saving a shorter file.
+
+Fixed along the way, all of it drift the old arrangement hid:
+
+* the Summary figure showed an unnamed grey `NA` line, because `EpiNow2` had no
+  entry in the figure's colour scale and the factor dropped it to `NA`;
+* two chunk labels were duplicated and two chunks called `tidy()` on objects the
+  article never created, so the article could not be knitted at all;
+* the `EpiNow2` delay section tidied a `dist_fit` that was never fitted, and the
+  `epinowcast` seasonal fit was never assigned to a name;
+* `regional_epinow()` was called without `truncation`, which is the one argument
+  that makes it a nowcast -- the same trap the pooled section spends a warning
+  box on;
+* `epidist`'s **marginal** model is used, now that it compiles. It reads the
+  aggregated weights the converter produces instead of expanding 6.1M cases back
+  to one row each, which is why the latent model was there;
+* the `epinowcast` sections filtered to **two years** of daily reference dates
+  while every other engine used 60 days, and the article claimed that "keeps the
+  Stan fit tractable". It does not: one chain spent **six hours** in a bad region
+  of the posterior while the other chain of the same fit finished in sixteen
+  minutes. The cached numbers had come from a 180-day fit that took six minutes,
+  so the article had never run its own window. It is 180 days now, with the
+  discrepancy explained in the text;
+* the `epinowcast` fits were **unseeded** -- `epinowcast()` does not take R's
+  `set.seed()`, so Stan drew its own each run and the same fit took 41 minutes
+  once and six hours the next. Both now pass `seed` through `enw_fit_opts()`.
+
+# tbl.now 0.21.0
+
+## The confirmation process
+
+A `tbl_now` can now carry a **third** date. Influenza is the picture to keep in
+mind: symptoms begin (the event), the patient visits a doctor (the report), and
+days later a swab comes back positive (the confirmation) or negative (a
+*retraction* -- reported, but not a case after all). The assumed timeline is
+`event <= report <= confirmation <= now`.
+
+* `tbl_now()` gains `confirmation_date`, `confirmation_type` and
+  `confirmation_units`. `confirmation_type` takes `"confirmed"`, `"retracted"`,
+  `"pending"` or `NA`; **pending** means reported and still waiting, so it has no
+  confirmation date, which is a different thing from a result you never
+  recorded (`NA`). Two columns are derived: `.confirmation_num` (on the same
+  numeric grid as the other dates) and `.confirmation_delay`, the laboratory's
+  turnaround, measured **from the report**.
+* `add_confirmation()`, `change_confirmation()`, `remove_confirmation()`,
+  `get_confirmation_date()`, `get_confirmation_type()`,
+  `get_confirmation_units()` and `has_confirmation()`.
+* A date with no type warns rather than guessing: a date alone cannot say
+  whether the case was confirmed or retracted. A confirmation before its own
+  report warns too.
+* `now` is confirmation-aware. A result issued on a date means the system was
+  still being observed then, so `now` is never earlier than the last
+  confirmation, and setting one earlier is an error.
+* The confirmation columns survive `dplyr` verbs, `update()`, `align_weeks()`
+  (which now aligns all three dates) and `to_count()` (which groups by the
+  confirmation, so a case is never summed together with its own retraction).
+* The print footer gains a confirmation line: the column, its units, and how
+  many cases are resolved.
+
+### Counting when cases can be undone
+
+`get_latest_confirmed()`, `get_net_confirmed()` (confirmed minus retracted),
+`get_nth_confirmed(x, delay)` and `get_initial_confirmed()` -- the confirmation
+mirrors of the report-axis getters. `censor_confirmation_delays_above()` returns
+implausibly long confirmations to `"pending"`, which is what they really were.
+
+### Diagnostics on the confirmation axis
+
+A laboratory clearing a backlog looks exactly like a surveillance system
+clearing its inbox, so rather than duplicate every diagnostic, they take an
+`axis = c("report", "confirmation")` argument: `batch_test()`, `batch_screen()`,
+`batch_shape_test()`, `transport_discriminant()`, `plot_reporting_process()`,
+`plot_epidemic_process()`, `plot_reporting_triangle()`, `plot_delay_profiles()`,
+`plot_reporting_hexamap()`, `plot_scalogram()`, `plot_delay_drift()`,
+`test_delay_drift()`, `test_delay_changepoint()` and `diagnostic_plot()`.
+
+On the confirmation axis, delays are still measured **from the event**, so the
+two axes are directly comparable and the gap between them is the time the
+laboratory adds. Cases still `"pending"` are excluded -- counting them would
+invent an arrival on a date they do not have.
+
+New in their own right: `plot_confirmation_status()` (the confirmed / retracted
+/ pending shares over time), and `test_confirmation_delay()` /
+`plot_confirmation_delay()`, which ask whether retractions come back faster than
+confirmations -- a laboratory that rules cases out sooner than it confirms them
+biases any nowcast that treats the two alike.
+
+## Other changes
+
+* **Calendar temporal effects are now factors.** `day_of_week`, `day_of_month`,
+  `month_of_year` and `week_of_year` are `factor`s with their full level sets
+  (all seven weekdays, 1-31, 1-12, 1-52) rather than character or numeric
+  columns, so a model gets dummy coding rather than treating "Tuesday" as
+  twice "Monday", and a level absent from a stratum still exists. `weekend`
+  stays 0/1 and the Fourier `seasons` stay numeric, as both are already
+  correctly numeric.
+* **Fixed:** the non-uniqueness warning fired on every confirmed/retracted pair.
+  A case and its own retraction share an (event, report) combination and are
+  still two different rows; the confirmation columns are now part of the key.
+* `run_nowcast(x, "diseasenowcasting")` passes straight through to
+  `diseasenowcasting::nowcast()`. The confirmation process belongs to that
+  package's `model()`, not to `tbl.now`, so pass it there.
+
+# tbl.now 0.20.0
+
+## Bugs found by the new engine test suite
+
+Every one of these was found by writing the tests, not before:
+
+* **`count-cumulative` data failed on `diseasenowcasting` for want of a
+  confirmation process.** `diseasenowcasting::nowcast()` auto-detects cumulative
+  data and switches to the signed-increment Skellam / SkNB likelihood, but that
+  likelihood needs a `confirmation_process()` -- the retraction side of a stream
+  that can revise **down** -- and `model()`'s default is `no_confirmation()`.
+  Without one the fit reports "Joint fit failed to converge for all init
+  attempts". Pass one through, as
+  `run_nowcast(x, "diseasenowcasting", model = model(confirmation = confirmation_process()))`.
+
+  De-accumulating to incidence first would also "work", and is wrong: it
+  discards the downward revisions the cumulative likelihood exists to model.
+* **A censored report's window started before its own event date.** For
+  `is_censored` rows, `.delay_censoring_windows()` bounded the secondary window
+  below by the *earliest event in the data* rather than by that row's event, so
+  every censored row implied a possibly-negative delay, and the zero-width guard
+  pushed one strictly negative. \pkg{epidist} refuses it outright ("Assertion on
+  `data$stime_lwr` failed: not >= 0") and `EpiNow2::estimate_dist()` would have
+  fitted a delay distribution with mass below zero. The window is now
+  `[event_date, report_date]`, and the zero-width guard widens **upward**.
+* **`as_tbl_now(x, verbose = )` failed on two classes.**
+  `as_tbl_now.tbl_now_triangle_list()` and
+  `as_tbl_now.tbl_now_epinow2_snapshots()` passed `verbose` both explicitly and
+  through `...`: "formal argument 'verbose' matched by multiple actual
+  arguments". Both now default it into the dots, so the caller still wins.
+* **`verbose = FALSE` was suppressing warnings, not just chatter.**
+  `.quietly_if()` wrapped every backend in `suppressWarnings()`, which hid
+  exactly the messages that say what the model actually saw -- strata pooled, a
+  censoring flag collapsed, covariates dropped. It now suppresses **messages
+  only**. This is the same failure mode DEVELOPMENT_SKILL section 9 records for
+  `run_engine()`.
+* **`diseasenowcasting` and `NobBS` were pooling multi-column strata
+  needlessly.** `diseasenowcasting` models any number of strata and labels each
+  combination `"F|N"`; `tbl.now` only ever read the one-column case and pooled
+  otherwise. `NobBS.strat()` takes one column, so several are now joined into
+  their interaction and split back apart. Both take **any** number of strata,
+  and `?run_nowcast`'s table says so.
+
+## Covariates and censoring are no longer dropped in silence
+
+* `tbl_now_to_baselinenowcast()` (matrix and triangle formats),
+  `tbl_now_to_epinowcast()` and `tbl_now_to_EpiNow2()` now **warn** when declared
+  covariates cannot be carried, naming them and saying what to do instead.
+  Materialised temporal-effect columns count as covariates: they are the case
+  where somebody asked for an effect and would otherwise never learn it was
+  ignored.
+* The censoring collapse already warned; it is now *reachable* through
+  `run_nowcast(verbose = FALSE)` because of the `.quietly_if()` fix above.
+
+## `nowcast_truth()` removed
+
+Dropped entirely rather than kept internal. It was `get_latest_reported_cases()`
+reshaped. `score_nowcast()` and `as_scoringutils()` take the `tbl_now` itself as
+`truth`.
+
+## `covidat` removed
+
+`covid_us` is kept: it is the only shipped dataset that actually exhibits
+backlog dumps, which `vignette("batch-reporting")` is about. Measured against a
+15-day rolling baseline, `covid_us` has 21 report days above 2x and 5 above 3x;
+`covid_colombia` has one above 2x and none above 3x.
+
+## New tests
+
+All `skip_on_cran()`, all on **synthetic fixtures** built by
+`tests/testthat/helper-engines.R` rather than on shipped data, so one axis can be
+varied at a time:
+
+* `test-engines-matrix.R` -- 24 real fits per fast engine
+  ({0,2 covariates} x {0,2 strata} x {days, weeks} x the three data types), plus
+  numeric-grid refusals, weekly-grid preservation, strata labelling for 0/1/2
+  columns, counts-are-cases, and `run_nowcast()` against the hand-written call.
+* `test-engines-covariates.R` -- used, or complained about, per converter.
+* `test-engines-censoring.R` -- used, or announced, per converter.
+* `test-converter-roundtrip-all.R` -- a registry of every `tbl_now_to_*()` shape
+  and whether `as_tbl_now()` brings it back; **fails when a converter is missing
+  from it**.
+* `test-coercion-methods.R` -- every converter must expose the target package's
+  own coercion generic (`as_reporting_triangle()`, `as_tsibble()`, ...) as a thin
+  wrapper, or record why that package has none. It re-checks the "has none"
+  claims against the installed package, so we find out if one gains a verb.
+
+## Articles
+
+* `vignette("nowcasting-models")`: **EpiNow2 is now a two-step fit.** Given only
+  a reporting delay it does not nowcast at all -- its median stayed flat and sat
+  below the already-reported count. `delays` says how infections become reports;
+  it does not say the newest days are incomplete. Only `truncation` does, and
+  that is what the report dimension of a `tbl_now` measures. Step 1 fits it with
+  `estimate_truncation()`, step 2 passes it as `trunc_opts()`. Over the last
+  seven days -- about 50% complete -- the fit now sits below the reported count
+  on 4 of 21 stratum-days instead of most of them.
+* `vignette("ensemble-nowcasting")`: the three-epidemic comparison is removed;
+  the article is now about how to use ensembles.
+
+## DEVELOPMENT_SKILL
+
+* A pre-flight grep before writing any new function, with the two questions that
+  decide whether it should exist, and the two times this package got it wrong.
+* The target package's own coercion verb is now part of "writing a converter".
+
+# tbl.now 0.19.0
+
+## Converters no longer make you aggregate first
+
+`covid_colombia` carries `sex`. An object built without `strata = sex` therefore
+has **two rows per `(notification_date, diagnosis_date)` cell**, and a reporting
+triangle, a `tsibble` key and an epinowcast observation table each have exactly
+one slot per cell. Until now that meant `tbl_now_to_baselinenowcast()` aborted
+("duplicate `reference_date` and `report_date` combinations") and
+`tbl_now_to_tsibble()` aborted ("a valid tsibble must have distinct rows"), and
+you had to `group_by() |> summarise()` before converting.
+
+Both now pool undeclared columns for you, as `tbl_now_to_nobbs()`,
+`tbl_now_to_surveillance()`, `tbl_now_to_EpiNow2()`, `tbl_now_to_epinowcast()`
+and `tbl_now_to_data_table()` already did. The pooling is `to_count()`, so case
+totals are preserved exactly, and it is reported under `verbose = TRUE`:
+
+```
+i `tbl_now_to_baselinenowcast()`: pooled over 1 undeclared column ("sex");
+  18195 rows -> 10129.
+i Declare it with `add_strata()` to nowcast it separately.
+```
+
+Line lists are left alone: one row is already one case there, and collapsing
+would destroy the individual records the target package is being handed.
+
+## The non-uniqueness warning now names the culprit
+
+It used to say "Consider using `to_count()` to aggregate the data or `distinct()`
+to remove repeated observations". The `distinct()` half is wrong whenever the
+cause is an undeclared column -- those rows **are** distinct, they differ in
+`sex` -- so it sends you in a circle, and on data with genuine repeats it
+silently deletes cases. The warning now inspects the object and says which:
+
+* undeclared columns: names them, and points at `strata =` or `to_count()`,
+  adding that the converters pool them for you so this is information rather
+  than a fault;
+* genuine duplicate rows: says so, and *then* recommends `distinct()`.
+
+## `tbl_now_to_baselinenowcast(max_delay = )`
+
+A cap on the delay axis, counted exactly as `tbl_now_to_epinowcast()` counts it
+-- `max_delay = 30` keeps delays `0` to `29`, giving a 30-column triangle -- so
+the same number means the same triangle in both. `NULL` (default) keeps every
+delay, which is the previous behaviour. This replaces the
+`filter(.delay <= 30) |>` idiom the docs used to recommend.
+
+## `nowcast_truth()` is now internal
+
+It was `get_latest_reported_cases()` with the class stripped, undeclared columns
+summed away and the count renamed `.observed` -- the values were identical. A
+second public name for that is a second thing to learn for no gain.
+
+`score_nowcast()` and `as_scoringutils()` now accept the **`tbl_now` itself** as
+`truth` and do the reshaping internally, which is shorter than what it replaces:
+
+```r
+score_nowcast(nowcast, truth = dengue)          # was: truth = nowcast_truth(dengue)
+```
+
+A data frame of observed counts still works, as does `NULL`.
+
+## `?run_nowcast` says what the models actually are
+
+Three new sections, because "it calls the package with its defaults" is not
+enough to read the output:
+
+* **Strata** -- a table of how many each backend can model and how.
+  `baselinenowcast`, `surveillance`, `EpiNow2` and `epinowcast` take any number;
+  `diseasenowcasting` and `NobBS` take exactly one and **pool with a warning**
+  beyond that, because the single array dimension they return cannot be split
+  back into two columns.
+* **Temporal effects** -- the converters materialise them into columns, but only
+  `diseasenowcasting` uses them automatically. `epinowcast` needs them named in
+  a module formula; every other backend carries them and ignores them.
+* **Censored delays** -- collapsed with a warning by every backend that goes
+  through a converter; `diseasenowcasting` receives the flag intact.
+
+And a section on how each engine's default model is specified, with the two
+that most need saying out loud:
+
+* **`epinowcast`** defaults to a per-day random effect on the growth rate (a
+  random walk in all but name), a single time-constant lognormal reporting
+  delay, and no day-of-week report effect.
+* **`EpiNow2`** defaults to `delays = delay_opts()`, which is `Fixed(0)` -- **no
+  reporting delay at all** -- and `generation_time = gt_opts()`, which is
+  `Fixed(1)`. Those defaults describe a process with nothing to nowcast, so
+  supply the epidemiology yourself. It also models \eqn{R_t} with a Gaussian
+  process rather than a random walk.
+
+## Article fixes
+
+* **`vignette("nowcasting-models")` now cuts at 2021-04-01**, on the rising limb
+  of Colombia's third wave, instead of 2023-03-03 where the epidemic had
+  subsided and a nowcast had nothing to correct. The line-list engines trim to
+  60 days (278,000 rows; NobBS 24s, surveillance 6s measured) rather than 180.
+* **The per-package figures were drawing the wrong quantity.** `geom_col()` was
+  given `width = 5.5` on a **daily** series, so each bar overlapped its
+  neighbours and ggplot2 stacked the overlaps: the grey "reported by now" bars
+  showed sums of about six days. The summary figure at the end of the article
+  used `width = 0.8` and was correct, which is why the two disagreed. All the
+  panels now use `width = 0.8`.
+* **The stratified `NobBS` example handed it count rows**, which is the exact
+  mistake the article's own warning box forbids two screens earlier -- it counts
+  rows, so it was nowcasting counts as cases. It now goes through
+  `tbl_now_to_nobbs()` like the unstratified example.
+* The stratified `surveillance` example converted the **whole** series (2.3M
+  cases) at build time and used `N.tInf.max = 1000` against per-stratum daily
+  counts of ~4,000, which silently truncates the posterior. It now trims first
+  and uses the same settings as the unstratified fit.
+* `vignette("ensemble-nowcasting")` gains an **experimental badge and note** at
+  the top, and a figure showing each member's median against the ensemble and
+  the eventual truth.
+
+# tbl.now 0.18.0
+
+## New: one call per model, and ensembles
+
+Until now `tbl.now` prepared data for six nowcasting packages and normalised what
+they returned, but running several of them still meant six different calls and
+six different result shapes to reconcile by hand. This release adds the layer
+that removes that bookkeeping.
+
+* **`run_nowcast(x, method)`** fits any supported package and always returns a
+  **`tbl_nowcast`**: an S7 object holding the predictions as one row per (event
+  date, stratum, quantile level), plus the draws where the backend has them, plus
+  the backend's own untouched fit. Backends ship for `"diseasenowcasting"`,
+  `"baselinenowcast"`, `"epinowcast"`, `"NobBS"`, `"surveillance"` and
+  `"EpiNow2"`, each feeding its package through the matching `tbl_now_to_*()`
+  converter rather than building the input by hand.
+
+  It is called `run_nowcast()` and not `nowcast()` because \pkg{diseasenowcasting}
+  exports `nowcast()`; keeping the names distinct means both can be attached at
+  once.
+
+* **`nowcast_ensemble()`** combines several of them, either by averaging their
+  quantiles level by level (`type = "quantile"`, vincentization -- narrower) or
+  by pooling their draws into a mixture (`type = "linear_pool"` -- wider, and
+  refused outright when a member has no draws, rather than silently dropping it).
+
+* **`nowcast_backtest()`**, **`score_nowcast()`** and **`nowcast_weights()`**
+  score models retrospectively and turn those scores into ensemble weights
+  (`"inverse_score"`, `"optim"` or `"equal"`). `as_scoringutils()` hands the same
+  object to \pkg{scoringutils} for its full score suite.
+
+* **`nowcast_fit()` / `nowcast_tidy()`** are the extension point: two S3 methods,
+  in any package, and `run_nowcast()` knows about your model. See
+  `vignette("ensemble-nowcasting")`.
+
+* **`autoplot()`** for a `tbl_nowcast` draws a fan chart, in the palette's green
+  -- a nowcast estimates the epidemic process, not the reporting one.
+
+## New: `tidy()` for a nowcast and for a backtest
+
+`tidy()` already worked on every raw engine fit. It now also works on what
+`run_nowcast()` and `nowcast_ensemble()` return, which is the way round it should
+always have been.
+
+* **`tidy()` on a `tbl_nowcast`** returns the package's standard frame --
+  `event_date`, `stratum`, `estimate`, `conf.low`, `conf.high`, `level`,
+  `engine`, plus `q*` columns for `probs`. `engine` is the method (or the
+  ensemble's name); `level` is the width of the **widest symmetric pair of
+  quantile levels the object actually carries**, and is `NA`, with `NA` bounds,
+  when no symmetric pair exists. A guessed 0.95 there would defeat the one column
+  that exists to stop a 90% band being compared with a 95% one.
+
+  `probs` is honoured only when the nowcast carries draws, and errors otherwise:
+  a quantile-only nowcast cannot produce a level it was not summarised at.
+
+  Registered in `.onLoad()`, because `tbl_nowcast` is S7 and
+  `tidy.tbl.now::tbl_nowcast` is not a writable S3 method name.
+
+* **`tidy()` on a `nowcast_backtest`** gives one row per (method, `now` date,
+  target), with the internal dot-prefixed columns traded for ordinary ones.
+
+## New: reproducible backtests
+
+`nowcast_backtest()` gains a **`seed`** argument. When given, the RNG is seeded
+immediately before each fit, from the seed and the method and date that fit is
+for. One `set.seed()` before the whole backtest only pins anything if every
+method draws the same random numbers in the same order -- which stops being true
+the moment a method is dropped or one date is refitted. This is the same lesson
+`data-raw/nowcast_comparison.R` already records.
+
+`nowcast_weights(type = "optim")` now falls back to equal weights, with a
+warning, when the optimiser does not converge on a usable point. It used to
+return `NA` weights, which do not fail until much later inside
+`nowcast_ensemble()`, as an all-`NA` nowcast that reads like a modelling problem
+rather than an optimisation one.
+
+## Removed: the `nowcaster` backend
+
+`nowcaster` was dropped in 0.16.0 along with its converters, for the reasons
+recorded there. The `run_nowcast()` backend for it is not shipped: it called
+`tbl_now_to_nowcaster()` and `get_nowcaster_strata()`, which no longer exist.
+Neither `nowcaster` nor `INLA` is reintroduced to `DESCRIPTION`.
+
+## Other
+
+* `scoringutils` added to `Suggests` (CRAN, so no `Additional_repositories`
+  entry is needed). \pkg{diseasenowcasting} is deliberately **not** added: it is
+  GitHub-only and sits in no repository `R CMD check --as-cran` can resolve, so
+  declaring it would trade an undeclared-import warning for a CRAN-incoming NOTE
+  about a dependency that cannot be found. `nowcast_fit.diseasenowcasting()`
+  therefore looks its entry point up with `getExportedValue()` after
+  `.need_pkg()` has confirmed the package is installed, rather than writing a
+  literal `diseasenowcasting::`.
+* `LICENSE` / `LICENSE.md` copyright year updated to 2026. The hand-rolled `.wis()` is now cross-checked against it in
+  the test suite: two implementations agreeing is worth more than either alone.
+* New article, `vignette("ensemble-nowcasting")`, with the fits precomputed by
+  `data-raw/ensemble_comparison.R` so the build never fits anything. It reports
+  WIS per model and per ensemble across three epidemics, and answers "does the
+  ensemble beat its best member?" and "does performance weighting beat equal
+  weighting?" from the cached numbers rather than by assertion.
+* `vignette("nowcasting-models")` gains a `run_nowcast()` column in its package
+  table, and a pointer to the new article.
+
 # tbl.now 0.17.0
 
 ## New: \pkg{EpiNow2} support

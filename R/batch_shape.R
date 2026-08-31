@@ -4,7 +4,7 @@
 # NOTE ON PACKAGE PLACEMENT.  Model-free; destined for `tbl.now`.  See the header
 # of `35_batch_test_tbl_now.R`.
 #
-# `batch_test()` looks only at *how many* reports arrived on each date.  This
+# `diagnose_batches()` looks only at *how many* reports arrived on each date.  This
 # file looks at *which event dates they came from* -- equivalently, at the
 # distribution of reporting delays among the reports that arrived on one date.
 #
@@ -37,7 +37,7 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' A complement to [batch_test()], which sees only report *volumes*.  This test
+#' A complement to [diagnose_batches()], which sees only report *volumes*.  This test
 #' asks whether the reports that arrived on a candidate date came from
 #' systematically *older* event dates -- the signature of a released backlog --
 #' by comparing their delays with those of neighbouring report dates.  It is
@@ -63,9 +63,9 @@
 #' data only positive increments carry a meaningful delay; negative increments
 #' (down-revisions) are dropped with a message.
 #'
-#' @param data A [tbl_now()] object.
+#' @param x A [tbl_now()] object.
 #' @param at The candidate report date (coercible to the class of the report
-#'   column), typically one flagged by [batch_test()].
+#'   column), typically one flagged by [diagnose_batches()].
 #' @param neighbours Number of report dates on each side used as the reference
 #'   group.  Default `3`.
 #' @param guard Number of report dates immediately either side of `at` to skip.
@@ -74,17 +74,26 @@
 #'   Poisson counts) or `"blocks"` (permutes whole report dates; valid under
 #'   overdispersion).
 #' @param n_permutations Number of permutations. Default `999`.
+#' @param axis Which time axis to scan for arrivals: `"report"` (default) or
+#'   `"confirmation"`. The question is the same either way -- did an unusual
+#'   number of records land on this date? -- so a laboratory clearing its
+#'   backlog is found exactly as a surveillance system clearing its inbox is.
+#'   `"confirmation"` needs a confirmation process (see [add_confirmation()])
+#'   and ignores cases that are still `"pending"`, which have no confirmation
+#'   date to arrive on.
 #' @param seed Optional RNG seed.
 #'
 #' @returns A tibble, one row per stratum, with `stratum`, `n_at`,
 #'   `n_reference`, `mean_delay_at`, `mean_delay_reference`, `statistic`
 #'   (standardised rank-sum) and `p_value` (one-sided: longer delays on `at`).
 #'
-#' @seealso [batch_test()], [simulate_batch()]
+#' @seealso
+#' [diagnose_batches()], which finds the report dates worth passing to `at`;
+#' [simulate_batch()] to plant a batch of known shape and check it is recovered;
+#' [plot_delay_profiles()] to see the delay profile this tests.
 #'
 #' @examples
-#' library(tbl.now)
-#' data(denguedat, package = "tbl.now")
+#' data(denguedat)
 #'
 #' dengue_tbl <- tbl_now(
 #'   denguedat,
@@ -94,19 +103,26 @@
 #'   verbose     = FALSE
 #' )
 #'
-#' batch_shape_test(dengue_tbl, at = as.Date("1990-06-25"), n_permutations = 99)
+#' # Pick a report date to interrogate. A real workflow takes this from
+#' ## diagnose_batches(); here we simply name one.
+#' diagnose_batch_shape(dengue_tbl, at = as.Date("1990-06-25"), n_permutations = 99)
+#'
+#' # `n_permutations` sets the resolution of the p-value: 99 keeps the example
+#' ## fast, but use the default (999) for anything you intend to report.
 #'
 #' @export
-batch_shape_test <- function(data,
+diagnose_batch_shape <- function(x,
                              at,
                              neighbours     = 3L,
                              guard          = 1L,
                              permute        = c("items", "blocks"),
                              n_permutations = 999L,
+                             axis           = c("report", "confirmation"),
                              seed           = NULL) {
   permute <- match.arg(permute)
-  .batch_experimental_warning("batch_shape_test")
-  .batch_check_tbl_now(data)
+  axis    <- match.arg(axis)
+  .batch_experimental_warning("diagnose_batch_shape")
+  .batch_check_tbl_now(x)
   if (!is.null(seed)) set.seed(seed)
 
   neighbours <- as.integer(neighbours)
@@ -114,7 +130,7 @@ batch_shape_test <- function(data,
   if (neighbours < 1L) cli::cli_abort("`neighbours` must be at least 1. Got {neighbours}.")
   if (guard < 0L)      cli::cli_abort("`guard` must be non-negative. Got {guard}.")
 
-  increments <- .batch_report_increments(data)
+  increments <- .batch_report_increments(x, axis = axis)
 
   # Only appearing reports carry a delay; down-revisions do not.
   if (any(increments$.count < 0)) {

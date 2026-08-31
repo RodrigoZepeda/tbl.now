@@ -1,9 +1,16 @@
-#' Update a `tbl_now`
+#' Append newly arrived data to a `tbl_now`
 #'
 #' @description `r lifecycle::badge('experimental')`
 #'
-#' Updates a `tbl_now` object with new observations
-#' either from another `tbl_now` or a `data.frame`
+#' Surveillance data does not arrive once; it arrives every week. `update()`
+#' takes a `tbl_now` and a batch of newer rows -- as another `tbl_now` or as a
+#' plain `data.frame` -- and returns a single object containing both, still
+#' knowing everything the original knew about itself.
+#'
+#' It also moves `now` forward, because the new rows may carry a later report
+#' than the object had seen. That is the difference between this and
+#' [dplyr::bind_rows()], which would give you back a plain data frame with no
+#' idea what a nowcast is.
 #'
 #' @param object A `tbl_now` object
 #' @param ... Additional arguments to pass to `tbl_now`
@@ -27,19 +34,32 @@
 #'
 #' @return A `tbl_now` object with all the properties of `object`
 #'
+#' @seealso
+#' [update_now()][add] to move `now` without adding rows;
+#' [tbl_now()] for the attributes that are carried over;
+#' [add()] and [change()][add] to edit those attributes instead of the data.
+#'
 #' @examples
 #' data(denguedat)
-#' initial_data <- denguedat[1:500, ]
-#' update_data <- denguedat[501:1000, ]
 #'
-#' initial_tbl <- tbl_now(denguedat,
+#' # Pretend the first 500 rows are what you had last week ...
+#' initial_tbl <- tbl_now(denguedat[1:500, ],
 #'   event_date = "onset_week",
 #'   report_date = "report_week", strata = "gender",
 #'   verbose = FALSE
 #' )
+#' nrow(initial_tbl)
+#' get_now(initial_tbl)
 #'
-#' # Update collapses everything into a single data.frame
-#' update(initial_tbl, new_data = update_data)
+#' # ... and these arrived since.
+#' new_rows <- denguedat[501:1000, ]
+#'
+#' # The result has both, keeps `gender` as a stratum, and has moved `now`
+#' # forward to the latest report it has now seen.
+#' updated <- update(initial_tbl, new_data = new_rows)
+#' nrow(updated)
+#' get_strata(updated)
+#' get_now(updated)
 #'
 #' @export
 update.tbl_now <- function(object, ..., new_data,
@@ -85,6 +105,21 @@ update.tbl_now <- function(object, ..., new_data,
     )
   }
 
+  # Move `now` forward before anything validates. New rows may carry a later
+  # report -- or a later CONFIRMATION -- than the object had, and validation
+  # refuses an object whose `now` sits before an observation that has already
+  # happened.
+  if (is.null(now)) {
+    now <- infer_now(
+      dplyr::as_tibble(updated_data),
+      now = NULL,
+      event_date = get_event_date(object),
+      report_date = get_report_date(object),
+      confirmation_date = get_confirmation_date(object)
+    )
+    attr(updated_data, "now") <- now
+  }
+
   # Determine which censored column name to register on the result.
   # Priority: object's column first (it was explicitly registered); fall back
   # to new_data's column when object had none.
@@ -93,7 +128,13 @@ update.tbl_now <- function(object, ..., new_data,
   if (grepl("count", get_data_type(object)) && remove_duplicates) {
     suppressWarnings(
       updated_data <- updated_data |>
-        dplyr::distinct(dplyr::pick(-dplyr::one_of(get_protected_generated_cols())), .keep_all = TRUE)
+        # Pass the object: with a confirmation process the generated set also
+        # holds `.confirmation_num`/`.confirmation_delay`, and leaving those in
+        # the de-duplication key would make every row look distinct.
+        dplyr::distinct(
+          dplyr::pick(-dplyr::one_of(get_protected_generated_cols(object))),
+          .keep_all = TRUE
+        )
     )
   } else if (!grepl("count", get_data_type(object)) && remove_duplicates) {
     cli::cli_warn(
@@ -235,12 +276,35 @@ update.tbl_now <- function(object, ..., new_data,
     updated_data <- updated_data |> dplyr::select(-dplyr::all_of(stale_t_effect_cols))
   }
 
+  # The confirmation process rides along, when the object had one AND the merged
+  # data still carries its columns. Losing it here would silently turn a
+  # three-date object back into a two-date one, and the `now` would move
+  # backwards with it.
+  confirmation_date <- get_confirmation_date(object)
+  if (!is.null(confirmation_date) && !confirmation_date %in% colnames(updated_data)) {
+    cli::cli_warn(c(
+      "The confirmation date {.val {confirmation_date}} is not in the updated
+       data, so the confirmation process was dropped.",
+      "i" = "Include that column in {.arg new_data} to keep it."
+    ))
+    confirmation_date <- NULL
+  }
+  confirmation_type <- if (is.null(confirmation_date)) {
+    NULL
+  } else {
+    type_col <- get_confirmation_type(object)
+    if (!is.null(type_col) && type_col %in% colnames(updated_data)) type_col else NULL
+  }
+
   result <- tbl_now(updated_data,
     event_date = get_event_date(object),
     report_date = get_report_date(object),
     strata = get_strata(updated_data),
     covariates = get_covariates(updated_data),
     is_censored = result_is_censored,
+    confirmation_date = confirmation_date,
+    confirmation_type = confirmation_type,
+    confirmation_units = get_confirmation_units(object) %||% "auto",
     event_units = get_event_units(object),
     report_units = get_report_units(object),
     data_type = get_data_type(object),

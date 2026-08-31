@@ -10,6 +10,7 @@ plot_reporting_triangle(
   report_ticks = 6L,
   mark_batches = 0L,
   plotly = FALSE,
+  axis = c("report", "confirmation"),
   palette = .tbl_now_palette()
 )
 }
@@ -24,10 +25,16 @@ draw as the third (report-date) axis. \code{0} disables it. Default \code{6}.}
 
 \item{mark_batches}{Integer: additionally highlight this many of the biggest
 batch stripes with a stronger dashed diagonal labelled by report date. \code{0}
-(default) disables it. Found cheaply from volume spikes, not \code{\link[=batch_test]{batch_test()}}.}
+(default) disables it. Found cheaply from volume spikes, not \code{\link[=diagnose_batches]{diagnose_batches()}}.}
 
 \item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget instead of a
 static plot. Default \code{FALSE}.}
+
+\item{axis}{Which time axis to draw: \code{"report"} (default) or
+\code{"confirmation"}. On the confirmation axis the picture answers the
+laboratory's version of the question -- when results arrived, rather than
+when reports did. Needs a confirmation process (see \code{\link[=add_confirmation]{add_confirmation()}});
+cases still \code{"pending"} have no confirmation date and are left out.}
 
 \item{palette}{A named colour palette. Defaults to the package palette.}
 }
@@ -36,8 +43,7 @@ A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Tiles over (event date, delay), filled by the reported count. Cells that are
 \strong{observable but empty} (a genuine reported zero) are drawn in a muted blue;
 cells that are \strong{not yet reportable} (report date beyond \code{now}, the upper-right
@@ -49,8 +55,15 @@ read off one plot. A batch is a single report date, i.e. one such diagonal.
 \examples{
 data(denguedat)
 dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+
+# Rows are event dates, columns are delays. The blank upper-right wedge is
+# the future: those reports cannot have arrived yet. That wedge is what a
+# nowcast fills in.
 plot_reporting_triangle(dn)
 }
 \seealso{
-\code{\link[=diagnostic_plot]{diagnostic_plot()}}.
+\code{\link[=plot_reporting_hexamap]{plot_reporting_hexamap()}} for the same grid drawn so that event date, report
+date and delay are all read the same way; \code{\link[=plot_delay_profiles]{plot_delay_profiles()}} for one
+curve per date instead of a grid; \code{\link[=complete_zeroes]{complete_zeroes()}} to fill the cells that
+are genuinely zero; \code{\link[=diagnostic_plot]{diagnostic_plot()}} for the whole gallery.
 }

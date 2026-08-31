@@ -2,29 +2,94 @@
 % Please edit documentation in R/dplyr_generics.R
 \name{assign_tbl}
 \alias{assign_tbl}
+\alias{names_tbl_now}
+\alias{money_tbl_now}
 \alias{[.tbl_now}
 \alias{[.grouped_tbl_now}
-\title{Subset function for \code{tbl_now}}
+\alias{names<-.tbl_now}
+\alias{names<-.grouped_tbl_now}
+\alias{$<-.tbl_now}
+\alias{$<-.grouped_tbl_now}
+\title{Base R operations on a \code{tbl_now}}
 \usage{
 \method{[}{tbl_now}(x, ...)
 
 \method{[}{grouped_tbl_now}(x, ...)
+
+\method{names}{tbl_now}(x) <- value
+
+\method{names}{grouped_tbl_now}(x) <- value
+
+\method{$}{tbl_now}(x, name) <- value
+
+\method{$}{grouped_tbl_now}(x, name) <- value
 }
 \arguments{
-\item{x}{A \code{tbl_now} object}
+\item{x}{A \code{tbl_now} object.}
 
-\item{...}{further arguments to be passed to or from other methods.}
+\item{...}{Passed to the underlying \code{[} method: rows and columns to keep.}
+
+\item{value}{For \verb{names<-} and \verb{$<-}, the replacement value.}
+
+\item{name}{For \verb{$<-}, the column being assigned to.}
 }
 \value{
-A \code{tbl_now} object or a \code{data.frame}
+A \code{tbl_now} object, or a plain data frame when the operation
+invalidated the class.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
-Accesors to \code{tbl_now} elements (rows and columns) as if
-it was a data.frame
+A \code{\link[=tbl_now]{tbl_now()}} is a \code{tibble} with extra attributes recording which column is
+the event date, which is the report date, and so on. These methods make sure
+those attributes survive ordinary base-R manipulation, so that \code{x[1:10, ]},
+\code{names(x) <- ...} and \code{x$new <- ...} give you back a \code{tbl_now} rather than a
+bare data frame.
+
+You never call them directly -- they are what makes the operators work.
 }
 \details{
-If the subsetting invalidates the class then a \code{data.frame}
-is returned.
+When an operation leaves the object unable to describe a nowcast -- because it
+dropped or renamed the event-date column, say -- the class cannot honestly be
+kept. In that case the result is \strong{demoted} to a plain data frame (with a
+warning), rather than pretending to still be a \code{tbl_now}. Attributes that are
+still meaningful are preserved on the way down.
+
+The same applies to \code{dplyr} verbs, through
+\link[dplyr:dplyr_extending]{dplyr_reconstruct()}.
+}
+\examples{
+data(denguedat)
+dengue <- tbl_now(denguedat,
+  event_date = onset_week, report_date = report_week,
+  strata = gender, verbose = FALSE
+)
+
+# Subsetting rows keeps the class and everything it knows.
+small <- dengue[1:10, ]
+class(small)[1]
+get_event_date(small)
+
+# So does adding a column with `$<-`.
+dengue$season <- ifelse(
+  lubridate::month(dengue$onset_week) \%in\% 6:11, "wet", "dry"
+)
+class(dengue)[1]
+
+# And renaming an unimportant column with `names<-`.
+renamed <- dengue
+names(renamed)[names(renamed) == "season"] <- "period"
+get_event_date(renamed)
+
+# But dropping the event date leaves nothing a nowcast could use, so the
+# object is demoted to a plain tibble instead of lying about itself.
+demoted <- suppressWarnings(dengue[, c("report_week", "gender")])
+class(demoted)[1]
+
+}
+\seealso{
+\code{\link[=tbl_now]{tbl_now()}} for the attributes being preserved;
+\code{\link[=tbl_now_attributes]{tbl_now_attributes()}} to check what survived;
+\link[=as_tibble.tbl_now]{as_tibble()} to drop the class on purpose;
+\code{\link[=validate_tbl_now]{validate_tbl_now()}} to confirm the result is still well formed.
 }

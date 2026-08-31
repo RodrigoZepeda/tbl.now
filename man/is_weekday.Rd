@@ -2,40 +2,52 @@
 % Please edit documentation in R/utils.R
 \name{is_weekday}
 \alias{is_weekday}
-\title{Check whether a date is a weekday vs weekend (international definition)}
+\title{Is a date a weekday or a weekend?}
 \usage{
 is_weekday(date, weekend_days = c("Sat", "Sun"))
 }
 \arguments{
-\item{date}{A Date (or POSIXt) object.}
+\item{date}{A Date (or POSIXt) object. May be a vector.}
 
-\item{weekend_days}{A character or numeric vector defining weekend days.
+\item{weekend_days}{A character or numeric vector defining which days count as
+the weekend. Defaults to Saturday and Sunday.
 \itemize{
-\item Numeric: must be integers in 1-7 corresponding to \code{\link[lubridate:wday]{lubridate::wday()}} when \code{week_start = 1}.
-\item Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
-Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).
+\item Character: day names or abbreviations, case-insensitive --
+\code{c("Mon", "Tuesday", "wed", ...)}.
+\item Numeric: integers 1-7 in \code{\link[lubridate:wday]{lubridate::wday()}} numbering with
+\code{week_start = 1}, so \strong{1 = Monday} and 7 = Sunday.
 }}
 }
 \value{
-A logical vector: TRUE if weekday, FALSE if weekend.
+A logical vector, \code{TRUE} where the date is a weekday and \code{FALSE} where
+it falls on the weekend.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
-Function that checks whether a date object is a weekday or weekend.
+Reporting almost always slows down at the weekend, which is one of the
+strongest and most predictable patterns in surveillance data. This tells you
+which days are which, and lets you say what "weekend" means -- it is Friday
+and Saturday in much of the Middle East, and Sunday alone in some countries.
 }
 \examples{
 is_weekday(as.Date("2020-04-22")) # TRUE (Wed)
 is_weekday(as.Date("2020-04-19")) # FALSE (Sun)
 
-# Middle East weekend (Fri - Sat)
+## Middle East weekend (Fri - Sat)
 is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri", "Sat"))
 
 # Weekend only on Friday
 is_weekday(as.Date("2020-04-17"), weekend_days = "Friday")
 is_weekday(as.Date("2020-04-18"), weekend_days = "Friday")
 
-# Weekend on Sun - Mon (numeric: 7 = Sun, 1 = Mon)
+## Weekend on Sun - Mon (numeric: 7 = Sun, 1 = Mon)
 is_weekday(as.Date("2020-04-20"), weekend_days = c(7, 1))
 
+}
+\seealso{
+\code{\link[=temporal_effects]{temporal_effects()}} and \code{\link[=add_temporal_effects]{add_temporal_effects()}}, which use this to build the
+day-of-week and weekend terms a model can fit;
+\link[=calendar_effect_plots]{plot_day_of_week_effects()} to see the effect in the
+data; \code{\link[=align_weeks]{align_weeks()}}, whose \code{align_on_day} uses this same ISO numbering.
 }

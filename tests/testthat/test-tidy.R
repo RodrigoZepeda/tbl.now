@@ -58,15 +58,41 @@ test_that("tidy() adds a q* column per requested probability", {
   expect_true(all(out$q5 <= out$q95))
 })
 
-test_that("tidy() refuses `probs` for engines that keep no draws", {
+test_that("tidy() refuses a `probs` the NobBS fit was never asked for", {
   skip_if_not_installed("NobBS")
-  # A bare list carrying NobBS's shape, so no model has to be fitted.
+  # A bare list carrying NobBS's shape, so no model has to be fitted. No
+  # `specs$quantiles` was set, so there are no `q_*` columns at all.
   fake_nobbs <- list(estimates = data.frame(
     onset_date = as.Date(c("2002-07-01", "2002-07-08")),
     estimate = c(10, 8), lower = c(6, 2), upper = c(15, 19)
   ))
   expect_tidy_contract(tidy(fake_nobbs), "NobBS")
-  expect_error(tidy(fake_nobbs, probs = 0.5), "does not keep posterior draws")
+  expect_error(tidy(fake_nobbs, probs = 0.5), "did not compute")
+  # The message has to say how to get it, which is at FIT time.
+  expect_error(tidy(fake_nobbs, probs = 0.5), "specs")
+})
+
+test_that("tidy() returns the quantiles a NobBS fit WAS asked for", {
+  skip_if_not_installed("NobBS")
+  # `specs = list(quantiles = c(0.1, 0.5, 0.9))` puts these columns in
+  # `estimates`. Reading them back is a lookup, not an approximation, so it must
+  # not be refused -- the whole point of NobBS's `specs$quantiles` argument.
+  fake_nobbs <- list(estimates = data.frame(
+    onset_date = as.Date("2020-01-01") + 0:1,
+    estimate = c(10, 8), lower = c(6, 2), upper = c(15, 19),
+    q_0.1 = c(7, 3), q_0.5 = c(10, 8), q_0.9 = c(14, 17)
+  ))
+
+  tidied <- tidy(fake_nobbs, probs = c(0.1, 0.5, 0.9))
+  expect_true(all(c("q10", "q50", "q90") %in% names(tidied)))
+  # The values are NobBS's own, not something recomputed.
+  expect_equal(tidied$q10, c(7, 3))
+  expect_equal(tidied$q90, c(14, 17))
+
+  # A level it did not compute is still refused, even though others are present.
+  expect_error(tidy(fake_nobbs, probs = c(0.1, 0.33)), "did not compute")
+  # And the advice lists what to ask for, including what is already there.
+  expect_error(tidy(fake_nobbs, probs = 0.33), "0\\.1")
 })
 
 test_that("tidy() recognises a NobBS fit by structure", {
@@ -98,7 +124,20 @@ test_that("tidy() records the interval width each engine actually returns", {
 # `nowcast()` already reports a prediction interval in the object's `pi` slot,
 # so `tidy()` must not blank it out (it used to return NA bounds and NA level).
 
-surveillance_fit <- function() {
+# Fitted ONCE and shared by the three tests below. `nowcast()` runs an MCMC, and
+# paying for it per test cost 18 seconds -- 5% of the CRAN suite -- for three
+# assertions about the same `pi` slot. The fit is read-only here: the test that
+# empties `pi` assigns into its own local binding, which R copies on
+# modification, so the cache cannot be reached through it.
+surveillance_fit <- local({
+  cached <- NULL
+  function() {
+    if (is.null(cached)) cached <<- .surveillance_fit()
+    cached
+  }
+})
+
+.surveillance_fit <- function() {
   data(denguedat, envir = environment())
   cut <- as.Date("2002-07-22")
   dengue <- denguedat |>

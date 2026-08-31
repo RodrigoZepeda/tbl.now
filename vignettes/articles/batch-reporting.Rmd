@@ -471,7 +471,7 @@ Identifying any bar with its dot we can conclude:
 missing (transport rising) while the window has *lost* cases (creation negative).
 
 Ordinary days (grey) sit in the cloud through the middle. That is the whole idea
-behind `transport_discriminant()` and `batch_test()`: **a batch is high transport
+behind `transport_discriminant()` and `diagnose_batches()`: **a batch is high transport
 with little creation**. 
 
 ### The transport discriminant
@@ -499,20 +499,20 @@ plot_transport_discriminant(tn, period = 7) +
 
 ### Recovering the data
 
-The `batch_test()` function runs the transport test for the batch signature and
+The `diagnose_batches()` function runs the transport test for the batch signature and
 returns, for every report date, the `batch` flag -- a Benjamini-Hochberg-corrected
-verdict that controls the false-discovery rate across all dates (see `?batch_test`
+verdict that controls the false-discovery rate across all dates (see `?diagnose_batches`
 for the full column reference). Keeping the `batch` rows gives the confirmed
 releases together with their `deficit` (how depleted the days just before were) and
 `delta` (how little the window total actually changed).
 
 ```{r screen-sim, eval = FALSE}
-batch_test(ideal) |>
+diagnose_batches(ideal) |>
   filter(batch)
 ```
 
 ```{r screen-sim2, echo = FALSE}
-batch_test(ideal) |>
+diagnose_batches(ideal) |>
   filter(batch) |>
   select(report_date, reported, baseline, deficit, delta, p_transport_bh, batch)
 ```
@@ -524,12 +524,12 @@ preceded by a matching deficit. The clearest is **10 June 2020**, nearly ten tim
 its baseline:
 
 ```{r screen-covid, eval = FALSE}
-batch_test(tn, period = 7) |>
+diagnose_batches(tn, period = 7) |>
   filter(batch)
 ```
 
 ```{r screen-covid2, echo = FALSE}
-batch_test(tn, period = 7) |>
+diagnose_batches(tn, period = 7) |>
   filter(batch) |>
   select(report_date, reported, baseline, deficit, delta, p_transport_bh, batch) |>
   arrange(desc(reported))
@@ -560,19 +560,19 @@ that decreases the delay in time:
 plot_delay_drift(tn)
 ```
 
-The functions `test_delay_drift()` and `test_delay_changepoint()` test 
+The functions `diagnose_drift()` and `diagnose_changepoint()` test 
 for a gradual or abrupt changes in the delay. We can see, for example, that it correctly identifies the drift in the COVID-19 dataset both for the median (trend) and the spread (see the quantiles getting tighter). On the ideal example this doesn't happen so it does not detect a drift:
 
 ```{r, warning=FALSE}
-test_delay_drift(tn)
-test_delay_drift(ideal)
+diagnose_drift(tn)
+diagnose_drift(ideal)
 ```
 
 The change-point function also detects that by April the COVID-19 delay distribution has completely changed from before. In the case of the ideal example the change is not  long enough to be detected: 
 
 ```{r, warning=FALSE}
-test_delay_changepoint(tn)
-test_delay_changepoint(ideal)
+diagnose_changepoint(tn)
+diagnose_changepoint(ideal)
 ```
 
 ### Delay profiles
@@ -604,7 +604,7 @@ same thing -- reports that were held back and then released together.
 | **The reporting V** | Horizontal slices show cases with the same report date. |
 | **Wavelet scalogram** | Bright short-period ridges in the reporting series show _holds_ on the reporting. |
 | **Transport discriminant** | A red dot up-and-left, in the "potential batch region" might indicate a batch. |
-| **`batch_test()`** | Shows the flagged reports in the discriminant as a `data.frame` |
+| **`diagnose_batches()`** | Shows the flagged reports in the discriminant as a `data.frame` |
 | **Delay profiles** | Show the delay distribution for each event date. |
 | **Reporting-delay drift** | Shows how the delay and its variance change through time. |
 

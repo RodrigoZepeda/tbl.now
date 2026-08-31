@@ -52,7 +52,7 @@
 #' Detects **batches**: report dates at which a stalled reporting system releases
 #' a backlog.  A batch *moves* reports along the report axis without creating
 #' them, so it shows up as a spike preceded by a deficit, while the total over a
-#' window spanning both is unchanged.  `batch_test()` is completely
+#' window spanning both is unchanged.  `diagnose_batches()` is completely
 #' **model-free** -- it needs only a [tbl_now()], not a fitted model -- which
 #' makes it the right tool for exploratory data analysis before any nowcasting
 #' model is chosen.
@@ -84,7 +84,7 @@
 #' negative (a down-revision).
 #'
 #' A reporting system that is always closed at weekends produces every batch
-#' symptom, every week, so `batch_test()` needs the length of any scheduled
+#' symptom, every week, so `diagnose_batches()` needs the length of any scheduled
 #' cycle. It reads that from the object's temporal effects when it can: a
 #' **day-of-week** effect sets `period = 7`, a **week-of-year** effect
 #' `period = 52` (see [add_temporal_effects()]). Pass `period` yourself to
@@ -93,7 +93,7 @@
 #' medians across cycles, so an irregular batch reads as an excursion relative to
 #' the schedule.
 #'
-#' @param data A [tbl_now()] object of any `data_type`.
+#' @param x A [tbl_now()] object of any `data_type`.
 #' @param lookback Integer `k`: how many report dates before `r` the window
 #'   reaches back.  Should comfortably cover the longest plausible stall.
 #'   Default `7` (a week of daily reporting).
@@ -115,10 +115,17 @@
 #'   robust normal approximation. Signed (count-cumulative) increments always use
 #'   the robust null. `"poisson"` and `"robust"` force the choice; note that
 #'   `"poisson"` is anti-conservative (over-flags) on overdispersed counts.
+#' @param axis Which time axis to scan for arrivals: `"report"` (default) or
+#'   `"confirmation"`. The question is the same either way -- did an unusual
+#'   number of records land on this date? -- so a laboratory clearing its
+#'   backlog is found exactly as a surveillance system clearing its inbox is.
+#'   `"confirmation"` needs a confirmation process (see [add_confirmation()])
+#'   and ignores cases that are still `"pending"`, which have no confirmation
+#'   date to arrive on.
 #' @param alpha Significance level for the Benjamini-Hochberg `batch` flag.
 #'   Default `0.05`.
 #'
-#' @returns A tibble of class `batch_test`, one row per (report date, stratum),
+#' @returns A tibble of class `diagnose_batches`, one row per (report date, stratum),
 #'   with a `print()` method that summarises the flagged dates. Columns:
 #'   \describe{
 #'     \item{`report_date`}{The report (registration) date the row describes.}
@@ -140,13 +147,18 @@
 #'       window is not still depleted (a hold). This is the column to trust.}
 #'   }
 #'
-#' @seealso [batch_shape_test()] for the complementary test on *which* event
-#'   dates a report date drew from, and [simulate_batch()] to inject a known
-#'   batch for validation.
+#' @seealso
+#' [diagnose_batch_shape()] for the complementary test on *which* event dates a
+#' flagged report date drew from; [transport_discriminant()] for the two
+#' coordinates behind the test, without the hypothesis test on top;
+#' [simulate_batch()] to plant a known batch and check the screen finds it;
+#' [plot_reporting_process()] and [plot_reporting_triangle()] to see it;
+#' [add_is_censored()][add] to record a batch once you believe it. The
+#' [*Diagnosing reporting batches* article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html)
+#' works through a real example.
 #'
 #' @examples
-#' library(tbl.now)
-#' data(denguedat, package = "tbl.now")
+#' data(denguedat)
 #'
 #' dengue_tbl <- tbl_now(
 #'   denguedat,
@@ -156,19 +168,30 @@
 #'   verbose     = FALSE
 #' )
 #'
-#' screened <- batch_test(dengue_tbl, lookback = 2)
+#' # Scan every report date for an unusually large arrival.
+#' screened <- diagnose_batches(dengue_tbl, lookback = 2)
 #' head(screened)
 #'
+#' # The dates it flagged, strongest evidence first. Treat these as candidates to
+#' # look into, not as confirmed backlog releases. `reported` against `baseline`
+#' # says how much bigger the arrival was than the surrounding days led you to
+#' # expect.
+#' flagged <- screened[screened$batch, ]
+#' nrow(flagged)
+#' flagged[order(flagged$p_transport_bh), c("report_date", "reported", "baseline")]
+#'
 #' @export
-batch_test <- function(data,
+diagnose_batches <- function(x,
                          lookback        = 7L,
                          baseline_window = NULL,
                          period          = NULL,
                          null_model      = c("auto", "poisson", "robust"),
+                         axis            = c("report", "confirmation"),
                          alpha           = 0.05) {
   null_model      <- match.arg(null_model)
-  .batch_experimental_warning("batch_test")
-  .batch_check_tbl_now(data)
+  axis            <- match.arg(axis)
+  .batch_experimental_warning("diagnose_batches")
+  .batch_check_tbl_now(x)
 
   lookback <- as.integer(lookback)
   if (lookback < 1L) {
@@ -179,10 +202,10 @@ batch_test <- function(data,
   }
 
   # Fill in / sanity-check the calendar period from the object's temporal effects.
-  period <- .batch_resolve_period(data, period)
+  period <- .batch_resolve_period(x, period)
 
   # -- 1-4. reporting totals, baseline and the window statistics Delta and W ----
-  registration <- .batch_registration(data, lookback, baseline_window, period)
+  registration <- .batch_registration(x, lookback, baseline_window, period, axis = axis)
 
   # -- 5. p-values under the appropriate null ---------------------------------
   # The exact Poisson/Binomial null is only valid when the counts are Poisson AND
@@ -192,7 +215,7 @@ batch_test <- function(data,
   # `auto` therefore reserves the exact Poisson null for non-negative counts that
   # show no overdispersion, and falls back to the dispersion-corrected robust null
   # for signed increments or whenever overdispersion is detected.
-  is_signed  <- identical(get_data_type(data), "count-cumulative")
+  is_signed  <- identical(get_data_type(x), "count-cumulative")
   null_used  <- if (!identical(null_model, "auto")) {
     null_model
   } else if (is_signed || .batch_dispersion(registration) > 1.5) {
@@ -215,7 +238,7 @@ batch_test <- function(data,
 
   structure(
     dplyr::as_tibble(registration),
-    class      = c("batch_test", class(dplyr::tibble())),
+    class      = c("diagnose_batches", class(dplyr::tibble())),
     lookback   = lookback,
     period     = period,
     null_model = null_used,
@@ -224,7 +247,7 @@ batch_test <- function(data,
 }
 
 #' Reporting totals, baseline and the window statistics, shared by
-#' `batch_test()` and `transport_discriminant()`.
+#' `diagnose_batches()` and `transport_discriminant()`.
 #'
 #' Runs steps 1-4 of the pipeline: reduce to signed counts, lay them on the
 #' complete report-date grid, fit the robust (optionally calendar-adjusted)
@@ -232,8 +255,9 @@ batch_test <- function(data,
 #' discriminant `Delta` on a leave-window-out baseline.
 #' @keywords internal
 #' @noRd
-.batch_registration <- function(data, lookback, baseline_window, period) {
-  increments      <- .batch_report_increments(data)
+.batch_registration <- function(data, lookback, baseline_window, period,
+                               axis = "report") {
+  increments      <- .batch_report_increments(data, axis = axis)
   registration    <- .batch_registration_totals(increments, data)
   baseline_window <- .batch_baseline_window(baseline_window, lookback, period)
   registration    <- .batch_add_baseline(registration, baseline_window, period)
@@ -243,6 +267,26 @@ batch_test <- function(data,
 # =============================================================================
 # Step 1: one signed count per (event date, report date, stratum)
 # =============================================================================
+
+#' Resolve the confirmation column for a batch scan
+#'
+#' @param x A `tbl_now`.
+#'
+#' @return The confirmation-date column name.
+#'
+#' @keywords internal
+#' @noRd
+.batch_confirmation_axis <- function(x) {
+  confirmation_col <- get_confirmation_date(x)
+  if (is.null(confirmation_col)) {
+    cli::cli_abort(c(
+      "{.code axis = \"confirmation\"} needs a confirmation process, and
+       {.arg x} has none.",
+      "i" = "Attach one with {.fn add_confirmation}."
+    ))
+  }
+  confirmation_col
+}
 
 #' Reduce a `tbl_now` to signed counts indexed by (event, report, stratum).
 #'
@@ -258,13 +302,38 @@ batch_test <- function(data,
 #'   `.stratum`.
 #' @keywords internal
 #' @noRd
-.batch_report_increments <- function(data) {
+.batch_report_increments <- function(data, axis = c("report", "confirmation")) {
+  axis <- match.arg(axis)
   observations <- as.data.frame(data)
   event_col    <- get_event_date(data)
-  report_col   <- get_report_date(data)
   data_type    <- get_data_type(data)
   strata_cols  <- get_strata(data)
   case_count_col <- get_case_count(data)
+
+  # The whole batch machinery asks one question: "did an unusual number of
+  # records arrive on this date?". That question is identical on the
+  # CONFIRMATION axis -- a laboratory clearing its backlog looks exactly like a
+  # surveillance system clearing its inbox -- so the axis is swapped here, at
+  # the single point every batch function and every reporting-process plot goes
+  # through, rather than duplicating any of them.
+  report_col <- if (identical(axis, "confirmation")) {
+    .batch_confirmation_axis(data)
+  } else {
+    get_report_date(data)
+  }
+
+  if (identical(axis, "confirmation")) {
+    # A pending case has not been confirmed, so it contributes nothing to the
+    # confirmation axis -- counting it on a date it does not have would invent
+    # arrivals.
+    observations <- observations[!is.na(observations[[report_col]]), , drop = FALSE]
+    if (nrow(observations) == 0) {
+      cli::cli_abort(c(
+        "No confirmed records: every row is still {.val pending}.",
+        "i" = "There is nothing to look for batches in on the confirmation axis."
+      ))
+    }
+  }
 
   # The per-row count, before any de-accumulation.
   if (identical(data_type, "linelist")) {
@@ -304,7 +373,7 @@ batch_test <- function(data,
   }
 
   # Integer delay, measured in report-grid steps (unit-agnostic).
-  date_grid <- .batch_date_grid(observations, data)
+  date_grid <- .batch_date_grid(observations, data, axis = axis)
   observations |>
     dplyr::mutate(
       .delay = match(.data$.report_date, date_grid) - match(.data$.event_date, date_grid)
@@ -375,11 +444,15 @@ batch_test <- function(data,
 #' The complete calendar grid spanned by the events and reports, in report units.
 #' @keywords internal
 #' @noRd
-.batch_date_grid <- function(observations, data) {
-  report_unit <- get_report_units(data) %||% "days"
+.batch_date_grid <- function(observations, data, axis = "report") {
+  report_unit <- if (identical(axis, "confirmation")) {
+    get_confirmation_units(data) %||% get_report_units(data) %||% "days"
+  } else {
+    get_report_units(data) %||% "days"
+  }
   grid_start  <- min(observations$.event_date,  na.rm = TRUE)
   grid_end    <- max(observations$.report_date, na.rm = TRUE)
-  seq(from = grid_start, to = grid_end, by = as.character(report_unit))
+  .tbl_now_date_seq(grid_start, grid_end, report_unit)
 }
 
 # =============================================================================
@@ -930,7 +1003,7 @@ batch_test <- function(data,
 #' effects.
 #'
 #' A scheduled reporting cycle -- a desk that is shut at weekends, say -- produces
-#' every batch symptom, every cycle, so `batch_test()` needs to know the cycle
+#' every batch symptom, every cycle, so `diagnose_batches()` needs to know the cycle
 #' length. When the user does not pass `period`, we read it off the `tbl_now`'s
 #' temporal-effect specs: a **day-of-week** effect implies a weekly cycle
 #' (`period = 7`), a **week-of-year** effect a yearly one (`period = 52`). A
@@ -981,8 +1054,8 @@ batch_test <- function(data,
 #' Warn, on every call, that the batch-detection functions are experimental.
 #'
 #' The batch detectors are new and their statistical behaviour and interface are
-#' still settling.  Every user-facing entry point (`batch_test()`,
-#' `batch_shape_test()`, `simulate_batch()`) calls this so a user is always told
+#' still settling.  Every user-facing entry point (`diagnose_batches()`,
+#' `diagnose_batch_shape()`, `simulate_batch()`) calls this so a user is always told
 #' that a flagged batch is a *potential* batch, not a confirmed one.
 #' @param function_name The calling function, for the message.
 #' @keywords internal
@@ -997,7 +1070,7 @@ batch_test <- function(data,
     ),
     # "regularly" (rlang throttles to roughly once per session per id) matches the
     # convention already used by the other experimental tbl.now diagnostics
-    # (`test_delay_drift()`, `test_delay_changepoint()`), so a user is warned
+    # (`diagnose_drift()`, `diagnose_changepoint()`), so a user is warned
     # without being buried when a function is called in a loop.
     .frequency    = "regularly",
     .frequency_id = paste0("tbl.now::", function_name)
@@ -1007,21 +1080,21 @@ batch_test <- function(data,
 
 #' @keywords internal
 #' @noRd
-.batch_check_tbl_now <- function(data) {
-  if (!is_tbl_now(data)) {
+.batch_check_tbl_now <- function(x) {
+  if (!is_tbl_now(x)) {
     cli::cli_abort(
-      "{.arg data} must be a {.cls tbl_now} object. Got {.cls {class(data)}}."
+      "{.arg x} must be a {.cls tbl_now} object. Got {.cls {class(x)}}."
     )
   }
   invisible(TRUE)
 }
 
 #' Print a batch screen
-#' @param x A `batch_test` object.
+#' @param x A `diagnose_batches` object.
 #' @param ... Unused.
 #' @export
 #' @noRd
-print.batch_test <- function(x, ...) {
+print.diagnose_batches <- function(x, ...) {
   flagged <- x[!is.na(x$batch) & x$batch, , drop = FALSE]
 
   # stdout (`cat_*`), not messages (`cli_*`): print output must survive

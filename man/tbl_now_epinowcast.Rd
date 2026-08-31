@@ -66,7 +66,9 @@ this \code{TRUE} would synthesise NA-reference padding rows the data never had.}
 \item{preprocess}{If \code{TRUE} (default) returns an \code{enw_preprocess_data}
 object; if \code{FALSE} returns the completed observation \code{data.table}.}
 
-\item{quiet}{Logical. If \code{TRUE}, suppress the lossy-conversion warning emitted
+\item{quiet}{Logical. A \emph{different} channel from \code{verbose}: \code{verbose}
+controls the informational summary of what the conversion did, while \code{quiet}
+suppresses the lossy-conversion \strong{warning} emitted
 by \code{tbl_now_to_epinowcast()} (see the Round-trip section).}
 }
 \value{
@@ -182,28 +184,40 @@ delay distribution is the one job that can use it.
 
 \examples{
 \dontshow{if (requireNamespace("epinowcast", quietly = TRUE) & requireNamespace("data.table", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-# Preprocessing epinowcast data is slow, so this is wrapped in \donttest{}.
-\donttest{
 library(data.table)
 library(epinowcast)
 
-#Read data from epinowcast
-obs  <- germany_covid19_hosp[location == "DE"]
+## CRAN asks examples to use at most two cores; data.table would otherwise
+## take every one it can find.
+data.table::setDTthreads(2)
 
-#Remove unused column
-obs  <- obs[, location := NULL]
+# epinowcast's own example data: German COVID-19 hospitalisations by age.
+obs <- germany_covid19_hosp[location == "DE"][, location := NULL]
 
-#Pre-process data
-pobs <- epinowcast::enw_preprocess_data(obs, max_delay = 40, by = "age_group")
+## A few weeks and a short delay keep the example quick; preprocessing the whole
+## series with `max_delay = 40` costs about ten times as much CPU.
+recent <- obs[reference_date >= as.Date("2021-10-15")]
+pobs <- epinowcast::enw_preprocess_data(recent, max_delay = 10, by = "age_group")
 
 # From the data.table input format ...
-nowobj <- tbl_now_from_epinowcast(obs, strata = c("age_group"))
+nowobj <- tbl_now_from_epinowcast(recent, strata = c("age_group"))
+nowobj
 
-# ... or from a preprocessed epinowcast object
+# ... or from a preprocessed epinowcast object.
 tbl_epi <- tbl_now_from_epinowcast(pobs)
 
-#You can also convert to epinowcast preprocess data format
+# And back out again.
 preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
-}
 \dontshow{\}) # examplesIf}
+}
+\seealso{
+\link[=nowcast_engines]{engine_epinowcast()} to fit through this package rather than
+converting by hand; \code{\link[=align_weeks]{align_weeks()}}, because \pkg{epinowcast} lays its grid out
+in whole timesteps; \code{\link[=complete_zeroes]{complete_zeroes()}} to fill the grid;
+\link[=tidy.nowcast]{tidy()} for the fitted result.
+\code{\link[=as_tbl_now]{as_tbl_now()}} for the generic that dispatches to the \verb{*_from_*()} side;
+\code{\link[=run_nowcast]{run_nowcast()}}, which does the conversion for you when you fit through an
+\code{\link[=engine]{engine()}}. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html}{\emph{One dataset, many nowcasts} article}
+fits the same data with every supported package.
 }

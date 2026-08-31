@@ -27,14 +27,14 @@ A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-}
-\details{
+
 Places each report date by its creation score (x) and transport / deficit
 score (y) from \code{\link[=transport_discriminant]{transport_discriminant()}}, shading the region that decides the
 batch call. Surges are not distinguished here (they fold into the quiet
 background) since only the batch call is of interest.
-
-Only the \code{\link[=batch_test]{batch_test()}}-confirmed batches (Benjamini-Hochberg-corrected) are
+}
+\details{
+Only the \code{\link[=diagnose_batches]{diagnose_batches()}}-confirmed batches (Benjamini-Hochberg-corrected) are
 coloured red; the dashed lines and shaded region are a reference for where a
 batch sits (deficit cleared, and significant), not the flagging rule. The most
 extreme-looking points (far left, far up) are \emph{holds} -- windows still depleted
@@ -47,5 +47,8 @@ dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
 plot_transport_discriminant(dn)
 }
 \seealso{
-\code{\link[=transport_discriminant]{transport_discriminant()}}, \code{\link[=diagnostic_plot]{diagnostic_plot()}}.
+\code{\link[=transport_discriminant]{transport_discriminant()}} for the numbers behind the plane;
+\code{\link[=diagnose_batches]{diagnose_batches()}} for the hypothesis test that flags the red points;
+\link[=plot_epidemic_process]{plot_reporting_process()} for the series they come
+from; \code{\link[=diagnostic_plot]{diagnostic_plot()}} for the whole gallery.
 }

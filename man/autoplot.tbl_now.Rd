@@ -165,26 +165,38 @@ does not bias them.
 \examples{
 \dontshow{if (requireNamespace("patchwork", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
-# A recent window keeps the example fast.
-recent <- denguedat[denguedat$onset_week >= as.Date("2010-01-01"), ]
+# A few recent months keep the example fast; the panels look the same on
+# twenty years of data, they just take longer to draw.
+recent <- denguedat[denguedat$onset_week >= as.Date("2010-11-01"), ]
 dengue <- tbl_now(recent,
   event_date = "onset_week",
   report_date = "report_week", strata = "gender", verbose = FALSE
 )
 autoplot(dengue)
 
-\donttest{
 # Only the reporting-delay calendar effect
 autoplot(dengue, panels = "delay_calendar")
 
-# A single panel (returned as a plain ggplot)
+## A single panel (returned as a plain ggplot)
 autoplot(dengue, panels = "delay_week")
 
-# Split every panel by stratum
-autoplot(dengue, by_strata = TRUE)
+# Split by stratum. `by_strata = TRUE` works on the whole gallery too; one
+# panel keeps the example quick.
+autoplot(dengue, panels = "delay_week", by_strata = TRUE)
 
 # Zoom the delay panel to delays of 0-10 weeks
-autoplot(dengue, delay_distribution_xlim = c(0, 10))
-}
+autoplot(dengue, panels = "delay_distribution", delay_distribution_xlim = c(0, 10))
 \dontshow{\}) # examplesIf}
+}
+\seealso{
+\code{\link[=diagnostic_plot]{diagnostic_plot()}} for the companion gallery, which looks at the \emph{reporting
+process} -- when reports arrived and whether any of it is artificial -- rather
+than at the case counts;
+the panels here as standalone functions: \code{\link[=plot_observed_cases]{plot_observed_cases()}},
+\code{\link[=plot_delay_distribution]{plot_delay_distribution()}}, \code{\link[=plot_cycles]{plot_cycles()}}, \link{calendar_effect_plots} and
+\code{\link[=plot_delay_drift]{plot_delay_drift()}};
+\link[=tbl_now_summary]{summary()} and \code{\link[=diagnose]{diagnose()}} for the same information as
+tables. The
+\href{https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html}{\emph{Describing and diagnosing a tbl_now} article}
+reads the panels one at a time.
 }

@@ -5,19 +5,46 @@
 # <https://github.com/joshwlambert/ExtendDataFrames/blob/main/R/subset-reconstruct.R>
 
 
-#' Validate a tbl_now object
+#' Check that an object is a valid `tbl_now`
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
-#' Checks that an object is a properly constructed `tbl_now`
-#' with all required attributes and valid data.
+#' Two ways of asking the same question -- *is this object a well-formed
+#' [tbl_now()]?*
 #'
-#' @param x An object to validate
+#' * `is_tbl_now()` answers quietly with `TRUE` or `FALSE`. Use it in an `if`.
+#' * `validate_tbl_now()` answers loudly: it stops with an error explaining what
+#'   is wrong, and warns about the merely suspicious. Use it when you want the
+#'   pipeline to halt rather than carry on with a broken object.
+#'
+#' Neither checks whether the data are *good* -- only whether the object is put
+#' together correctly. For the quality of the data itself, use [diagnose()].
+#'
+#' @param x An object to check.
 #'
 #' @inheritParams tbl_now
-#' @param warn_now Boolean. Whether to warn if now is before last report or too far in the future.
+#' @param warn_now Boolean. Whether to warn if `now` falls before the last report
+#'   date, or unreasonably far into the future.
 #'
-#' @return Returns `TRUE` invisibly or throws an error. Called for its side effects.
+#' @return
+#' `is_tbl_now()` returns a single `TRUE` or `FALSE`.
+#'
+#' `validate_tbl_now()` returns `TRUE` invisibly; it is called for the error or
+#' warning it raises when the object is malformed.
+#'
+#' @details
+#' `validate_tbl_now()` and [diagnose()] share one implementation. This function
+#' is the *condition* presentation of it: it aborts on the `error` findings and
+#' warns about the `warning` ones. [diagnose()] is the *data* presentation, and
+#' additionally reports the `note`-level observations that would make every
+#' `dplyr` verb noisy if they were emitted here.
+#'
+#' @seealso
+#' [diagnose()] for the same findings returned as a tibble, plus the softer
+#' notes; [tbl_now()] to build a valid object; [tbl_now_attributes()] to see what
+#' it recorded. The
+#' [*Describing and diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+#' explains what each finding means.
 #'
 #' @examples
 #' data(denguedat)
@@ -26,300 +53,40 @@
 #'   report_date = "report_week", verbose = FALSE
 #' )
 #'
-#' # Validate without errors
+#' # A well-formed object passes both checks.
+#' is_tbl_now(ndata)
 #' validate_tbl_now(ndata)
 #'
-#' # Validate with errors (wrapped in try() since this intentionally errors)
+#' # A plain data.frame is not a tbl_now ...
+#' is_tbl_now(data.frame(x = 1:3))
+#'
+#' ## ... and asking for validation says so, with a reason. (Wrapped in try()
+#' # because it is meant to fail here.)
 #' try(validate_tbl_now(data.frame(x = 1:3)))
 #'
 #' @export
 validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
-  # Get required attributes
-  required_attrs <- c(
-    "event_date", "report_date", "now", "event_units", "report_units",
-    "data_type"
+  # One implementation, two presentations: `diagnose()` returns the findings as
+  # data, this returns them as the conditions the class has always emitted.
+  #
+  # `deep = FALSE` is what keeps that affordable. This function runs inside
+  # `tbl_now_can_reconstruct()`, i.e. on every `dplyr` verb, so the engine is
+  # told to skip any work that costs a pass over the data and only ever yields
+  # a note. `floor = "note"` then reports the errors, the warnings, and the one
+  # note this function has always shown as an alert.
+  findings <- .tbl_now_findings(
+    x,
+    checks = .diagnose_validation_checks(),
+    by_strata = FALSE,
+    warn_non_uniqueness = warn_non_uniqueness,
+    warn_now = warn_now,
+    floor = "note",
+    deep = FALSE,
+    assert = FALSE,
+    fn = "validate_tbl_now"
   )
 
-  errors <- character(0)
-  warnings <- character(0)
-
-  # # === 1. Check class ===
-  if (!is.data.frame(x)) {
-    errors <- c(errors, "Object must inherit from {.code data.frame}")
-  }
-
-  # === 2. Check required attributes exist ===
-  for (attr_name in required_attrs) {
-    if (is.null(attr(x, attr_name, exact = TRUE))) {
-      errors <- c(errors, sprintf("Missing required attribute: {.val %s}", attr_name))
-    }
-  }
-
-  # If required attributes are missing, return early
-  if (length(errors) > 0) {
-    cli::cli_abort(c("Invalid {.code tbl_now} object:", errors))
-  }
-
-  # === 3. Extract attributes for validation ===
-  event_date <- get_event_date(x)
-  report_date <- get_report_date(x)
-  strata <- get_strata(x)
-  covariates <- get_covariates(x)
-  now <- get_now(x)
-  report_units <- get_report_units(x)
-  event_units <- get_event_units(x)
-  data_type <- get_data_type(x)
-  is_censored <- get_is_censored(x)
-  case_count <- get_case_count(x)
-
-  if (data_type == "linelist") {
-    warn_non_uniqueness <- FALSE
-  }
-
-  # === 4. Validate attribute types ===
-
-  # event_date and report_date must be character(1)
-  if (!is.character(event_date) || length(event_date) != 1) {
-    errors <- c(errors, "Attribute {.val event_date} must be a Date of length 1")
-  }
-
-  if (!is.character(report_date) || length(report_date) != 1) {
-    errors <- c(errors, "Attribute {.val report_date} must be a Date of length 1")
-  }
-
-
-  # strata must be NULL or character
-  if (!is.null(strata) && !is.character(strata)) {
-    errors <- c(errors, "Attribute {.val strata} must be {.val NULL} or a character vector")
-  }
-
-  # covariates must be NULL or character
-  if (!is.null(covariates) && !is.character(covariates)) {
-    errors <- c(errors, "Attribute {.val covariates} must be {.val NULL} or a character vector")
-  }
-
-  # now must be a Date
-  if ((!lubridate::is.Date(now) && !is.integer(now)) || length(now) != 1) {
-    errors <- c(errors, "Attribute {.val now}  must be a Date or integer object of length 1")
-  }
-
-  # "event_units" and "report_units" must be valid option
-  valid_date_units <- c("auto", "days", "weeks", "numeric", "months", "years")
-  if (!is.character(report_units) || length(report_units) != 1 ||
-    !report_units %in% valid_date_units) {
-    errors <- c(errors, sprintf(
-      "Attribute {.val report_units} must be one of: {.val %s}",
-      paste(valid_date_units, collapse = ", ")
-    ))
-  }
-  if (!is.character(event_units) || length(event_units) != 1 ||
-    !event_units %in% valid_date_units) {
-    errors <- c(errors, sprintf(
-      "Attribute {.val event_units} must be one of: {.val %s}",
-      paste(valid_date_units, collapse = ", ")
-    ))
-  }
-
-  # data_type must be valid option
-  valid_data_types <- c("auto", "linelist", "count-incidence", "count-cumulative")
-  if (!is.character(data_type) || length(data_type) != 1 ||
-    !data_type %in% valid_data_types) {
-    errors <- c(errors, sprintf(
-      "Attribute {.val data_type} must be one of: {.val %s}",
-      paste(valid_data_types, collapse = ", ")
-    ))
-  }
-
-  # is_censored must be NULL or character(1)
-  if (!is.null(is_censored) && (length(is_censored) != 1 || !is.character(is_censored))) {
-    errors <- c(errors, "Attribute {.val is_censored} must be {.val NULL} or a character vector of length 1")
-  }
-
-  # === 5. Validate columns exist in data ===
-  if (!is.null(event_date) && !event_date %in% colnames(x)) {
-    errors <- c(errors, sprintf("Column {.val %s} (event_date) not found in data", event_date))
-  }
-
-  if (!is.null(report_date) && !report_date %in% colnames(x)) {
-    errors <- c(errors, sprintf("Column {.val %s} (report_date) not found in data", report_date))
-  }
-
-  if (!is.null(is_censored) && length(is_censored) == 1 && !(is_censored %in% colnames(x))) {
-    errors <- c(errors, sprintf("Column {.val %s} (is_censored) not found in data", is_censored))
-  }
-
-  if (!is.null(strata)) {
-    for (st in strata) {
-      if (!st %in% colnames(x)) {
-        errors <- c(errors, sprintf("Strata column {.val %s} not found in data", st))
-      }
-    }
-  }
-
-  if (!is.null(covariates)) {
-    for (cv in covariates) {
-      if (!cv %in% colnames(x)) {
-        errors <- c(errors, sprintf("Covariate column {.val %s} not found in data", cv))
-      }
-    }
-  }
-
-  # Check once per category--------------
-
-  # Check that no covariate is in strata and viceversa
-  if (any(covariates %in% strata)) {
-    # Get those that are repeated
-    repeated_vars <- covariates[which(covariates %in% strata)]
-
-    errors <- c(
-      errors,
-      sprintf("Strata variable {.val %s} cannot also be a covariate", repeated_vars)
-    )
-  }
-
-  # Check that no date is in strata
-  if (report_date %in% strata) {
-    errors <- c(errors, sprintf("Report date {.val %s} cannot be strata", report_date))
-  }
-  if (event_date %in% strata) {
-    errors <- c(errors, sprintf("Event date {.val %s} cannot be strata", event_date))
-  }
-
-  # Check that no date is in covariate
-  if (report_date %in% covariates) {
-    errors <- c(errors, sprintf("Report date {.val %s} cannot be a covariate", report_date))
-  }
-  if (event_date %in% covariates) {
-    errors <- c(errors, sprintf("Event date {.val %s} cannot be a covariate", event_date))
-  }
-
-  # Check that is_censored is not a covariate / strata
-  if (!is.null(is_censored) && any(is_censored %in% covariates)) {
-    errors <- c(errors, sprintf("Censored indicator {.val %s} cannot be also a covariate", is_censored))
-  }
-
-  if (!is.null(is_censored) && any(is_censored %in% strata)) {
-    errors <- c(errors, sprintf("Censored indicator {.val %s} cannot be also strata", is_censored))
-  }
-
-  # === 6. Validate column types ===
-  if (!is.null(event_date) && event_date %in% colnames(x)) {
-    if (!lubridate::is.Date(x[[event_date]]) && !is.integer(x[[event_date]])) {
-      errors <- c(errors, sprintf("Column '%s' must be of class Date or integer", event_date))
-    }
-  }
-
-  if (!is.null(report_date) && report_date %in% colnames(x)) {
-    if (!lubridate::is.Date(x[[report_date]]) && !is.integer(x[[report_date]])) {
-      errors <- c(errors, sprintf("Column '%s' must be of class Date or integer", report_date))
-    }
-  }
-
-  if (!is.null(is_censored) && length(is_censored) == 1 && is_censored %in% colnames(x)) {
-    if (!is.logical(x[[is_censored]])) {
-      errors <- c(errors, sprintf("Column '%s' must be logical (TRUE/FALSE)", is_censored))
-    }
-  }
-
-  # Check they don't have the same report and event dates
-  if (get_event_date(x) == get_report_date(x)) {
-    cli::cli_alert_warning(
-      "Object has the same event and report dates with value {.val {get_event_date(x)}}"
-    )
-  }
-
-  # Removing the case_count
-  if (data_type != "linelist" && (is.null(case_count) || !(case_count %in% colnames(x)))) {
-    errors <- c(
-      errors,
-      paste0("Dropped case column ", case_count, " when data_type was ", data_type, ".")
-    )
-  }
-
-  # === 8. Validate data relationships ===
-
-  if (!is.null(event_date) && !is.null(report_date) &&
-    event_date %in% colnames(x) && report_date %in% colnames(x)) {
-    # Check that report_date >= event_date (where both are non-NA)
-    valid_rows <- !is.na(x[[event_date]]) & !is.na(x[[report_date]])
-    if (any(valid_rows)) {
-      invalid_dates <- x[[report_date]][valid_rows] < x[[event_date]][valid_rows]
-      if (any(invalid_dates, na.rm = TRUE)) {
-        warnings <- c(warnings, sprintf(
-          "%d row(s) have a `report_date` before `event_date`",
-          sum(invalid_dates, na.rm = TRUE)
-        ))
-      }
-    }
-
-    # Check that 'now' is >= max(report_date)
-    if (nrow(x) > 0 & warn_now) {
-      max_report <- max(x[[report_date]], na.rm = TRUE)
-      if (!is.na(max_report) && !is.null(now) && lubridate::is.Date(now) && now < max_report) {
-        warnings <- c(warnings, sprintf(
-          "Attribute 'now' (%s) seems to be in the past (before maximum report_date (%s))",
-          as.character(now), as.character(max_report)
-        ))
-      }
-    }
-  }
-
-  # FIXME: Throw warning when now is too far in the future or in the past
-
-  # Warn ig they have missing values
-  if (event_date %in% colnames(x)) {
-    missing_events <- x |>
-      ungroup() |>
-      dplyr::filter(is.na(!!as.symbol(event_date)) | is.null(!!as.symbol(event_date)))
-
-    if (nrow(missing_events) > 0) {
-      warnings <- c(warnings, "{.val {nrow(missing_events)}} rows have NULL or NA values in column `event_date ={.val event_date}`.")
-    }
-  }
-
-
-  if (report_date %in% colnames(x)) {
-    missing_reports <- x |>
-      ungroup() |>
-      dplyr::filter(is.na(!!as.symbol(report_date)) | is.null(!!as.symbol(report_date)))
-
-    if (nrow(missing_reports) > 0) {
-      warnings <- c(warnings, "{.val {nrow(missing_reports)}} rows have NULL or NA values in column `report_date = {.val report_date}`.")
-    }
-  }
-
-
-  # Validate that event_date and report_date don't have repeated values for same strata/covariates----
-  if (warn_non_uniqueness) {
-    current_rows <- nrow(x)
-    distinct_rows <- x |>
-      dplyr::as_tibble() |>
-      dplyr::distinct(dplyr::across(dplyr::all_of(c(get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x), get_is_censored(x), get_temporal_effect_cols(x))))) |>
-      nrow()
-
-    if (current_rows > distinct_rows) {
-      warnings <- c(
-        warnings,
-        paste0(
-          "*Non-unique*: Data has multiple rows for the same event ({event_date}) and report",
-          "({report_date}) dates. Consider using `to_count()` to aggregate the data or",
-          "`distinct()` to remove repeated observations."
-        )
-      )
-    }
-  }
-
-
-  # === 9. Return results ===
-  if (length(errors) > 0) {
-    cli::cli_abort(c("Invalid tbl_now object:", errors))
-  }
-
-  if (length(warnings) > 0) {
-    for (w in warnings) {
-      cli::cli_warn(w)
-    }
-  }
+  .tbl_now_emit_findings(findings)
 
   return(invisible(TRUE))
 }
@@ -441,46 +208,79 @@ tbl_now_reconstruct_internal <- function(data, template) {
   return(data)
 }
 
-#' Check if an object is a tbl_now
-#'
-#' @description `r lifecycle::badge("experimental")`
-#'
-#' Checks if object x is a `tbl.now`
-#'
-#' @param x any R object
-#'
-#' @return (boolean) `TRUE` if object is a `tbl_now`
-#' `FALSE` if not.
-#'
-#'
-#' @examples
-#' is_tbl_now(data.frame(x = 1:3))
-#'
-#' xval <- data.frame(x = 1:3)
-#' class(xval) <- c("tbl_now", "data.frame")
-#' is_tbl_now(xval)
+#' @rdname validate_tbl_now
 #' @export
 is_tbl_now <- function(x) {
   inherits(x, "tbl_now") && tbl_now_can_reconstruct(x)
 }
 
-#' Subset function for `tbl_now`
+#' Base R operations on a `tbl_now`
 #'
 #' @description `r lifecycle::badge("stable")`
 #'
-#' Accesors to `tbl_now` elements (rows and columns) as if
-#' it was a data.frame
+#' A [tbl_now()] is a `tibble` with extra attributes recording which column is
+#' the event date, which is the report date, and so on. These methods make sure
+#' those attributes survive ordinary base-R manipulation, so that `x[1:10, ]`,
+#' `names(x) <- ...` and `x$new <- ...` give you back a `tbl_now` rather than a
+#' bare data frame.
+#'
+#' You never call them directly -- they are what makes the operators work.
 #'
 #' @details
-#' If the subsetting invalidates the class then a `data.frame`
-#' is returned.
+#' When an operation leaves the object unable to describe a nowcast -- because it
+#' dropped or renamed the event-date column, say -- the class cannot honestly be
+#' kept. In that case the result is **demoted** to a plain data frame (with a
+#' warning), rather than pretending to still be a `tbl_now`. Attributes that are
+#' still meaningful are preserved on the way down.
 #'
-#' @param x A `tbl_now` object
-#' @inheritParams base::subset
+#' The same applies to `dplyr` verbs, through
+#' [dplyr_reconstruct()][dplyr::dplyr_extending].
 #'
-#' @return A `tbl_now` object or a `data.frame`
+#' @param x A `tbl_now` object.
+#' @param name For `$<-`, the column being assigned to.
+#' @param value For `names<-` and `$<-`, the replacement value.
+#' @param ... Passed to the underlying `[` method: rows and columns to keep.
+#'
+#' @return A `tbl_now` object, or a plain data frame when the operation
+#' invalidated the class.
+#'
+#' @seealso
+#' [tbl_now()] for the attributes being preserved;
+#' [tbl_now_attributes()] to check what survived;
+#' [as_tibble()][as_tibble.tbl_now] to drop the class on purpose;
+#' [validate_tbl_now()] to confirm the result is still well formed.
+#'
+#' @examples
+#' data(denguedat)
+#' dengue <- tbl_now(denguedat,
+#'   event_date = onset_week, report_date = report_week,
+#'   strata = gender, verbose = FALSE
+#' )
+#'
+#' # Subsetting rows keeps the class and everything it knows.
+#' small <- dengue[1:10, ]
+#' class(small)[1]
+#' get_event_date(small)
+#'
+#' # So does adding a column with `$<-`.
+#' dengue$season <- ifelse(
+#'   lubridate::month(dengue$onset_week) %in% 6:11, "wet", "dry"
+#' )
+#' class(dengue)[1]
+#'
+#' # And renaming an unimportant column with `names<-`.
+#' renamed <- dengue
+#' names(renamed)[names(renamed) == "season"] <- "period"
+#' get_event_date(renamed)
+#'
+#' # But dropping the event date leaves nothing a nowcast could use, so the
+#' # object is demoted to a plain tibble instead of lying about itself.
+#' demoted <- suppressWarnings(dengue[, c("report_week", "gender")])
+#' class(demoted)[1]
+#'
 #' @name assign_tbl
-#' @export
+#' @aliases names_tbl_now money_tbl_now
+NULL
 
 #' @rdname assign_tbl
 #' @export
@@ -496,58 +296,28 @@ is_tbl_now <- function(x) {
   tbl_now_reconstruct(out, x)
 }
 
-#' Set names on `tbl_now` class
-#'
-#' @description `r lifecycle::badge("experimental")`
-#'
-#' Function for modifying the names of a `tbl_now`
-#'
-#' @details If the modifying the names invalidates the `tbl_now` object
-#' the subsetting will return a data frame with the other attributes of the
-#' class preserved.
-#'
-#' @inheritParams base::names
-#'
-#' @return A `tbl_now` object or a `data.frame`
-#' @name names_tbl_now
-#' @export
-
-#' @rdname names_tbl_now
+#' @rdname assign_tbl
 #' @export
 `names<-.tbl_now` <- function(x, value) {
   out <- NextMethod()
   tbl_now_reconstruct(out, x)
 }
 
-#' @rdname names_tbl_now
+#' @rdname assign_tbl
 #' @export
 `names<-.grouped_tbl_now` <- function(x, value) {
   out <- NextMethod()
   tbl_now_reconstruct(out, x)
 }
 
-#' Set accessor for `tbl_now` class
-#'
-#' @description `r lifecycle::badge("stable")`
-#'
-#' Accessor for `tbl_now` columns
-#'
-#' @param x A `tbl_now` object
-#'
-#' @inheritParams base::Extract
-#'
-#' @return A `tbl_now` object or a `data.frame`
-#' @name money_tbl_now
-#' @export
-
-#' @rdname money_tbl_now
+#' @rdname assign_tbl
 #' @export
 `$<-.tbl_now` <- function(x, name, value) {
   out <- NextMethod()
   tbl_now_reconstruct(out, x)
 }
 
-#' @rdname money_tbl_now
+#' @rdname assign_tbl
 #' @export
 `$<-.grouped_tbl_now` <- function(x, name, value) {
   out <- NextMethod()
@@ -586,22 +356,25 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
     x <- new_grouped_tbl_now(.data, groups = grouping_structure)
   } else {
     # Edge case: no groups were actually provided — reconstruct without losing temporal-effects spec
-    x <- tbl_now(
-      data = .data,
-      event_date = get_event_date(.data),
-      report_date = get_report_date(.data),
-      strata = get_strata(.data),
-      covariates = get_covariates(.data),
-      is_censored = get_is_censored(.data),
-      now = get_now(.data),
-      event_units = get_event_units(.data),
-      report_units = get_event_units(.data),
-      data_type = get_data_type(.data),
-      case_count = get_case_count(.data),
-      verbose = FALSE,
-      force = TRUE,
-      warn_non_uniqueness = FALSE
-    )
+    x <- do.call(tbl_now, c(
+      list(
+        data = .data,
+        event_date = get_event_date(.data),
+        report_date = get_report_date(.data),
+        strata = get_strata(.data),
+        covariates = get_covariates(.data),
+        is_censored = get_is_censored(.data),
+        now = get_now(.data),
+        event_units = get_event_units(.data),
+        report_units = get_event_units(.data),
+        data_type = get_data_type(.data),
+        case_count = get_case_count(.data),
+        verbose = FALSE,
+        force = TRUE,
+        warn_non_uniqueness = FALSE
+      ),
+      .confirmation_rebuild_args(.data, .data)
+    ))
     attr(x, "temporal_effects") <- get_temporal_effects(.data)
     attr(x, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(x))
   }
@@ -717,22 +490,25 @@ ungroup.grouped_tbl_now <- function(x, ...) {
     # This is most simplest done by simply creating a new tibble subclass
     # This is an edge case if no groups are actually provided. Then simply return a regular subclass
     old_x <- x
-    x <- tbl_now(
-      data = tbl,
-      event_date = get_event_date(old_x),
-      report_date = get_report_date(old_x),
-      strata = get_strata(old_x),
-      covariates = get_covariates(old_x),
-      is_censored = get_is_censored(old_x),
-      now = get_now(old_x),
-      event_units = get_event_units(old_x),
-      report_units = get_report_units(old_x),
-      data_type = get_data_type(old_x),
-      case_count = get_case_count(old_x),
-      verbose = FALSE,
-      force = TRUE,
-      warn_non_uniqueness = FALSE
-    )
+    x <- do.call(tbl_now, c(
+      list(
+        data = tbl,
+        event_date = get_event_date(old_x),
+        report_date = get_report_date(old_x),
+        strata = get_strata(old_x),
+        covariates = get_covariates(old_x),
+        is_censored = get_is_censored(old_x),
+        now = get_now(old_x),
+        event_units = get_event_units(old_x),
+        report_units = get_report_units(old_x),
+        data_type = get_data_type(old_x),
+        case_count = get_case_count(old_x),
+        verbose = FALSE,
+        force = TRUE,
+        warn_non_uniqueness = FALSE
+      ),
+      .confirmation_rebuild_args(old_x, tbl)
+    ))
     attr(x, "temporal_effects") <- get_temporal_effects(old_x)
     attr(x, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(old_x), names(x))
   }
@@ -759,23 +535,29 @@ summarise.tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
 
   result <- tryCatch(
     {
-      tmp <- tbl_now(
-        data = ungroup(summarised_tbl),
-        event_date = get_event_date(.data),
-        report_date = get_report_date(.data),
-        strata = get_strata(.data),
-        covariates = get_covariates(.data),
-        is_censored = get_is_censored(.data),
-        now = get_now(.data),
-        event_units = get_event_units(.data),
-        report_units = get_event_units(.data),
-        data_type = get_data_type(.data),
-        case_count = get_case_count(.data),
-        verbose = FALSE,
-        force = TRUE,
-        warn_non_uniqueness = FALSE,
-        align_weeks = FALSE
-      )
+      ungrouped <- ungroup(summarised_tbl)
+      tmp <- do.call(tbl_now, c(
+        list(
+          data = ungrouped,
+          event_date = get_event_date(.data),
+          report_date = get_report_date(.data),
+          strata = get_strata(.data),
+          covariates = get_covariates(.data),
+          is_censored = get_is_censored(.data),
+          now = get_now(.data),
+          event_units = get_event_units(.data),
+          report_units = get_event_units(.data),
+          data_type = get_data_type(.data),
+          case_count = get_case_count(.data),
+          verbose = FALSE,
+          force = TRUE,
+          warn_non_uniqueness = FALSE,
+          align_weeks = FALSE
+        ),
+        # Every fixed attribute list is a place the confirmation process can be
+        # dropped in silence.
+        .confirmation_rebuild_args(.data, ungrouped)
+      ))
       attr(tmp, "temporal_effects") <- get_temporal_effects(.data)
       attr(tmp, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(tmp))
       tmp
