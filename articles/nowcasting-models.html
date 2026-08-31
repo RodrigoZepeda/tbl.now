@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>One dataset, many nowcasts: using tbl.now with five modelling packages • tbl.now</title>
+<title>One dataset, many nowcasts: using tbl.now with different modelling packages • tbl.now</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
@@ -17,23 +17,9 @@
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<meta property="og:title" content="One dataset, many nowcasts: using tbl.now with five modelling packages">
+<meta property="og:title" content="One dataset, many nowcasts: using tbl.now with different modelling packages">
 </head>
 <body>
-<p>
-
-
-
-
-
-
-
-
-  pkgdown/extra.css
-
-  
-
-  </p>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -41,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,8 +42,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul>
 </li>
@@ -81,7 +67,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>One dataset, many nowcasts: using tbl.now with five modelling packages</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>One dataset, many nowcasts: using tbl.now with different modelling packages</h1>
             
       
 
@@ -93,242 +79,455 @@
 <div class="section level2">
 <h2 id="why-this-vignette">Why this vignette?<a class="anchor" aria-label="anchor" href="#why-this-vignette"></a>
 </h2>
-<p>Preparing the same outbreak data different ways can be tedious and
-error-prone. This is exactly what <a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a>
-does for you. You describe your data once by specifying which column is
-the event date, which is the report date, what the counts mean and
-<code>tbl.now</code> hands it to each modelling package in the format
-that package expects. In this vignette we take a single dengue line-list
-and, from that one object, drive five different nowcasting /
-delay-estimation tools:</p>
+<p>Preparing the same data different ways for the different nowcasting
+models can be tedious and error-prone. This is exactly what <a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a>
+helps with. You can describe your data once by specifying which column
+is the event date, which is the report date, whether your data is
+linelist or has counts (and what <em>those</em> counts mean!) and
+<code>tbl.now</code> will hands it to each modelling package in the
+format that package expects.</p>
+<blockquote>
+<p>In this vignette we take a single dataset
+(<code>covid_colombia</code>), and from that one object, use several
+different nowcasting / delay-estimation tools:</p>
+</blockquote>
 <table class="table">
 <colgroup>
-<col width="33%">
-<col width="33%">
-<col width="33%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
 </colgroup>
 <thead><tr class="header">
 <th>Package</th>
 <th>What it does</th>
+<th>Additional requirements</th>
 <th>
-<code>tbl.now</code> bridge</th>
+<code>tbl.now</code> converter</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td><a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link">diseasenowcasting</a></td>
-<td>Bayesian structural time-series nowcast</td>
+<td>flexible Bayesian nowcast (delay + epidemic processes)</td>
+<td>none (uses <code>RTMB</code>)</td>
 <td>consumes a <code>tbl_now</code> <strong>directly</strong>
 </td>
 </tr>
 <tr class="even">
 <td><a href="https://baselinenowcast.epinowcast.org/" class="external-link">baselinenowcast</a></td>
 <td>fast, assumption-light baseline nowcast</td>
+<td>none</td>
 <td><code><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code></td>
 </tr>
 <tr class="odd">
 <td><a href="https://package.epinowcast.org/" class="external-link">epinowcast</a></td>
 <td>flexible Bayesian nowcast (delay + reference modules)</td>
+<td><strong>Stan</strong></td>
 <td><code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code></td>
 </tr>
 <tr class="even">
 <td><a href="https://epidist.epinowcast.org/" class="external-link">epidist</a></td>
-<td>estimates the reporting <strong>delay distribution</strong>
+<td>estimates only the reporting <strong>delay
+distribution</strong>
 </td>
+<td><strong>Stan</strong></td>
 <td><code><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code></td>
 </tr>
 <tr class="odd">
 <td><a href="https://cran.r-project.org/package=NobBS" class="external-link">NobBS</a></td>
 <td>Nowcasting by Bayesian Smoothing</td>
-<td>a plain line-list (<code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code>)</td>
+<td><strong>JAGS</strong></td>
+<td><code><a href="../reference/tbl_now_nobbs.html">tbl_now_to_nobbs()</a></code></td>
+</tr>
+<tr class="even">
+<td><a href="https://cran.r-project.org/package=surveillance" class="external-link">surveillance</a></td>
+<td>the classic Höhle &amp; an der Heiden nowcast</td>
+<td>none for the method used here (<strong>JAGS</strong> for
+<code>bayes.trunc.ddcp</code>)</td>
+<td><code><a href="../reference/tbl_now_surveillance.html">tbl_now_to_surveillance()</a></code></td>
+</tr>
+<tr class="odd">
+<td><a href="https://epiforecasts.io/EpiNow2/" class="external-link">EpiNow2</a></td>
+<td>renewal-equation <span class="math inline">R_t</span>, reporting
+truncation, and delay distributions</td>
+<td>
+<strong>Stan</strong> (<code>cmdstanr</code>)</td>
+<td><code><a href="../reference/tbl_now_EpiNow2.html">tbl_now_to_EpiNow2()</a></code></td>
 </tr>
 </tbody>
 </table>
-<p>You do not need to be an expert in any of them to follow along — the
-point is how little changes on <em>your</em> side when you switch
-models.</p>
+<p>You do not need to be an expert in any of them to follow along, the
+point is to show how little changes on <em>your</em> side when you
+switch models.</p>
+<div class="alert alert-warning">
+<p><strong>Each of these is a separate package, and <code>tbl.now</code>
+does not install any of them.</strong> It only knows how to
+<em>talk</em> to them. Install whichever you actually want to use — and
+note that some also need software outside R (the <em>Additional
+requirements</em> column above): <strong>Stan</strong> via
+<code>cmdstanr</code> (needed by , and ) and <strong>JAGS</strong> as a
+standalone program (needed by ).</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># CRAN packges</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"baselinenowcast"</span>, <span class="st">"EpiNow2"</span>, <span class="st">"NobBS"</span>, <span class="st">"surveillance"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Not on CRAN:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"cmdstanr"</span>,   repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'https://stan-dev.r-universe.dev'</span>, <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"repos"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"epidist"</span>,    repos <span class="op">=</span> <span class="st">"https://epinowcast.r-universe.dev"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"epinowcast"</span>, repos <span class="op">=</span> <span class="st">"https://epinowcast.r-universe.dev"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Packages from Github:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"pak"</span><span class="op">)</span> </span>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pkg_install.html" class="external-link">pkg_install</a></span><span class="op">(</span><span class="st">"RodrigoZepeda/diseasenowcasting"</span><span class="op">)</span></span></code></pre></div>
+<p>Every code block below is guarded, so the article still builds when a
+package is missing — but nothing will run on <em>your</em> machine until
+you install it.</p>
+</div>
 </div>
 <div class="section level2">
-<h2 id="the-data-one-tbl_now-to-rule-them-all">The data: one <code>tbl_now</code> to rule them all<a class="anchor" aria-label="anchor" href="#the-data-one-tbl_now-to-rule-them-all"></a>
+<h2 id="the-data">The data<a class="anchor" aria-label="anchor" href="#the-data"></a>
 </h2>
-<p><code>tbl.now</code> ships with <code>denguedat</code>, a weekly
-dengue line-list (one row per case) with the week of symptom
-<strong>onset</strong> and the week the case was
-<strong>reported</strong>.</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<p><code>tbl.now</code> ships with <code>covid_colombia</code>,
+<strong>daily</strong> COVID-19 case counts from Colombia’s national
+surveillance system (INS), 2020–2023. Each row is a
+<code>(notification_date, diagnosis_date, sex)</code> combination with a
+case count <code>n</code>: the date the case was notified, and the date
+the laboratory diagnosis was registered. The gap between the two is the
+reporting delay.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt;   onset_week report_week gender</span></span>
-<span><span class="co">#&gt; 1 1990-01-01  1990-01-01   Male</span></span>
-<span><span class="co">#&gt; 2 1990-01-01  1990-01-01 Female</span></span>
-<span><span class="co">#&gt; 3 1990-01-01  1990-01-01 Female</span></span>
-<span><span class="co">#&gt; 4 1990-01-01  1990-01-08 Female</span></span>
-<span><span class="co">#&gt; 5 1990-01-01  1990-01-08   Male</span></span>
-<span><span class="co">#&gt; 6 1990-01-01  1990-01-15 Female</span></span></code></pre>
-<p>We build a single <code>tbl_now</code>. We only have to say which
-column is the event date (<code>onset_week</code>) and which is the
-report date (<code>report_week</code>); <code>tbl.now</code> infers the
-rest (the data is line-list, measured in weeks, and the “now” is the
-last report, <code>2010-12-20</code>).</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># A compact recent window keeps the vignette fast to build.</span></span>
-<span><span class="va">dengue</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">onset_week</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2009-01-01"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">covid_colombia</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt;   notification_date diagnosis_date    sex n</span></span>
+<span><span class="co">#&gt; 1        2020-03-02     2020-03-06 Female 1</span></span>
+<span><span class="co">#&gt; 2        2020-03-03     2020-03-14 Female 1</span></span>
+<span><span class="co">#&gt; 3        2020-03-06     2020-03-09   Male 1</span></span>
+<span><span class="co">#&gt; 4        2020-03-07     2020-03-09 Female 1</span></span>
+<span><span class="co">#&gt; 5        2020-03-08     2020-03-11 Female 2</span></span>
+<span><span class="co">#&gt; 6        2020-03-09     2020-03-11 Female 1</span></span></code></pre>
+<p>We build a single <code>tbl_now</code>. We say which column is the
+event date (<code>notification_date</code>), which is the report date
+(<code>diagnosis_date</code>) and which holds the counts
+(<code>n</code>); <code>tbl.now</code> infers the rest — that the grid
+is daily, and that the “now” is the last report date.</p>
+<p>We cut <strong>both</strong> dates at the start of March 2023. The
+example assumes we are back on that date, nowcasting with only the
+information available then (<code>now = "2023-03-02"</code>).</p>
+<p><code>covid_colombia</code> is <strong>daily</strong> and already
+<strong>aggregated</strong>: one row per
+<code>(notification_date, diagnosis_date, sex)</code> with a case count
+<code>n</code>. That makes it <code>count-incidence</code> data rather
+than a line list. It also means a <em>pooled</em> object has to sum over
+<code>sex</code> first — leaving <code>sex</code> in the data without
+declaring it as a stratum would put two rows in every
+<code>(event, report)</code> cell, and a reporting triangle has one slot
+per cell.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cutoff</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2023-03-03"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
-<span>  <span class="va">dengue</span>,</span>
-<span>  event_date  <span class="op">=</span> <span class="va">onset_week</span>,</span>
-<span>  report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
-<span>  data_type   <span class="op">=</span> <span class="st">"linelist"</span></span>
+<span><span class="va">covid</span> <span class="op">&lt;-</span> <span class="va">covid_colombia</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">notification_date</span> <span class="op">&lt;</span> <span class="va">cutoff</span>, <span class="va">diagnosis_date</span> <span class="op">&lt;</span> <span class="va">cutoff</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">covid_now</span> <span class="op">&lt;-</span> <span class="va">covid</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">notification_date</span>, <span class="va">diagnosis_date</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>, .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
+<span>    event_date  <span class="op">=</span> <span class="va">notification_date</span>,</span>
+<span>    report_date <span class="op">=</span> <span class="va">diagnosis_date</span>,</span>
+<span>    case_count  <span class="op">=</span> <span class="va">n</span>,</span>
+<span>    data_type   <span class="op">=</span> <span class="st">"count-incidence"</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
-<span><span class="va">dengue_now</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  9,268 × 6</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span></span>
-<span><span class="co">#&gt;    onset_week   report_week   gender .event_num .report_num .delay</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt;    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2009-01-05   2009-01-12    Male            0           1      1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2009-01-05   2009-01-12    Male            0           1      1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2009-01-05   2009-01-19    Female          0           2      2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2009-01-05   2009-01-12    Male            0           1      1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2009-01-05   2009-01-12    Female          0           1      1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2009-01-05   2009-01-12    Female          0           1      1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2009-01-05   2009-01-12    Female          0           1      1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2009-01-05   2009-01-19    Female          0           2      2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2009-01-05   2009-01-12    Male            0           1      1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2009-01-05   2009-01-12    Female          0           1      1</span></span>
+<span><span class="va">covid_now</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  19,816 × 6</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
+<span><span class="co">#&gt;    notification_date diagnosis_date       n .event_num .report_num .delay</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt;    <span style="color: #949494;">[event_date]</span>      <span style="color: #949494;">[report_date]</span>  <span style="color: #949494;">[cases]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2020-03-02        2020-03-06           1          0           4      4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2020-03-03        2020-03-14           1          1          12     11</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2020-03-06        2020-03-09           1          4           7      3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2020-03-07        2020-03-09           1          5           7      2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2020-03-08        2020-03-11           2          6           9      3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2020-03-09        2020-03-11           3          7           9      2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2020-03-10        2020-03-11           1          8           9      1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2020-03-10        2020-03-12           2          8          10      2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2020-03-10        2020-03-13           1          8          11      3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2020-03-11        2020-03-12           1          9          10      1</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2010-12-20</span> | Event date: <span style="color: #0000BB;">"onset_week"</span> | Report date: <span style="color: #0000BB;">"report_week"</span></span></span>
+<span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2023-03-02</span> | Event date: <span style="color: #0000BB;">"notification_date"</span> | Report date:</span></span>
+<span><span class="co">#&gt; # <span style="color: #0000BB;">"diagnosis_date"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9,258 more rows</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 19,806 more rows</span></span></span></code></pre></div>
+<p>That is 6,120,923 cases over 1094 days, from March 2020 to
+2023-03-02. Everything in this article — every fit, every figure — is
+built from this one object, so following along step by step reproduces
+exactly what you see.</p>
+<div class="alert alert-info">
+<p><strong>A note on series length</strong>, with the measured cost of
+each choice on this 1,094-day series:</p>
+<ul>
+<li>
+<code>diseasenowcasting</code> takes the <strong>whole</strong>
+series untrimmed (33s). Nothing is dropped.</li>
+<li>
+<code>baselinenowcast</code> also keeps every day, but the
+<strong>delays</strong> are capped at 30 days (55s). That is a modelling
+assumption, not a workaround: 99% of reports arrive within 15 days, and
+a single 330-day straggler otherwise makes the triangle 1094 × 331 and
+the fit take 314s.</li>
+<li>
+<code>NobBS</code> and <code>surveillance</code> need the series
+shortened, and each has its own argument for it:
+<code>moving_window</code> and <code>when</code>. They also need a
+<strong>line list</strong>, so the counts are expanded to one row per
+case — after trimming, because the whole series is 6.1M cases.</li>
+<li>
+<code>epinowcast</code> has no such argument, because the reporting
+triangle is already built by the time you hold a preprocessed object. It
+is trimmed one step earlier, in its own section.</li>
+<li>
+<code>epidist</code> is the awkward one here and gets its own note
+in that section.</li>
+</ul>
+</div>
 <div class="section level3">
 <h3 id="a-more-complex-object-strata-and-temporal-effects">A more complex object: strata and temporal effects<a class="anchor" aria-label="anchor" href="#a-more-complex-object-strata-and-temporal-effects"></a>
 </h3>
 <p>Reporting delays are rarely constant and many series are reported for
-several <strong>strata</strong> (here, the patient’s sex) that you may
-want to nowcast separately. <a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a>
-lets you attach both <strong>once</strong> and carries them into
-whichever format can hold them. Here we build a second object,
-<code>dengue_seasonal</code>, that adds a <code>gender</code> stratum
-and a week-of-year plus annual-Fourier <strong>temporal (delay)
-effect</strong> on top of <code>dengue_now</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dengue_seasonal</span> <span class="op">&lt;-</span> <span class="va">dengue_now</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add.html">add_strata</a></span><span class="op">(</span><span class="va">gender</span><span class="op">)</span> <span class="op">|&gt;</span>      <span class="co"># nowcast Male/Female separately</span></span>
+several <strong>strata</strong> (here, <code>sex</code>) that you may
+want to nowcast separately. Here we build a second object,
+<code>covid_seasonal</code>, that declares <code>sex</code> as a stratum
+and adds day-of-week plus annual-Fourier <strong>temporal (delay)
+effects</strong>. Daily data makes day-of-week the effect worth
+modelling: only 9.6% of these cases are notified on a Sunday against
+16.1% on a Tuesday.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">covid_seasonal</span> <span class="op">&lt;-</span> <span class="va">covid</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
+<span>    event_date  <span class="op">=</span> <span class="va">notification_date</span>,</span>
+<span>    report_date <span class="op">=</span> <span class="va">diagnosis_date</span>,</span>
+<span>    case_count  <span class="op">=</span> <span class="va">n</span>,</span>
+<span>    strata      <span class="op">=</span> <span class="va">sex</span>,       <span class="co"># nowcast Male/Female separately</span></span>
+<span>    data_type   <span class="op">=</span> <span class="st">"count-incidence"</span>,</span>
+<span>    verbose     <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span></span>
 <span>    <span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span></span>
-<span>      week_of_year <span class="op">=</span> <span class="cn">TRUE</span>,   <span class="co"># a separate level per epidemiological week</span></span>
-<span>      seasons      <span class="op">=</span> <span class="fl">52</span>      <span class="co"># an annual Fourier cycle (period = 52 weeks)</span></span>
+<span>      day_of_week <span class="op">=</span> <span class="cn">TRUE</span>,    <span class="co"># a separate level per weekday</span></span>
+<span>      seasons     <span class="op">=</span> <span class="fl">365</span>      <span class="co"># an annual Fourier cycle (period = 365 days)</span></span>
 <span>    <span class="op">)</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <p>For each package below we show the <strong>bare</strong> conversion
-of <code>dengue_now</code> first, then how the same call carries the
-strata and the effects when handed <code>dengue_seasonal</code>. (Tip:
-run <a href="https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html"><code>autoplot()</code></a>
-with <code>panels = "delay_seasonality"</code> or
+of <code>covid_now</code> first, then how the same call carries the
+strata and the temporal effects when handed
+<code>covid_seasonal</code>.</p>
+<div class="alert alert-info">
+<p><strong>TIP</strong>: Run <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> with
+<code>panels = "delay_seasonality"</code> or
 <code>"delay_calendar"</code> first to <em>see</em> whether such effects
-are present before modelling them.)</p>
+are present before modelling them.</p>
+</div>
+<blockquote>
+<p><strong>Checking each nowcast</strong> Every section below ends with
+the same figure: three panels — the <strong>total</strong> series and
+the two <strong>sex</strong> strata — each showing what had been
+reported by <code>now</code> (grey bars), what those dates eventually
+reached (the dark <strong>truth</strong> line), and that package’s
+nowcast, with its uncertainty interval where the package provides
+one.</p>
+</blockquote>
 </div>
 </div>
 <div class="section level2">
-<h2 id="diseasenowcasting-no-conversion-at-all">1. diseasenowcasting — no conversion at all<a class="anchor" aria-label="anchor" href="#diseasenowcasting-no-conversion-at-all"></a>
+<h2 id="diseasenowcasting">diseasenowcasting<a class="anchor" aria-label="anchor" href="#diseasenowcasting"></a>
 </h2>
 <p><a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link"><code>diseasenowcasting</code></a>
-was designed hand-in-hand with <code>tbl.now</code>, so it takes a
+is designed hand-in-hand with <code>tbl.now</code>, so it takes a
 <code>tbl_now</code> <strong>directly</strong>. You just hand it the
 object:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">diseasenowcasting</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">dnc_fit</span> <span class="op">&lt;-</span> <span class="fu">nowcast</span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span>
+<div class="section level3">
+<h3 id="simple-nowcast">Simple nowcast<a class="anchor" aria-label="anchor" href="#simple-nowcast"></a>
+</h3>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># `diseasenowcasting::` rather than `library()`: it is not on CRAN, so attaching</span></span>
+<span><span class="co"># it in a vignette leaves `R CMD check` with an undeclared dependency. Qualifying</span></span>
+<span><span class="co"># the call also keeps this article's `tidy()` calls on the `generics` generic --</span></span>
+<span><span class="co"># versions before 2.1.0 declared their own, which masks every other package's</span></span>
+<span><span class="co"># methods with no error.</span></span>
+<span><span class="va">dnc_fit</span> <span class="op">&lt;-</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu">nowcast</span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dnc_fit</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; -- diseasenowcasting --------------------------------------- as of 2023-03-02 --</span></span>
+<span><span class="co">#&gt; Model: NegBin / HSGP / LogNormal</span></span>
+<span><span class="co">#&gt; two_stage (1096 event-times; 25 fits, rung 'multi')</span></span>
+<span><span class="co">#&gt; Use `predict()` / `autoplot()` for the nowcast, `coef()` / `summary()` for</span></span>
+<span><span class="co">#&gt; estimates.</span></span>
+<span><span class="co">#&gt; Call `print(nc@model)` for the full model spec (including priors).</span></span></code></pre>
+</div>
 <div class="section level3">
 <h3 id="with-strata-and-effects-">With strata and effects.<a class="anchor" aria-label="anchor" href="#with-strata-and-effects-"></a>
 </h3>
 <p><code>diseasenowcasting</code> reaches into the <code>tbl_now</code>
 itself, so the enriched object needs no extra arguments: it picks up the
-<code>gender</code> stratum and the week-of-year / seasonal effect
-columns automatically.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">nowcast</span><span class="op">(</span><span class="va">dengue_seasonal</span><span class="op">)</span>   <span class="co"># the strata and temporal effects are used automatically</span></span></code></pre></div>
+<code>sex</code> stratum and the day-of-week / seasonal effect columns
+automatically.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu">nowcast</span><span class="op">(</span><span class="va">covid_seasonal</span><span class="op">)</span>   <span class="co"># strata and effects used automatically</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; -- diseasenowcasting --------------------------------------- as of 2023-03-02 --</span></span>
+<span><span class="co">#&gt; Model: NegBin / HSGP / LogNormal</span></span>
+<span><span class="co">#&gt; two_stage (1096 event-times, 2 strata; 1 fit, rung 'onestage')</span></span>
+<span><span class="co">#&gt; Use `predict()` / `autoplot()` for the nowcast, `coef()` / `summary()` for</span></span>
+<span><span class="co">#&gt; estimates.</span></span>
+<span><span class="co">#&gt; Call `print(nc@model)` for the full model spec (including priors).</span></span></code></pre>
+<p>Predictions can be obtained via <code>tidy</code>:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu">nowcast</span><span class="op">(</span><span class="va">covid_seasonal</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 7</span></span></span>
+<span><span class="co">#&gt;   event_date stratum estimate conf.low conf.high level engine           </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-03-02 Female         1        1         1  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-03-03 Female         1        1         1  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-03-04 Female         0        0         0  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2020-03-05 Female         0        0         0  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 2020-03-06 Female         0        0         0  0.95 diseasenowcasting</span></span></code></pre>
+<p>In both stratified and unstratified cases:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">dnc_fit</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 7</span></span></span>
+<span><span class="co">#&gt;   event_date stratum estimate conf.low conf.high level engine           </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-03-02 all            1        1         1  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-03-03 all            1        1         1  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-03-04 all            0        0         0  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2020-03-05 all            0        0         0  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 2020-03-06 all            1        1         1  0.95 diseasenowcasting</span></span></code></pre>
+<div class="alert alert-info">
+<p><strong>NOTE</strong>: this needs <strong>diseasenowcasting &gt;=
+2.1.0</strong>. Earlier versions declared their own <code><a href="../reference/tidy.nowcast.html">tidy()</a></code>
+generic rather than re-exporting the shared one, so a bare
+<code>tidy(dnc_fit)</code> returned that package’s
+<em>model-parameter</em> table (<code>term</code>,
+<code>std.error</code>, …) instead of a nowcast — no error, just a
+different table. On 2.1.0 and later, <code><a href="../reference/tidy.nowcast.html">tidy()</a></code> returns the
+nowcast and the parameter table moved to
+<code>model_parameters()</code>. On an older version, use
+<code>tbl.now::tidy(predict(dnc_fit))</code>.</p>
+<p>A related hazard remains with : loading it overwrites
+<code>tbl.now</code>’s <code><a href="../reference/tidy.nowcast.html">tidy.list()</a></code> method, which is what
+fits dispatch on. Qualify the call as <code><a href="../reference/tidy.nowcast.html">tbl.now::tidy()</a></code> there
+if is attached.</p>
+</div>
+<div class="figure">
+<img src="nowcasting-models_files/figure-html/dnc-panels-1.png" class="r-plt" alt="Three panels (Total, Female, Male) comparing the diseasenowcasting nowcast against the counts reported by now and the counts those dates eventually reached." width="100%"><p class="caption">
+Nowcast both stratified and total using the diseasenowcasting package
+</p>
+</div>
 </div>
 </div>
 <div class="section level2">
-<h2 id="baselinenowcast-a-reporting-triangle">2. baselinenowcast — a reporting triangle<a class="anchor" aria-label="anchor" href="#baselinenowcast-a-reporting-triangle"></a>
+<h2 id="baselinenowcast">baselinenowcast<a class="anchor" aria-label="anchor" href="#baselinenowcast"></a>
 </h2>
 <p><a href="https://baselinenowcast.epinowcast.org/" class="external-link"><code>baselinenowcast</code></a>
 is a simple, fast baseline. It works from a <strong>reporting
-triangle</strong>: a matrix with one row per reference (onset) week and
-one column per reporting delay, where the lower-right corner is the
-not-yet-observed part we want to fill in.</p>
-<p><code><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code> builds that triangle for
-you (aggregating the line-list to weekly incidence on the way):</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+triangle</strong>, a matrix with one row per event (reference) date and
+one column per reporting delay. The lower-right corner of the matrix
+corresponds to the not-yet-observed part the nowcast will fill in.</p>
+<p><code><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code> builds that triangle
+directly from the count-incidence data:</p>
+<div class="section level3">
+<h3 id="simple-nowcast-1">Simple nowcast<a class="anchor" aria-label="anchor" href="#simple-nowcast-1"></a>
+</h3>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/epinowcast/baselinenowcast" class="external-link">baselinenowcast</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># `delays_unit` defaults to NULL and is inferred from the object's weekly units;</span></span>
-<span><span class="co"># pass it explicitly (e.g. delays_unit = "weeks") if the units are ambiguous.</span></span>
-<span><span class="va">dengue_triangle</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="va">dengue_now</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co"># Cap the delays first: a single 330-day straggler would otherwise give the</span></span>
+<span><span class="co"># triangle 331 columns. 99% of reports arrive within 15 days.</span></span>
+<span><span class="va">covid_triangle</span> <span class="op">&lt;-</span> <span class="va">covid_now</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">.delay</span> <span class="op">&lt;=</span> <span class="fl">30</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># rows = onset weeks, columns = delay in weeks</span></span>
-<span><span class="va">dengue_triangle</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span></span>
-<span><span class="co">#&gt;            0  1  2 3 4 5</span></span>
-<span><span class="co">#&gt; 2009-01-05 0 17 11 2 0 0</span></span>
-<span><span class="co">#&gt; 2009-01-12 0 18 17 0 0 0</span></span>
-<span><span class="co">#&gt; 2009-01-19 1 20  9 7 3 0</span></span>
-<span><span class="co">#&gt; 2009-01-26 0 13 12 4 0 0</span></span>
-<span><span class="co">#&gt; 2009-02-02 1 22 17 8 0 0</span></span></code></pre></div>
-<p>Because <code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">as_reporting_triangle()</a></code> is registered as a
-method for <code>tbl_now</code>, alternatively you can also write the
-idiomatic <code>baselinenowcast</code> call and pass the
-<code>tbl_now</code> straight in:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dengue_triangle2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">as_reporting_triangle</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span></code></pre></div>
-<p>From here you follow <code>baselinenowcast</code>’s own workflow. The
-one-call <code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast()</a></code> wrapper estimates the delay from
-the triangle, applies it, and draws nowcast samples in a single
-step:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<span><span class="co"># rows = notification dates, columns = delay in days</span></span>
+<span><span class="va">covid_triangle</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span></span>
+<span><span class="co">#&gt;            0 1 2 3 4 5</span></span>
+<span><span class="co">#&gt; 2020-03-02 0 0 0 0 1 0</span></span>
+<span><span class="co">#&gt; 2020-03-03 0 0 0 0 0 0</span></span>
+<span><span class="co">#&gt; 2020-03-06 0 0 0 1 0 0</span></span>
+<span><span class="co">#&gt; 2020-03-07 0 0 1 0 0 0</span></span>
+<span><span class="co">#&gt; 2020-03-08 0 0 0 2 0 0</span></span></code></pre></div>
+<div class="alert alert-info">
+<p><strong>Why cap the delays?</strong> It is a modelling assumption,
+not a workaround. The triangle keeps every one of the 1094 event dates;
+only the delay axis is bounded. Left uncapped the fit takes
+<strong>314s</strong> against <strong>55s</strong>, for a tail that
+carries well under 1% of cases. <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> has
+a <code>max_delay</code> argument for the same purpose; for
+<code>baselinenowcast</code> the cap is an ordinary
+<code><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter()</a></code> on the delay column.</p>
+</div>
+<p>From here you can follow <code>baselinenowcast</code>’s own workflow.
+For example calling <code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast()</a></code> to estimate the delay
+from the triangle, apply it, and draw nowcast samples:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># One-call workflow: estimate the delay, apply it, and draw nowcast samples.</span></span>
 <span><span class="va">nowcast_samples</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast</a></span><span class="op">(</span></span>
-<span>  <span class="va">dengue_triangle2</span>,</span>
+<span>  <span class="va">covid_triangle</span>,</span>
 <span>  output_type <span class="op">=</span> <span class="st">"samples"</span>,</span>
 <span>  draws       <span class="op">=</span> <span class="fl">1000</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">nowcast_samples</span><span class="op">)</span></span></code></pre></div>
-<p>If you want the intermediate point nowcast (rather than samples), the
-single-triangle helper is <code><a href="https://baselinenowcast.epinowcast.org/reference/estimate_and_apply_delay.html" class="external-link">estimate_and_apply_delay()</a></code>:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">point_nowcast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/estimate_and_apply_delay.html" class="external-link">estimate_and_apply_delay</a></span><span class="op">(</span><span class="va">dengue_triangle2</span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
 <div class="section level3">
 <h3 id="with-strata-and-effects--1">With strata and effects.<a class="anchor" aria-label="anchor" href="#with-strata-and-effects--1"></a>
 </h3>
 <p>A reporting-triangle <em>matrix</em> is a single table with no room
 for strata or covariates, so <code>format = "matrix"</code> pools the
-strata (with a warning) and drops the effect columns. To keep them and
-to nowcast each stratum separately take the <strong>long</strong>
-format, which carries <code>gender</code> and the effect columns, and
-build one triangle per stratum:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dengue_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="va">dengue_seasonal</span>, format <span class="op">=</span> <span class="st">"long"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># List with one reporting triangle per stratum</span></span>
-<span><span class="va">triangles_by_stratum</span> <span class="op">&lt;-</span> <span class="va">dengue_long</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/split.html" class="external-link">split</a></span><span class="op">(</span><span class="va">dengue_long</span><span class="op">$</span><span class="va">gender</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="co">#</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">as_reporting_triangle</a></span><span class="op">(</span><span class="va">df</span>, delays_unit <span class="op">=</span> <span class="st">"weeks"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">#One nowcast per triangle</span></span>
+strata (with a warning) and drops the effect columns. To nowcast each
+stratum we need to do it separately via a
+<code>format = "triangle_list"</code>. This creates one
+reporting-triangle per stratum.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># One reporting triangle per stratum, straight from the object.</span></span>
+<span><span class="va">triangles_by_stratum</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span></span>
+<span>  <span class="va">covid_seasonal</span>,</span>
+<span>  format  <span class="op">=</span> <span class="st">"triangle_list"</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">triangles_by_stratum</span></span>
+<span><span class="co">#&gt; ── 2 reporting triangles from a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────</span></span>
+<span><span class="co">#&gt; • One per stratum (<span style="color: #0000BB;">"sex"</span>): <span style="color: #0000BB;">"Female"</span> and <span style="color: #0000BB;">"Male"</span></span></span>
+<span><span class="co">#&gt; • Delays unit: <span style="color: #0000BB;">"days"</span></span></span>
+<span><span class="co">#&gt; • Now: <span style="color: #0000BB;">"2023-03-02"</span></span></span>
+<span><span class="co">#&gt; • Dimensions (event x delay): <span style="color: #0000BB;">"1093 x 331"</span> and <span style="color: #0000BB;">"1090 x 325"</span></span></span>
+<span><span class="co">#&gt; ℹ This is one triangle per STRATUM. `baselinenowcast::estimate_and_apply_delays()` expects retrospective snapshots of a single series instead -- do not pass this object to it.</span></span></code></pre></div>
+<p>This can be used to nowcast each stratum via <code>lapply</code>:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># One nowcast per triangle, each trimmed the same way.</span></span>
 <span><span class="va">nowcasts_by_stratum</span> <span class="op">&lt;-</span> <span class="va">triangles_by_stratum</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">tri</span><span class="op">)</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast</a></span><span class="op">(</span><span class="va">tri</span>, output_type <span class="op">=</span> <span class="st">"samples"</span>, draws <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>In both stratified and unstratified cases the predictions can be
+recovered with <code>tidy</code>:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">nowcast_samples</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 7</span></span></span>
+<span><span class="co">#&gt;   event_date stratum estimate conf.low conf.high level engine         </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-03-02 all            1        1         1  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-03-03 all            1        1         1  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-03-06 all            1        1         1  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2020-03-07 all            1        1         1  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 2020-03-08 all            2        2         2  0.95 baselinenowcast</span></span></code></pre>
+<div class="figure">
+<img src="nowcasting-models_files/figure-html/bln-panels-1.png" class="r-plt" alt="Three panels (Total, Female, Male) comparing the baselinenowcast nowcast against the counts reported by now and the counts those dates eventually reached." width="100%"><p class="caption">
+Nowcast both stratified and total using the baselinenowcast package
+</p>
+</div>
 </div>
 </div>
 <div class="section level2">
-<h2 id="epinowcast-a-preprocessed-bayesian-model-object">3. epinowcast — a preprocessed Bayesian model object<a class="anchor" aria-label="anchor" href="#epinowcast-a-preprocessed-bayesian-model-object"></a>
+<h2 id="epinowcast">epinowcast<a class="anchor" aria-label="anchor" href="#epinowcast"></a>
 </h2>
 <p><a href="https://package.epinowcast.org/" class="external-link"><code>epinowcast</code></a>
 fits a flexible Bayesian model with separate modules for the reporting
@@ -337,38 +536,79 @@ object built by <code><a href="https://package.epinowcast.org/reference/enw_prep
 <p><code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> handles the preprocessing,
 returning an object you can pass straight to
 <code><a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast::epinowcast()</a></code>:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<p><strong>Series length: trimmed, before preprocessing.</strong>
+<code>epinowcast</code> is the one engine here with no argument for
+shortening the series, because by the time you hold a preprocessed
+object the reporting triangle is already built. Its filters work one
+step earlier, on the <em>observations</em> — and
+<code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> will hand you those instead of the
+finished object if you ask with <code>preprocess = FALSE</code>:</p>
+<div class="alert alert-warning">
+<p><strong>Warning: requires Stan.</strong> This package fits its model
+with <strong>Stan</strong>, so it needs a working <code>cmdstanr</code>
+(or <code>rstan</code>) toolchain installed before any of the code below
+will run.</p>
+</div>
+<div class="section level3">
+<h3 id="simple-nowcast-2">Simple nowcast<a class="anchor" aria-label="anchor" href="#simple-nowcast-2"></a>
+</h3>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://package.epinowcast.org" class="external-link">epinowcast</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dengue_enw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">dengue_now</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co"># Trim FIRST, then convert: two years of history is plenty and keeps the Stan</span></span>
+<span><span class="co"># fit tractable.</span></span>
+<span><span class="va">covid_enw_recent</span> <span class="op">&lt;-</span> <span class="va">covid_now</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">notification_date</span> <span class="op">&gt;=</span> <span class="va">cutoff</span> <span class="op">-</span> <span class="fl">7</span> <span class="op">*</span> <span class="fl">104</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">10</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dengue_enw</span></span></code></pre></div>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<span><span class="va">covid_enw_recent</span></span>
+<span><span class="co">#&gt; ── Preprocessed nowcast data ─────────────────────────────────────────────────── </span></span>
+<span><span class="co">#&gt; Groups: 1 | Timestep: day | Max delay: 10 </span></span>
+<span><span class="co">#&gt; Observations: 728 timepoints x 728 snapshots </span></span>
+<span><span class="co">#&gt; Max date: 2023-03-02 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Datasets (access with `enw_get_data(x, "&lt;name&gt;")`): </span></span>
+<span><span class="co">#&gt;   obs                :   7,235 x 7 </span></span>
+<span><span class="co">#&gt;   new_confirm        :   7,235 x 9 </span></span>
+<span><span class="co">#&gt;   latest             :     728 x 8 </span></span>
+<span><span class="co">#&gt;   missing_reference  :       0 x 4 </span></span>
+<span><span class="co">#&gt;   reporting_triangle :     728 x 12 </span></span>
+<span><span class="co">#&gt;   metareference      :     728 x 7 </span></span>
+<span><span class="co">#&gt;   metareport         :     737 x 10 </span></span>
+<span><span class="co">#&gt;   metadelay          :      10 x 5</span></span></code></pre></div>
+<p>Two years preprocesses in well under a second, and it is
+<code>covid_enw_recent</code> — not the full series — that goes to the
+Stan fit.</p>
+<p>This can then be passed to <code><a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast()</a></code>:</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># A minimal epinowcast fit from the preprocessed object</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast</a></span><span class="op">(</span></span>
-<span>  <span class="va">dengue_enw</span>,</span>
-<span>  fit <span class="op">=</span> <span class="fu"><a href="https://package.epinowcast.org/reference/enw_fit_opts.html" class="external-link">enw_fit_opts</a></span><span class="op">(</span>pp <span class="op">=</span> <span class="cn">TRUE</span>, chains <span class="op">=</span> <span class="fl">2</span>, iter_sampling <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
+<span>  <span class="va">covid_enw_recent</span>,   <span class="co"># the trimmed object, not the full series</span></span>
+<span>  fit <span class="op">=</span> <span class="fu"><a href="https://package.epinowcast.org/reference/enw_fit_opts.html" class="external-link">enw_fit_opts</a></span><span class="op">(</span></span>
+<span>    pp <span class="op">=</span> <span class="cn">TRUE</span>, chains <span class="op">=</span> <span class="fl">2</span>, iter_sampling <span class="op">=</span> <span class="fl">500</span>, iter_warmup <span class="op">=</span> <span class="fl">500</span></span>
+<span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p><code>max_delay</code> above is a <strong>modelling choice, not a
+detail</strong>: left unset, the converter infers it from the longest
+delay present (330 days here), and the nowcast then carries one
+reference date per delay. Setting it to 10 matches the maximum delay
+every other engine on this page is given, so the comparison at the end
+is like for like.</p>
+</div>
 <div class="section level3">
 <h3 id="with-strata-and-effects--2">With strata and effects.<a class="anchor" aria-label="anchor" href="#with-strata-and-effects--2"></a>
 </h3>
 <p>Handing <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> the enriched object does
-two things automatically: the <code>gender</code> stratum becomes
+two things automatically: the <code>sex</code> stratum becomes
 epinowcast’s grouping (<code>by</code>), so the model fits a delay per
 sex, and the temporal-effect columns land in the
-<code>metareference</code> / <code>metareport</code> tables on every
-completed reference date, including the recent incomplete ones ready to
-be used in a module formula.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">enw_seasonal</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">dengue_seasonal</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># One group per stratum:</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">enw_seasonal</span><span class="op">$</span><span class="va">metareference</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">.group</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 2</span></span>
-<span></span>
-<span><span class="co"># The effect columns are in the per-reference-date metadata, ready for a formula:</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">enw_seasonal</span><span class="op">$</span><span class="va">metareference</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] ... ".event_week_of_year"  ".event_season_52_cos" ".event_season_52_sin" ...</span></span>
+<code>metareference</code> / <code>metareport</code> tables so that they
+can be used in a module formula.</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Same trim, from the enriched object.</span></span>
+<span><span class="va">enw_seasonal</span> <span class="op">&lt;-</span> <span class="va">covid_seasonal</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">notification_date</span> <span class="op">&gt;=</span> <span class="va">cutoff</span> <span class="op">-</span> <span class="fl">7</span> <span class="op">*</span> <span class="fl">104</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">10</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Drop the seasonal terms into a reference-module formula and fit as usual: the</span></span>
 <span><span class="co"># covariates now enter the reference model.</span></span>
@@ -379,12 +619,31 @@ be used in a module formula.</p>
 <span>    distribution <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
 <span>    data         <span class="op">=</span> <span class="va">enw_seasonal</span></span>
 <span>  <span class="op">)</span>,</span>
-<span>  fit <span class="op">=</span> <span class="fu"><a href="https://package.epinowcast.org/reference/enw_fit_opts.html" class="external-link">enw_fit_opts</a></span><span class="op">(</span>pp <span class="op">=</span> <span class="cn">TRUE</span>, chains <span class="op">=</span> <span class="fl">2</span>, iter_sampling <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
+<span>  fit <span class="op">=</span> <span class="fu"><a href="https://package.epinowcast.org/reference/enw_fit_opts.html" class="external-link">enw_fit_opts</a></span><span class="op">(</span></span>
+<span>    pp <span class="op">=</span> <span class="cn">TRUE</span>, chains <span class="op">=</span> <span class="fl">2</span>, iter_sampling <span class="op">=</span> <span class="fl">500</span>, iter_warmup <span class="op">=</span> <span class="fl">500</span></span>
+<span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>In both stratified and unstratified cases the predictions can be
+recovered with <code>tidy</code>:</p>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 7</span></span></span>
+<span><span class="co">#&gt;   event_date stratum estimate conf.low conf.high level engine    </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2023-02-01 all          123      123       123   0.9 epinowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2023-02-02 all          104      104       104   0.9 epinowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2023-02-03 all          118      118       118   0.9 epinowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2023-02-04 all          103      103       103   0.9 epinowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 2023-02-05 all           69       69        70   0.9 epinowcast</span></span></code></pre>
+<div class="figure">
+<img src="nowcasting-models_files/figure-html/enw-panels-1.png" class="r-plt" alt="Three panels (Total, Female, Male) comparing the epinowcast nowcast against the counts reported by now and the counts those dates eventually reached." width="100%"><p class="caption">
+Nowcast both stratified and total using the epinowcast package
+</p>
+</div>
 </div>
 </div>
 <div class="section level2">
-<h2 id="epidist-the-reporting-delay-distribution">4. epidist — the reporting delay distribution<a class="anchor" aria-label="anchor" href="#epidist-the-reporting-delay-distribution"></a>
+<h2 id="epidist">epidist<a class="anchor" aria-label="anchor" href="#epidist"></a>
 </h2>
 <p>Sometimes the quantity you actually want is the <strong>delay
 distribution</strong> itself — how long, on average, between onset and
@@ -392,133 +651,1054 @@ report, and how variable is it? <a href="https://epidist.epinowcast.org/" class=
 estimates exactly that, treating each case as an interval-censored
 onset/report pair.</p>
 <p><code><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> converts the <code>tbl_now</code>
-into the censored line-list <code>epidist</code> expects. Because our
-data are weekly, each event is censored over its whole week
-automatically:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+into the censored form <code>epidist</code> expects. Our data are daily
+counts, so the converter produces <code>epidist_aggregate_data</code> —
+one row per distinct <code>(delay, observation time)</code> combination
+with a weight — rather than one row per case:</p>
+<div class="alert alert-warning">
+<p><strong>Warning: requires Stan.</strong> This package fits its model
+with <strong>Stan</strong>, so it needs a working <code>cmdstanr</code>
+(or <code>rstan</code>) toolchain installed before any of the code below
+will run.</p>
+</div>
+<div class="section level3">
+<h3 id="simple-delay-fit">Simple delay fit<a class="anchor" aria-label="anchor" href="#simple-delay-fit"></a>
+</h3>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://epidist.epinowcast.org/" class="external-link">epidist</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dengue_epidist</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span><span class="va">dengue_now</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<span><span class="va">covid_epidist</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span><span class="va">covid_now</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<p><code>epidist</code> offers several model types, and on
+<strong>count</strong> data the choice matters more than it looks. The
+<strong>marginal</strong> model is the one built for aggregated counts —
+but it does not currently compile (see the warning below). The
+<strong>latent</strong> model works, at a price: it carries one latent
+variable per <em>case</em>, so handing it the whole series expands 6.1M
+cases into 6.1M rows and it never finishes. It is therefore fitted on
+the last 30 days (2,705 cases, about seven minutes). A delay
+distribution needs delays, not a long series.</p>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit the delay distribution (see the epidist documentation for model choices)</span></span>
-<span><span class="va">delay_model</span> <span class="op">&lt;-</span> <span class="va">dengue_epidist</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/as_epidist_marginal_model.html" class="external-link">as_epidist_marginal_model</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="va">delay_model</span> <span class="op">&lt;-</span> <span class="va">covid_now</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">notification_date</span> <span class="op">&gt;=</span> <span class="va">cutoff</span> <span class="op">-</span> <span class="fl">30</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/as_epidist_latent_model.html" class="external-link">as_epidist_latent_model</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/epidist.html" class="external-link">epidist</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<div class="alert alert-warning">
+<p><strong>The <code>marginal</code> model does not currently fit, and
+it is the one you would want here.</strong> With <strong>epidist
+0.4.0</strong> and <strong>primarycensored 1.5.1</strong>,
+<code><a href="https://epidist.epinowcast.org/reference/as_epidist_marginal_model.html" class="external-link">as_epidist_marginal_model()</a></code> fails at Stan compilation: the
+generated code calls <code>primarycensored_lpmf()</code> with 8
+arguments against a 9-argument signature (primarycensored gained an
+<code>L</code> lower-truncation argument that the generated call does
+not supply). That matters more for count data than for a line list,
+because the marginal model is what consumes aggregated counts
+efficiently — without it, the latent model has to expand them back to
+one row per case. Reported upstream; check the <a href="https://github.com/epinowcast/epidist/issues/" class="external-link">epidist issue
+tracker</a> before reaching for
+<code><a href="https://epidist.epinowcast.org/reference/as_epidist_marginal_model.html" class="external-link">as_epidist_marginal_model()</a></code>.</p>
+</div>
 <p>The fitted delay distribution can then feed back into a nowcast for
 example as a data-informed prior in <code>epinowcast</code>.</p>
+</div>
 <div class="section level3">
 <h3 id="with-strata-and-effects--3">With strata and effects.<a class="anchor" aria-label="anchor" href="#with-strata-and-effects--3"></a>
 </h3>
-<p><code>epidist</code> has no separate grouping argument, so the
-<code>gender</code> stratum and the temporal-effect columns simply ride
-along as extra columns on the censored line-list — where an
-<code>epidist</code> model <strong>formula</strong> can use them. The
-mean of the delay distribution (<code>mu</code>) can be made to vary by
-sex, or by season through the Fourier terms:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dengue_epidist_eff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span><span class="va">dengue_seasonal</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># the strata and effect columns are on the line-list, ready for a formula</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">dengue_epidist_eff</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "ptime_lwr"            "ptime_upr"            "stime_lwr"           </span></span>
-<span><span class="co">#&gt;  [4] "stime_upr"            "obs_time"             "pdate_lwr"           </span></span>
-<span><span class="co">#&gt;  [7] "pdate_upr"            "sdate_lwr"            "sdate_upr"           </span></span>
-<span><span class="co">#&gt; [10] "gender"               ".event_week_of_year"  ".event_season_52_cos"</span></span>
-<span><span class="co">#&gt; [13] ".event_season_52_sin" "obs_date"</span></span></code></pre></div>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># A sex-varying mean delay: `gender` enters the model for `mu`.</span></span>
-<span><span class="va">delay_by_sex</span> <span class="op">&lt;-</span> <span class="va">dengue_epidist_eff</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/as_epidist_marginal_model.html" class="external-link">as_epidist_marginal_model</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/epidist.html" class="external-link">epidist</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="va">mu</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">+</span> <span class="va">gender</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># A season-varying mean delay uses the Fourier pair instead:</span></span>
-<span><span class="va">delay_seasonal</span> <span class="op">&lt;-</span> <span class="va">dengue_epidist_eff</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/as_epidist_marginal_model.html" class="external-link">as_epidist_marginal_model</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/epidist.html" class="external-link">epidist</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="va">mu</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">+</span> <span class="va">.event_season_52_sin</span> <span class="op">+</span> <span class="va">.event_season_52_cos</span><span class="op">)</span></span></code></pre></div>
+<p><code>epidist</code> has no separate grouping argument, so the strata
+(<code>sex</code>) and the temporal-effect columns become extra columns
+that can be used within the model’s formula. For example:</p>
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">covid_epidist_eff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span><span class="va">covid_seasonal</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># A sex-varying mean delay.</span></span>
+<span><span class="va">delay_by_sex</span> <span class="op">&lt;-</span> <span class="va">covid_seasonal</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">notification_date</span> <span class="op">&gt;=</span> <span class="va">cutoff</span> <span class="op">-</span> <span class="fl">30</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/as_epidist_latent_model.html" class="external-link">as_epidist_latent_model</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://epidist.epinowcast.org/reference/epidist.html" class="external-link">epidist</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="va">mu</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">+</span> <span class="va">sex</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/tidy.nowcast.html">tidy()</a></code> works here too, but it returns a
+<strong>different table</strong>, because <code>epidist</code> estimates
+a different thing. There are no per-date case estimates to report, so
+instead of one row per event date you get one row per parameter of the
+fitted delay distribution:</p>
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">delay_model</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<thead><tr class="header">
+<th>column</th>
+<th>meaning</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>term</code></td>
+<td>a parameter of the fitted delay distribution</td>
+</tr>
+<tr class="even">
+<td><code>estimate</code></td>
+<td>posterior median</td>
+</tr>
+<tr class="odd">
+<td>
+<code>conf.low</code>, <code>conf.high</code>
+</td>
+<td>interval bounds, using ’s names</td>
+</tr>
+<tr class="even">
+<td><code>level</code></td>
+<td>the width of that interval</td>
+</tr>
+<tr class="odd">
+<td><code>engine</code></td>
+<td>always <code>"epidist"</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>term</code> values are the distribution’s own parameters
+(<code>mu</code>, <code>sigma</code>, or whichever the
+<code>family</code> has) <strong>plus</strong> the derived
+<code>mean</code> and <code>sd</code> — the delay summaries those
+parameters imply, which are usually the numbers you actually want to
+quote. The fit keeps its draws, so <code>probs</code> works as it does
+elsewhere: <code>tidy(delay_model, probs = c(0.05, 0.95))</code> adds
+<code>q5</code> and <code>q95</code> columns.</p>
+<div class="alert alert-warning">
+<p><strong>Watch the dispatch.</strong> <code><a href="https://epidist.epinowcast.org/reference/epidist.html" class="external-link">epidist()</a></code> returns
+an object whose class is <code>c("brmsfit", "epidist_fit")</code>, in
+that order. If is loaded, its <code>tidy.brmsfit()</code> method matches
+<strong>first</strong> and you get raw parameters instead of the delay
+table above. Call <code>tidy.epidist_fit(fit)</code> explicitly when you
+cannot be sure which method wins.</p>
+</div>
+<p>The natural use of the result here is as a <strong>data-informed
+delay prior</strong> for one of the other engines.</p>
+</div>
+<div class="section level3">
+<h3 id="a-caveat-on-this-dataset-same-day-reporting">A caveat on this dataset: same-day reporting<a class="anchor" aria-label="anchor" href="#a-caveat-on-this-dataset-same-day-reporting"></a>
+</h3>
+<p>Every other section ends with the nowcast plotted against the truth.
+The equivalent check here would be the fitted delay distribution against
+the delays actually observed — and on <code>covid_colombia</code> that
+check <strong>fails</strong>, for a reason worth understanding before
+you reach for a delay model on your own data.</p>
+<p><strong>57.4%</strong> of the cases in the fitting window carry a
+delay of exactly <strong>zero</strong> days: notification and laboratory
+diagnosis are recorded on the same date. Another 20% arrive the next
+day. A lognormal — <code>epidist</code>’s default family, and the usual
+choice for a delay — has no way to represent a point mass at zero,
+because <code>log(0)</code> is undefined. Asked to fit one anyway, it
+does not fail loudly; it inflates the variance until the density piles
+up near zero, and reports:</p>
+<table class="table">
+<thead><tr class="header">
+<th>term</th>
+<th>estimate</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>mu</code></td>
+<td>7.36</td>
+</tr>
+<tr class="even">
+<td><code>sigma</code></td>
+<td><strong>17.95</strong></td>
+</tr>
+<tr class="odd">
+<td><code>mean</code></td>
+<td>1.5 × 10<sup>73</sup> days</td>
+</tr>
+</tbody>
+</table>
+<p>A mean delay of 10<sup>73</sup> days is not a convergence warning you
+can tune away. It is the model telling you that the family cannot
+describe the data.</p>
+<div class="alert alert-warning">
+<p><strong>What to do instead.</strong> If same-day reporting dominates
+your series, a continuous positive-support distribution is the wrong
+tool. The options are to model the delay as <strong>discrete</strong> (a
+distribution that puts real mass on 0), to fit a
+<strong>zero-inflated</strong> or hurdle form that separates “reported
+same day” from “how long otherwise”, or to keep the continuous fit for
+the <em>non-zero</em> delays only and report the zero share separately.
+<code>epidist</code> also offers <code><a href="https://epiforecasts.io/EpiNow2/reference/Distributions.html" class="external-link">Gamma()</a></code> and
+<code><a href="https://paulbuerkner.com/brms/reference/brmsfamily.html" class="external-link">weibull()</a></code>, but neither solves this: both have zero density
+at zero too.</p>
+<p>This is a property of the data, not of <code>tbl.now</code> or
+<code>epidist</code> — the converter does its job, and the diagnosis
+above comes straight from <code><a href="../reference/tidy.nowcast.html">tidy()</a></code>.</p>
+</div>
 </div>
 </div>
 <div class="section level2">
-<h2 id="nobbs-nowcasting-by-bayesian-smoothing">5. NobBS — Nowcasting by Bayesian Smoothing<a class="anchor" aria-label="anchor" href="#nobbs-nowcasting-by-bayesian-smoothing"></a>
+<h2 id="nobbs">NobBS<a class="anchor" aria-label="anchor" href="#nobbs"></a>
 </h2>
 <p><a href="https://cran.r-project.org/package=NobBS" class="external-link"><code>NobBS</code></a>
-works from a <strong>line-list</strong> with an onset-date column and a
-report-date column — precisely what a <code>linelist</code>
-<code>tbl_now</code> already is. Drop the <code>tbl.now</code> classes
-with <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> and hand the columns to
-<code>NobBS()</code>:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dengue_linelist</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+works from a <strong>line list</strong> with an onset-date column and a
+report-date column, and it counts <strong>rows</strong> — each row is
+one case. Our data are counts, so they have to be expanded first.
+<code><a href="../reference/tbl_now_nobbs.html">tbl_now_to_nobbs()</a></code> does that and names the columns what
+<code><a href="https://rdrr.io/pkg/NobBS/man/NobBS.html" class="external-link">NobBS()</a></code> expects:</p>
+<div class="alert alert-warning">
+<p><strong>Warning: requires JAGS.</strong> This package fits its model
+with <strong>JAGS</strong>, which is a separate program: install JAGS
+itself, not just the R package, before running the code below.</p>
+</div>
+<div class="section level3">
+<h3 id="simple-nowcast-3">Simple nowcast<a class="anchor" aria-label="anchor" href="#simple-nowcast-3"></a>
+</h3>
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Trim BEFORE converting: the expansion is one row per case, and `moving_window`</span></span>
+<span><span class="co"># below limits only what NobBS fits, not what it is handed.</span></span>
+<span><span class="va">covid_linelist</span> <span class="op">&lt;-</span> <span class="va">covid_now</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">notification_date</span> <span class="op">&gt;=</span> <span class="va">cutoff</span> <span class="op">-</span> <span class="fl">180</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now_nobbs.html">tbl_now_to_nobbs</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `tbl_now_to_nobbs()` needs a line list; expanding <span style="color: #0000BB;">"count-incidence"</span> counts in</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">"n"</span> to one row per case.</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">covid_linelist</span><span class="op">)</span>   <span class="co"># one row per case</span></span>
+<span><span class="co">#&gt; [1] 50160</span></span></code></pre></div>
+<div class="alert alert-warning">
+<p><strong>Do not hand <code><a href="https://rdrr.io/pkg/NobBS/man/NobBS.html" class="external-link">NobBS()</a></code> count data
+directly.</strong> It counts rows, so a table of 1,174 rows carrying
+50,160 cases is nowcast as <strong>1,174 cases</strong> — no error, just
+an answer that is 40 times too small. The converter exists to make that
+impossible.</p>
+</div>
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">NobBS</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">nobbs_fit</span> <span class="op">&lt;-</span> <span class="fu">NobBS</span><span class="op">(</span></span>
-<span>  data        <span class="op">=</span> <span class="va">dengue_linelist</span>,</span>
-<span>  now         <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>,</span>
-<span>  units       <span class="op">=</span> <span class="st">"1 week"</span>,</span>
-<span>  onset_date  <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_event_date</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>,</span>
-<span>  report_date <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_report_date</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">nobbs_fit</span><span class="op">$</span><span class="va">estimates</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">nobbs_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/NobBS/man/NobBS.html" class="external-link">NobBS</a></span><span class="op">(</span></span>
+<span>  data          <span class="op">=</span> <span class="va">covid_linelist</span>,</span>
+<span>  now           <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span>,</span>
+<span>  units         <span class="op">=</span> <span class="st">"1 day"</span>,</span>
+<span>  onset_date    <span class="op">=</span> <span class="st">"onset_date"</span>,</span>
+<span>  report_date   <span class="op">=</span> <span class="st">"report_date"</span>,</span>
+<span>  max_D         <span class="op">=</span> <span class="fl">30</span>,   <span class="co"># delays beyond 30 days are negligible here</span></span>
+<span>  moving_window <span class="op">=</span> <span class="fl">180</span>   <span class="co"># fit to the last six months</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The predictions come out with <code><a href="../reference/tidy.nowcast.html">tidy()</a></code>, in the same shape
+as every other engine here:</p>
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">nobbs_fit</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 7</span></span></span>
+<span><span class="co">#&gt;   event_date stratum estimate conf.low conf.high level engine</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2022-09-04 all           81       81        81  0.95 NobBS </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2022-09-05 all          158      158       158  0.95 NobBS </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2022-09-06 all          147      147       147  0.95 NobBS </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2022-09-07 all          130      130       130  0.95 NobBS </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 2022-09-08 all          148      148       148  0.95 NobBS</span></span></code></pre>
 <p>Notice that even the arguments come from the <code>tbl_now</code>:
 <code><a href="../reference/nowcast_data_getters.html">get_now()</a></code>, <code><a href="../reference/nowcast_data_getters.html">get_event_date()</a></code> and
 <code><a href="../reference/nowcast_data_getters.html">get_report_date()</a></code> tell <code>NobBS</code> what
 <code>tbl.now</code> already figured out.</p>
+</div>
 <div class="section level3">
 <h3 id="with-strata-and-effects--4">With strata and effects.<a class="anchor" aria-label="anchor" href="#with-strata-and-effects--4"></a>
 </h3>
-<p>Call <code>NobBS.strat()</code> and pass the column name to the
+<p>Call <code><a href="https://rdrr.io/pkg/NobBS/man/NobBS.strat.html" class="external-link">NobBS.strat()</a></code> and pass the column name to the
 strata option:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dengue_nobbs</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">dengue_seasonal</span><span class="op">)</span></span>
-<span><span class="va">stratified_nobbs</span> <span class="op">&lt;-</span> <span class="fu">NobBS.strat</span><span class="op">(</span><span class="va">dengue_nobbs</span>, </span>
-<span>                                strata        <span class="op">=</span> <span class="st">"gender"</span>, </span>
-<span>                                now         <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">dengue_seasonal</span><span class="op">)</span>, </span>
-<span>                                units       <span class="op">=</span> <span class="st">"1 week"</span>,</span>
-<span>                                onset_date  <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_event_date</a></span><span class="op">(</span><span class="va">dengue_seasonal</span><span class="op">)</span>,</span>
-<span>                                report_date <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_report_date</a></span><span class="op">(</span><span class="va">dengue_seasonal</span><span class="op">)</span>,</span>
-<span>                                <span class="co">#These two values are set small for the example</span></span>
-<span>                                max_D         <span class="op">=</span> <span class="fl">5</span>, </span>
-<span>                                moving_window <span class="op">=</span> <span class="fl">7</span></span>
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dengue_nobbs</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">covid_seasonal</span><span class="op">)</span></span>
+<span><span class="va">stratified_nobbs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/NobBS/man/NobBS.strat.html" class="external-link">NobBS.strat</a></span><span class="op">(</span><span class="va">dengue_nobbs</span>,</span>
+<span>                                strata        <span class="op">=</span> <span class="st">"sex"</span>,</span>
+<span>                                now           <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">covid_seasonal</span><span class="op">)</span>,</span>
+<span>                                units         <span class="op">=</span> <span class="st">"1 day"</span>,</span>
+<span>                                onset_date    <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_event_date</a></span><span class="op">(</span><span class="va">covid_seasonal</span><span class="op">)</span>,</span>
+<span>                                report_date   <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_report_date</a></span><span class="op">(</span><span class="va">covid_seasonal</span><span class="op">)</span>,</span>
+<span>                                max_D         <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>                                moving_window <span class="op">=</span> <span class="fl">104</span></span>
 <span>                                <span class="op">)</span></span></code></pre></div>
+<p>In both stratified and unstratified cases the predictions can be
+recovered with <code>tidy</code>:</p>
+<div class="figure">
+<img src="nowcasting-models_files/figure-html/nobbs-panels-1.png" class="r-plt" alt="Three panels (Total, Female, Male) comparing the NobBS nowcast against the counts reported by now and the counts those dates eventually reached." width="100%"><p class="caption">
+Nowcast both stratified and total using the NobBS package
+</p>
+</div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="surveillance">surveillance<a class="anchor" aria-label="anchor" href="#surveillance"></a>
+</h2>
+<p><a href="https://cran.r-project.org/package=surveillance" class="external-link"><code>surveillance</code></a>
+is the long-standing R package for outbreak detection and nowcasting,
+and implements the Höhle &amp; an der Heiden (2014) approach.
+<code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code> works from an individual-level
+<strong>line list</strong> with one column for the event date and one
+for the report date, named by its <code>dEventCol</code> /
+<code>dReportCol</code> arguments.</p>
+<p><code><a href="../reference/tbl_now_surveillance.html">tbl_now_to_surveillance()</a></code> builds that data frame and
+renames the two dates to <code>surveillance</code>’s own defaults:</p>
+<div class="section level3">
+<h3 id="simple-nowcast-4">Simple nowcast<a class="anchor" aria-label="anchor" href="#simple-nowcast-4"></a>
+</h3>
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://surveillance.R-Forge.R-project.org/" class="external-link">surveillance</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Trim before converting: the converter expands counts to one row per case.</span></span>
+<span><span class="va">covid_sur</span> <span class="op">&lt;-</span> <span class="va">covid_now</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">notification_date</span> <span class="op">&gt;=</span> <span class="va">cutoff</span> <span class="op">-</span> <span class="fl">180</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now_surveillance.html">tbl_now_to_surveillance</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `tbl_now_to_surveillance()` needs a line list; expanding <span style="color: #0000BB;">"count-incidence"</span></span></span>
+<span><span class="co">#&gt; counts in <span style="color: #0000BB;">"n"</span> to one row per case.</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">covid_sur</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    dHospital    dReport</span></span>
+<span><span class="co">#&gt; 1 2022-09-04 2022-09-04</span></span>
+<span><span class="co">#&gt; 2 2022-09-04 2022-09-04</span></span>
+<span><span class="co">#&gt; 3 2022-09-04 2022-09-04</span></span>
+<span><span class="co">#&gt; 4 2022-09-04 2022-09-04</span></span>
+<span><span class="co">#&gt; 5 2022-09-04 2022-09-04</span></span>
+<span><span class="co">#&gt; 6 2022-09-04 2022-09-04</span></span></code></pre></div>
+<p>The nowcast itself needs a <code>now</code>, the dates you want
+estimated (<code>when</code>), and a maximum delay <code>D</code>. All
+of it can come from the <code>tbl_now</code>:</p>
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sur_now</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
+<span><span class="va">sur_when</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="va">sur_now</span> <span class="op">-</span> <span class="fl">30</span>, <span class="va">sur_now</span>, by <span class="op">=</span> <span class="st">"1 day"</span><span class="op">)</span>   <span class="co"># days to estimate</span></span>
+<span></span>
+<span><span class="co"># `dRange` gives surveillance the grid explicitly, so it reaches the `now` even</span></span>
+<span><span class="co"># if the most recent days carry no reports yet: a line list cannot express a</span></span>
+<span><span class="co"># zero day (no rows), so zero-completion is no help here.</span></span>
+<span><span class="va">sur_range</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">covid_sur</span><span class="op">$</span><span class="va">dHospital</span><span class="op">)</span>, <span class="va">sur_now</span>, by <span class="op">=</span> <span class="st">"1 day"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">sur_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">nowcast</a></span><span class="op">(</span></span>
+<span>  now          <span class="op">=</span> <span class="va">sur_now</span>,</span>
+<span>  when         <span class="op">=</span> <span class="va">sur_when</span>,</span>
+<span>  data         <span class="op">=</span> <span class="va">covid_sur</span>,</span>
+<span>  dEventCol    <span class="op">=</span> <span class="st">"dHospital"</span>,</span>
+<span>  dReportCol   <span class="op">=</span> <span class="st">"dReport"</span>,</span>
+<span>  aggregate.by <span class="op">=</span> <span class="st">"1 day"</span>,</span>
+<span>  D            <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>  method       <span class="op">=</span> <span class="st">"bayes.notrunc.bnb"</span>,</span>
+<span>  control      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>dRange <span class="op">=</span> <span class="va">sur_range</span>, N.tInf.max <span class="op">=</span> <span class="fl">100000</span>, nSamples <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The predictions come out with <code><a href="../reference/tidy.nowcast.html">tidy()</a></code>, in the same shape
+as every other engine here:</p>
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">sur_fit</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 7</span></span></span>
+<span><span class="co">#&gt;   event_date stratum estimate conf.low conf.high level engine      </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2023-01-31 all          146      146       146  0.95 surveillance</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2023-02-01 all          123      123       123  0.95 surveillance</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2023-02-02 all          104      104       104  0.95 surveillance</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2023-02-03 all          118      118       118  0.95 surveillance</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 2023-02-04 all          103      103       103  0.95 surveillance</span></span></code></pre>
+<div class="alert alert-info">
+<p><strong>TIP</strong>: the interval is already there.
+<code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code> stores a prediction interval in the
+returned object’s <code>pi</code> slot, at whatever width
+<code>control$alpha</code> names (<code>0.05</code>, so 95%, by
+default), and <code><a href="../reference/tidy.nowcast.html">tidy()</a></code> reads it into <code>conf.low</code> /
+<code>conf.high</code>. The JAGS-backed <code>bayes.trunc</code> and
+<code>bayes.trunc.ddcp</code> methods are worth reaching for when you
+want the delay distribution modelled differently, <strong>not</strong>
+merely to get uncertainty out of the fit.</p>
+</div>
+</div>
+<div class="section level3">
+<h3 id="with-strata-and-effects--5">With strata and effects.<a class="anchor" aria-label="anchor" href="#with-strata-and-effects--5"></a>
+</h3>
+<p><code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code> has <strong>no strata
+argument</strong> as it only models one series. The strata ride along as
+ordinary columns, so fit one nowcast per stratum in a loop:</p>
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">covid_sur_eff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_surveillance.html">tbl_now_to_surveillance</a></span><span class="op">(</span><span class="va">covid_seasonal</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># `sex` is kept as a column, so it can be split on.</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">covid_sur_eff</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    dHospital    dReport    sex .event_day_of_week .event_season_365_cos</span></span>
+<span><span class="co">#&gt; 1 2020-03-02 2020-03-06 Female                  2             1.0000000</span></span>
+<span><span class="co">#&gt; 2 2020-03-03 2020-03-14 Female                  3             0.9998518</span></span>
+<span><span class="co">#&gt; 3 2020-03-06 2020-03-09   Male                  6             0.9976303</span></span>
+<span><span class="co">#&gt; 4 2020-03-07 2020-03-09 Female                  7             0.9962982</span></span>
+<span><span class="co">#&gt; 5 2020-03-08 2020-03-11 Female                  1             0.9946708</span></span>
+<span><span class="co">#&gt; 6 2020-03-08 2020-03-11 Female                  1             0.9946708</span></span>
+<span><span class="co">#&gt;   .event_season_365_sin</span></span>
+<span><span class="co">#&gt; 1            0.00000000</span></span>
+<span><span class="co">#&gt; 2            0.01721336</span></span>
+<span><span class="co">#&gt; 3            0.06880243</span></span>
+<span><span class="co">#&gt; 4            0.08596480</span></span>
+<span><span class="co">#&gt; 5            0.10310170</span></span>
+<span><span class="co">#&gt; 6            0.10310170</span></span></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sur_by_stratum</span> <span class="op">&lt;-</span> <span class="va">covid_sur_eff</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/split.html" class="external-link">split</a></span><span class="op">(</span><span class="va">covid_sur_eff</span><span class="op">$</span><span class="va">sex</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">nowcast</a></span><span class="op">(</span></span>
+<span>    now          <span class="op">=</span> <span class="va">sur_now</span>,</span>
+<span>    when         <span class="op">=</span> <span class="va">sur_when</span>,</span>
+<span>    data         <span class="op">=</span> <span class="va">df</span>,</span>
+<span>    dEventCol    <span class="op">=</span> <span class="st">"dHospital"</span>,</span>
+<span>    dReportCol   <span class="op">=</span> <span class="st">"dReport"</span>,</span>
+<span>    aggregate.by <span class="op">=</span> <span class="st">"1 week"</span>,</span>
+<span>    D            <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>    method       <span class="op">=</span> <span class="st">"bayes.notrunc.bnb"</span>,</span>
+<span>    control      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>      dRange     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">dHospital</span><span class="op">)</span>, <span class="va">sur_now</span>, by <span class="op">=</span> <span class="st">"1 week"</span><span class="op">)</span>,</span>
+<span>      N.tInf.max <span class="op">=</span> <span class="fl">1000</span>,</span>
+<span>      nSamples   <span class="op">=</span> <span class="fl">1000</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>In both stratified and unstratified cases the predictions can be
+recovered with <code>tidy</code>:</p>
+<div class="figure">
+<img src="nowcasting-models_files/figure-html/sur-panels-1.png" class="r-plt" alt="Three panels (Total, Female, Male) comparing the surveillance nowcast against the counts reported by now and the counts those dates eventually reached." width="100%"><p class="caption">
+Nowcast both stratified and total using the surveillance package
+</p>
+</div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="epinow2">EpiNow2<a class="anchor" aria-label="anchor" href="#epinow2"></a>
+</h2>
+<p><a href="https://epiforecasts.io/EpiNow2/" class="external-link"><code>EpiNow2</code></a>
+is the odd one out here: it is not a single nowcast model but
+<strong>four entry points</strong>, each taking a different shape of
+data. <code><a href="../reference/tbl_now_EpiNow2.html">tbl_now_to_EpiNow2()</a></code> therefore takes a
+<code>target</code> argument, named for the function the result is
+passed to, so whatever it gives you can be handed over unchanged.</p>
+<div class="alert alert-warning">
+<p><strong>Warning: requires Stan.</strong> These models fit through
+<code>cmdstanr</code>, so a working CmdStan installation is needed
+before running the code below.</p>
+</div>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th><code>target</code></th>
+<th>you get</th>
+<th>for</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code>"estimate_infections"</code> (default)</td>
+<td>
+<code>date</code> / <code>confirm</code>
+</td>
+<td>
+<code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_infections.html" class="external-link">estimate_infections()</a></code>, <code><a href="https://epiforecasts.io/EpiNow2/reference/epinow.html" class="external-link">epinow()</a></code>
+</td>
+</tr>
+<tr class="even">
+<td><code>"regional_epinow"</code></td>
+<td>the same plus <code>region</code>
+</td>
+<td><code><a href="https://epiforecasts.io/EpiNow2/reference/regional_epinow.html" class="external-link">regional_epinow()</a></code></td>
+</tr>
+<tr class="odd">
+<td><code>"estimate_truncation"</code></td>
+<td>a list of snapshots</td>
+<td><code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_truncation.html" class="external-link">estimate_truncation()</a></code></td>
+</tr>
+<tr class="even">
+<td><code>"estimate_dist"</code></td>
+<td>interval-censored date columns</td>
+<td><code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_dist.html" class="external-link">estimate_dist()</a></code></td>
+</tr>
+</tbody>
+</table>
+<div class="alert alert-warning">
+<p><strong>EpiNow2 models a <em>daily</em> process and has no
+<code>timestep</code>.</strong> Handing it a weekly series as one row
+per week is read as one row per <strong>day</strong> — no error, just an
+epidemic seven times too fast. The converter lays non-daily data on
+EpiNow2’s own daily grid using its <code>accumulate</code> column, so
+you do not have to. Units coarser than a week are refused rather than
+approximated.</p>
+</div>
+<div class="section level3">
+<h3 id="simple-nowcast-5">Simple nowcast<a class="anchor" aria-label="anchor" href="#simple-nowcast-5"></a>
+</h3>
+<p><code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_infections.html" class="external-link">estimate_infections()</a></code> wants the series as known at the
+<code>now</code> — one row per day, with the filler days marked:</p>
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">covid_en2</span> <span class="op">&lt;-</span> <span class="va">covid_now</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">notification_date</span> <span class="op">&gt;=</span> <span class="va">cutoff</span> <span class="op">-</span> <span class="fl">180</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now_EpiNow2.html">tbl_now_to_EpiNow2</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">covid_en2</span><span class="op">)</span></span>
+<span><span class="co">#&gt;         date confirm</span></span>
+<span><span class="co">#&gt; 1 2022-09-04      81</span></span>
+<span><span class="co">#&gt; 2 2022-09-05     158</span></span>
+<span><span class="co">#&gt; 3 2022-09-06     147</span></span>
+<span><span class="co">#&gt; 4 2022-09-07     130</span></span>
+<span><span class="co">#&gt; 5 2022-09-08     148</span></span>
+<span><span class="co">#&gt; 6 2022-09-09     159</span></span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://epiforecasts.io/EpiNow2/" class="external-link">EpiNow2</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">epinow2_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/estimate_infections.html" class="external-link">estimate_infections</a></span><span class="op">(</span></span>
+<span>  <span class="va">covid_en2</span>,</span>
+<span>  generation_time <span class="op">=</span> <span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/generation_time_opts.html" class="external-link">gt_opts</a></span><span class="op">(</span><span class="va">example_generation_time</span><span class="op">)</span>,</span>
+<span>  delays          <span class="op">=</span> <span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/delay_opts.html" class="external-link">delay_opts</a></span><span class="op">(</span><span class="va">example_incubation_period</span> <span class="op">+</span> <span class="va">example_reporting_delay</span><span class="op">)</span>,</span>
+<span>  rt              <span class="op">=</span> <span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/rt_opts.html" class="external-link">rt_opts</a></span><span class="op">(</span>prior <span class="op">=</span> <span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/Distributions.html" class="external-link">LogNormal</a></span><span class="op">(</span>mean <span class="op">=</span> <span class="fl">2</span>, sd <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  stan            <span class="op">=</span> <span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/stan_opts.html" class="external-link">stan_opts</a></span><span class="op">(</span>samples <span class="op">=</span> <span class="fl">500</span>, warmup <span class="op">=</span> <span class="fl">250</span>, chains <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Two things about that call, so the numbers below are read for what
+they are. <strong>The delay distributions are EpiNow2’s own shipped
+examples</strong> — COVID-in-the-UK priors — not distributions fitted to
+these Colombian data. That is the normal footing for a comparison of
+machinery rather than of estimates, but it does mean the EpiNow2 curve
+answers a slightly different question from the engines that learn their
+delay from the reporting triangle in front of them. Fitting the delay
+from the data instead is one <code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_dist.html" class="external-link">estimate_dist()</a></code> call away —
+see below. <strong>Sampling is also lighter than the default</strong>
+(500 draws, 250 warmup, 2 chains), because this is much the slowest
+engine here.</p>
+<p>The predictions come out with <code><a href="../reference/tidy.nowcast.html">tidy()</a></code>, in the same shape
+as every other engine here:</p>
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">epinow2_fit</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 7</span></span></span>
+<span><span class="co">#&gt;   event_date stratum estimate conf.low conf.high level engine </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2022-09-03 all           60     41.9      83     0.9 EpiNow2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2022-09-04 all           49     31        71.0   0.9 EpiNow2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2022-09-05 all          102     70       143.    0.9 EpiNow2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2022-09-06 all          113     77       149     0.9 EpiNow2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 2022-09-07 all          117     77.9     162     0.9 EpiNow2</span></span></code></pre>
+<p><code><a href="../reference/tidy.nowcast.html">tidy()</a></code> reads the interval width off the fit rather than
+assuming it: EpiNow2’s <code>CrIs</code> is a user argument, so a model
+fitted with <code>CrIs = c(0.5, 0.95)</code> reports
+<code>level = 0.95</code> and one fitted with the defaults reports
+<code>level = 0.9</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="the-report-dimension-estimate_truncation">The report dimension: <code>estimate_truncation()</code><a class="anchor" aria-label="anchor" href="#the-report-dimension-estimate_truncation"></a>
+</h3>
+<p>This is the one EpiNow2 model that uses the <strong>report</strong>
+dimension a <code>tbl_now</code> exists to carry. It takes a list of
+snapshots — the series as it looked at each of several report dates —
+which is exactly what the object already knows:</p>
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">covid_snapshots</span> <span class="op">&lt;-</span> <span class="va">covid_now</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">notification_date</span> <span class="op">&gt;=</span> <span class="va">cutoff</span> <span class="op">-</span> <span class="fl">180</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now_EpiNow2.html">tbl_now_to_EpiNow2</a></span><span class="op">(</span></span>
+<span>    target <span class="op">=</span> <span class="st">"estimate_truncation"</span>, snapshots <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>    verbose <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="va">covid_snapshots</span></span>
+<span><span class="co">#&gt; ── 5 reporting snapshots from a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────</span></span>
+<span><span class="co">#&gt; • One per report date: <span style="color: #0000BB;">"2023-02-26"</span>, <span style="color: #0000BB;">"2023-02-27"</span>, <span style="color: #0000BB;">"2023-02-28"</span>, <span style="color: #0000BB;">"2023-03-01"</span>, and <span style="color: #0000BB;">"2023-03-02"</span></span></span>
+<span><span class="co">#&gt; • Rows each: <span style="color: #0000BB;">176</span>, <span style="color: #0000BB;">177</span>, <span style="color: #0000BB;">178</span>, <span style="color: #0000BB;">179</span>, and <span style="color: #0000BB;">180</span></span></span>
+<span><span class="co">#&gt; • Now: <span style="color: #0000BB;">"2023-03-02"</span></span></span>
+<span><span class="co">#&gt; ℹ Pass this to `EpiNow2::estimate_truncation()`. `EpiNow2::estimate_secondary()` wants a single data frame of linked series instead -- not this.</span></span></code></pre></div>
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">truncation_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/estimate_truncation.html" class="external-link">estimate_truncation</a></span><span class="op">(</span><span class="va">covid_snapshots</span><span class="op">)</span></span></code></pre></div>
+<p>Because the snapshots carry their report dates, this is the one
+EpiNow2 shape that can be turned <strong>back</strong> into a
+<code>tbl_now</code> — differencing consecutive snapshots recovers the
+incidence:</p>
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/as_tbl_now.html">as_tbl_now</a></span><span class="op">(</span><span class="va">covid_snapshots</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  198 × 6</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
+<span><span class="co">#&gt;    notification_date diagnosis_date   count .event_num .report_num .delay</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt;    <span style="color: #949494;">[event_date]</span>      <span style="color: #949494;">[report_date]</span>  <span style="color: #949494;">[cases]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2022-09-04        2023-02-26          81          0         175    175</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2022-09-05        2023-02-26         158          1         175    174</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2022-09-06        2023-02-26         147          2         175    173</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2022-09-07        2023-02-26         130          3         175    172</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2022-09-08        2023-02-26         148          4         175    171</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2022-09-09        2023-02-26         159          5         175    170</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2022-09-10        2023-02-26         100          6         175    169</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2022-09-11        2023-02-26          51          7         175    168</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2022-09-12        2023-02-26         124          8         175    167</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2022-09-13        2023-02-26         108          9         175    166</span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2023-03-02</span> | Event date: <span style="color: #0000BB;">"notification_date"</span> | Report date:</span></span>
+<span><span class="co">#&gt; # <span style="color: #0000BB;">"diagnosis_date"</span></span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 188 more rows</span></span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="the-delay-distribution-estimate_dist">The delay distribution: <code>estimate_dist()</code><a class="anchor" aria-label="anchor" href="#the-delay-distribution-estimate_dist"></a>
+</h3>
+<p><code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_dist.html" class="external-link">estimate_dist()</a></code> (new in EpiNow2 1.9.0) estimates a
+reporting-delay distribution, accounting for double interval censoring
+and right truncation. It takes the same schema as , so the two are
+directly comparable on the same object:</p>
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">covid_dist</span> <span class="op">&lt;-</span> <span class="va">covid_now</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">notification_date</span> <span class="op">&gt;=</span> <span class="va">cutoff</span> <span class="op">-</span> <span class="fl">180</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now_EpiNow2.html">tbl_now_to_EpiNow2</a></span><span class="op">(</span>target <span class="op">=</span> <span class="st">"estimate_dist"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">covid_dist</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    pdate_lwr  pdate_upr  sdate_lwr  sdate_upr   obs_date  n</span></span>
+<span><span class="co">#&gt; 1 2022-09-04 2022-09-05 2022-09-04 2022-09-05 2023-03-03 39</span></span>
+<span><span class="co">#&gt; 2 2022-09-04 2022-09-05 2022-09-05 2022-09-06 2023-03-03 21</span></span>
+<span><span class="co">#&gt; 3 2022-09-04 2022-09-05 2022-09-06 2022-09-07 2023-03-03  3</span></span>
+<span><span class="co">#&gt; 4 2022-09-04 2022-09-05 2022-09-07 2022-09-08 2023-03-03  6</span></span>
+<span><span class="co">#&gt; 5 2022-09-04 2022-09-05 2022-09-08 2022-09-09 2023-03-03  2</span></span>
+<span><span class="co">#&gt; 6 2022-09-04 2022-09-05 2022-09-15 2022-09-16 2023-03-03 10</span></span></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dist_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/estimate_dist.html" class="external-link">estimate_dist</a></span><span class="op">(</span><span class="va">covid_dist</span>, dist <span class="op">=</span> <span class="st">"lognormal"</span><span class="op">)</span></span></code></pre></div>
+<p>Like <code><a href="../reference/tidy.epidist_fit.html">tidy.epidist_fit()</a></code>, this returns a
+<strong>delay-shaped</strong> table — one row per parameter, plus the
+distribution’s <code>mean</code> and <code>sd</code>:</p>
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">dist_fit</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 6</span></span></span>
+<span><span class="co">#&gt;   term    estimate conf.low conf.high level engine </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> meanlog    -<span style="color: #BB0000;">1.37</span>    -<span style="color: #BB0000;">1.40</span>     -<span style="color: #BB0000;">1.35</span>  0.95 EpiNow2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> sdlog       2.34     2.32      2.37  0.95 EpiNow2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> mean        1.30     1.29      1.32  0.95 EpiNow2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> sd          2.83     2.81      2.86  0.95 EpiNow2</span></span></code></pre>
+</div>
+<div class="section level3">
+<h3 id="with-strata-and-effects--6">With strata and effects.<a class="anchor" aria-label="anchor" href="#with-strata-and-effects--6"></a>
+</h3>
+<p><code><a href="https://epiforecasts.io/EpiNow2/reference/regional_epinow.html" class="external-link">regional_epinow()</a></code> takes a single <code>region</code>
+column, so the object’s strata are folded into one label:</p>
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">covid_regional</span> <span class="op">&lt;-</span> <span class="va">covid_seasonal</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">notification_date</span> <span class="op">&gt;=</span> <span class="va">cutoff</span> <span class="op">-</span> <span class="fl">180</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now_EpiNow2.html">tbl_now_to_EpiNow2</a></span><span class="op">(</span>target <span class="op">=</span> <span class="st">"regional_epinow"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">covid_regional</span><span class="op">)</span></span>
+<span><span class="co">#&gt;         date confirm region</span></span>
+<span><span class="co">#&gt; 1 2022-09-04      48 Female</span></span>
+<span><span class="co">#&gt; 2 2022-09-04      33   Male</span></span>
+<span><span class="co">#&gt; 3 2022-09-05      85 Female</span></span>
+<span><span class="co">#&gt; 4 2022-09-05      73   Male</span></span>
+<span><span class="co">#&gt; 5 2022-09-06      78 Female</span></span>
+<span><span class="co">#&gt; 6 2022-09-06      69   Male</span></span></code></pre></div>
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">regional_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/regional_epinow.html" class="external-link">regional_epinow</a></span><span class="op">(</span></span>
+<span>  <span class="va">covid_regional</span>,</span>
+<span>  generation_time <span class="op">=</span> <span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/generation_time_opts.html" class="external-link">gt_opts</a></span><span class="op">(</span><span class="va">example_generation_time</span><span class="op">)</span>,</span>
+<span>  delays          <span class="op">=</span> <span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/delay_opts.html" class="external-link">delay_opts</a></span><span class="op">(</span><span class="va">example_incubation_period</span> <span class="op">+</span> <span class="va">example_reporting_delay</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/tidy.nowcast.html">tidy()</a></code> on the result gives one block per region, so
+<code>stratum</code> stays a unique key alongside
+<code>event_date</code>.</p>
+<div class="alert alert-info">
+<p><strong>Two shapes EpiNow2 has that <code>tbl.now</code> does not
+convert for.</strong> <code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_secondary.html" class="external-link">estimate_secondary()</a></code> models
+<em>two</em> data streams against each other (cases and deaths, say) and
+one <code>tbl_now</code> is one stream, so there is no honest mapping.
+<code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_delay.html" class="external-link">estimate_delay()</a></code> takes a bare vector of delays; EpiNow2’s
+own help now points at <code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_dist.html" class="external-link">estimate_dist()</a></code> instead, and it
+discards the censoring a <code>tbl_now</code> carries. If you want it
+anyway it is <code>x$.delay</code>.</p>
+</div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="does-this-work-on-your-data">Does this work on <em>your</em> data?<a class="anchor" aria-label="anchor" href="#does-this-work-on-your-data"></a>
+</h2>
+<p>Everything above uses one daily, count-incidence dataset.
+<code>tbl.now</code> ships six others with different shapes — daily and
+weekly, line-list and count-incidence and count-cumulative — so the
+table below records what actually happens when every converter, plus one
+representative nowcast, is run against each of them. It is generated by
+<code>data-raw/converter_matrix.R</code>, and it reports failures as
+failures.</p>
+<table style="width:100%;" class="table">
+<caption>Every converter against every shipped dataset</caption>
+<colgroup>
+<col width="11%">
+<col width="12%">
+<col width="14%">
+<col width="11%">
+<col width="7%">
+<col width="5%">
+<col width="9%">
+<col width="4%">
+<col width="7%">
+<col width="5%">
+<col width="10%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">dataset</th>
+<th align="left">data_type</th>
+<th align="left">to_count(incidence)</th>
+<th align="left">baselinenowcast</th>
+<th align="left">epinowcast</th>
+<th align="left">epidist</th>
+<th align="left">surveillance</th>
+<th align="left">NobBS</th>
+<th align="left">data.table</th>
+<th align="left">tsibble</th>
+<th align="left">nowcast (dnc)</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">denguedat</td>
+<td align="left">linelist</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+</tr>
+<tr class="even">
+<td align="left">hai_bucaramanga</td>
+<td align="left">linelist</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+</tr>
+<tr class="odd">
+<td align="left">covid_colombia</td>
+<td align="left">count-incidence</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+</tr>
+<tr class="even">
+<td align="left">covidat</td>
+<td align="left">count-incidence</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+</tr>
+<tr class="odd">
+<td align="left">covid_us</td>
+<td align="left">count-incidence</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+</tr>
+<tr class="even">
+<td align="left">mpoxdat</td>
+<td align="left">count-incidence</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+</tr>
+<tr class="odd">
+<td align="left">flusight</td>
+<td align="left">count-cumulative</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">ok</td>
+<td align="left">fails</td>
+</tr>
+</tbody>
+</table>
+<table class="table">
+<caption>What went wrong, and why</caption>
+<colgroup>
+<col width="9%">
+<col width="17%">
+<col width="14%">
+<col width="7%">
+<col width="52%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">dataset</th>
+<th align="left">data_type</th>
+<th align="left">step</th>
+<th align="left">status</th>
+<th align="left">message</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td align="left">flusight</td>
+<td align="left">count-cumulative</td>
+<td align="left">nowcast (dnc)</td>
+<td align="left">error</td>
+<td align="left">Joint fit failed to converge for all init
+attempts.</td>
+</tr></tbody>
+</table>
+<p>Two of these datasets needed fixing before they would convert at all,
+and both problems are ones you will meet in your own data:</p>
+<ul>
+<li>
+<strong><code>mpoxdat</code> has a <code>race</code> column that
+must be declared.</strong> Left as an undeclared extra column, the
+<code>(event_date, report_date)</code> pair is not unique — there is one
+row per race — and every target that needs a unique cell rejects it: a
+reporting triangle reported <em>832 duplicate pairs</em>, and
+<code>tsibble</code> refused for the same reason.
+<code>strata = race</code> fixes both. If a column genuinely is not a
+stratum, aggregate it away with <code><a href="../reference/to_count.html">to_count()</a></code> instead.</li>
+<li>
+<strong><code>covidat</code> has rows registered <em>before</em>
+symptom onset.</strong> A negative delay is not a delay, and
+<code>epidist</code> rejects it outright rather than guess. Filter them
+before converting.</li>
+</ul>
+<p>A third needed fixing too, and it is the one most likely to catch you
+out:</p>
+<ul>
+<li>
+<strong>FluSight’s reporting weekday is not constant.</strong>
+<code>target_end_date</code> is always a Saturday, but
+<code>as_of</code> lands on Saturdays <em>and</em> Wednesdays — so the
+delay between them is <code>0.571</code> weeks, not a whole number, and
+no reporting triangle can be built at all. That is an
+<strong>alignment</strong> problem masquerading as a cumulative-data
+problem. <code>align_weeks = TRUE</code> in <code><a href="../reference/tbl_now.html">tbl_now()</a></code> snaps
+the reports onto a consistent weekday and the delays become
+integers.</li>
+</ul>
+<p><strong><code>count-cumulative</code> data does convert</strong>,
+once its delays are whole periods. De-accumulating a cumulative series
+produces <em>negative</em> increments wherever a total was revised
+downward, and <code>baselinenowcast</code> ships
+<code><a href="https://baselinenowcast.epinowcast.org/reference/preprocess_negative_values.html" class="external-link">preprocess_negative_values()</a></code> for exactly that — it
+redistributes each negative back into earlier delays.
+<code><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code> calls it for you and says so;
+pass <code>negatives = "error"</code> if you would rather be stopped
+than have the correction applied silently.</p>
+<p>What is left is a modelling limit rather than a conversion one:</p>
+<ul>
+<li>
+<strong><code>epidist</code> needs a delay it can censor, and counts
+of at least one.</strong> It models an interval-censored onset-to-report
+pair; a cumulative series has no individual delays to censor, and its
+zero cells fail epidist’s <code>n &gt;= 1</code> check.</li>
+<li>
+<strong>Not every model converges on every dataset.</strong>
+<code>diseasenowcasting</code> reports <em>“joint fit failed to converge
+for all init attempts”</em> on the cumulative FluSight series. The
+converter did its job; the model could not fit the shape it was
+given.</li>
+</ul>
+<p>The honest summary: <strong>every converter works on
+<code>linelist</code>, <code>count-incidence</code> and
+<code>count-cumulative</code> data</strong> — provided the delays are
+whole periods and any undeclared strata are declared. Those two data
+problems, not the converters, are what you will spend your time on.
+—&gt;</p>
+</div>
+<div class="section level2">
+<h2 id="the-tidy-function">The <code>tidy()</code> function<a class="anchor" aria-label="anchor" href="#the-tidy-function"></a>
+</h2>
+<p>The converters normalize what goes <em>into</em> each package.
+<code><a href="../reference/tidy.nowcast.html">tidy()</a></code> normalizes what comes out. Every engine above
+returns something different: a matrix of draws, an <code>stsNC</code>
+object, a Stan fit, an INLA summary, a bare list. The
+<code><a href="../reference/tidy.nowcast.html">tidy()</a></code> turns any of them into the same table:</p>
+<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># A short window so this runs quickly; any fit from any section works the same.</span></span>
+<span><span class="va">recent_triangle</span> <span class="op">&lt;-</span> <span class="va">covid_now</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">notification_date</span> <span class="op">&gt;=</span> <span class="va">cutoff</span> <span class="op">-</span> <span class="fl">365</span> <span class="op">*</span> <span class="fl">2</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/to_count.html">to_count</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"count-incidence"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/complete_zeroes.html">complete_zeroes</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">bln_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast</a></span><span class="op">(</span><span class="va">recent_triangle</span>, output_type <span class="op">=</span> <span class="st">"samples"</span>, draws <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">bln_fit</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="fl">4</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 7</span></span></span>
+<span><span class="co">#&gt;   event_date stratum estimate conf.low conf.high level engine         </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2023-02-27 all          107     95        144.  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2023-02-28 all           91     78        127   0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2023-03-01 all          118     97        167.  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2023-03-02 all           93     67.0      135.  0.95 baselinenowcast</span></span></code></pre></div>
+<p>The columns are the same whatever produced the fit:</p>
+<table class="table">
+<thead><tr class="header">
+<th>column</th>
+<th>meaning</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>event_date</code></td>
+<td>event/reference date, <strong>on the engine’s own grid</strong>
+</td>
+</tr>
+<tr class="even">
+<td><code>stratum</code></td>
+<td>
+<code>"all"</code> when the fit is unstratified</td>
+</tr>
+<tr class="odd">
+<td><code>estimate</code></td>
+<td>point nowcast (posterior median where available)</td>
+</tr>
+<tr class="even">
+<td>
+<code>conf.low</code>, <code>conf.high</code>
+</td>
+<td>interval bounds, using ’s names</td>
+</tr>
+<tr class="odd">
+<td><code>level</code></td>
+<td>the width that interval <strong>actually</strong> has</td>
+</tr>
+<tr class="even">
+<td><code>engine</code></td>
+<td>which package produced it</td>
+</tr>
+<tr class="odd">
+<td><code>qXX</code></td>
+<td>(optional) quantile columns of the prediction</td>
+</tr>
+</tbody>
+</table>
+<p>Pass <code>probs</code> for columns with other quantiles:</p>
+<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">bln_fit</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.05</span>, <span class="fl">0.5</span>, <span class="fl">0.95</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 10</span></span></span>
+<span><span class="co">#&gt;   event_date stratum estimate conf.low conf.high level engine     q5   q50   q95</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2023-02-28 all           91     78        127   0.95 baseli…    79    91  122 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2023-03-01 all          118     97        167.  0.95 baseli…    99   118  157.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2023-03-02 all           93     67.0      135.  0.95 baseli…    71    93  129.</span></span></code></pre></div>
+<div class="alert alert-warning">
+<p><strong>Only engines that keep draws can answer an arbitrary
+<code>probs</code>.</strong> That is <code>diseasenowcasting</code>,
+<code>baselinenowcast</code> and <code>epinowcast</code>.
+<code>NobBS</code> and <code>surveillance</code> report a fixed set of
+summaries, so asking them for a quantile they never computed is an
+<strong>error</strong> rather than a silent approximation.</p>
+</div>
+<div class="section level3">
+<h3 id="asking-the-other-engines-for-the-quantiles-you-want">Asking the other engines for the quantiles you want<a class="anchor" aria-label="anchor" href="#asking-the-other-engines-for-the-quantiles-you-want"></a>
+</h3>
+<p>That error is about <em>when</em> the quantiles are computed, not
+about whether you can have them. Several of these packages will happily
+compute any quantile — you just have to <strong>ask at fit
+time</strong>, because once the fit returns, the draws are gone and
+there is nothing left to re-summarise.</p>
+<p><code>NobBS</code> is the clearest example. Its <code>specs</code>
+argument takes a <code>quantiles</code> element, and whatever you put
+there is computed alongside the default summaries:</p>
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">nobbs_quantiles</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/NobBS/man/NobBS.html" class="external-link">NobBS</a></span><span class="op">(</span></span>
+<span>  data          <span class="op">=</span> <span class="va">covid_linelist</span>,</span>
+<span>  now           <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span>,</span>
+<span>  units         <span class="op">=</span> <span class="st">"1 day"</span>,</span>
+<span>  onset_date    <span class="op">=</span> <span class="st">"onset_date"</span>,</span>
+<span>  report_date   <span class="op">=</span> <span class="st">"report_date"</span>,</span>
+<span>  max_D         <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  moving_window <span class="op">=</span> <span class="fl">104</span>,</span>
+<span>  specs         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>quantiles <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="fl">0.9</span><span class="op">)</span><span class="op">)</span>   <span class="co"># &lt;- ask here</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="va">nobbs_quantiles</span><span class="op">$</span><span class="va">estimates</span>, <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt;     estimate lower upper q_0.1 q_0.5 q_0.9 onset_date n.reported</span></span>
+<span><span class="co">#&gt; 176       52    47    59    49    52    56 2023-02-26         44</span></span>
+<span><span class="co">#&gt; 177      109   102   118   104   109   115 2023-02-27         94</span></span>
+<span><span class="co">#&gt; 178       96    88   106    90    96   103 2023-02-28         77</span></span>
+<span><span class="co">#&gt; 179      121   110   134   114   121   129 2023-03-01         93</span></span>
+<span><span class="co">#&gt; 180       97    82   114    87    97   108 2023-03-02         55</span></span></code></pre>
+<p>The requested quantiles arrive as <code>q_0.1</code>,
+<code>q_0.5</code> and <code>q_0.9</code> columns on
+<code>$estimates</code>, next to the usual <code>estimate</code> /
+<code>lower</code> / <code>upper</code>. <code><a href="../reference/tidy.nowcast.html">tidy()</a></code> still
+returns the standard six columns for such a fit — it does not invent a
+schema per engine — so join the extra columns on by date when you need
+them:</p>
+<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">nobbs_quantiles</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
+<span>    <span class="va">nobbs_quantiles</span><span class="op">$</span><span class="va">estimates</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="va">onset_date</span>, <span class="va">q_0.1</span>, <span class="va">q_0.5</span>, <span class="va">q_0.9</span><span class="op">)</span>,</span>
+<span>    by <span class="op">=</span> <span class="st">"event_date"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 10</span></span></span>
+<span><span class="co">#&gt;   event_date stratum estimate conf.low conf.high level engine q_0.1 q_0.5 q_0.9</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2023-02-26 all           52       47        59  0.95 NobBS     49    52    56</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2023-02-27 all          109      102       118  0.95 NobBS    104   109   115</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2023-02-28 all           96       88       106  0.95 NobBS     90    96   103</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2023-03-01 all          121      110       134  0.95 NobBS    114   121   129</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 2023-03-02 all           97       82       114  0.95 NobBS     87    97   108</span></span></code></pre>
+<p>The same idea applies elsewhere: <code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code>
+takes the interval width through <code>control$alpha</code>. Decide what
+you need <strong>before</strong> you fit.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
+<p><img src="nowcasting-models_files/figure-html/comparison-all-1.png" class="r-plt" alt="Three panels (Total, Female, Male). Grey bars show the counts reported by now, a dark line the counts those dates eventually reached, and one coloured line per package its nowcast." width="100%"></p>
 <p>We described the dengue data once as a <code>tbl_now</code>, and then
 a single converter call (or, for <code>diseasenowcasting</code>, no call
 at all) handed it to each package in the shape it needed:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">dengue</span>, event_date <span class="op">=</span> <span class="va">onset_week</span>, report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
+<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">covid_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">dengue</span>, event_date <span class="op">=</span> <span class="va">notification_date</span>, report_date <span class="op">=</span> <span class="va">diagnosis_date</span>,</span>
 <span>                      data_type <span class="op">=</span> <span class="st">"linelist"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dengue_now</span>                              <span class="co"># diseasenowcasting</span></span>
-<span><span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>  <span class="co"># baselinenowcast</span></span>
-<span><span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>       <span class="co"># epinowcast</span></span>
-<span><span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>          <span class="co"># epidist</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span>               <span class="co"># NobBS or others</span></span></code></pre></div>
+<span><span class="va">covid_now</span>                              <span class="co"># diseasenowcasting</span></span>
+<span><span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span>  <span class="co"># baselinenowcast</span></span>
+<span><span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span>       <span class="co"># epinowcast</span></span>
+<span><span class="fu"><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span>          <span class="co"># epidist</span></span>
+<span><span class="fu"><a href="../reference/tbl_now_surveillance.html">tbl_now_to_surveillance</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span>     <span class="co"># surveillance</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span>               <span class="co"># NobBS or others</span></span></code></pre></div>
 <p>Attaching <strong>strata</strong> and <strong>temporal
-effects</strong> once (<code>dengue_seasonal</code>) then rides along
-the same converters: each package receives them in whatever way it can
-use — a grouping in <code>epinowcast</code>, covariate columns in
+effects</strong> once (<code>covid_seasonal</code>) uses the same
+converters: each package receives them in whatever way it can use a
+grouping in <code>epinowcast</code>, covariate columns in
 <code>epidist</code> and the <code>baselinenowcast</code> long format,
 one triangle/series per stratum where the model takes a single series,
 and automatically in <code>diseasenowcasting</code>.</p>
+<!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit here only. Blank lines inside this comment would leak as &#10; into the rendered README, so keep it to one line. Callers locate this file with system.file("fragments", ...) rather than a relative path: rmarkdown renders into a temp intermediates directory and copies relative resources alongside, so a "../.." path escapes that directory and fails on CI. Links are absolute so they resolve on both GitHub and pkgdown. -->
 </div>
 <div class="section level2">
-<h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
+<h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
 </h2>
 <ul>
-<li>The main <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html"><code>tbl.now</code>
-vignette</a> for the full anatomy of a <code>tbl_now</code>, data types,
-and temporal effects.</li>
-<li>
-<a href="https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html"><code>autoplot()</code></a>
-for a quick diagnostic overview (delay distribution, epidemic curve,
-calendar effects, seasonality) of any <code>tbl_now</code>.</li>
+<li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a>
+for the full anatomy of a <code>tbl_now</code>, data types, and temporal
+effects.</li>
+<li>End-to-end tutorial on real, messy surveillance data — cleaning,
+diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/Example.html">https://rodrigozepeda.github.io/tbl.now/articles/Example.html</a>
+</li>
 <li>Tutorial on detecting batches and other reporting-delay artifacts:
 <a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html">https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html</a>
+</li>
+<li>Comparing nowcasting engines on one dataset: <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>
+</li>
+<li>Package reference: <a href="https://rodrigozepeda.github.io/tbl.now/reference/">https://rodrigozepeda.github.io/tbl.now/reference/</a>
 </li>
 </ul>
 </div>
@@ -543,6 +1723,5 @@ calendar effects, seasonality) of any <code>tbl_now</code>.</li>
 
 
 
-  
-</body>
+  </body>
 </html>

@@ -25,21 +25,7 @@ tbl_now_to_tsibble() converts a tbl_now into a tbl_ts, using index
 the other date plus the strata as the key. Linelist data is aggregated to
 count-incidence first (a tsibble requires unique index/key combinations).
 The covariates, the censoring indicator and any materialised temporal-effect
-columns (see compute_temporal_effects()) ride along as measurement columns."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
-
-
-
-
-
-
-
-
-
-  pkgdown/extra.css
-
-  
-
-  </p>
+columns (see compute_temporal_effects()) ride along as measurement columns."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -47,7 +33,7 @@ columns (see compute_temporal_effects()) ride along as measurement columns."><me
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,8 +46,8 @@ columns (see compute_temporal_effects()) ride along as measurement columns."><me
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -161,6 +147,22 @@ tsibble index.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>tbl_now</code> (<code>from</code>) or a <code>tbl_ts</code> (<code>to</code>).</p>
     </div>
+    <div class="section level2">
+    <h2 id="censored-delays">Censored delays<a class="anchor" aria-label="anchor" href="#censored-delays"></a></h2>
+
+
+
+<p>A censoring indicator that is a property of the <strong>case</strong> rather than of the
+delay – an administrative "this date is only an upper bound" mark, say –
+puts a censored and an uncensored row in the same
+<code>(event_date, report_date)</code> cell. A reporting triangle has one slot per cell,
+so the extra dimension has to go before the conversion. It is removed
+automatically, with a warning either way:</p><ul><li><p><strong>count data</strong>: the counts are summed over the flag, leaving case totals
+unchanged;</p></li>
+<li><p><strong>line lists</strong>: the column is dropped, leaving one row per case.</p></li>
+</ul><p><code><a href="tbl_now_epidist.html">tbl_now_to_epidist()</a></code> is the exception and keeps the flag: estimating a
+delay distribution is the one job that can use it.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -194,6 +196,5 @@ tsibble index.</p></dd>
 
 
 
-  
-</body></html>
+  </body></html>
 

@@ -3,21 +3,7 @@
 Functions that extract the attributes from a tbl_now object.
 Each function returns a specific attribute (e.g. event date, strata, covariates, etc)."><meta property="og:description" content="
 Functions that extract the attributes from a tbl_now object.
-Each function returns a specific attribute (e.g. event date, strata, covariates, etc)."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
-
-
-
-
-
-
-
-
-
-  pkgdown/extra.css
-
-  
-
-  </p>
+Each function returns a specific attribute (e.g. event date, strata, covariates, etc)."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -25,7 +11,7 @@ Each function returns a specific attribute (e.g. event date, strata, covariates,
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,8 +24,8 @@ Each function returns a specific attribute (e.g. event date, strata, covariates,
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -166,10 +152,9 @@ Each function returns a specific attribute (e.g. event date, strata, covariates,
 <span class="r-in"><span><span class="fu">get_temporal_effects</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [[1]]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [[1]]$t_effects</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Temporal Effects</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"month_of_year"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Temporal Effects ────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"month_of_year"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [[1]]$date_type</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "event_date"</span>
@@ -199,6 +184,5 @@ Each function returns a specific attribute (e.g. event date, strata, covariates,
 
 
 
-  
-</body></html>
+  </body></html>
 

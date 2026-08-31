@@ -20,13 +20,13 @@
 ## Citation
 
 Zepeda-Tello R, Yaari R, Perini M (2026). *tbl.now: Tidy Extension for
-Nowcasting*. R package version 0.15.0,
+Nowcasting*. R package version 0.17.0,
 <https://rodrigozepeda.github.io/tbl.now/>.
 
     @Manual{,
       title = {tbl.now: Tidy Extension for Nowcasting},
       author = {Rodrigo Zepeda-Tello and Rami Yaari and Matteo Perini},
       year = {2026},
-      note = {R package version 0.15.0},
+      note = {R package version 0.17.0},
       url = {https://rodrigozepeda.github.io/tbl.now/},
     }

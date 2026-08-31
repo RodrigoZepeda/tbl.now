@@ -5,21 +5,7 @@ for event_dates or report_dates that have not been registered
 (by each strata) with a 0."><meta property="og:description" content="
 Takes a tbl.now object and completes observations
 for event_dates or report_dates that have not been registered
-(by each strata) with a 0."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
-
-
-
-
-
-
-
-
-
-  pkgdown/extra.css
-
-  
-
-  </p>
+(by each strata) with a 0."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -27,7 +13,7 @@ for event_dates or report_dates that have not been registered
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,8 +26,8 @@ for event_dates or report_dates that have not been registered
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -70,7 +56,7 @@ for event_dates or report_dates that have not been registered
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">complete_zeroes</span><span class="op">(</span><span class="va">x</span>, max_delay <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">complete_zeroes</span><span class="op">(</span><span class="va">x</span>, max_delay <span class="op">=</span> <span class="cn">NULL</span>, until <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -84,6 +70,18 @@ for event_dates or report_dates that have not been registered
 <dt id="arg-max-delay">max_delay<a class="anchor" aria-label="anchor" href="#arg-max-delay"></a></dt>
 <dd><p>Maximum delay to fill. For example if set to 5 it will complete
 with 0's all reports with delays 0 to 4. But will not fill other delays (say 6)</p></dd>
+
+
+<dt id="arg-until">until<a class="anchor" aria-label="anchor" href="#arg-until"></a></dt>
+<dd><p>Event date to complete up to. <code>NULL</code> (the default) completes to
+whichever is later, the object's <code><a href="nowcast_data_getters.html">get_now()</a></code> or the last event date present
+in the data. Completing only up to the last <em>observed</em> event date would
+leave a gap precisely at the <code>now</code> edge, because an event date with no
+reports at all does not appear in the data; several downstream converters
+build their time grid from the rows they are given and would silently stop
+short. A supplied <code>until</code> is never allowed to truncate below the data, and
+has no effect beyond the <code>now</code>: an event date later than the <code>now</code> cannot
+carry any report on or before it, so no row would survive for it.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -138,7 +136,7 @@ the <code>0</code> observations in the <code>case_count</code>.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># But complete zeroes adds it with a 0</span></span></span>
 <span class="r-in"><span><span class="fu">complete_zeroes</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  14 × 7</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  18 × 7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    event        report              n sex      .event_num .report_num .delay</span>
@@ -148,16 +146,20 @@ the <code>0</code> observations in the <code>case_count</code>.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 2020-01-01   2020-01-02          6 Male              0           1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 2020-01-02   2020-01-02          4 Male              1           1      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 2020-01-04   2020-01-04          8 Male              3           3      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 2020-01-01   2020-01-01          6 Female            0           0      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 2020-01-01   2020-01-02          4 Female            0           1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 2020-01-02   2020-01-02          9 Female            1           1      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 2020-01-04   2020-01-04          1 Female            3           3      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 2020-01-02   2020-01-03          0 Male              1           2      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 2020-01-02   2020-01-03          0 Female            1           2      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> 2020-01-03   2020-01-03          0 Male              2           2      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> 2020-01-03   2020-01-03          0 Female            2           2      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">13</span> 2020-01-03   2020-01-04          0 Male              2           3      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">14</span> 2020-01-03   2020-01-04          0 Female            2           3      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 2020-01-04   2020-01-05          2 Male              3           4      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 2020-01-01   2020-01-01          6 Female            0           0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 2020-01-01   2020-01-02          4 Female            0           1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 2020-01-02   2020-01-02          9 Female            1           1      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 2020-01-04   2020-01-04          1 Female            3           3      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 2020-01-04   2020-01-05          4 Female            3           4      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> 2020-01-02   2020-01-03          0 Male              1           2      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> 2020-01-02   2020-01-03          0 Female            1           2      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">13</span> 2020-01-03   2020-01-03          0 Male              2           2      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">14</span> 2020-01-03   2020-01-03          0 Female            2           2      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">15</span> 2020-01-03   2020-01-04          0 Male              2           3      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">16</span> 2020-01-03   2020-01-04          0 Female            2           3      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">17</span> 2020-01-05   2020-01-05          0 Male              4           4      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">18</span> 2020-01-05   2020-01-05          0 Female            4           4      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2020-01-05</span> | Event date: <span style="color: #0000BB;">"event"</span> | Report date: <span style="color: #0000BB;">"report"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"sex"</span></span>
@@ -168,7 +170,7 @@ the <code>0</code> observations in the <code>case_count</code>.</p>
 <span class="r-in"><span>  <span class="fu"><a href="to_count.html">to_count</a></span><span class="op">(</span><span class="st">"count-cumulative"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">complete_zeroes</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">event</span>, <span class="va">sex</span>, <span class="va">report</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  14 × 7</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  18 × 7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    event        report        .event_num .report_num sex            n .delay</span>
@@ -187,7 +189,11 @@ the <code>0</code> observations in the <code>case_count</code>.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> 2020-01-03   2020-01-03             2           2 Male           0      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> 2020-01-03   2020-01-04             2           3 Male           0      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">13</span> 2020-01-04   2020-01-04             3           3 Female         1      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">14</span> 2020-01-04   2020-01-04             3           3 Male           8      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">14</span> 2020-01-04   2020-01-05             3           4 Female         5      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">15</span> 2020-01-04   2020-01-04             3           3 Male           8      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">16</span> 2020-01-04   2020-01-05             3           4 Male          10      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">17</span> 2020-01-05   2020-01-05             4           4 Female         0      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">18</span> 2020-01-05   2020-01-05             4           4 Male           0      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2020-01-05</span> | Event date: <span style="color: #0000BB;">"event"</span> | Report date: <span style="color: #0000BB;">"report"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"sex"</span></span>
@@ -213,6 +219,5 @@ the <code>0</code> observations in the <code>case_count</code>.</p>
 
 
 
-  
-</body></html>
+  </body></html>
 

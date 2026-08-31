@@ -237,10 +237,10 @@ integer, character, or factor.
 
 ------------------------------------------------------------------------
 
-## Skill: mark whether data is right-censored
+## Skill: mark whether data is left-censored
 
 `is_censored` flags reports that arrive in artificial **batches**
-representing right-censoring rather than true reporting dynamics (e.g. a
+representing left-censoring rather than true reporting dynamics (e.g. a
 lab outage where a week of reports all land on the same later day). The
 `is_censored` attribute stores the **name of a logical column**
 (`TRUE`/`FALSE` per row).
@@ -264,6 +264,22 @@ To tell whether a dataset is censored: `is.null(get_is_censored(tn))` →
 itself must be logical or
 [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
 rejects it.
+
+**The converters drop it, and say so.** A flag that varies *within* an
+`(event_date, report_date)` cell (a per-case “upper bound only” mark,
+unlike one derived from the delay) puts two rows in a cell a reporting
+triangle has one slot for. Every converter but
+[`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+therefore collapses it first, warning either way:
+
+| input      | what happens                                           |
+|------------|--------------------------------------------------------|
+| count data | counts **summed** over the flag; case totals unchanged |
+| line list  | column **dropped**; one row per case, unchanged        |
+
+[`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+keeps it — a delay-distribution fit is the one consumer that can use
+censoring.
 
 ------------------------------------------------------------------------
 
@@ -814,11 +830,13 @@ round-trips straight back.
 | Package | from | to | Mapping |
 |----|:--:|:--:|----|
 | epinowcast | ✅ | ✅ | `reference_date`/`report_date`/`confirm` ↔︎ count-cumulative. `from` accepts the raw long input, a preprocessed `enw_preprocess_data` object, **or** a fitted `epinowcast` object (grouping auto-detected). `to` builds the preprocessed `enw_preprocess_data` object (or the completed-input `data.table` with `preprocess = FALSE`) |
-| baselinenowcast | ✅ | ✅ | long df **or** reporting-triangle matrix ↔︎ count-incidence; `to` has `format = c("matrix","long")` — **`"matrix"` is the default**. `to`’s `delays_unit` defaults to `NULL` and is **inferred** from the object units (equal event/report units of `"days"`/`"weeks"`) for the matrix format, else supply it. Refuses `count-cumulative` input (would need to de-accumulate to possibly-negative increments) |
+| baselinenowcast | ✅ | ✅ | long df **or** reporting-triangle matrix ↔︎ count-incidence; `to` has `format = c("matrix","long","triangle_list")` — **`"matrix"` is the default**; `"triangle_list"` returns ONE TRIANGLE PER STRATUM as a thin `tbl_now_triangle_list` (still a plain list, so [`lapply()`](https://rdrr.io/r/base/lapply.html) works), length-1 and named `"all"` when there are no strata, and [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md) rebuilds a `tbl_now` from it with the strata recoded. `to`’s `delays_unit` defaults to `NULL` and is **inferred** from the object units (equal event/report units of `"days"`/`"weeks"`) for the matrix format, else supply it. Refuses `count-cumulative` input (would need to de-accumulate to possibly-negative increments) |
 | EpiNow2 | ❌ | ✅ | `to` only. `model = "estimate_infections"` (default) → a single `date`/`confirm` series for `estimate_infections()`/`epinow()`. `model = "estimate_truncation"` → a list of `date`/`confirm` snapshots (one per report date) for `estimate_truncation()`, which *does* use the report dimension |
 | data.table | ✅ | ✅ | [`tbl_now_from_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md) / [`tbl_now_to_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md) (underscores) |
 | epidist | ✅ | ✅ | epidist 0.4.0 interval-censored dates; `format = "linelist"` uses lower bounds as dates, `format = "interval"` attaches upper bounds as covariates |
 | tsibble | ✅ | ✅ | `to` builds a `tbl_ts` (index defaults to `report_date`, key = other date + strata); `from` needs `event_date`, recovers strata from the key |
+| surveillance | ❌ | ✅ | `to` only. Builds the individual-level line list [`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html) takes, renaming the dates to its own `dHospital`/`dReport` defaults. `format = "sts"` returns the observed curve as an `sts` object instead. Count input is expanded back to one row per case |
+| nowcaster | ❌ | ✅ | `to` only. Builds the line list `nowcaster::nowcasting_inla()` takes (`date_onset`/`date_report`). **Strata are encoded for you**: it emits a numeric `stratum_code` column, and `get_nowcaster_strata()` returns the `bins_age` breaks to pass alongside it, because `age_col` must be numeric despite the help calling it a “stratum column” |
 
 ``` r
 
@@ -827,6 +845,85 @@ nowobj <- tbl_now_from_epinowcast(epinowcast::germany_covid19_hosp,
 ts     <- tbl_now_to_tsibble(nowobj, verbose = FALSE)
 back   <- as_tbl_now(ts, event_date = "reference_date")   # round-trip
 ```
+
+------------------------------------------------------------------------
+
+## Skill: get predictions out of ANY nowcast (`tidy`)
+
+[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+is the mirror of the converters: they normalise what goes **into** a
+nowcasting package,
+[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+normalises what comes **out**. Same columns, same types, whichever
+engine produced the fit.
+
+``` r
+
+tidy(fit)                              # one table, whatever `fit` is
+tidy(fit, probs = c(0.05, 0.5, 0.95))  # adds q5, q50, q95 columns
+tidy(fit, engine = "NobBS")            # when the object is an unclassed list
+```
+
+Columns: `event_date`, `stratum` (`"all"` when unstratified),
+`estimate`, `conf.low`, `conf.high`, `level`, `engine` — plus one `q*`
+column per `probs` entry (named after the probability: `0.025` →
+`q2.5`).
+
+Supported: `diseasenowcasting` (pass `predict(fit)`), `baselinenowcast`
+(`output_type = "samples"`), `epinowcast`, `NobBS`, `surveillance`
+(`stsNC`), `nowcaster`.
+
+- **`level` is not decoration.** It records the width each engine’s
+  interval actually has. `epinowcast` reports a q5–q95 band (**90%**) by
+  default while the others report 95%; without it you would compare the
+  two as if identical.
+- **`probs` only works where draws exist** (`diseasenowcasting`,
+  `baselinenowcast`, `epinowcast`). The others report a fixed summary
+  set and **error** rather than approximate.
+- **[`library(broom)`](https://broom.tidymodels.org/) overwrites
+  `tbl.now`’s
+  [`tidy.list()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  method**, which is what `NobBS` and `nowcaster` fits dispatch on.
+  Qualify as `tbl.now::tidy(...)` when broom is attached.
+- **`diseasenowcasting` needs \>= 2.1.0 for a bare `tidy(fit)`.** From
+  2.1.0 it re-exports the shared generic and supplies its own method, so
+  `tidy(fit)` returns the nowcast and `model_parameters()` returns the
+  parameter table. Before 2.1.0 it declared its **own**
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  generic, so `tidy(fit)` silently returned parameters; on those
+  versions use `tbl.now::tidy(predict(fit))`. `tbl.now` registers its
+  own method only when the package does not supply one, so it never
+  overrides the newer version.
+- **`epidist` has its own
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md),
+  with different columns.** It estimates a delay distribution, not a
+  nowcast, so
+  [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
+  returns `term` / `estimate` / `conf.low` / `conf.high` / `level` /
+  `engine`, one row per distribution parameter (`mu`, `sigma`, plus the
+  derived `mean` and `sd`). There is no `event_date`. Beware dispatch:
+  the fit is `c("brmsfit", "epidist_fit")`, so a loaded `broom.mixed`
+  matches first.
+- **Engines without draws can still give you quantiles — ask at fit
+  time.** `tidy(probs =)` errors for `NobBS`, `nowcaster` and
+  `surveillance`, but
+  `NobBS(specs = list(quantiles = c(0.1, 0.5, 0.9)))` computes them
+  during the fit and returns `q_0.1` / `q_0.5` / `q_0.9` columns on
+  `$estimates`; join them onto
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  output by date.
+- **`surveillance` does report an interval**, read from the `stsNC`
+  object’s `pi` slot at the width `control$alpha` sets (95% by default).
+  You do NOT need the JAGS-backed `bayes.trunc`/`bayes.trunc.ddcp`
+  methods to get uncertainty; `lawless` and `unif` may leave the slot
+  empty, and then the bounds are `NA`.
+- **`NobBS` and `nowcaster` return unclassed lists**, so they are told
+  apart by structure; pass `engine =` if that ever fails.
+- **[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  does NOT re-grid.** Engines that bin onto their own week starts keep
+  them. Snapping silently would hide a real difference between packages.
+- The generic comes from `generics`, so it composes with `broom` rather
+  than masking it.
 
 ------------------------------------------------------------------------
 
@@ -851,7 +948,14 @@ tbl_now_attributes(tn)               # list of just the tbl_now-specific attribu
   afterward to force integer delays.
 - **`complete_zeroes`** is important before modelling count data:
   unobserved (event, report\[, strata\]) combinations become explicit
-  zeros.
+  zeros. It completes out to `max(get_now(x), last event date)` — an
+  event date with NO reports at all does not exist as a row, so stopping
+  at the last observed event leaves a hole exactly at the `now` edge,
+  where nowcasting matters. `until =` sets a different end date (never
+  truncating below the data). **Counts only** — a line list cannot
+  represent a zero period, so convert with
+  [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
+  first.
 
 ------------------------------------------------------------------------
 
@@ -957,3 +1061,22 @@ data(mpoxdat)     # mpox count-incidence data (has a `race` stratum + `n` counts
   use
   [`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md) +
   [`batch_shape_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.md).
+- **A zero period is invisible in a line list.** An event date with no
+  reports has no rows, so engines that build their time grid from the
+  rows they are handed stop short of the `now`.
+  [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+  fixes this for *count*-shaped converters (`baselinenowcast`,
+  `epinowcast`); for line-list engines the padding evaporates (a
+  zero-count row expands to zero rows) and you must give the grid
+  another way — `control$dRange` in `surveillance`.
+- **`nowcaster` takes its last observable week from the last EVENT, not
+  the last report** (`Tmax <- max(date_onset)`, then
+  `Y <- ifelse(Time + delay > Tmax.id, NA, Y)`). If your final event
+  period has no same-period report then `max(event) < max(report)` and
+  it silently discards a whole diagonal of real reports — the symptom is
+  a nowcast **below** counts you have already observed. Check
+  `max(event_date) == max(report_date)` after aggregating to your time
+  unit.
+- `tidy(fit, probs =)` **errors** for `NobBS`, `nowcaster` and
+  `surveillance`: they keep no draws, so an arbitrary quantile would be
+  an approximation.

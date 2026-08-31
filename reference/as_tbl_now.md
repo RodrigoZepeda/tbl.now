@@ -38,6 +38,12 @@ as_tbl_now(object, report_date, event_date = NULL, ...)
 
 # S3 method for class 'data.table'
 as_tbl_now(object, event_date, report_date, ...)
+
+# S3 method for class 'tbl_now_epinow2_snapshots'
+as_tbl_now(object, ...)
+
+# S3 method for class 'tbl_now_triangle_list'
+as_tbl_now(object, ...)
 ```
 
 ## Arguments

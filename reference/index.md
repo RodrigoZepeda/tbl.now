@@ -105,6 +105,9 @@
   **\[stable\]** : Get the latest / first / nth-delay reported cases for
   each event date
 
+- [`hai_bucaramanga`](https://rodrigozepeda.github.io/tbl.now/reference/hai_bucaramanga.md)
+  : Healthcare-Associated Infections – Bucaramanga, Colombia 2016-2023
+
 - [`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/is_tbl_now.md)
   **\[experimental\]** : Check if an object is a tbl_now
 
@@ -202,6 +205,12 @@
 
   Create a `tbl_now` object
 
+- [`tbl_now_to_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_EpiNow2.md)
+  [`tbl_now_from_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_EpiNow2.md)
+  **\[experimental\]** :
+
+  Convert between `tbl_now` and EpiNow2
+
 - [`tbl_now_attributes()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.md)
   **\[stable\]** :
 
@@ -234,11 +243,29 @@
 
   Convert between `tbl_now` and epidist
 
+- [`print(`*`<tbl_now_epinow2_snapshots>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinow2_snapshots.md)
+  **\[experimental\]** :
+
+  Snapshots of one series, as EpiNow2 estimates truncation from
+
 - [`tbl_now_from_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
   [`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
   **\[experimental\]** :
 
   Convert between `tbl_now` and epinowcast
+
+- [`tbl_now_to_nobbs()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_nobbs.md)
+  **\[experimental\]** :
+
+  Convert a `tbl_now` into the line list NobBS nowcasts from
+
+- [`tbl_now_to_surveillance()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance.md)
+  **\[experimental\]** :
+
+  Convert a `tbl_now` into the line list surveillance nowcasts from
+
+- [`print(`*`<tbl_now_triangle_list>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_triangle_list.md)
+  **\[experimental\]** : One reporting triangle per stratum
 
 - [`tbl_now_from_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md)
   [`tbl_now_to_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md)
@@ -256,6 +283,19 @@
 - [`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
   **\[experimental\]** : Test whether the reporting-delay distribution
   drifts over time
+
+- [`tidy(`*`<epidist_fit>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
+  **\[experimental\]** :
+
+  Tidy the delay distribution from an epidist fit
+
+- [`tidy(`*`<estimate_dist>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.estimate_dist.md)
+  **\[experimental\]** :
+
+  Tidy the delay distribution from an EpiNow2 `estimate_dist()` fit
+
+- [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  **\[experimental\]** : Tidy a fitted nowcast into one standard table
 
 - [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
   **\[stable\]** : Transform an object to count data

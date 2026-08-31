@@ -89,6 +89,24 @@ tbl_now_to_tsibble(
 
 A `tbl_now` (`from`) or a `tbl_ts` (`to`).
 
+## Censored delays
+
+A censoring indicator that is a property of the **case** rather than of
+the delay – an administrative "this date is only an upper bound" mark,
+say – puts a censored and an uncensored row in the same
+`(event_date, report_date)` cell. A reporting triangle has one slot per
+cell, so the extra dimension has to go before the conversion. It is
+removed automatically, with a warning either way:
+
+- **count data**: the counts are summed over the flag, leaving case
+  totals unchanged;
+
+- **line lists**: the column is dropped, leaving one row per case.
+
+[`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+is the exception and keeps the flag: estimating a delay distribution is
+the one job that can use it.
+
 ## Examples
 
 ``` r

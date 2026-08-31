@@ -250,7 +250,6 @@ removing from here.
 
 ``` r
 temporal_effects(day_of_week = TRUE, week_of_year = TRUE)
-#> 
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
 #> The following effects are in place:
 #> • "day_of_week"
@@ -258,21 +257,18 @@ temporal_effects(day_of_week = TRUE, week_of_year = TRUE)
 
 # Annual seasonality in weekly data (period = 52 weeks)
 temporal_effects(seasons = 52)
-#> 
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
 #> The following effects are in place:
 #> • "season" periods: 52
 
 # Annual seasonality in daily data (52 weeks x 7 days = 364-day period)
 temporal_effects(seasons = 52, season_length = 7)
-#> 
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
 #> The following effects are in place:
 #> • "season" periods: 52*7=364
 
 # After-weekend effect: flag the first two working days after a weekend
 temporal_effects(weekend = TRUE, weekend_lags = 2)
-#> 
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
 #> The following effects are in place:
 #> • "weekend"
@@ -280,7 +276,6 @@ temporal_effects(weekend = TRUE, weekend_lags = 2)
 
 # Before-weekend effect: flag the last working day before a weekend (Friday)
 temporal_effects(weekend = TRUE, weekend_lags = -1)
-#> 
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
 #> The following effects are in place:
 #> • "weekend"

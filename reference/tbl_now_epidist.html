@@ -81,21 +81,7 @@ The strata, the covariate columns and any materialised temporal-effect columns
 (holidays, Fourier terms, calendar effects; see compute_temporal_effects())
 are carried onto the epidist data unchanged, so the strata are available as
 covariates in an epidist model formula (epidist has no separate grouping
-argument).'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
-
-
-
-
-
-
-
-
-
-  pkgdown/extra.css
-
-  
-
-  </p>
+argument).'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -103,7 +89,7 @@ argument).'><meta property="og:image" content="https://rodrigozepeda.github.io/t
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,8 +102,8 @@ argument).'><meta property="og:image" content="https://rodrigozepeda.github.io/t
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -256,6 +242,56 @@ by <code>tbl_now_to_epidist()</code>.</p></dd>
     <p>A <code>tbl_now</code> (<code>from</code>) or an <code>epidist_linelist_data</code> /
 <code>epidist_aggregate_data</code> object (<code>to</code>).</p>
     </div>
+    <div class="section level2">
+    <h2 id="delays-of-zero-and-the-lognormal">Delays of zero, and the lognormal<a class="anchor" aria-label="anchor" href="#delays-of-zero-and-the-lognormal"></a></h2>
+
+
+
+<p>A delay distribution with a <strong>point mass at zero</strong> cannot be fitted with a
+lognormal (or a gamma, or a Weibull): all have zero density at zero. If a
+large share of your cases are reported the same period they occur, the fit
+does not fail loudly – it inflates the variance until the density piles up
+near zero. On a daily COVID series where <strong>57%</strong> of cases carried a delay of
+exactly 0, <code>epidist</code> returned <code>sigma = 17.9</code> and an implied mean delay of
+<code>1.5e73</code> days.</p>
+<p>Check before fitting:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">x</span><span class="op">[[</span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_report_date</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">]</span><span class="op">]</span> <span class="op">-</span> <span class="va">x</span><span class="op">[[</span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_event_date</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span></span></code></pre><p></p></div>
+<p>If that share is large, model the delay as <strong>discrete</strong>, use a
+<strong>zero-inflated</strong>/hurdle form, or fit the continuous distribution to the
+non-zero delays and report the zero share separately.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="counts-epidist-cannot-use">Counts <span class="pkg">epidist</span> cannot use<a class="anchor" aria-label="anchor" href="#counts-epidist-cannot-use"></a></h2>
+
+
+
+<p><code>epidist_aggregate_data</code> requires <code>n &gt;= 1</code>, and so does
+<code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_dist.html" class="external-link">EpiNow2::estimate_dist()</a></code> – with the identical assertion message. Count data
+routinely holds rows that violate it:</p><ul><li><p><strong>zeros</strong> – an <code>(event, report)</code> cell where the report added nothing, which
+is most cells once <code><a href="complete_zeroes.html">complete_zeroes()</a></code> has run, and which de-accumulating a
+<code>count-cumulative</code> series produces wherever a cumulative total was
+unchanged;</p></li>
+<li><p><strong>negatives</strong> – a cumulative total revised <em>downward</em>, which de-accumulates
+to a negative increment.</p></li>
+</ul><p>Both are dropped before the epidist object is built. A zero contributes no
+case to a delay distribution, so dropping it is lossless and is only reported
+when <code>verbose = TRUE</code>. A negative is not a number of cases at all, so dropping
+it discards the revision and <strong>warns</strong>. If nothing usable is left the
+conversion aborts saying so, rather than letting <span class="pkg">epidist</span>'s own
+<code>Assertion on 'data$n' failed</code> through.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="model-choice-for-count-data">Model choice for count data<a class="anchor" aria-label="anchor" href="#model-choice-for-count-data"></a></h2>
+
+
+
+<p><code><a href="https://epidist.epinowcast.org/reference/as_epidist_marginal_model.html" class="external-link">epidist::as_epidist_marginal_model()</a></code> is the one built for aggregated counts,
+but with <strong>epidist 0.4.0</strong> and <strong>primarycensored 1.5.1</strong> it fails at Stan
+compilation (its generated code calls <code>primarycensored_lpmf()</code> with 8
+arguments against a 9-argument signature). The latent model is unaffected but
+expands counts to <strong>one row per case</strong>, so it is only practical on a short
+window. Check the epidist issue tracker for the current status.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -361,6 +397,5 @@ by <code>tbl_now_to_epidist()</code>.</p></dd>
 
 
 
-  
-</body></html>
+  </body></html>
 

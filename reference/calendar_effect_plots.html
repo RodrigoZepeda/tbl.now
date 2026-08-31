@@ -37,21 +37,7 @@ vary by calendar group) or "report" (red — how the reporting does).
 Use these when you want one effect, in its own figure, at its own size; use
 autoplot() when you want the diagnostic grid in one call. Everything else is
 the same: autoplot(x, panels = "calendar_weekday") and
-plot_day_of_week_effects(x) return the identical plot.'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
-
-
-
-
-
-
-
-
-
-  pkgdown/extra.css
-
-  
-
-  </p>
+plot_day_of_week_effects(x) return the identical plot.'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -59,7 +45,7 @@ plot_day_of_week_effects(x) return the identical plot.'><meta property="og:image
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,8 +58,8 @@ plot_day_of_week_effects(x) return the identical plot.'><meta property="og:image
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -118,35 +104,35 @@ the same: <code>autoplot(x, panels = "calendar_weekday")</code> and
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plot_day_of_week_effects</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span><span class="op">)</span>,</span>
-<span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"normalized"</span>, <span class="st">"percent"</span><span class="op">)</span>,</span>
+<span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"percent"</span>, <span class="st">"normalized"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">plot_week_of_year_effects</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span><span class="op">)</span>,</span>
-<span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"normalized"</span>, <span class="st">"percent"</span><span class="op">)</span>,</span>
+<span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"percent"</span>, <span class="st">"normalized"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">plot_month_of_year_effects</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span><span class="op">)</span>,</span>
-<span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"normalized"</span>, <span class="st">"percent"</span><span class="op">)</span>,</span>
+<span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"percent"</span>, <span class="st">"normalized"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">plot_holiday_effects</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span><span class="op">)</span>,</span>
-<span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"normalized"</span>, <span class="st">"percent"</span><span class="op">)</span>,</span>
+<span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"percent"</span>, <span class="st">"normalized"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">plot_holiday_lag_effects</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span><span class="op">)</span>,</span>
-<span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"normalized"</span>, <span class="st">"percent"</span><span class="op">)</span>,</span>
+<span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"percent"</span>, <span class="st">"normalized"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -189,7 +175,8 @@ it. See <code><a href="autoplot.tbl_now.html">autoplot.tbl_now()</a></code> for 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>, <span class="va">onset_week</span>, <span class="va">report_week</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># First few years only, to keep the example quick; the full data works the same.</span></span></span>
+<span class="r-in"><span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">10000</span>, <span class="op">]</span>, <span class="va">onset_week</span>, <span class="va">report_week</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># How the cases vary by epidemiological week</span></span></span>
 <span class="r-in"><span><span class="fu">plot_week_of_year_effects</span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span></span>
@@ -248,6 +235,5 @@ it. See <code><a href="autoplot.tbl_now.html">autoplot.tbl_now()</a></code> for 
 
 
 
-  
-</body></html>
+  </body></html>
 

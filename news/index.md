@@ -1,5 +1,836 @@
 # Changelog
 
+## tbl.now 0.17.0
+
+### New: support
+
+[`tbl_now_to_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_EpiNow2.md)
+and
+[`tbl_now_from_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_EpiNow2.md),
+against **EpiNow2 1.9.0** (now the minimum in `Suggests`). EpiNow2 takes
+four different input shapes, one per entry point, so `target` names the
+function the result is passed to and it can be handed over unchanged:
+
+- **`"estimate_infections"`** (default) – `data.frame(date, confirm)`,
+  the series as known at
+  [`get_now()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md).
+  Also what
+  [`epinow()`](https://epiforecasts.io/EpiNow2/reference/epinow.html)
+  takes.
+- **`"regional_epinow"`** – the same plus a `region` column built from
+  the object’s strata (`" | "`-joined for several, matching the
+  `triangle_list` convention). The other targets pool strata with a
+  warning.
+- **`"estimate_truncation"`** – a `tbl_now_epinow2_snapshots` list, one
+  `date`/`confirm` snapshot per report date. This is the one EpiNow2
+  model that uses the report dimension a `tbl_now` exists to carry.
+- **`"estimate_dist"`** – the interval-censored frame
+  [`EpiNow2::estimate_dist()`](https://epiforecasts.io/EpiNow2/reference/estimate_dist.html)
+  fits a delay distribution to. **New in EpiNow2 1.9.0**, and it
+  documents the schema exactly, so it shares
+  `.delay_censoring_windows()` with
+  [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+  rather than growing a second copy.
+
+Three things worth knowing:
+
+- **EpiNow2 models a daily process and has no `timestep`.** As of 1.9.0
+  there is no `timestep`, `interval` or `period` argument on any entry
+  point (all four formals checked), so a weekly series passed as one row
+  per week is read as one row per **day** – no error, just an epidemic
+  seven times too fast. The converter lays it on the daily grid with
+  EpiNow2’s own `accumulate` column instead – built by
+  \[EpiNow2::fill_missing()\] rather than by hand, because a hand-rolled
+  version put each period’s count on the period’s *last* day where
+  [`fill_missing()`](https://epiforecasts.io/EpiNow2/reference/fill_missing.html)
+  leaves it on the date given, shifting every weekly fit six days with
+  no error. Units coarser than a week, and the `"numeric"` grid, are
+  refused by name rather than approximated.
+
+  `initial_accumulate` is passed explicitly rather than inferred: with
+  `by`, EpiNow2 1.9.0’s inference drops each group’s first observation
+  (a two-region weekly series of 336/167 cases came back as 295/147).
+  Single-series inference is unaffected.
+
+- **The snapshot form has a real inverse.** Snapshot *k* is the series
+  as known at report date *k*, so differencing consecutive snapshots
+  recovers `count-incidence` exactly. `tbl_now_epinow2_snapshots`
+  carries the report dates so
+  [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+  can do it; a bare list needs `report_dates`. Verified against
+  [`EpiNow2::example_truncated`](https://epiforecasts.io/EpiNow2/reference/example_truncated.html),
+  which round-trips to the case for the case. (The commented-out draft
+  of this converter asserted no inverse was possible. For a single
+  series that is true; for snapshots it is not.)
+
+- **[`estimate_secondary()`](https://epiforecasts.io/EpiNow2/reference/estimate_secondary.html)
+  and
+  [`estimate_delay()`](https://epiforecasts.io/EpiNow2/reference/estimate_delay.html)
+  get no target.** The first models two data streams against each other
+  and one `tbl_now` is one stream; the second is superseded by
+  [`estimate_dist()`](https://epiforecasts.io/EpiNow2/reference/estimate_dist.html)
+  by EpiNow2’s own help and throws away the censoring a `tbl_now`
+  carries.
+
+**`obs_date` and the censoring windows are different quantities**, and
+the converter now treats them as such. `[sdate_lwr, sdate_upr)` brackets
+*when the report happened* – at weekly resolution `[W, W + 7)`, a
+half-open interval whose upper bound is the end of that week, not a
+claim that anything happened on day `W + 7`. `obs_date` is *when
+observation stopped*, which
+[`estimate_dist()`](https://epiforecasts.io/EpiNow2/reference/estimate_dist.html)
+asserts is `>= sdate_upr` on every row. A `tbl_now`’s `now` **labels a
+period**, so the instant observation stopped is the end of it:
+`obs_date = now + w`. That makes the assertion hold by construction, and
+nothing is observed after it. Clamping the windows at `now` instead was
+tried and rejected – it moves reports in the final period into an
+earlier one, which the epidist round-trip test caught.
+
+The `nowcasting-models` article now covers across all three strata, with
+its results precomputed into `nowcast-comparison.rds` like every other
+engine. Two caveats are stated in the article itself: the delay
+distributions are ’s shipped examples rather than distributions fitted
+to the Colombian data, and sampling is lighter than the default (500
+draws, 250 warmup, 2 chains) because it is much the slowest engine in
+the comparison.
+
+`data-raw/nowcast_comparison.R` now takes engine names
+(`Rscript data-raw/nowcast_comparison.R EpiNow2`) and merges them into
+the existing file, leaving every other engine’s rows and recorded
+timings alone; with no arguments it rebuilds everything as before. This
+replaces a second script that re-created the setup by parsing the first
+one.
+
+Two correctness fixes came out of that. Every engine is now seeded per
+`(engine, stratum)` immediately before its fit, rather than relying on a
+single [`set.seed()`](https://rdrr.io/r/base/Random.html) at the top of
+the script – which only pins results if every engine consumes the same
+random numbers in the same order, and so does not survive refitting a
+subset. Refitting `baselinenowcast` alone had been silently changing its
+estimates, and one EpiNow2 fit produced a stratum whose upper credible
+bound sat at `1e8` for all 181 days and would not reproduce. Both now
+refit to `max abs diff == 0`. The script also refuses to cache any fit
+whose scale exceeds 100x the observed maximum for its stratum, since an
+unconverged Stan or INLA fit returns numbers rather than an error.
+
+[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+gained methods for `estimate_infections`, `epinow`,
+`estimate_truncation` and `estimate_dist`, plus a `regional_epinow`
+branch in
+[`tidy.list()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+giving one block per region.
+
+[`tidy.estimate_dist()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.estimate_dist.md)
+reports the fitted distribution’s **`mean` and `sd`** alongside its
+parameters, so its output is directly comparable with
+[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md).
+They are derived from the **distribution**, not from the family’s
+algebra: each draw’s parameters go back into the fit’s own `dist_spec`
+and through \[EpiNow2::discretise()\], which knows the families, and the
+moments follow by summation over the PMF. Nothing in this package names
+a distribution, so a family adds later works as soon as
+[`discretise()`](https://epiforecasts.io/EpiNow2/reference/discretise.html)
+supports it. Against the closed forms the mean is exact and the sd runs
+about 1% high – the variance a discrete grid adds – so expect a
+difference of that order against , which reports continuous-distribution
+moments.
+
+It also honours `probs` and takes a `level` argument, matching
+[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md).
+(An earlier draft rejected `probs` with a message claiming the engine
+keeps no draws. It does: `summary.estimate_dist()` reads them.)
+
+`tbl_now_to_EpiNow2(target = "estimate_dist")` warns when it pools
+strata –
+[`estimate_dist()`](https://epiforecasts.io/EpiNow2/reference/estimate_dist.html)
+has no grouping argument, so it fits one distribution to everything –
+and warns when a large share of delays are exactly zero, since a
+lognormal has zero density there and will inflate its variance rather
+than fail. The message points at the families that do have positive
+density at zero (`"exp"`, or `"gamma"`/`"weibull"` with shape below 1)
+rather than at a constant shift, which would silently bias every
+parameter.
+
+Two more points of care:
+
+- `level` is read off the `lower_<pct>`/`upper_<pct>` column names,
+  because EpiNow2’s `CrIs` is a user argument – a fit made with
+  `CrIs = c(0.5, 0.95)` has no `lower_90` at all, and hard-coding `0.90`
+  would report a width the fit never produced.
+- [`tidy.estimate_dist()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.estimate_dist.md)
+  returns the **delay** schema (`term`, `estimate`, …), not the nowcast
+  one – the second instance of the documented exception alongside
+  [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md).
+  Note that [`summary()`](https://rdrr.io/r/base/summary.html)’s
+  `mean`/`sd` *columns* are the posterior mean and sd of each
+  **parameter**, while the `mean`/`sd` *rows* this method reports are
+  the **delay distribution’s** moments. Same words, different
+  quantities.
+
+`.epidist_drop_unusable_counts()` is now `.drop_unusable_counts()` and
+shared:
+[`EpiNow2::estimate_dist()`](https://epiforecasts.io/EpiNow2/reference/estimate_dist.html)
+asserts `n >= 1` with the identical message epidist uses, so the same
+filter applies to both.
+
+### Audit of the converters and `tidy()` against the target packages’ own docs
+
+Every claim the converters and
+[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+methods make about `diseasenowcasting`, `baselinenowcast`, `epinowcast`,
+`epidist`, `NobBS`, `surveillance`, `tsibble` and `data.table` was
+re-checked against those packages’ installed help pages and source. Five
+defects came out of it, all of them cases where the code was silently
+*plausible* rather than wrong-looking.
+
+- **[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  no longer pools strata under `"all"`.**
+  [`tidy.nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  documents `stratum` as `"all"` *when the fit is unstratified*, so
+  `(stratum, event_date)` is meant to be a unique key. Two methods broke
+  that:
+
+  - **[`tidy.epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)**
+    read `summary(fit, type = "nowcast")` and ignored both `.group` and
+    the `by` columns sitting beside it. A real two-group fit
+    (`by = "age_group"` on `germany_covid19_hosp`, age groups `00+` and
+    `80+`) came back as 20 rows all labelled `"all"`, with every one of
+    its 10 reference dates duplicated. It now emits one block per `by`
+    group, and several grouping columns are pasted `" | "`-separated,
+    matching `tbl_now_to_baselinenowcast(format = "triangle_list")`.
+  - **[`tidy.list()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)**
+    recognised a
+    [`NobBS::NobBS.strat()`](https://rdrr.io/pkg/NobBS/man/NobBS.strat.html)
+    fit – it has the `estimates`/`onset_date` shape the detector looks
+    for – but ignored the `stratum` column that
+    [`NobBS.strat()`](https://rdrr.io/pkg/NobBS/man/NobBS.strat.html)
+    puts there. A two-stratum fit on `denguedat` returned 44 rows
+    labelled `"all"`, 22 of them duplicate keys. It now reads `stratum`
+    when present.
+
+  The `probs` path for `epinowcast` was mispaired in the same way: it
+  split the posterior samples on `reference_date` alone, so on a
+  stratified fit each date’s quantiles went to whichever stratum
+  [`split()`](https://rdrr.io/r/base/split.html) sorted first. The split
+  is now keyed on `(stratum, reference_date)` and indexed by the
+  summary’s own rows.
+
+- **[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  no longer invents an interval for a `baselinenowcast` point fit.**
+  `baselinenowcast(output_type = "point")` returns one value per
+  reference date and stamps `output_type = "point"` on the result.
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  ignored that column and took the 2.5%/97.5% quantiles of a single
+  number, reporting `conf.low == conf.high == estimate` with
+  `level = 0.95` – a zero-width 95% band. It now returns `NA` bounds and
+  `NA` `level`, and refuses `probs` rather than returning the point
+  estimate under a quantile’s name.
+
+- **[`tbl_now_to_nobbs()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_nobbs.md)
+  prints the `units` string NobBS accepts.** Its verbose summary printed
+  the object’s own `"weeks"`, but
+  [`NobBS::NobBS()`](https://rdrr.io/pkg/NobBS/man/NobBS.html) documents
+  `units` as `"1 day"` or `"1 week"`; pasting `"weeks"` into the call
+  produces `-Inf`/`Inf` warnings from
+  [`seq()`](https://rdrr.io/r/base/seq.html) and then an opaque
+  `replacement has 1 row, data has 0`. It now prints `"1 week"`, and
+  aborts up front for any grid NobBS cannot model.
+
+- **The line-list back-ends no longer fabricate 1970 dates from a
+  `numeric` grid.**
+  [`tbl_now_to_nobbs()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_nobbs.md)
+  and
+  [`tbl_now_to_surveillance()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance.md)
+  both coerced the event and report columns with
+  [`as.Date()`](https://rdrr.io/r/base/as.Date.html). On a
+  `numeric`-unit `tbl_now` those columns are integer indices, so index 1
+  became 1970-01-02 and the conversion succeeded, silently, with a line
+  list of invented dates. Both now abort naming the units, as
+  [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
+  and
+  [`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+  already did.
+  [`tbl_now_to_surveillance()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance.md)
+  also gained `"years"` -\> `"1 year"`; it previously fell through to
+  `"1 week"`.
+
+The remaining findings were addressed too:
+
+- **A negative delay now warns instead of silently losing cases.** A
+  reporting triangle is indexed by delay from 0, so a report that
+  arrived *before* its event has no cell: 10 cases in gave a triangle
+  summing to 9, with the affected cell reading `0` – an *observed* zero
+  – rather than `NA`. Both triangle formats and
+  [`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+  now warn, naming how many rows and cases go and how to filter them
+  yourself. `format = "long"` has no delay axis, keeps them, and stays
+  quiet.
+
+- **[`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+  accepts `count-cumulative` data.** epidist asserts `n >= 1`, and
+  de-accumulating a cumulative series produces a `0` wherever a report
+  added nothing and a negative on any downward revision – so the
+  conversion died on epidist’s own `Assertion on 'data$n' failed` for
+  essentially any real cumulative input, and for plain incidence data
+  that had been through
+  [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md).
+  Rows carrying no case are now dropped before the epidist object is
+  built: a zero contributes nothing to a delay distribution, so that is
+  lossless and only reported under `verbose = TRUE`; a negative discards
+  a revision, so it **warns**; and if nothing usable is left the
+  converter aborts saying why. `flusight` – the one `error` cell in the
+  article’s converter matrix – now converts.
+
+- **[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  handles a per-stratum list of `baselinenowcast` fits.**
+  [`?tbl_now_triangle_list`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_triangle_list.md)
+  recommends `lapply(triangles, baselinenowcast::baselinenowcast)`, and
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  on the result used to error and suggest `engine = "NobBS"`. A list
+  whose elements are all `baselinenowcast_df` is now recognised: each is
+  tidied and labelled with its list name (or its position, when the list
+  is unnamed), giving the same one-block-per-stratum table the natively
+  stratified engines return. `probs` passes through.
+
+- **`DEVELOPMENT_SKILL.md` section 2 corrected.** It claimed
+  [`tbl_now_to_surveillance()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance.md)
+  sets `control$dRange`. It does not, and its own help page says so:
+  `now` and the delay unit are deliberately left to the caller, because
+  the converter cannot know which window you mean to fit.
+
+### Behaviour changes
+
+- **[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  reports `level = NA` for a fit** instead of `0.95`.
+  [`NobBS()`](https://rdrr.io/pkg/NobBS/man/NobBS.html)’s
+  `lower`/`upper` come from `specs$conf`, and its return value is
+  `list(estimates, estimates.inflated, nowcast.post.samps, params.post)`
+  – no `specs`, so the width is genuinely unrecoverable from the fit. A
+  guessed default is worse than `NA` in the one column that exists to
+  stop widths being compared blindly. Pass `tidy(fit, level = 0.95)` to
+  fill it in. The assertion in `test-tidy.R` that recorded the old
+  behaviour was updated.
+
+- **[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
+  warns on a delay model with covariates.**
+  [`epidist::predict_delay_parameters()`](https://epidist.epinowcast.org/reference/predict_delay_parameters.html)
+  returns one row per draw *and* observation, and the reported quantiles
+  pool over both. For `mu ~ 1` every observation shares the draw’s
+  value, so that is exactly the posterior interval; with covariates in
+  the delay model the interval is a *mixture across covariate levels*,
+  which the docs described simply as “Posterior median”. The method now
+  detects a parameter that varies within a single draw and says so,
+  pointing at `newdata` for a specific covariate combination. The
+  numbers are unchanged – only the silence is.
+
+### Tests
+
+- New `test-tidy-strata.R`: stratified
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  for `epinowcast` and
+  [`NobBS.strat()`](https://rdrr.io/pkg/NobBS/man/NobBS.strat.html),
+  quantile-to-stratum alignment, the point-fit interval, the per-stratum
+  list of `baselinenowcast_df` fits, and the `level` argument. The fits
+  are mocked from the shape of real ones, so the file needs neither
+  cmdstan nor JAGS.
+
+- New `test-converter-grids.R`: the `numeric` grid across every
+  converter, zero / negative / very long delays, gaps in the event grid,
+  a trailing event period with no reports under each `complete` setting,
+  the negative-delay warning, and epidist’s `n >= 1` filtering
+  (including `flusight`).
+
+- New `test-converter-strata-shapes.R`: several stratifying columns, a
+  factor level with no rows, and label-to-value pairing when the data
+  order is not alphabetical.
+
+- `test-converter-censoring.R` now covers
+  [`tbl_now_to_nobbs()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_nobbs.md),
+  which the converter loop skipped because its package name is not its
+  suffix.
+
+- **Removed support**: `tbl_now_to_nowcaster()`,
+  `get_nowcaster_strata()`, the
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  branch for its fits, and its sections in the articles are all gone.
+  The converter worked, but the package around it demanded enough
+  special-casing that keeping it cost more than it returned:
+
+  - **`Dmax` and `wdw` are counted in weeks, whatever grid you hand
+    it.** On a daily series, values chosen as days are silently read as
+    weeks: `Dmax = 30`, `wdw = 120` asked for a 30-week horizon over a
+    2.3-year window, which ran for **45 minutes** and had INLA reporting
+    the fit diverging. The same fit with week-scaled values took **24
+    seconds**.
+  - **It returns weekly estimates from daily data**, so its numbers are
+    weekly *totals* while every other engine reports daily counts –
+    roughly 6x larger on the same axis, and not comparable without
+    re-gridding. Its label is the week *start*.
+  - **`age_col` must be numeric** even though the help calls it a
+    stratum column: a character column errors inside
+    [`cut()`](https://rdrr.io/r/base/cut.html), and a character
+    `bins_age` trips an `if (bins_age == "SI-PNI")` comparison against a
+    vector. The converter existed largely to encode strata into codes
+    and hand back the matching breaks.
+  - **Results come back as those codes, not labels**, so a tidied
+    stratified fit reported `stratum` values of `"1"` and `"2"` rather
+    than the levels.
+  - **It takes its maximum observable time from the last event date, not
+    the last report**, so cutting the series anywhere except where
+    `max(onset) == max(report)` made it NA-mask genuinely observed cells
+    and nowcast *below* what had already been reported.
+  - It needs **R-INLA**, and was itself installable only from GitHub.
+
+  That last point has a side benefit: was the only entry in `Remotes:`,
+  so removing it drops that field entirely – and with it the reason the
+  package could not be submitted to CRAN as-is.
+
+- **New
+  [`tbl_now_to_nobbs()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_nobbs.md)**,
+  filling a real gap. counts *rows*, so handing it `count-incidence`
+  data was silently wrong: a table of 1,174 rows carrying 50,160 cases
+  was nowcast as 1,174 cases, with no error. The converter expands
+  counts to one row per case first. The articles previously recommended
+  [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html), which
+  is correct only for a line list.
+
+- **Fixed the pkgdown build on CI.** The shared “Learning more” fragment
+  was pulled in with a relative child path (`../../man/fragments/...`).
+  renders into an intermediates directory under
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html) and copies
+  relative resources alongside it, so a path containing `../..` escapes
+  that directory – harmless where
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html) is deep, fatal on
+  CI where it sits two levels from the filesystem root
+  (`cannot create file '/tmp/RtmpXXXX/../../man/...'`). The fragment
+  moved to `inst/fragments/` and every caller now locates it with
+  [`system.file()`](https://rdrr.io/r/base/system.file.html), which is
+  path-independent and also works under
+  [`pkgload::load_all()`](https://pkgload.r-lib.org/reference/load_all.html).
+
+- **Dependency fixes for CI.** `almanac` is used by the package but was
+  declared nowhere – the `Remotes:` entry for it was inert, since
+  `Remotes` only says *where* to fetch an already-declared dependency.
+  It is now in `Suggests`, with its r-universe added to
+  `Additional_repositories` (it was archived from CRAN). `nowcaster` was
+  declared but unobtainable from any configured repository; it briefly
+  gained a `Remotes:` entry, and was then dropped altogether (above).
+
+- **[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  on a fit now works directly.** From 2.1.0 that package re-exports the
+  shared `generics` generic and ships its own method, so `tidy(fit)`
+  returns the standard nowcast table. `tbl.now` now registers its own
+  method for `diseasenowcasting::nowcast_prediction` **only when the
+  package does not supply one**, so older versions keep working and
+  newer ones are not overridden. The article calls plain `tidy(dnc_fit)`
+  again.
+
+- **Article fixes so the code on the page reproduces the output shown.**
+  Three places displayed results the printed code could not produce: the
+  section tidied the *fit* rather than `predict(fit)`, and the section
+  hid the trailing-row trim that keeps the final week from exploding.
+  All three now match the precompute.
+
+- **Documented two
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  masking hazards.**
+  [`library(diseasenowcasting)`](https://rdrr.io/r/base/library.html)
+  attaches its own
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  generic, and [`library(broom)`](https://broom.tidymodels.org/)
+  overwrites `tbl.now`’s
+  [`tidy.list()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  method (which fits dispatch on). Neither errors; both silently return
+  a different table.
+  [`tbl.now::tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  disambiguates.
+
+- **New
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  method for fits.** is the one supported package that does not nowcast
+  – it estimates the reporting-delay distribution – so
+  [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
+  returns a *delay-shaped* table (`term`, `estimate`, `conf.low`,
+  `conf.high`, `level`, `engine`) with one row per distribution
+  parameter, rather than forcing a delay fit into the per-event-date
+  nowcast schema. `probs` works, because the fit keeps its draws. Note
+  that
+  [`epidist()`](https://epidist.epinowcast.org/reference/epidist.html)
+  returns `c("brmsfit", "epidist_fit")` in that order, so a loaded wins
+  dispatch; call
+  [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
+  explicitly if that matters.
+
+- **[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  now returns ’s credible interval**, which it previously discarded.
+  [`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
+  stores a prediction interval in the returned object’s `pi` slot at the
+  width `control$alpha` names (95% by default), but the method
+  hard-coded `conf.low`, `conf.high` and `level` to `NA`, so
+  surveillance was the one engine that appeared to report no
+  uncertainty. Reaching for the JAGS-backed
+  `bayes.trunc`/`bayes.trunc.ddcp` methods was never needed to get an
+  interval.
+
+- **Censored delays no longer break the converters.** A censoring
+  indicator that is a property of the *case* rather than of the delay –
+  an administrative “this date is only an upper bound” mark, say –
+  splits one `(event_date, report_date)` cell into a censored and an
+  uncensored row. A reporting triangle has one slot per cell, so
+  [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
+  and
+  [`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+  aborted on duplicate cells, and the converters that expand back to a
+  line list picked the flag up as an unrequested stratifier. The
+  censoring dimension is now collapsed before the conversion, and each
+  route warns:
+
+  - **count data**: counts are summed over the flag, so case totals are
+    unchanged;
+  - **line lists**: the column is dropped, leaving one row per case.
+
+  [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+  is deliberately exempt: estimating a delay distribution is the one job
+  that can use the flag.
+
+- [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
+  now handles a **line list on its own**. It already aggregated to
+  incidence; it now also completes the zero periods out to the `now`
+  (new `complete = TRUE` argument). A reporting triangle is a
+  rectangular grid, and an event period with no reports has no rows, so
+  the triangle used to stop short unless you remembered
+  `to_count() |> complete_zeroes()` first. Linelist and count-incidence
+  input now produce an **identical** triangle.
+
+- [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
+  also accepts **`count-cumulative`** data, which it used to refuse.
+  De-accumulating produces negative increments wherever a total was
+  revised downward, and ships
+  [`preprocess_negative_values()`](https://baselinenowcast.epinowcast.org/reference/preprocess_negative_values.html)
+  for exactly that; the converter applies it and warns.
+  `negatives = "error"` restores the old refusal.
+
+- **Bug fix:
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  ignored the strata of a `diseasenowcasting` fit.** A stratified fit
+  reports `strata_draws` (draws x event times x stratum), but the method
+  read only the pooled `draws`, so every row came back with
+  `stratum = "all"` even when the fit itself said “2 strata”. It now
+  returns one block per stratum, matching what the other engines do.
+
+- Two new test files worth naming, because they exist to stop silent
+  regressions:
+
+  - `test-converter-equivalence.R` – every converter accepts line-list
+    input, and the triangle/preprocessing targets give the *same* result
+    from a line list as from the equivalent count-incidence object.
+  - `test-converter-datasets.R` – every converter against every dataset
+    the package ships. This is the testthat counterpart of the article’s
+    matrix: the article documents, this one fails.
+
+- Website: fixed a regression that drew an empty scrollbar track (“a
+  rectangle”) under every code chunk. The no-wrap rules have to apply to
+  `code` as well as its container, but `overflow-x` must apply ONLY to
+  the container – setting it on the inner `<code>` too made each one a
+  second scroll context that reserved a gutter. Figure captions are now
+  centred, smaller and grey.
+
+- The nowcasting-models article now **shows the real output of every fit
+  and every
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  call**. The fits are far too slow to run on each build, so
+  `data-raw/nowcast_comparison.R` captures what each one prints and what
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  returns for it, and the article replays that. Each section pairs a
+  copy-pasteable `tidy(fit)` (shown, not run) with a hidden `head(5)`
+  whose output appears beneath it, so nothing in the visible code has to
+  be trimmed for display. The ad-hoc result extraction each section used
+  to do – pulling `$estimates` out of NobBS, building a
+  [`data.frame()`](https://rdrr.io/r/base/data.frame.html) from
+  [`epoch()`](https://rdrr.io/pkg/surveillance/man/stsSlots.html) and
+  [`upperbound()`](https://rdrr.io/pkg/surveillance/man/stsSlots.html)
+  for surveillance – is gone; every section now uses
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md).
+
+- New article section running **every converter, plus a nowcast, against
+  every dataset the package ships** (`data-raw/converter_matrix.R`),
+  recording which combinations work and explaining the ones that do not:
+  `count-cumulative` cannot become a reporting triangle without
+  inventing negative increments, `epidist` has no individual delays to
+  censor in a cumulative series, and a `tsibble` needs a unique
+  index/key. Each attempt is time-limited so the matrix is reproducible.
+
+- The article states plainly that each modelling package is a **separate
+  install** that `tbl.now` does not pull in, with the commands for the
+  ones that are not on CRAN and the note that Stan, JAGS and R-INLA are
+  software outside R.
+
+- `SKILL.md` documents
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md),
+  the `surveillance` converter, `format = "triangle_list"`, the new
+  [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+  behaviour, and the zero-period pitfalls.
+
+- Every package section in that article now shows how to recover its
+  predictions with
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md).
+
+- The comparison precompute falls back gracefully when rejects a
+  triangle whose most recent reference times are all zero. A thin
+  stratum can hit that after the zero weeks are completed out to `now` –
+  here the female series has no case in the final week even though the
+  pooled series does – and the fallback completes only as far as the
+  last week holding a case, costing that stratum one week rather than
+  the whole nowcast.
+
+- New
+  **[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)**
+  methods, one shape of answer whatever engine produced the fit. The
+  converters normalise what goes *into* a nowcasting package;
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  normalises what comes back out. It returns `event_date`, `stratum`,
+  `estimate`, `conf.low`, `conf.high`, `level` and `engine` for fits
+  from , , , and .
+
+  - `probs` adds one column per requested quantile, named after the
+    probability (`q5`, `q50`, `q2.5`, …). Only the engines that keep
+    draws (, , ) can honour it; the others error rather than return an
+    approximation dressed up as a quantile.
+  - `level` records the width each engine’s interval **actually** has –
+    reports a 90% band by default while the others report 95%, and
+    without it the two get compared as if they were the same.
+  - returns an *unclassed* list, so it is told apart by structure, with
+    an `engine` argument to override.
+  - [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+    deliberately does **not** re-grid: packages that bin onto their own
+    week starts keep them, because snapping would hide a real
+    difference.
+  - The generic comes from (a new, dependency-free `Imports`), so it
+    composes with rather than masking it.
+
+- The nowcasting-models article now cuts at the **second week of July
+  2002** rather than the turn of the year: a December cut lands on the
+  holiday reporting slump, which says more about December than about the
+  models. Section headings are now just the package name, each package’s
+  figure carries a caption instead of a heading, each gains a *Simple
+  nowcast* heading, and packages needing an external backend (Stan,
+  JAGS, R-INLA) carry a coloured requirement callout. The overview table
+  gained an *Additional requirements* column.
+
+- Website: `.alert-warning` callouts now use the attenuated red the
+  plots use for intervals, and code blocks are pinned to scroll sideways
+  rather than wrap – pkgdown’s `white-space: pre-wrap` on `code` inside
+  `pre` was overriding the bare `pre` rule and folding long lines onto a
+  second line.
+
+- Print methods now write to **stdout** instead of emitting messages.
+  `print.batch_test()`, `print.transport_discriminant()`,
+  [`print.tbl_now_triangle_list()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_triangle_list.md)
+  and the `temporal_effects` print method used the `cli_*()` family,
+  whose output is a *message* – so it vanished under `message = FALSE`,
+  [`sink()`](https://rdrr.io/r/base/sink.html) or
+  [`capture.output()`](https://rdrr.io/r/utils/capture.output.html),
+  which is exactly where a print method is expected to work. They now
+  use cli’s `cat_*()` family. The matching tests were switched from
+  [`cli::cli_fmt()`](https://cli.r-lib.org/reference/cli_fmt.html) to
+  [`capture.output()`](https://rdrr.io/r/utils/capture.output.html).
+
+- The `epinowcast` section filtered on a hard-coded `2008-12-20`, left
+  over from the old window; against the new data that matched **zero
+  rows** and aborted the build. It now trims relative to the series,
+  using `tbl_now_to_epinowcast(preprocess = FALSE)` followed by
+  [`enw_filter_reference_dates()`](https://package.epinowcast.org/reference/enw_filter_reference_dates.html)
+  and
+  [`enw_preprocess_data()`](https://package.epinowcast.org/reference/enw_preprocess_data.html).
+
+- [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
+  gained `format = "triangle_list"`: one reporting triangle **per
+  stratum**, instead of pooling them into a single matrix. Unlike
+  splitting the long format by hand it takes the delay unit and the
+  strata off the object, so neither has to be restated. With no strata
+  attached the result is still a list — of length one, named `"all"` —
+  so the return type never depends on whether strata happen to be
+  present.
+
+- The result is a thin `tbl_now_triangle_list` class: still an ordinary
+  list, so [`lapply()`](https://rdrr.io/r/base/lapply.html) and `[[`
+  work as before, but with a
+  [`print()`](https://rdrr.io/r/base/print.html) method. The class earns
+  its place as a guard: ’s
+  [`estimate_and_apply_delays()`](https://baselinenowcast.epinowcast.org/reference/estimate_and_apply_delays.html)
+  also takes a list of triangles, but *retrospective snapshots of one
+  series* rather than one per stratum, and would silently accept a
+  per-stratum list and treat the strata as points in time.
+
+- [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+  gained a method for `tbl_now_triangle_list`, rebuilding a
+  `count-incidence` `tbl_now` with the strata recoded onto their column.
+  The strata **values** are stored on the object rather than parsed back
+  out of the element names, so a stratum containing the name separator
+  still round-trips.
+
+- **Bug fix:
+  [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+  aborted on any weekly reporting triangle.**
+  [`tbl_now_from_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
+  ignored the triangle’s own `delays_unit` attribute and read the delay
+  columns as *days*, so a weekly triangle produced daily report dates
+  against weekly event dates and unit inference contradicted itself
+  (“report_units must be coarser than or equal to event_units”). Both
+  directions now default `delays_unit = NULL` and resolve it from the
+  attribute; an explicit value still wins.
+
+- **Bug fix in
+  [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md):
+  it was silently deleting real cases.** The closing “don’t look into
+  the future” filter compared with `<` rather than `<=`, so every row
+  reported on the final report date was dropped — in the function’s own
+  documented example, 5 of 55 cases vanished. A function whose job is to
+  *add* zeroes was removing data at the boundary.
+
+- [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+  now completes out to the object’s `now`, not merely to the last event
+  date present in the data, and gained an `until` argument to complete
+  to a specific date instead. An event date with no reports at all does
+  not appear in the data, so the old behaviour left a gap exactly at the
+  `now` edge — where nowcasting matters. A supplied `until` never
+  truncates below the data. The line-list error message now explains why
+  a line list cannot hold a zero week and points at
+  [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md).
+
+- [`plot_reporting_hexamap()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.md)’s
+  `max_cells` is now a real bound. It previously took the delay at
+  position `max_cells` and kept every cell sharing that delay, so a wide
+  band at the cut overshot the documented cap.
+
+- The nowcasting-models comparison now runs to the `now` for every
+  engine. `baselinenowcast` gets there via
+  [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md);
+  `surveillance` cannot (a zero-count row expands to zero line-list
+  rows, so padding evaporates) and is instead given its grid directly
+  through `control$dRange`. The article explains both, including that
+  forcing `surveillance` to estimate a period with no observations is
+  unstable on stratified data.
+
+- The nowcasting-models article now builds its `tbl_now` from the
+  **whole** `denguedat` series (52,987 cases over 1,091 weeks) instead
+  of a pre-filtered two-year window. Every converter runs on the full
+  object in a few seconds; where a package needs a shorter series to
+  fit, the article now uses **that package’s own argument** rather than
+  subsetting the data first — `moving_window` in `NobBS` (which is what
+  takes the full-series fit from impractical to about six seconds) and
+  `when` in `surveillance`. `diseasenowcasting` (~12 s) and
+  `baselinenowcast` (~10 s) take all 1,091 weeks as they are.
+  `epinowcast` is the one engine with no such argument, since the
+  reporting triangle is already built by the time you hold a
+  preprocessed object; the article shows
+  `tbl_now_to_epinowcast(preprocess = FALSE)` followed by
+  [`enw_filter_reference_dates()`](https://package.epinowcast.org/reference/enw_filter_reference_dates.html)
+  and
+  [`enw_preprocess_data()`](https://package.epinowcast.org/reference/enw_preprocess_data.html),
+  and prints the full and trimmed objects side by side. Each section
+  states which it is doing.
+
+- Website: `.alert-info` callouts (pandoc `::: {.alert .alert-info}`
+  fenced divs) are restyled from the Bootstrap default blue into the
+  package’s sage green, with a darker green left rule and heading
+  colour.
+
+- The nowcasting-models article’s `baselinenowcast` fit referred to a
+  `dengue_triangle2` object that no longer existed; it now uses
+  `dengue_triangle`.
+
+- The example article was rewritten from scratch around the new
+  `hai_bucaramanga` dataset and is now a full **end-to-end tutorial**:
+  cleaning a messy surveillance extract with `dplyr` + `tbl.now`
+  (duplicate records, missing dates, and reports dated before the event
+  they describe), reading the data with
+  [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  and the standalone `plot_*()` diagnostics, testing the reporting delay
+  for drift and change points, attaching only the temporal effects the
+  data justifies, and finally nowcasting with `diseasenowcasting` and
+  five other engines. Each modelling choice at the end is traced back to
+  a diagnostic at the beginning. It moved from `vignettes/` to
+  `vignettes/articles/` (the pkgdown URL is unchanged) because
+  `diseasenowcasting` is not on CRAN and so cannot be fitted while
+  building a shipped vignette.
+
+- New converters for further back-ends:
+
+  - [`tbl_now_to_surveillance()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance.md)
+    builds the individual-level line list \[surveillance::nowcast()\]
+    works from, renaming the event and report dates to ’s own
+    `dHospital` / `dReport` defaults. `format = "sts"` instead returns
+    the observed curve as a `surveillance` `sts` object.
+
+  It accepts count data as well as line lists, expanding counts back to
+  one row per case (de-accumulating first when the data is cumulative).
+  is a new `Suggests`.
+
+- The nowcasting-models article gained a section for it and a closing
+  **comparison of every engine on one set of axes** — one plot for the
+  unstratified object and one faceted by stratum, with a colour per
+  package, the incomplete data each engine actually saw, and the counts
+  those weeks eventually reached. The comparison deliberately uses an
+  earlier 2002-2003 window rather than the article’s main `dengue_now`,
+  because the latter runs to the end of `denguedat` and so has no ground
+  truth to check against. The fits are precomputed by
+  `data-raw/nowcast_comparison.R` and read from a saved file, so editing
+  the prose no longer re-runs Stan, JAGS and INLA.
+
+- `flusight` no longer ships duplicate rows (#25). The upstream FluSight
+  `time-series.csv` contains 39,139 exact duplicates, which forced every
+  example to open with a
+  [`distinct()`](https://dplyr.tidyverse.org/reference/distinct.html)
+  call; the dataset now goes from 491,706 to 452,567 rows. The removal
+  is lossless — every repeated (`as_of`, `target_end_date`,
+  `location_name`) key carried an identical `observation`, with no
+  conflicting values — so that triple is now a unique key. The help page
+  documents the change, and the FluSight example vignette drops the
+  de-duplication step.
+
+- New dataset **`hai_bucaramanga`**: 1,423 healthcare-associated
+  infections (IAAS) notified in Bucaramanga, Colombia, 2016-2023, from
+  the Colombian open data portal. Column names and categorical values
+  are translated from Spanish. It is a deliberately *unpolished* extract
+  and its help page documents the defects in detail — a `1900-01-01`
+  missing-date sentinel, 88 negative reporting delays, 100 exact
+  duplicate records, and a strongly bimodal delay (3-day median, 92-day
+  90th percentile) — which makes it a realistic exercise for the delay
+  diagnostics rather than a clean modelling example.
+
+- [`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
+  and
+  [`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md)
+  now document **every column of their output**, plus new *Interpreting
+  the result* sections. The
+  [`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
+  help gained a *Choosing a method* section explaining why `"hamed-rao"`
+  is the default (deterministic, no AR(1) assumption, effectively
+  instant) and when to cross-check with `"block-bootstrap"`, which is
+  robust to weekly periodicity but stochastic and thousands of times
+  slower.
+
+- The Get Started vignette now opens the nowcasting problem with a
+  **figure** showing observed-to-date cases, the reports still in
+  transit, and the nowcast of the eventual total.
+
+- The “Learning more” links live in a single
+  `man/fragments/learning-more.Rmd` and are included in the README and
+  at the end of every vignette and article, so they only have to be
+  edited in one place.
+
+- Website: the “Articles” navbar dropdown was rendering near-black with
+  grey text because the styling targeted `.submenu`, which Bootstrap 5
+  does not use; it now targets `.dropdown-menu` and matches the pale red
+  of the package plots. `pkgdown/extra.css` is also no longer listed
+  under `includes: in_header:`, which was pasting raw CSS into `<head>`
+  where it was ignored.
+
+- README code blocks no longer wrap mid-tibble: printed output was being
+  split into stacked column blocks by R itself, which no stylesheet
+  could undo.
+
 ## tbl.now 0.15.0
 
 - [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
@@ -701,7 +1532,7 @@ mathematics in a **“The mathematics”** section of its help page.
   observations and `metareference` tables for use in the reference
   module). The `baselinenowcast` reporting-triangle matrix still cannot
   hold them.
-- Removed the `%>%` export and changed all the pipes to `|>`
+- Removed the `|>` export and changed all the pipes to `|>`
 - Refactored `converters.R` for readability (dplyr column operations
   instead of base indexing, full variable names, lintr-clean).
 - The `tbl_now_to_*()` converters now keep the `covariates` and
@@ -745,11 +1576,11 @@ mathematics in a **“The mathematics”** section of its help page.
   `enw_preprocess_data` object or a fitted `epinowcast` object (grouping
   auto-detected), matching the format `epinowcast` uses for summaries
   and plots.
-- `tbl_now_to_EpiNow2()` gained a `model` argument:
-  `"estimate_infections"` (default, the single `date`/`confirm` series)
-  and `"estimate_truncation"` (a list of report-date snapshots, the one
-  EpiNow2 model that uses the report dimension). Documentation clarified
-  accordingly.
+- [`tbl_now_to_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_EpiNow2.md)
+  gained a `model` argument: `"estimate_infections"` (default, the
+  single `date`/`confirm` series) and `"estimate_truncation"` (a list of
+  report-date snapshots, the one EpiNow2 model that uses the report
+  dimension). Documentation clarified accordingly.
 - Fixed two converter
   [`requireNamespace()`](https://rdrr.io/r/base/ns-load.html) guards:
   [`tbl_now_to_data_table()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.md)

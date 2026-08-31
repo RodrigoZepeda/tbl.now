@@ -78,7 +78,7 @@ picture shows what it would have looked back then.
 
 data(covid_us)
 
-covid_early <- covid_us %>% 
+covid_early <- covid_us |>
   filter(cdc_case_earliest_dt < as.Date("2020-09-01") &
            cdc_report_dt < as.Date("2020-09-01"))
 
@@ -339,7 +339,7 @@ changed).
 
 ``` r
 
-batch_test(ideal) %>%
+batch_test(ideal) |>
   filter(batch)
 ```
 
@@ -356,7 +356,7 @@ its neighbours *and* was preceded by a matching deficit. The clearest is
 
 ``` r
 
-batch_test(tn, period = 7) %>% 
+batch_test(tn, period = 7) |>
   filter(batch)
 ```
 
@@ -492,3 +492,18 @@ Another practical notes from other data we have analyzed:
 - Batches are very difficult to identify in low-incidence scenarios.  
 - Batches very close to the now are difficult to identify without
   additional modeling hypotheses.
+
+## Learning more
+
+- Introduction vignette:
+  <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
+  the full anatomy of a `tbl_now`, data types, and temporal effects.
+- End-to-end tutorial on real, messy surveillance data — cleaning,
+  diagnostics and nowcasting:
+  <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
+- Tutorial on detecting batches and other reporting-delay artifacts:
+  <https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html>
+- Comparing nowcasting engines on one dataset:
+  <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
+- Package reference:
+  <https://rodrigozepeda.github.io/tbl.now/reference/>

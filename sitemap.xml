@@ -1,11 +1,12 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/404.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/BATCH_DETECTION_EXPLAINED.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/DEVELOPMENT_SKILL.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE-text.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/SKILL.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/articles/Example.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/articles/example.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/index.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</loc></url>
@@ -33,6 +34,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/flusight.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/hai_bucaramanga.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/index.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/is_tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/is_weekday.html</loc></url>
@@ -56,16 +58,24 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/simulate_batch.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl.now-package.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_EpiNow2.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_data_table.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinow2_snapshots.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_nobbs.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_triangle_list.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tidy.estimate_dist.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/to_count.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.html</loc></url>

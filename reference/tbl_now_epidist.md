@@ -131,6 +131,57 @@ tbl_now_to_epidist(
 A `tbl_now` (`from`) or an `epidist_linelist_data` /
 `epidist_aggregate_data` object (`to`).
 
+## Delays of zero, and the lognormal
+
+A delay distribution with a **point mass at zero** cannot be fitted with
+a lognormal (or a gamma, or a Weibull): all have zero density at zero.
+If a large share of your cases are reported the same period they occur,
+the fit does not fail loudly – it inflates the variance until the
+density piles up near zero. On a daily COVID series where **57%** of
+cases carried a delay of exactly 0, `epidist` returned `sigma = 17.9`
+and an implied mean delay of `1.5e73` days.
+
+Check before fitting:
+
+    mean(as.numeric(x[[get_report_date(x)]] - x[[get_event_date(x)]]) == 0)
+
+If that share is large, model the delay as **discrete**, use a
+**zero-inflated**/hurdle form, or fit the continuous distribution to the
+non-zero delays and report the zero share separately.
+
+## Counts epidist cannot use
+
+`epidist_aggregate_data` requires `n >= 1`, and so does
+[`EpiNow2::estimate_dist()`](https://epiforecasts.io/EpiNow2/reference/estimate_dist.html)
+– with the identical assertion message. Count data routinely holds rows
+that violate it:
+
+- **zeros** – an `(event, report)` cell where the report added nothing,
+  which is most cells once
+  [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+  has run, and which de-accumulating a `count-cumulative` series
+  produces wherever a cumulative total was unchanged;
+
+- **negatives** – a cumulative total revised *downward*, which
+  de-accumulates to a negative increment.
+
+Both are dropped before the epidist object is built. A zero contributes
+no case to a delay distribution, so dropping it is lossless and is only
+reported when `verbose = TRUE`. A negative is not a number of cases at
+all, so dropping it discards the revision and **warns**. If nothing
+usable is left the conversion aborts saying so, rather than letting
+epidist's own `Assertion on 'data$n' failed` through.
+
+## Model choice for count data
+
+[`epidist::as_epidist_marginal_model()`](https://epidist.epinowcast.org/reference/as_epidist_marginal_model.html)
+is the one built for aggregated counts, but with **epidist 0.4.0** and
+**primarycensored 1.5.1** it fails at Stan compilation (its generated
+code calls `primarycensored_lpmf()` with 8 arguments against a
+9-argument signature). The latent model is unaffected but expands counts
+to **one row per case**, so it is only practical on a short window.
+Check the epidist issue tracker for the current status.
+
 ## Examples
 
 ``` r

@@ -183,6 +183,40 @@ an `enw_preprocess_data` object carries:
   7 by delay 40 but a final 11 only at delay 74, so its `max_confirm` is
   11 in `pobs` and 7 after the round-trip.)
 
+## Negative delays
+
+A reporting triangle is indexed by delay from **0**, so a report that
+arrived *before* its event has no cell to go in.
+[`baselinenowcast::as_reporting_triangle()`](https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html)
+drops it, and the cell then reads `0` – indistinguishable from an
+observed zero. Both triangle formats therefore **warn**, naming how many
+rows and cases go, so the loss is not silent; `format = "long"` is a
+tidy data frame with no delay axis and keeps them.
+`tbl_now_to_epinowcast()` drops them the same way, and warns the same
+way.
+
+Filter first if you want to decide what happens:
+
+    x |> dplyr::filter(.delay >= 0) |> tbl_now_to_baselinenowcast()
+
+## Censored delays
+
+A censoring indicator that is a property of the **case** rather than of
+the delay – an administrative "this date is only an upper bound" mark,
+say – puts a censored and an uncensored row in the same
+`(event_date, report_date)` cell. A reporting triangle has one slot per
+cell, so the extra dimension has to go before the conversion. It is
+removed automatically, with a warning either way:
+
+- **count data**: the counts are summed over the flag, leaving case
+  totals unchanged;
+
+- **line lists**: the column is dropped, leaving one row per case.
+
+[`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+is the exception and keeps the flag: estimating a delay distribution is
+the one job that can use it.
+
 ## Examples
 
 ``` r
@@ -196,7 +230,7 @@ library(data.table)
 #>     %notin%
 library(epinowcast)
 #> ! `enw_cache_location` is not set.
-#> ℹ Using `tempdir()` at /tmp/Rtmp99rNuL for the epinowcast model cache location.
+#> ℹ Using `tempdir()` at /tmp/RtmpmJpI35 for the epinowcast model cache location.
 #> ℹ Set a specific cache location using `enw_set_cache` to control Stan
 #>   recompilation in this R session or across R sessions.
 #> ℹ For example: `enw_set_cache(tools::R_user_dir(package = "epinowcast",

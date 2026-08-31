@@ -42,35 +42,35 @@ same: `autoplot(x, panels = "calendar_weekday")` and
 plot_day_of_week_effects(
   x,
   type = c("epidemic", "report"),
-  measure = c("normalized", "percent"),
+  measure = c("percent", "normalized"),
   ...
 )
 
 plot_week_of_year_effects(
   x,
   type = c("epidemic", "report"),
-  measure = c("normalized", "percent"),
+  measure = c("percent", "normalized"),
   ...
 )
 
 plot_month_of_year_effects(
   x,
   type = c("epidemic", "report"),
-  measure = c("normalized", "percent"),
+  measure = c("percent", "normalized"),
   ...
 )
 
 plot_holiday_effects(
   x,
   type = c("epidemic", "report"),
-  measure = c("normalized", "percent"),
+  measure = c("percent", "normalized"),
   ...
 )
 
 plot_holiday_lag_effects(
   x,
   type = c("epidemic", "report"),
-  measure = c("normalized", "percent"),
+  measure = c("percent", "normalized"),
   ...
 )
 ```
@@ -118,7 +118,8 @@ A ggplot2 object (or a plotly widget when `plotly = TRUE`).
 
 ``` r
 data(denguedat)
-dengue_now <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+# First few years only, to keep the example quick; the full data works the same.
+dengue_now <- tbl_now(denguedat[1:10000, ], onset_week, report_week, verbose = FALSE)
 
 # How the cases vary by epidemiological week
 plot_week_of_year_effects(dengue_now)

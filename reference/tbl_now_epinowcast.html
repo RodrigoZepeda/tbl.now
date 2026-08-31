@@ -39,21 +39,7 @@ tbl_now_to_epinowcast() takes a tbl_now and, by default, builds the
 preprocessed epinowcast::enw_preprocess_data() object (the representation
 used for epinowcast's summaries and plots). With preprocess = FALSE it
 returns the completed long observation data.table (the model input
-format, as produced by epinowcast::enw_complete_dates())."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
-
-
-
-
-
-
-
-
-
-  pkgdown/extra.css
-
-  
-
-  </p>
+format, as produced by epinowcast::enw_complete_dates())."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -61,7 +47,7 @@ format, as produced by epinowcast::enw_complete_dates())."><meta property="og:im
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,8 +60,8 @@ format, as produced by epinowcast::enw_complete_dates())."><meta property="og:im
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -252,6 +238,38 @@ columns differ. (For example, in <code>germany_covid19_hosp</code> the
 2021-04-06 / 00-04 cell reaches 7 by delay 40 but a final 11 only at
 delay 74, so its <code>max_confirm</code> is 11 in <code>pobs</code> and 7 after the round-trip.)</p></li>
 </ul></div>
+    <div class="section level2">
+    <h2 id="negative-delays">Negative delays<a class="anchor" aria-label="anchor" href="#negative-delays"></a></h2>
+
+
+
+<p>A reporting triangle is indexed by delay from <strong>0</strong>, so a report that arrived
+<em>before</em> its event has no cell to go in.
+<code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code> drops it, and the cell then reads
+<code>0</code> – indistinguishable from an observed zero. Both triangle formats
+therefore <strong>warn</strong>, naming how many rows and cases go, so the loss is not
+silent; <code>format = "long"</code> is a tidy data frame with no delay axis and keeps
+them. <code>tbl_now_to_epinowcast()</code> drops them the same way, and warns the same
+way.</p>
+<p>Filter first if you want to decide what happens:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="va">x</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">.delay</span> <span class="op">&gt;=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="op">)</span></span></code></pre><p></p></div>
+    </div>
+    <div class="section level2">
+    <h2 id="censored-delays">Censored delays<a class="anchor" aria-label="anchor" href="#censored-delays"></a></h2>
+
+
+
+<p>A censoring indicator that is a property of the <strong>case</strong> rather than of the
+delay – an administrative "this date is only an upper bound" mark, say –
+puts a censored and an uncensored row in the same
+<code>(event_date, report_date)</code> cell. A reporting triangle has one slot per cell,
+so the extra dimension has to go before the conversion. It is removed
+automatically, with a warning either way:</p><ul><li><p><strong>count data</strong>: the counts are summed over the flag, leaving case totals
+unchanged;</p></li>
+<li><p><strong>line lists</strong>: the column is dropped, leaving one row per case.</p></li>
+</ul><p><code><a href="tbl_now_epidist.html">tbl_now_to_epidist()</a></code> is the exception and keeps the flag: estimating a
+delay distribution is the one job that can use it.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -265,7 +283,7 @@ delay 74, so its <code>max_confirm</code> is 11 in <code>pobs</code> and 7 after
 <span class="r-msg co"><span class="r-pr">#&gt;</span>     %notin%</span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://package.epinowcast.org" class="external-link">epinowcast</a></span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> `enw_cache_location` is not set.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Using `tempdir()` at /tmp/Rtmp99rNuL for the epinowcast model cache location.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Using `tempdir()` at /tmp/RtmpmJpI35 for the epinowcast model cache location.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Set a specific cache location using `enw_set_cache` to control Stan</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   recompilation in this R session or across R sessions.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> For example: `enw_set_cache(tools::R_user_dir(package = "epinowcast",</span>
@@ -346,6 +364,5 @@ delay 74, so its <code>max_confirm</code> is 11 in <code>pobs</code> and 7 after
 
 
 
-  
-</body></html>
+  </body></html>
 

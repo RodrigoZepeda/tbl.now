@@ -135,21 +135,7 @@ holiday panel without the matching effect warns and skips it. The spec is read
 directly, so you do not need to call compute_temporal_effects() first.
 The delay panels are computed on the complete portion of the series (event
 dates on or before the incompleteness line) so the recent reporting truncation
-does not bias them."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
-
-
-
-
-
-
-
-
-
-  pkgdown/extra.css
-
-  
-
-  </p>
+does not bias them."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -157,7 +143,7 @@ does not bias them."><meta property="og:image" content="https://rodrigozepeda.gi
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -170,8 +156,8 @@ does not bias them."><meta property="og:image" content="https://rodrigozepeda.gi
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -266,7 +252,7 @@ does not bias them.</p>
 <span>  panels <span class="op">=</span> <span class="st">"all"</span>,</span>
 <span>  by_strata <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"normalized"</span>, <span class="st">"percent"</span><span class="op">)</span>,</span>
+<span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"percent"</span>, <span class="st">"normalized"</span><span class="op">)</span>,</span>
 <span>  level <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  plotly <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  palette <span class="op">=</span> <span class="fu">.tbl_now_palette</span><span class="op">(</span><span class="op">)</span>,</span>
@@ -318,10 +304,10 @@ some of them. Ignored when <code>by_strata = FALSE</code>.</p></dd>
 <dt id="arg-measure">measure<a class="anchor" aria-label="anchor" href="#arg-measure"></a></dt>
 <dd><p>How to express the calendar-effect boxplots (the day-of-week,
 week-of-year, month-of-year, holiday and holiday-lag panels; every other
-panel ignores it).</p><ul><li><p><code>"normalized"</code> (default) — the value divided by its overall mean, so <code>1</code>
+panel ignores it).</p><ul><li><p><code>"normalized"</code>  — the value divided by its overall mean, so <code>1</code>
 (the dashed line) marks an average level. Case-count panels normalize the
 cases per event date; delay panels normalize the mean reporting delay.</p></li>
-<li><p><code>"percent"</code> — the <strong>share of cases</strong> falling in each group, as a
+<li><p><code>"percent"</code> (default) — the <strong>share of cases</strong> falling in each group, as a
 percentage, so the box reads directly as "10% of cases at the weekend
 versus 90% on weekdays" with the IQR around it. One observation per
 calendar block: the seven weekdays (and the day types) are shared out
@@ -414,6 +400,5 @@ single panel is selected — that panel as a <span class="pkg">ggplot2</span> ob
 
 
 
-  
-</body></html>
+  </body></html>
 

@@ -59,12 +59,69 @@ test_delay_changepoint(
 
 ## Value
 
-A tibble with one row per `stat` x stratum: `strata`, `stat`, `n`
-(series length), `changepoint` (the event date of the estimated change,
-`NA` when none is found), `statistic` (Pettitt's `K`), `p_value`,
-`before` / `after` (the mean of the statistic on each side of the
-change), `shift` (`after - before`) and a logical `changepoint_detected`
-(`p_value < alpha`).
+A [tibble](https://tibble.tidyverse.org/reference/tibble.html) with
+**one row per requested `stat` per stratum**, and the following columns:
+
+- `strata`:
+
+  `character`. The stratum the row refers to. When `by_strata = FALSE`
+  (the default) there is a single stratum labelled `"all"`; otherwise
+  one level per observed combination of `strata`.
+
+- `stat`:
+
+  `character`. Which delay summary was tested — one of `"median"`,
+  `"mean"`, `"iqr"` or `"spread"`. As in
+  [`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md),
+  the first two are *location* statistics and the last two *dispersion*
+  statistics.
+
+- `n`:
+
+  `integer`. **Length of the tested series**: the number of event dates
+  contributing a non-missing value after the `mature_only` filter —
+  periods, not cases. Series shorter than 8 periods, or with zero
+  variance, are not tested and return `NA` throughout.
+
+- `changepoint`:
+
+  `Date`. The event date of the **last period before the estimated
+  change**; the shift is taken to occur immediately after it. `NA` when
+  the series was too short to test. Note this is reported even when
+  `changepoint_detected` is `FALSE` — Pettitt's test always returns the
+  most extreme candidate split, so this field is only meaningful once
+  the p-value supports it.
+
+- `statistic`:
+
+  `numeric`. Pettitt's `K`, the maximum absolute value of the rank
+  statistic `U_t` over all candidate split points. Larger means a
+  cleaner separation between the two sides. It is not standardised, so
+  it grows with `n` and is not comparable across series of different
+  lengths.
+
+- `p_value`:
+
+  `numeric`. Two-sided p-value for the null of *no change point*, from
+  the standard approximation \\2\exp(-6K^2 / (n^3 + n^2))\\, capped
+  at 1. This approximation is known to be conservative for small `n`.
+
+- `before`, `after`:
+
+  `numeric`. The mean of the statistic on each side of `changepoint`, in
+  the object's delay units. These are plain means of the per-period
+  summaries, so they describe the two regimes directly.
+
+- `shift`:
+
+  `numeric`. `after - before`: the estimated size and direction of the
+  jump, in delay units. Positive means delays got longer after the
+  change point. This is the number to judge operational relevance by.
+
+- `changepoint_detected`:
+
+  `logical`. The verdict: `TRUE` when `p_value < alpha`. `NA` p-values
+  give `FALSE`.
 
 ## Details
 
@@ -80,10 +137,44 @@ statistic (IQR / 10-90 spread), on mature data only, and — being
 rank-based — it is robust to the skew and serial dependence of a delay
 series.
 
+## Interpreting the result
+
+Judge `shift` first and `p_value` second. A statistically detected
+change point with a `shift` far smaller than the day-to-day noise in the
+delay series is not worth acting on; a large `shift` is, even at a
+marginal p-value.
+
+Two structural caveats matter in practice:
+
+- Pettitt's test assumes **exactly one** change point. Given several, it
+  returns the most prominent and silently ignores the rest. If you
+  suspect more, re-run on each side of the first `changepoint` to search
+  recursively.
+
+- A slow monotonic drift will often trip this test too, with the change
+  point landing near the middle of the series. Running
+  [`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
+  alongside disambiguates: a genuine step shows up here and not
+  necessarily there, while a gradual drift shows up in both.
+
+A confirmed change point usually has an operational explanation — a new
+laboratory information system, a change in case definition, a reporting
+mandate, a holiday backlog being cleared. Where it lands is a strong
+hint about the cause, and about how far back a nowcasting model can
+safely be fitted: data before the change point comes from a different
+reporting regime.
+
+Unlike
+[`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md),
+this test has no third-party dependency and no meaningful runtime cost,
+so it is cheap to run routinely.
+
 ## See also
 
-[`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md),
+[`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
+for gradual trends,
 [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)
+to visualise the series and mark detected changes.
 
 ## Examples
 

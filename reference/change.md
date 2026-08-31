@@ -367,7 +367,7 @@ ndata
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-19 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Right-censored indicator: "is_censored"
+#> # left-censored indicator: "is_censored"
 #> # Strata: "gender" and "age_group"
 #> # Covariates: "temperature" and "humidity"
 #> # ────────────────────────────────────────────────────────────────────────────────
@@ -398,7 +398,7 @@ ndata
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-19 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Right-censored indicator: "is_censored"
+#> # left-censored indicator: "is_censored"
 #> # Strata: "gender" and "age_group"
 #> # Covariates: "temperature" and "humidity"
 #> # ────────────────────────────────────────────────────────────────────────────────
@@ -432,7 +432,7 @@ ndata |> compute_temporal_effects()
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-19 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Right-censored indicator: "is_censored"
+#> # left-censored indicator: "is_censored"
 #> # Strata: "gender" and "age_group"
 #> # Covariates: "temperature" and "humidity"
 #> # T. effects: [event_date] month_of_year, week_of_year
@@ -463,7 +463,7 @@ ndata |> replace_temporal_effects(t_effects = temporal_effects(seasons = 52))
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-19 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Right-censored indicator: "is_censored"
+#> # left-censored indicator: "is_censored"
 #> # Strata: "gender" and "age_group"
 #> # Covariates: "temperature" and "humidity"
 #> # T. effects (lazy): [event_date] season(52)
@@ -492,7 +492,7 @@ ndata |> remove_temporal_effects()
 #> 10 1990-01-01 1990-01-08  Female            0           1      1 1989-12-31    
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-19 | Event date: "new_onset_week" | Report date: "new_report_week"
-#> # Right-censored indicator: "is_censored"
+#> # left-censored indicator: "is_censored"
 #> # Strata: "gender" and "age_group"
 #> # Covariates: "temperature" and "humidity"
 #> # ────────────────────────────────────────────────────────────────────────────────

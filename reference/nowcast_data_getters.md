@@ -106,7 +106,6 @@ get_case_count(ndata)
 get_temporal_effects(ndata)
 #> [[1]]
 #> [[1]]$t_effects
-#> 
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
 #> The following effects are in place:
 #> • "month_of_year"

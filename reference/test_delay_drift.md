@@ -43,6 +43,7 @@ test_delay_drift(
   [`modifiedmk::mmky()`](https://rdrr.io/pkg/modifiedmk/man/mmky.html))
   or `"block-bootstrap"` (block-bootstrap MK,
   [`modifiedmk::bbsmk()`](https://rdrr.io/pkg/modifiedmk/man/bbsmk.html)).
+  See the *Choosing a method* section.
 
 - by_strata:
 
@@ -69,10 +70,67 @@ test_delay_drift(
 
 ## Value
 
-A tibble with one row per `stat` x stratum: `strata`, `stat`, `n`
-(series length), `tau`, `sens_slope` (change in the statistic per
-period), `statistic`, `p_value`, `method` and a logical `drift`
-(`p_value < alpha`).
+A [tibble](https://tibble.tidyverse.org/reference/tibble.html) with
+**one row per requested `stat` per stratum**, and the following columns:
+
+- `strata`:
+
+  `character`. The stratum the row refers to. When `by_strata = FALSE`
+  (the default) there is a single stratum labelled `"all"`; otherwise
+  one level per observed combination of `strata`.
+
+- `stat`:
+
+  `character`. Which delay summary was tested — one of `"median"`,
+  `"mean"`, `"iqr"` or `"spread"`. `"median"`/`"mean"` are *location*
+  statistics (are delays getting longer?); `"iqr"`/`"spread"` are
+  *dispersion* statistics (are delays getting more erratic?).
+
+- `n`:
+
+  `integer`. **Length of the tested series**, i.e. the number of event
+  dates contributing a non-missing value after the `mature_only` filter.
+  This is a count of *periods*, not a count of cases. Series with
+  `n < 10` (or with zero variance) are not tested and return `NA` for
+  every test column.
+
+- `tau`:
+
+  `numeric` in `[-1, 1]`. Kendall's rank correlation between the
+  statistic and time — the *effect size*. Positive means delays are
+  growing, negative means they are shrinking. Roughly, `|tau|` below 0.1
+  is a negligible trend even when `p_value` is small.
+
+- `sens_slope`:
+
+  `numeric`. Sen's slope: the median pairwise rate of change, expressed
+  **in delay units per period** — so for weekly data with delays
+  measured in weeks, "weeks of delay gained per week elapsed". Multiply
+  by `n` for the total drift implied across the series. Unlike an OLS
+  slope this is robust to outlying periods.
+
+- `statistic`:
+
+  `numeric`. The autocorrelation-corrected Mann-Kendall `Z` score. Under
+  the null it is standard normal, so `|Z| > 1.96` corresponds to
+  `p_value < 0.05`.
+
+- `p_value`:
+
+  `numeric`. Two-sided p-value for the null hypothesis of *no monotonic
+  trend*, after the serial-correlation correction implied by `method`.
+  `NA` when the series was too short or constant.
+
+- `method`:
+
+  `character`. The `method` actually used, echoed back so the result is
+  self-documenting when several runs are bound together.
+
+- `drift`:
+
+  `logical`. The verdict: `TRUE` when `p_value < alpha`. `NA` p-values
+  give `FALSE`, so a `FALSE` means "no drift detected" and not
+  necessarily "no drift".
 
 ## Details
 
@@ -93,9 +151,83 @@ the `level` incompleteness cutoff), because the recent,
 not-yet-fully-reported dates would otherwise inject a spurious downward
 trend.
 
+## Interpreting the result
+
+Read `tau` and `sens_slope` *before* `p_value`. On long surveillance
+series a tiny, operationally irrelevant trend will still be highly
+significant, so `drift = TRUE` on its own is not a reason to act. The
+question to ask is whether `sens_slope * n` — the total drift implied
+over the observed window — is large relative to the delays themselves.
+
+The location and dispersion statistics answer different questions and
+can disagree, which is informative rather than contradictory:
+
+- `median` drifting up, `spread` flat: reporting is uniformly slower.
+
+- `median` flat, `spread` drifting up: the typical case is unaffected
+  but the tail is getting worse — often a subset of reporting sites
+  degrading.
+
+- both drifting up: broad deterioration in reporting timeliness.
+
+A detected drift means a nowcasting model fitted on a **fixed** delay
+distribution will be biased, because it is averaging over delay regimes
+that are not exchangeable. Consider a model with a time-varying delay,
+or fitting only to the recent, homogeneous stretch of data.
+
+Because this is a trend test it will *not* find an abrupt one-off shift;
+a step change can even cancel out to a non-significant monotonic trend.
+Pair it with
+[`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md),
+which is built for exactly that case.
+
+## Choosing a method
+
+All three options are Mann-Kendall tests that correct for the serial
+correlation of a delay series; they differ in what they assume about
+that correlation, and in cost.
+
+- `"hamed-rao"` (default):
+
+  Inflates the Mann-Kendall variance using all *significant*
+  autocorrelation lags of the detrended ranks. It makes no AR(1)
+  assumption, is deterministic, and is effectively instantaneous, so it
+  is the sensible default for a routine diagnostic. Its variance
+  correction is known to be unstable on short series — treat results
+  with `n` below roughly 30 as indicative only.
+
+- `"yue-pilon"`:
+
+  Trend-free pre-whitening, which effectively assumes the series is
+  **AR(1)**. That assumption is a poor fit for daily reporting delays,
+  which carry strong day-of-week periodicity, and pre-whitening is known
+  to remove part of the very trend being tested. Offered for
+  comparability with the hydrology literature; rarely the right choice
+  here.
+
+- `"block-bootstrap"`:
+
+  Resamples contiguous blocks, so it accommodates arbitrary dependence
+  *within* a block — including weekly periodicity, if the block length
+  covers it. Statistically the most defensible for daily data, and the
+  best cross-check when a `hamed-rao` result is borderline. Two caveats:
+  it is **stochastic**, so call
+  [`set.seed()`](https://rdrr.io/r/base/Random.html) first for a
+  reproducible p-value, and it is **thousands of times slower** — it
+  scales at roughly the square of the series length, so a multi-year
+  daily series can take many minutes per statistic. Reduce `nsim`
+  (passed through `...`) or restrict to a shorter window before reaching
+  for it.
+
+When a decision matters, run the default first and confirm a borderline
+result with `method = "block-bootstrap"` on a restricted window.
+
 ## See also
 
+[`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md)
+for abrupt shifts,
 [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)
+to visualise the series being tested.
 
 ## Examples
 

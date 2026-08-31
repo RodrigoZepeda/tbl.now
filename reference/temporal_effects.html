@@ -3,21 +3,7 @@
 The temporal_effects class specifies which temporal covariates or effects
 should be included in a nowcasting model (e.g., day of week, month, holidays, etc.)."><meta property="og:description" content="
 The temporal_effects class specifies which temporal covariates or effects
-should be included in a nowcasting model (e.g., day of week, month, holidays, etc.)."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
-
-
-
-
-
-
-
-
-
-  pkgdown/extra.css
-
-  
-
-  </p>
+should be included in a nowcasting model (e.g., day of week, month, holidays, etc.)."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -25,7 +11,7 @@ should be included in a nowcasting model (e.g., day of week, month, holidays, et
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,8 +24,8 @@ should be included in a nowcasting model (e.g., day of week, month, holidays, et
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -267,41 +253,36 @@ consider removing from here.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">temporal_effects</span><span class="op">(</span>day_of_week <span class="op">=</span> <span class="cn">TRUE</span>, week_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Temporal Effects</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"day_of_week"</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"week_of_year"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Temporal Effects ────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"day_of_week"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"week_of_year"</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Annual seasonality in weekly data (period = 52 weeks)</span></span></span>
 <span class="r-in"><span><span class="fu">temporal_effects</span><span class="op">(</span>seasons <span class="op">=</span> <span class="fl">52</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Temporal Effects</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"season"</span> periods: 52</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Temporal Effects ────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"season"</span> periods: 52</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Annual seasonality in daily data (52 weeks x 7 days = 364-day period)</span></span></span>
 <span class="r-in"><span><span class="fu">temporal_effects</span><span class="op">(</span>seasons <span class="op">=</span> <span class="fl">52</span>, season_length <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Temporal Effects</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"season"</span> periods: 52*7=364</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Temporal Effects ────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"season"</span> periods: 52*7=364</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># After-weekend effect: flag the first two working days after a weekend</span></span></span>
 <span class="r-in"><span><span class="fu">temporal_effects</span><span class="op">(</span>weekend <span class="op">=</span> <span class="cn">TRUE</span>, weekend_lags <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Temporal Effects</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"weekend"</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"after-weekend"</span> effect: <span style="font-style: italic;">first 2 working days</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Temporal Effects ────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"weekend"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"after-weekend"</span> effect: <span style="font-style: italic;">first 2 working days</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Before-weekend effect: flag the last working day before a weekend (Friday)</span></span></span>
 <span class="r-in"><span><span class="fu">temporal_effects</span><span class="op">(</span>weekend <span class="op">=</span> <span class="cn">TRUE</span>, weekend_lags <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Temporal Effects</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────────</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"weekend"</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"before-weekend"</span> effect: <span style="font-style: italic;">last working day</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Temporal Effects ────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"weekend"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"before-weekend"</span> effect: <span style="font-style: italic;">last working day</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu">rlang</span><span class="fu">::</span><span class="fu"><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">is_installed</a></span><span class="op">(</span><span class="st">"almanac"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="va">cal</span> <span class="op">&lt;-</span> <span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/rcalendar.html" class="external-link">rcalendar</a></span><span class="op">(</span><span class="fu">almanac</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/almanac/man/holidays.html" class="external-link">hol_christmas</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
@@ -376,6 +357,5 @@ consider removing from here.</p>
 
 
 
-  
-</body></html>
+  </body></html>
 

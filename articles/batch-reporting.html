@@ -20,20 +20,6 @@
 <meta property="og:title" content="Diagnosing reporting batches and other reporting-delay artifacts">
 </head>
 <body>
-<p>
-
-
-
-
-
-
-
-
-  pkgdown/extra.css
-
-  
-
-  </p>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -41,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,8 +42,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul>
 </li>
@@ -162,7 +148,7 @@ picture shows what it would have looked back then.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">covid_us</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">covid_early</span> <span class="op">&lt;-</span> <span class="va">covid_us</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
+<span><span class="va">covid_early</span> <span class="op">&lt;-</span> <span class="va">covid_us</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cdc_case_earliest_dt</span> <span class="op">&lt;</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-09-01"</span><span class="op">)</span> <span class="op">&amp;</span></span>
 <span>           <span class="va">cdc_report_dt</span> <span class="op">&lt;</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-09-01"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -372,7 +358,7 @@ controls the false-discovery rate across all dates (see
 <code>deficit</code> (how depleted the days just before were) and
 <code>delta</code> (how little the window total actually changed).</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/batch_test.html">batch_test</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/batch_test.html">batch_test</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">batch</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 7</span></span></span>
 <span><span class="co">#&gt;   report_date reported baseline deficit delta p_transport_bh batch</span></span>
@@ -385,7 +371,7 @@ spring/summer-2020 releases – each reported far more than its neighbours
 <em>and</em> was preceded by a matching deficit. The clearest is
 <strong>10 June 2020</strong>, nearly ten times its baseline:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/batch_test.html">batch_test</a></span><span class="op">(</span><span class="va">tn</span>, period <span class="op">=</span> <span class="fl">7</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/batch_test.html">batch_test</a></span><span class="op">(</span><span class="va">tn</span>, period <span class="op">=</span> <span class="fl">7</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">batch</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 7</span></span></span>
 <span><span class="co">#&gt;   report_date reported baseline deficit   delta p_transport_bh batch</span></span>
@@ -535,6 +521,26 @@ scenarios.<br>
 <li>Batches very close to the now are difficult to identify without
 additional modeling hypotheses.</li>
 </ul>
+<!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit here only. Blank lines inside this comment would leak as &#10; into the rendered README, so keep it to one line. Callers locate this file with system.file("fragments", ...) rather than a relative path: rmarkdown renders into a temp intermediates directory and copies relative resources alongside, so a "../.." path escapes that directory and fails on CI. Links are absolute so they resolve on both GitHub and pkgdown. -->
+</div>
+<div class="section level2">
+<h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
+</h2>
+<ul>
+<li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a>
+for the full anatomy of a <code>tbl_now</code>, data types, and temporal
+effects.</li>
+<li>End-to-end tutorial on real, messy surveillance data — cleaning,
+diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/Example.html">https://rodrigozepeda.github.io/tbl.now/articles/Example.html</a>
+</li>
+<li>Tutorial on detecting batches and other reporting-delay artifacts:
+<a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html">https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html</a>
+</li>
+<li>Comparing nowcasting engines on one dataset: <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>
+</li>
+<li>Package reference: <a href="https://rodrigozepeda.github.io/tbl.now/reference/">https://rodrigozepeda.github.io/tbl.now/reference/</a>
+</li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
@@ -557,6 +563,5 @@ additional modeling hypotheses.</li>
 
 
 
-  
-</body>
+  </body>
 </html>

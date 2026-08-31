@@ -13,7 +13,7 @@ covariates, the censoring indicator and any materialised temporal-effect
 columns (see compute_temporal_effects()); the matrix holds only the three
 core columns. A single reporting-triangle matrix has no strata dimension, so
 format = "matrix" pools any strata (summing the counts) with a warning;
-build one triangle per stratum (from the long format) to nowcast each stratum.'><meta property="og:description" content='
+use format = "triangle_list" to get one triangle per stratum instead.'><meta property="og:description" content='
 tbl_now_from_baselinenowcast() accepts either the long data.frame
 (reference_date, report_date, count) or a reporting_triangle
 matrix (rownames = reference dates, colnames = delays, incremental counts)
@@ -27,21 +27,7 @@ covariates, the censoring indicator and any materialised temporal-effect
 columns (see compute_temporal_effects()); the matrix holds only the three
 core columns. A single reporting-triangle matrix has no strata dimension, so
 format = "matrix" pools any strata (summing the counts) with a warning;
-build one triangle per stratum (from the long format) to nowcast each stratum.'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
-
-
-
-
-
-
-
-
-
-  pkgdown/extra.css
-
-  
-
-  </p>
+use format = "triangle_list" to get one triangle per stratum instead.'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -49,7 +35,7 @@ build one triangle per stratum (from the long format) to nowcast each stratum.'>
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,8 +48,8 @@ build one triangle per stratum (from the long format) to nowcast each stratum.'>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -98,7 +84,7 @@ covariates, the censoring indicator and any materialised temporal-effect
 columns (see <code><a href="compute_temporal_effects.html">compute_temporal_effects()</a></code>); the matrix holds only the three
 core columns. A single reporting-triangle matrix has no strata dimension, so
 <code>format = "matrix"</code> <strong>pools</strong> any strata (summing the counts) with a warning;
-build one triangle per stratum (from the long format) to nowcast each stratum.</p>
+use <code>format = "triangle_list"</code> to get one triangle per stratum instead.</p>
     </div>
 
     <div class="section level2">
@@ -109,15 +95,17 @@ build one triangle per stratum (from the long format) to nowcast each stratum.</
 <span>  reference_date <span class="op">=</span> <span class="st">"reference_date"</span>,</span>
 <span>  report_date <span class="op">=</span> <span class="st">"report_date"</span>,</span>
 <span>  count <span class="op">=</span> <span class="st">"count"</span>,</span>
-<span>  delays_unit <span class="op">=</span> <span class="st">"days"</span>,</span>
+<span>  delays_unit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">tbl_now_to_baselinenowcast</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">...</span>,</span>
-<span>  format <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"matrix"</span>, <span class="st">"long"</span><span class="op">)</span>,</span>
+<span>  format <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"matrix"</span>, <span class="st">"long"</span>, <span class="st">"triangle_list"</span><span class="op">)</span>,</span>
 <span>  delays_unit <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  complete <span class="op">=</span> <span class="st">"auto"</span>,</span>
+<span>  negatives <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"redistribute"</span>, <span class="st">"error"</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -132,7 +120,7 @@ build one triangle per stratum (from the long format) to nowcast each stratum.</
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Forwarded to <code><a href="as_tbl_now.html">as_tbl_now()</a></code> (<code>from</code>) or
-<code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code> (<code>to</code>, matrix format).</p></dd>
+<code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code> (<code>to</code>, triangle formats).</p></dd>
 
 
 <dt id="arg-reference-date-report-date-count">reference_date, report_date, count<a class="anchor" aria-label="anchor" href="#arg-reference-date-report-date-count"></a></dt>
@@ -141,12 +129,13 @@ build one triangle per stratum (from the long format) to nowcast each stratum.</
 
 <dt id="arg-delays-unit">delays_unit<a class="anchor" aria-label="anchor" href="#arg-delays-unit"></a></dt>
 <dd><p>Unit of the delay axis of the reporting triangle, one of
-<code>"days"</code> or <code>"weeks"</code>. For <code>tbl_now_from_baselinenowcast()</code> this says how to
-read an input matrix's delay columns and defaults to <code>"days"</code>. For
-<code>tbl_now_to_baselinenowcast()</code> (matrix format only) it defaults to <code>NULL</code>,
-meaning it is <strong>inferred</strong> from the object's time units when the event and
-report units agree and are <code>"days"</code> or <code>"weeks"</code>; otherwise you must supply
-it explicitly.</p></dd>
+<code>"days"</code> or <code>"weeks"</code>. Both directions default to <code>NULL</code>, meaning it is
+worked out for you. For <code>tbl_now_from_baselinenowcast()</code> that means reading
+the input matrix's own <code>delays_unit</code> attribute (falling back to <code>"days"</code>
+when it has none); a supplied value always wins. For
+<code>tbl_now_to_baselinenowcast()</code> (triangle formats only) it is <strong>inferred</strong>
+from the object's time units when the event and report units agree and are
+<code>"days"</code> or <code>"weeks"</code>; otherwise you must supply it explicitly.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -158,12 +147,45 @@ it explicitly.</p></dd>
 
 
 <dt id="arg-format">format<a class="anchor" aria-label="anchor" href="#arg-format"></a></dt>
-<dd><p>For <code>to</code>: <code>"matrix"</code> (default) or <code>"long"</code>.</p></dd>
+<dd><p>For <code>to</code>, one of:</p><ul><li><p><code>"matrix"</code> (default) – a single <code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code>
+matrix. A triangle has no strata dimension, so any strata are <strong>pooled</strong>
+(with a warning).</p></li>
+<li><p><code>"long"</code> – a tidy data frame, which can also carry the strata,
+covariates, temporal-effect columns and the censoring indicator.</p></li>
+<li><p><code>"triangle_list"</code> – one reporting triangle <strong>per stratum</strong>, as a
+<a href="tbl_now_triangle_list.html">tbl_now_triangle_list</a>. Use this instead of pooling when you want a
+nowcast per stratum. With no strata attached the result is still a list,
+of length one and named <code>"all"</code>, so the return type never depends on
+whether strata happen to be present. Unlike splitting the long format
+yourself, the delay unit and the strata are taken from the object, and
+<code><a href="as_tbl_now.html">as_tbl_now()</a></code> can rebuild a <code>tbl_now</code> from the result.</p></li>
+</ul></dd>
+
+
+<dt id="arg-complete">complete<a class="anchor" aria-label="anchor" href="#arg-complete"></a></dt>
+<dd><p>For <code>to</code> with a triangle format: fill event periods that have
+no reports at all with zeroes, out to the object's <code><a href="nowcast_data_getters.html">get_now()</a></code>, via
+<code><a href="complete_zeroes.html">complete_zeroes()</a></code>. <code>"auto"</code> (the default) does this for <strong>line-list</strong>
+input only, so you do not have to remember
+<code>to_count() |&gt; complete_zeroes()</code> first. Count data is left exactly as
+supplied, because it <em>can</em> distinguish an observed zero from a cell that
+could not be observed yet (<code>NA</code>) and filling those would claim reporting was
+complete when it was not. <code>TRUE</code> / <code>FALSE</code> force either behaviour. Ignored
+for <code>format = "long"</code>.</p></dd>
+
+
+<dt id="arg-negatives">negatives<a class="anchor" aria-label="anchor" href="#arg-negatives"></a></dt>
+<dd><p>How to handle the negative increments that appear when
+<code>count-cumulative</code> data is de-accumulated (a downward revision).
+<code>"redistribute"</code> (default) absorbs each negative into earlier delays with
+<code><a href="https://baselinenowcast.epinowcast.org/reference/preprocess_negative_values.html" class="external-link">baselinenowcast::preprocess_negative_values()</a></code>, which is what that
+function exists for; <code>"error"</code> refuses cumulative input instead.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code>tbl_now</code> (<code>from</code>), or a <code>data.frame</code>/<code>reporting_triangle</code> (<code>to</code>).</p>
+    <p>A <code>tbl_now</code> (<code>from</code>), or a <code>data.frame</code>, <code>reporting_triangle</code> or
+<a href="tbl_now_triangle_list.html">tbl_now_triangle_list</a> (<code>to</code>), according to <code>format</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="round-trip">Round-trip<a class="anchor" aria-label="anchor" href="#round-trip"></a></h2>
@@ -179,6 +201,72 @@ They are genuinely <strong>missing</strong> and kept as <code>count = NA</code> 
 the <code><a href="tbl_now.html">tbl_now()</a></code>.</p></li>
 </ul><p>On the way back, <code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code> fills the
 in-triangle cells with <code>0</code> unless they are marked in the tibble as <code>NA</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="sparse-same-period-reporting-weekly-data-especially-">Sparse same-period reporting (weekly data especially)<a class="anchor" aria-label="anchor" href="#sparse-same-period-reporting-weekly-data-especially-"></a></h2>
+
+
+
+<p><code>baselinenowcast</code> divides each observed row by the share of the delay
+distribution that should have arrived by now. When almost nothing is reported
+in the same period as the event, that share is tiny for the most recent row
+and the estimate explodes: on a weekly line list where <code>P(delay = 0)</code> is about
+<strong>0.05</strong>, a final row holding a single case became an estimate of <strong>257 with
+an upper bound of 1584</strong> against a truth of 15.</p>
+<p>Completing the triangle to the <code>now</code> <em>always</em> leaves a final row observable
+only at delay 0, so no choice of cut-off avoids it. Check the delay PMF before
+trusting the newest rows:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="va">pmf</span> <span class="op">&lt;-</span> <span class="fu">baselinenowcast</span><span class="fu">::</span><span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/estimate_delay.html" class="external-link">estimate_delay</a></span><span class="op">(</span><span class="va">triangle</span><span class="op">)</span></span>
+<span><span class="va">pmf</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>   <span class="co"># share expected to arrive in the same period</span></span></code></pre><p></p></div>
+<p>If it is small, follow <code>baselinenowcast</code>'s own advice and truncate "to an
+earlier reference time to ensure a nowcast, not a forecast, is being
+produced" – drop trailing rows whose expected observed share is below, say,
+10%. Daily data with substantial same-day reporting does not have this
+problem.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="capping-the-delay-axis">Capping the delay axis<a class="anchor" aria-label="anchor" href="#capping-the-delay-axis"></a></h2>
+
+
+
+<p>The triangle gets one column per delay, so a single long straggler makes it
+very wide and the fit very slow: capping delays at 30 days on a daily series
+took a fit from <strong>314s to 50s</strong> for a tail carrying under 1% of cases. Unlike
+<code><a href="tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> there is no <code>max_delay</code> argument here, so cap with a
+filter before converting:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="va">x</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">.delay</span> <span class="op">&lt;=</span> <span class="fl">30</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="op">)</span></span></code></pre><p></p></div>
+    </div>
+    <div class="section level2">
+    <h2 id="negative-delays">Negative delays<a class="anchor" aria-label="anchor" href="#negative-delays"></a></h2>
+
+
+
+<p>A reporting triangle is indexed by delay from <strong>0</strong>, so a report that arrived
+<em>before</em> its event has no cell to go in.
+<code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code> drops it, and the cell then reads
+<code>0</code> – indistinguishable from an observed zero. Both triangle formats
+therefore <strong>warn</strong>, naming how many rows and cases go, so the loss is not
+silent; <code>format = "long"</code> is a tidy data frame with no delay axis and keeps
+them. <code><a href="tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> drops them the same way, and warns the same
+way.</p>
+<p>Filter first if you want to decide what happens:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="va">x</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">.delay</span> <span class="op">&gt;=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="op">)</span></span></code></pre><p></p></div>
+    </div>
+    <div class="section level2">
+    <h2 id="censored-delays">Censored delays<a class="anchor" aria-label="anchor" href="#censored-delays"></a></h2>
+
+
+
+<p>A censoring indicator that is a property of the <strong>case</strong> rather than of the
+delay – an administrative "this date is only an upper bound" mark, say –
+puts a censored and an uncensored row in the same
+<code>(event_date, report_date)</code> cell. A reporting triangle has one slot per cell,
+so the extra dimension has to go before the conversion. It is removed
+automatically, with a warning either way:</p><ul><li><p><strong>count data</strong>: the counts are summed over the flag, leaving case totals
+unchanged;</p></li>
+<li><p><strong>line lists</strong>: the column is dropped, leaving one row per case.</p></li>
+</ul><p><code><a href="tbl_now_epidist.html">tbl_now_to_epidist()</a></code> is the exception and keeps the flag: estimating a
+delay distribution is the one job that can use it.</p>
     </div>
 
     <div class="section level2">
@@ -230,6 +318,5 @@ in-triangle cells with <code>0</code> unless they are marked in the tibble as <c
 
 
 
-  
-</body></html>
+  </body></html>
 

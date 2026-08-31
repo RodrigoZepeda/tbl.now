@@ -7,21 +7,7 @@ Data was downloaded on November 12th 2025."><meta property="og:description" cont
 based on the 'total number of new hospital admissions of patients with confirmed
 influenza captured during the reporting week' reported through CDC's NHSN
 (the dataset formerly known as HHS-Protect), Weekly Hospital Respiratory Data.
-Data was downloaded on November 12th 2025."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body><p>
-
-
-
-
-
-
-
-
-
-  pkgdown/extra.css
-
-  
-
-  </p>
+Data was downloaded on November 12th 2025."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -29,7 +15,7 @@ Data was downloaded on November 12th 2025."><meta property="og:image" content="h
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,8 +28,8 @@ Data was downloaded on November 12th 2025."><meta property="og:image" content="h
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/Example.html">Example analysis with Flusight</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with five modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -78,18 +64,35 @@ Data was downloaded on November 12th 2025.</p>
 
     <div class="section level2">
     <h2 id="format">Format<a class="anchor" aria-label="anchor" href="#format"></a></h2>
-    <p>A data frame.</p>
+    <p>A data frame with 452,567 rows and 4 variables.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Data represents how many cases were considered influenza during the week of
 <em>target_end_date</em> given the information known until week <em>as_of</em>. Note
 that <em>as_of</em> is always one week ahead of <em>target_end_date</em>.</p>
-<p>This is count data. The columns are as follows:</p><ul><li><p><code>as_of</code>: The</p></li>
-<li><p><code>target_end_date</code>: The date where the case happened</p></li>
-<li><p><code>observation</code>: Case counts for those dates</p></li>
-<li><p><code>location_name</code>: State, district or territory</p></li>
-</ul></div>
+<p>This is count data with 452,567 rows and 4 columns:</p><ul><li><p><code>as_of</code>: The report date – the date the snapshot was taken, i.e. what was
+known as of that week.</p></li>
+<li><p><code>target_end_date</code>: The event date – the week the admissions occurred.</p></li>
+<li><p><code>location_name</code>: State, district or territory (53 levels).</p></li>
+<li><p><code>observation</code>: Case counts for those dates. <code>NA</code> for 1,152 rows.</p></li>
+</ul><p>Together, <code>as_of</code>, <code>target_end_date</code> and <code>location_name</code> form a unique key.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="duplicate-rows-removed">Duplicate rows removed<a class="anchor" aria-label="anchor" href="#duplicate-rows-removed"></a></h2>
+
+
+
+<p>The upstream FluSight <code>time-series.csv</code> ships exact duplicate rows – 39,139
+of them in this snapshot. They were dropped with <code><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">dplyr::distinct()</a></code> before
+the dataset was saved (issue #25), taking it from 491,706 to 452,567 rows.</p>
+<p>The removal is lossless: every repeated
+(<code>as_of</code>, <code>target_end_date</code>, <code>location_name</code>) key carried an <em>identical</em>
+<code>observation</code>, with no conflicting values anywhere in the file, so no
+information was discarded and the key became unique. If you download the
+upstream file yourself you will still see the duplicates and should
+<code><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct()</a></code> them before use.</p>
+    </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
     <p>Target data from Flusight. Online:
@@ -119,6 +122,5 @@ that <em>as_of</em> is always one week ahead of <em>target_end_date</em>.</p>
 
 
 
-  
-</body></html>
+  </body></html>
 
