@@ -314,3 +314,70 @@ Duration: 20m 25.3s
 examples 77s OK · `--run-donttest` 216s OK · tests `[24m/14m]` OK · vignettes
 re-built OK. No per-example timing table, i.e. **no example exceeds 5s** — the run
 before the Stan examples were trimmed named four, the worst at 87s.
+
+## Removing `\donttest{}` entirely (2026-08-31)
+
+All eight blocks are gone. Nothing in `man/` contains `\donttest`, `\dontrun` or
+`if (FALSE)`; verified per-file across all 88 Rd pages.
+
+Five were wrapped only for speed and cost under a second each once unwrapped: the two
+plot galleries and the three `baselinenowcast` fits, which already sat behind
+`requireNamespace()` guards. Three needed work:
+
+| topic | before | after | how |
+|---|---|---|---|
+| `tbl_now_epinowcast` | 16.0s CPU | 3.6s CPU | later reference-date window; `setDTthreads(2)` |
+| `tidy.estimate_dist` | 8.1s | 1.1s | `stan_opts(samples = 100, chains = 1)`, `try()`-guarded |
+| `tidy.epidist_fit` | 87s | ~59s | `chains = 1, iter = 200`, `try()`-guarded |
+
+**`tidy.epidist_fit` cannot be made fast.** 62.0s on 5,426 rows against 63.6s on 305:
+the cost is fixed Stan setup, not data, and a second fit in the same session costs the
+same, so it is not compilation caching either. `epidist` is not on CRAN, so the
+`@examplesIf` guard means CRAN never runs it; it costs only machines that installed
+epidist deliberately. It is the one example over 5s.
+
+Unwrapping pushed four examples over the threshold; they were tuned back by narrowing
+data windows and, for `autoplot`, drawing two of the five demonstrations as single
+panels rather than full galleries.
+
+### What `R CMD check` measures
+
+The timing table trips on **user + system OR elapsed** > 5s. `tbl_now_epinowcast` read
+16.0s CPU against 3.0s elapsed purely because data.table used every core. Capping
+threads at 2 -- which CRAN asks for anyway -- fixed it without touching the data.
+
+## The CI failure: a missing Stan backend is not a broken engine
+
+`test-engines-matrix.R` did `skip_if_not_installed(engine)`, which passes on CI because
+`epinowcast` *is* installed -- but `cmdstanr` is not, so all 24 shapes failed with
+"cmdstanr is required but not installed" and one assertion emitted eighteen lines that
+said nothing about shapes.
+
+`available_engines()` now means installed **and** runnable, and
+`engine_backend_available()` checks for a *built CmdStan*, not merely the `cmdstanr`
+package -- the R package installs happily without one and the fit fails just the same.
+Verified by hiding `cmdstanr`: epinowcast reports unavailable, the others do not.
+
+## checktor
+
+Everything passes except one false positive:
+
+* `diagnose_package_size` reports **14232 MB**. That is the working directory, which
+  contains `devel/COVID-19_Case_Surveillance_Public_Use_Data_20260710.csv` -- the 14 GB
+  CDC source for `covid_us`, both `.gitignore`d and `.Rbuildignore`d. The **built
+  tarball is 1.3 MB**.
+* `diagnose_unexported_example_ns` errors inside checktor itself:
+  `invalid regular expression '(?<!:)\b[\.tbl_now\s*\('`. checktor builds that pattern
+  from the package name and does not escape our dot-prefixed internals. Not ours to fix.
+
+`diagnose_suggested_in_examples` caught a **real bug this audit introduced**: the
+container-class examples called `tbl_now_to_baselinenowcast()`,
+`tbl_now_to_surveillance()` and `tbl_now_to_EpiNow2()`, all of which call `.need_pkg()`,
+with no guard. `R CMD check` missed it because all three packages are installed here.
+Now `@examplesIf`-guarded. checktor found two of the three; the third had the same bug
+but a comment that did not use `::` notation.
+
+`diagnose_commented_examples` reads `#` at the start of an example line as commented-out
+code and `##` as prose -- the base R convention, which `?lm` follows. The audit's prose
+comments used `#`, taking the count from 15 files to 36. Converted 67 lines across 26
+files inside `@examples` blocks; no prose changed, only the marker.
