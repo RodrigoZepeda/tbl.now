@@ -184,29 +184,26 @@ delay distribution is the one job that can use it.
 
 \examples{
 \dontshow{if (requireNamespace("epinowcast", quietly = TRUE) & requireNamespace("data.table", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-# Preprocessing epinowcast data is slow, so this is wrapped in \donttest{}.
-\donttest{
 library(data.table)
 library(epinowcast)
 
-#Read data from epinowcast
-obs  <- germany_covid19_hosp[location == "DE"]
+# epinowcast's own example data: German COVID-19 hospitalisations by age.
+obs <- germany_covid19_hosp[location == "DE"][, location := NULL]
 
-#Remove unused column
-obs  <- obs[, location := NULL]
-
-#Pre-process data
-pobs <- epinowcast::enw_preprocess_data(obs, max_delay = 40, by = "age_group")
+# A few months and a short delay keep the example quick; preprocessing the
+# whole series with `max_delay = 40` takes several seconds.
+recent <- obs[reference_date >= as.Date("2021-09-01")]
+pobs <- epinowcast::enw_preprocess_data(recent, max_delay = 10, by = "age_group")
 
 # From the data.table input format ...
-nowobj <- tbl_now_from_epinowcast(obs, strata = c("age_group"))
+nowobj <- tbl_now_from_epinowcast(recent, strata = c("age_group"))
+nowobj
 
-# ... or from a preprocessed epinowcast object
+# ... or from a preprocessed epinowcast object.
 tbl_epi <- tbl_now_from_epinowcast(pobs)
 
-#You can also convert to epinowcast preprocess data format
+# And back out again.
 preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
-}
 \dontshow{\}) # examplesIf}
 }
 \seealso{

@@ -795,8 +795,6 @@ tidy.estimate_truncation <- function(x, probs = NULL, ...) {
 #' distribution; [confirmation_delay] for the delay this is estimating.
 #'
 #' @examplesIf requireNamespace("EpiNow2", quietly = TRUE)
-#' # Fitting needs Stan and takes minutes, so the fit itself is wrapped in
-#' # \donttest{}; the conversion above it runs.
 #' data(denguedat)
 #' # A short window: fitting a delay distribution does not need twenty years of
 #' # data, and Stan is slow.
@@ -812,12 +810,21 @@ tidy.estimate_truncation <- function(x, probs = NULL, ...) {
 #' )
 #' head(delays)
 #'
-#' \donttest{
-#' fit <- EpiNow2::estimate_dist(delays)
+#' # A short chain keeps the example quick -- use EpiNow2's defaults for real
+#' # work. `try()` guards the case where EpiNow2 is installed but its Stan
+#' # toolchain is not.
+#' fit <- try(
+#'   EpiNow2::estimate_dist(
+#'     delays,
+#'     stan = EpiNow2::stan_opts(samples = 100, chains = 1)
+#'   ),
+#'   silent = TRUE
+#' )
 #'
 #' # One row per fitted parameter, plus the delay's own mean and sd.
-#' tidy(fit)
-#' tidy(fit, probs = c(0.05, 0.95))
+#' if (!inherits(fit, "try-error")) {
+#'   print(tidy(fit))
+#'   print(tidy(fit, probs = c(0.05, 0.95)))
 #' }
 #'
 #' @rdname tidy.estimate_dist
@@ -1052,8 +1059,6 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
 #'   [tbl_now_to_epidist()] for the conversion.
 #'
 #' @examplesIf requireNamespace("epidist", quietly = TRUE)
-#' # Fitting needs Stan and takes minutes, so the fit itself is wrapped in
-#' # \donttest{}; everything above it runs.
 #' data(denguedat)
 #' # A short window: fitting a delay distribution does not need twenty years of
 #' # data, and Stan is slow.
@@ -1066,13 +1071,19 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
 #' converted <- suppressWarnings(tbl_now_to_epidist(nowobj, verbose = FALSE))
 #' head(converted)
 #'
-#' \donttest{
-#' fit <- converted |>
-#'   epidist::as_epidist_marginal_model() |>
-#'   epidist::epidist()
+#' # Fitting compiles a Stan model, so this takes about a minute even on a short
+#' # chain. `try()` guards the case where \pkg{epidist} is installed but its Stan
+#' # toolchain is not; use \pkg{brms}'s defaults for real work.
+#' fit <- try(
+#'   converted |>
+#'     epidist::as_epidist_marginal_model() |>
+#'     epidist::epidist(chains = 1, iter = 200, refresh = 0),
+#'   silent = TRUE
+#' )
 #'
-#' tidy(fit)
-#' tidy(fit, probs = c(0.05, 0.95))
+#' if (!inherits(fit, "try-error")) {
+#'   print(tidy(fit))
+#'   print(tidy(fit, probs = c(0.05, 0.95)))
 #' }
 #'
 #' @rdname tidy.epidist_fit

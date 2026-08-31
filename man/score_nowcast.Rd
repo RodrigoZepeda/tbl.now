@@ -88,7 +88,6 @@ head(as_scoringutils(nc, truth = truth))
 
 # With a real model, `truth` is the full object and the nowcast is fitted to
 # a snapshot of it taken at an earlier `now`.
-\donttest{
 data(denguedat)
 
 recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
@@ -105,7 +104,6 @@ if (requireNamespace("baselinenowcast", quietly = TRUE)) {
   # The FULL object is the truth: it still holds the reports that arrived
   # after the snapshot's `now`.
   score_nowcast(nc, truth = dengue)
-}
 }
 
 }

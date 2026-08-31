@@ -207,13 +207,52 @@ ENGINE_SPEC <- list(
   )
 )
 
-#' Engines whose backing package is installed
+#' Is the engine's modelling backend usable, not just its R package?
+#'
+#' `requireNamespace()` asks whether the engine's R package is installed. For the
+#' Stan engines that is not the same question: `epinowcast` fits through CmdStan,
+#' so a machine can have `epinowcast` and still fail every single fit with
+#' "cmdstanr is required but not installed".
+#'
+#' That is what CI does, and it turned 18 shape assertions into one failure
+#' message that said nothing about shapes. An absent backend means the engine
+#' cannot run here, which is a skip, not a failure.
+#'
+#' `cmdstanr` is also checked for a *built* CmdStan: the R package installs
+#' happily without one, and the fit fails just the same.
+#'
+#' @param engine An engine name from `ENGINE_SPEC`.
+#'
+#' @return `TRUE` when the engine can actually fit on this machine.
+engine_backend_available <- function(engine) {
+  backend <- switch(engine, epinowcast = "cmdstanr", NULL)
+  if (is.null(backend)) {
+    return(TRUE)
+  }
+  if (!requireNamespace(backend, quietly = TRUE)) {
+    return(FALSE)
+  }
+  if (identical(backend, "cmdstanr")) {
+    version <- tryCatch(
+      cmdstanr::cmdstan_version(error_on_NA = FALSE),
+      error = function(e) NULL
+    )
+    return(!is.null(version))
+  }
+  TRUE
+}
+
+#' Engines that can actually be run here
+#'
+#' Both halves matter: the R package must be installed *and* its modelling
+#' backend must be usable. See `engine_backend_available()`.
 available_engines <- function(fast_only = FALSE) {
   names <- names(ENGINE_SPEC)
   if (fast_only) {
     names <- names[vapply(ENGINE_SPEC[names], `[[`, logical(1), "fast")]
   }
-  names[vapply(names, requireNamespace, logical(1), quietly = TRUE)]
+  names <- names[vapply(names, requireNamespace, logical(1), quietly = TRUE)]
+  names[vapply(names, engine_backend_available, logical(1))]
 }
 
 #' Arguments that keep each engine quick on a 40-period fixture

@@ -73,8 +73,6 @@ different quantities.
 
 \examples{
 \dontshow{if (requireNamespace("EpiNow2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-# Fitting needs Stan and takes minutes, so the fit itself is wrapped in
-# \donttest{}; the conversion above it runs.
 data(denguedat)
 # A short window: fitting a delay distribution does not need twenty years of
 # data, and Stan is slow.
@@ -90,12 +88,21 @@ delays <- tbl_now_to_EpiNow2(nowobj,
 )
 head(delays)
 
-\donttest{
-fit <- EpiNow2::estimate_dist(delays)
+# A short chain keeps the example quick -- use EpiNow2's defaults for real
+# work. `try()` guards the case where EpiNow2 is installed but its Stan
+# toolchain is not.
+fit <- try(
+  EpiNow2::estimate_dist(
+    delays,
+    stan = EpiNow2::stan_opts(samples = 100, chains = 1)
+  ),
+  silent = TRUE
+)
 
 # One row per fitted parameter, plus the delay's own mean and sd.
-tidy(fit)
-tidy(fit, probs = c(0.05, 0.95))
+if (!inherits(fit, "try-error")) {
+  print(tidy(fit))
+  print(tidy(fit, probs = c(0.05, 0.95)))
 }
 \dontshow{\}) # examplesIf}
 }

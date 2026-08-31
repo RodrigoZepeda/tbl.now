@@ -61,6 +61,10 @@ for (engine_name in c(
 
     test_that(paste0("all 24 shapes are handled: ", this_engine), {
       skip_if_not_installed(this_engine)
+      skip_if_not(
+        engine_backend_available(this_engine),
+        paste0(this_engine, ": modelling backend not available")
+      )
 
       failures <- character()
       for (row in seq_len(nrow(SHAPES))) {

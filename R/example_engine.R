@@ -1,11 +1,10 @@
 # A backend that exists only so the documentation has something to run.
 #
-# Every real engine needs its modelling package, which means every example that
-# fits a nowcast has to be wrapped in `\donttest{}` behind a
-# `requireNamespace()` guard -- and then nothing runs on a default check. This
-# one needs nothing, is deterministic, and returns in milliseconds, so the
-# examples for `run_nowcast()`, `nowcast_backtest()`, `score_nowcast()` and the
-# rest can show real output.
+# Every real engine needs its modelling package, so an example that fits with one
+# only runs where that package happens to be installed -- and three of them are
+# not on CRAN at all. This engine needs nothing, is deterministic, and returns in
+# milliseconds, so the examples for `run_nowcast()`, `nowcast_backtest()`,
+# `score_nowcast()` and the rest show real output everywhere.
 
 #' A toy engine for examples
 #'

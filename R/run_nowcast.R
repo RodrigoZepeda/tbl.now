@@ -454,11 +454,9 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #' head(tibble::as_tibble(nc))
 #'
 #' # A real model is the same call with a real engine.
-#' \donttest{
 #' if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 #'   nc <- run_nowcast(dengue, engine_baselinenowcast(draws = 100), verbose = FALSE)
 #'   nc
-#' }
 #' }
 #'
 #' @export

@@ -90,7 +90,7 @@ the same: \code{autoplot(x, panels = "calendar_weekday")} and
 \dontshow{if (requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("almanac", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
 # First few years only, to keep the example quick; the full data works the same.
-dengue_now <- tbl_now(denguedat[1:10000, ], onset_week, report_week, verbose = FALSE)
+dengue_now <- tbl_now(denguedat[1:5000, ], onset_week, report_week, verbose = FALSE)
 
 # How the cases vary by epidemiological week
 plot_week_of_year_effects(dengue_now)
@@ -116,13 +116,11 @@ monthly_now <- tbl_now(
 )
 plot_month_of_year_effects(monthly_now)
 
-\donttest{
 # ... and how the reporting does
 plot_week_of_year_effects(dengue_now, type = "report")
 
 # As a share of the year's cases, rather than normalized
 plot_week_of_year_effects(dengue_now, measure = "percent")
-}
 \dontshow{\}) # examplesIf}
 }
 \seealso{

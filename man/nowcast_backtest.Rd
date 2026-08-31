@@ -113,13 +113,11 @@ head(bt$scores)
 bt$methods
 
 # With a real model the call is the same, with a real engine.
-\donttest{
 if (requireNamespace("baselinenowcast", quietly = TRUE)) {
   nowcast_backtest(dengue,
     engine_baselinenowcast(draws = 100),
     now_dates = as.Date("2010-11-15"), verbose = FALSE
   )$scores
-}
 }
 
 }
