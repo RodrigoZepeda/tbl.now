@@ -56,7 +56,7 @@ column to name.
 \examples{
 # A nowcast and the truth it should be judged against. Both are built by
 # hand here so that the example needs no modelling package; in practice `nc`
-# comes from run_nowcast() and `truth` is the same data seen later, once the
+## comes from run_nowcast() and `truth` is the same data seen later, once the
 # late reports have arrived.
 truth_df <- data.frame(
   onset  = rep(as.Date("2024-03-04") + 7 * (0:3), each = 3),

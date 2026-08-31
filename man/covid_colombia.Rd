@@ -43,7 +43,7 @@ The dataset covers the full first three years of the Colombian epidemic
 benchmark the diseasenowcasting / diseasenowcast2 engine.
 }
 \examples{
-# Build a stratified tbl_now (event = notification, report = diagnosis,
+## Build a stratified tbl_now (event = notification, report = diagnosis,
 # strata = sex).  Pipe through temporal effects for day-of-week covariates.
 if (requireNamespace("tbl.now", quietly = TRUE)) {
   tn <- tbl.now::tbl_now(

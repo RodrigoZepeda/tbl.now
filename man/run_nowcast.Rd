@@ -196,12 +196,12 @@ dengue <- tbl_now(recent,
 )
 
 # Every nowcast goes the same way: describe the model with an engine, then
-# hand it and the data to `run_nowcast()`.
+## hand it and the data to `run_nowcast()`.
 #
-# `example_engine()` is a toy that ignores the reporting delay entirely; it is
+## `example_engine()` is a toy that ignores the reporting delay entirely; it is
 # used here only so the example runs without a modelling package. Swap in a
-# real one -- `engine_baselinenowcast()`, `engine_epinowcast()`,
-# `engine_nobbs()` -- for anything you intend to act on.
+## real one -- `engine_baselinenowcast()`, `engine_epinowcast()`,
+## `engine_nobbs()` -- for anything you intend to act on.
 nc <- run_nowcast(dengue, example_engine(), verbose = FALSE)
 nc
 

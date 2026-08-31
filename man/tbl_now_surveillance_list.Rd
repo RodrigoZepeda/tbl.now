@@ -60,7 +60,7 @@ dengue <- tbl_now(denguedat[1:3000, ],
   event_date = onset_week, report_date = report_week, verbose = FALSE
 )
 
-# One line list per stratum, in the shape surveillance::nowcast() wants.
+## One line list per stratum, in the shape surveillance::nowcast() wants.
 linelists <- tbl_now_to_surveillance(dengue,
   format = "linelist_list", verbose = FALSE
 )

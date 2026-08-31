@@ -61,7 +61,7 @@ upstream file yourself you will still see the duplicates and should
 data(flusight)
 head(flusight)
 
-# This is count data: one row per (week, publication date, state).
+## This is count data: one row per (week, publication date, state).
 nrow(flusight)
 length(unique(flusight$location_name))
 
@@ -74,7 +74,7 @@ flu <- tbl_now(texas,
 flu
 
 # `as_of` is not always the same weekday, so some delays are not whole weeks.
-# `align_weeks()` fixes that.
+## `align_weeks()` fixes that.
 mean(flu$.delay != round(flu$.delay))
 }
 \references{

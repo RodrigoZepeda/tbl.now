@@ -69,7 +69,7 @@ ndata <- tbl_now(ndata,
 # Nothing happened on 2020-01-03, so the data has no row for it at all.
 sort(unique(ndata$event))
 
-# complete_zeroes() writes that absence down as an explicit zero, for every
+## complete_zeroes() writes that absence down as an explicit zero, for every
 # stratum, so a model can tell "no cases" from "not reported yet".
 filled <- complete_zeroes(ndata)
 sort(unique(filled$event))

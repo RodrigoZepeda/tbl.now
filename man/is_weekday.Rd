@@ -34,14 +34,14 @@ and Saturday in much of the Middle East, and Sunday alone in some countries.
 is_weekday(as.Date("2020-04-22")) # TRUE (Wed)
 is_weekday(as.Date("2020-04-19")) # FALSE (Sun)
 
-# Middle East weekend (Fri - Sat)
+## Middle East weekend (Fri - Sat)
 is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri", "Sat"))
 
 # Weekend only on Friday
 is_weekday(as.Date("2020-04-17"), weekend_days = "Friday")
 is_weekday(as.Date("2020-04-18"), weekend_days = "Friday")
 
-# Weekend on Sun - Mon (numeric: 7 = Sun, 1 = Mon)
+## Weekend on Sun - Mon (numeric: 7 = Sun, 1 = Mon)
 is_weekday(as.Date("2020-04-20"), weekend_days = c(7, 1))
 
 }

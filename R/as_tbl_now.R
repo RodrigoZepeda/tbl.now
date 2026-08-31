@@ -51,7 +51,7 @@
 #' shows the round trip against each modelling package.
 #'
 #' @examples
-#' # For a plain data.frame this is a synonym for tbl_now(): you name the
+#' ## For a plain data.frame this is a synonym for tbl_now(): you name the
 #' # columns yourself.
 #' data(denguedat)
 #' as_tbl_now(denguedat, event_date = "onset_week", report_date = "report_week")

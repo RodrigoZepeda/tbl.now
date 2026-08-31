@@ -104,11 +104,11 @@
 #' )
 #'
 #' # Pick a report date to interrogate. A real workflow takes this from
-#' # diagnose_batches(); here we simply name one.
+#' ## diagnose_batches(); here we simply name one.
 #' diagnose_batch_shape(dengue_tbl, at = as.Date("1990-06-25"), n_permutations = 99)
 #'
 #' # `n_permutations` sets the resolution of the p-value: 99 keeps the example
-#' # fast, but use the default (999) for anything you intend to report.
+#' ## fast, but use the default (999) for anything you intend to report.
 #'
 #' @export
 diagnose_batch_shape <- function(x,

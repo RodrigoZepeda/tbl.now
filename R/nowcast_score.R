@@ -251,7 +251,7 @@
 #' @examples
 #' # A nowcast and the truth it should be judged against. Both are built by
 #' # hand here so that the example needs no modelling package; in practice `nc`
-#' # comes from run_nowcast() and `truth` is the same data seen later, once the
+#' ## comes from run_nowcast() and `truth` is the same data seen later, once the
 #' # late reports have arrived.
 #' truth_df <- data.frame(
 #'   onset  = rep(as.Date("2024-03-04") + 7 * (0:3), each = 3),
@@ -406,10 +406,10 @@ score_nowcast <- function(x, truth = NULL) {
 #'   event_date = onset_week, report_date = report_week, verbose = FALSE
 #' )
 #'
-#' # `example_engine()` is a toy that ignores the reporting delay entirely; it
+#' ## `example_engine()` is a toy that ignores the reporting delay entirely; it
 #' # is used here only so the example runs without a modelling package.
-#' # Swap in a real one -- `engine_baselinenowcast()`, `engine_epinowcast()`,
-#' # `engine_nobbs()` -- for anything you intend to act on.
+#' ## Swap in a real one -- `engine_baselinenowcast()`, `engine_epinowcast()`,
+#' ## `engine_nobbs()` -- for anything you intend to act on.
 #'
 #' # Refit at two past `now` dates and score each against what is known now.
 #' bt <- nowcast_backtest(dengue,
@@ -689,10 +689,10 @@ print.nowcast_backtest <- function(x, ...) {
 #'   event_date = onset_week, report_date = report_week, verbose = FALSE
 #' )
 #'
-#' # `example_engine()` is a toy that ignores the reporting delay entirely; it
+#' ## `example_engine()` is a toy that ignores the reporting delay entirely; it
 #' # is used here only so the example runs without a modelling package.
-#' # Swap in a real one -- `engine_baselinenowcast()`, `engine_epinowcast()`,
-#' # `engine_nobbs()` -- for anything you intend to act on.
+#' ## Swap in a real one -- `engine_baselinenowcast()`, `engine_epinowcast()`,
+#' ## `engine_nobbs()` -- for anything you intend to act on.
 #'
 #' # Two engines that differ in how wide they claim their intervals are.
 #' bt <- nowcast_backtest(dengue,
@@ -706,7 +706,7 @@ print.nowcast_backtest <- function(x, ...) {
 #' nowcast_weights(bt)
 #' sum(nowcast_weights(bt))
 #'
-#' # Hand them to nowcast_ensemble() to pool the nowcasts they came from.
+#' ## Hand them to nowcast_ensemble() to pool the nowcasts they came from.
 #'
 #' @export
 nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"), ...) {

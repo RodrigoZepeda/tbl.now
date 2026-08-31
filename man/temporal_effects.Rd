@@ -224,16 +224,16 @@ pulled back to Fri Dec 31 2027 — so it appears in the 2027 events, not 2028.
 \examples{
 temporal_effects(day_of_week = TRUE, week_of_year = TRUE)
 
-# Annual seasonality in weekly data (period = 52 weeks)
+## Annual seasonality in weekly data (period = 52 weeks)
 temporal_effects(seasons = 52)
 
-# Annual seasonality in daily data (52 weeks x 7 days = 364-day period)
+## Annual seasonality in daily data (52 weeks x 7 days = 364-day period)
 temporal_effects(seasons = 52, season_length = 7)
 
 # After-weekend effect: flag the first two working days after a weekend
 temporal_effects(weekend = TRUE, weekend_lags = 2)
 
-# Before-weekend effect: flag the last working day before a weekend (Friday)
+## Before-weekend effect: flag the last working day before a weekend (Friday)
 temporal_effects(weekend = TRUE, weekend_lags = -1)
 
 if (rlang::is_installed("almanac")) {
@@ -247,7 +247,7 @@ if (rlang::is_installed("almanac")) {
   temporal_effects(holidays = cal, holiday_lags = -2)
 
   # A calendar of your own: write a rule for the holiday, not a date, and
-  # almanac generates it for every year (see "Using a different holiday
+  ## almanac generates it for every year (see "Using a different holiday
   # calendar" above for a full local calendar).
   lincolns_birthday <- almanac::yearly() |>
     almanac::recur_on_month_of_year("February") |>

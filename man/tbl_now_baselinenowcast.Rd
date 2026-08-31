@@ -210,7 +210,7 @@ rt     <- baselinenowcast::example_reporting_triangle
 # Convert to a tbl_now
 nowobj <- tbl_now_from_baselinenowcast(rt)
 
-# The matrix round-trip is faithful (not-yet-observed `NA` cells are kept).
+## The matrix round-trip is faithful (not-yet-observed `NA` cells are kept).
 identical(rt, tbl_now_to_baselinenowcast(nowobj))
 \dontshow{\}) # examplesIf}
 }

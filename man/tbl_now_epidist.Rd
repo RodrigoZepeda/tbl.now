@@ -170,7 +170,7 @@ window. Check the epidist issue tracker for the current status.
 
 \examples{
 \dontshow{if (requireNamespace("epidist", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-# --- Linelist epidist data (one row per case) ---
+## --- Linelist epidist data (one row per case) ---
 ll <- epidist::as_epidist_linelist_data(
   data.frame(
     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-02")),
@@ -184,7 +184,7 @@ get_data_type(nowll)
 # ... and back to an epidist_linelist_data
 tbl_now_to_epidist(nowll)
 
-# --- Aggregate epidist data (counts in an `n` column) ---
+## --- Aggregate epidist data (counts in an `n` column) ---
 agg <- epidist::as_epidist_aggregate_data(
   data.frame(
     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
@@ -193,10 +193,10 @@ agg <- epidist::as_epidist_aggregate_data(
   ),
   n = "n", pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
 )
-# -> a count-incidence tbl_now (case_count = "n") ...
+## -> a count-incidence tbl_now (case_count = "n") ...
 nowagg <- tbl_now_from_epidist(agg)
 get_data_type(nowagg)
-# ... and back to an epidist_aggregate_data (auto-detected from the counts)
+## ... and back to an epidist_aggregate_data (auto-detected from the counts)
 tbl_now_to_epidist(nowagg)
 \dontshow{\}) # examplesIf}
 }

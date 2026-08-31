@@ -27,7 +27,7 @@ package's examples runnable. It is not a nowcasting method -- ignore it when
 choosing one.
 }
 \examples{
-# What can this installation actually fit right now? ("example" is the toy
+## What can this installation actually fit right now? ("example" is the toy
 # engine, not a method you would nowcast with.)
 list_nowcast_methods()
 

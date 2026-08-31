@@ -278,7 +278,7 @@ print.nowcast_engine <- function(x, ...) {
 #' package; [run_nowcast()], which takes one.
 #'
 #' @examples
-#' # Built by engine(): yes.
+#' ## Built by engine(): yes.
 #' is_nowcast_engine(engine("baselinenowcast"))
 #'
 #' # The name of a package on its own: no.

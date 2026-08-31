@@ -21,7 +21,7 @@ A bare package name is \emph{not} an engine, which is what this is usually used 
 check.
 }
 \examples{
-# Built by engine(): yes.
+## Built by engine(): yes.
 is_nowcast_engine(engine("baselinenowcast"))
 
 # The name of a package on its own: no.

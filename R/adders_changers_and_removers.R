@@ -79,13 +79,13 @@
 #'
 #' ndata$age_group <- sample(c("<18", "18-60", "60+"), nrow(ndata), replace = TRUE)
 #'
-#' # `add_strata()` keeps gender and adds age group.
+#' ## `add_strata()` keeps gender and adds age group.
 #' get_strata(add_strata(ndata, age_group))
 #'
-#' # `change_strata()` replaces gender with age group.
+#' ## `change_strata()` replaces gender with age group.
 #' get_strata(change_strata(ndata, age_group))
 #'
-#' # `remove_strata()` drops one; `remove_all_strata()` drops the lot.
+#' ## `remove_strata()` drops one; `remove_all_strata()` drops the lot.
 #' get_strata(remove_strata(ndata, gender))
 #' get_strata(remove_all_strata(add_strata(ndata, age_group)))
 #'
@@ -103,7 +103,7 @@
 #'
 #' ## ---- Pointing an attribute at a different column ---------------------
 #'
-#' # Suppose onset was recorded a day late and you correct it. `change_event_date()`
+#' ## Suppose onset was recorded a day late and you correct it. `change_event_date()`
 #' # tells the object to use the corrected column instead.
 #' ndata$corrected_onset <- ndata$onset_week - lubridate::days(1)
 #' ndata <- ndata |> change_event_date(corrected_onset)
@@ -111,7 +111,7 @@
 #'
 #' ## ---- The censoring indicator -----------------------------------------
 #'
-#' # TRUE means the report date is only an upper bound (e.g. a backlog dump).
+#' ## TRUE means the report date is only an upper bound (e.g. a backlog dump).
 #' ndata$is_censored <- FALSE
 #' ndata <- ndata |> add_is_censored(is_censored)
 #' get_is_censored(ndata)

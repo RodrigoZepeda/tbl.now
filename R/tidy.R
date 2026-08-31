@@ -811,7 +811,7 @@ tidy.estimate_truncation <- function(x, probs = NULL, ...) {
 #' head(delays)
 #'
 #' # A short chain keeps the example quick -- use EpiNow2's defaults for real
-#' # work. `try()` guards the case where EpiNow2 is installed but its Stan
+#' ## work. `try()` guards the case where EpiNow2 is installed but its Stan
 #' # toolchain is not.
 #' fit <- try(
 #'   EpiNow2::estimate_dist(
@@ -1067,12 +1067,12 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
 #'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 #' )
 #'
-#' # The conversion itself is quick, and is what tidy() will later summarise.
+#' ## The conversion itself is quick, and is what tidy() will later summarise.
 #' converted <- suppressWarnings(tbl_now_to_epidist(nowobj, verbose = FALSE))
 #' head(converted)
 #'
 #' # Fitting compiles a Stan model, so this takes about a minute even on a short
-#' # chain. `try()` guards the case where \pkg{epidist} is installed but its Stan
+#' ## chain. `try()` guards the case where \pkg{epidist} is installed but its Stan
 #' # toolchain is not; use \pkg{brms}'s defaults for real work.
 #' fit <- try(
 #'   converted |>

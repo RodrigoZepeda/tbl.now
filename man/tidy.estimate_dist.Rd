@@ -89,7 +89,7 @@ delays <- tbl_now_to_EpiNow2(nowobj,
 head(delays)
 
 # A short chain keeps the example quick -- use EpiNow2's defaults for real
-# work. `try()` guards the case where EpiNow2 is installed but its Stan
+## work. `try()` guards the case where EpiNow2 is installed but its Stan
 # toolchain is not.
 fit <- try(
   EpiNow2::estimate_dist(

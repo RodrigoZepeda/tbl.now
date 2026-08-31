@@ -132,8 +132,8 @@ diagnose(ndata) |> dplyr::filter(status <= "note")
 # One block on its own
 diagnose(ndata, checks = "units")
 
-# `diagnose()` never stops your pipeline -- it hands back a table for you to
-# read. Use validate_tbl_now() when you want a broken object to be an error.
+## `diagnose()` never stops your pipeline -- it hands back a table for you to
+## read. Use validate_tbl_now() when you want a broken object to be an error.
 nrow(diagnose(ndata))
 
 }

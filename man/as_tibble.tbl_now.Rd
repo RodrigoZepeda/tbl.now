@@ -58,7 +58,7 @@ df_now <- tbl_now(denguedat,
   verbose     = FALSE
 )
 
-# Plain coercion leaves the spec lazy (no temporal-effect columns):
+## Plain coercion leaves the spec lazy (no temporal-effect columns):
 ".event_week_of_year" \%in\% names(tibble::as_tibble(df_now)) # FALSE
 
 # Opt in to materialise the holiday / Fourier / calendar columns:

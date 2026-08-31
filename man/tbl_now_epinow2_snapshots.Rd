@@ -43,7 +43,7 @@ dengue <- tbl_now(denguedat[1:3000, ],
 )
 
 # A stack of snapshots: what the series looked like at each of several past
-# report dates. EpiNow2::estimate_truncation() uses these to learn how much
+## report dates. EpiNow2::estimate_truncation() uses these to learn how much
 # the most recent counts are still going to grow.
 snaps <- tbl_now_to_EpiNow2(dengue,
   target = "estimate_truncation", verbose = FALSE, quiet = TRUE

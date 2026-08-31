@@ -23,7 +23,7 @@ returns -- rather than the data a nowcast is fitted to (for which see
 # A number is not a nowcast.
 is_tbl_nowcast(1)
 
-# The object run_nowcast() returns is.
+## The object run_nowcast() returns is.
 predictions <- data.frame(
   onset_week = as.Date("2020-01-05"),
   .quantile_level = c(0.5, 0.9), .value = c(10, 14)

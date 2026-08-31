@@ -50,14 +50,14 @@ attr_default <- function(x, name, default = NULL) {
 #' is_weekday(as.Date("2020-04-22")) # TRUE (Wed)
 #' is_weekday(as.Date("2020-04-19")) # FALSE (Sun)
 #'
-#' # Middle East weekend (Fri - Sat)
+#' ## Middle East weekend (Fri - Sat)
 #' is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri", "Sat"))
 #'
 #' # Weekend only on Friday
 #' is_weekday(as.Date("2020-04-17"), weekend_days = "Friday")
 #' is_weekday(as.Date("2020-04-18"), weekend_days = "Friday")
 #'
-#' # Weekend on Sun - Mon (numeric: 7 = Sun, 1 = Mon)
+#' ## Weekend on Sun - Mon (numeric: 7 = Sun, 1 = Mon)
 #' is_weekday(as.Date("2020-04-20"), weekend_days = c(7, 1))
 #'
 #' @export
@@ -116,11 +116,11 @@ is_weekday <- function(date, weekend_days = c("Sat", "Sun")) {
 #'   report_date = report_week, strata = gender, verbose = FALSE
 #' )
 #'
-#' # `attributes()` returns everything, including tibble internals like `names`
+#' ## `attributes()` returns everything, including tibble internals like `names`
 #' # and `row.names`.
 #' attributes(df_now) |> names()
 #'
-#' # `tbl_now_attributes()` returns only what makes it a tbl_now.
+#' ## `tbl_now_attributes()` returns only what makes it a tbl_now.
 #' tbl_now_attributes(df_now) |> names()
 #'
 #' # And their values: the roles it recorded, plus the `now` of the nowcast.

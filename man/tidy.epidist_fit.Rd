@@ -76,12 +76,12 @@ nowobj <- tbl_now(recent,
   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 )
 
-# The conversion itself is quick, and is what tidy() will later summarise.
+## The conversion itself is quick, and is what tidy() will later summarise.
 converted <- suppressWarnings(tbl_now_to_epidist(nowobj, verbose = FALSE))
 head(converted)
 
 # Fitting compiles a Stan model, so this takes about a minute even on a short
-# chain. `try()` guards the case where \pkg{epidist} is installed but its Stan
+## chain. `try()` guards the case where \pkg{epidist} is installed but its Stan
 # toolchain is not; use \pkg{brms}'s defaults for real work.
 fit <- try(
   converted |>

@@ -1538,7 +1538,7 @@ tbl_now_from_epinowcast <- function(data, ...,
 #' # Convert to a tbl_now
 #' nowobj <- tbl_now_from_baselinenowcast(rt)
 #'
-#' # The matrix round-trip is faithful (not-yet-observed `NA` cells are kept).
+#' ## The matrix round-trip is faithful (not-yet-observed `NA` cells are kept).
 #' identical(rt, tbl_now_to_baselinenowcast(nowobj))
 #' @section Sparse same-period reporting (weekly data especially):
 #'
@@ -1823,7 +1823,7 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'   `epidist_aggregate_data` object (`to`).
 #'
 #' @examplesIf requireNamespace("epidist", quietly = TRUE)
-#' # --- Linelist epidist data (one row per case) ---
+#' ## --- Linelist epidist data (one row per case) ---
 #' ll <- epidist::as_epidist_linelist_data(
 #'   data.frame(
 #'     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-02")),
@@ -1837,7 +1837,7 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' # ... and back to an epidist_linelist_data
 #' tbl_now_to_epidist(nowll)
 #'
-#' # --- Aggregate epidist data (counts in an `n` column) ---
+#' ## --- Aggregate epidist data (counts in an `n` column) ---
 #' agg <- epidist::as_epidist_aggregate_data(
 #'   data.frame(
 #'     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
@@ -1846,10 +1846,10 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'   ),
 #'   n = "n", pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
 #' )
-#' # -> a count-incidence tbl_now (case_count = "n") ...
+#' ## -> a count-incidence tbl_now (case_count = "n") ...
 #' nowagg <- tbl_now_from_epidist(agg)
 #' get_data_type(nowagg)
-#' # ... and back to an epidist_aggregate_data (auto-detected from the counts)
+#' ## ... and back to an epidist_aggregate_data (auto-detected from the counts)
 #' tbl_now_to_epidist(nowagg)
 #' @section Delays of zero, and the lognormal:
 #'
@@ -2735,11 +2735,11 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #' nowobj <- tbl_now(denguedat[1:2000, ],
 #'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 #' )
-#' # A single daily series for estimate_infections() -- the weekly data is laid
+#' ## A single daily series for estimate_infections() -- the weekly data is laid
 #' # on EpiNow2's daily grid.
 #' head(tbl_now_to_EpiNow2(nowobj, verbose = FALSE, quiet = TRUE))
 #'
-#' # Snapshots for estimate_truncation(), which uses the report dimension.
+#' ## Snapshots for estimate_truncation(), which uses the report dimension.
 #' snaps <- tbl_now_to_EpiNow2(nowobj,
 #'   target = "estimate_truncation", verbose = FALSE, quiet = TRUE
 #' )
@@ -3080,7 +3080,7 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 #' )
 #'
 #' # A stack of snapshots: what the series looked like at each of several past
-#' # report dates. EpiNow2::estimate_truncation() uses these to learn how much
+#' ## report dates. EpiNow2::estimate_truncation() uses these to learn how much
 #' # the most recent counts are still going to grow.
 #' snaps <- tbl_now_to_EpiNow2(dengue,
 #'   target = "estimate_truncation", verbose = FALSE, quiet = TRUE
@@ -4263,7 +4263,7 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
 #'   event_date = onset_week, report_date = report_week, verbose = FALSE
 #' )
 #'
-#' # One line list per stratum, in the shape surveillance::nowcast() wants.
+#' ## One line list per stratum, in the shape surveillance::nowcast() wants.
 #' linelists <- tbl_now_to_surveillance(dengue,
 #'   format = "linelist_list", verbose = FALSE
 #' )
@@ -4416,7 +4416,7 @@ as_tbl_now.tbl_now_surveillance_list <- function(object, ...) {
 #'   head(data.table::as.data.table(dengue))
 #' }
 #'
-#' # Use the `tbl_now_to_*()` function itself when you need its arguments; these
+#' ## Use the `tbl_now_to_*()` function itself when you need its arguments; these
 #' # methods take none beyond `verbose`.
 #'
 #' @name tbl_now_coercion_methods

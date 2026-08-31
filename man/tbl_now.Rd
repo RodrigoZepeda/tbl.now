@@ -281,8 +281,8 @@ data-types.
 
 \examples{
 # `denguedat` is a linelist: one row per dengue case, with the week symptoms
-# began (`onset_week`) and the week the case reached the surveillance system
-# (`report_week`).
+## began (`onset_week`) and the week the case reached the surveillance system
+## (`report_week`).
 data(denguedat)
 head(denguedat)
 
@@ -309,7 +309,7 @@ ndata |>
 ndata |> dplyr::select(-gender)
 
 # But dropping a column the class depends on demotes the object back to a
-# plain tibble (with a warning): without an event date it can no longer
+## plain tibble (with a warning): without an event date it can no longer
 # describe a nowcast.
 suppressWarnings(
   ndata |> dplyr::select(-onset_week)

@@ -118,11 +118,11 @@ data(denguedat)
 nowobj <- tbl_now(denguedat[1:2000, ],
   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 )
-# A single daily series for estimate_infections() -- the weekly data is laid
+## A single daily series for estimate_infections() -- the weekly data is laid
 # on EpiNow2's daily grid.
 head(tbl_now_to_EpiNow2(nowobj, verbose = FALSE, quiet = TRUE))
 
-# Snapshots for estimate_truncation(), which uses the report dimension.
+## Snapshots for estimate_truncation(), which uses the report dimension.
 snaps <- tbl_now_to_EpiNow2(nowobj,
   target = "estimate_truncation", verbose = FALSE, quiet = TRUE
 )

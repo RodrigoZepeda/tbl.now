@@ -32,11 +32,11 @@ df_now <- tbl_now(denguedat,
   report_date = report_week, strata = gender, verbose = FALSE
 )
 
-# `attributes()` returns everything, including tibble internals like `names`
+## `attributes()` returns everything, including tibble internals like `names`
 # and `row.names`.
 attributes(df_now) |> names()
 
-# `tbl_now_attributes()` returns only what makes it a tbl_now.
+## `tbl_now_attributes()` returns only what makes it a tbl_now.
 tbl_now_attributes(df_now) |> names()
 
 # And their values: the roles it recorded, plus the `now` of the nowcast.

@@ -115,7 +115,7 @@
 #'   epidemiological_year = rep(2024, 5)
 #' )
 #'
-#' # week_2_date() turns those into the Sunday that starts each epiweek.
+#' ## week_2_date() turns those into the Sunday that starts each epiweek.
 #' week_2_date(df,
 #'   week_col = epidemiological_week,
 #'   year_col = epidemiological_year

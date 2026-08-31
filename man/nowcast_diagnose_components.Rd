@@ -111,7 +111,7 @@ diagnose_truncation(ndata)
 diagnose_strata(ndata)
 diagnose_signposts(ndata)
 
-# Each returns the same schema, so they stack the way diagnose() stacks them.
+## Each returns the same schema, so they stack the way diagnose() stacks them.
 dplyr::bind_rows(
   diagnose_units(ndata),
   diagnose_now(ndata)

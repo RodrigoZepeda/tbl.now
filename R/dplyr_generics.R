@@ -60,7 +60,7 @@
 #' # A plain data.frame is not a tbl_now ...
 #' is_tbl_now(data.frame(x = 1:3))
 #'
-#' # ... and asking for validation says so, with a reason. (Wrapped in try()
+#' ## ... and asking for validation says so, with a reason. (Wrapped in try()
 #' # because it is meant to fail here.)
 #' try(validate_tbl_now(data.frame(x = 1:3)))
 #'

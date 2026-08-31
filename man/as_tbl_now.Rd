@@ -87,7 +87,7 @@ on to \code{\link[=tbl_now]{tbl_now()}}), so options such as \code{event_units},
 be supplied here too.
 }
 \examples{
-# For a plain data.frame this is a synonym for tbl_now(): you name the
+## For a plain data.frame this is a synonym for tbl_now(): you name the
 # columns yourself.
 data(denguedat)
 as_tbl_now(denguedat, event_date = "onset_week", report_date = "report_week")

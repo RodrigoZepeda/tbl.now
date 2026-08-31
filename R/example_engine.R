@@ -65,7 +65,7 @@
 #' nc <- run_nowcast(dengue, example_engine(), verbose = FALSE)
 #' nc
 #'
-#' # `spread` controls how wide the (made-up) interval is.
+#' ## `spread` controls how wide the (made-up) interval is.
 #' run_nowcast(dengue, example_engine(spread = 0.5), verbose = FALSE)
 #'
 #' @export

@@ -120,7 +120,7 @@ head(ndata[[get_event_date(ndata)]])
 get_strata(ndata)
 get_num_strata(ndata)
 
-# Nothing was declared a covariate, so this is NULL (and the count is 0).
+## Nothing was declared a covariate, so this is NULL (and the count is 0).
 get_covariates(ndata)
 get_num_covariates(ndata)
 
@@ -136,7 +136,7 @@ get_report_units(ndata)
 get_data_type(ndata)
 get_case_count(ndata)
 
-# After to_count() there is one.
+## After to_count() there is one.
 counts <- to_count(ndata, to = "count-incidence")
 get_data_type(counts)
 get_case_count(counts)

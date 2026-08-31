@@ -73,7 +73,7 @@ accepted.
 \examples{
 data(hai_bucaramanga)
 
-# specimen taken -> reported -> (here) the laboratory receipt as the
+## specimen taken -> reported -> (here) the laboratory receipt as the
 # confirmation step.
 hai <- hai_bucaramanga |>
   dplyr::filter(

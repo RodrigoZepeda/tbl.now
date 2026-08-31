@@ -32,10 +32,10 @@ dengue <- tbl_now(recent,
   event_date = onset_week, report_date = report_week, verbose = FALSE
 )
 
-# `example_engine()` is a toy that ignores the reporting delay entirely; it
+## `example_engine()` is a toy that ignores the reporting delay entirely; it
 # is used here only so the example runs without a modelling package.
-# Swap in a real one -- `engine_baselinenowcast()`, `engine_epinowcast()`,
-# `engine_nobbs()` -- for anything you intend to act on.
+## Swap in a real one -- `engine_baselinenowcast()`, `engine_epinowcast()`,
+## `engine_nobbs()` -- for anything you intend to act on.
 
 bt <- nowcast_backtest(dengue,
   example_engine(label = "carry forward"),

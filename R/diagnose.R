@@ -132,8 +132,8 @@
 #' # One block on its own
 #' diagnose(ndata, checks = "units")
 #'
-#' # `diagnose()` never stops your pipeline -- it hands back a table for you to
-#' # read. Use validate_tbl_now() when you want a broken object to be an error.
+#' ## `diagnose()` never stops your pipeline -- it hands back a table for you to
+#' ## read. Use validate_tbl_now() when you want a broken object to be an error.
 #' nrow(diagnose(ndata))
 #'
 #' @md
@@ -229,7 +229,7 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 #' diagnose_strata(ndata)
 #' diagnose_signposts(ndata)
 #'
-#' # Each returns the same schema, so they stack the way diagnose() stacks them.
+#' ## Each returns the same schema, so they stack the way diagnose() stacks them.
 #' dplyr::bind_rows(
 #'   diagnose_units(ndata),
 #'   diagnose_now(ndata)

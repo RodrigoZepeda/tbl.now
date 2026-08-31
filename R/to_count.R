@@ -59,7 +59,7 @@
 #' # A linelist has one row per case ...
 #' nrow(ndata)
 #'
-#' # ... which becomes one row per (onset week, report week, gender), with the
+#' ## ... which becomes one row per (onset week, report week, gender), with the
 #' # number of cases in `n`.
 #' counts <- to_count(ndata, to = "count-incidence")
 #' counts

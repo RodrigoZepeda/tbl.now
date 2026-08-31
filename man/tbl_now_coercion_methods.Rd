@@ -62,7 +62,7 @@ if (requireNamespace("data.table", quietly = TRUE)) {
   head(data.table::as.data.table(dengue))
 }
 
-# Use the `tbl_now_to_*()` function itself when you need its arguments; these
+## Use the `tbl_now_to_*()` function itself when you need its arguments; these
 # methods take none beyond `verbose`.
 
 }

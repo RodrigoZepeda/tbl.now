@@ -83,7 +83,7 @@
 #' # How the cases vary by epidemiological week
 #' plot_week_of_year_effects(dengue_now)
 #'
-#' # By day type (weekday / weekend / holiday), once a holiday calendar is attached
+#' ## By day type (weekday / weekend / holiday), once a holiday calendar is attached
 #' holiday_now <- dengue_now |>
 #'   add_temporal_effects(temporal_effects(weekend = TRUE, holidays = almanac::cal_us_federal()))
 #' plot_holiday_effects(holiday_now)
