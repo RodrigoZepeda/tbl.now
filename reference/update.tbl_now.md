@@ -1,9 +1,18 @@
-# Update a `tbl_now`
+# Append newly arrived data to a `tbl_now`
 
 **\[experimental\]**
 
-Updates a `tbl_now` object with new observations either from another
-`tbl_now` or a `data.frame`
+Surveillance data does not arrive once; it arrives every week.
+[`update()`](https://rdrr.io/r/stats/update.html) takes a `tbl_now` and
+a batch of newer rows – as another `tbl_now` or as a plain `data.frame`
+– and returns a single object containing both, still knowing everything
+the original knew about itself.
+
+It also moves `now` forward, because the new rows may carry a later
+report than the object had seen. That is the difference between this and
+[`dplyr::bind_rows()`](https://dplyr.tidyverse.org/reference/bind_rows.html),
+which would give you back a plain data frame with no idea what a nowcast
+is.
 
 ## Usage
 
@@ -74,40 +83,42 @@ By default it keeps the strata, covariates and temporal effects of
 `object`. Use the `strata`, `covariates` and `t_effects` arguments to
 change it.
 
+## See also
+
+[update_now()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+to move `now` without adding rows;
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+for the attributes that are carried over;
+[`add()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md) and
+[change()](https://rodrigozepeda.github.io/tbl.now/reference/add.md) to
+edit those attributes instead of the data.
+
 ## Examples
 
 ``` r
 data(denguedat)
-initial_data <- denguedat[1:500, ]
-update_data <- denguedat[501:1000, ]
 
-initial_tbl <- tbl_now(denguedat,
+# Pretend the first 500 rows are what you had last week ...
+initial_tbl <- tbl_now(denguedat[1:500, ],
   event_date = "onset_week",
   report_date = "report_week", strata = "gender",
   verbose = FALSE
 )
+nrow(initial_tbl)
+#> [1] 500
+get_now(initial_tbl)
+#> [1] "1990-09-03"
 
-# Update collapses everything into a single data.frame
-update(initial_tbl, new_data = update_data)
-#> # A tibble:  53,487 × 6
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#>    onset_week   report_week   gender   .event_num .report_num .delay
-#>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl>
-#>    [event_date] [report_date] [strata]      [...]       [...]  [...]
-#>  1 1990-01-01   1990-01-01    Male              0           0      0
-#>  2 1990-01-01   1990-01-01    Female            0           0      0
-#>  3 1990-01-01   1990-01-01    Female            0           0      0
-#>  4 1990-01-01   1990-01-08    Female            0           1      1
-#>  5 1990-01-01   1990-01-08    Male              0           1      1
-#>  6 1990-01-01   1990-01-15    Female            0           2      2
-#>  7 1990-01-01   1990-01-15    Female            0           2      2
-#>  8 1990-01-01   1990-01-15    Female            0           2      2
-#>  9 1990-01-01   1990-01-22    Female            0           3      3
-#> 10 1990-01-01   1990-01-08    Female            0           1      1
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
-#> # Strata: "gender"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 53,477 more rows
+# ... and these arrived since.
+new_rows <- denguedat[501:1000, ]
+
+# The result has both, keeps `gender` as a stratum, and has moved `now`
+# forward to the latest report it has now seen.
+updated <- update(initial_tbl, new_data = new_rows)
+nrow(updated)
+#> [1] 1000
+get_strata(updated)
+#> [1] "gender"
+get_now(updated)
+#> [1] "1990-11-12"
 ```

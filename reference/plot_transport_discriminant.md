@@ -2,6 +2,13 @@
 
 **\[experimental\]**
 
+Places each report date by its creation score (x) and transport /
+deficit score (y) from
+[`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md),
+shading the region that decides the batch call. Surges are not
+distinguished here (they fold into the quiet background) since only the
+batch call is of interest.
+
 ## Usage
 
 ``` r
@@ -42,15 +49,8 @@ A ggplot2 object (or a plotly widget when `plotly = TRUE`).
 
 ## Details
 
-Places each report date by its creation score (x) and transport /
-deficit score (y) from
-[`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md),
-shading the region that decides the batch call. Surges are not
-distinguished here (they fold into the quiet background) since only the
-batch call is of interest.
-
 Only the
-[`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md)-confirmed
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)-confirmed
 batches (Benjamini-Hochberg-corrected) are coloured red; the dashed
 lines and shaded region are a reference for where a batch sits (deficit
 cleared, and significant), not the flagging rule. The most
@@ -61,8 +61,14 @@ once the window total recovers.
 
 ## See also
 
-[`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md),
-[`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md).
+[`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md)
+for the numbers behind the plane;
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
+for the hypothesis test that flags the red points;
+[plot_reporting_process()](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md)
+for the series they come from;
+[`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md)
+for the whole gallery.
 
 ## Examples
 

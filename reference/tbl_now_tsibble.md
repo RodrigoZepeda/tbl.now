@@ -20,7 +20,7 @@ index and the other date plus the strata as the key. Linelist data is
 aggregated to `count-incidence` first (a tsibble requires unique
 index/key combinations). The covariates, the censoring indicator and any
 materialised temporal-effect columns (see
-[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md))
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md))
 ride along as measurement columns.
 
 ## Usage
@@ -51,11 +51,15 @@ tbl_now_to_tsibble(
 
 - report_date:
 
-  Column name of the report date (required for `from`).
+  The report-date column (required for `from`), as a
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  expression – a bare column name or a string.
 
 - event_date:
 
-  Column name of the event date (for `from`); defaults to the tsibble
+  The event-date column (for `from`), as a
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  expression – a bare column name or a string. Defaults to the tsibble
   index.
 
 - strata:
@@ -106,6 +110,24 @@ removed automatically, with a warning either way:
 [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
 is the exception and keeps the flag: estimating a delay distribution is
 the one job that can use it.
+
+## See also
+
+[as_tsibble()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_coercion_methods.md),
+the tsibble method that calls this;
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md),
+since a tsibble needs unique index/key rows and a line list has to be
+aggregated first;
+[`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
+for regular weekly indexes.
+[`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+for the generic that dispatches to the `*_from_*()` side;
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md),
+which does the conversion for you when you fit through an
+[`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md).
+The [*One dataset, many nowcasts*
+article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+fits the same data with every supported package.
 
 ## Examples
 

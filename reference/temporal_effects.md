@@ -1,10 +1,37 @@
-# Temporal Effects Class
+# Calendar effects to include in a nowcast
 
 **\[stable\]**
 
-The `temporal_effects` class specifies which temporal covariates or
-effects should be included in a nowcasting model (e.g., day of week,
-month, holidays, etc.).
+Reporting follows the calendar. Fewer cases are entered at the weekend,
+almost none over Christmas, and the backlog clears in the days
+afterwards. Disease itself follows the calendar too – dengue peaks in
+the rainy season, influenza in winter. A nowcast that ignores this will
+overestimate a Monday and underestimate the Tuesday that follows.
+
+`temporal_effects()` writes down which of those patterns you want a
+model to account for. It does not compute anything: it is a
+specification you hand to
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+or
+[`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md),
+and the columns are only built when
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
+is called.
+
+The patterns available are:
+
+- **Position in the week or month** – `day_of_week`, `weekend`,
+  `day_of_month`.
+
+- **Position in the year** – `week_of_year`, `month_of_year`.
+
+- **Smooth seasonality** – `seasons`, which fits Fourier terms rather
+  than one indicator per period. Use this when you believe the pattern
+  is a smooth wave rather than 52 unrelated weeks.
+
+- **Holidays, and the days around them** – `holidays`, `holiday_lags`
+  and `weekend_lags`, which capture the shutdown and the catch-up that
+  follows it.
 
 ## Usage
 
@@ -87,10 +114,15 @@ temporal_effects(
 
 - seasons:
 
-  Vector. Either `integer(0)` (no seasonal effects) or a
-  positive-numeric vector where each entry is the number of seasons
-  (cycles) to model. The actual Fourier period for the i-th entry is
+  Vector. Smooth (Fourier) seasonality, as opposed to one indicator per
+  calendar unit. Either `integer(0)` (no seasonal effects) or a
+  positive-numeric vector, each entry giving the number of periods in
+  one cycle. The Fourier period of the i-th entry is
   `seasons[i] * season_length[i]`.
+
+  In weekly data, `seasons = 52` is a yearly wave. Several entries fit
+  several waves at once, so `seasons = c(7, 365)` in daily data fits a
+  weekly and a yearly cycle together.
 
 - season_length:
 
@@ -110,7 +142,11 @@ temporal_effects(
 
 ## Value
 
-An object of class `temporal_effects`.
+An object of class `temporal_effects`: a specification, not data. Hand
+it to
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)'s
+`t_effects` argument or to
+[`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md).
 
 ## Details
 
@@ -128,10 +164,10 @@ Example:
 `holidays` accepts **any**
 [`almanac::rcalendar()`](https://rdrr.io/pkg/almanac/man/rcalendar.html).
 
-A calendar is a set of *recurrence rules*, so you describe how a holiday
-is constructed . say "the fourth Thursday of November", and almanac
-generates it for every year. In general, you should avoid hardcoding
-specific dates (like "18/11/2021").
+A calendar is a set of *recurrence rules*: you describe how a holiday is
+constructed – "the fourth Thursday of November" – and almanac generates
+it for every year. Avoid hardcoding specific dates such as
+`"2021-11-18"`, which will be wrong next year.
 
 A calendar has four building blocks:
 
@@ -243,8 +279,20 @@ Two of those show the rules we implemented:
   is pulled back to Fri Dec 31 2027 — so it appears in the 2027 events,
   not 2028.
 
-**Note** NYC's Lincoln's Birthday is a floating holiday so consider
-removing from here.
+## See also
+
+[`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
+to attach a specification to a `tbl_now`, and
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
+to turn it into columns;
+[get_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+to read it back;
+[calendar_effect_plots](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
+to see the patterns in your data before deciding which to model;
+[`is_weekday()`](https://rodrigozepeda.github.io/tbl.now/reference/is_weekday.md)
+for the weekend definition these use;
+[`almanac::rcalendar()`](https://rdrr.io/pkg/almanac/man/rcalendar.html)
+for building holiday calendars.
 
 ## Examples
 
@@ -255,13 +303,13 @@ temporal_effects(day_of_week = TRUE, week_of_year = TRUE)
 #> • "day_of_week"
 #> • "week_of_year"
 
-# Annual seasonality in weekly data (period = 52 weeks)
+## Annual seasonality in weekly data (period = 52 weeks)
 temporal_effects(seasons = 52)
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
 #> The following effects are in place:
 #> • "season" periods: 52
 
-# Annual seasonality in daily data (52 weeks x 7 days = 364-day period)
+## Annual seasonality in daily data (52 weeks x 7 days = 364-day period)
 temporal_effects(seasons = 52, season_length = 7)
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
 #> The following effects are in place:
@@ -274,7 +322,7 @@ temporal_effects(weekend = TRUE, weekend_lags = 2)
 #> • "weekend"
 #> • "after-weekend" effect: first 2 working days
 
-# Before-weekend effect: flag the last working day before a weekend (Friday)
+## Before-weekend effect: flag the last working day before a weekend (Friday)
 temporal_effects(weekend = TRUE, weekend_lags = -1)
 #> ── Temporal Effects ────────────────────────────────────────────────────────────
 #> The following effects are in place:
@@ -292,7 +340,7 @@ if (rlang::is_installed("almanac")) {
   temporal_effects(holidays = cal, holiday_lags = -2)
 
   # A calendar of your own: write a rule for the holiday, not a date, and
-  # almanac generates it for every year (see "Using a different holiday
+  ## almanac generates it for every year (see "Using a different holiday
   # calendar" above for a full local calendar).
   lincolns_birthday <- almanac::yearly() |>
     almanac::recur_on_month_of_year("February") |>

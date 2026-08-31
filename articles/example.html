@@ -12,7 +12,7 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -23,11 +23,11 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,9 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
+    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
@@ -55,6 +58,14 @@
 </form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/rodrigozepeda/tbl.now" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://twitter.com/rodzepeda" aria-label="Twitter"><span class="fa fab fa-twitter"></span></a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
+<li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
+  </ul>
+</li>
       </ul>
 </div>
 
@@ -81,13 +92,17 @@
 unpolished</strong> dataset. We will:</p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Clean</strong> a messy surveillance extract with
-<code>dplyr</code> and <code>tbl.now</code>, checking the things that
-actually break a nowcast — duplicate records, missing dates, and reports
-that arrive <em>before</em> the event they describe.</li>
+<strong>Build</strong> a <code>tbl_now</code> from a messy
+surveillance extract — <em>before</em> cleaning it — and let
+<code><a href="../reference/diagnose.html">diagnose()</a></code> report what is wrong, rather than guessing.</li>
 <li>
-<strong>Look</strong> at the data with <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> and
-the standalone <code>plot_*()</code> diagnostics.</li>
+<strong>Clean</strong> what it reported: duplicate records, missing
+dates, and reports that arrive <em>before</em> the event they describe.
+Then re-run the diagnosis to confirm the fix rather than assume it.</li>
+<li>
+<strong>Look</strong> at the data with <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code>, read
+the numbers off it with <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, and use the standalone
+<code>plot_*()</code> diagnostics.</li>
 <li>Ask whether the reporting delay is <strong>stable</strong> — does it
 drift, does it jump?</li>
 <li>Attach <strong>temporal effects</strong> that the data actually
@@ -95,7 +110,7 @@ justifies.</li>
 <li>
 <strong>Nowcast</strong>, first with <code>diseasenowcasting</code>
 and then with five other engines, letting everything we found in steps
-1–3 inform the model.</li>
+1–4 inform the model.</li>
 </ol>
 <p>The thread running through all of it: <em>look before you model.</em>
 Every modelling choice at the end is traceable to something we measured
@@ -148,18 +163,175 @@ would split that into a transport and a processing leg, but it is 84%
 missing and stops in 2019, so we leave it alone.)</p>
 </div>
 <div class="section level2">
-<h2 id="cleaning">1. Cleaning<a class="anchor" aria-label="anchor" href="#cleaning"></a>
+<h2 id="choosing-a-time-resolution">1. Choosing a time resolution<a class="anchor" aria-label="anchor" href="#choosing-a-time-resolution"></a>
 </h2>
-<p><code><a href="../reference/hai_bucaramanga.html">?hai_bucaramanga</a></code> documents the defects; here we deal
-with them one at a time rather than trusting the help page. Nothing
-below is specific to this dataset — these are the checks worth running
-on <em>any</em> surveillance extract before it reaches a model.</p>
+<p>Before anything else, the data has to be put on a time grid, because
+the grid constrains everything after it — including which nowcasting
+engines you can use at all.</p>
+<p>A <code>tbl_now</code> will happily take the daily dates, but daily
+is not usable here. Counting needs rows that have both dates, so this
+one filter runs ahead of the cleaning proper:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
+<span>    cases            <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>    distinct_days    <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/n_distinct.html" class="external-link">n_distinct</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span>,</span>
+<span>    cases_per_day    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/n_distinct.html" class="external-link">n_distinct</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>    distinct_weeks   <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/n_distinct.html" class="external-link">n_distinct</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/round_date.html" class="external-link">floor_date</a></span><span class="op">(</span><span class="va">specimen_date</span>, <span class="st">"week"</span>, week_start <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    cases_per_week   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/n_distinct.html" class="external-link">n_distinct</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/round_date.html" class="external-link">floor_date</a></span><span class="op">(</span><span class="va">specimen_date</span>, <span class="st">"week"</span>, week_start <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 5</span></span></span>
+<span><span class="co">#&gt;   cases distinct_days cases_per_day distinct_weeks cases_per_week</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>   826           539          1.53            234           3.53</span></span></code></pre></div>
+<p>Roughly <strong>1.5 cases per day</strong> cannot support a delay
+distribution with any resolution at all. Aggregating to weeks gives
+about three and a half cases a week, which is still thin but
+workable.</p>
+<p>Monthly would be denser still, and statistically it is the better fit
+for this data — but it is worth knowing that <strong>your time unit
+constrains your choice of engine</strong>. Of the five nowcasting
+packages used at the end of this article, only
+<code>diseasenowcasting</code> and <code>baselinenowcast</code> accept
+monthly data: <code>NobBS</code> supports only daily and weekly units,
+and <code>epinowcast</code> accepts only <code>"day"</code> and
+<code>"week"</code> timesteps. Weeks are the finest unit every engine
+agrees on, so weeks it is.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hai_weekly_raw</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>    event_week  <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/round_date.html" class="external-link">floor_date</a></span><span class="op">(</span><span class="va">specimen_date</span>, <span class="st">"week"</span>, week_start <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span>
+<span>    report_week <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/round_date.html" class="external-link">floor_date</a></span><span class="op">(</span><span class="va">report_date</span>,   <span class="st">"week"</span>, week_start <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="building-the-tbl_now">2. Building the <code>tbl_now</code><a class="anchor" aria-label="anchor" href="#building-the-tbl_now"></a>
+</h2>
+<p>Now the data can be handed to <code><a href="../reference/tbl_now.html">tbl_now()</a></code>. We declare the
+two dates, say the data is a line list (one row per case), and stratify
+by the type of intensive care unit.</p>
+<p>This is deliberately done <strong>before</strong> cleaning.
+<code><a href="../reference/hai_bucaramanga.html">?hai_bucaramanga</a></code> documents the defects, but rather than
+trusting the help page — or discovering them one at a time — we let the
+object tell us what is wrong with it. <code><a href="../reference/tbl_now.html">tbl_now()</a></code> accepts
+imperfect data and complains about it:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hai_raw_now</span> <span class="op">&lt;-</span> <span class="va">hai_weekly_raw</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
+<span>    event_date  <span class="op">=</span> <span class="va">event_week</span>,</span>
+<span>    report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
+<span>    strata      <span class="op">=</span> <span class="va">icu_type</span>,</span>
+<span>    data_type   <span class="op">=</span> <span class="st">"linelist"</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: 318 rows have NA values in the event_date column "event_week".</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> A row with no event date cannot be placed on the reporting triangle.</span></span>
+<span><span class="co">#&gt; Warning: 583 rows have NA values in the report_date column "report_week".</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> A row with no report date cannot be placed on the reporting triangle.</span></span>
+<span><span class="co">#&gt; Warning: 88 rows have a `report_date` before `event_date`</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> A negative reporting delay is not a delay; the two date columns may be swapped, or the rows may be data-entry errors.</span></span></code></pre></div>
+<p>Three warnings, before we have looked at a single number.
+<code><a href="../reference/tbl_now.html">tbl_now()</a></code> also inferred that both dates are
+<strong>weekly</strong>, computed <code>.delay</code> and the numeric
+indices, and set the <strong>now</strong> to the most recent report
+week. From here on, everything — the plots, the diagnostics, and every
+model converter — reads those settings off the object instead of being
+told again.</p>
+</div>
+<div class="section level2">
+<h2 id="what-is-wrong-with-it">3. What is wrong with it?<a class="anchor" aria-label="anchor" href="#what-is-wrong-with-it"></a>
+</h2>
+<p>The warnings above are the loud findings. <code><a href="../reference/diagnose.html">diagnose()</a></code>
+returns all of them, and the quiet ones too, as a tibble sorted worst
+first. <code>status</code> is an ordered factor — <code>error</code>
+&gt; <code>warning</code> &gt; <code>note</code> &gt; <code>ok</code>
+&gt; <code>not_run</code> &gt; <code>skipped</code> — so filtering to
+what needs acting on is a comparison:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">hai_raw_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">&lt;=</span> <span class="st">"note"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">check</span>, <span class="va">scope</span>, <span class="va">stratum</span>, <span class="va">status</span>, <span class="va">n_affected</span>, <span class="va">n_total</span>, <span class="va">message</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 14 × 7</span></span></span>
+<span><span class="co">#&gt;    check        scope           stratum    status  n_affected n_total message                                                                                   </span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                                                     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> missing      event_week      all        warning        318    <span style="text-decoration: underline;">1</span>423 <span style="color: #949494;">"</span>318 rows have NA values in the event_date column \"event_week\".<span style="color: #949494;">"</span>                        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> missing      report_week     all        warning        583    <span style="text-decoration: underline;">1</span>423 <span style="color: #949494;">"</span>583 rows have NA values in the report_date column \"report_week\".<span style="color: #949494;">"</span>                      </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> ordering     event_to_report all        warning         88    <span style="text-decoration: underline;">1</span>423 <span style="color: #949494;">"</span>88 rows have a `report_date` before `event_date`<span style="color: #949494;">"</span>                                        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> declarations undeclared      all        note            12      18 <span style="color: #949494;">"</span>12 columns \"id\", \"specimen_date\", \"received_date\", \"report_date\", \"specimen\", …</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> now          now_gap_event   Neonatal   note            40      <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The last event date is 40 weeks before now (\"2023-10-30\").<span style="color: #949494;">"</span>                            </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> now          now_gap_report  Adult      note            39      <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The last report date is 39 weeks before now (\"2023-10-30\").<span style="color: #949494;">"</span>                           </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> now          now_gap_report  Neonatal   note            40      <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The last report date is 40 weeks before now (\"2023-10-30\").<span style="color: #949494;">"</span>                           </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> now          now_gap_report  Paediatric note            42      <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The last report date is 42 weeks before now (\"2023-10-30\").<span style="color: #949494;">"</span>                           </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> now          now_gap_report  all        note            39      <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The last report date is 39 weeks before now (\"2023-10-30\").<span style="color: #949494;">"</span>                           </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> strata       size            Neonatal   note           157    <span style="text-decoration: underline;">1</span>423 <span style="color: #949494;">"</span>The smallest stratum is \"Neonatal\" with 157 cases, 11% of the total.<span style="color: #949494;">"</span>                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> strata       sparsity        Neonatal   note           337     410 <span style="color: #949494;">"</span>The sparsest stratum is \"Neonatal\": 82.2% of the event dates on the grid carry no case…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> truncation   event_date      Adult      note             2     210 <span style="color: #949494;">"</span>2 event dates are younger than the 95th percentile of the delay, so their counts are sti…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> truncation   event_date      Paediatric note             1      75 <span style="color: #949494;">"</span>1 event date is younger than the 95th percentile of the delay, so its counts are still f…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> truncation   event_date      all        note             2     234 <span style="color: #949494;">"</span>2 event dates are younger than the 95th percentile of the delay, so their counts are sti…</span></span></code></pre></div>
+<p>That is the cleaning list, derived rather than assumed. Three of the
+findings are defects to fix — missing event dates, missing report dates,
+and reports that precede their event. The others are things the file
+cannot be blamed for but you still need to know: twelve columns were
+never declared, so they silently split every reporting-triangle cell;
+and the last event date sits well behind <code>now</code>, because
+reporting on this extract stopped before the extract did.</p>
+<p>Two statuses deserve attention, because neither means “fine”:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">hai_raw_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"skipped"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">check</span>, <span class="va">scope</span>, <span class="va">message</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 3</span></span></span>
+<span><span class="co">#&gt;   check      scope                  message                                                                               </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                                                 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> duplicates key                    A line list is one row per case, so identical rows are two cases rather than a repeat.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> negatives  count                  A line list has no count column to go negative.                                       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> ordering   event_to_confirmation  The object carries no confirmation process.                                           </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ordering   report_to_confirmation The object carries no confirmation process.                                           </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> signposts  confirmation           The object carries no confirmation process.                                           </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> strata     pending                The object carries no confirmation process.</span></span></code></pre></div>
+<p><code>skipped</code> is not <code>ok</code>. <code>ok</code> means a
+check ran and found nothing; <code>skipped</code> means it could not run
+at all, and a check that cannot be performed is never reported as a
+pass. Note the first row in particular: <strong><code><a href="../reference/diagnose.html">diagnose()</a></code>
+will not look for duplicate records in a line list</strong>, because one
+row <em>is</em> one case, so two identical rows are two infections
+rather than a repeat. That check is the one piece of the cleaning below
+that <code><a href="../reference/diagnose.html">diagnose()</a></code> cannot do for you, and §4 does it by
+hand.</p>
+<p>The <code>not_run</code> rows are different again — questions
+<code><a href="../reference/diagnose.html">diagnose()</a></code> deliberately refuses to answer:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_diagnose_components.html">diagnose_signposts</a></span><span class="op">(</span><span class="va">hai_raw_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">scope</span>, <span class="va">status</span>, <span class="va">message</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 3</span></span></span>
+<span><span class="co">#&gt;   scope                status  message                                            </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                              </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> confirmation_batches not_run <span style="color: #949494;">"</span>Run: diagnose_batches(x, axis = \"confirmation\")<span style="color: #949494;">"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> report               not_run <span style="color: #949494;">"</span>Run: diagnose_drift(x, axis = \"report\")<span style="color: #949494;">"</span>        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> report_batches       not_run <span style="color: #949494;">"</span>Run: diagnose_batches(x, axis = \"report\")<span style="color: #949494;">"</span>      </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> confirmation         skipped <span style="color: #949494;">"</span>The object carries no confirmation process.<span style="color: #949494;">"</span></span></span></code></pre></div>
+<p><code><a href="../reference/diagnose.html">diagnose()</a></code> is <strong>structural</strong>: it never runs
+a statistical test, so it is fast and its answer never depends on a
+random seed. Whether the delay drifts, and whether reports arrive in
+batches, are statistical questions, and each signpost names the call
+that answers it. §6 runs them.</p>
+</div>
+<div class="section level2">
+<h2 id="cleaning">4. Cleaning<a class="anchor" aria-label="anchor" href="#cleaning"></a>
+</h2>
+<p>Now the defects, one at a time. Nothing below is specific to this
+dataset — these are the fixes worth knowing on <em>any</em> surveillance
+extract.</p>
 <div class="section level3">
 <h3 id="duplicate-records">Duplicate records<a class="anchor" aria-label="anchor" href="#duplicate-records"></a>
 </h3>
-<p>The source’s <code>id</code> column is documented as a unique
-autonumber, so it should have no repeats:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>This is the check <code><a href="../reference/diagnose.html">diagnose()</a></code> skipped, and the reason it
+skipped it is exactly why it needs doing here: the <em>object</em>
+cannot tell a repeated case from a real second one, but the
+<em>source</em> can. <code>hai_bucaramanga</code>’s <code>id</code>
+column is documented as a unique autonumber, so it should have no
+repeats:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">n</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -168,7 +340,7 @@ autonumber, so it should have no repeats:</p>
 <p>It does. Are those rows genuinely identical, or do they differ
 somewhere and merely share an id? That distinction decides whether it is
 safe to drop them:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Rows that are byte-identical to another row, across every column.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html" class="external-link">duplicated</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 100</span></span></code></pre></div>
@@ -176,7 +348,7 @@ safe to drop them:</p>
 agree, so every repeat is a whole-record copy — an export artifact, not
 a real second infection. <code><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct()</a></code> removes them without
 losing information:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">hai</span><span class="op">)</span></span>
@@ -188,24 +360,14 @@ losing information:</p>
 <p>The source encodes missing dates as <code>1900-01-01</code>; that
 sentinel has already been converted to <code>NA</code> when the dataset
 was built (see <code><a href="../reference/hai_bucaramanga.html">?hai_bucaramanga</a></code>). A row without both dates
-cannot contribute to a reporting triangle:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">hai</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
-<span>    missing_event  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    missing_report <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    missing_either <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span> <span class="op">|</span> <span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
-<span><span class="co">#&gt;   missing_event missing_report missing_either</span></span>
-<span><span class="co">#&gt;           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>           293            558            569</span></span></code></pre></div>
+cannot contribute to a reporting triangle — which is what the two
+<code>missing</code> findings above were saying.</p>
 <p>That is a large fraction of the file, and it is worth pausing on
 rather than filtering away reflexively. Missingness that depends on
 <em>when</em> a case occurred would bias the nowcast; missingness spread
 evenly over time mostly costs precision. Here it is heavily concentrated
 in the early years:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>year <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -226,7 +388,7 @@ in the early years:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>  <span style="text-decoration: underline;">2</span>021   278         0   </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span>  <span style="text-decoration: underline;">2</span>022   125         0.04</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span>  <span style="text-decoration: underline;">2</span>023     8         0</span></span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai</span> <span class="op">&lt;-</span> <span class="va">hai</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">hai</span><span class="op">)</span></span>
@@ -237,8 +399,10 @@ in the early years:</p>
 </h3>
 <p>This is the check that most often catches real data-entry problems,
 and it is easy to forget: a result cannot be issued before the sample
-was taken, so the delay must never be negative.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+was taken, so the delay must never be negative.
+<code><a href="../reference/nowcast_diagnose_components.html">diagnose_ordering()</a></code> counted these at the weekly resolution;
+at daily resolution the picture is:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>delay_days <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">report_date</span> <span class="op">-</span> <span class="va">specimen_date</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
@@ -255,7 +419,7 @@ was taken, so the delay must never be negative.</p>
 date, one by almost a year. There is no way to tell from the file
 whether the event date, the report date, or both are wrong, so the only
 defensible move is to drop them and say so:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai</span> <span class="op">&lt;-</span> <span class="va">hai</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">report_date</span> <span class="op">&gt;=</span> <span class="va">specimen_date</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">hai</span><span class="op">)</span></span>
@@ -300,52 +464,17 @@ and why the rest did not:</p>
 <p>Just under half the file survives. That is uncomfortable, and it is
 the honest starting point for everything that follows.</p>
 </div>
-</div>
-<div class="section level2">
-<h2 id="choosing-a-time-resolution">2. Choosing a time resolution<a class="anchor" aria-label="anchor" href="#choosing-a-time-resolution"></a>
-</h2>
-<p>A <code>tbl_now</code> will happily take the daily dates, but daily
-is not usable here:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">hai</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
-<span>    cases            <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>    distinct_days    <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/n_distinct.html" class="external-link">n_distinct</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span>,</span>
-<span>    cases_per_day    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/n_distinct.html" class="external-link">n_distinct</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span>,</span>
-<span>    distinct_weeks   <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/n_distinct.html" class="external-link">n_distinct</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/round_date.html" class="external-link">floor_date</a></span><span class="op">(</span><span class="va">specimen_date</span>, <span class="st">"week"</span>, week_start <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    cases_per_week   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/n_distinct.html" class="external-link">n_distinct</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/round_date.html" class="external-link">floor_date</a></span><span class="op">(</span><span class="va">specimen_date</span>, <span class="st">"week"</span>, week_start <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 5</span></span></span>
-<span><span class="co">#&gt;   cases distinct_days cases_per_day distinct_weeks cases_per_week</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>   673           488          1.38            225           2.99</span></span></code></pre></div>
-<p>Roughly <strong>1.4 cases per day</strong> cannot support a delay
-distribution with any resolution at all. Aggregating to weeks gives
-about three cases a week, which is still thin but workable.</p>
-<p>Monthly would be denser still, and statistically it is the better fit
-for this data — but it is worth knowing that <strong>your time unit
-constrains your choice of engine</strong>. Of the five nowcasting
-packages used at the end of this article, only
-<code>diseasenowcasting</code> and <code>baselinenowcast</code> accept
-monthly data: <code>NobBS</code> supports only daily and weekly units,
-and <code>epinowcast</code> accepts only <code>"day"</code> and
-<code>"week"</code> timesteps. Weeks are the finest unit every engine
-agrees on, so weeks it is.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="section level3">
+<h3 id="rebuilding-and-checking-that-it-worked">Rebuilding, and checking that it worked<a class="anchor" aria-label="anchor" href="#rebuilding-and-checking-that-it-worked"></a>
+</h3>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_weekly</span> <span class="op">&lt;-</span> <span class="va">hai</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    event_week  <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/round_date.html" class="external-link">floor_date</a></span><span class="op">(</span><span class="va">specimen_date</span>, <span class="st">"week"</span>, week_start <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span>
 <span>    report_week <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/round_date.html" class="external-link">floor_date</a></span><span class="op">(</span><span class="va">report_date</span>,   <span class="st">"week"</span>, week_start <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="building-the-tbl_now">3. Building the <code>tbl_now</code><a class="anchor" aria-label="anchor" href="#building-the-tbl_now"></a>
-</h2>
-<p>Now the data can be handed to <code><a href="../reference/tbl_now.html">tbl_now()</a></code>. We declare the
-two dates, say the data is a line list (one row per case), and stratify
-by the type of intensive care unit:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">hai_now</span> <span class="op">&lt;-</span> <span class="va">hai_weekly</span> <span class="op">|&gt;</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="va">hai_now</span> <span class="op">&lt;-</span> <span class="va">hai_weekly</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
 <span>    event_date  <span class="op">=</span> <span class="va">event_week</span>,</span>
 <span>    report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
@@ -376,13 +505,36 @@ by the type of intensive care unit:</p>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 663 more rows</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: report_week &lt;date&gt;, .event_num &lt;dbl&gt;, .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;</span></span></span></code></pre></div>
-<p><code><a href="../reference/tbl_now.html">tbl_now()</a></code> inferred that both dates are
-<strong>weekly</strong>, computed <code>.delay</code> and the numeric
-indices, and set the <strong>now</strong> to the most recent report
-week. From here on, everything — the plots, the diagnostics, and every
-model converter — reads those settings off the object instead of being
-told again.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<p>No warnings this time. Re-running the diagnosis confirms it rather
+than assuming it, which is the point of having the check return
+data:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">&lt;=</span> <span class="st">"note"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">check</span>, <span class="va">scope</span>, <span class="va">stratum</span>, <span class="va">status</span>, <span class="va">n_affected</span>, <span class="va">message</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 13 × 6</span></span></span>
+<span><span class="co">#&gt;    check        scope          stratum    status n_affected message                                                                                             </span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                                                               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> declarations undeclared     all        note           12 <span style="color: #949494;">"</span>12 columns \"id\", \"specimen_date\", \"received_date\", \"report_date\", \"specimen\", \"test\", …</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> now          now_gap_event  Adult      note            1 <span style="color: #949494;">"</span>The last event date is 1 week before now (\"2023-01-30\").<span style="color: #949494;">"</span>                                        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> now          now_gap_event  Neonatal   note            1 <span style="color: #949494;">"</span>The last event date is 1 week before now (\"2023-01-30\").<span style="color: #949494;">"</span>                                        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> now          now_gap_event  Paediatric note           15 <span style="color: #949494;">"</span>The last event date is 15 weeks before now (\"2023-01-30\").<span style="color: #949494;">"</span>                                      </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> now          now_gap_event  all        note            1 <span style="color: #949494;">"</span>The last event date is 1 week before now (\"2023-01-30\").<span style="color: #949494;">"</span>                                        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> now          now_gap_report Neonatal   note            1 <span style="color: #949494;">"</span>The last report date is 1 week before now (\"2023-01-30\").<span style="color: #949494;">"</span>                                       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> now          now_gap_report Paediatric note            9 <span style="color: #949494;">"</span>The last report date is 9 weeks before now (\"2023-01-30\").<span style="color: #949494;">"</span>                                      </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> strata       size           Neonatal   note           62 <span style="color: #949494;">"</span>The smallest stratum is \"Neonatal\" with 62 cases, 9.2% of the total.<span style="color: #949494;">"</span>                            </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> strata       sparsity       Neonatal   note          270 <span style="color: #949494;">"</span>The sparsest stratum is \"Neonatal\": 85.2% of the event dates on the grid carry no cases at all.<span style="color: #949494;">"</span> </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> truncation   event_date     Adult      note            9 <span style="color: #949494;">"</span>9 event dates are younger than the 95th percentile of the delay, so their counts are still filling…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> truncation   event_date     Neonatal   note            5 <span style="color: #949494;">"</span>5 event dates are younger than the 95th percentile of the delay, so their counts are still filling…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> truncation   event_date     Paediatric note            2 <span style="color: #949494;">"</span>2 event dates are younger than the 95th percentile of the delay, so their counts are still filling…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> truncation   event_date     all        note           12 <span style="color: #949494;">"</span>12 event dates are younger than the 95th percentile of the delay, so their counts are still fillin…</span></span></code></pre></div>
+<p>The three defects are gone. What remains are the two structural notes
+— the undeclared columns, which are deliberate here (we are stratifying
+only by <code>icu_type</code>), and the staleness and truncation of the
+tail, which are properties of the extract rather than mistakes in it. A
+finding you have read and accepted is a different thing from one you
+have not seen.</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  now          <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  event_units  <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_event_units</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span>,</span>
@@ -392,13 +544,14 @@ told again.</p>
 <span><span class="co">#&gt;          now  event_units report_units       strata </span></span>
 <span><span class="co">#&gt; "2023-01-30"      "weeks"      "weeks"   "icu_type"</span></span></code></pre></div>
 </div>
+</div>
 <div class="section level2">
-<h2 id="looking-at-the-data">4. Looking at the data<a class="anchor" aria-label="anchor" href="#looking-at-the-data"></a>
+<h2 id="looking-at-the-data">5. Looking at the data<a class="anchor" aria-label="anchor" href="#looking-at-the-data"></a>
 </h2>
 <p><code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> draws a diagnostic grid: the case-count
 panels in green describe the <strong>epidemic</strong> process, the red
 ones the <strong>reporting</strong> process.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span></code></pre></div>
 <p><img src="example_files/figure-html/autoplot-1.png" class="r-plt" alt="A six-panel diagnostic grid: empirical delay distribution, observed epidemic curve, month-of-year effects for cases and for reporting, and periodograms for both processes." width="100%" style="display: block; margin: auto;"></p>
 <p>Four things stand out, and each of them changes a modelling decision
@@ -411,13 +564,13 @@ incomplete: everything to its right is still arriving.</p>
 <p><strong>The delay distribution is not a single hump.</strong> This is
 the most consequential feature of the dataset, so it is worth its own
 plot:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_delay_distribution.html">plot_delay_distribution</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span></code></pre></div>
 <p><img src="example_files/figure-html/delay-dist-1.png" class="r-plt" alt="Histogram of the reporting delay in weeks, showing a large spike at zero and a long right tail." width="100%" style="display: block; margin: auto;"></p>
 <p>More than half of all results are reported in the <strong>same
 week</strong> the specimen was taken, but the tail runs out past thirty
 weeks. Tabulating the cumulative share makes the shape explicit:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_weekly</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>delay_weeks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">report_week</span> <span class="op">-</span> <span class="va">event_week</span><span class="op">)</span> <span class="op">/</span> <span class="fl">7</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">delay_weeks</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -449,9 +602,49 @@ bottom-right periodogram the reporting series peaks at a period of about
 <em>reporting</em> — not in infections — is consistent with that second,
 retrospective stream being an annual audit or reconciliation
 exercise.</p>
+<div class="section level3">
+<h3 id="the-same-picture-as-numbers">The same picture, as numbers<a class="anchor" aria-label="anchor" href="#the-same-picture-as-numbers"></a>
+</h3>
+<p><code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> is for looking; <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> is for
+reading off values, and returns a tibble so you can do either. It
+confirms the bimodality above without needing the plot:</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">component</span> <span class="op">==</span> <span class="st">"delay"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">quantity</span>, <span class="va">stratum</span>, <span class="va">n</span>, <span class="va">total</span>, <span class="va">mean</span>, <span class="va">sd</span>, <span class="va">q50</span>, <span class="va">q90</span>, <span class="va">max</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 9</span></span></span>
+<span><span class="co">#&gt;   quantity        stratum        n total  mean    sd   q50   q90   max</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> event_to_report all          436   673  3.47  5.98     0    13    35</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> event_to_report Adult        312   522  3.88  6.11     1    13    35</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> event_to_report Neonatal      50    62  2.05  5.54     0    13    27</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> event_to_report Paediatric    74    89  2.04  5.11     0    13    18</span></span></code></pre></div>
+<p>A <strong>mean of 3.5 weeks against a median of 0</strong> is the
+whole story in two numbers: most results arrive in the same week, and a
+long right tail drags the average out to three and a half. A symmetric
+delay would have had them nearly equal. The standard deviation, larger
+than the mean, says the same thing.</p>
+<p>The composition block explains why the strata behave so differently
+downstream:</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">component</span> <span class="op">==</span> <span class="st">"composition"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">quantity</span>, <span class="va">total</span>, <span class="va">prop</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 3</span></span></span>
+<span><span class="co">#&gt;   quantity            total   prop</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> strata = Adult        522 0.776 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> strata = Neonatal      62 0.092<span style="text-decoration: underline;">1</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> strata = Paediatric    89 0.132</span></span></code></pre></div>
+<p>Adult units carry 78% of the cases. That is the imbalance
+<code><a href="../reference/nowcast_diagnose_components.html">diagnose_strata()</a></code> flagged as a note, and it is worth
+remembering when a per-stratum nowcast for <code>Neonatal</code> — 62
+cases spread over 317 event weeks — comes back with very wide
+intervals.</p>
+</div>
 </div>
 <div class="section level2">
-<h2 id="is-the-reporting-delay-stable">5. Is the reporting delay stable?<a class="anchor" aria-label="anchor" href="#is-the-reporting-delay-stable"></a>
+<h2 id="is-the-reporting-delay-stable">6. Is the reporting delay stable?<a class="anchor" aria-label="anchor" href="#is-the-reporting-delay-stable"></a>
 </h2>
 <p>A nowcast fitted to the whole series assumes the delay distribution
 is the same throughout. If it is not, the model averages over reporting
@@ -459,7 +652,7 @@ regimes that are not exchangeable, and the nowcast is biased.
 <code>tbl.now</code> gives you two tests for this, which answer
 different questions.</p>
 <p>First, look at it:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">hai_now</span>, changepoint <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="example_files/figure-html/drift-plot-1.png" class="r-plt" alt="Fan chart of the reporting delay over time, showing the median as a solid line and the interquartile and 10-90 percent bands. The bands widen substantially from early 2020 onward." width="100%" style="display: block; margin: auto;"></p>
 <p>The median delay bounces around zero throughout, but the spread of
@@ -468,10 +661,10 @@ exactly that split.</p>
 <div class="section level3">
 <h3 id="is-there-a-gradual-trend">Is there a gradual trend?<a class="anchor" aria-label="anchor" href="#is-there-a-gradual-trend"></a>
 </h3>
-<p><code><a href="../reference/test_delay_drift.html">test_delay_drift()</a></code> runs an autocorrelation-robust
+<p><code><a href="../reference/diagnose_drift.html">diagnose_drift()</a></code> runs an autocorrelation-robust
 Mann-Kendall test for a <em>monotonic</em> trend:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/test_delay_drift.html">test_delay_drift</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_drift.html">diagnose_drift</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 9</span></span></span>
 <span><span class="co">#&gt;   strata stat       n      tau sens_slope statistic p_value method    drift</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span></span></span>
@@ -485,11 +678,10 @@ tiny, so this is a genuine null rather than an underpowered one.</p>
 <h3 id="is-there-an-abrupt-shift">Is there an abrupt shift?<a class="anchor" aria-label="anchor" href="#is-there-an-abrupt-shift"></a>
 </h3>
 <p>A trend test cannot see a step change — a jump up and a jump down can
-even cancel out to no trend at all.
-<code><a href="../reference/test_delay_changepoint.html">test_delay_changepoint()</a></code> uses Pettitt’s test to look for
-exactly that:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/test_delay_changepoint.html">test_delay_changepoint</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
+even cancel out to no trend at all. <code><a href="../reference/diagnose_changepoint.html">diagnose_changepoint()</a></code>
+uses Pettitt’s test to look for exactly that:</p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_changepoint.html">diagnose_changepoint</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 10</span></span></span>
 <span><span class="co">#&gt;   strata stat       n changepoint statistic p_value before after shift changepoint_detected</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>               </span></span>
@@ -504,13 +696,13 @@ and hospital laboratories were abruptly redirected.</p>
 <p>So the typical case was reported no more slowly after March 2020, but
 the <em>variability</em> of reporting more than doubled. That is a real
 change in the reporting process, and it has a direct modelling
-consequence, which we act on in section 7.</p>
+consequence, which we act on in section 8.</p>
 </div>
 <div class="section level3">
 <h3 id="does-this-differ-by-unit">Does this differ by unit?<a class="anchor" aria-label="anchor" href="#does-this-differ-by-unit"></a>
 </h3>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/test_delay_drift.html">test_delay_drift</a></span><span class="op">(</span><span class="va">hai_now</span>, by_strata <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_drift.html">diagnose_drift</a></span><span class="op">(</span><span class="va">hai_now</span>, by_strata <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 9</span></span></span>
 <span><span class="co">#&gt;   strata     stat       n     tau sens_slope statistic p_value method    drift</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span></span></span>
@@ -533,7 +725,7 @@ discrete, heavily-tied data, not a bug.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="temporal-effects">6. Temporal effects<a class="anchor" aria-label="anchor" href="#temporal-effects"></a>
+<h2 id="temporal-effects">7. Temporal effects<a class="anchor" aria-label="anchor" href="#temporal-effects"></a>
 </h2>
 <p><code><a href="../reference/temporal_effects.html">temporal_effects()</a></code> attaches calendar covariates a model
 can use. The temptation is to add everything available; the discipline
@@ -541,7 +733,7 @@ is to add only what the data supports.</p>
 <p><strong>Day-of-week effects are not justified here.</strong> They are
 the usual first choice for surveillance data — laboratories are quieter
 at weekends — but this dataset does not behave that way:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span>weekday <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/day.html" class="external-link">wday</a></span><span class="op">(</span><span class="va">specimen_date</span>, label <span class="op">=</span> <span class="cn">TRUE</span>, week_start <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>percent <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">n</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
@@ -559,9 +751,9 @@ at weekends — but this dataset does not behave that way:</p>
 included. And in any case we aggregated to weeks, so a day-of-week term
 has nothing to attach to. Adding one would be modelling noise.</p>
 <p><strong>An annual cycle is justified</strong>, on the reporting side,
-by the periodogram in section 4 and by the bimodal delay. Since the data
+by the periodogram in section 5 and by the bimodal delay. Since the data
 are weekly, that is a Fourier season of period 52:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_effects</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span></span>
 <span>  week_of_year <span class="op">=</span> <span class="cn">TRUE</span>,   <span class="co"># position within the year</span></span>
 <span>  seasons      <span class="op">=</span> <span class="fl">52</span>      <span class="co"># an annual Fourier cycle on weekly data</span></span>
@@ -574,7 +766,7 @@ are weekly, that is a Fourier season of period 52:</p>
 <span><span class="co">#&gt; • <span style="color: #0000BB;">"season"</span> periods: 52</span></span></code></pre></div>
 <p>Attach them to the report date, because the annual rhythm we saw is a
 property of <em>reporting</em>, not of infection:</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_seasonal</span> <span class="op">&lt;-</span> <span class="va">hai_now</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="va">hai_effects</span>, date_type <span class="op">=</span> <span class="st">"report_date"</span><span class="op">)</span></span>
 <span></span>
@@ -604,23 +796,23 @@ property of <em>reporting</em>, not of infection:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: report_week &lt;date&gt;, .event_num &lt;dbl&gt;, .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>Effects are attached <strong>lazily</strong> — the object records the
 specification but does not materialise the columns until a model asks
-for them (or you call <code><a href="../reference/compute_temporal_effects.html">compute_temporal_effects()</a></code>):</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+for them (or you call <code><a href="../reference/add_temporal_effects.html">compute_temporal_effects()</a></code>):</p>
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_seasonal</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/compute_temporal_effects.html">compute_temporal_effects</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_temporal_effects.html">compute_temporal_effects</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">event_week</span>, <span class="va">report_week</span>, <span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">starts_with</a></span><span class="op">(</span><span class="st">".report_"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">4</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: Dropped protected column(?s): <span style="color: #0000BB;">".event_num"</span> and <span style="color: #0000BB;">".delay"</span>. Returning a `tibble`</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 6</span></span></span>
 <span><span class="co">#&gt;   event_week report_week .report_num .report_week_of_year .report_season_52_cos .report_season_52_sin</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2018-01-22 2018-01-29           55                    1                 0.935                 0.355</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2018-01-22 2018-01-29           55                    1                 0.935                 0.355</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2018-04-16 2018-04-23           67                   13                -<span style="color: #BB0000;">0.239</span>                 0.971</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2018-01-22 2018-01-22           54                   52                 0.971                 0.239</span></span></code></pre></div>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>                                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2018-01-22 2018-01-29           55 1                                    0.935                 0.355</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2018-01-22 2018-01-29           55 1                                    0.935                 0.355</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2018-04-16 2018-04-23           67 13                                  -<span style="color: #BB0000;">0.239</span>                 0.971</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2018-01-22 2018-01-22           54 52                                   0.971                 0.239</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="nowcasting-with-diseasenowcasting">7. Nowcasting with <code>diseasenowcasting</code><a class="anchor" aria-label="anchor" href="#nowcasting-with-diseasenowcasting"></a>
+<h2 id="nowcasting-with-diseasenowcasting">8. Nowcasting with <code>diseasenowcasting</code><a class="anchor" aria-label="anchor" href="#nowcasting-with-diseasenowcasting"></a>
 </h2>
 <p>Now we let the diagnostics decide the model. Three findings carry
 over:</p>
@@ -637,7 +829,7 @@ short enough not to carry a mostly-empty tail.</li>
 <strong>No monotonic drift within that period</strong>, so a single
 delay distribution for the restricted window is defensible.</li>
 </ul>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">changepoint_date</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-03-09"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">hai_model</span> <span class="op">&lt;-</span> <span class="va">hai_weekly</span> <span class="op">|&gt;</span></span>
@@ -684,7 +876,7 @@ series.</p>
 <p><code>diseasenowcasting</code> consumes a <code>tbl_now</code>
 <strong>directly</strong> — no converter, no restating of which column
 is which:</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># `diseasenowcasting::` rather than `library()` -- it is not on CRAN, and</span></span>
 <span><span class="co"># attaching it would leave `R CMD check` with an undeclared dependency.</span></span>
 <span><span class="va">hai_fit</span> <span class="op">&lt;-</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu">nowcast</span><span class="op">(</span><span class="va">hai_model</span>, type <span class="op">=</span> <span class="st">"one_stage"</span>, n_draws <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span></span>
@@ -692,7 +884,7 @@ is which:</p>
 <span><span class="va">hai_fit</span></span></code></pre></div>
 <p>The posterior draws of the eventual counts come from
 <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>:</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_prediction</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">hai_fit</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">draws</span>       <span class="op">&lt;-</span> <span class="fu">S7</span><span class="fu">::</span><span class="fu"><a href="https://rconsortium.github.io/S7/reference/prop.html" class="external-link">prop</a></span><span class="op">(</span><span class="va">hai_prediction</span>, <span class="st">"draws"</span><span class="op">)</span>        <span class="co"># draws x event weeks</span></span>
@@ -708,7 +900,7 @@ is which:</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="va">nowcast_summary</span>, <span class="fl">8</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">recent</span> <span class="op">&lt;-</span> <span class="va">nowcast_summary</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">event_week</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">event_week</span><span class="op">)</span> <span class="op">-</span> <span class="fl">7</span> <span class="op">*</span> <span class="fl">30</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">recent</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">event_week</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
@@ -755,7 +947,7 @@ averaged together.</p>
 <p>The enriched object needs no extra arguments:
 <code>diseasenowcasting</code> reads the <code>icu_type</code> stratum
 and the seasonal columns off the object itself.</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_model_seasonal</span> <span class="op">&lt;-</span> <span class="va">hai_model</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="va">hai_effects</span>, date_type <span class="op">=</span> <span class="st">"report_date"</span><span class="op">)</span></span>
 <span></span>
@@ -763,7 +955,7 @@ and the seasonal columns off the object itself.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="the-same-data-other-engines">8. The same data, other engines<a class="anchor" aria-label="anchor" href="#the-same-data-other-engines"></a>
+<h2 id="the-same-data-other-engines">9. The same data, other engines<a class="anchor" aria-label="anchor" href="#the-same-data-other-engines"></a>
 </h2>
 <p>The value of describing the data once is that every other package is
 now one call away. Each converter reads the event date, report date,
@@ -771,7 +963,7 @@ strata and units off <code>hai_model</code>.</p>
 <div class="section level3">
 <h3 id="baselinenowcast-a-reporting-triangle">baselinenowcast — a reporting triangle<a class="anchor" aria-label="anchor" href="#baselinenowcast-a-reporting-triangle"></a>
 </h3>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/epinowcast/baselinenowcast" class="external-link">baselinenowcast</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">hai_triangle</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="va">hai_model</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -782,7 +974,7 @@ strata and units off <code>hai_model</code>.</p>
 <span><span class="co">#&gt; 2020-03-16 0 0 0 0 0 0</span></span>
 <span><span class="co">#&gt; 2020-03-23 0 0 0 0 0 0</span></span>
 <span><span class="co">#&gt; 2020-03-30 0 0 0 0 0 0</span></span></code></pre></div>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bln_samples</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast</a></span><span class="op">(</span><span class="va">hai_triangle</span>, output_type <span class="op">=</span> <span class="st">"samples"</span>, draws <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">bln_samples</span> <span class="op">|&gt;</span></span>
@@ -800,7 +992,7 @@ strata and units off <code>hai_model</code>.</p>
 <div class="section level3">
 <h3 id="surveillance-the-classic-line-list-nowcast">surveillance — the classic line-list nowcast<a class="anchor" aria-label="anchor" href="#surveillance-the-classic-line-list-nowcast"></a>
 </h3>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://surveillance.R-Forge.R-project.org/" class="external-link">surveillance</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">hai_sur</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_surveillance.html">tbl_now_to_surveillance</a></span><span class="op">(</span><span class="va">hai_model</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -840,7 +1032,7 @@ strata and units off <code>hai_model</code>.</p>
 <p><code>NobBS</code> takes a plain line list, which a
 <code>linelist</code> <code>tbl_now</code> already is — and even its
 arguments come off the object.</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">NobBS</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">nobbs_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/NobBS/man/NobBS.html" class="external-link">NobBS</a></span><span class="op">(</span></span>
@@ -864,7 +1056,7 @@ arguments come off the object.</p>
 </h3>
 <p><code>epinowcast</code> compiles a Stan model, so the fit below is
 not run when this page is built; the conversion is.</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://package.epinowcast.org" class="external-link">epinowcast</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">hai_enw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">hai_model</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -884,7 +1076,7 @@ not run when this page is built; the conversion is.</p>
 <span><span class="co">#&gt;   metareference      :     456 x 8 </span></span>
 <span><span class="co">#&gt;   metareport         :     561 x 11 </span></span>
 <span><span class="co">#&gt;   metadelay          :      36 x 5</span></span></code></pre></div>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast</a></span><span class="op">(</span></span>
 <span>  <span class="va">hai_enw</span>,</span>
 <span>  fit <span class="op">=</span> <span class="fu"><a href="https://package.epinowcast.org/reference/enw_fit_opts.html" class="external-link">enw_fit_opts</a></span><span class="op">(</span>pp <span class="op">=</span> <span class="cn">TRUE</span>, chains <span class="op">=</span> <span class="fl">2</span>, iter_sampling <span class="op">=</span> <span class="fl">500</span>, iter_warmup <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
@@ -898,31 +1090,47 @@ article</a>.</p>
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
 <p>The workflow, start to finish:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># 1. Clean, checking what actually breaks a nowcast.</span></span>
-<span><span class="va">hai</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span>                                       <span class="co"># duplicate records</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span>  <span class="co"># missing dates</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">report_date</span> <span class="op">&gt;=</span> <span class="va">specimen_date</span><span class="op">)</span>                <span class="co"># report before event</span></span>
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 1. Choose a resolution the data (and your engine) can support.</span></span>
+<span><span class="va">hai_weekly_raw</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>event_week  <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/round_date.html" class="external-link">floor_date</a></span><span class="op">(</span><span class="va">specimen_date</span>, <span class="st">"week"</span>, week_start <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span>
+<span>         report_week <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/round_date.html" class="external-link">floor_date</a></span><span class="op">(</span><span class="va">report_date</span>,   <span class="st">"week"</span>, week_start <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2. Choose a resolution the data (and your engine) can support.</span></span>
+<span><span class="co"># 2. Describe it once -- before cleaning, so the object can tell you what is wrong.</span></span>
+<span><span class="va">hai_raw_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">hai_weekly_raw</span>, event_date <span class="op">=</span> <span class="va">event_week</span>,</span>
+<span>                       report_date <span class="op">=</span> <span class="va">report_week</span>, strata <span class="op">=</span> <span class="va">icu_type</span>,</span>
+<span>                       data_type <span class="op">=</span> <span class="st">"linelist"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 3. Ask what is wrong with it, instead of guessing.</span></span>
+<span><span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">hai_raw_now</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">&lt;=</span> <span class="st">"note"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 4. Fix what it reported, and confirm the fix.</span></span>
+<span><span class="va">hai</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span>                                          <span class="co"># duplicates: diagnose() skips</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span>  <span class="co">#   these two it found</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">report_date</span> <span class="op">&gt;=</span> <span class="va">specimen_date</span><span class="op">)</span>                   <span class="co">#   and this one</span></span>
+<span></span>
 <span><span class="va">hai_weekly</span> <span class="op">&lt;-</span> <span class="va">hai</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>event_week  <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/round_date.html" class="external-link">floor_date</a></span><span class="op">(</span><span class="va">specimen_date</span>, <span class="st">"week"</span>, week_start <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span>
 <span>         report_week <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/round_date.html" class="external-link">floor_date</a></span><span class="op">(</span><span class="va">report_date</span>,   <span class="st">"week"</span>, week_start <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 3. Describe it once.</span></span>
 <span><span class="va">hai_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">hai_weekly</span>, event_date <span class="op">=</span> <span class="va">event_week</span>, report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
 <span>                   strata <span class="op">=</span> <span class="va">icu_type</span>, data_type <span class="op">=</span> <span class="st">"linelist"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 4. Look at it, and test the delay for drift and change points.</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/test_delay_drift.html">test_delay_drift</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/test_delay_changepoint.html">test_delay_changepoint</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">&lt;=</span> <span class="st">"note"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 5. Let those findings set the model window and the maximum delay.</span></span>
+<span><span class="co"># 5. Look at it, and read the numbers off it.</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 6. Run the statistical tests diagnose() signposted but would not run itself.</span></span>
+<span><span class="fu"><a href="../reference/diagnose_drift.html">diagnose_drift</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/diagnose_changepoint.html">diagnose_changepoint</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 7. Let those findings set the model window and the maximum delay.</span></span>
 <span><span class="va">hai_model</span> <span class="op">&lt;-</span> <span class="va">hai_now</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/censor_delays_above.html">censor_delays_above</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 6. Hand it to whichever engine you like.</span></span>
+<span><span class="co"># 8. Hand it to whichever engine you like.</span></span>
 <span><span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu">nowcast</span><span class="op">(</span><span class="va">hai_model</span><span class="op">)</span>         <span class="co"># diseasenowcasting</span></span>
 <span><span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="va">hai_model</span><span class="op">)</span>         <span class="co"># baselinenowcast</span></span>
 <span><span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">hai_model</span><span class="op">)</span>              <span class="co"># epinowcast</span></span>

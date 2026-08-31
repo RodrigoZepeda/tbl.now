@@ -2,8 +2,21 @@
 
 **\[experimental\]**
 
-A special `tibble` class that includes information for the nowcast. See
-the Attributes section for more information.
+Surveillance data arrives late. A case that happened on Monday may only
+reach the surveillance system on Thursday, so counts for the most recent
+days always look artificially low. *Nowcasting* corrects that artifact:
+it estimates how many cases have already happened but have not been
+reported yet.
+
+To do that, a model needs two dates for every case – when it
+**happened** (`event_date`) and when it was **reported** (`report_date`)
+– together with the date you are standing on (`now`). `tbl_now()` takes
+an ordinary `data.frame` and records which of its columns play those
+roles, so you only have to say it once.
+
+The result still behaves like a `tibble`: `dplyr` verbs, `$`, `[` and
+`ggplot2` keep working, and every `tbl.now` function knows where to find
+the dates without being told again.
 
 ## Usage
 
@@ -17,6 +30,9 @@ tbl_now(
   covariates = NULL,
   case_count = NULL,
   is_censored = NULL,
+  confirmation_date = NULL,
+  confirmation_type = NULL,
+  confirmation_units = "auto",
   now = NULL,
   event_units = "auto",
   report_units = "auto",
@@ -97,6 +113,36 @@ tbl_now(
   the `report_date` corresponds to an error and is only an upper bound
   of the real report date set `is_censored = TRUE`.
 
+- confirmation_date:
+
+  (optional)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  column holding a **third** date: the day the report was resolved.
+  Influenza is the picture to keep in mind – symptoms begin (the event),
+  the patient sees a doctor (the report), and days later a swab comes
+  back. The assumed timeline is
+  `event_date <= report_date <= confirmation_date <= now`. Leave `NULL`
+  (the default) for the usual two-date object. See
+  [`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md).
+
+- confirmation_type:
+
+  (optional)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  column saying what the resolution *was*: `"confirmed"`, `"retracted"`
+  (it was reported, but it is not a case after all), `"pending"` or
+  `NA`. **`"pending"` means reported and still waiting**, so it carries
+  no confirmation date – which is a different thing from a result that
+  was never recorded (`NA`). A confirmation date with no type warns
+  rather than guessing, because a date alone cannot say whether the case
+  was confirmed or retracted.
+
+- confirmation_units:
+
+  (optional) Character. Either `"auto"` (default), `"days"`, `"weeks"`,
+  `"months"`, `"years"` or `"numeric"` – the grid the confirmation date
+  lives on, resolved the same way as `report_units`.
+
 - now:
 
   (optional) Date or `NULL` (default). The date that is considered the
@@ -149,11 +195,48 @@ tbl_now(
 
 - ...:
 
-  Additional metadata to be stored as attributes.
+  Additional metadata to be stored as attributes on the object. Use this
+  for provenance you want to travel with the data – `data_source`,
+  `citation`, `population` – and read it back with
+  [`tbl_now_attributes()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.md).
+
+  Because anything unmatched lands here, a misspelled argument name
+  would otherwise be accepted in silence. Names close enough to a real
+  argument to be a typo (`case_col` for `case_count`, `stata` for
+  `strata`) warn instead; the warning is safe to ignore if the name
+  really was metadata.
 
 ## Value
 
-An object of class `tbl_now`.
+An object of class `tbl_now`: the input `data` as a `tibble`, carrying
+extra attributes that record which columns hold the event date, report
+date, strata, covariates and so on, plus the `now` of the nowcast. List
+them with
+[`tbl_now_attributes()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.md).
+
+## Details
+
+The minimum you must supply is `event_date` and `report_date` (or one of
+them plus a `delay` column, from which the other is reconstructed).
+Everything else is optional and can be added later with
+[`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md),
+[`add_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md),
+[`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)
+and the rest of the
+[`add()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+family.
+
+Once the object exists the usual path is
+[summary()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.md)
+to see what is in the data,
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+to see what is wrong with it,
+[autoplot()](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.md)
+to look at it, and
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
+to fit a model.
+[`vignette("tbl.now")`](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.md)
+walks through that path end to end.
 
 ## Attributes
 
@@ -207,20 +290,32 @@ function:
   Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to
   the units of `report_date`
 
-- repot_num:
-
-  Column where the `report_date` was transformed to numeric values
-
-- event_num:
-
-  Column where the `event_date` was transformed to numeric values
-
 - data_type:
 
   Either `linelist`, `count-incidence` or `count-cumulative` depending
   on whether it is linelist data or count data with incidence (each
   report date's incidence) or cumulative (overall known cases at report
   date)
+
+- confirmation_date:
+
+  Name of the column with the (optional) third date: when the report was
+  resolved.
+
+- confirmation_type:
+
+  Name of the column saying what that resolution was (`"confirmed"`,
+  `"retracted"`, `"pending"`).
+
+- confirmation_units:
+
+  Units of `confirmation_date`, resolved like `report_units`.
+
+- computed_temporal_effect_cols:
+
+  Names of the temporal-effect columns that have actually been
+  materialised in the data by
+  [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md).
 
 You can list all `tbl_now` related attributes in a specific `tbl_now`
 with
@@ -308,20 +403,51 @@ The
 [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
 function allows you to easily convert from between different data-types.
 
+## See also
+
+[`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+to convert an object created by another nowcasting package;
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
+to move between linelist and aggregated count data;
+[`tbl_now_attributes()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.md)
+to list what the object recorded;
+[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
+and
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+to check it;
+[summary()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.md)
+to describe it;
+[autoplot()](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.md)
+to plot it;
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
+to fit a nowcast.
+
 ## Examples
 
 ``` r
-# The `tbl_now` is a data.frame with additional attributes
+# `denguedat` is a linelist: one row per dengue case, with the week symptoms
+## began (`onset_week`) and the week the case reached the surveillance system
+## (`report_week`).
 data(denguedat)
-ndata <- denguedat |>
-  tbl_now(
-    event_date = onset_week, report_date = report_week,
-    strata = gender
-  )
+head(denguedat)
+#>   onset_week report_week gender
+#> 1 1990-01-01  1990-01-01   Male
+#> 2 1990-01-01  1990-01-01 Female
+#> 3 1990-01-01  1990-01-01 Female
+#> 4 1990-01-01  1990-01-08 Female
+#> 5 1990-01-01  1990-01-08   Male
+#> 6 1990-01-01  1990-01-15 Female
+
+# Tell tbl.now which column plays which role. `now` defaults to the last
+# event date seen in the data.
+ndata <- tbl_now(denguedat,
+  event_date = onset_week,
+  report_date = report_week,
+  strata = gender
+)
 #> ℹ Identified data as <linelist-data> where each observation is a test.
 
-# You can see that it documents the `event_date`, `report_date`, `strata`,
-# `covariates` as well as the `now`.
+# Printing reports back the roles it recorded, and the `now` it chose.
 ndata
 #> # A tibble:  52,987 × 6
 #> # Data type: "linelist"
@@ -345,52 +471,8 @@ ndata
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 52,977 more rows
 
-
-# A `tbl_now` is an extension of a `tibble` which means normal
-# `data.frame` operations are permitted
+# A `tbl_now` is still a tibble, so ordinary manipulation works ...
 ndata$newcolumn <- "something"
-ndata
-#> # A tibble:  52,987 × 7
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#>    onset_week   report_week   gender   .event_num .report_num .delay newcolumn
-#>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl> <chr>    
-#>    [event_date] [report_date] [strata]      [...]       [...]  [...] [...]    
-#>  1 1990-01-01   1990-01-01    Male              0           0      0 something
-#>  2 1990-01-01   1990-01-01    Female            0           0      0 something
-#>  3 1990-01-01   1990-01-01    Female            0           0      0 something
-#>  4 1990-01-01   1990-01-08    Female            0           1      1 something
-#>  5 1990-01-01   1990-01-08    Male              0           1      1 something
-#>  6 1990-01-01   1990-01-15    Female            0           2      2 something
-#>  7 1990-01-01   1990-01-15    Female            0           2      2 something
-#>  8 1990-01-01   1990-01-15    Female            0           2      2 something
-#>  9 1990-01-01   1990-01-22    Female            0           3      3 something
-#> 10 1990-01-01   1990-01-08    Female            0           1      1 something
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
-#> # Strata: "gender"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 52,977 more rows
-
-# Like removing a column
-ndata[, -4]
-#> Warning: Dropped protected column(?s): ".event_num". Returning a `tibble`
-#> # A tibble: 52,987 × 6
-#>    onset_week report_week gender .report_num .delay newcolumn
-#>    <date>     <date>      <chr>        <dbl>  <dbl> <chr>    
-#>  1 1990-01-01 1990-01-01  Male             0      0 something
-#>  2 1990-01-01 1990-01-01  Female           0      0 something
-#>  3 1990-01-01 1990-01-01  Female           0      0 something
-#>  4 1990-01-01 1990-01-08  Female           1      1 something
-#>  5 1990-01-01 1990-01-08  Male             1      1 something
-#>  6 1990-01-01 1990-01-15  Female           2      2 something
-#>  7 1990-01-01 1990-01-15  Female           2      2 something
-#>  8 1990-01-01 1990-01-15  Female           2      2 something
-#>  9 1990-01-01 1990-01-22  Female           3      3 something
-#> 10 1990-01-01 1990-01-08  Female           1      1 something
-#> # ℹ 52,977 more rows
-
-# Like selecting
 ndata[1:10, ]
 #> # A tibble:  10 × 7
 #> # Data type: "linelist"
@@ -413,9 +495,9 @@ ndata[1:10, ]
 #> # Strata: "gender"
 #> # ────────────────────────────────────────────────────────────────────────────────
 
-# You can also apply all dplyr functions:
+# ... including dplyr verbs.
 ndata |>
-  dplyr::filter(report_week <= as.Date("1991-01-02", format = "%Y-%m-%d"))
+  dplyr::filter(report_week <= as.Date("1991-01-02"))
 #> # A tibble:  1,981 × 7
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
@@ -438,28 +520,7 @@ ndata |>
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 1,971 more rows
 
-# Removing an important column automatically transforms to tibble
-# losing its property
-suppressWarnings(
-  ndata |>
-    dplyr::select(-onset_week)
-)
-#> # A tibble: 52,987 × 6
-#>    report_week gender .event_num .report_num .delay newcolumn
-#>    <date>      <chr>       <dbl>       <dbl>  <dbl> <chr>    
-#>  1 1990-01-01  Male            0           0      0 something
-#>  2 1990-01-01  Female          0           0      0 something
-#>  3 1990-01-01  Female          0           0      0 something
-#>  4 1990-01-08  Female          0           1      1 something
-#>  5 1990-01-08  Male            0           1      1 something
-#>  6 1990-01-15  Female          0           2      2 something
-#>  7 1990-01-15  Female          0           2      2 something
-#>  8 1990-01-15  Female          0           2      2 something
-#>  9 1990-01-22  Female          0           3      3 something
-#> 10 1990-01-08  Female          0           1      1 something
-#> # ℹ 52,977 more rows
-
-# Removing strata just changes the overall structure
+# Dropping a strata column simply forgets that stratum.
 ndata |> dplyr::select(-gender)
 #> # A tibble:  52,987 × 6
 #> # Data type: "linelist"
@@ -480,5 +541,26 @@ ndata |> dplyr::select(-gender)
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 52,977 more rows
+
+# But dropping a column the class depends on demotes the object back to a
+## plain tibble (with a warning): without an event date it can no longer
+# describe a nowcast.
+suppressWarnings(
+  ndata |> dplyr::select(-onset_week)
+)
+#> # A tibble: 52,987 × 6
+#>    report_week gender .event_num .report_num .delay newcolumn
+#>    <date>      <chr>       <dbl>       <dbl>  <dbl> <chr>    
+#>  1 1990-01-01  Male            0           0      0 something
+#>  2 1990-01-01  Female          0           0      0 something
+#>  3 1990-01-01  Female          0           0      0 something
+#>  4 1990-01-08  Female          0           1      1 something
+#>  5 1990-01-08  Male            0           1      1 something
+#>  6 1990-01-15  Female          0           2      2 something
+#>  7 1990-01-15  Female          0           2      2 something
+#>  8 1990-01-15  Female          0           2      2 something
+#>  9 1990-01-22  Female          0           3      3 something
+#> 10 1990-01-08  Female          0           1      1 something
 #> # ℹ 52,977 more rows
 ```

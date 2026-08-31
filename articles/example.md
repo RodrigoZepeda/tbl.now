@@ -3,18 +3,23 @@
 This article is an end-to-end walk-through of the `tbl.now` workflow on
 a real, **deliberately unpolished** dataset. We will:
 
-1.  **Clean** a messy surveillance extract with `dplyr` and `tbl.now`,
-    checking the things that actually break a nowcast — duplicate
-    records, missing dates, and reports that arrive *before* the event
-    they describe.
-2.  **Look** at the data with
-    [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
-    and the standalone `plot_*()` diagnostics.
-3.  Ask whether the reporting delay is **stable** — does it drift, does
+1.  **Build** a `tbl_now` from a messy surveillance extract — *before*
+    cleaning it — and let
+    [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+    report what is wrong, rather than guessing.
+2.  **Clean** what it reported: duplicate records, missing dates, and
+    reports that arrive *before* the event they describe. Then re-run
+    the diagnosis to confirm the fix rather than assume it.
+3.  **Look** at the data with
+    [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html),
+    read the numbers off it with
+    [`summary()`](https://rdrr.io/r/base/summary.html), and use the
+    standalone `plot_*()` diagnostics.
+4.  Ask whether the reporting delay is **stable** — does it drift, does
     it jump?
-4.  Attach **temporal effects** that the data actually justifies.
-5.  **Nowcast**, first with `diseasenowcasting` and then with five other
-    engines, letting everything we found in steps 1–3 inform the model.
+5.  Attach **temporal effects** that the data actually justifies.
+6.  **Nowcast**, first with `diseasenowcasting` and then with five other
+    engines, letting everything we found in steps 1–4 inform the model.
 
 The thread running through all of it: *look before you model.* Every
 modelling choice at the end is traceable to something we measured at the
@@ -70,18 +75,200 @@ exactly what a nowcast has to model. (`received_date` would split that
 into a transport and a processing leg, but it is 84% missing and stops
 in 2019, so we leave it alone.)
 
-## 1. Cleaning
+## 1. Choosing a time resolution
 
+Before anything else, the data has to be put on a time grid, because the
+grid constrains everything after it — including which nowcasting engines
+you can use at all.
+
+A `tbl_now` will happily take the daily dates, but daily is not usable
+here. Counting needs rows that have both dates, so this one filter runs
+ahead of the cleaning proper:
+
+``` r
+
+hai_bucaramanga |>
+  filter(!is.na(specimen_date), !is.na(report_date)) |>
+  summarise(
+    cases            = n(),
+    distinct_days    = n_distinct(specimen_date),
+    cases_per_day    = round(n() / n_distinct(specimen_date), 2),
+    distinct_weeks   = n_distinct(floor_date(specimen_date, "week", week_start = 1)),
+    cases_per_week   = round(n() / n_distinct(floor_date(specimen_date, "week", week_start = 1)), 2)
+  )
+#> # A tibble: 1 × 5
+#>   cases distinct_days cases_per_day distinct_weeks cases_per_week
+#>   <int>         <int>         <dbl>          <int>          <dbl>
+#> 1   826           539          1.53            234           3.53
+```
+
+Roughly **1.5 cases per day** cannot support a delay distribution with
+any resolution at all. Aggregating to weeks gives about three and a half
+cases a week, which is still thin but workable.
+
+Monthly would be denser still, and statistically it is the better fit
+for this data — but it is worth knowing that **your time unit constrains
+your choice of engine**. Of the five nowcasting packages used at the end
+of this article, only `diseasenowcasting` and `baselinenowcast` accept
+monthly data: `NobBS` supports only daily and weekly units, and
+`epinowcast` accepts only `"day"` and `"week"` timesteps. Weeks are the
+finest unit every engine agrees on, so weeks it is.
+
+``` r
+
+hai_weekly_raw <- hai_bucaramanga |>
+  mutate(
+    event_week  = floor_date(specimen_date, "week", week_start = 1),
+    report_week = floor_date(report_date,   "week", week_start = 1)
+  )
+```
+
+## 2. Building the `tbl_now`
+
+Now the data can be handed to
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md).
+We declare the two dates, say the data is a line list (one row per
+case), and stratify by the type of intensive care unit.
+
+This is deliberately done **before** cleaning.
 [`?hai_bucaramanga`](https://rodrigozepeda.github.io/tbl.now/reference/hai_bucaramanga.md)
-documents the defects; here we deal with them one at a time rather than
-trusting the help page. Nothing below is specific to this dataset —
-these are the checks worth running on *any* surveillance extract before
-it reaches a model.
+documents the defects, but rather than trusting the help page — or
+discovering them one at a time — we let the object tell us what is wrong
+with it.
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+accepts imperfect data and complains about it:
+
+``` r
+
+hai_raw_now <- hai_weekly_raw |>
+  tbl_now(
+    event_date  = event_week,
+    report_date = report_week,
+    strata      = icu_type,
+    data_type   = "linelist"
+  )
+#> Warning: 318 rows have NA values in the event_date column "event_week".
+#> ℹ A row with no event date cannot be placed on the reporting triangle.
+#> Warning: 583 rows have NA values in the report_date column "report_week".
+#> ℹ A row with no report date cannot be placed on the reporting triangle.
+#> Warning: 88 rows have a `report_date` before `event_date`
+#> ℹ A negative reporting delay is not a delay; the two date columns may be swapped, or the rows may be data-entry errors.
+```
+
+Three warnings, before we have looked at a single number.
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+also inferred that both dates are **weekly**, computed `.delay` and the
+numeric indices, and set the **now** to the most recent report week.
+From here on, everything — the plots, the diagnostics, and every model
+converter — reads those settings off the object instead of being told
+again.
+
+## 3. What is wrong with it?
+
+The warnings above are the loud findings.
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+returns all of them, and the quiet ones too, as a tibble sorted worst
+first. `status` is an ordered factor — `error` \> `warning` \> `note` \>
+`ok` \> `not_run` \> `skipped` — so filtering to what needs acting on is
+a comparison:
+
+``` r
+
+diagnose(hai_raw_now) |>
+  filter(status <= "note") |>
+  select(check, scope, stratum, status, n_affected, n_total, message)
+#> # A tibble: 14 × 7
+#>    check        scope           stratum    status  n_affected n_total message                                                                                   
+#>    <chr>        <chr>           <chr>      <ord>        <dbl>   <dbl> <chr>                                                                                     
+#>  1 missing      event_week      all        warning        318    1423 "318 rows have NA values in the event_date column \"event_week\"."                        
+#>  2 missing      report_week     all        warning        583    1423 "583 rows have NA values in the report_date column \"report_week\"."                      
+#>  3 ordering     event_to_report all        warning         88    1423 "88 rows have a `report_date` before `event_date`"                                        
+#>  4 declarations undeclared      all        note            12      18 "12 columns \"id\", \"specimen_date\", \"received_date\", \"report_date\", \"specimen\", …
+#>  5 now          now_gap_event   Neonatal   note            40      NA "The last event date is 40 weeks before now (\"2023-10-30\")."                            
+#>  6 now          now_gap_report  Adult      note            39      NA "The last report date is 39 weeks before now (\"2023-10-30\")."                           
+#>  7 now          now_gap_report  Neonatal   note            40      NA "The last report date is 40 weeks before now (\"2023-10-30\")."                           
+#>  8 now          now_gap_report  Paediatric note            42      NA "The last report date is 42 weeks before now (\"2023-10-30\")."                           
+#>  9 now          now_gap_report  all        note            39      NA "The last report date is 39 weeks before now (\"2023-10-30\")."                           
+#> 10 strata       size            Neonatal   note           157    1423 "The smallest stratum is \"Neonatal\" with 157 cases, 11% of the total."                  
+#> 11 strata       sparsity        Neonatal   note           337     410 "The sparsest stratum is \"Neonatal\": 82.2% of the event dates on the grid carry no case…
+#> 12 truncation   event_date      Adult      note             2     210 "2 event dates are younger than the 95th percentile of the delay, so their counts are sti…
+#> 13 truncation   event_date      Paediatric note             1      75 "1 event date is younger than the 95th percentile of the delay, so its counts are still f…
+#> 14 truncation   event_date      all        note             2     234 "2 event dates are younger than the 95th percentile of the delay, so their counts are sti…
+```
+
+That is the cleaning list, derived rather than assumed. Three of the
+findings are defects to fix — missing event dates, missing report dates,
+and reports that precede their event. The others are things the file
+cannot be blamed for but you still need to know: twelve columns were
+never declared, so they silently split every reporting-triangle cell;
+and the last event date sits well behind `now`, because reporting on
+this extract stopped before the extract did.
+
+Two statuses deserve attention, because neither means “fine”:
+
+``` r
+
+diagnose(hai_raw_now) |>
+  filter(status == "skipped") |>
+  select(check, scope, message)
+#> # A tibble: 6 × 3
+#>   check      scope                  message                                                                               
+#>   <chr>      <chr>                  <chr>                                                                                 
+#> 1 duplicates key                    A line list is one row per case, so identical rows are two cases rather than a repeat.
+#> 2 negatives  count                  A line list has no count column to go negative.                                       
+#> 3 ordering   event_to_confirmation  The object carries no confirmation process.                                           
+#> 4 ordering   report_to_confirmation The object carries no confirmation process.                                           
+#> 5 signposts  confirmation           The object carries no confirmation process.                                           
+#> 6 strata     pending                The object carries no confirmation process.
+```
+
+`skipped` is not `ok`. `ok` means a check ran and found nothing;
+`skipped` means it could not run at all, and a check that cannot be
+performed is never reported as a pass. Note the first row in particular:
+**[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+will not look for duplicate records in a line list**, because one row
+*is* one case, so two identical rows are two infections rather than a
+repeat. That check is the one piece of the cleaning below that
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+cannot do for you, and §4 does it by hand.
+
+The `not_run` rows are different again — questions
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+deliberately refuses to answer:
+
+``` r
+
+diagnose_signposts(hai_raw_now) |>
+  select(scope, status, message)
+#> # A tibble: 4 × 3
+#>   scope                status  message                                            
+#>   <chr>                <ord>   <chr>                                              
+#> 1 confirmation_batches not_run "Run: diagnose_batches(x, axis = \"confirmation\")"
+#> 2 report               not_run "Run: diagnose_drift(x, axis = \"report\")"        
+#> 3 report_batches       not_run "Run: diagnose_batches(x, axis = \"report\")"      
+#> 4 confirmation         skipped "The object carries no confirmation process."
+```
+
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+is **structural**: it never runs a statistical test, so it is fast and
+its answer never depends on a random seed. Whether the delay drifts, and
+whether reports arrive in batches, are statistical questions, and each
+signpost names the call that answers it. §6 runs them.
+
+## 4. Cleaning
+
+Now the defects, one at a time. Nothing below is specific to this
+dataset — these are the fixes worth knowing on *any* surveillance
+extract.
 
 ### Duplicate records
 
-The source’s `id` column is documented as a unique autonumber, so it
-should have no repeats:
+This is the check
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+skipped, and the reason it skipped it is exactly why it needs doing
+here: the *object* cannot tell a repeated case from a real second one,
+but the *source* can. `hai_bucaramanga`’s `id` column is documented as a
+unique autonumber, so it should have no repeats:
 
 ``` r
 
@@ -122,21 +309,8 @@ nrow(hai_bucaramanga) - nrow(hai)
 The source encodes missing dates as `1900-01-01`; that sentinel has
 already been converted to `NA` when the dataset was built (see
 [`?hai_bucaramanga`](https://rodrigozepeda.github.io/tbl.now/reference/hai_bucaramanga.md)).
-A row without both dates cannot contribute to a reporting triangle:
-
-``` r
-
-hai |>
-  summarise(
-    missing_event  = sum(is.na(specimen_date)),
-    missing_report = sum(is.na(report_date)),
-    missing_either = sum(is.na(specimen_date) | is.na(report_date))
-  )
-#> # A tibble: 1 × 3
-#>   missing_event missing_report missing_either
-#>           <int>          <int>          <int>
-#> 1           293            558            569
-```
+A row without both dates cannot contribute to a reporting triangle —
+which is what the two `missing` findings above were saying.
 
 That is a large fraction of the file, and it is worth pausing on rather
 than filtering away reflexively. Missingness that depends on *when* a
@@ -181,6 +355,9 @@ nrow(hai)
 This is the check that most often catches real data-entry problems, and
 it is easy to forget: a result cannot be issued before the sample was
 taken, so the delay must never be negative.
+[`diagnose_ordering()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md)
+counted these at the weekly resolution; at daily resolution the picture
+is:
 
 ``` r
 
@@ -229,38 +406,7 @@ Cleaning cascade {.table}
 Just under half the file survives. That is uncomfortable, and it is the
 honest starting point for everything that follows.
 
-## 2. Choosing a time resolution
-
-A `tbl_now` will happily take the daily dates, but daily is not usable
-here:
-
-``` r
-
-hai |>
-  summarise(
-    cases            = n(),
-    distinct_days    = n_distinct(specimen_date),
-    cases_per_day    = round(n() / n_distinct(specimen_date), 2),
-    distinct_weeks   = n_distinct(floor_date(specimen_date, "week", week_start = 1)),
-    cases_per_week   = round(n() / n_distinct(floor_date(specimen_date, "week", week_start = 1)), 2)
-  )
-#> # A tibble: 1 × 5
-#>   cases distinct_days cases_per_day distinct_weeks cases_per_week
-#>   <int>         <int>         <dbl>          <int>          <dbl>
-#> 1   673           488          1.38            225           2.99
-```
-
-Roughly **1.4 cases per day** cannot support a delay distribution with
-any resolution at all. Aggregating to weeks gives about three cases a
-week, which is still thin but workable.
-
-Monthly would be denser still, and statistically it is the better fit
-for this data — but it is worth knowing that **your time unit constrains
-your choice of engine**. Of the five nowcasting packages used at the end
-of this article, only `diseasenowcasting` and `baselinenowcast` accept
-monthly data: `NobBS` supports only daily and weekly units, and
-`epinowcast` accepts only `"day"` and `"week"` timesteps. Weeks are the
-finest unit every engine agrees on, so weeks it is.
+### Rebuilding, and checking that it worked
 
 ``` r
 
@@ -269,16 +415,6 @@ hai_weekly <- hai |>
     event_week  = floor_date(specimen_date, "week", week_start = 1),
     report_week = floor_date(report_date,   "week", week_start = 1)
   )
-```
-
-## 3. Building the `tbl_now`
-
-Now the data can be handed to
-[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md).
-We declare the two dates, say the data is a line list (one row per
-case), and stratify by the type of intensive care unit:
-
-``` r
 
 hai_now <- hai_weekly |>
   tbl_now(
@@ -313,12 +449,37 @@ hai_now
 #> # ℹ 4 more variables: report_week <date>, .event_num <dbl>, .report_num <dbl>, .delay <dbl>
 ```
 
-[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
-inferred that both dates are **weekly**, computed `.delay` and the
-numeric indices, and set the **now** to the most recent report week.
-From here on, everything — the plots, the diagnostics, and every model
-converter — reads those settings off the object instead of being told
-again.
+No warnings this time. Re-running the diagnosis confirms it rather than
+assuming it, which is the point of having the check return data:
+
+``` r
+
+diagnose(hai_now) |>
+  filter(status <= "note") |>
+  select(check, scope, stratum, status, n_affected, message)
+#> # A tibble: 13 × 6
+#>    check        scope          stratum    status n_affected message                                                                                             
+#>    <chr>        <chr>          <chr>      <ord>       <dbl> <chr>                                                                                               
+#>  1 declarations undeclared     all        note           12 "12 columns \"id\", \"specimen_date\", \"received_date\", \"report_date\", \"specimen\", \"test\", …
+#>  2 now          now_gap_event  Adult      note            1 "The last event date is 1 week before now (\"2023-01-30\")."                                        
+#>  3 now          now_gap_event  Neonatal   note            1 "The last event date is 1 week before now (\"2023-01-30\")."                                        
+#>  4 now          now_gap_event  Paediatric note           15 "The last event date is 15 weeks before now (\"2023-01-30\")."                                      
+#>  5 now          now_gap_event  all        note            1 "The last event date is 1 week before now (\"2023-01-30\")."                                        
+#>  6 now          now_gap_report Neonatal   note            1 "The last report date is 1 week before now (\"2023-01-30\")."                                       
+#>  7 now          now_gap_report Paediatric note            9 "The last report date is 9 weeks before now (\"2023-01-30\")."                                      
+#>  8 strata       size           Neonatal   note           62 "The smallest stratum is \"Neonatal\" with 62 cases, 9.2% of the total."                            
+#>  9 strata       sparsity       Neonatal   note          270 "The sparsest stratum is \"Neonatal\": 85.2% of the event dates on the grid carry no cases at all." 
+#> 10 truncation   event_date     Adult      note            9 "9 event dates are younger than the 95th percentile of the delay, so their counts are still filling…
+#> 11 truncation   event_date     Neonatal   note            5 "5 event dates are younger than the 95th percentile of the delay, so their counts are still filling…
+#> 12 truncation   event_date     Paediatric note            2 "2 event dates are younger than the 95th percentile of the delay, so their counts are still filling…
+#> 13 truncation   event_date     all        note           12 "12 event dates are younger than the 95th percentile of the delay, so their counts are still fillin…
+```
+
+The three defects are gone. What remains are the two structural notes —
+the undeclared columns, which are deliberate here (we are stratifying
+only by `icu_type`), and the staleness and truncation of the tail, which
+are properties of the extract rather than mistakes in it. A finding you
+have read and accepted is a different thing from one you have not seen.
 
 ``` r
 
@@ -332,7 +493,7 @@ c(
 #> "2023-01-30"      "weeks"      "weeks"   "icu_type"
 ```
 
-## 4. Looking at the data
+## 5. Looking at the data
 
 [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
 draws a diagnostic grid: the case-count panels in green describe the
@@ -408,7 +569,56 @@ which the epidemic series does not. An annual rhythm in *reporting* —
 not in infections — is consistent with that second, retrospective stream
 being an annual audit or reconciliation exercise.
 
-## 5. Is the reporting delay stable?
+### The same picture, as numbers
+
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html) is
+for looking; [`summary()`](https://rdrr.io/r/base/summary.html) is for
+reading off values, and returns a tibble so you can do either. It
+confirms the bimodality above without needing the plot:
+
+``` r
+
+summary(hai_now) |>
+  filter(component == "delay") |>
+  select(quantity, stratum, n, total, mean, sd, q50, q90, max)
+#> # A tibble: 4 × 9
+#>   quantity        stratum        n total  mean    sd   q50   q90   max
+#>   <chr>           <chr>      <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+#> 1 event_to_report all          436   673  3.47  5.98     0    13    35
+#> 2 event_to_report Adult        312   522  3.88  6.11     1    13    35
+#> 3 event_to_report Neonatal      50    62  2.05  5.54     0    13    27
+#> 4 event_to_report Paediatric    74    89  2.04  5.11     0    13    18
+```
+
+A **mean of 3.5 weeks against a median of 0** is the whole story in two
+numbers: most results arrive in the same week, and a long right tail
+drags the average out to three and a half. A symmetric delay would have
+had them nearly equal. The standard deviation, larger than the mean,
+says the same thing.
+
+The composition block explains why the strata behave so differently
+downstream:
+
+``` r
+
+summary(hai_now) |>
+  filter(component == "composition") |>
+  select(quantity, total, prop)
+#> # A tibble: 3 × 3
+#>   quantity            total   prop
+#>   <chr>               <dbl>  <dbl>
+#> 1 strata = Adult        522 0.776 
+#> 2 strata = Neonatal      62 0.0921
+#> 3 strata = Paediatric    89 0.132
+```
+
+Adult units carry 78% of the cases. That is the imbalance
+[`diagnose_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md)
+flagged as a note, and it is worth remembering when a per-stratum
+nowcast for `Neonatal` — 62 cases spread over 317 event weeks — comes
+back with very wide intervals.
+
+## 6. Is the reporting delay stable?
 
 A nowcast fitted to the whole series assumes the delay distribution is
 the same throughout. If it is not, the model averages over reporting
@@ -433,13 +643,13 @@ exactly that split.
 
 ### Is there a gradual trend?
 
-[`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
+[`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
 runs an autocorrelation-robust Mann-Kendall test for a *monotonic*
 trend:
 
 ``` r
 
-test_delay_drift(hai_now)
+diagnose_drift(hai_now)
 #> # A tibble: 2 × 9
 #>   strata stat       n      tau sens_slope statistic p_value method    drift
 #>   <chr>  <chr>  <int>    <dbl>      <dbl>     <dbl>   <dbl> <chr>     <lgl>
@@ -455,12 +665,12 @@ null rather than an underpowered one.
 
 A trend test cannot see a step change — a jump up and a jump down can
 even cancel out to no trend at all.
-[`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md)
+[`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md)
 uses Pettitt’s test to look for exactly that:
 
 ``` r
 
-test_delay_changepoint(hai_now)
+diagnose_changepoint(hai_now)
 #> # A tibble: 2 × 10
 #>   strata stat       n changepoint statistic p_value before after shift changepoint_detected
 #>   <chr>  <chr>  <int> <date>          <dbl>   <dbl>  <dbl> <dbl> <dbl> <lgl>               
@@ -477,13 +687,13 @@ reached Colombia and hospital laboratories were abruptly redirected.
 So the typical case was reported no more slowly after March 2020, but
 the *variability* of reporting more than doubled. That is a real change
 in the reporting process, and it has a direct modelling consequence,
-which we act on in section 7.
+which we act on in section 8.
 
 ### Does this differ by unit?
 
 ``` r
 
-test_delay_drift(hai_now, by_strata = TRUE)
+diagnose_drift(hai_now, by_strata = TRUE)
 #> # A tibble: 6 × 9
 #>   strata     stat       n     tau sens_slope statistic p_value method    drift
 #>   <chr>      <chr>  <int>   <dbl>      <dbl>     <dbl>   <dbl> <chr>     <lgl>
@@ -507,7 +717,7 @@ of weeks and more than half of them are zero, so the median pairwise
 slope really is zero; that is a property of discrete, heavily-tied data,
 not a bug.
 
-## 6. Temporal effects
+## 7. Temporal effects
 
 [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
 attaches calendar covariates a model can use. The temptation is to add
@@ -540,7 +750,7 @@ included. And in any case we aggregated to weeks, so a day-of-week term
 has nothing to attach to. Adding one would be modelling noise.
 
 **An annual cycle is justified**, on the reporting side, by the
-periodogram in section 4 and by the bimodal delay. Since the data are
+periodogram in section 5 and by the bimodal delay. Since the data are
 weekly, that is a Fourier season of period 52:
 
 ``` r
@@ -594,7 +804,7 @@ hai_seasonal
 Effects are attached **lazily** — the object records the specification
 but does not materialise the columns until a model asks for them (or you
 call
-[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)):
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)):
 
 ``` r
 
@@ -605,14 +815,14 @@ hai_seasonal |>
 #> Warning: Dropped protected column(?s): ".event_num" and ".delay". Returning a `tibble`
 #> # A tibble: 4 × 6
 #>   event_week report_week .report_num .report_week_of_year .report_season_52_cos .report_season_52_sin
-#>   <date>     <date>            <dbl>                <int>                 <dbl>                 <dbl>
-#> 1 2018-01-22 2018-01-29           55                    1                 0.935                 0.355
-#> 2 2018-01-22 2018-01-29           55                    1                 0.935                 0.355
-#> 3 2018-04-16 2018-04-23           67                   13                -0.239                 0.971
-#> 4 2018-01-22 2018-01-22           54                   52                 0.971                 0.239
+#>   <date>     <date>            <dbl> <fct>                                <dbl>                 <dbl>
+#> 1 2018-01-22 2018-01-29           55 1                                    0.935                 0.355
+#> 2 2018-01-22 2018-01-29           55 1                                    0.935                 0.355
+#> 3 2018-04-16 2018-04-23           67 13                                  -0.239                 0.971
+#> 4 2018-01-22 2018-01-22           54 52                                   0.971                 0.239
 ```
 
-## 7. Nowcasting with `diseasenowcasting`
+## 8. Nowcasting with `diseasenowcasting`
 
 Now we let the diagnostics decide the model. Three findings carry over:
 
@@ -766,7 +976,7 @@ hai_model_seasonal <- hai_model |>
 diseasenowcasting::nowcast(hai_model_seasonal, type = "one_stage", n_draws = 2000)
 ```
 
-## 8. The same data, other engines
+## 9. The same data, other engines
 
 The value of describing the data once is that every other package is now
 one call away. Each converter reads the event date, report date, strata
@@ -915,30 +1125,46 @@ The workflow, start to finish:
 
 ``` r
 
-# 1. Clean, checking what actually breaks a nowcast.
-hai <- hai_bucaramanga |>
-  distinct() |>                                       # duplicate records
-  filter(!is.na(specimen_date), !is.na(report_date)) |>  # missing dates
-  filter(report_date >= specimen_date)                # report before event
+# 1. Choose a resolution the data (and your engine) can support.
+hai_weekly_raw <- hai_bucaramanga |>
+  mutate(event_week  = floor_date(specimen_date, "week", week_start = 1),
+         report_week = floor_date(report_date,   "week", week_start = 1))
 
-# 2. Choose a resolution the data (and your engine) can support.
+# 2. Describe it once -- before cleaning, so the object can tell you what is wrong.
+hai_raw_now <- tbl_now(hai_weekly_raw, event_date = event_week,
+                       report_date = report_week, strata = icu_type,
+                       data_type = "linelist")
+
+# 3. Ask what is wrong with it, instead of guessing.
+diagnose(hai_raw_now) |> filter(status <= "note")
+
+# 4. Fix what it reported, and confirm the fix.
+hai <- hai_bucaramanga |>
+  distinct() |>                                          # duplicates: diagnose() skips
+  filter(!is.na(specimen_date), !is.na(report_date)) |>  #   these two it found
+  filter(report_date >= specimen_date)                   #   and this one
+
 hai_weekly <- hai |>
   mutate(event_week  = floor_date(specimen_date, "week", week_start = 1),
          report_week = floor_date(report_date,   "week", week_start = 1))
 
-# 3. Describe it once.
 hai_now <- tbl_now(hai_weekly, event_date = event_week, report_date = report_week,
                    strata = icu_type, data_type = "linelist")
 
-# 4. Look at it, and test the delay for drift and change points.
-autoplot(hai_now)
-test_delay_drift(hai_now)
-test_delay_changepoint(hai_now)
+diagnose(hai_now) |> filter(status <= "note")
 
-# 5. Let those findings set the model window and the maximum delay.
+# 5. Look at it, and read the numbers off it.
+autoplot(hai_now)
+summary(hai_now)
+
+# 6. Run the statistical tests diagnose() signposted but would not run itself.
+diagnose_drift(hai_now)
+diagnose_changepoint(hai_now)
+
+# 7. Let those findings set the model window and the maximum delay.
 hai_model <- hai_now |> censor_delays_above(max_delay = 20)
 
-# 6. Hand it to whichever engine you like.
+# 8. Hand it to whichever engine you like.
 diseasenowcasting::nowcast(hai_model)         # diseasenowcasting
 tbl_now_to_baselinenowcast(hai_model)         # baselinenowcast
 tbl_now_to_epinowcast(hai_model)              # epinowcast

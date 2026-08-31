@@ -90,7 +90,7 @@ spec, so they appear only when there is one to describe:
 `holiday_lags`. Requesting a holiday panel without the matching effect
 warns and skips it. The spec is read directly, so you do **not** need to
 call
-[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
 first.
 
 The delay panels are computed on the *complete* portion of the series
@@ -210,12 +210,33 @@ autoplot(
 A patchwork object combining the selected panels, or — when a single
 panel is selected — that panel as a ggplot2 object.
 
+## See also
+
+[`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md)
+for the companion gallery, which looks at the *reporting process* – when
+reports arrived and whether any of it is artificial – rather than at the
+case counts; the panels here as standalone functions:
+[`plot_observed_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_observed_cases.md),
+[`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.md),
+[`plot_cycles()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_cycles.md),
+[calendar_effect_plots](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
+and
+[`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md);
+[summary()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.md)
+and
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+for the same information as tables. The [*Describing and diagnosing a
+tbl_now*
+article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+reads the panels one at a time.
+
 ## Examples
 
 ``` r
 data(denguedat)
-# A recent window keeps the example fast.
-recent <- denguedat[denguedat$onset_week >= as.Date("2010-01-01"), ]
+# A few recent months keep the example fast; the panels look the same on
+# twenty years of data, they just take longer to draw.
+recent <- denguedat[denguedat$onset_week >= as.Date("2010-11-01"), ]
 dengue <- tbl_now(recent,
   event_date = "onset_week",
   report_date = "report_week", strata = "gender", verbose = FALSE
@@ -223,21 +244,19 @@ dengue <- tbl_now(recent,
 autoplot(dengue)
 
 
-# \donttest{
 # Only the reporting-delay calendar effect
 autoplot(dengue, panels = "delay_calendar")
 
 
-# A single panel (returned as a plain ggplot)
+## A single panel (returned as a plain ggplot)
 autoplot(dengue, panels = "delay_week")
 
 
-# Split every panel by stratum
-autoplot(dengue, by_strata = TRUE)
+# Split by stratum. `by_strata = TRUE` works on the whole gallery too; one
+# panel keeps the example quick.
+autoplot(dengue, panels = "delay_week", by_strata = TRUE)
 
 
 # Zoom the delay panel to delays of 0-10 weeks
-autoplot(dengue, delay_distribution_xlim = c(0, 10))
-
-# }
+autoplot(dengue, panels = "delay_distribution", delay_distribution_xlim = c(0, 10))
 ```

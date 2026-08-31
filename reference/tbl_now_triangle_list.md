@@ -49,3 +49,33 @@ print(x, ...)
 
 [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md),
 [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+
+## Examples
+
+``` r
+data(denguedat)
+dengue <- tbl_now(denguedat[1:3000, ],
+  event_date = onset_week, report_date = report_week, verbose = FALSE
+)
+
+# One reporting triangle per stratum, in the shape baselinenowcast wants.
+triangles <- suppressWarnings(
+  tbl_now_to_baselinenowcast(dengue, format = "triangle_list", verbose = FALSE)
+)
+#> ℹ Using max_delay = 13 from data
+
+# Printing summarises the set rather than dumping every matrix.
+triangles
+#> ── 1 reporting triangle from a <tbl_now> ───────────────────────────────────────
+#> • No strata; a single triangle named "all"
+#> • Delays unit: "weeks"
+#> • Now: "1991-10-14"
+#> • Dimensions (event x delay): "94 x 14"
+#> ℹ This is one triangle per STRATUM. `baselinenowcast::estimate_and_apply_delays()` expects retrospective snapshots of a single series instead -- do not pass this object to it.
+
+# It is a list underneath, so the usual accessors work.
+length(triangles)
+#> [1] 1
+names(triangles)
+#> [1] "all"
+```

@@ -96,7 +96,10 @@ tbl_now_from_EpiNow2(data, ..., report_dates = NULL, verbose = TRUE)
 
 - quiet:
 
-  Logical. If `TRUE`, suppress the lossy-conversion warning.
+  Logical. A *different* channel from `verbose`: `verbose` controls the
+  informational summary of what the conversion did, while `quiet`
+  suppresses the lossy-conversion warning. Set both to keep a conversion
+  entirely silent.
 
 - data:
 
@@ -160,7 +163,7 @@ data(denguedat)
 nowobj <- tbl_now(denguedat[1:2000, ],
   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 )
-# A single daily series for estimate_infections() -- the weekly data is laid
+## A single daily series for estimate_infections() -- the weekly data is laid
 # on EpiNow2's daily grid.
 head(tbl_now_to_EpiNow2(nowobj, verbose = FALSE, quiet = TRUE))
 #>         date confirm accumulate
@@ -171,7 +174,7 @@ head(tbl_now_to_EpiNow2(nowobj, verbose = FALSE, quiet = TRUE))
 #> 5 1989-12-30      NA       TRUE
 #> 6 1989-12-31      NA       TRUE
 
-# Snapshots for estimate_truncation(), which uses the report dimension.
+## Snapshots for estimate_truncation(), which uses the report dimension.
 snaps <- tbl_now_to_EpiNow2(nowobj,
   target = "estimate_truncation", verbose = FALSE, quiet = TRUE
 )

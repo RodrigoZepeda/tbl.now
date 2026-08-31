@@ -216,7 +216,7 @@ df_now
 
 This lazily adds to the table `day_of_week`, `week_of_year`, and
 `holiday` related to `event_date`. However it does not compute. Use
-[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
 to add them as columns:
 
 ``` r
@@ -227,12 +227,12 @@ df_now |>
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
 #>   event_date   report_date         n .event_num .report_num .delay sex   .event_day_of_week .event_week_of_year .event_holiday
-#>   <date>       <date>          <dbl>      <dbl>       <dbl>  <dbl> <chr>              <int>               <int>          <int>
-#>   [event_date] [report_date] [cases]      [...]       [...]  [...] [...]         [t_effect]          [t_effect]     [t_effect]
-#> 1 2023-12-25   2023-12-26         10          0           1      1 M                      2                   1              1
-#> 2 2023-12-26   2023-12-26          2          1           1      0 M                      3                   1              0
-#> 3 2023-12-25   2023-12-27          5          0           2      2 F                      2                   1              1
-#> 4 2023-12-26   2023-12-27         11          1           2      1 M                      3                   1              0
+#>   <date>       <date>          <dbl>      <dbl>       <dbl>  <dbl> <chr> <fct>              <fct>                        <int>
+#>   [event_date] [report_date] [cases]      [...]       [...]  [...] [...] [t_effect]         [t_effect]              [t_effect]
+#> 1 2023-12-25   2023-12-26         10          0           1      1 M     Monday             1                                1
+#> 2 2023-12-26   2023-12-26          2          1           1      0 M     Tuesday            1                                0
+#> 3 2023-12-25   2023-12-27          5          0           2      2 F     Monday             1                                1
+#> 4 2023-12-26   2023-12-27         11          1           2      1 M     Tuesday            1                                0
 #> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #> # Now: 2023-12-27 | Event date: "event_date" | Report date: "report_date"
 #> # T. effects: [event_date] day_of_week, week_of_year, holidays
@@ -309,6 +309,110 @@ autoplot(mpoxdat_now)
 
 ![](reference/figures/README-autoplot-1.png)
 
+## Describing and diagnosing a `tbl_now`
+
+### What is in the data?
+
+[`summary()`](https://rdrr.io/r/base/summary.html) returns a **tibble**,
+not printed text, so every number in it can be filtered, joined or
+plotted. One row describes one quantity, and `component` says which
+block it belongs to:
+
+``` r
+
+summary(mpoxdat_now) |>
+  filter(component == "cases") |>
+  select(quantity, n, total, mean, sd, q50, max, prop_zero)
+#> # A tibble: 2 x 8
+#>   quantity            n total  mean    sd   q50   max prop_zero
+#>   <chr>           <int> <dbl> <dbl> <dbl> <dbl> <dbl>     <dbl>
+#> 1 per_event_date    316  3323  10.5  22.3     0    98     0.703
+#> 2 per_report_date   313  3323  10.6  23.0     0   109     0.696
+```
+
+Seventy percent of the event dates carry no cases at all (`prop_zero`),
+which is the first thing worth knowing before choosing a model. The
+`coverage` block gives the reach of the object, including its `now`:
+
+``` r
+
+summary(mpoxdat_now) |>
+  filter(component == "coverage", quantity %in% c("total_cases", "event_date", "report_date", "now")) |>
+  select(quantity, n, total, date_min, date_max)
+#> # A tibble: 4 x 5
+#>   quantity        n total date_min   date_max  
+#>   <chr>       <int> <dbl> <date>     <date>    
+#> 1 total_cases   585  3323 NA         NA        
+#> 2 event_date     94  3323 2022-07-08 2022-10-12
+#> 3 report_date    95  3323 2022-07-11 2023-05-19
+#> 4 now            NA    NA 2023-05-19 2023-05-19
+```
+
+The other blocks are `delay`, `zero_run`, `composition`,
+`autocorrelation`, `completeness` and `growth`, and each is also a
+function of its own —
+[`delay_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`prop_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+and so on. See
+[`?tbl_now_summary`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.md).
+
+### Is anything wrong with it?
+
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+answers that, returning findings **sorted worst first**. `status` is an
+ordered factor (`error` \> `warning` \> `note` \> `ok` \> `not_run` \>
+`skipped`), so filtering to what needs acting on is a comparison:
+
+``` r
+
+diagnose(mpoxdat_now) |>
+  filter(status <= "note") |>
+  select(check, scope, status, n_affected, message)
+#> # A tibble: 3 x 5
+#>   check        scope         status  n_affected message                                                                 
+#>   <chr>        <chr>         <ord>        <dbl> <chr>                                                                   
+#> 1 duplicates   key           warning        832 "*Non-unique*: 832 rows share an (dx_date, dx_report_date) combination."
+#> 2 declarations undeclared    note             1 "1 column \"race\" is not declared as strata or covariates."            
+#> 3 now          now_gap_event note           219 "The last event date is 219 days before now (\"2023-05-19\")."
+```
+
+It caught a real problem in the object built above: `race` was never
+declared, so it silently splits every `(event_date, report_date)` cell
+into several rows. That is the most common source of surprising results
+in this package. Declaring it fixes the finding:
+
+``` r
+
+mpoxdat_now |>
+  add_strata(race) |>
+  diagnose(checks = "duplicates") |>
+  select(check, status, n_affected, message)
+#> # A tibble: 1 x 4
+#>   check      status n_affected message                                                                             
+#>   <chr>      <ord>       <dbl> <chr>                                                                               
+#> 1 duplicates ok              0 Every row is unique on (dx_date, dx_report_date) and everything the object declares.
+```
+
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+is deliberately **structural**: it never runs a statistical test, so it
+is fast and its answer never depends on a random seed. The questions
+that do need a test come back as `not_run` signposts naming the call
+that answers them — which are exactly the two sections that follow:
+
+``` r
+
+diagnose_signposts(mpoxdat_now) |>
+  select(scope, status, message)
+#> # A tibble: 4 x 3
+#>   scope                status  message                                            
+#>   <chr>                <ord>   <chr>                                              
+#> 1 confirmation_batches not_run "Run: diagnose_batches(x, axis = \"confirmation\")"
+#> 2 report               not_run "Run: diagnose_drift(x, axis = \"report\")"        
+#> 3 report_batches       not_run "Run: diagnose_batches(x, axis = \"report\")"      
+#> 4 confirmation         skipped "The object carries no confirmation process."
+```
+
 ### Diagnosing reporting problems
 
 `tbl.now` also diagnoses common reporting artefacts directly from the
@@ -345,13 +449,13 @@ We can see that the delay does change in time varying a lot at the
 beginning of the epidemic (before April) then stabilizing between April
 and July, and finally shifting downwards around August. The same result
 can be observed with
-[`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
+[`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
 which checks, statistically, via a modified Mann-Kendall test, whether
 there is a drift in the delay:
 
 ``` r
 
-test_delay_drift(covidat_now, method = "yue-pilon")
+diagnose_drift(covidat_now, method = "yue-pilon")
 #> # A tibble: 2 x 9
 #>   strata stat       n    tau sens_slope statistic p_value method    drift
 #>   <chr>  <chr>  <int>  <dbl>      <dbl>     <dbl>   <dbl> <chr>     <lgl>
@@ -362,11 +466,11 @@ test_delay_drift(covidat_now, method = "yue-pilon")
 The **changepoint** option uses [Pettitt’s
 test](https://doi.org/10.2307/2346729) to identify **one** changepoint
 in the data. It can be recovered with
-[`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md):
+[`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md):
 
 ``` r
 
-test_delay_changepoint(covidat_now)
+diagnose_changepoint(covidat_now)
 #> # A tibble: 2 x 10
 #>   strata stat       n changepoint statistic  p_value before after shift changepoint_detected
 #>   <chr>  <chr>  <int> <date>          <dbl>    <dbl>  <dbl> <dbl> <dbl> <lgl>               
@@ -381,10 +485,10 @@ for COVID-19 and in August 25th implemented the **PRASS programme**
 which shifted the sampling and reporting paradigm for the country
 (*Osorio Saldarriga et al*). These are the changes potentially
 identified by
-[`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md).
+[`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md).
 
 Pettitt’s test in
-[`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md)
+[`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md)
 detects only one change point: the largest one. If your data has more
 than one changepoint break your data into chunks and run the test for
 each of them.
@@ -399,7 +503,7 @@ period (see the [corresponding article for more
 information](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html)).
 
 The
-[`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md)
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
 function uses this idea to identify batches. The confidence level can be
 set with `alpha`. For example here we set a level of 80%:
 
@@ -407,7 +511,7 @@ set with `alpha`. For example here we set a level of 80%:
 
 covidat_now |>
   remove_all_strata() |>
-  batch_test(period = 7, alpha = 0.2) 
+  diagnose_batches(period = 7, alpha = 0.2) 
 ```
 
 ``` R

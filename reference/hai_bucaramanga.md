@@ -112,8 +112,8 @@ translation tables and the list of dropped columns.
 This is a real, unpolished open-data extract, and it is included partly
 *because* it is messy: it is a realistic exercise for the delay
 diagnostics in this package
-([`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md),
-[`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md),
+([`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md),
+[`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md),
 [`plot_delay_profiles()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_profiles.md)).
 Nothing below has been silently repaired.
 
@@ -167,12 +167,21 @@ delay diagnostics that assume a unimodal delay.
 
 ## See also
 
-[covid_colombia](https://rodrigozepeda.github.io/tbl.now/reference/covid_colombia.md)
-for a second Colombian surveillance dataset,
-[`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+to declare the date columns, and
+[add_confirmation()](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)
+for the third one this dataset has;
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
 and
-[`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md)
-for the delay diagnostics this dataset is well suited to.
+[`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md),
+which this dataset is deliberately messy enough to exercise; the
+package's other datasets –
+[denguedat](https://rodrigozepeda.github.io/tbl.now/reference/denguedat.md),
+[mpoxdat](https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.md),
+[flusight](https://rodrigozepeda.github.io/tbl.now/reference/flusight.md),
+[covid_colombia](https://rodrigozepeda.github.io/tbl.now/reference/covid_colombia.md)
+and
+[covid_us](https://rodrigozepeda.github.io/tbl.now/reference/covid_us.md).
 
 ## Examples
 

@@ -7,16 +7,16 @@ dates and releases its accumulated backlog on the next open date.
 Reports keep their event dates and merely move *later* on the report
 axis, so no cases are created or destroyed – the defining property of a
 batch. Useful for checking that
-[`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md)
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
 and
-[`batch_shape_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.md)
+[`diagnose_batch_shape()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batch_shape.md)
 recover a batch you planted.
 
 ## Usage
 
 ``` r
 simulate_batch(
-  data,
+  x,
   closed_dates,
   held_fraction = 1,
   drop_unreleased = TRUE,
@@ -26,7 +26,7 @@ simulate_batch(
 
 ## Arguments
 
-- data:
+- x:
 
   A
   [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
@@ -101,14 +101,20 @@ on the total.
 
 ## See also
 
-[`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md),
-[`batch_shape_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_shape_test.md)
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
+and
+[`diagnose_batch_shape()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batch_shape.md),
+the tests this exists to validate;
+[`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+for recording a real batch rather than planting one. The [*Diagnosing
+reporting batches*
+article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html)
+uses this to calibrate the screen.
 
 ## Examples
 
 ``` r
-library(tbl.now)
-data(denguedat, package = "tbl.now")
+data(denguedat)
 
 dengue_tbl <- tbl_now(
   denguedat,
@@ -118,11 +124,24 @@ dengue_tbl <- tbl_now(
   verbose     = FALSE
 )
 
-# Close the reporting desk for three consecutive weeks
+# Pretend the reporting desk was shut for three consecutive weeks: everything
+# that would have been reported then is held, and released together afterwards.
 closed <- as.Date(c("1990-06-04", "1990-06-11", "1990-06-18"))
 batched_tbl <- simulate_batch(dengue_tbl, closed_dates = closed, verbose = FALSE)
 #> Warning: ! `simulate_batch()` is experimental: results are not guaranteed and the
 #>   interface may change.
 #> ℹ Treat a flagged report date as a potential batch, not a confirmed one.
 #> This warning is displayed once every 8 hours.
+
+# No cases are lost -- they are only moved later in the reporting process.
+nrow(dengue_tbl)
+#> [1] 52987
+nrow(batched_tbl)
+#> [1] 52987
+
+# Which is the point: you now have data with a batch you planted yourself, so
+# you can check whether the screen finds it.
+found <- suppressWarnings(diagnose_batches(batched_tbl, lookback = 2))
+found$report_date[found$batch]
+#> [1] "1991-08-12" "2007-11-26" "2009-11-16" "2010-09-13"
 ```

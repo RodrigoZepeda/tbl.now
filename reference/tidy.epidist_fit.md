@@ -97,17 +97,52 @@ for the conversion.
 ## Examples
 
 ``` r
-if (FALSE) {
-# Fitting needs Stan, so this is not run.
 data(denguedat)
-nowobj <- tbl_now(denguedat,
+# A short window: fitting a delay distribution does not need twenty years of
+# data, and Stan is slow.
+recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+nowobj <- tbl_now(recent,
   event_date = "onset_week", report_date = "report_week", verbose = FALSE
 )
-fit <- tbl_now_to_epidist(nowobj) |>
-  epidist::as_epidist_marginal_model() |>
-  epidist::epidist()
 
-tidy(fit)
-tidy(fit, probs = c(0.05, 0.95))
+## The conversion itself is quick, and is what tidy() will later summarise.
+converted <- suppressWarnings(tbl_now_to_epidist(nowobj, verbose = FALSE))
+#> ℹ No observation time column provided, using 2010-12-27 as the observation date (the maximum of the secondary event upper bound).
+head(converted)
+#> # A tibble: 6 × 10
+#>   ptime_lwr ptime_upr stime_lwr stime_upr obs_time pdate_lwr  pdate_upr 
+#>       <dbl>     <dbl>     <dbl>     <dbl>    <dbl> <date>     <date>    
+#> 1         0         7         7        14      203 2010-06-07 2010-06-14
+#> 2         0         7         7        14      203 2010-06-07 2010-06-14
+#> 3         0         7         7        14      203 2010-06-07 2010-06-14
+#> 4         0         7         7        14      203 2010-06-07 2010-06-14
+#> 5         0         7         7        14      203 2010-06-07 2010-06-14
+#> 6         0         7         7        14      203 2010-06-07 2010-06-14
+#> # ℹ 3 more variables: sdate_lwr <date>, sdate_upr <date>, obs_date <date>
+
+# Fitting compiles a Stan model, so this takes about a minute even on a short
+## chain. `try()` guards the case where \pkg{epidist} is installed but its Stan
+# toolchain is not; use \pkg{brms}'s defaults for real work.
+fit <- try(
+  converted |>
+    epidist::as_epidist_marginal_model() |>
+    epidist::epidist(chains = 1, iter = 200, refresh = 0),
+  silent = TRUE
+)
+#> ! Setting 560 observation times beyond 182 (=2x max delay) to Inf. This
+#>   improves model efficiency by reducing unique observation times while
+#>   maintaining model accuracy as these times should have negligible impact.
+#> Warning: Found infinite values in the data, which may cause issues for Stan.
+#> ℹ Data summarised by unique combinations of:
+#> * Model variables: delay bounds, observation time, and primary censoring window
+#> ! Reduced from 5426 to 116 rows.
+#> ℹ This should improve model efficiency with no loss of information.
+#> Warning: Found infinite values in the data, which may cause issues for Stan.
+#> Warning: Found infinite values in the data, which may cause issues for Stan.
+#> Compiling Stan program...
+
+if (!inherits(fit, "try-error")) {
+  print(tidy(fit))
+  print(tidy(fit, probs = c(0.05, 0.95)))
 }
 ```

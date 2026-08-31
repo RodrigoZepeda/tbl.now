@@ -299,7 +299,7 @@ Ordinary days (grey) sit in the cloud through the middle. That is the
 whole idea behind
 [`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md)
 and
-[`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md):
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md):
 **a batch is high transport with little creation**.
 
 ### The transport discriminant
@@ -327,11 +327,11 @@ plot_transport_discriminant(tn, period = 7)
 ### Recovering the data
 
 The
-[`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md)
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
 function runs the transport test for the batch signature and returns,
 for every report date, the `batch` flag – a Benjamini-Hochberg-corrected
 verdict that controls the false-discovery rate across all dates (see
-[`?batch_test`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md)
+[`?diagnose_batches`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
 for the full column reference). Keeping the `batch` rows gives the
 confirmed releases together with their `deficit` (how depleted the days
 just before were) and `delta` (how little the window total actually
@@ -339,7 +339,7 @@ changed).
 
 ``` r
 
-batch_test(ideal) |>
+diagnose_batches(ideal) |>
   filter(batch)
 ```
 
@@ -356,7 +356,7 @@ its neighbours *and* was preceded by a matching deficit. The clearest is
 
 ``` r
 
-batch_test(tn, period = 7) |>
+diagnose_batches(tn, period = 7) |>
   filter(batch)
 ```
 
@@ -398,9 +398,9 @@ plot_delay_drift(tn)
 ![](batch-reporting_files/figure-html/drift-covid-1.png)
 
 The functions
-[`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
+[`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
 and
-[`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md)
+[`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md)
 test for a gradual or abrupt changes in the delay. We can see, for
 example, that it correctly identifies the drift in the COVID-19 dataset
 both for the median (trend) and the spread (see the quantiles getting
@@ -409,13 +409,13 @@ a drift:
 
 ``` r
 
-test_delay_drift(tn)
+diagnose_drift(tn)
 #> # A tibble: 2 × 9
 #>   strata stat       n    tau sens_slope statistic  p_value method    drift
 #>   <chr>  <chr>  <int>  <dbl>      <dbl>     <dbl>    <dbl> <chr>     <lgl>
 #> 1 all    median   182 -0.601     -0.286     -3.91 9.17e- 5 hamed-rao TRUE 
 #> 2 all    spread   182 -0.871     -0.912     -6.13 8.55e-10 hamed-rao TRUE
-test_delay_drift(ideal)
+diagnose_drift(ideal)
 #> # A tibble: 2 × 9
 #>   strata stat       n     tau sens_slope statistic p_value method    drift
 #>   <chr>  <chr>  <int>   <dbl>      <dbl>     <dbl>   <dbl> <chr>     <lgl>
@@ -429,14 +429,14 @@ ideal example the change is not long enough to be detected:
 
 ``` r
 
-test_delay_changepoint(tn)
+diagnose_changepoint(tn)
 #> # A tibble: 2 × 10
 #>   strata stat       n changepoint statistic  p_value before after shift
 #>   <chr>  <chr>  <int> <date>          <dbl>    <dbl>  <dbl> <dbl> <dbl>
 #> 1 all    median   182 2020-04-06       5881 2.71e-15   40.7  6.35 -34.3
 #> 2 all    spread   182 2020-04-01       8076 1.84e-28  127.  44.0  -82.7
 #> # ℹ 1 more variable: changepoint_detected <lgl>
-test_delay_changepoint(ideal)
+diagnose_changepoint(ideal)
 #> # A tibble: 2 × 10
 #>   strata stat       n changepoint statistic p_value before after  shift
 #>   <chr>  <chr>  <int> <date>          <dbl>   <dbl>  <dbl> <dbl>  <dbl>
@@ -481,7 +481,7 @@ together.
 | **The reporting V** | Horizontal slices show cases with the same report date. |
 | **Wavelet scalogram** | Bright short-period ridges in the reporting series show *holds* on the reporting. |
 | **Transport discriminant** | A red dot up-and-left, in the “potential batch region” might indicate a batch. |
-| **[`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md)** | Shows the flagged reports in the discriminant as a `data.frame` |
+| **[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)** | Shows the flagged reports in the discriminant as a `data.frame` |
 | **Delay profiles** | Show the delay distribution for each event date. |
 | **Reporting-delay drift** | Shows how the delay and its variance change through time. |
 

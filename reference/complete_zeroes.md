@@ -1,9 +1,18 @@
-# Complete with zeroes
+# Fill in the days when nothing was reported
 
 **\[experimental\]**
 
-Takes a `tbl.now` object and completes observations for event_dates or
-report_dates that have not been registered (by each strata) with a 0.
+Surveillance data records what happened, not what didn't. If no dengue
+case with onset on 3 January was reported on 5 January, there is simply
+no row for that combination – which is *not* the same as a row saying
+zero, even though it means the same thing.
+
+Most nowcasting models need the difference spelled out. They work on a
+complete rectangle of (event date x report date) cells, and a missing
+cell is ambiguous: it could be a genuine zero, or a delay so long the
+report has not arrived yet. `complete_zeroes()` writes the genuine zeros
+in explicitly, for every stratum, leaving only the not-yet-reported
+cells absent.
 
 ## Usage
 
@@ -15,7 +24,7 @@ complete_zeroes(x, max_delay = NULL, until = NULL)
 
 - x:
 
-  A `tbl.now` object.
+  A `tbl_now` object.
 
 - max_delay:
 
@@ -39,8 +48,28 @@ complete_zeroes(x, max_delay = NULL, until = NULL)
 
 ## Value
 
-A `tbl.now` object with the same columns that includes the `0`
-observations in the `case_count`.
+A `tbl_now` object with the same columns as `x`, plus the rows that were
+implicitly zero, carrying `0` in the `case_count` column. The data type
+is preserved.
+
+## Details
+
+Zeros are only filled where a report *could* have arrived: cells with a
+report date on or before the event date's `now`, and within `max_delay`.
+Filling beyond that would invent observations from the future.
+
+## See also
+
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
+for the data shapes this operates on;
+[`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+for the opposite problem, delays that are too long;
+[`diagnose_missing()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md)
+and
+[`diagnose_truncation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md)
+to find the gaps first;
+[`plot_reporting_triangle()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.md)
+to see the rectangle being filled.
 
 ## Examples
 
@@ -64,59 +93,19 @@ ndata <- tbl_now(ndata,
   verbose = FALSE, strata = sex, case_count = n, data_type = "count-incidence"
 )
 
-# Notice that ndata has no 2020-01-03 event date
-ndata
-#> # A tibble:  10 × 7
-#> # Data type: "count-incidence"
-#> # Frequency: Event: `days` | Report: `days`
-#>    event        report              n sex      .event_num .report_num .delay
-#>    <date>       <date>          <int> <chr>         <dbl>       <dbl>  <dbl>
-#>    [event_date] [report_date] [cases] [strata]      [...]       [...]  [...]
-#>  1 2020-01-01   2020-01-01          9 Male              0           0      0
-#>  2 2020-01-01   2020-01-02          6 Male              0           1      1
-#>  3 2020-01-02   2020-01-02          4 Male              1           1      0
-#>  4 2020-01-04   2020-01-04          8 Male              3           3      0
-#>  5 2020-01-04   2020-01-05          2 Male              3           4      1
-#>  6 2020-01-01   2020-01-01          6 Female            0           0      0
-#>  7 2020-01-01   2020-01-02          4 Female            0           1      1
-#>  8 2020-01-02   2020-01-02          9 Female            1           1      0
-#>  9 2020-01-04   2020-01-04          1 Female            3           3      0
-#> 10 2020-01-04   2020-01-05          4 Female            3           4      1
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2020-01-05 | Event date: "event" | Report date: "report"
-#> # Strata: "sex"
-#> # ────────────────────────────────────────────────────────────────────────────────
+# Nothing happened on 2020-01-03, so the data has no row for it at all.
+sort(unique(ndata$event))
+#> [1] "2020-01-01" "2020-01-02" "2020-01-04"
 
-# But complete zeroes adds it with a 0
-complete_zeroes(ndata)
-#> # A tibble:  18 × 7
-#> # Data type: "count-incidence"
-#> # Frequency: Event: `days` | Report: `days`
-#>    event        report              n sex      .event_num .report_num .delay
-#>    <date>       <date>          <int> <chr>         <int>       <dbl>  <dbl>
-#>    [event_date] [report_date] [cases] [strata]      [...]       [...]  [...]
-#>  1 2020-01-01   2020-01-01          9 Male              0           0      0
-#>  2 2020-01-01   2020-01-02          6 Male              0           1      1
-#>  3 2020-01-02   2020-01-02          4 Male              1           1      0
-#>  4 2020-01-04   2020-01-04          8 Male              3           3      0
-#>  5 2020-01-04   2020-01-05          2 Male              3           4      1
-#>  6 2020-01-01   2020-01-01          6 Female            0           0      0
-#>  7 2020-01-01   2020-01-02          4 Female            0           1      1
-#>  8 2020-01-02   2020-01-02          9 Female            1           1      0
-#>  9 2020-01-04   2020-01-04          1 Female            3           3      0
-#> 10 2020-01-04   2020-01-05          4 Female            3           4      1
-#> 11 2020-01-02   2020-01-03          0 Male              1           2      1
-#> 12 2020-01-02   2020-01-03          0 Female            1           2      1
-#> 13 2020-01-03   2020-01-03          0 Male              2           2      0
-#> 14 2020-01-03   2020-01-03          0 Female            2           2      0
-#> 15 2020-01-03   2020-01-04          0 Male              2           3      1
-#> 16 2020-01-03   2020-01-04          0 Female            2           3      1
-#> 17 2020-01-05   2020-01-05          0 Male              4           4      0
-#> 18 2020-01-05   2020-01-05          0 Female            4           4      0
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2020-01-05 | Event date: "event" | Report date: "report"
-#> # Strata: "sex"
-#> # ────────────────────────────────────────────────────────────────────────────────
+## complete_zeroes() writes that absence down as an explicit zero, for every
+# stratum, so a model can tell "no cases" from "not reported yet".
+filled <- complete_zeroes(ndata)
+sort(unique(filled$event))
+#> [1] "2020-01-01" "2020-01-02" "2020-01-03" "2020-01-04" "2020-01-05"
+nrow(ndata)
+#> [1] 10
+nrow(filled)
+#> [1] 18
 
 # Also works for count-cumulative
 ndata |>
@@ -129,22 +118,22 @@ ndata |>
 #>    event        report        .event_num .report_num sex            n .delay
 #>    <date>       <date>             <dbl>       <dbl> <chr>      <dbl>  <dbl>
 #>    [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
-#>  1 2020-01-01   2020-01-01             0           0 Female         6      0
+#>  1 2020-01-01   2020-01-01             0           0 Female         5      0
 #>  2 2020-01-01   2020-01-02             0           1 Female        10      1
-#>  3 2020-01-01   2020-01-01             0           0 Male           9      0
+#>  3 2020-01-01   2020-01-01             0           0 Male          10      0
 #>  4 2020-01-01   2020-01-02             0           1 Male          15      1
-#>  5 2020-01-02   2020-01-02             1           1 Female         9      0
-#>  6 2020-01-02   2020-01-03             1           2 Female         9      1
+#>  5 2020-01-02   2020-01-02             1           1 Female         2      0
+#>  6 2020-01-02   2020-01-03             1           2 Female         2      1
 #>  7 2020-01-02   2020-01-02             1           1 Male           4      0
 #>  8 2020-01-02   2020-01-03             1           2 Male           4      1
 #>  9 2020-01-03   2020-01-03             2           2 Female         0      0
 #> 10 2020-01-03   2020-01-04             2           3 Female         0      1
 #> 11 2020-01-03   2020-01-03             2           2 Male           0      0
 #> 12 2020-01-03   2020-01-04             2           3 Male           0      1
-#> 13 2020-01-04   2020-01-04             3           3 Female         1      0
-#> 14 2020-01-04   2020-01-05             3           4 Female         5      1
-#> 15 2020-01-04   2020-01-04             3           3 Male           8      0
-#> 16 2020-01-04   2020-01-05             3           4 Male          10      1
+#> 13 2020-01-04   2020-01-04             3           3 Female         5      0
+#> 14 2020-01-04   2020-01-05             3           4 Female         8      1
+#> 15 2020-01-04   2020-01-04             3           3 Male           4      0
+#> 16 2020-01-04   2020-01-05             3           4 Male           9      1
 #> 17 2020-01-05   2020-01-05             4           4 Female         0      0
 #> 18 2020-01-05   2020-01-05             4           4 Male           0      0
 #> # ────────────────────────────────────────────────────────────────────────────────

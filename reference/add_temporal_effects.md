@@ -1,9 +1,28 @@
-# Add temporal effect coding to a `tbl_now`
+# Attach calendar effects to a `tbl_now`, and turn them into columns
 
 **\[stable\]**
 
-Takes a `tbl_now` or a `data.frame` and adds the temporal effects
-`t_effect` as columns
+These are the second and third steps of using calendar structure in a
+nowcast. First you write down which patterns you want with
+[`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md);
+then:
+
+- `add_temporal_effects()` **records** that request on the object.
+  Nothing is computed and no columns appear – the specification is
+  stored lazily, so it survives filtering and joining without going
+  stale.
+
+- `compute_temporal_effects()` **materialises** it, building one column
+  per effect from the object's dates.
+
+The split matters because the columns depend on the data. If you
+computed them first and then filtered, or changed the event-date column,
+the columns would silently describe the wrong rows. Recording the
+request and computing it at the end avoids that.
+
+Call `add_temporal_effects()` more than once to accumulate several
+specifications on the same object; `compute_temporal_effects()` builds
+all of them.
 
 ## Usage
 
@@ -31,6 +50,8 @@ add_temporal_effects(
   date_type = "event_date",
   weekend_days = c("Sat", "Sun")
 )
+
+compute_temporal_effects(x, overwrite = FALSE)
 ```
 
 ## Arguments
@@ -47,9 +68,9 @@ add_temporal_effects(
 
 - overwrite:
 
-  If `TRUE` ignores that the columns already exist and overwrites them.
-  If `FALSE` it throws an errors if the columns it is creating already
-  exist (default).
+  Logical. When `TRUE`, columns that already exist are overwritten. When
+  `FALSE` (the default) an existing column of the same name is an error,
+  so an accidental second computation cannot silently replace your data.
 
 - ...:
 
@@ -70,18 +91,19 @@ add_temporal_effects(
 
 - name_prefix:
 
-  What preffix to add to the column names
+  Character. Prefix for the names of the created columns.
 
 - weekend_days:
 
-  A character or numeric vector defining weekend days.
+  A character or numeric vector defining which days count as the
+  weekend. Defaults to Saturday and Sunday.
 
-  - Numeric: must be integers in 1-7 corresponding to
+  - Character: day names or abbreviations, case-insensitive –
+    `c("Mon", "Tuesday", "wed", ...)`.
+
+  - Numeric: integers 1-7 in
     [`lubridate::wday()`](https://lubridate.tidyverse.org/reference/day.html)
-    when `week_start = 1`.
-
-  - Character: any of c("Mon","Tuesday","wed",...) case-insensitive.
-    Defaults to Saturday and Sunday (weekend_days = c("Sat", "Sun")).
+    numbering with `week_start = 1`, so **1 = Monday** and 7 = Sunday.
 
 - date_type:
 
@@ -90,107 +112,101 @@ add_temporal_effects(
 
 ## Value
 
-A `tbl_now` or `data.frame` containing all of the effects as new
-columns.
+`add_temporal_effects()` returns the object with the specification
+recorded. For a `tbl_now` **no columns are added**; for a plain
+`data.frame`, which has nowhere to record a specification, the columns
+are computed immediately.
+
+`compute_temporal_effects()` returns a `tbl_now` with one column per
+effect appended. The specification is kept, so it still prints; the
+names of the columns just created are available from
+[get_temporal_effect_cols()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md).
 
 ## See also
 
 [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
-[add](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-[remove](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
-[change](https://rodrigozepeda.github.io/tbl.now/reference/change.md)
+to build the specification, and for what each effect means;
+[replace_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+and
+[remove_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+to swap or drop it;
+[get_temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+and
+[get_temporal_effect_cols()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+to read back the request and the columns;
+[calendar_effect_plots](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
+to see the patterns;
+[`add()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md) for
+the other attribute setters.
 
 ## Examples
 
 ``` r
 data(denguedat)
-
-# Get disease
-disease_data <- tbl_now(denguedat,
+dengue <- tbl_now(denguedat,
   event_date = "onset_week",
   report_date = "report_week",
-  strata = "gender"
+  strata = "gender",
+  verbose = FALSE
 )
-#> ℹ Identified data as <linelist-data> where each observation is a test.
 
-# Add an effect for epidemiological week
-disease_data <- disease_data |>
+# Step 1-2: say you want a week-of-year effect, and record it.
+dengue <- dengue |>
   add_temporal_effects(t_effects = temporal_effects(week_of_year = TRUE))
 
-# Use the compute to calculate them
-disease_data |> compute_temporal_effects()
-#> # A tibble:  52,987 × 7
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#>    onset_week   report_week   gender   .event_num .report_num .delay
-#>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl>
-#>    [event_date] [report_date] [strata]      [...]       [...]  [...]
-#>  1 1990-01-01   1990-01-01    Male              0           0      0
-#>  2 1990-01-01   1990-01-01    Female            0           0      0
-#>  3 1990-01-01   1990-01-01    Female            0           0      0
-#>  4 1990-01-01   1990-01-08    Female            0           1      1
-#>  5 1990-01-01   1990-01-08    Male              0           1      1
-#>  6 1990-01-01   1990-01-15    Female            0           2      2
-#>  7 1990-01-01   1990-01-15    Female            0           2      2
-#>  8 1990-01-01   1990-01-15    Female            0           2      2
-#>  9 1990-01-01   1990-01-22    Female            0           3      3
-#> 10 1990-01-01   1990-01-08    Female            0           1      1
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
-#> # Strata: "gender"
-#> # T. effects: [event_date] week_of_year
-#> # T. effect cols: ".event_week_of_year"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 52,977 more rows
-#> # ℹ 1 more variable: .event_week_of_year <int>
+# The request is stored, but no column has been built yet.
+get_temporal_effects(dengue)
+#> [[1]]
+#> [[1]]$t_effects
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "week_of_year"
+#> 
+#> [[1]]$date_type
+#> [1] "event_date"
+#> 
+#> [[1]]$weekend_days
+#> [1] "Sat" "Sun"
+#> 
+#> 
+get_temporal_effect_cols(dengue)
+#> character(0)
 
-# Use replace to change them
-disease_data |>
-  replace_temporal_effects(t_effects = temporal_effects(seasons = 52))
-#> # A tibble:  52,987 × 6
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#>    onset_week   report_week   gender   .event_num .report_num .delay
-#>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl>
-#>    [event_date] [report_date] [strata]      [...]       [...]  [...]
-#>  1 1990-01-01   1990-01-01    Male              0           0      0
-#>  2 1990-01-01   1990-01-01    Female            0           0      0
-#>  3 1990-01-01   1990-01-01    Female            0           0      0
-#>  4 1990-01-01   1990-01-08    Female            0           1      1
-#>  5 1990-01-01   1990-01-08    Male              0           1      1
-#>  6 1990-01-01   1990-01-15    Female            0           2      2
-#>  7 1990-01-01   1990-01-15    Female            0           2      2
-#>  8 1990-01-01   1990-01-15    Female            0           2      2
-#>  9 1990-01-01   1990-01-22    Female            0           3      3
-#> 10 1990-01-01   1990-01-08    Female            0           1      1
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
-#> # Strata: "gender"
-#> # T. effects (lazy): [event_date] season(52)
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 52,977 more rows
+# Step 3: materialise it.
+computed <- compute_temporal_effects(dengue)
+get_temporal_effect_cols(computed)
+#> [1] ".event_week_of_year"
+head(computed[[get_temporal_effect_cols(computed)[1]]])
+#> [1] 1 1 1 1 1 1
+#> 52 Levels: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 ... 52
 
-# Use remove to delete them
-disease_data |> remove_temporal_effects()
-#> # A tibble:  52,987 × 6
-#> # Data type: "linelist"
-#> # Frequency: Event: `weeks` | Report: `weeks`
-#>    onset_week   report_week   gender   .event_num .report_num .delay
-#>    <date>       <date>        <chr>         <dbl>       <dbl>  <dbl>
-#>    [event_date] [report_date] [strata]      [...]       [...]  [...]
-#>  1 1990-01-01   1990-01-01    Male              0           0      0
-#>  2 1990-01-01   1990-01-01    Female            0           0      0
-#>  3 1990-01-01   1990-01-01    Female            0           0      0
-#>  4 1990-01-01   1990-01-08    Female            0           1      1
-#>  5 1990-01-01   1990-01-08    Male              0           1      1
-#>  6 1990-01-01   1990-01-15    Female            0           2      2
-#>  7 1990-01-01   1990-01-15    Female            0           2      2
-#>  8 1990-01-01   1990-01-15    Female            0           2      2
-#>  9 1990-01-01   1990-01-22    Female            0           3      3
-#> 10 1990-01-01   1990-01-08    Female            0           1      1
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
-#> # Strata: "gender"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 52,977 more rows
+# Specifications accumulate, so you can add a second pattern ...
+both <- dengue |>
+  add_temporal_effects(t_effects = temporal_effects(month_of_year = TRUE))
+get_temporal_effect_cols(compute_temporal_effects(both))
+#> [1] ".event_week_of_year"  ".event_month_of_year"
+
+# ... swap the whole specification for another ...
+dengue |>
+  replace_temporal_effects(t_effects = temporal_effects(seasons = 52)) |>
+  get_temporal_effects()
+#> [[1]]
+#> [[1]]$t_effects
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "season" periods: 52
+#> 
+#> [[1]]$date_type
+#> [1] "event_date"
+#> 
+#> [[1]]$weekend_days
+#> [1] "Sat" "Sun"
+#> 
+#> 
+
+# ... or forget it entirely.
+dengue |>
+  remove_temporal_effects() |>
+  get_temporal_effects()
+#> list()
 ```

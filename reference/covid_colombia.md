@@ -53,10 +53,26 @@ The dataset covers the full first three years of the Colombian epidemic
 (2020-03-02 to 2023-03-03) and was used in the NobBS comparison study to
 benchmark the diseasenowcasting / diseasenowcast2 engine.
 
+## See also
+
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+to declare the date columns;
+[summary()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.md)
+and
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+to inspect the result; the package's other datasets –
+[denguedat](https://rodrigozepeda.github.io/tbl.now/reference/denguedat.md),
+[mpoxdat](https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.md),
+[flusight](https://rodrigozepeda.github.io/tbl.now/reference/flusight.md),
+covid_colombia,
+[covid_us](https://rodrigozepeda.github.io/tbl.now/reference/covid_us.md)
+and
+[hai_bucaramanga](https://rodrigozepeda.github.io/tbl.now/reference/hai_bucaramanga.md).
+
 ## Examples
 
 ``` r
-# Build a stratified tbl_now (event = notification, report = diagnosis,
+## Build a stratified tbl_now (event = notification, report = diagnosis,
 # strata = sex).  Pipe through temporal effects for day-of-week covariates.
 if (requireNamespace("tbl.now", quietly = TRUE)) {
   tn <- tbl.now::tbl_now(

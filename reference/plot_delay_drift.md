@@ -2,6 +2,13 @@
 
 **\[experimental\]**
 
+Draws a **rolling fan chart** of the count-weighted reporting-delay
+distribution indexed by **event date**: a solid line for the rolling
+median, a dashed line for the rolling mean, and two shaded bands (the
+25-75% and 10-90% quantile ranges). Reading it left to right answers "do
+delays drift?" — a rising/falling centre line is *location* drift,
+widening/narrowing bands are *spread* drift.
+
 ## Usage
 
 ``` r
@@ -16,6 +23,7 @@ plot_delay_drift(
   changepoint = FALSE,
   level = 0.95,
   plotly = FALSE,
+  axis = c("report", "confirmation"),
   palette = .tbl_now_palette()
 )
 ```
@@ -60,7 +68,7 @@ plot_delay_drift(
   Logical (default `FALSE`). When `TRUE`, mark the estimated abrupt
   change point of the **median** delay (Pettitt's test, on mature data)
   with a vertical line, when one is detected (p \< 0.05). See
-  [`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md).
+  [`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md).
 
 - level:
 
@@ -73,6 +81,18 @@ plot_delay_drift(
   If `TRUE`, return an interactive plotly widget instead of a static
   plot. Default `FALSE`.
 
+- axis:
+
+  Which time axis the delay is measured to: `"report"` (default) or
+  `"confirmation"`. Both are measured *from the event*, so the two are
+  directly comparable – run each in turn and the gap between them is the
+  time the laboratory adds. (This is not the same quantity as the
+  `.confirmation_delay` column, which is the laboratory's own
+  turnaround, measured from the report.) Needs a confirmation process
+  (see
+  [`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md));
+  cases still `"pending"` are left out.
+
 - palette:
 
   A named colour palette (defaults to the package palette).
@@ -83,26 +103,26 @@ A ggplot2 object.
 
 ## Details
 
-Draws a **rolling fan chart** of the count-weighted reporting-delay
-distribution indexed by **event date**: a solid line for the rolling
-median, a dashed line for the rolling mean, and two shaded bands (the
-25-75% and 10-90% quantile ranges). Reading it left to right answers "do
-delays drift?" — a rising/falling centre line is *location* drift,
-widening/narrowing bands are *spread* drift.
-
 Because recent event dates have not had time to be fully reported, their
 delay summaries are downward-biased (only short delays are observable
 yet). That immature region — event dates after the `level`
 incompleteness cutoff — is **shaded grey** and should not be read as
 drift. Pair the plot with
-[`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md)
+[`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
 for a formal test.
 
 ## See also
 
-[`test_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.md),
-[`test_delay_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.md),
-[`autoplot.tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.md)
+[`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
+for the formal trend test behind this picture, and
+[`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md)
+for an abrupt shift rather than a gradual one;
+[`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.md)
+for the delay pooled over the whole period;
+[autoplot()](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.md)
+and
+[`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md)
+for the galleries this belongs to.
 
 ## Examples
 

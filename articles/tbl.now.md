@@ -648,12 +648,12 @@ df_computed
 #> # ".event_holiday"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 52,977 more rows
-#> # ℹ 3 more variables: .event_day_of_week <int>, .event_week_of_year <int>,
+#> # ℹ 3 more variables: .event_day_of_week <fct>, .event_week_of_year <fct>,
 #> #   .event_holiday <int>
 ```
 
 After
-[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md):
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md):
 
 - The effect columns (`.event_day_of_week`, `.event_week_of_year`,
   `.event_holiday`) are added.
@@ -762,6 +762,227 @@ df_now |>
   add_temporal_effects(temporal_effects(week_of_year = TRUE), date_type = "event_date") |>
   add_temporal_effects(temporal_effects(day_of_week = TRUE),  date_type = "report_date")
 ```
+
+### The confirmation process
+
+Some surveillance systems have a **third** date. A case is not only
+reported – it is later *resolved*: a laboratory issues the result that
+confirms it, or rules it out. Influenza is the standard picture:
+symptoms begin (the event), the patient visits a doctor (the report),
+and days later a swab comes back positive (the confirmation) or negative
+(a *retraction* – the case was reported but is not a case after all).
+
+A `tbl_now` can carry this with `confirmation_date`, an optional
+`confirmation_type`, and its own `confirmation_units`. The timeline it
+assumes is
+
+\text{event date} \le \text{report date} \le \text{confirmation date}
+\le \text{now}
+
+`confirmation_type` takes the values `"confirmed"`, `"retracted"`,
+`"pending"` or `NA`. **Pending** is the important one: it means the case
+has been reported and is still waiting for a result, so it has *no*
+confirmation date. That is a different thing from a case whose result
+you simply never recorded, which is `NA`.
+
+We will use `hai_bucaramanga`, an open extract of healthcare-associated
+infections from Bucaramanga, Colombia, which records all three dates:
+when the specimen was taken, when the laboratory received it, and when
+the laboratory issued the result.
+
+``` r
+
+data("hai_bucaramanga")
+
+hai <- hai_bucaramanga |>
+  distinct() |>
+  filter(
+    !is.na(specimen_date), !is.na(received_date),
+    received_date >= specimen_date
+  ) |>
+  mutate(
+    # A result was issued: that is the confirmation. Everything else is still
+    # waiting, and a case that is waiting has no confirmation date.
+    result_date = if_else(
+      !is.na(report_date) & report_date >= received_date,
+      report_date, as.Date(NA)
+    ),
+    result = if_else(is.na(result_date), "pending", "confirmed")
+  )
+
+table(hai$result)
+#> 
+#> confirmed   pending 
+#>       201        21
+```
+
+The three dates map onto the three roles directly:
+
+``` r
+
+hai_now <- hai |>
+  tbl_now(
+    event_date        = specimen_date, # the specimen was taken
+    report_date       = received_date, # the laboratory received it
+    confirmation_date = result_date, # the laboratory issued a result
+    confirmation_type = result,
+    data_type         = "linelist",
+    verbose           = FALSE
+  )
+
+hai_now
+#> # A tibble:  222 × 20
+#> # Data type: "linelist"
+#> # Frequency: Event: `days` | Report: `days`
+#>       id specimen_date received_date report_date specimen    test  microorganism
+#>    <int> <date>        <date>        <date>      <fct>       <fct> <chr>        
+#>    [...] [event_date]  [report_date] [...]       [...]       [...] [...]        
+#>  1     1 2018-10-01    2018-10-01    2018-01-13  Whole blood Bloo… Burkholderia…
+#>  2     2 2018-11-01    2018-11-01    NA          Whole blood Bloo… Klebsiella p…
+#>  3     3 2018-01-27    2018-01-27    2018-01-31  Whole blood Bloo… Stenotrophom…
+#>  4     4 2018-01-27    2018-01-27    2018-01-30  Whole blood Bloo… Klebsiella p…
+#>  5     5 2018-04-20    2018-04-20    2018-04-26  Urine       Urin… Klebsiella p…
+#>  6     6 2018-01-22    2018-01-22    2018-01-25  Whole blood Bloo… Klebsiella p…
+#>  7     7 2018-01-02    2018-01-02    2018-03-02  Whole blood Bloo… Klebsiella p…
+#>  8     8 2018-06-28    2018-06-28    2018-06-30  Whole blood Bloo… Acinetobacte…
+#>  9    10 2018-12-02    2018-12-02    NA          Whole blood Bloo… Enterococcus…
+#> 10    13 2018-10-03    2018-10-03    2018-12-03  Urine       Urin… Enterobacter…
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2019-12-01 | Event date: "specimen_date" | Report date: "received_date"
+#> # Confirmation date: "result_date" ("days") | resolved: 201/222
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 212 more rows
+#> # ℹ 13 more variables: sex <fct>, age_group <ord>, case_type <fct>,
+#> #   final_condition <fct>, icu_type <fct>, institution <int>,
+#> #   result_date <date>, result <chr>, .event_num <dbl>, .report_num <dbl>,
+#> #   .delay <dbl>, .confirmation_num <dbl>, .confirmation_delay <dbl>
+```
+
+The footer now carries a confirmation line – the column, its units, and
+how many cases have actually been resolved. Two derived columns appear
+alongside `.delay`: `.confirmation_num` (the confirmation date on the
+same numeric grid as the other dates) and `.confirmation_delay`, the
+laboratory’s **turnaround** – the time from report to result, which is a
+different quantity from the reporting delay.
+
+``` r
+
+# Reporting delay: specimen to laboratory.
+median(hai_now$.delay, na.rm = TRUE)
+#> [1] 0
+
+# Turnaround: laboratory to result.
+median(hai_now$.confirmation_delay, na.rm = TRUE)
+#> [1] 2
+```
+
+Confirmation also moves `now`. A result issued on a date means you were,
+by definition, still observing the system on that date, so `now` is
+never earlier than the last confirmation – even when reporting stopped
+before it.
+
+``` r
+
+get_now(hai_now)
+#> [1] "2019-12-01"
+get_confirmation_units(hai_now)
+#> [1] "days"
+has_confirmation(hai_now)
+#> [1] TRUE
+```
+
+#### Counting cases when some of them can be undone
+
+Once cases can be retracted, “how many cases were there?” has more than
+one answer, and the right one depends on the question:
+
+``` r
+
+head(get_latest_confirmed(hai_now), 3) # cases the laboratory confirmed
+#> # A tibble: 3 × 2
+#>   specimen_date     n
+#>   <date>        <dbl>
+#> 1 2017-01-12        1
+#> 2 2017-02-12        1
+#> 3 2017-03-11        1
+head(get_net_confirmed(hai_now), 3) # confirmed minus retracted
+#> # A tibble: 3 × 2
+#>   specimen_date     n
+#>   <date>        <dbl>
+#> 1 2017-01-12        1
+#> 2 2017-02-12        1
+#> 3 2017-03-11        1
+```
+
+`get_nth_confirmed(x, delay)` counts only the cases resolved *within* a
+given number of periods – what you would have known that soon after the
+report – and
+[`get_initial_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md)
+is the same-period case. These mirror
+[`get_nth_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+and
+[`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+on the report axis.
+
+If your data records absurdly long confirmation delays – a result
+“issued” two years later is usually a data-entry artefact, not a
+laboratory –
+[`censor_confirmation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+returns those cases to `"pending"`, which is what they really were.
+
+#### How much of the epidemic has been resolved?
+
+[`plot_confirmation_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_confirmation_status.md)
+shows the share of cases confirmed, retracted and pending over time. A
+pending share that grows towards the right-hand edge is normal – recent
+cases have not had time to come back from the laboratory – but a pending
+share that grows in the *middle* of the series is a laboratory falling
+behind.
+
+``` r
+
+plot_confirmation_status(hai_now)
+```
+
+![](tbl.now_files/figure-html/unnamed-chunk-25-1.png)
+
+#### The confirmation axis
+
+Every reporting diagnostic in the package asks one question: did an
+unusual number of records arrive on this date, and with what delay? That
+question is just as meaningful for results arriving from a laboratory,
+so the diagnostics take an `axis` argument instead of being duplicated:
+
+``` r
+
+# The same picture, drawn for the laboratory instead of the surveillance desk.
+plot_reporting_triangle(hai_now, axis = "confirmation")
+plot_delay_profiles(hai_now, axis = "confirmation")
+plot_delay_drift(hai_now, axis = "confirmation")
+diagnostic_plot(hai_now, axis = "confirmation")
+
+# A laboratory clearing a backlog is a batch, exactly as a surveillance system
+# clearing its inbox is.
+diagnose_batches(hai_now, axis = "confirmation")
+```
+
+Two notes on what `axis = "confirmation"` means. Delays are still
+measured **from the event**, so the report and confirmation axes are
+directly comparable and the gap between them is the time the laboratory
+adds. And cases that are still `"pending"` are excluded: they have no
+confirmation date, so counting them would invent an arrival on a date
+they do not have.
+
+Finally, when a system produces both confirmations and retractions you
+can ask whether they take equally long – a laboratory that rules cases
+out faster than it confirms them will bias any nowcast that treats the
+two alike.
+[`diagnose_confirmation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md)
+tests exactly that (a Wilcoxon rank-sum test on the two delay
+distributions) and
+[`plot_confirmation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md)
+draws it. The Bucaramanga extract records no retractions, so there is
+nothing to compare here.
 
 ### Getting, removing and changing attributes
 
@@ -872,7 +1093,7 @@ get_temporal_effect_cols(df_now)
 Attributes can be removed using the corresponding
 [remove\_\*](https://rodrigozepeda.github.io/tbl.now/reference/remove.html)
 functions.
-[`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/remove.md)
+[`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 drops both the spec and any computed columns:
 
 ``` r
@@ -880,9 +1101,11 @@ drops both the spec and any computed columns:
 df_now <- df_now |>
   remove_temporal_effects() |>
   remove_all_strata()
-#> Warning: *Non-unique*: Data has multiple rows for the same event (dx_date) and
-#> report(dx_report_date) dates. Consider using `to_count()` to aggregate the data
-#> or`distinct()` to remove repeated observations.
+#> Warning: *Non-unique*: 832 rows share an (dx_date, dx_report_date) combination.
+#> ℹ 2 columns "race" and "RACE_UPPER" are not declared, so they split each cell
+#>   into several rows. Declare them with `strata = ` to model them separately, or
+#>   `to_count()` to pool them away. The `tbl_now_to_()` converters pool
+#>   undeclared columns for you, so this is a warning rather than an error.
 
 df_now
 #> # A tibble:  1,417 × 8
@@ -1114,7 +1337,7 @@ We explore each of the panels below
 ### The delay distribution
 
 ![Empirical delay
-distribution](tbl.now_files/figure-html/unnamed-chunk-33-1.png)
+distribution](tbl.now_files/figure-html/unnamed-chunk-40-1.png)
 
 Empirical delay distribution
 
@@ -1124,7 +1347,7 @@ histogram of the reporting delay.
 ### The observed epidemic process
 
 ![Observed epidemic
-process](tbl.now_files/figure-html/unnamed-chunk-34-1.png)
+process](tbl.now_files/figure-html/unnamed-chunk-41-1.png)
 
 Observed epidemic process
 
@@ -1134,7 +1357,7 @@ per `event_date`.
 ### The calendar effects
 
 ![Day of the week and week of the year
-effects](tbl.now_files/figure-html/unnamed-chunk-35-1.png)
+effects](tbl.now_files/figure-html/unnamed-chunk-42-1.png)
 
 Day of the week and week of the year effects
 
@@ -1153,7 +1376,7 @@ effects](#holiday-effects)
 ### The cycles
 
 ![Periodogram showing the Fourier season's dominant
-peak](tbl.now_files/figure-html/unnamed-chunk-36-1.png)
+peak](tbl.now_files/figure-html/unnamed-chunk-43-1.png)
 
 Periodogram showing the Fourier season’s dominant peak
 
@@ -1182,7 +1405,7 @@ pass `strata = "gender"` to group on a subset.
 autoplot(dengue_now, strata = "gender", by_strata = TRUE)
 ```
 
-![](tbl.now_files/figure-html/unnamed-chunk-37-1.png)
+![](tbl.now_files/figure-html/unnamed-chunk-44-1.png)
 
 #### One panel at a time: the `plot_*()` functions
 
@@ -1230,7 +1453,7 @@ The holiday panels describe the
 attached. For them to appear you need to describe a `holidays` calendar
 and/or `holiday_lags`. The temporal effect is read directly, so there is
 no need to call
-[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
 first.
 
 Holidays are a daily phenomenon, so for this example we switch to daily
@@ -1272,6 +1495,172 @@ left-to-right as time does. Counting is in **working days**, so weekends
 and other holidays are skipped exactly as they are for the
 `..._holiday_lag_k` columns.
 
+## Describing and diagnosing a `tbl_now`
+
+Two questions come up with every new object: **what is in it**, and
+**what is wrong with it**.
+[summary()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.html)
+and
+[diagnose()](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.html)
+answer them. Both return a **tibble** rather than printed text, so their
+answers can be filtered, joined, plotted, or asserted on in a test.
+
+### What is in the data?
+
+[`summary()`](https://rdrr.io/r/base/summary.html) stacks several blocks
+into one table. `component` says which block a row belongs to:
+
+``` r
+
+summary(dengue_now) |>
+  count(component)
+#> # A tibble: 6 × 2
+#>   component           n
+#>   <chr>           <int>
+#> 1 autocorrelation     2
+#> 2 cases               2
+#> 3 completeness        8
+#> 4 coverage           11
+#> 5 delay               1
+#> 6 zero_run            2
+```
+
+The `completeness` block is often the most useful of them: it says how
+much of each event date’s eventual total had arrived by delay `d`, which
+is what decides how far back a nowcast is even meaningful.
+
+``` r
+
+summary(dengue_now) |>
+  filter(component == "completeness") |>
+  select(quantity, n, mean, q50, prop) |>
+  head(4)
+#> # A tibble: 4 × 5
+#>   quantity       n   mean    q50   prop
+#>   <chr>      <int>  <dbl>  <dbl>  <dbl>
+#> 1 delay <= 0  1090 0.0381 0.0220 0.0396
+#> 2 delay <= 1  1090 0.510  0.510  0.502 
+#> 3 delay <= 2  1090 0.844  0.867  0.850 
+#> 4 delay <= 3  1090 0.931  0.953  0.941
+```
+
+Half of a week’s cases are in by the end of the following week, and 94%
+by three weeks — so a nowcast reaching further back than about three
+weeks has very little left to estimate.
+
+Every block is also a function of its own, returning the same schema, so
+[`summary()`](https://rdrr.io/r/base/summary.html) is exactly the
+[`bind_rows()`](https://dplyr.tidyverse.org/reference/bind_rows.html) of
+them:
+
+``` r
+
+delay_summary(dengue_now) |>
+  select(quantity, n, total, mean, sd, q50, q90, max)
+#> # A tibble: 1 × 8
+#>   quantity            n total  mean    sd   q50   q90   max
+#>   <chr>           <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+#> 1 event_to_report  5154 52987  1.74  1.21     1     3    26
+```
+
+The others are
+[`cases_per_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`zero_run_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`prop_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`prop_confirmation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`date_ranges()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`triangle_occupancy()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+and
+[`cumulative_growth()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md).
+See
+[`?nowcast_summary_components`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md).
+
+Quantiles in [`summary()`](https://rdrr.io/r/base/summary.html) are
+**inverse-ECDF** (type 1): `q50` is the smallest value whose cumulative
+weight reaches 0.5, which for an even number of observations is the
+upper of the two middle values rather than their average. This is the
+same estimator
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+and
+[`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)
+use, so the table and the figures always agree.
+
+### What is wrong with it?
+
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+returns findings **sorted worst first**. `status` is an ordered factor —
+`error` \> `warning` \> `note` \> `ok` \> `not_run` \> `skipped` — so
+filtering to what needs acting on is a comparison:
+
+``` r
+
+diagnose(dengue_now) |>
+  filter(status <= "note") |>
+  select(check, scope, status, n_affected, message)
+#> # A tibble: 3 × 5
+#>   check        scope         status n_affected message                          
+#>   <chr>        <chr>         <ord>       <dbl> <chr>                            
+#> 1 declarations undeclared    note            1 "1 column \"gender\" is not decl…
+#> 2 now          now_gap_event note            3 "The last event date is 3 weeks …
+#> 3 truncation   event_date    note            1 "1 event date is younger than th…
+```
+
+Three findings on a dataset that looks clean: an undeclared `gender`
+column (which silently splits every reporting-triangle cell), an object
+whose last event date is three weeks behind its `now`, and one event
+date still too young to be trusted.
+
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+is deliberately **structural**. It never runs a statistical test, so it
+is fast and its answer never depends on a random seed. The questions
+that *do* need a test come back as `not_run` signposts naming the call
+that answers each one — the two sections that follow:
+
+``` r
+
+diagnose_signposts(dengue_now) |>
+  select(scope, status, message)
+#> # A tibble: 4 × 3
+#>   scope                status  message                                          
+#>   <chr>                <ord>   <chr>                                            
+#> 1 confirmation_batches not_run "Run: diagnose_batches(x, axis = \"confirmation\…
+#> 2 report               not_run "Run: diagnose_drift(x, axis = \"report\")"      
+#> 3 report_batches       not_run "Run: diagnose_batches(x, axis = \"report\")"    
+#> 4 confirmation         skipped "The object carries no confirmation process."
+```
+
+`skipped` is a distinct status from `ok`, and the difference matters:
+`ok` means the check ran and found nothing, whereas `skipped` means it
+could not run at all — here because `dengue_now` carries no confirmation
+process. A check that cannot be performed is never silently reported as
+a pass.
+
+Like [`summary()`](https://rdrr.io/r/base/summary.html), every block is
+callable on its own —
+[`diagnose_declarations()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
+[`diagnose_ordering()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
+[`diagnose_missing()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
+[`diagnose_duplicates()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
+[`diagnose_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
+[`diagnose_negatives()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
+[`diagnose_now()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
+[`diagnose_truncation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
+[`diagnose_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md)
+and
+[`diagnose_signposts()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md).
+See
+[`?nowcast_diagnose_components`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md).
+
+The same findings reach you a second way:
+[validate_tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.html)
+runs the same engine but *re-emits* the `error` and `warning` rows as
+conditions rather than returning them, which is why a malformed object
+complains as soon as you build it.
+
 ### Do delay distributions drift over time?
 
 Reporting delays are not always stable: a surveillance system may speed
@@ -1295,14 +1684,14 @@ reported, their delays look artificially short; that immature region
 read as drift.
 
 For a formal answer,
-[test_delay_drift()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_drift.html)
+[diagnose_drift()](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.html)
 tests both a location statistic (the median) and a dispersion statistic
 (the 10–90 spread), on mature data only for any drift:
 
 ``` r
 
-test_delay_drift(dengue_now, stat = c("median", "spread"))
-#> Warning: ! `test_delay_drift()` is experimental: results are not guaranteed and the
+diagnose_drift(dengue_now, stat = c("median", "spread"))
+#> Warning: ! `diagnose_drift()` is experimental: results are not guaranteed and the
 #>   interface may change.
 #> ℹ Interpret a significant result as a potential trend change, not a confirmed
 #>   one.
@@ -1320,15 +1709,15 @@ A significant `drift` for `spread` with a non-significant one for
 
 The trend test looks for *gradual* change. If instead you suspect an
 **abrupt** shift — a reporting-system change on some date — use
-[test_delay_changepoint()](https://rodrigozepeda.github.io/tbl.now/reference/test_delay_changepoint.html),
+[diagnose_changepoint()](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.html),
 which applies Pettitt’s nonparametric change-point test and returns the
 estimated change date together with the before/after delay level:
 
 ``` r
 
-test_delay_changepoint(dengue_now, stat = c("median", "spread"))
-#> Warning: ! `test_delay_changepoint()` is experimental: results are not guaranteed and
-#>   the interface may change.
+diagnose_changepoint(dengue_now, stat = c("median", "spread"))
+#> Warning: ! `diagnose_changepoint()` is experimental: results are not guaranteed and the
+#>   interface may change.
 #> ℹ Treat a detected change as a potential change point, not a confirmed one.
 #> This warning is displayed once every 8 hours.
 #> # A tibble: 2 × 10
@@ -1349,12 +1738,12 @@ backlog at once — a **batch**. The key idea is that a batch *moves*
 reports along the report axis without *creating* them, so a window of
 report dates spanning both the lull and the spike has an unchanged total
 — whereas a genuine epidemic surge adds cases and inflates it.
-[batch_test()](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.html)
+[diagnose_batches()](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.html)
 turns this into a per-report-date diagnostic that separates the two:
 
 ``` r
 
-batches <- batch_test(dengue_now, lookback = 2)
+batches <- diagnose_batches(dengue_now, lookback = 2)
 
 batches |>
   filter(batch) |>

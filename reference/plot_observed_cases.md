@@ -14,7 +14,7 @@ spec are marked with red dots.
 [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md)
 draws the same curve without the incompleteness line, next to its
 reporting twin
-[`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_process.md).
+[`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md).
 
 ## Usage
 
@@ -45,7 +45,7 @@ A ggplot2 object (or a plotly widget when `plotly = TRUE`).
 
 [`autoplot.tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.md),
 [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md),
-[`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_process.md).
+[`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md).
 
 ## Examples
 

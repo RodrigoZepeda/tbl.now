@@ -14,7 +14,7 @@ matrix (`format = "matrix"`, the default) via
 or the long `baselinenowcast`-style `data.frame` (`format = "long"`).
 The long format also carries the **strata**, the covariates, the
 censoring indicator and any materialised temporal-effect columns (see
-[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md));
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md));
 the matrix holds only the three core columns. A single
 reporting-triangle matrix has no strata dimension, so
 `format = "matrix"` **pools** any strata (summing the counts) with a
@@ -39,6 +39,7 @@ tbl_now_to_baselinenowcast(
   ...,
   format = c("matrix", "long", "triangle_list"),
   delays_unit = NULL,
+  max_delay = NULL,
   complete = "auto",
   negatives = c("redistribute", "error"),
   verbose = TRUE
@@ -105,6 +106,16 @@ tbl_now_to_baselinenowcast(
     and
     [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
     can rebuild a `tbl_now` from the result.
+
+- max_delay:
+
+  Number of delay periods to keep, in the object's report units:
+  `max_delay = 30` keeps delays `0` to `29`, giving a 30-column
+  triangle. Counted exactly as
+  [`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+  counts it, so the same number means the same triangle in both. `NULL`
+  (default) keeps every delay – which is fine on a short tail and
+  expensive on a long one (see *Cost of a long delay tail*).
 
 - complete:
 
@@ -186,12 +197,11 @@ this problem.
 The triangle gets one column per delay, so a single long straggler makes
 it very wide and the fit very slow: capping delays at 30 days on a daily
 series took a fit from **314s to 50s** for a tail carrying under 1% of
-cases. Unlike
-[`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
-there is no `max_delay` argument here, so cap with a filter before
-converting:
+cases. Use `max_delay`, which counts the way
+[`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)'s
+does:
 
-    x |> dplyr::filter(.delay <= 30) |> tbl_now_to_baselinenowcast()
+    tbl_now_to_baselinenowcast(x, max_delay = 30)   # delays 0-29, 30 columns
 
 ## Negative delays
 
@@ -227,6 +237,24 @@ removed automatically, with a warning either way:
 is the exception and keeps the flag: estimating a delay distribution is
 the one job that can use it.
 
+## See also
+
+[engine_baselinenowcast()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
+to fit through this package rather than converting by hand;
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md),
+because a reporting triangle needs non-negative increments and
+de-accumulating a revised cumulative series can produce negative ones;
+[`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+to fill the grid first.
+[`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+for the generic that dispatches to the `*_from_*()` side;
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md),
+which does the conversion for you when you fit through an
+[`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md).
+The [*One dataset, many nowcasts*
+article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+fits the same data with every supported package.
+
 ## Examples
 
 ``` r
@@ -246,7 +274,7 @@ nowobj <- tbl_now_from_baselinenowcast(rt)
 #> • case_count: "count"
 #> • expanded a reporting-triangle matrix to long counts
 
-# The matrix round-trip is faithful (not-yet-observed `NA` cells are kept).
+## The matrix round-trip is faithful (not-yet-observed `NA` cells are kept).
 identical(rt, tbl_now_to_baselinenowcast(nowobj))
 #> 
 #> ── Converting <tbl_now> to baselinenowcast matrix 

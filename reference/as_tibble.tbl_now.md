@@ -10,7 +10,7 @@ returning a plain `tibble` / `data.frame`.
 Set `compute_temporal_effects = TRUE` to **materialise the lazy
 [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
 specification** with
-[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
 first, so the holiday / Fourier / calendar columns are present in the
 result. The input `tbl_now` is left unchanged (the spec is materialised
 on a copy).
@@ -26,7 +26,7 @@ Materialising there would both break the lazy `temporal_effects`
 contract and recurse, so materialising is strictly opt-in. To get a
 modelling-ready frame with the effects computed, either pass
 `compute_temporal_effects = TRUE` here or call
-[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
 on the `tbl_now` beforehand.
 
 ## Usage
@@ -75,7 +75,7 @@ carries the temporal-effect columns when
 
 ## See also
 
-[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md),
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md),
 [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
 
 ## Examples
@@ -89,7 +89,7 @@ df_now <- tbl_now(denguedat,
   verbose     = FALSE
 )
 
-# Plain coercion leaves the spec lazy (no temporal-effect columns):
+## Plain coercion leaves the spec lazy (no temporal-effect columns):
 ".event_week_of_year" %in% names(tibble::as_tibble(df_now)) # FALSE
 #> [1] FALSE
 
@@ -109,7 +109,7 @@ as_tibble(df_now, compute_temporal_effects = TRUE)
 #>  9 1990-01-01 1990-01-22  Female          0           3      3
 #> 10 1990-01-01 1990-01-08  Female          0           1      1
 #> # ℹ 52,977 more rows
-#> # ℹ 1 more variable: .event_week_of_year <int>
+#> # ℹ 1 more variable: .event_week_of_year <fct>
 as.data.frame(df_now, compute_temporal_effects = TRUE)
 #>       onset_week report_week gender .event_num .report_num .delay
 #> 1     1990-01-01  1990-01-01   Male          0           0      0

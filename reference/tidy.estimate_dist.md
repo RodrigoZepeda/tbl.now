@@ -87,6 +87,74 @@ Same words, different quantities.
 ## See also
 
 [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
-for the epidist equivalent,
+for the epidist equivalent, and the note above on why their `sd` values
+differ slightly;
 [`tbl_now_to_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_EpiNow2.md)
-for the conversion.
+for the conversion;
+[tidy()](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+for tidying a *case-count* nowcast rather than a delay distribution;
+[confirmation_delay](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md)
+for the delay this is estimating.
+
+## Examples
+
+``` r
+data(denguedat)
+# A short window: fitting a delay distribution does not need twenty years of
+# data, and Stan is slow.
+recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+nowobj <- tbl_now(recent,
+  event_date = "onset_week", report_date = "report_week", verbose = FALSE
+)
+
+# `target = "estimate_dist"` gives the censored linelist EpiNow2 wants: one
+# row per case, each date as the interval it is known to fall in.
+delays <- tbl_now_to_EpiNow2(nowobj,
+  target = "estimate_dist", verbose = FALSE, quiet = TRUE
+)
+head(delays)
+#>    pdate_lwr  pdate_upr  sdate_lwr  sdate_upr   obs_date
+#> 1 2010-06-07 2010-06-14 2010-06-14 2010-06-21 2010-12-27
+#> 2 2010-06-07 2010-06-14 2010-06-14 2010-06-21 2010-12-27
+#> 3 2010-06-07 2010-06-14 2010-06-14 2010-06-21 2010-12-27
+#> 4 2010-06-07 2010-06-14 2010-06-14 2010-06-21 2010-12-27
+#> 5 2010-06-07 2010-06-14 2010-06-14 2010-06-21 2010-12-27
+#> 6 2010-06-07 2010-06-14 2010-06-14 2010-06-21 2010-12-27
+
+# A short chain keeps the example quick -- use EpiNow2's defaults for real
+## work. `try()` guards the case where EpiNow2 is installed but its Stan
+# toolchain is not.
+fit <- try(
+  EpiNow2::estimate_dist(
+    delays,
+    stan = EpiNow2::stan_opts(samples = 100, chains = 1)
+  ),
+  silent = TRUE
+)
+#> WARN [2026-08-31 20:02:12] estimate_dist (chain: 1): Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess - 
+#> WARN [2026-08-31 20:02:12] estimate_dist (chain: 1): Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess - 
+
+# One row per fitted parameter, plus the delay's own mean and sd.
+if (!inherits(fit, "try-error")) {
+  print(tidy(fit))
+  print(tidy(fit, probs = c(0.05, 0.95)))
+}
+#> # A tibble: 4 × 6
+#>   term    estimate conf.low conf.high level engine 
+#>   <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>  
+#> 1 meanlog    2.33     2.32      2.34   0.95 EpiNow2
+#> 2 sdlog      0.368    0.355     0.380  0.95 EpiNow2
+#> 3 mean      11.0     10.9      11.1    0.95 EpiNow2
+#> 4 sd         4.21     4.06      4.37   0.95 EpiNow2
+#> # A tibble: 4 × 8
+#>   term    estimate conf.low conf.high level engine      q5    q95
+#>   <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>    <dbl>  <dbl>
+#> 1 meanlog    2.33     2.32      2.34   0.95 EpiNow2  2.32   2.34 
+#> 2 sdlog      0.368    0.355     0.380  0.95 EpiNow2  0.356  0.376
+#> 3 mean      11.0     10.9      11.1    0.95 EpiNow2 10.9   11.1  
+#> 4 sd         4.21     4.06      4.37   0.95 EpiNow2  4.08   4.32 
+```

@@ -45,7 +45,7 @@ received by CDC) and the **report date** is `cdc_report_dt` (the date
 the case was first reported to CDC). The delay between them is enormous
 and heavily right-skewed: cases were reported to CDC not smoothly but in
 large backlog dumps – a textbook batch-reporting pattern that
-[`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md)
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
 and
 [`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md)
 recover.
@@ -56,6 +56,21 @@ between 2020-01-01 and 2021-12-31 – a self-consistent "as of the end of
 two years. The handful of rows whose report date precedes their event
 date (data-entry errors) were dropped. See `data-raw/covid_us.R` for the
 exact duckdb aggregation of the 14 GB source file.
+
+## See also
+
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+to declare the date columns;
+[summary()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.md)
+and
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+to inspect the result; the package's other datasets –
+[denguedat](https://rodrigozepeda.github.io/tbl.now/reference/denguedat.md),
+[mpoxdat](https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.md),
+[flusight](https://rodrigozepeda.github.io/tbl.now/reference/flusight.md),
+[covid_colombia](https://rodrigozepeda.github.io/tbl.now/reference/covid_colombia.md),
+covid_us and
+[hai_bucaramanga](https://rodrigozepeda.github.io/tbl.now/reference/hai_bucaramanga.md).
 
 ## Examples
 

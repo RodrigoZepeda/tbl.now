@@ -9,6 +9,14 @@ event date and another the report date, named by its `dEventCol` /
 that data frame, renaming the two dates to surveillance's own defaults
 so the result can be passed straight through.
 
+With `format = "linelist_list"` it returns **one line list per stratum**
+as a
+[tbl_now_surveillance_list](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance_list.md),
+ready to [`lapply()`](https://rdrr.io/r/base/lapply.html) over –
+[`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
+has no strata argument, so a stratified analysis is one fit per stratum
+and this saves splitting by hand.
+
 With `format = "sts"` it instead returns the observed epidemic curve as
 an
 [surveillance::sts](https://rdrr.io/pkg/surveillance/man/sts-class.html)
@@ -32,8 +40,10 @@ tbl_now_to_surveillance(
   ...,
   event_col = "dHospital",
   report_col = "dReport",
-  format = c("linelist", "sts"),
+  format = c("linelist", "linelist_list", "sts"),
   aggregate_by = NULL,
+  strata_col = "strata",
+  strata_sep = " | ",
   verbose = TRUE
 )
 ```
@@ -59,11 +69,22 @@ tbl_now_to_surveillance(
 
 - format:
 
-  `"linelist"` (default) for the data frame
-  [`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
-  expects, or `"sts"` for an
-  [surveillance::sts](https://rdrr.io/pkg/surveillance/man/sts-class.html)
-  object of the observed curve.
+  One of
+
+  - `"linelist"` (default) – the single data frame
+    [`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
+    expects;
+
+  - `"linelist_list"` – one line list **per stratum**, as a
+    [tbl_now_surveillance_list](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance_list.md).
+    Still a plain list, so it goes straight into
+    [`lapply()`](https://rdrr.io/r/base/lapply.html); length one and
+    named `"all"` when the object declares no strata, so the return type
+    does not depend on whether strata happen to be attached;
+
+  - `"sts"` – an
+    [surveillance::sts](https://rdrr.io/pkg/surveillance/man/sts-class.html)
+    object of the observed curve.
 
 - aggregate_by:
 
@@ -76,15 +97,53 @@ tbl_now_to_surveillance(
   needs. Pass a value explicitly to override, including on a numeric
   grid if you know what the index steps mean.
 
+- strata_col:
+
+  Name of a single column to add, holding every declared stratum pasted
+  together, for splitting the line list into one fit per stratum. `NULL`
+  leaves it out. Ignored when the object declares no strata.
+
+- strata_sep:
+
+  Separator used to paste the strata into `strata_col`.
+
 - verbose:
 
   Logical. Print the choices that were made.
 
 ## Value
 
-A `data.frame` line list (`format = "linelist"`) or an
+A `data.frame` line list (`format = "linelist"`), a
+[tbl_now_surveillance_list](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance_list.md)
+(`format = "linelist_list"`) or an
 [surveillance::sts](https://rdrr.io/pkg/surveillance/man/sts-class.html)
 object (`format = "sts"`).
+
+## Stratified nowcasts
+
+[`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
+models one series and has no strata argument, so a stratified analysis
+means fitting each stratum separately. `format = "linelist_list"` does
+the splitting, so the fit is an
+[`lapply()`](https://rdrr.io/r/base/lapply.html):
+
+    pieces <- tbl_now_to_surveillance(x, format = "linelist_list", verbose = FALSE)
+    fits <- lapply(pieces, function(piece) {
+      surveillance::nowcast(
+        now = get_now(x), when = get_surveillance_when(x),
+        data = piece, dEventCol = "dHospital", dReportCol = "dReport",
+        control = list(dRange = get_surveillance_range(x))
+      )
+    })
+
+The `control$dRange` comes from the **whole object**, not from the
+piece: every stratum has to be laid on the same time axis, or a stratum
+whose first case arrived late starts its own time on a different day.
+
+The default `format = "linelist"` keeps the same information in one
+frame: the declared strata are pasted into a single `strata` column, so
+`split(sur, sur$strata)` reproduces the list. The original columns are
+kept alongside it, so you can split on them instead.
 
 ## Cost of expanding counts
 
@@ -114,7 +173,8 @@ the one job that can use it.
 
 ## See also
 
-[`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+[`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md),
+[tbl_now_surveillance_list](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance_list.md)
 
 ## Examples
 

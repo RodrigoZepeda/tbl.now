@@ -2,21 +2,30 @@
 
 **\[experimental\]**
 
+Computes, for every report date, the two coordinates of
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)'s
+conservation law – the **deficit** (the *transport* axis: how many
+reports the preceding window is missing) and the window **discriminant**
+(the *creation* axis: the window total relative to its baseline) –
+together with their robust standardised versions `transport_z` and
+`creation_z`.
+
 ## Usage
 
 ``` r
 transport_discriminant(
-  data,
+  x,
   lookback = 7L,
   baseline_window = NULL,
   period = NULL,
-  alpha = 0.05
+  alpha = 0.05,
+  axis = c("report", "confirmation")
 )
 ```
 
 ## Arguments
 
-- data:
+- x:
 
   A
   [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
@@ -30,12 +39,19 @@ transport_discriminant(
 - baseline_window, period:
 
   Baseline controls, passed through to the same machinery as
-  [`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md).
+  [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md).
   `period` (e.g. `7`) absorbs a scheduled weekly reporting cadence.
 
 - alpha:
 
   Level for the `classification` labels. Default `0.05`.
+
+- axis:
+
+  Which time axis to scan for arrivals: `"report"` (default) or
+  `"confirmation"`. Needs a confirmation process (see
+  [`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md));
+  cases still `"pending"` are left out.
 
 ## Value
 
@@ -45,14 +61,6 @@ stratum), with columns `report_date`, `stratum`, `reported`, `baseline`,
 `transport_z`, `creation_z`, `classification` and `batch`.
 
 ## Details
-
-Computes, for every report date, the two coordinates of
-[`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md)'s
-conservation law – the **deficit** (the *transport* axis: how many
-reports the preceding window is missing) and the window **discriminant**
-(the *creation* axis: the window total relative to its baseline) –
-together with their robust standardised versions `transport_z` and
-`creation_z`.
 
 A batch *moves* reports later without creating them, so it leaves a
 positive deficit while conserving the window total (`transport_z` large,
@@ -64,11 +72,11 @@ score is large and its creation score is not. A negative `creation_z`
 with no transport is a hold in progress (the window is depleted and
 nothing has been released yet). The `classification` column applies
 these labels at level `alpha`, exactly as in
-[`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md).
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md).
 
 ## See also
 
-[`batch_test()`](https://rodrigozepeda.github.io/tbl.now/reference/batch_test.md)
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
 for the hypothesis test,
 [`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md)
 to plot this plane.

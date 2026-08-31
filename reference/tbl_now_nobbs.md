@@ -22,6 +22,8 @@ tbl_now_to_nobbs(
   ...,
   event_col = "onset_date",
   report_col = "report_date",
+  strata_col = "strata",
+  strata_sep = " | ",
   verbose = TRUE
 )
 ```
@@ -42,6 +44,18 @@ tbl_now_to_nobbs(
   match the arguments of
   [`NobBS::NobBS()`](https://rdrr.io/pkg/NobBS/man/NobBS.html).
 
+- strata_col:
+
+  Name of the single stratifying column to add, holding every declared
+  stratum pasted together. This is what
+  [`NobBS::NobBS.strat()`](https://rdrr.io/pkg/NobBS/man/NobBS.strat.html)'s
+  own `strata` argument takes. `NULL` leaves it out. Ignored when the
+  object declares no strata.
+
+- strata_sep:
+
+  Separator used to paste the strata into `strata_col`.
+
 - verbose:
 
   Print what the conversion did. The `units` line prints the string
@@ -53,8 +67,30 @@ tbl_now_to_nobbs(
 
 A `data.frame` with one row per case, ready for
 [`NobBS::NobBS()`](https://rdrr.io/pkg/NobBS/man/NobBS.html). The
-strata, covariates and temporal-effect columns ride along so a
-per-stratum loop can split on them.
+strata, covariates and temporal-effect columns ride along, plus the
+single pasted `strata_col` that
+[`NobBS::NobBS.strat()`](https://rdrr.io/pkg/NobBS/man/NobBS.strat.html)
+takes.
+
+## Stratified nowcasts
+
+[`NobBS::NobBS.strat()`](https://rdrr.io/pkg/NobBS/man/NobBS.strat.html)
+fits one nowcast per stratum, and its `strata` argument names **one**
+column. A `tbl_now` may declare several – age group and region, say –
+and "nowcast each age-group-and-region separately" is a single stratum
+as far as NobBS is concerned. So the declared columns are also pasted
+into one `strata` column, which you hand straight to `NobBS.strat()`:
+
+    nb <- tbl_now_to_nobbs(x, verbose = FALSE)
+    NobBS::NobBS.strat(nb, now = get_now(x), units = "1 day",
+                       onset_date = "onset_date", report_date = "report_date",
+                       strata = "strata")
+
+The original columns are kept alongside it, so a hand-rolled per-stratum
+loop can still split on them. Choose a separator your stratum values do
+not contain:
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
+splits the label back into the original columns when it tidies the fit.
 
 ## Units NobBS can model
 

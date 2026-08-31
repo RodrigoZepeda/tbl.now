@@ -22,6 +22,7 @@ plot_reporting_hexamap(
   format = "%d/%b/%y",
   max_cells = 12000L,
   trans = "sqrt",
+  axis = c("report", "confirmation"),
   palette = .tbl_now_palette()
 )
 ```
@@ -65,6 +66,15 @@ plot_reporting_hexamap(
 
   Fill transform for the count scale. Default `"sqrt"`.
 
+- axis:
+
+  Which time axis to draw: `"report"` (default) or `"confirmation"`. On
+  the confirmation axis the picture answers the laboratory's version of
+  the question – when results arrived, rather than when reports did.
+  Needs a confirmation process (see
+  [`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md));
+  cases still `"pending"` have no confirmation date and are left out.
+
 - palette:
 
   A named colour palette. Defaults to the package palette.
@@ -96,8 +106,11 @@ Visualization. *Epidemiology* **31**, e47-e49.
 
 ## See also
 
-[`plot_reporting_triangle()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.md),
-[`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md).
+[`plot_reporting_triangle()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.md)
+for the same data on ordinary axes, where the third quantity has to be
+read off the diagonals;
+[`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md)
+for the whole gallery.
 
 ## Examples
 

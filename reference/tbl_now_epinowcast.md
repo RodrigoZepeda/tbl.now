@@ -124,7 +124,9 @@ tbl_now_to_epinowcast(
 
 - quiet:
 
-  Logical. If `TRUE`, suppress the lossy-conversion warning emitted by
+  Logical. A *different* channel from `verbose`: `verbose` controls the
+  informational summary of what the conversion did, while `quiet`
+  suppresses the lossy-conversion **warning** emitted by
   `tbl_now_to_epinowcast()` (see the Round-trip section).
 
 ## Value
@@ -157,7 +159,7 @@ an `enw_preprocess_data` object carries:
   *are* carried over: the lazy
   [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
   spec is materialised with
-  [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md)
+  [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
   and the resulting columns are passed through to the observations and
   `metareference`/`metareport` tables.
 
@@ -217,11 +219,28 @@ removed automatically, with a warning either way:
 is the exception and keeps the flag: estimating a delay distribution is
 the one job that can use it.
 
+## See also
+
+[engine_epinowcast()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
+to fit through this package rather than converting by hand;
+[`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md),
+because epinowcast lays its grid out in whole timesteps;
+[`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+to fill the grid;
+[tidy()](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+for the fitted result.
+[`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+for the generic that dispatches to the `*_from_*()` side;
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md),
+which does the conversion for you when you fit through an
+[`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md).
+The [*One dataset, many nowcasts*
+article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+fits the same data with every supported package.
+
 ## Examples
 
 ``` r
-# Preprocessing epinowcast data is slow, so this is wrapped in \donttest{}.
-# \donttest{
 library(data.table)
 #> 
 #> Attaching package: ‘data.table’
@@ -230,7 +249,7 @@ library(data.table)
 #>     %notin%
 library(epinowcast)
 #> ! `enw_cache_location` is not set.
-#> ℹ Using `tempdir()` at /tmp/RtmpmJpI35 for the epinowcast model cache location.
+#> ℹ Using `tempdir()` at /tmp/Rtmp6z9zVz for the epinowcast model cache location.
 #> ℹ Set a specific cache location using `enw_set_cache` to control Stan
 #>   recompilation in this R session or across R sessions.
 #> ℹ For example: `enw_set_cache(tools::R_user_dir(package = "epinowcast",
@@ -243,17 +262,28 @@ library(epinowcast)
 #> 
 #>     ar, arima
 
-#Read data from epinowcast
-obs  <- germany_covid19_hosp[location == "DE"]
+## CRAN asks examples to use at most two cores; data.table would otherwise
+## take every one it can find.
+data.table::setDTthreads(2)
 
-#Remove unused column
-obs  <- obs[, location := NULL]
+# epinowcast's own example data: German COVID-19 hospitalisations by age.
+obs <- germany_covid19_hosp[location == "DE"][, location := NULL]
 
-#Pre-process data
-pobs <- epinowcast::enw_preprocess_data(obs, max_delay = 40, by = "age_group")
+## A few weeks and a short delay keep the example quick; preprocessing the whole
+## series with `max_delay = 40` costs about ten times as much CPU.
+recent <- obs[reference_date >= as.Date("2021-10-15")]
+pobs <- epinowcast::enw_preprocess_data(recent, max_delay = 10, by = "age_group")
+#> Warning: You specified a maximum delay of 10 days, but the maximum observed delay is
+#> only 6 days.
+#> • This is justified if you don't have much data yet (e.g. early phase of an
+#>   outbreak) and expect a longer maximum delay than currently observed.
+#>   epinowcast will then extrapolate the delay distribution beyond the observed
+#>   maximum delay.
+#> • Otherwise, we recommend using a shorter maximum delay to speed up the
+#>   nowcasting.
 
 # From the data.table input format ...
-nowobj <- tbl_now_from_epinowcast(obs, strata = c("age_group"))
+nowobj <- tbl_now_from_epinowcast(recent, strata = c("age_group"))
 #> 
 #> ── Converted epinowcast <data> into a <tbl_now> 
 #> • event_date: "reference_date"
@@ -264,8 +294,30 @@ nowobj <- tbl_now_from_epinowcast(obs, strata = c("age_group"))
 #> • report_units: "days"
 #> • strata: "age_group"
 #> • case_count: "confirm"
+nowobj
+#> # A tibble:  146 × 7
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `days` | Report: `days`
+#>    reference_date age_group confirm report_date   .event_num .report_num .delay
+#>    <IDate>        <fct>       <int> <date>             <dbl>       <dbl>  <dbl>
+#>    [event_date]   [strata]  [cases] [report_date]      [...]       [...]  [...]
+#>  1 2021-10-15     00+           142 2021-10-15             0           0      0
+#>  2 2021-10-16     00+           115 2021-10-16             1           1      0
+#>  3 2021-10-17     00+            52 2021-10-17             2           2      0
+#>  4 2021-10-18     00+            43 2021-10-18             3           3      0
+#>  5 2021-10-19     00+           223 2021-10-19             4           4      0
+#>  6 2021-10-20     00+           235 2021-10-20             5           5      0
+#>  7 2021-10-15     00-04           5 2021-10-15             0           0      0
+#>  8 2021-10-16     00-04           1 2021-10-16             1           1      0
+#>  9 2021-10-17     00-04           1 2021-10-17             2           2      0
+#> 10 2021-10-18     00-04           1 2021-10-18             3           3      0
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2021-10-20 | Event date: "reference_date" | Report date: "report_date"
+#> # Strata: "age_group"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 136 more rows
 
-# ... or from a preprocessed epinowcast object
+# ... or from a preprocessed epinowcast object.
 tbl_epi <- tbl_now_from_epinowcast(pobs)
 #> 
 #> ── Converted epinowcast <data> into a <tbl_now> 
@@ -278,7 +330,7 @@ tbl_epi <- tbl_now_from_epinowcast(pobs)
 #> • strata: "age_group"
 #> • case_count: "confirm"
 
-#You can also convert to epinowcast preprocess data format
+# And back out again.
 preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
 #> 
 #> ── Converting <tbl_now> into an epinowcast object 
@@ -287,8 +339,7 @@ preprocessed_tbl <- tbl_now_to_epinowcast(tbl_epi, quiet = TRUE)
 #> • confirm <- "confirm"
 #> • by: "age_group"
 #> • timestep: "day"
-#> • max_delay: 40 day
+#> • max_delay: 6 day
 #> • missing_reference: FALSE
 #> • preprocess: TRUE
-# }
 ```

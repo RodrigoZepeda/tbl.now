@@ -53,9 +53,11 @@ tidy(x, probs = NULL, engine = NULL, level = NULL, ...)
 - engine:
 
   Optional string naming the engine. Needed only for the shapes that
-  arrive as an **unclassed list** – a NobBS fit, or a list of
-  per-stratum baselinenowcast fits – which are otherwise recognised by
-  their structure.
+  arrive as an **unclassed list** – a NobBS fit, an
+  [`EpiNow2::regional_epinow()`](https://epiforecasts.io/EpiNow2/reference/regional_epinow.html)
+  result, or a per-stratum list of baselinenowcast or
+  [`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
+  fits – which are otherwise recognised by their structure.
 
 - level:
 
@@ -151,6 +153,24 @@ approximation.
   produces. Each element is tidied and labelled with its list name,
   giving the same one-block-per-stratum table the natively stratified
   engines return.
+
+## See also
+
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
+and
+[tidy()](https://rodrigozepeda.github.io/tbl.now/reference/tidy.tbl_nowcast.md),
+which give you this shape without needing to call the modelling package
+yourself;
+[tidy()](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast_backtest.md)
+for a backtest;
+[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
+and
+[`tidy.estimate_dist()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.estimate_dist.md)
+for fitted *delay distributions* rather than case counts;
+[`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
+to score the result. The [*One dataset, many nowcasts*
+article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+shows each engine's native output next to this one.
 
 ## Examples
 

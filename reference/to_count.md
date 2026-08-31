@@ -1,12 +1,24 @@
-# Transform an object to count data
+# Convert between linelist and aggregated count data
 
-**\[stable\]** Transforms a `tbl.now` between count data types:
+**\[stable\]**
 
-- `linelist`: to `count-incidence` or `count-cumulative`
+Surveillance data comes in three shapes, and different nowcasting
+packages want different ones. `to_count()` moves a
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+between them:
 
-- `count-incidence`: to `count-cumulative`
+- **`linelist`** – one row per case. The most detailed shape.
 
-- `count-cumulative`: to `count-incidence`
+- **`count-incidence`** – one row per (event date, report date) pair,
+  holding the number of cases reported *on exactly that report date*.
+
+- **`count-cumulative`** – the same grid, but holding the number of
+  cases known *up to and including* that report date. This is the shape
+  most public dashboards publish.
+
+You can go from `linelist` to either count shape, and back and forth
+between the two count shapes. You cannot go back to `linelist`: once
+cases have been added up, the individual rows are gone.
 
 ## Usage
 
@@ -21,16 +33,19 @@ to_count(x, to = NULL, ...)
 
 - x:
 
-  Data to be transformed from `linelist` to count data
+  A
+  [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+  object to convert.
 
 - to:
 
-  Either `linelist`, `count-incidence` or `count-cumulative` the
-  resulting data-type to be created.
+  Character. The data type to produce: `"linelist"`, `"count-incidence"`
+  or `"count-cumulative"`. Defaults to the object's current type, i.e.
+  no change.
 
 - ...:
 
-  Additional arguments
+  Additional arguments passed to methods.
 
 ## Value
 
@@ -39,25 +54,43 @@ aggregated into the `case_count` column.
 
 ## Details
 
-This is an S3 generic. This package provides methods for the following
-classes:
+This is an S3 generic. The package provides a method for `tbl_now`
+objects, which aggregates into the `case_count` column, creating one
+named `n` when the object does not already have one.
 
-- `tbl_now`: takes a `tbl_now` object and creates a new column with name
-  `n` of counts of observations if `data_type = "linelist"`.
-
-Converting `count-cumulative` to `count-incidence` **de-accumulates**
-the series: within each event date (and grouping), ordered by report
-date, the incremental count is the cumulative total minus the previous
-one. Because cumulative totals can be revised *downward*, an increment
-can be **negative**; callers that need non-negative increments (for
-example
-[`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md))
-must handle or refuse that case.
+Aggregation sums over every column the object has *not* been told about,
+so a column you care about should be declared as a strata or covariate
+first (see
+[`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md))
+or it will be summed away.
 
 ## Note
 
-`linelist` data cannot be reconstructed from `count-*` data. Trying this
-will throw an error as you cannot un-count aggregated data.
+`linelist` data cannot be reconstructed from `count-*` data. Asking for
+it throws an error, because aggregated data cannot be un-counted.
+
+## Statistical details
+
+Converting `count-cumulative` to `count-incidence` **de-accumulates**
+the series: within each event date (and grouping), ordered by report
+date, the increment is that cumulative total minus the previous one.
+Because published cumulative totals are sometimes revised *downward*, an
+increment can be **negative**. That is not a bug – it is a retraction
+showing through – but code that requires non-negative counts (for
+example
+[`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md))
+must handle or refuse it.
+
+## See also
+
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+and its *Data types* section for what each shape means;
+[`get_data_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+to ask an object which shape it currently is;
+[`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+to fill in the (event, report) pairs where nothing was reported;
+[`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+to pull out the most recent counts.
 
 ## Examples
 
@@ -70,7 +103,14 @@ ndata <- tbl_now(denguedat,
 )
 #> ℹ Identified data as <linelist-data> where each observation is a test.
 
-to_count(ndata, to = "count-incidence")
+# A linelist has one row per case ...
+nrow(ndata)
+#> [1] 52987
+
+## ... which becomes one row per (onset week, report week, gender), with the
+# number of cases in `n`.
+counts <- to_count(ndata, to = "count-incidence")
+counts
 #> # A tibble:  8,265 × 7
 #> # Data type: "count-incidence"
 #> # Frequency: Event: `weeks` | Report: `weeks`
@@ -93,37 +133,34 @@ to_count(ndata, to = "count-incidence")
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 8,255 more rows
 
-data("covidat")
-suppressWarnings({
-  ndata <- tbl_now(covidat,
-    event_date = "date_of_symptom_onset",
-    report_date = "date_of_registry",
-    strata = "sex"
-  )
-  to_count(ndata)
-})
-#> ℹ Identified data as <linelist-data> where each observation is a test.
-#> # A tibble:  40,822 × 7
-#> # Data type: "linelist"
-#> # Frequency: Event: `days` | Report: `days`
-#>    date_of_registry date_of_symptom_onset sex          n .event_num .report_num
-#>    <date>           <date>                <chr>    <int>      <dbl>       <dbl>
-#>    [report_date]    [event_date]          [strata] [...]      [...]       [...]
-#>  1 2020-04-05       2020-03-06            FEMALE       1          0          30
-#>  2 2020-04-05       2020-03-06            MALE         1          0          30
-#>  3 2020-04-05       2020-03-07            FEMALE       1          1          30
-#>  4 2020-04-07       2020-03-11            MALE         1          5          32
-#>  5 2020-04-05       2020-03-18            FEMALE       1         12          30
-#>  6 2020-04-08       2020-03-23            FEMALE       1         17          33
-#>  7 2020-04-05       2020-03-24            MALE         1         18          30
-#>  8 2020-04-06       2020-03-26            FEMALE       1         20          31
-#>  9 2020-04-05       2020-03-27            FEMALE       1         21          30
-#> 10 2020-04-05       2020-03-31            FEMALE       1         25          30
+# Cumulative totals instead: how many cases for that onset week were known by
+# each report week. Within an onset week these only ever go up.
+to_count(counts, to = "count-cumulative")
+#> # A tibble:  8,265 × 7
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>    onset_week   report_week   .event_num .report_num gender         n .delay
+#>    <date>       <date>             <dbl>       <dbl> <chr>      <int>  <dbl>
+#>    [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
+#>  1 1990-01-01   1990-01-01             0           0 Female         2      0
+#>  2 1990-01-01   1990-01-08             0           1 Female        15      1
+#>  3 1990-01-01   1990-01-15             0           2 Female        31      2
+#>  4 1990-01-01   1990-01-22             0           3 Female        38      3
+#>  5 1990-01-01   1990-03-05             0           9 Female        39      9
+#>  6 1990-01-01   1990-01-01             0           0 Male           1      0
+#>  7 1990-01-01   1990-01-08             0           1 Male          12      1
+#>  8 1990-01-01   1990-01-15             0           2 Male          19      2
+#>  9 1990-01-01   1990-01-22             0           3 Male          20      3
+#> 10 1990-01-01   1990-01-29             0           4 Male          21      4
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2023-01-01 | Event date: "date_of_symptom_onset" | Report date:
-#> # "date_of_registry"
-#> # Strata: "sex"
+#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
+#> # Strata: "gender"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 40,812 more rows
-#> # ℹ 1 more variable: .delay <dbl>
+#> # ℹ 8,255 more rows
+
+# Going back to a linelist is impossible -- the individual cases are gone.
+try(to_count(counts, to = "linelist"))
+#> Error in to_count(counts, to = "linelist") : 
+#>   Transformation from `data_type` count-incidence to linelist not
+#> implemented
 ```

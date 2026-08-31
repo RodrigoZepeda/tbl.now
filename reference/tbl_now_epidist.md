@@ -40,13 +40,15 @@ interval columns:
 
 - the secondary event spans `[report_date, report_date + w]` normally,
   but for rows flagged by `is_censored` it is left-censored to
-  `[origin, report_date]` (with `origin` the earliest `event_date`, i.e.
+  `[event_date, report_date]` (the report is known only to have happened
+  at or before its report date, and cannot precede the event, i.e.
   epidist time 0) — encoding the `tbl_now` convention that a censored
-  report is only known to lie in `[0, report_date]`.
+  report is known only to have happened at or before its report date, so
+  the window is `[event_date, report_date]`.
 
 The strata, the covariate columns and any materialised temporal-effect
 columns (holidays, Fourier terms, calendar effects; see
-[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.md))
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md))
 are carried onto the epidist data unchanged, so the strata are available
 as covariates in an epidist model formula (epidist has no separate
 grouping argument).
@@ -123,7 +125,9 @@ tbl_now_to_epidist(
 
 - quiet:
 
-  Logical. If `TRUE`, suppress the lossy-conversion warning emitted by
+  Logical. A *different* channel from `verbose`: `verbose` controls the
+  informational summary of what the conversion did, while `quiet`
+  suppresses the lossy-conversion **warning** emitted by
   `tbl_now_to_epidist()`.
 
 ## Value
@@ -182,10 +186,30 @@ code calls `primarycensored_lpmf()` with 8 arguments against a
 to **one row per case**, so it is only practical on a short window.
 Check the epidist issue tracker for the current status.
 
+## See also
+
+[confirmation_setters](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)
+and
+[confirmation_delay](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md),
+since epidist is about delay distributions and a `tbl_now` may carry two
+of them;
+[`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+for the long delays that would otherwise dominate a fitted distribution;
+[tidy()](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
+for the fitted result.
+[`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+for the generic that dispatches to the `*_from_*()` side;
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md),
+which does the conversion for you when you fit through an
+[`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md).
+The [*One dataset, many nowcasts*
+article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
+fits the same data with every supported package.
+
 ## Examples
 
 ``` r
-# --- Linelist epidist data (one row per case) ---
+## --- Linelist epidist data (one row per case) ---
 ll <- epidist::as_epidist_linelist_data(
   data.frame(
     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-02")),
@@ -225,7 +249,7 @@ tbl_now_to_epidist(nowll)
 #> 3         1         2         5         6        6 2020-03-02 2020-03-03
 #> # ℹ 3 more variables: sdate_lwr <date>, sdate_upr <date>, obs_date <date>
 
-# --- Aggregate epidist data (counts in an `n` column) ---
+## --- Aggregate epidist data (counts in an `n` column) ---
 agg <- epidist::as_epidist_aggregate_data(
   data.frame(
     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
@@ -237,7 +261,7 @@ agg <- epidist::as_epidist_aggregate_data(
 #> ℹ No primary event upper bound provided, using the primary event lower bound + 1 day as the assumed upper bound.
 #> ℹ No secondary event upper bound provided, using the secondary event lower bound + 1 day as the assumed upper bound.
 #> ℹ No observation time column provided, using 2020-03-06 as the observation date (the maximum of the secondary event upper bound).
-# -> a count-incidence tbl_now (case_count = "n") ...
+## -> a count-incidence tbl_now (case_count = "n") ...
 nowagg <- tbl_now_from_epidist(agg)
 #> 
 #> ── Converted epidist <data> into a <tbl_now> 
@@ -251,7 +275,7 @@ nowagg <- tbl_now_from_epidist(agg)
 #> • format: aggregate (lower bounds -> event/report dates, n -> case_count)
 get_data_type(nowagg)
 #> [1] "count-incidence"
-# ... and back to an epidist_aggregate_data (auto-detected from the counts)
+## ... and back to an epidist_aggregate_data (auto-detected from the counts)
 tbl_now_to_epidist(nowagg)
 #> 
 #> ── Converting <tbl_now> into epidist aggregate data 
