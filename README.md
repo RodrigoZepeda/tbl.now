@@ -14,14 +14,7 @@ status](https://www.r-pkg.org/badges/version/tbl.now)](https://CRAN.R-project.or
 [![R-CMD-check](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-[`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) provides an
-extension of the [`tibble()`](https://tibble.tidyverse.org/) for
-storing, validating, and manipulating epidemiological nowcasting data.
-It standardizes the representation of event dates, report dates, strata,
-temporal covariates, and data types (linelist and cumulative), ensuring
-that downstream models within the
-[`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/)
-ecosystem can rely on a consistent interface.
+
 
 [`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) rovides an
 extension of the [`tibble()`](https://tibble.tidyverse.org/) for
