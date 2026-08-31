@@ -131,10 +131,10 @@ fit <- try(
   ),
   silent = TRUE
 )
-#> WARN [2026-08-31 22:01:32] estimate_dist (chain: 1): Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> WARN [2026-08-31 22:08:05] estimate_dist (chain: 1): Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#bulk-ess - 
-#> WARN [2026-08-31 22:01:32] estimate_dist (chain: 1): Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> WARN [2026-08-31 22:08:05] estimate_dist (chain: 1): Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#tail-ess - 
 

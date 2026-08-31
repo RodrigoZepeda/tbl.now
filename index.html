@@ -86,7 +86,7 @@
 </div>
 <!-- badges: start -->
 
-<p><a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a> rovides an extension of the <a href="https://tibble.tidyverse.org/" class="external-link"><code>tibble()</code></a> for storing, validating, and manipulating epidemiological nowcasting data. It standardizes the representation of event dates, report dates, strata, temporal covariates, etc and in a way that is compatible with many frameworks including diseasenowcasting, epinowcast, NobBS, surveillance, EpiNow2, and more.</p>
+<p><a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a> provides an extension of the <a href="https://tibble.tidyverse.org/" class="external-link"><code>tibble()</code></a> for storing, validating, and manipulating epidemiological nowcasting data. It standardizes the representation of event dates, report dates, strata, temporal covariates, etc and in a way that is compatible with many frameworks including diseasenowcasting, epinowcast, NobBS, surveillance, EpiNow2, and more.</p>
 <p>Specifically a <code>tbl_now</code> is a data structure that keeps track of the following attributes relevant for a nowcasting excercise so that all <code>dplyr</code> transformations (i.e. the ones from tidyverse) keep track of the relevant nowcasting variables:</p>
 <table class="table">
 <thead><tr>
@@ -271,7 +271,7 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <code class="sourceCode R"><span><span class="co"># install.packages("pak") # &lt;- uncomment if you do not have `pak`</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pkg_install.html" class="external-link">pkg_install</a></span><span class="op">(</span><span class="st">"RodrigoZepeda/tbl.now"</span><span class="op">)</span></span></code></pre></div>
 <p>and checkout our articles starting with the <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html">Introduction</a>:</p>
-<!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit here only. Blank lines inside this comment would leak as &#10; into the rendered README, so keep it to one line. Callers locate this file with system.file("fragments", ...) rather than a relative path: rmarkdown renders into a temp intermediates directory and copies relative resources alongside, so a "../.." path escapes that directory and fails on CI. Links are absolute so they resolve on both GitHub and pkgdown. -->
+<!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit on `learning.more.Rmd`.-->
 <div class="section level2">
 <h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
 </h2>
@@ -279,9 +279,13 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a> for the full anatomy of a <code>tbl_now</code>, data types, and temporal effects.</li>
 <li>End-to-end tutorial on real, messy surveillance data — cleaning, diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/Example.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/Example.html</a>
 </li>
-<li>Tutorial on detecting batches and other reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html</a>
+<li>Tutorial on diagnosing problems with your dataset, detecting batches and other reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html</a>
 </li>
-<li>Comparing nowcasting engines on one dataset: <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>
+<li>Using different nowcasting engines for the same dataset: <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>
+</li>
+<li>Ensemble nowcasting across different engines <a href="https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html</a>
+</li>
+<li>Adding your own nowcasting model <a href="https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html</a>
 </li>
 <li>Package reference: <a href="https://rodrigozepeda.github.io/tbl.now/reference/" class="uri">https://rodrigozepeda.github.io/tbl.now/reference/</a>
 </li>
