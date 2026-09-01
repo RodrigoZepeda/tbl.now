@@ -43,7 +43,7 @@
 #' [diagnose()] for the same findings returned as a tibble, plus the softer
 #' notes; [tbl_now()] to build a valid object; [tbl_now_attributes()] to see what
 #' it recorded. The
-#' [*Describing and diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+#' [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' explains what each finding means.
 #'
 #' @examples
@@ -373,7 +373,7 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
         force = TRUE,
         warn_non_uniqueness = FALSE
       ),
-      .confirmation_rebuild_args(.data, .data)
+      .validation_rebuild_args(.data, .data)
     ))
     attr(x, "temporal_effects") <- get_temporal_effects(.data)
     attr(x, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(x))
@@ -507,7 +507,7 @@ ungroup.grouped_tbl_now <- function(x, ...) {
         force = TRUE,
         warn_non_uniqueness = FALSE
       ),
-      .confirmation_rebuild_args(old_x, tbl)
+      .validation_rebuild_args(old_x, tbl)
     ))
     attr(x, "temporal_effects") <- get_temporal_effects(old_x)
     attr(x, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(old_x), names(x))
@@ -554,9 +554,9 @@ summarise.tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
           warn_non_uniqueness = FALSE,
           align_weeks = FALSE
         ),
-        # Every fixed attribute list is a place the confirmation process can be
+        # Every fixed attribute list is a place the validation process can be
         # dropped in silence.
-        .confirmation_rebuild_args(.data, ungrouped)
+        .validation_rebuild_args(.data, ungrouped)
       ))
       attr(tmp, "temporal_effects") <- get_temporal_effects(.data)
       attr(tmp, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(tmp))

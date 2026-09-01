@@ -157,9 +157,9 @@ test_that("a report before its event is one warning naming that row", {
   expect_true(ndata$report[row$rows[[1]]] < ndata$onset[row$rows[[1]]])
 })
 
-test_that("the confirmation timeline is checked on both of its legs", {
+test_that("the validation timeline is checked on both of its legs", {
   frame <- clean_frame()
-  # Row 2 is confirmed the day BEFORE it was reported; row 4 is confirmed
+  # Row 2 is validated the day BEFORE it was reported; row 4 is validated
   # before the event happened, and has no report date at all, so only the
   # transitive check can see it.
   frame$result <- as.Date(c("2024-01-02", "2024-01-02", "2024-01-05", NA))
@@ -170,28 +170,28 @@ test_that("the confirmation timeline is checked on both of its legs", {
 
   ndata <- suppressWarnings(tbl_now(frame,
     event_date = "onset", report_date = "report", case_count = "n",
-    confirmation_date = "result", confirmation_type = "outcome",
+    validation_date = "result", validation_type = "outcome",
     data_type = "count-incidence", now = as.Date("2024-01-05"),
     verbose = FALSE
   ))
   result <- diagnose(ndata)
 
-  before_report <- finding(result, "ordering", "report_to_confirmation")
+  before_report <- finding(result, "ordering", "report_to_validation")
   expect_equal(as.character(before_report$status), "warning")
   expect_equal(before_report$n_affected, 1)
   expect_equal(before_report$rows[[1]], 2L)
 
-  before_event <- finding(result, "ordering", "event_to_confirmation")
+  before_event <- finding(result, "ordering", "event_to_validation")
   expect_equal(as.character(before_event$status), "note")
   expect_equal(before_event$n_affected, 1)
   expect_equal(before_event$rows[[1]], 4L)
 })
 
-test_that("the confirmation legs are skipped without a confirmation process", {
+test_that("the validation legs are skipped without a validation process", {
   result <- diagnose(clean_tbl())
 
   expect_equal(
-    as.character(finding(result, "ordering", "report_to_confirmation")$status),
+    as.character(finding(result, "ordering", "report_to_validation")$status),
     "skipped"
   )
 })
@@ -326,22 +326,22 @@ test_that("weekly dates on two weekday grids are found, with the fix named", {
   expect_equal(fractional$n_affected, 3)
 })
 
-test_that("confirmation units that differ from the event units are flagged", {
+test_that("validation units that differ from the event units are flagged", {
   frame <- clean_frame()
   frame$result <- frame$report + 1
   frame$outcome <- "confirmed"
 
   ndata <- tbl_now(frame,
     event_date = "onset", report_date = "report", case_count = "n",
-    confirmation_date = "result", confirmation_type = "outcome",
+    validation_date = "result", validation_type = "outcome",
     data_type = "count-incidence",
     now = as.Date("2024-01-06"), verbose = FALSE
   )
-  attr(ndata, "confirmation_units") <- "weeks" # days everywhere else
+  attr(ndata, "validation_units") <- "weeks" # days everywhere else
 
   row <- finding(diagnose(ndata), "units", "declared")
   expect_equal(as.character(row$status), "note")
-  expect_match(row$message, "confirmation_units")
+  expect_match(row$message, "validation_units")
 })
 
 test_that("units that agree are reported as ok", {
@@ -413,18 +413,18 @@ test_that("an event dated after now is a note naming the row", {
   expect_equal(row$rows[[1]], 2L)
 })
 
-test_that("a confirmation after now is an error", {
+test_that("a validation after now is an error", {
   frame <- clean_frame()
   frame$result <- frame$report
   frame$outcome <- "confirmed"
   ndata <- tbl_now(frame,
     event_date = "onset", report_date = "report", case_count = "n",
-    confirmation_date = "result", confirmation_type = "outcome",
+    validation_date = "result", validation_type = "outcome",
     data_type = "count-incidence", now = as.Date("2024-01-05"), verbose = FALSE
   )
   attr(ndata, "now") <- as.Date("2024-01-04")
 
-  row <- finding(diagnose(ndata), "now", "confirmation_date")
+  row <- finding(diagnose(ndata), "now", "validation_date")
   expect_equal(as.character(row$status), "error")
   expect_equal(row$n_affected, 1)
 })
@@ -475,14 +475,14 @@ test_that("an unstratified object skips the stratum comparison", {
   )
 })
 
-test_that("pending confirmations are counted, not thresholded away", {
+test_that("pending validations are counted, not thresholded away", {
   frame <- clean_frame()
   frame$result <- as.Date(c("2024-01-02", "2024-01-04", NA, NA))
   frame$outcome <- c("confirmed", "confirmed", "pending", "pending")
 
   ndata <- tbl_now(frame,
     event_date = "onset", report_date = "report", case_count = "n",
-    confirmation_date = "result", confirmation_type = "outcome",
+    validation_date = "result", validation_type = "outcome",
     data_type = "count-incidence", now = as.Date("2024-01-05"), verbose = FALSE
   )
 
@@ -502,11 +502,11 @@ test_that("the statistical questions are signposted, never answered", {
   expect_equal(nrow(signposts), 4)
   expect_setequal(
     signposts$scope,
-    c("report", "confirmation", "report_batches", "confirmation_batches")
+    c("report", "validation", "report_batches", "validation_batches")
   )
-  # Without a confirmation process the two confirmation axes cannot be asked.
+  # Without a validation process the two validation axes cannot be asked.
   expect_equal(
-    as.character(signposts$status[signposts$scope == "confirmation"]), "skipped"
+    as.character(signposts$status[signposts$scope == "validation"]), "skipped"
   )
   expect_equal(
     as.character(signposts$status[signposts$scope == "report_batches"]), "not_run"
@@ -638,17 +638,84 @@ test_that("validate_tbl_now() does not emit the notes diagnose() adds", {
   )
 })
 
-test_that("validate_tbl_now() warns when a confirmation precedes its report", {
+test_that("validate_tbl_now() warns when a validation precedes its report", {
   frame <- clean_frame()
   frame$result <- frame$report
-  frame$result[2] <- frame$report[2] - 1 # confirmed before it was reported
+  frame$result[2] <- frame$report[2] - 1 # validated before it was reported
   frame$outcome <- "confirmed"
 
   ndata <- suppressWarnings(tbl_now(frame,
     event_date = "onset", report_date = "report", case_count = "n",
-    confirmation_date = "result", confirmation_type = "outcome",
+    validation_date = "result", validation_type = "outcome",
     data_type = "count-incidence", now = as.Date("2024-01-05"), verbose = FALSE
   ))
 
-  expect_warning(validate_tbl_now(ndata), "confirmed BEFORE")
+  expect_warning(validate_tbl_now(ndata), "validated BEFORE")
+})
+
+# Printing ---------------------------------------------------------------------
+
+test_that("a diagnosis prints its findings, not the tibble", {
+  # `cli_*` writes to the MESSAGE stream, which `capture.output()` does not see
+  # and `message = FALSE` swallows. A print method has to reach stdout.
+  result <- diagnose(clean_tbl())
+  printed <- capture.output(print(result))
+
+  expect_true(any(grepl("Diagnosis of a", printed)))
+  expect_true(any(grepl("passed", printed)))
+  # The messages themselves, not just a count of them.
+  first_note <- result$message[result$status == "note"][1]
+  expect_true(any(vapply(printed, function(line) {
+    grepl(substr(first_note, 1, 30), line, fixed = TRUE)
+  }, logical(1))))
+  # And the whole text of a check that passed, once it is asked for.
+  expect_true(any(grepl(
+    "The declared units agree", capture.output(print(result, all = TRUE))
+  )))
+})
+
+test_that("errors, warnings and notes are spelled out; passes are counted", {
+  result <- diagnose(suppressWarnings(clean_tbl(dirty_frame())))
+  printed <- capture.output(print(result))
+
+  warning_message <- result$message[result$status == "warning"][1]
+  expect_true(any(grepl("Warnings", printed)))
+  expect_true(any(vapply(printed, function(line) {
+    grepl(substr(warning_message, 1, 30), line, fixed = TRUE)
+  }, logical(1))))
+
+  # The `ok` rows are a one-line tally by default, and every one of them by
+  # request.
+  n_ok <- sum(result$status == "ok")
+  expect_true(any(grepl(paste0(n_ok, " passed:"), printed)))
+  expect_true(any(grepl(
+    "^Passed \\(", capture.output(print(result, all = TRUE))
+  )))
+})
+
+test_that("a diagnosis is still a tibble", {
+  result <- diagnose(clean_tbl())
+
+  expect_s3_class(result, "tbl_df")
+  # The class survives the verbs, so a filtered diagnosis still prints as one.
+  expect_s3_class(dplyr::filter(result, status <= "note"), "tbl_now_diagnosis")
+  # And `as_tibble()` is the documented way back to the table.
+  expect_false(inherits(tibble::as_tibble(result), "tbl_now_diagnosis"))
+})
+
+test_that("dropping the schema columns falls back to the tibble", {
+  # The class survives `select()`, and `diagnose(x) |> select(...)` is how the
+  # articles read a block. A report cannot be written from columns that are gone.
+  narrowed <- dplyr::select(diagnose(clean_tbl()), scope, status, message)
+  printed <- capture.output(print(narrowed))
+
+  expect_false(any(grepl("Diagnosis of a", printed)))
+  expect_true(any(grepl("A tibble", printed)))
+})
+
+test_that("an empty diagnosis says so", {
+  empty <- diagnose(clean_tbl())[0, ]
+  printed <- capture.output(print(empty))
+
+  expect_true(any(grepl("No findings", printed)))
 })

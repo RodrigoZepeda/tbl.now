@@ -166,7 +166,7 @@ nowcast_tidy.diseasenowcasting <- function(engine, fit, x, ..., quantile_levels)
 #' @rdname nowcast_fit
 #' @export
 nowcast_fit.baselinenowcast <- function(engine, x, ..., draws = 1000,
-                                        delays_unit = NULL,
+                                        delays_unit = NULL, max_delay = NULL,
                                         quantile_levels = nowcast_quantile_levels(),
                                         verbose = TRUE) {
   .need_pkg("baselinenowcast")
@@ -174,9 +174,13 @@ nowcast_fit.baselinenowcast <- function(engine, x, ..., draws = 1000,
 
   if (length(strata_cols) == 0) {
     triangle <- .quietly_if(
-      tbl_now_to_baselinenowcast(x, delays_unit = delays_unit, verbose = verbose),
+      tbl_now_to_baselinenowcast(
+        x,
+        delays_unit = delays_unit, max_delay = max_delay, verbose = verbose
+      ),
       verbose
     )
+    .baselinenowcast_check_shape(triangle)
     return(.quietly_if(
       baselinenowcast::baselinenowcast(
         triangle, output_type = "samples", draws = draws, ...
@@ -189,7 +193,10 @@ nowcast_fit.baselinenowcast <- function(engine, x, ..., draws = 1000,
   # nowcast is one triangle (and one fit) per stratum.
   delays_unit <- .baselinenowcast_delays_unit(x, delays_unit)
   long <- .quietly_if(
-    tbl_now_to_baselinenowcast(x, format = "long", verbose = verbose),
+    tbl_now_to_baselinenowcast(
+      x,
+      format = "long", max_delay = max_delay, verbose = verbose
+    ),
     verbose
   )
 
@@ -202,6 +209,10 @@ nowcast_fit.baselinenowcast <- function(engine, x, ..., draws = 1000,
         as.data.frame(stratum[, c("reference_date", "report_date", "count")]),
         delays_unit = delays_unit
       )
+      .baselinenowcast_check_shape(
+        triangle,
+        stratum = .tbl_now_strata_label(stratum[1, , drop = FALSE], strata_cols)
+      )
       baselinenowcast::baselinenowcast(
         triangle, output_type = "samples", draws = draws, ...
       )
@@ -210,6 +221,80 @@ nowcast_fit.baselinenowcast <- function(engine, x, ..., draws = 1000,
   )
 
   structure(fits, strata_lookup = lookup, class = "baselinenowcast_strata")
+}
+
+#' Refuse a reporting triangle that is too wide to be fitted, and say what to cap
+#'
+#' \pkg{baselinenowcast} needs more reference dates than it has delay columns:
+#' it spends `max_delay` of them estimating the delay distribution and keeps
+#' `n_min_retro_nowcasts` (2) back for the uncertainty model, so a triangle with
+#' as many delays as reference dates leaves nothing for either. Its own message
+#' for that is arithmetic ("112 reference times available and 114 are needed"),
+#' with no mention of the delay axis and nothing the reader can act on.
+#'
+#' A revision series makes this the DEFAULT shape rather than an edge case: a
+#' FluSight-style snapshot re-reports every past week in every snapshot, so the
+#' oldest event date carries a delay as long as the series and the triangle
+#' comes out square. Almost all of that width is zeros -- 99% of `flusight`
+#' Colorado's cases arrive within 2 weeks of a 112-week axis -- so the fix is to
+#' cap the axis, and the number worth capping it at is computable.
+#'
+#' @param triangle A `reporting_triangle`.
+#' @param stratum Stratum label, or `NULL` when the object is unstratified.
+#'
+#' @return `NULL`, invisibly. Aborts when the triangle cannot be fitted.
+#'
+#' @keywords internal
+#' @noRd
+.baselinenowcast_check_shape <- function(triangle, stratum = NULL) {
+  # `n_min_retro_nowcasts` is `baselinenowcast::allocate_reference_times()`'s
+  # own default, and this is the inequality it checks.
+  n_min_retro_nowcasts <- 2L
+  n_reference <- nrow(triangle)
+  n_delays <- ncol(triangle)
+  if (n_reference >= (n_delays - 1L) + n_min_retro_nowcasts) {
+    return(invisible(NULL))
+  }
+
+  # The delay covering 99% of everything reported -- the cut
+  # `baselinenowcast::truncate_to_quantile()` makes by default -- but never
+  # wider than the geometry allows. `max_delay` counts PERIODS, so a triangle of
+  # `n` columns holds delays 0 to n-1 and the feasible cap is `n_reference - 1`.
+  arrived <- cumsum(colSums(triangle, na.rm = TRUE))
+  total <- arrived[length(arrived)]
+  covering <- if (isTRUE(total > 0)) {
+    which(arrived >= 0.99 * total)[1]
+  } else {
+    NA_integer_
+  }
+  # `which()[1]` is `NA` when the running total is not monotone, which a
+  # redistributed negative increment can make it. Fall back to the widest cap
+  # the geometry allows rather than printing `max_delay = NA`.
+  if (is.na(covering)) {
+    covering <- n_delays
+  }
+  suggestion <- max(2L, min(as.integer(covering), n_reference - 1L))
+
+  # Built here rather than inside the `cli_abort()` string: a `\\` continuation
+  # renders literally inside cli's glue, so a multi-line expression in `{}` is a
+  # parse error rather than a message (DEVELOPMENT_SKILL section 9).
+  where <- if (is.null(stratum)) "" else paste0(" for stratum ", stratum)
+
+  cli::cli_abort(c(
+    "The reporting triangle is too wide to nowcast{where}: \\
+     {n_delays} delay column{?s} against {n_reference} reference date{?s}.",
+    "x" = "{.pkg baselinenowcast} needs at least \\
+           {(n_delays - 1L) + n_min_retro_nowcasts} reference dates for a \\
+           triangle this wide -- {n_delays - 1L} to estimate the delay \\
+           distribution and {n_min_retro_nowcasts} for the uncertainty model.",
+    "i" = "Cap the delay axis: \\
+           {.code engine_baselinenowcast(max_delay = {suggestion})} keeps \\
+           delays 0-{suggestion - 1L}, which is where 99% of the reported cases \\
+           are.",
+    "i" = "A snapshot (\"as of\") series is the usual cause: it re-reports \\
+           every past period in every snapshot, so the delay axis grows with \\
+           the series and almost all of it is zeros."
+  ))
 }
 
 #' @rdname nowcast_tidy

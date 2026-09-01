@@ -792,7 +792,7 @@ tidy.estimate_truncation <- function(x, probs = NULL, ...) {
 #' why their `sd` values differ slightly;
 #' [tbl_now_to_EpiNow2()] for the conversion;
 #' [tidy()][tidy.nowcast] for tidying a *case-count* nowcast rather than a delay
-#' distribution; [confirmation_delay] for the delay this is estimating.
+#' distribution; [validation_delay] for the delay this is estimating.
 #'
 #' @examplesIf requireNamespace("EpiNow2", quietly = TRUE)
 #' data(denguedat)

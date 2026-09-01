@@ -107,8 +107,21 @@ The inference heuristic (`infer_data_type`):
    - any **decrease** → `"count-incidence"` (incremental counts go up and down);
    - **monotonically non-decreasing** → `"count-cumulative"`.
 
-If the auto guess is wrong (e.g. genuinely cumulative data that happens to never
-decrease in a small sample), pass `data_type =` explicitly.
+**Declare `data_type` for a revision series.** A snapshot ("as of") stream — a
+running total re-reported in every snapshot — is `"count-cumulative"`, but real
+ones revise downward now and then, and a single revision makes the rule above
+say `"count-incidence"`. The inference cannot be right about both, so say which
+you have:
+
+```r
+tbl_now(flusight, event_date = target_end_date, report_date = as_of,
+        case_count = observation, data_type = "count-cumulative",
+        align_weeks = TRUE)
+```
+
+Get it wrong and nothing downstream will tell you: read as increments, every
+delay carries a whole period's count instead of the change, and the totals come
+out an order of magnitude too big.
 
 ---
 
@@ -480,7 +493,12 @@ Read the block you want with `dplyr::filter()`.
 summary(tn)                              # everything
 summary(tn) |> dplyr::filter(component == "delay")
 summary(tn, by_strata = FALSE)           # pooled rows only
+tibble::as_tibble(summary(tn))           # the plain table
 ```
+
+Printing it groups the rows by `component` and drops the columns that component
+does not populate; `as_tibble()` gives the full schema back. The same is true of
+every individual block (`delay_summary()`, `cases_per_date()`, …).
 
 Columns: `component`, `quantity`, `stratum`, then `n`, `total`, `mean`, `sd`,
 `min`, `q25`, `q50`, `q75`, `q90`, `max`, `prop_zero`, `prop`, `value`,
@@ -491,12 +509,12 @@ rest `NA`. `stratum` is `"all"` for the pooled rows.
 
 | component | rows |
 |---|---|
-| `cases` | counts per event / report / confirmation date, and per confirmation outcome; plus `censored_per_*_date` when there is a censoring flag |
-| `delay` | `event_to_report`, `event_to_confirmation`, `report_to_confirmation`, split by outcome when there is more than one |
+| `cases` | counts per event / report / validation date, and per validation outcome; plus `censored_per_*_date` when there is a censoring flag |
+| `delay` | `event_to_report`, `event_to_validation`, `report_to_validation`, split by outcome when there is more than one |
 | `zero_run` | lengths of the runs of consecutive zero dates, per axis |
-| `composition` | shares: `censored`, `confirmation_type = ...`, `strata = ...`, `covariate: <col> = <level>` (in `prop`) |
+| `composition` | shares: `censored`, `validation_type = ...`, `strata = ...`, `covariate: <col> = <level>` (in `prop`) |
 | `autocorrelation` | lag-*k* correlation of each case series (in `value`) |
-| `completeness` | share of each event date's eventual total arrived by delay *d* |
+| `completeness` | share of each event date's eventual total arrived by delay *d* — across event dates in `mean`/`sd`/the quantiles, pooled in `prop`; not in `value` |
 | `coverage` | `total_cases`, the date ranges, `now`, `max_delay`, the triangle cell counts and occupancy, `now_gap_*` |
 | `growth` | ratio of each event date's running total from one delay to the next (`count-cumulative` only) |
 
@@ -504,11 +522,11 @@ Each block is also its own exported function, returning the same schema, so they
 stack with `dplyr::bind_rows()`:
 
 ```r
-cases_per_date(tn, axis = "event")       # "event" / "report" / "confirmation"
+cases_per_date(tn, axis = "event")       # "event" / "report" / "validation"
 delay_summary(tn, delay = "event_to_report")
 zero_run_summary(tn, axis = "event")
 prop_censored(tn); prop_strata(tn)
-prop_confirmation_type(tn); prop_covariate_levels(tn)
+prop_validation_type(tn); prop_covariate_levels(tn)
 case_autocorrelation(tn, lags = 1)
 date_ranges(tn); triangle_occupancy(tn)
 reporting_completeness(tn, delays = 0:7)
@@ -536,8 +554,8 @@ Three things to know before reading the numbers:
   `to_count(x, to = "count-incidence")` first (remembering that de-accumulating
   can produce negative increments).
 
-`report_to_confirmation` is the **laboratory's turnaround, measured from the
-report**; `event_to_confirmation` is measured from the event, so it is directly
+`report_to_validation` is the **laboratory's turnaround, measured from the
+report**; `event_to_validation` is measured from the event, so it is directly
 comparable with `event_to_report`. They are different quantities.
 
 ---
@@ -557,7 +575,14 @@ diagnose(tn, by_strata = FALSE)                # pooled rows only
 # The offending rows are carried, so you can go straight to them:
 bad <- diagnose(tn) |> dplyr::filter(check == "ordering")
 tn[bad$rows[[1]], ]
+
+print(diagnose(tn), all = TRUE)   # spell out the passes and skips too
+tibble::as_tibble(diagnose(tn))   # the plain table
 ```
+
+Printing it writes the errors, warnings and notes out in full, each with its
+hint, and counts the checks that passed, that were deliberately not run, and
+that could not be assessed. Every block prints the same way.
 
 Columns: `check`, `scope`, `stratum`, `status`, `n_affected`, `n_total`,
 `prop`, `message`, `hint`, `rows` (a list-column of row indices into `tn`).
@@ -572,21 +597,21 @@ itself and why `status <= "note"` reads as "anything worth acting on":
 | `note` | a `diagnose()`-only observation. **Never promoted to a warning**: `validate_tbl_now()` runs on every dplyr verb, and a new warning there would make construction noisy for data that has always been accepted |
 | `ok` | the check ran and found nothing |
 | `not_run` | a signpost: the question needs a statistical test, and `message` is the call that answers it |
-| `skipped` | could not be assessed (no confirmation process, wrong data type, package not installed) |
+| `skipped` | could not be assessed (no validation process, wrong data type, package not installed) |
 
 `check` is one of:
 
 | check | what it looks for |
 |---|---|
 | `declarations` | attribute types, the columns they name, role collisions, **undeclared columns**, temporal effects added but never materialised |
-| `ordering` | `event <= report <= confirmation`, including the transitive leg a missing `report_date` would otherwise hide |
+| `ordering` | `event <= report <= validation`, including the transitive leg a missing `report_date` would otherwise hide |
 | `missing` | `NA`s per column and per stratum. An `NA` **count** is reported *neutrally* — in a triangle it means *not yet observed*, which is correct data |
-| `duplicates` | rows repeating on the full key (including the confirmation columns). Defaults **on** here, unlike `validate_tbl_now()` |
+| `duplicates` | rows repeating on the full key (including the validation columns). Defaults **on** here, unlike `validate_tbl_now()` |
 | `units` | the declared units against each other, against the calendar the dates land on, and against the `.delay` they produce |
 | `negatives` | negative incidence counts, and the negative increments a downward revision leaves when cumulative data is de-accumulated |
 | `now` | anything dated after `now`, and the gap from the last observation to `now` |
 | `truncation` | how many recent event dates are still immature, and how much of their eventual total has not arrived |
-| `strata` | the smallest and the sparsest stratum (named, **not** thresholded), and the confirmations still pending |
+| `strata` | the smallest and the sparsest stratum (named, **not** thresholded), and the validations still pending |
 | `signposts` | the four questions `diagnose()` refuses to answer |
 
 Each block is also its own exported function, same schema, so they stack with
@@ -878,7 +903,7 @@ general `engine(method, ...)` for anything else (including your own backend):
 | engine | fits | key named args | needs |
 |---|---|---|---|
 | `engine_diseasenowcasting()` | `diseasenowcasting::nowcast()`, straight off the `tbl_now` | `model`, `type`, `n_draws` | — |
-| `engine_baselinenowcast()` | one reporting triangle, or one **per stratum** | `draws`, `delays_unit` | — |
+| `engine_baselinenowcast()` | one reporting triangle, or one **per stratum** | `draws`, `delays_unit`, `max_delay` | — |
 | `engine_epinowcast()` | `epinowcast::epinowcast()` | `preprocess_args`, `expectation`, `reference`, `report`, `fit` | Stan |
 | `engine_nobbs()` | `NobBS()`, or `NobBS.strat()` when strata are declared | `max_D`, `moving_window`, `specs` | JAGS |
 | `engine_surveillance()` | `surveillance::nowcast()`, **one fit per stratum** | `D`, `when`, `fit_method`, `control` | — |
@@ -904,10 +929,20 @@ Every engine also takes:
 - **`label`** — its name in a `nowcast_backtest()`, defaulting to the method.
   This is how one package appears twice with different settings.
 
+**Snapshot ("as of") data needs `max_delay`.** A snapshot stream restates the
+whole history in every snapshot, so its delay axis is as long as the series
+itself and the reporting triangle comes out square. `baselinenowcast` needs more
+reference dates than delay columns, so it cannot fit one at all; the error names
+the cap to use. Three of the six shipped datasets are that shape.
+
+```r
+run_nowcast(flusight_tn, engine_baselinenowcast(max_delay = 21))
+```
+
 What comes back:
 
 ```r
-nc                          # print: method, now, dates, strata, quantile levels
+nc                          # print: the estimate at `now`, then the metadata
 as_tibble(nc)               # the quantile predictions (long)
 as_tibble(nc, type = "draws")  # the draws, where the backend has them
 tidy(nc)                    # the standard event_date/stratum/estimate/... table
@@ -1159,7 +1194,7 @@ diagnose(x, checks =, by_strata =)        # the structural health check
 diagnose_declarations/ordering/missing/duplicates/units/negatives(x)
 diagnose_now/truncation/strata/signposts(x)
 cases_per_date(x, axis =) / delay_summary(x, delay =) / zero_run_summary(x, axis =)
-prop_censored(x) / prop_strata(x) / prop_confirmation_type(x) / prop_covariate_levels(x)
+prop_censored(x) / prop_strata(x) / prop_validation_type(x) / prop_covariate_levels(x)
 case_autocorrelation(x, lags =) / date_ranges(x) / triangle_occupancy(x)
 reporting_completeness(x, delays =) / cumulative_growth(x, k =)
 autoplot(x, panels =, by_strata =)        # multi-panel diagnostic (patchwork)

@@ -13,9 +13,9 @@ tbl_now(
   covariates = NULL,
   case_count = NULL,
   is_censored = NULL,
-  confirmation_date = NULL,
-  confirmation_type = NULL,
-  confirmation_units = "auto",
+  validation_date = NULL,
+  validation_type = NULL,
+  validation_units = "auto",
   now = NULL,
   event_units = "auto",
   report_units = "auto",
@@ -73,26 +73,26 @@ set \code{is_censored = FALSE} but if the \code{report_date} corresponds to an e
 and is only an upper bound of the real report date
 set \code{is_censored = TRUE}.}
 
-\item{confirmation_date}{(optional)
+\item{validation_date}{(optional)
 \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 column holding a \strong{third} date: the day the report was resolved. Influenza is
 the picture to keep in mind -- symptoms begin (the event), the patient sees a
 doctor (the report), and days later a swab comes back. The assumed timeline is
-\verb{event_date <= report_date <= confirmation_date <= now}. Leave \code{NULL} (the
-default) for the usual two-date object. See \code{\link[=add_confirmation]{add_confirmation()}}.}
+\verb{event_date <= report_date <= validation_date <= now}. Leave \code{NULL} (the
+default) for the usual two-date object. See \code{\link[=add_validation_date]{add_validation_date()}}.}
 
-\item{confirmation_type}{(optional)
+\item{validation_type}{(optional)
 \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 column saying what the resolution \emph{was}: \code{"confirmed"}, \code{"retracted"} (it was
 reported, but it is not a case after all), \code{"pending"} or \code{NA}. \strong{\code{"pending"}
-means reported and still waiting}, so it carries no confirmation date --
+means reported and still waiting}, so it carries no validation date --
 which is a different thing from a result that was never recorded (\code{NA}). A
-confirmation date with no type warns rather than guessing, because a date
+validation date with no type warns rather than guessing, because a date
 alone cannot say whether the case was confirmed or retracted.}
 
-\item{confirmation_units}{(optional) Character. Either \code{"auto"} (default),
+\item{validation_units}{(optional) Character. Either \code{"auto"} (default),
 \code{"days"}, \code{"weeks"}, \code{"months"}, \code{"years"} or \code{"numeric"} -- the grid the
-confirmation date lives on, resolved the same way as \code{report_units}.}
+validation date lives on, resolved the same way as \code{report_units}.}
 
 \item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
 nowcast. If no \code{now} is given then the function automatically uses the last
@@ -161,7 +161,7 @@ dates without being told again.
 The minimum you must supply is \code{event_date} and \code{report_date} (or one of them
 plus a \code{delay} column, from which the other is reconstructed). Everything else
 is optional and can be added later with \code{\link[=add_strata]{add_strata()}}, \code{\link[=add_covariates]{add_covariates()}},
-\code{\link[=add_confirmation]{add_confirmation()}} and the rest of the \code{\link[=add]{add()}} family.
+\code{\link[=add_validation_date]{add_validation_date()}} and the rest of the \code{\link[=add]{add()}} family.
 
 Once the object exists the usual path is \link[=tbl_now_summary]{summary()} to see
 what is in the data, \code{\link[=diagnose]{diagnose()}} to see what is wrong with it,
@@ -187,9 +187,9 @@ by the \code{\link[=validate_tbl_now]{validate_tbl_now()}} function:
 \item{report_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}. Corresponds to the units of \code{report_date}}
 \item{data_type}{Either \code{linelist}, \code{count-incidence} or \code{count-cumulative} depending on whether it is linelist data
 or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)}
-\item{confirmation_date}{Name of the column with the (optional) third date: when the report was resolved.}
-\item{confirmation_type}{Name of the column saying what that resolution was (\code{"confirmed"}, \code{"retracted"}, \code{"pending"}).}
-\item{confirmation_units}{Units of \code{confirmation_date}, resolved like \code{report_units}.}
+\item{validation_date}{Name of the column with the (optional) third date: when the report was resolved.}
+\item{validation_type}{Name of the column saying what that resolution was (\code{"confirmed"}, \code{"retracted"}, \code{"pending"}).}
+\item{validation_units}{Units of \code{validation_date}, resolved like \code{report_units}.}
 \item{computed_temporal_effect_cols}{Names of the temporal-effect columns that have actually been materialised in the data by \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}.}
 }
 

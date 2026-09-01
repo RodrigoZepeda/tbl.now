@@ -68,7 +68,7 @@ can be stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}} or used on
 \item \code{diagnose_declarations()} -- the attributes and the columns they name:
 types, existence, collisions, columns the object was never told about, and
 temporal effects that were added but never materialised.
-\item \code{diagnose_ordering()} -- the \verb{event <= report <= confirmation} timeline.
+\item \code{diagnose_ordering()} -- the \verb{event <= report <= validation} timeline.
 \item \code{diagnose_missing()} -- \code{NA} values, per column and per stratum. An \code{NA}
 \emph{count} is reported neutrally: in a reporting triangle it means \emph{not yet
 observed}, which is correct data rather than a defect.
@@ -81,7 +81,7 @@ downward revision leaves behind when cumulative data is de-accumulated.
 \item \code{diagnose_truncation()} -- how many recent event dates are still immature,
 and how much of their eventual total is probably still missing.
 \item \code{diagnose_strata()} -- the smallest and the sparsest stratum, and the
-confirmations still pending.
+validations still pending.
 \item \code{diagnose_signposts()} -- the questions \code{\link[=diagnose]{diagnose()}} deliberately does not
 answer, and the call that answers each one.
 }
@@ -125,6 +125,6 @@ dplyr::bind_rows(
 wrong with it; \code{\link[=diagnose_drift]{diagnose_drift()}}, \code{\link[=diagnose_changepoint]{diagnose_changepoint()}} and
 \code{\link[=diagnose_batches]{diagnose_batches()}} for the statistical tests \code{diagnose_signposts()} points
 you at. The
-\href{https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html}{\emph{Describing and diagnosing a tbl_now} article}
+\href{https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html}{\emph{Diagnosing a tbl_now} article}
 explains how to read each finding.
 }

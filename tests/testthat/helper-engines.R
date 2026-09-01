@@ -262,7 +262,7 @@ engine_args <- function(engine, x) {
     baselinenowcast = list(draws = 50),
     # A `count-cumulative` stream needs a CONFIRMATION PROCESS: the signed
     # increments it models can go down, and `model()`'s default is
-    # `no_confirmation()`, under which the fit reports "Joint fit failed to
+    # `no_validation()`, under which the fit reports "Joint fit failed to
     # converge for all init attempts".
     #
     # `run_nowcast()` deliberately does not inject one -- picking a model
@@ -413,4 +413,68 @@ try_run_nowcast <- function(method, x, ...) {
     )),
     error = function(e) e
   )
+}
+
+#' A snapshot ("as of") series, the shape `engine_fixture()` cannot express
+#'
+#' `engine_fixture()` builds a reporting triangle whose delay tail is SHORT --
+#' `max_delay = 3` against 40 event periods -- so every shape in the grid comes
+#' out far taller than it is wide. A snapshot stream is the opposite: each
+#' snapshot restates the whole history, so event period 0 is re-reported in
+#' every one of the periods after it and the delay axis ends up as long as the
+#' series itself.
+#'
+#' That aspect ratio is an axis the matrix never varied, and it is why the
+#' `flusight` failure reached a user: `baselinenowcast` needs more reference
+#' dates than delay columns, so a square triangle cannot be fitted at all until
+#' the delay axis is capped, and no cell of the grid can be square.
+#'
+#' `data_type` is DECLARED, not inferred. A snapshot series is a running total
+#' and has to be said to be one -- `infer_data_type()` reads a single downward
+#' revision as incidence, which is the documented rule and the reason the
+#' argument exists.
+#'
+#' @param n_periods How many event periods (and hence report periods).
+#' @param complete_after Delay by which an event period's total has arrived.
+#' @param n_revisions How many downward corrections to plant, so that
+#'   de-accumulation has negative increments to redistribute.
+#' @param seed RNG seed for where the revisions land.
+#'
+#' @return A `tbl_now` of `data_type = "count-cumulative"`.
+snapshot_fixture <- function(n_periods = 30L, complete_after = 2L,
+                             n_revisions = 3L, seed = 20260901L) {
+  set.seed(seed)
+  origin <- as.Date("2023-09-18") # a Monday
+
+  periods <- seq_len(n_periods) - 1L
+  eventual <- 10L + 2L * periods
+
+  grid <- do.call(rbind, lapply(periods, function(p) {
+    delays <- seq.int(0L, n_periods - 1L - p)
+    share <- pmin(1, 0.4 + 0.3 * delays)
+    data.frame(
+      event_time = origin + 7L * p,
+      report_time = origin + 7L * (p + delays),
+      n = as.integer(round(eventual[p + 1L] * share))
+    )
+  }))
+
+  # A handful of downward corrections, planted well past `complete_after` so
+  # they revise a total that had already settled -- exactly the shape a single
+  # `< 0` difference used to misread as incidence.
+  mature <- which(
+    as.integer((grid$report_time - grid$event_time) / 7) > complete_after
+  )
+  for (row in sample(mature, min(n_revisions, length(mature)))) {
+    same_event <- grid$event_time == grid$event_time[row] &
+      grid$report_time >= grid$report_time[row]
+    grid$n[same_event] <- grid$n[same_event] - 1L
+  }
+
+  suppressMessages(tbl_now(
+    dplyr::as_tibble(grid),
+    event_date = "event_time", report_date = "report_time", case_count = "n",
+    data_type = "count-cumulative",
+    event_units = "weeks", report_units = "weeks", verbose = FALSE
+  ))
 }

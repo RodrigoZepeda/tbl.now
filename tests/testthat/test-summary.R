@@ -410,7 +410,7 @@ test_that("prop_censored() is absent when the object has no flag", {
   expect_false("censored" %in% summary(fixture_plain())$quantity)
 })
 
-test_that("prop_confirmation_type() splits the cases between the outcomes", {
+test_that("prop_validation_type() splits the cases between the outcomes", {
   # 2 confirmed, 1 retracted, 3 pending, 4 confirmed -> 6 confirmed, 1
   # retracted, 3 pending out of ten.
   confirmed <- tbl_now(
@@ -420,38 +420,38 @@ test_that("prop_confirmation_type() splits the cases between the outcomes", {
       outcome = c("confirmed", "retracted", "pending", "confirmed")
     ),
     event_date = "onset", report_date = "report", case_count = "n",
-    confirmation_date = "checked", confirmation_type = "outcome",
+    validation_date = "checked", validation_type = "outcome",
     data_type = "count-incidence", now = as.Date("2024-01-05"), verbose = FALSE
   )
-  result <- prop_confirmation_type(confirmed)
+  result <- prop_validation_type(confirmed)
 
-  expect_equal(pick(result, "composition", "confirmation_type = confirmed")$prop, 0.6)
-  expect_equal(pick(result, "composition", "confirmation_type = retracted")$prop, 0.1)
-  expect_equal(pick(result, "composition", "confirmation_type = pending")$prop, 0.3)
+  expect_equal(pick(result, "composition", "validation_type = confirmed")$prop, 0.6)
+  expect_equal(pick(result, "composition", "validation_type = retracted")$prop, 0.1)
+  expect_equal(pick(result, "composition", "validation_type = pending")$prop, 0.3)
   expect_equal(sum(result$prop), 1)
 
-  # A pending case has no confirmation date, so it must not be counted as an
-  # arrival on the confirmation axis. A RETRACTED one does have a date -- the
+  # A pending case has no validation date, so it must not be counted as an
+  # arrival on the validation axis. A RETRACTED one does have a date -- the
   # laboratory answered, it just answered no -- so the axis carries
   # 2 + 1 + 4 = 7 cases, not all ten and not only the six confirmed.
-  axis <- pick(cases_per_date(confirmed, axis = "confirmation"),
-               "cases", "per_confirmation_date")
+  axis <- pick(cases_per_date(confirmed, axis = "validation"),
+               "cases", "per_validation_date")
   expect_equal(axis$total, 7)
 
   # With more than one outcome present the axis is also split by outcome.
-  by_type <- cases_per_date(confirmed, axis = "confirmation")
+  by_type <- cases_per_date(confirmed, axis = "validation")
   expect_equal(
-    pick(by_type, "cases", "per_confirmation_date [confirmed]")$total, 6
+    pick(by_type, "cases", "per_validation_date [confirmed]")$total, 6
   )
   expect_equal(
-    pick(by_type, "cases", "per_confirmation_date [retracted]")$total, 1
+    pick(by_type, "cases", "per_validation_date [retracted]")$total, 1
   )
 
   # The laboratory turnaround is measured FROM THE REPORT: confirmed cases wait
   # 01-01 -> 01-02 (1 day, 2 cases) and 01-05 -> 01-05 (0 days, 4 cases).
   turnaround <- pick(
-    delay_summary(confirmed, delay = "report_to_confirmation"),
-    "delay", "report_to_confirmation [confirmed]"
+    delay_summary(confirmed, delay = "report_to_validation"),
+    "delay", "report_to_validation [confirmed]"
   )
   expect_equal(turnaround$total, 6)
   expect_equal(turnaround$mean, (2 * 1 + 4 * 0) / 6)
@@ -579,6 +579,29 @@ test_that("mature_only = FALSE keeps the immature event dates", {
   expect_equal(same_day$prop, 0.6)
 })
 
+test_that("completeness is a distribution, so `value` stays empty", {
+  # The share arrived by delay d varies from one event date to the next, so it
+  # is reported like every other distribution in the schema: mean/sd/quantiles
+  # across the event dates, plus the pooled share in `prop`. `value` is the
+  # column for the rows that really are a single scalar -- an autocorrelation,
+  # a gap, an occupancy -- and completeness must not fill it, because that
+  # would be a second estimator of a number `prop` already carries. The
+  # documented examples select `mean`/`q50`/`prop` for exactly this reason.
+  result <- reporting_completeness(fixture_plain())
+  expect_true("value" %in% names(result))
+  expect_true(all(is.na(result$value)))
+  expect_false(anyNA(result$mean))
+  expect_false(anyNA(result$q50))
+  expect_false(anyNA(result$prop))
+
+  # And the same rows once stacked into the whole table.
+  whole <- summary(fixture_plain())
+  rows <- whole[whole$component == "completeness", ]
+  expect_gt(nrow(rows), 0)
+  expect_true(all(is.na(rows$value)))
+  expect_false(anyNA(rows$prop))
+})
+
 test_that("reporting_completeness() honours an explicit delay set", {
   result <- reporting_completeness(fixture_plain(), delays = c(0, 2))
   expect_equal(result$quantity, c("delay <= 0", "delay <= 2"))
@@ -687,9 +710,9 @@ test_that("covariate shares are also computed within each stratum", {
   )
 })
 
-# The confirmation axis in a full summary --------------------------------------
+# The validation axis in a full summary --------------------------------------
 
-test_that("summary() carries the confirmation blocks when there is a third date", {
+test_that("summary() carries the validation blocks when there is a third date", {
   confirmed <- tbl_now(
     cbind(
       fixture_frame(),
@@ -697,29 +720,29 @@ test_that("summary() carries the confirmation blocks when there is a third date"
       outcome = c("confirmed", "retracted", "pending", "confirmed")
     ),
     event_date = "onset", report_date = "report", case_count = "n",
-    confirmation_date = "checked", confirmation_type = "outcome",
+    validation_date = "checked", validation_type = "outcome",
     data_type = "count-incidence", now = as.Date("2024-01-05"), verbose = FALSE
   )
   result <- summary(confirmed)
 
-  expect_true("per_confirmation_date" %in% result$quantity)
-  expect_true("confirmation_date" %in%
+  expect_true("per_validation_date" %in% result$quantity)
+  expect_true("validation_date" %in%
                 result$quantity[result$component == "zero_run"])
-  expect_true("confirmation_date" %in%
+  expect_true("validation_date" %in%
                 result$quantity[result$component == "coverage"])
 
-  # Both confirmation delays are present, and they are different quantities:
+  # Both validation delays are present, and they are different quantities:
   # from the event (2 cases wait 1 day, 1 waits 3, 4 wait 0 -> 10/7)
   # versus from the report (2 wait 1, 1 waits 1, 4 wait 0 -> 3/7).
-  from_event <- pick(result, "delay", "event_to_confirmation")
-  from_report <- pick(result, "delay", "report_to_confirmation")
+  from_event <- pick(result, "delay", "event_to_validation")
+  from_report <- pick(result, "delay", "report_to_validation")
   expect_equal(from_event$total, 7)
   expect_equal(from_report$total, 7)
   expect_equal(from_event$mean, (2 * 1 + 1 * 3 + 4 * 0) / 7)
   expect_equal(from_report$mean, (2 * 1 + 1 * 1 + 4 * 0) / 7)
 
-  # The confirmation-date range excludes the pending case, which has no date.
-  range <- pick(result, "coverage", "confirmation_date")
+  # The validation-date range excludes the pending case, which has no date.
+  range <- pick(result, "coverage", "validation_date")
   expect_equal(range$total, 7)
   expect_equal(range$date_min, as.Date("2024-01-02"))
   expect_equal(range$date_max, as.Date("2024-01-05"))
@@ -762,4 +785,45 @@ test_that("by_strata = TRUE without strata is an error, not a silent pooling", {
 test_that("bad lags are rejected", {
   expect_error(case_autocorrelation(fixture_plain(), lags = 0), "positive whole")
   expect_error(case_autocorrelation(fixture_plain(), lags = -1), "positive whole")
+})
+
+# Printing ---------------------------------------------------------------------
+
+test_that("a summary prints one block per component, on stdout", {
+  # `cli_*` writes to the MESSAGE stream, which `capture.output()` does not see.
+  printed <- capture.output(print(summary(fixture_plain())))
+
+  expect_true(any(grepl("Summary of a", printed)))
+  for (component in unique(summary(fixture_plain())$component)) {
+    expect_true(
+      any(printed == component),
+      label = paste0("component heading for ", component)
+    )
+  }
+})
+
+test_that("a block drops the columns it does not populate", {
+  # The schema is wide because it holds every block at once; no block fills more
+  # than a handful, and a table that is mostly `NA` is unreadable for a reason
+  # that has nothing to do with the data.
+  printed <- capture.output(print(case_autocorrelation(fixture_plain())))
+
+  expect_true(any(grepl("value", printed)))
+  expect_false(any(grepl("prop_zero", printed)))
+})
+
+test_that("dropping the schema columns falls back to the tibble", {
+  narrowed <- dplyr::select(summary(fixture_plain()), quantity, value)
+  printed <- capture.output(print(narrowed))
+
+  expect_false(any(grepl("Summary of a", printed)))
+  expect_true(any(grepl("A tibble", printed)))
+})
+
+test_that("a summary is still a tibble", {
+  result <- summary(fixture_plain())
+
+  expect_s3_class(result, "tbl_df")
+  expect_s3_class(dplyr::filter(result, component == "delay"), "tbl_now_summary_table")
+  expect_false(inherits(tibble::as_tibble(result), "tbl_now_summary_table"))
 })

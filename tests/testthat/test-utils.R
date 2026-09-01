@@ -11,7 +11,7 @@ test_that("test it returns the attributes correctly", {
   #
   # Until 0.21.0 it diffed against a default `tbl_now`, so any attribute the
   # default did not happen to carry was silently missing from the listing:
-  # `strata`, `covariates`, and every confirmation attribute. That is precisely
+  # `strata`, `covariates`, and every validation attribute. That is precisely
   # what somebody calls this function to check, so the omission was the bug.
   listed <- names(tbl_now_attributes(df_now))
   tibble_attributes <- names(attributes(dplyr::tibble(denguedat)))

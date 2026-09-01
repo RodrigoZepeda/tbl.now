@@ -1,8 +1,8 @@
 ---
-title: "Diagnosing reporting batches and other reporting-delay artifacts"
+title: "Diagnosing a tbl_now"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Diagnosing reporting batches and other reporting-delay artifacts}
+  %\VignetteIndexEntry{Diagnosing a tbl_now}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -18,9 +18,313 @@ knitr::opts_chunk$set(
   dpi = 120,
   cache = TRUE
 )
+# The summary and diagnose tables are wide, and wrapping them costs more than
+# the horizontal scroll bar does.
+options(tibble.width = Inf, width = 160, pillar.width = 160)
+```
+
+```{r setup, message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(patchwork)
 library(tbl.now)
 ```
 
+Three questions come up with every new surveillance dataset, and they are
+different questions that want different tools:
+
+1. **What is in it?** -- how many cases, over what period, arriving how late,
+   how sparse, how concentrated in one stratum. `summary()` answers this.
+2. **What is structurally wrong with it?** -- missing dates, impossible
+   orderings, repeated rows, units that do not line up, data that stops before
+   its own `now`. `diagnose()` answers this, deterministically and with no
+   model.
+3. **What needs a statistical test?** -- has the reporting delay drifted, did
+   reports arrive in batches, is a spike real cases or released backlog.
+   `diagnose()` deliberately refuses these and hands you a signpost instead,
+   because answering them means choosing a method, a window and a multiplicity
+   correction.
+
+This article walks the three in order. The first two return a **tibble**, not
+printed text, which is the design decision everything else follows from: an
+answer you can `filter()`, `join()`, plot or assert on in a test is worth far
+more than one you can only read. The third returns test results and figures,
+because a hypothesis test has a p-value and an effect size that a findings row
+has nowhere to put.
+
+```{r dengue-data}
+data(denguedat)
+
+dengue_now <- tbl_now(denguedat,
+  event_date  = "onset_week",
+  report_date = "report_week",
+  strata      = "gender",
+  verbose     = FALSE
+)
+```
+
+# Part 1 — What is in the data: `summary()`
+
+## One table, several blocks
+
+`summary()` returns a table, and prints it one **component** at a time with the
+columns that component does not populate dropped — the schema is wide because it
+has to hold every block at once, and no single block fills more than a handful
+of it:
+
+```{r summary-print}
+summary(dengue_now)
+```
+
+Underneath it is an ordinary tibble, so every `dplyr` verb works on it and
+`tibble::as_tibble()` gives the full schema back. The `component` column says
+which block a row belongs to:
+
+```{r summary-blocks}
+summary(dengue_now) |>
+  count(component)
+```
+
+Every row is one quantity, described by up to eighteen columns. Not every column
+applies to every row — a delay distribution has a `mean` but no `prop`, a
+proportion has a `prop` but no `q90` — so the table is deliberately sparse:
+
+```{r summary-shape}
+summary(dengue_now) |>
+  filter(component == "cases") |>
+  select(component, quantity, stratum, n, total, mean, sd, min, q50, q90, max, prop_zero)
+```
+
+`stratum` is always "which subset of the data does this row describe": `"all"`
+for the pooled rows, or a stratum label. The *category* of a compositional row
+goes in `quantity` instead, which keeps the two ideas from colliding:
+
+```{r summary-composition}
+summary(dengue_now) |>
+  filter(component == "composition") |>
+  select(quantity, stratum, n, total, prop)
+```
+
+## The blocks worth knowing
+
+**`delay`** — the case-weighted reporting delay. Weighted means "equal to what
+you would get by expanding the counts to one row per case", so it needs no
+separate explanation:
+
+```{r summary-delay}
+delay_summary(dengue_now) |>
+  select(quantity, stratum, n, total, mean, sd, q50, q90, max)
+```
+
+**`completeness`** — the share of each event date's eventual total that had
+arrived by delay `d`. This is usually the most decision-relevant block in the
+table, because it says how far back a nowcast has anything left to estimate:
+
+```{r summary-completeness}
+reporting_completeness(dengue_now, delays = 0:4) |>
+  filter(stratum == "all") |>
+  select(quantity, n, mean, q50, prop)
+```
+
+Four percent of a week's cases are in by the end of that week, half by the end
+of the next, and 94% by three weeks. Beyond about three weeks there is very
+little missing to reconstruct.
+
+**`zero_run`** — how sparse the series is, measured as runs of consecutive
+zero dates rather than as a simple proportion. A series that is 30% zeros
+scattered at random is a very different modelling problem from one that is 30%
+zeros in three long gaps:
+
+```{r summary-zeroruns}
+zero_run_summary(dengue_now, axis = "event") |>
+  select(quantity, stratum, n, total, mean, q50, max)
+```
+
+**`coverage`** — the reach of the object, including how stale it is:
+
+```{r summary-coverage}
+triangle_occupancy(dengue_now) |>
+  filter(stratum == "all") |>
+  select(quantity, n, value)
+```
+
+## Every block is also a function
+
+`summary()` is exactly the `bind_rows()` of its components, and each one is
+exported, so you can ask a single question without computing the rest:
+
+```{r summary-components}
+prop_strata(dengue_now) |>
+  select(quantity, total, prop)
+```
+
+The full set is `cases_per_date()`, `delay_summary()`, `zero_run_summary()`,
+`prop_censored()`, `prop_validation_type()`, `prop_strata()`,
+`prop_covariate_levels()`, `case_autocorrelation()`, `date_ranges()`,
+`triangle_occupancy()`, `reporting_completeness()` and `cumulative_growth()`.
+
+<div class="alert alert-info">
+**Quantiles are inverse-ECDF (type 1).** `q50` is the smallest value whose
+cumulative weight reaches 0.5 — for an even number of observations, the upper of
+the two middle values rather than their average. This is the same estimator
+`autoplot()` and `plot_delay_drift()` use, so the table and the figures always
+agree, and for count data it always returns a value that was actually observed.
+A half-case delay is not.
+</div>
+
+# Part 2 — What is structurally wrong: `diagnose()`
+
+## Findings, worst first
+
+`diagnose()` prints as a report: the errors, warnings and notes in full, each
+with its hint, and one line each for the checks that passed, that were
+deliberately not run, and that could not be assessed. `print(x, all = TRUE)`
+spells those out too.
+
+```{r diagnose-print}
+diagnose(dengue_now)
+```
+
+It is a tibble underneath, in the schema the rest of this section reads:
+
+```{r diagnose-all}
+diagnose(dengue_now) |>
+  count(status)
+```
+
+`status` is an **ordered factor** — `error` > `warning` > `note` > `ok` >
+`not_run` > `skipped` — so the table sorts itself and filtering to what needs
+acting on is a comparison rather than a set membership test:
+
+```{r diagnose-actionable}
+diagnose(dengue_now) |>
+  filter(status <= "note") |>
+  select(check, scope, stratum, status, n_affected, n_total, message)
+```
+
+Each finding also carries a `hint` saying what to do about it, and a `rows`
+list-column of the offending row indices, so you can go straight to them:
+
+```{r diagnose-rows}
+finding <- diagnose(dengue_now) |> filter(check == "declarations", status <= "note")
+
+finding$hint
+```
+
+## The six statuses, and why `skipped` is not `ok`
+
+The distinction that matters most is between a check that **ran and found
+nothing** and one that **could not run**:
+
+```{r diagnose-skipped}
+diagnose(dengue_now) |>
+  filter(status == "skipped") |>
+  select(check, scope, message)
+```
+
+`dengue_now` is a line list with no validation process, so four checks have
+nothing to work on. None of them is a pass. Reporting them as `ok` would be a
+quiet lie, and this is the single most common way a health check misleads:
+silence that reads as approval.
+
+Note the first row in particular. **`diagnose()` will not look for duplicate
+records in a line list**, because a line list is one row per case — two
+identical rows are two infections, not a repeat. Deduplicating a line list needs
+a key the object does not have (a record id, say), so that check stays yours.
+
+## Structural, never statistical
+
+`diagnose()` runs no statistical tests at all. It is fast, and its answer never
+depends on a random seed or an optional package. The questions that *do* need a
+test come back as `not_run` signposts naming the call that answers each one:
+
+```{r diagnose-signposts}
+diagnose_signposts(dengue_now) |>
+  select(scope, status, message)
+```
+
+Those calls — `diagnose_drift()`, `diagnose_changepoint()`,
+`diagnose_batches()`, `diagnose_batch_shape()` — are Part 3 of this article.
+They return their own shapes rather than the findings schema, because a
+hypothesis test has a p-value and an effect size that a findings row has nowhere
+to put.
+
+## Cumulative data: the revisions
+
+Cumulative counts get revised downwards, and a downward revision becomes a
+**negative increment** the moment the series is de-accumulated. Anything
+consuming incidence has to cope with that, so `diagnose()` counts them.
+FluSight is the standard example:
+
+```{r flusight}
+data(flusight)
+
+flu_now <- flusight |>
+  filter(location_name %in% c("Alabama", "Alaska", "Arizona"),
+         target_end_date >= as.Date("2023-01-01")) |>
+  tbl_now(
+    event_date  = target_end_date,
+    report_date = as_of,
+    case_count  = observation,
+    strata      = location_name,
+    data_type   = "count-cumulative",
+    verbose     = FALSE
+  )
+
+diagnose_negatives(flu_now) |>
+  select(scope, stratum, status, n_affected, n_total, message)
+```
+
+For cumulative data `summary()` also swaps its `delay` block for a `growth`
+one — the ratio of one delay's running total to the previous one's — because a
+cumulative total is not additive across delays and a case-weighted delay
+distribution would be meaningless:
+
+```{r flusight-growth}
+cumulative_growth(flu_now, k = 3) |>
+  filter(stratum == "all") |>
+  select(quantity, n, total, mean, q50, max)
+```
+
+The mean ratio falls below 1 by the third delay, and the totals go negative:
+these series shrink on revision more often than they grow. `delay_summary()`
+refuses to run on this object at all, and says why.
+
+## The same findings, two presentations
+
+`validate_tbl_now()` runs the **same engine** as `diagnose()`. It does not
+return the findings; it re-emits the `error` rows as an abort and the `warning`
+rows as warnings. That is why a malformed object complains the moment you build
+it, and why the two can never drift apart:
+
+```{r validate, error=TRUE}
+bad <- denguedat |>
+  mutate(report_week = report_week - 400) |>
+  tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE)
+```
+
+The warning above and the `ordering` row of `diagnose(bad)` are the same
+finding, formatted for two different audiences: one for a person who is about to
+make a mistake, one for a program that needs to decide what to do.
+
+`note` rows are deliberately never promoted to warnings. `validate_tbl_now()`
+runs on every `dplyr` verb, so a new warning there would turn a quiet
+construction into a noisy one for data that has always been accepted.
+
+
+# Part 3 — What needs a statistical test: reporting artefacts
+
+Everything above is structural: it can be decided by looking at the object, it
+gives the same answer every time, and it costs nothing. The `not_run` signposts
+at the end of Part 2 are where that stops. Whether the reporting delay has
+drifted, and whether a spike is released backlog or genuine new cases, are
+statements about a **distribution** — and answering them means picking a method,
+a window and a multiplicity correction, which is not a decision a health check
+should make on your behalf.
+
+So the rest of this article is the other half of the toolkit: the tests and the
+pictures for the questions `diagnose()` refuses to answer.
 
 ## Batch reporting
 
@@ -33,12 +337,6 @@ reporting period. Intuivitively one can think of a batch as a collection of repo
 were actually released later. 
 
 ```{r, echo = FALSE}
-# Load required libraries
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-library(patchwork)
-
 # --- 1. GENERATE SYNTHETIC SURVEILLANCE DATA ---
 set.seed(42)
 dates  <- seq(as.Date("2026-06-01"), as.Date("2026-06-25"), by = "day")
@@ -305,7 +603,7 @@ plot_reporting_hexamap(tn, max_delay = 60)
 ## Scalograms
 
 ::: {.alert .alert-warning}
-The scalogram functions are **very experimental**. We have yet to confirm they work for all batch cases. Feel free to skip to the section on [transport](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html#sec-transport)
+The scalogram functions are **very experimental**. We have yet to confirm they work for all batch cases. Feel free to skip to the section on [transport](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html#sec-transport)
 :::
 
 Scalograms show reductions of cases. For this example, consider the following simulated reporting  process:
@@ -592,12 +890,21 @@ plot_delay_profiles(tn)
 ```
 
 
-## In summary
+# The whole toolkit, on one page
 
-Here is the whole toolkit on one page. Every row is a different way of seeing the
-same thing -- reports that were held back and then released together.
+The structural tools come first because they are cheap and never wrong; the
+statistical ones come second because they cost a choice.
 
-| Plot | What to look for |
+| Tool | Question it answers |
+|---|---|
+| **`summary()`** | What is in the data: counts, delays, sparsity, composition, reach. |
+| **`diagnose()`** | What is structurally wrong: ordering, missingness, duplicates, units, right-truncation. |
+| **`validate_tbl_now()`** | The same findings, raised as errors and warnings instead of returned. |
+
+Everything below needs a statistical choice, and every row is a different way of
+seeing the same thing -- reports that were held back and then released together.
+
+| Plot or test | What to look for |
 |---|---|
 | **Reporting process** | Shows how reports were registered. |
 | **Reporting triangle** | Diagonals show cases with the same report date. |
@@ -613,6 +920,16 @@ Another practical notes from other data we have analyzed:
 + In general, **surges** (real new cases) seem harder to identify of that **batches** (moved reports).
 + Batches are very difficult to identify in low-incidence scenarios.  
 + Batches very close to the now are difficult to identify without additional modeling hypotheses.  
+
+
+# Where to go next
+
+* `?tbl_now_summary` and `?nowcast_summary_components` — every column, every
+  block of Part 1.
+* `?diagnose` and `?nowcast_diagnose_components` — every check, every status of
+  Part 2.
+* `?diagnose_drift`, `?diagnose_batches` and `?diagnostic_plot` — the tests and
+  figures of Part 3.
 
 ```{r learning-more, echo=FALSE, results="asis"}
 # The fragment is looked up by ABSOLUTE path via system.file(), never by a

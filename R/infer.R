@@ -25,7 +25,7 @@
 #' @keywords internal
 #' @noRd
 infer_now <- function(data, now, event_date, report_date,
-                      confirmation_date = NULL) {
+                      validation_date = NULL) {
   # Force conversion of data to avoid loops with dplyr_reconstruct
   data <- dplyr::as_tibble(data)
 
@@ -51,14 +51,14 @@ infer_now <- function(data, now, event_date, report_date,
 
     now <- max(max_report_date, max_true_date)
 
-    # A confirmation is an observation too, so it moves the as-of moment
+    # A validation is an observation too, so it moves the as-of moment
     # forward exactly as a report does.
-    if (!is.null(confirmation_date) && confirmation_date %in% colnames(data)) {
-      max_confirmation <- suppressWarnings(
-        max(data[[confirmation_date]], na.rm = TRUE)
+    if (!is.null(validation_date) && validation_date %in% colnames(data)) {
+      max_validation <- suppressWarnings(
+        max(data[[validation_date]], na.rm = TRUE)
       )
-      if (is.finite(max_confirmation)) {
-        now <- max(now, max_confirmation)
+      if (is.finite(max_validation)) {
+        now <- max(now, max_validation)
       }
     }
   }

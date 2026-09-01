@@ -25,6 +25,7 @@
   ...,
   draws = 1000,
   delays_unit = NULL,
+  max_delay = NULL,
   quantile_levels = nowcast_quantile_levels(),
   verbose = TRUE
 )
@@ -107,6 +108,11 @@ should be chatty.}
 
 \item{delays_unit}{(\code{"baselinenowcast"} only) Unit of the reporting
 triangle's delay axis; inferred from the object's time units when \code{NULL}.}
+
+\item{max_delay}{(\code{"baselinenowcast"} only) Number of delay periods to keep,
+forwarded to \code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast()}}. \code{NULL} keeps every delay,
+which a snapshot ("as of") series cannot be fitted with -- see
+\link[=nowcast_engines]{engine_baselinenowcast()}.}
 
 \item{preprocess_args}{(\code{"epinowcast"} only) A list of arguments for
 \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}, e.g. \code{list(max_delay = 20)}.}

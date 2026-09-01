@@ -339,3 +339,47 @@ test_that("run_nowcast() agrees with the hand-written call", {
   expect_equal(hand_tidy$event_date, run_tidy$event_date)
   expect_equal(hand_tidy$estimate, run_tidy$estimate)
 })
+
+# -- the shape the grid above cannot make --------------------------------------
+#
+# Every cell of the 24-shape grid has a SHORT delay tail: `engine_fixture()`
+# reports each event period over three delays against forty event periods, so
+# the reporting triangle is always far taller than it is wide. That is one axis
+# the grid does not vary, and the `flusight` failure lived in it -- a snapshot
+# ("as of") series restates the whole history in every snapshot, so the delay
+# axis is as long as the series and the triangle comes out square, which no cell
+# of the grid can be.
+
+test_that("a square reporting triangle is refused with the cap that fixes it", {
+  skip_if_not_installed("baselinenowcast")
+
+  x <- snapshot_fixture()
+  triangle <- suppressWarnings(suppressMessages(
+    tbl_now_to_baselinenowcast(x, verbose = FALSE)
+  ))
+  # The converter succeeds. This is the whole reason the converter matrix could
+  # not have caught it.
+  expect_s3_class(triangle, "reporting_triangle")
+  expect_equal(nrow(triangle), ncol(triangle))
+
+  expect_error(
+    suppressWarnings(suppressMessages(
+      run_nowcast(x, engine_baselinenowcast(draws = 10), verbose = FALSE)
+    )),
+    "too wide to nowcast"
+  )
+})
+
+test_that("capping the delay axis makes a snapshot series fittable", {
+  skip_if_not_installed("baselinenowcast")
+
+  x <- snapshot_fixture()
+  nowcast <- suppressWarnings(suppressMessages(
+    run_nowcast(x, engine_baselinenowcast(draws = 10, max_delay = 4), verbose = FALSE)
+  ))
+
+  expect_true(is_tbl_nowcast(nowcast))
+  predictions <- tibble::as_tibble(nowcast)
+  expect_gt(nrow(predictions), 0)
+  expect_false(all(is.na(predictions$.value)))
+})

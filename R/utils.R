@@ -146,8 +146,8 @@ tbl_now_attributes <- function(x) {
 
   # Everything on `x` that a bare tibble does not have. Diffing against the
   # DEFAULT tbl_now instead would silently drop any attribute the default does
-  # not happen to carry -- which is every optional one (`confirmation_date`,
-  # `confirmation_type`, `confirmation_units`), the exact case a user asks about.
+  # not happen to carry -- which is every optional one (`validation_date`,
+  # `validation_type`, `validation_units`), the exact case a user asks about.
   own <- setdiff(
     names(attributes(x)),
     c(names(tibble_attributes), names(default_attributes)[

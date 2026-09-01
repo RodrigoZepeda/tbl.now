@@ -99,7 +99,7 @@
 #'   \item{`ok`}{The check ran and found nothing.}
 #'   \item{`not_run`}{A signpost: this question needs a statistical test, and
 #'     `message` names the call that answers it.}
-#'   \item{`skipped`}{Could not be assessed -- no confirmation process, the
+#'   \item{`skipped`}{Could not be assessed -- no validation process, the
 #'     wrong data type, or an optional package that is not installed.}
 #' }
 #'
@@ -111,7 +111,7 @@
 #' data rather than what is wrong with it;
 #' [validate_tbl_now()] for the same findings raised as errors and warnings;
 #' [diagnostic_plot()] for the picture version. The
-#' [*Describing and diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+#' [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' goes through the findings one at a time.
 #'
 #' @examples
@@ -173,7 +173,7 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 #' * `diagnose_declarations()` -- the attributes and the columns they name:
 #'   types, existence, collisions, columns the object was never told about, and
 #'   temporal effects that were added but never materialised.
-#' * `diagnose_ordering()` -- the `event <= report <= confirmation` timeline.
+#' * `diagnose_ordering()` -- the `event <= report <= validation` timeline.
 #' * `diagnose_missing()` -- `NA` values, per column and per stratum. An `NA`
 #'   *count* is reported neutrally: in a reporting triangle it means *not yet
 #'   observed*, which is correct data rather than a defect.
@@ -186,7 +186,7 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 #' * `diagnose_truncation()` -- how many recent event dates are still immature,
 #'   and how much of their eventual total is probably still missing.
 #' * `diagnose_strata()` -- the smallest and the sparsest stratum, and the
-#'   confirmations still pending.
+#'   validations still pending.
 #' * `diagnose_signposts()` -- the questions [diagnose()] deliberately does not
 #'   answer, and the call that answers each one.
 #'
@@ -201,7 +201,7 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 #' wrong with it; [diagnose_drift()], [diagnose_changepoint()] and
 #' [diagnose_batches()] for the statistical tests `diagnose_signposts()` points
 #' you at. The
-#' [*Describing and diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+#' [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' explains how to read each finding.
 #'
 #' @examples
@@ -813,7 +813,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   index <- order(as.integer(status), check, scope, stratum, method = "radix")
   findings <- findings[index]
 
-  dplyr::tibble(
+  .as_diagnosis(dplyr::tibble(
     check = check[index], scope = scope[index], stratum = stratum[index],
     status = status[index],
     n_affected = n_affected[index],
@@ -827,7 +827,29 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       USE.NAMES = FALSE
     ),
     rows = lapply(findings, function(f) f$rows)
-  )
+  ))
+}
+
+#' Tag a findings tibble so it prints as a report
+#'
+#' The class goes on in `.diagnose_finalise()`, which is the one exit both
+#' `diagnose()` and every `diagnose_*()` component share -- so a component
+#' prints the same way the whole report does, and stacking components with
+#' [dplyr::bind_rows()] keeps the class rather than silently reverting to a
+#' plain tibble.
+#'
+#' @param x A findings tibble.
+#'
+#' @return `x` with `"tbl_now_diagnosis"` prepended to its class.
+#'
+#' @keywords internal
+#' @noRd
+.as_diagnosis <- function(x) {
+  if (inherits(x, "tbl_now_diagnosis")) {
+    return(x)
+  }
+  class(x) <- c("tbl_now_diagnosis", class(x))
+  x
 }
 
 # Pre-flight ------------------------------------------------------------------
@@ -1112,7 +1134,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   .diagnose_block(rows)
 }
 
-#' The `event <= report <= confirmation` timeline
+#' The `event <= report <= validation` timeline
 #'
 #' @param context A diagnose context.
 #'
@@ -1124,8 +1146,8 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   x <- context$x
   event <- x[[get_event_date(x)]]
   report <- x[[get_report_date(x)]]
-  confirmation <- if (has_confirmation(x)) {
-    x[[get_confirmation_date(x)]]
+  validation <- if (has_validation(x)) {
+    x[[get_validation_date(x)]]
   } else {
     NULL
   }
@@ -1146,48 +1168,48 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     rows = before_event
   )
 
-  if (is.null(confirmation)) {
+  if (is.null(validation)) {
     rows[[2]] <- .diagnose_row(
-      "ordering", "report_to_confirmation", "skipped",
-      .diagnose_text("The object carries no confirmation process.")
+      "ordering", "report_to_validation", "skipped",
+      .diagnose_text("The object carries no validation process.")
     )
     rows[[3]] <- .diagnose_row(
-      "ordering", "event_to_confirmation", "skipped",
-      .diagnose_text("The object carries no confirmation process.")
+      "ordering", "event_to_validation", "skipped",
+      .diagnose_text("The object carries no validation process.")
     )
     return(.diagnose_block(rows))
   }
 
   before_report <- which(
-    !is.na(confirmation) & !is.na(report) & confirmation < report
+    !is.na(validation) & !is.na(report) & validation < report
   )
   shown <- utils::head(before_report, 5)
   rows[[2]] <- .diagnose_count_row(
-    "ordering", "report_to_confirmation", length(before_report), nrow(x),
+    "ordering", "report_to_validation", length(before_report), nrow(x),
     "warning",
     .diagnose_text(
-      "{length(before_report)} row{?s} {?is/are} confirmed BEFORE they were reported."
+      "{length(before_report)} row{?s} {?is/are} validated BEFORE they were reported."
     ),
-    clean = .diagnose_text("Every confirmation is on or after its report."),
+    clean = .diagnose_text("Every validation is on or after its report."),
     hint = .diagnose_text(
       "The timeline is {.code event_date <= report_date <=
-       confirmation_date}; a negative confirmation delay is not a delay.
+       validation_date}; a negative validation delay is not a delay.
        {cli::qty(length(shown))}First affected row{?s}: {.val {shown}}."
     ),
     rows = before_report
   )
 
   # The transitive case. A row whose `report_date` is missing escapes the check
-  # above entirely, so a confirmation before the event goes unnoticed there.
+  # above entirely, so a validation before the event goes unnoticed there.
   before_all <- which(
-    !is.na(confirmation) & !is.na(event) & confirmation < event
+    !is.na(validation) & !is.na(event) & validation < event
   )
   rows[[3]] <- .diagnose_count_row(
-    "ordering", "event_to_confirmation", length(before_all), nrow(x), "note",
+    "ordering", "event_to_validation", length(before_all), nrow(x), "note",
     .diagnose_text(
-      "{length(before_all)} row{?s} {?is/are} confirmed BEFORE the event happened."
+      "{length(before_all)} row{?s} {?is/are} validated BEFORE the event happened."
     ),
-    clean = .diagnose_text("Every confirmation is on or after its event."),
+    clean = .diagnose_text("Every validation is on or after its event."),
     hint = .diagnose_text(
       "A row with a missing {.field report_date} is only caught here."
     ),
@@ -1241,14 +1263,14 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   # -- everything else, per stratum -------------------------------------------
   case_count <- get_case_count(x)
   censoring <- get_is_censored(x)
-  confirmation <- if (has_confirmation(x)) get_confirmation_date(x) else NULL
-  confirmation_type <- if (has_confirmation(x)) {
-    get_confirmation_type(x)
+  validation <- if (has_validation(x)) get_validation_date(x) else NULL
+  validation_type <- if (has_validation(x)) {
+    get_validation_type(x)
   } else {
     NULL
   }
 
-  columns <- c(case_count, confirmation, confirmation_type, censoring,
+  columns <- c(case_count, validation, validation_type, censoring,
                get_covariates(x))
   columns <- intersect(unique(columns), colnames(x))
 
@@ -1256,9 +1278,9 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     missing <- is.na(x[[column]])
     # An `NA` COUNT is not a defect: in a reporting triangle it means the cell
     # has not been observed yet, which is different from an observed zero. The
-    # same goes for a confirmation date that has not come back. Say so, rather
+    # same goes for a validation date that has not come back. Say so, rather
     # than inviting the user to "fix" correct data.
-    neutral <- identical(column, case_count) || identical(column, confirmation)
+    neutral <- identical(column, case_count) || identical(column, validation)
     for (label in context$labels) {
       selected <- .diagnose_rows(context, label)
       offending <- which(selected & missing)
@@ -1337,14 +1359,14 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   }
 
   # Any column that legitimately distinguishes two rows belongs in the key. The
-  # confirmation columns are here because a case and its own retraction share an
+  # validation columns are here because a case and its own retraction share an
   # (event, report) pair and are still two different rows -- left out, every
   # confirmed/retracted pair came out as an "exact duplicate", and the advice to
   # call `distinct()` would have deleted the retraction.
   key_cols <- unique(c(
     get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x),
     get_is_censored(x), get_temporal_effect_cols(x),
-    .confirmation_group_cols(x)
+    .validation_group_cols(x)
   ))
   key_cols <- intersect(key_cols, colnames(x))
   repeated <- which(duplicated(
@@ -1404,8 +1426,8 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   x <- context$x
   event_units <- get_event_units(x)
   report_units <- get_report_units(x)
-  confirmation_units <- if (has_confirmation(x)) {
-    get_confirmation_units(x)
+  validation_units <- if (has_validation(x)) {
+    get_validation_units(x)
   } else {
     NULL
   }
@@ -1415,14 +1437,14 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   # -- 1. the declarations against each other ---------------------------------
   # `time_cols_to_numeric()` enforces the first two rules at construction, so
   # this row is mostly reachable through `change_event_date()` and friends. The
-  # confirmation rule is not enforced anywhere: `.confirmation_num` is measured
+  # validation rule is not enforced anywhere: `.validation_num` is measured
   # in the CONFIRMATION units while `.event_num` and `.report_num` are in the
-  # EVENT units, so `.confirmation_delay`, which subtracts one from the other,
+  # EVENT units, so `.validation_delay`, which subtracts one from the other,
   # only means anything when the two agree.
   order <- c("days", "weeks", "months", "years")
   declared <- c(event = event_units, report = report_units)
-  if (!is.null(confirmation_units)) {
-    declared <- c(declared, confirmation = confirmation_units)
+  if (!is.null(validation_units)) {
+    declared <- c(declared, validation = validation_units)
   }
 
   # An unrecognised unit string is already an `error` from
@@ -1456,12 +1478,12 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
          {.field event_units} ({.val {event_units}})."
       )))
     }
-    if (!is.null(confirmation_units) &&
-      !identical(confirmation_units, event_units)) {
+    if (!is.null(validation_units) &&
+      !identical(validation_units, event_units)) {
       problems <- c(problems, list(.diagnose_text(
-        "{.field confirmation_units} ({.val {confirmation_units}}) differs from
+        "{.field validation_units} ({.val {validation_units}}) differs from
          {.field event_units} ({.val {event_units}}), so
-         {.code .confirmation_delay} subtracts one scale from another."
+         {.code .validation_delay} subtracts one scale from another."
       )))
     }
   }
@@ -1474,7 +1496,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     ),
     hint = .diagnose_text(
       "Set them with {.code event_units = } / {.code report_units = } /
-       {.code confirmation_units = }, or move every axis to {.val numeric}."
+       {.code validation_units = }, or move every axis to {.val numeric}."
     )
   )
 
@@ -1489,10 +1511,10 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     list(name = "event", column = get_event_date(x), units = event_units),
     list(name = "report", column = get_report_date(x), units = report_units)
   )
-  if (!is.null(confirmation_units)) {
+  if (!is.null(validation_units)) {
     axes <- c(axes, list(list(
-      name = "confirmation", column = get_confirmation_date(x),
-      units = confirmation_units
+      name = "validation", column = get_validation_date(x),
+      units = validation_units
     )))
   }
 
@@ -1662,41 +1684,41 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   now_value <- get_now(x)
   rows <- list()
 
-  # A confirmation is an OBSERVATION, so nothing can have been confirmed after
+  # A validation is an OBSERVATION, so nothing can have been confirmed after
   # the as-of moment. This is the same rule `now` already obeys for reports;
   # breaking it means the object claims to know something it could not have.
-  if (has_confirmation(x)) {
-    confirmation <- x[[get_confirmation_date(x)]]
-    latest <- suppressWarnings(max(confirmation, na.rm = TRUE))
-    after <- which(!is.na(confirmation) & confirmation > now_value)
+  if (has_validation(x)) {
+    validation <- x[[get_validation_date(x)]]
+    latest <- suppressWarnings(max(validation, na.rm = TRUE))
+    after <- which(!is.na(validation) & validation > now_value)
     rows[[length(rows) + 1L]] <- .diagnose_count_row(
-      "now", "confirmation_date", length(after), nrow(x), "error",
+      "now", "validation_date", length(after), nrow(x), "error",
       .diagnose_text(
-        "The latest confirmation ({.val {as.character(latest)}}) is AFTER
+        "The latest validation ({.val {as.character(latest)}}) is AFTER
          {.field now} ({.val {as.character(now_value)}}). Nothing can be
          confirmed after the as-of moment."
       ),
-      clean = .diagnose_text("No confirmation is dated after {.field now}."),
+      clean = .diagnose_text("No validation is dated after {.field now}."),
       hint = .diagnose_text(
         "Move {.field now} forward with {.fn change_now}, or drop the rows."
       ),
       rows = after
     )
 
-    allowed <- .confirmation_levels()
-    type_col <- get_confirmation_type(x)
+    allowed <- .validation_levels()
+    type_col <- get_validation_type(x)
     if (!is.null(type_col) && type_col %in% colnames(x)) {
       values <- as.character(x[[type_col]])
       unknown <- setdiff(stats::na.omit(unique(values)), allowed)
       offending <- which(values %in% unknown)
       rows[[length(rows) + 1L]] <- .diagnose_count_row(
-        "now", "confirmation_type", length(offending), nrow(x), "error",
+        "now", "validation_type", length(offending), nrow(x), "error",
         .diagnose_text(
-          "{.field confirmation_type} has unrecognised value{?s}:
+          "{.field validation_type} has unrecognised value{?s}:
            {.val {unknown}}."
         ),
         clean = .diagnose_text(
-          "Every {.field confirmation_type} is one of {.val {allowed}}."
+          "Every {.field validation_type} is one of {.val {allowed}}."
         ),
         hint = .diagnose_text("The allowed values are {.val {allowed}}."),
         rows = offending
@@ -1934,7 +1956,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   .diagnose_block(rows)
 }
 
-#' The smallest and the sparsest stratum, and the confirmations still pending
+#' The smallest and the sparsest stratum, and the validations still pending
 #'
 #' @param context A diagnose context.
 #'
@@ -2003,11 +2025,11 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     }
   }
 
-  # -- the confirmation backlog ----------------------------------------------
-  if (!has_confirmation(x)) {
+  # -- the validation backlog ----------------------------------------------
+  if (!has_validation(x)) {
     rows[[length(rows) + 1L]] <- .diagnose_row(
       "strata", "pending", "skipped",
-      .diagnose_text("The object carries no confirmation process.")
+      .diagnose_text("The object carries no validation process.")
     )
     return(.diagnose_block(rows))
   }
@@ -2016,14 +2038,14 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   if (is.null(summary)) {
     rows[[length(rows) + 1L]] <- .diagnose_row(
       "strata", "pending", "skipped",
-      .diagnose_text("The confirmations could not be counted.")
+      .diagnose_text("The validations could not be counted.")
     )
     return(.diagnose_block(rows))
   }
 
   cases <- summary$cases
-  pending <- cases$confirmation_type %in% "pending"
-  turnaround <- cases$report_to_confirmation
+  pending <- cases$validation_type %in% "pending"
+  turnaround <- cases$report_to_validation
   typical <- .tbl_now_weighted_quantile(
     turnaround[!pending], cases$count[!pending], 0.5
   )
@@ -2065,11 +2087,11 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
         "{round(open_cases)} case{?s} {?is/are} still pending, {share}% of the
          stratum; {against}."
       ),
-      clean = .diagnose_text("No confirmation is still pending."),
+      clean = .diagnose_text("No validation is still pending."),
       stratum = label,
       hint = .diagnose_text(
-        "A pending case has no confirmation date, so it is invisible to
-         anything counting arrivals on the confirmation axis."
+        "A pending case has no validation date, so it is invisible to
+         anything counting arrivals on the validation axis."
       )
     )
   }
@@ -2093,14 +2115,14 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
 #' @noRd
 .diagnose_signposts <- function(context) {
   x <- context$x
-  confirmed <- has_confirmation(x)
+  confirmed <- has_validation(x)
   has_modifiedmk <- requireNamespace("modifiedmk", quietly = TRUE)
 
   signpost <- function(check, scope, call, why) {
-    if (identical(scope, "confirmation") && !confirmed) {
+    if (identical(scope, "validation") && !confirmed) {
       return(.diagnose_row(
         check, scope, "skipped",
-        .diagnose_text("The object carries no confirmation process.")
+        .diagnose_text("The object carries no validation process.")
       ))
     }
     if (identical(check, "signposts") && !has_modifiedmk &&
@@ -2131,13 +2153,13 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   .diagnose_block(list(
     signpost("signposts", "report", "diagnose_drift(x, axis = \"report\")", drift_why),
     signpost(
-      "signposts", "confirmation",
-      "diagnose_drift(x, axis = \"confirmation\")", drift_why
+      "signposts", "validation",
+      "diagnose_drift(x, axis = \"validation\")", drift_why
     ),
     signpost("signposts", "report_batches", "diagnose_batches(x, axis = \"report\")", batch_why),
     signpost(
-      "signposts", "confirmation_batches",
-      "diagnose_batches(x, axis = \"confirmation\")", batch_why
+      "signposts", "validation_batches",
+      "diagnose_batches(x, axis = \"validation\")", batch_why
     )
   ))
 }
@@ -2208,3 +2230,211 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
 .diagnose_escape <- function(text) {
   gsub("}", "}}", gsub("{", "{{", text, fixed = TRUE), fixed = TRUE)
 }
+
+# Printing ---------------------------------------------------------------------
+
+#' What each status looks like on the console
+#'
+#' @return A named list, one entry per status, holding the bullet symbol, the
+#'   colour to draw it in and the heading the block gets.
+#'
+#' @keywords internal
+#' @noRd
+.diagnose_status_style <- function() {
+  list(
+    error   = list(symbol = cli::symbol$cross,  colour = cli::col_red,     heading = "Errors"),
+    warning = list(symbol = "!",                colour = cli::col_yellow,  heading = "Warnings"),
+    note    = list(symbol = cli::symbol$info,   colour = cli::col_blue,    heading = "Notes"),
+    ok      = list(symbol = cli::symbol$tick,   colour = cli::col_green,   heading = "Passed"),
+    not_run = list(symbol = cli::symbol$arrow_right, colour = cli::col_cyan, heading = "Not run"),
+    skipped = list(symbol = cli::symbol$line,   colour = cli::col_grey,    heading = "Skipped")
+  )
+}
+
+#' Print a `tbl_now` diagnosis
+#'
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' Prints the findings [diagnose()] returned as a report: the errors, warnings
+#' and notes in full, each with its hint, and the checks that passed, that were
+#' deliberately not run, and that could not be assessed as one line each.
+#'
+#' The object is an ordinary tibble underneath, so
+#' `print(tibble::as_tibble(x))` gives the table and every `dplyr` verb still
+#' works on it.
+#'
+#' @param x A findings tibble, from [diagnose()] or one of the
+#'   [nowcast_diagnose_components].
+#' @param ... Unused.
+#' @param all Logical. Spell out the `ok` and `skipped` findings too, instead of
+#'   counting them. Defaults to `FALSE`, and to `TRUE` when there is nothing
+#'   else to report -- a block that found nothing wrong would otherwise print an
+#'   empty report.
+#'
+#' @return `x`, invisibly.
+#'
+#' @seealso [diagnose()], [nowcast_diagnose_components]
+#'
+#' @examples
+#' data(denguedat)
+#' ndata <- tbl_now(denguedat,
+#'   event_date = "onset_week", report_date = "report_week",
+#'   strata = "gender", verbose = FALSE
+#' )
+#'
+#' diagnose(ndata)
+#'
+#' # Every finding, including the ones that passed.
+#' print(diagnose(ndata), all = TRUE)
+#'
+#' # Still a tibble.
+#' print(tibble::as_tibble(diagnose(ndata)))
+#'
+#' @name print.tbl_now_diagnosis
+#' @md
+#' @exportS3Method base::print
+print.tbl_now_diagnosis <- function(x, ..., all = FALSE) {
+  # The class survives `select()` as well as `filter()`, and a report cannot be
+  # written from columns that are no longer there. Fall back to the tibble
+  # rather than erroring on a pipeline that is perfectly reasonable --
+  # `diagnose(x) |> select(scope, status, message)` is how the articles read it.
+  required <- c("check", "scope", "stratum", "status", "message", "hint")
+  if (length(setdiff(required, names(x))) > 0) {
+    return(NextMethod())
+  }
+
+  # stdout (`cat_*`), not messages (`cli_*`): print output must survive
+  # `message = FALSE`, `sink()` and `capture.output()`.
+  cli::cat_rule(left = cli::format_inline("Diagnosis of a {.cls tbl_now}"))
+
+  if (nrow(x) == 0) {
+    cli::cat_line(cli::format_inline("{.emph No findings.}"))
+    return(invisible(x))
+  }
+
+  status <- as.character(x$status)
+  styles <- .diagnose_status_style()
+  counts <- vapply(names(styles), function(s) sum(status == s), integer(1))
+
+  cli::cat_line(.diagnose_tally(counts))
+
+  # `ok` and `skipped` are the bulk of a healthy report and say the same thing
+  # every time; the point of the printed form is the handful of rows that do
+  # not. When they are ALL there is, spelling them out is the only way the
+  # report says anything at all.
+  actionable <- c("error", "warning", "note", "not_run")
+  spell_everything <- isTRUE(all) || sum(counts[actionable]) == 0
+  spelled <- if (spell_everything) names(styles) else actionable
+
+  # Spelled-out blocks first, in severity order, then the one-line tallies for
+  # whatever was collapsed -- so the reader never has to step over a summary
+  # line to reach the next finding.
+  seen_hints <- character(0)
+  for (level in intersect(names(styles), spelled)) {
+    rows <- x[status == level, , drop = FALSE]
+    if (nrow(rows) == 0) {
+      next
+    }
+    style <- styles[[level]]
+
+    cli::cat_line()
+    cli::cat_line(cli::style_bold(paste0(style$heading, " (", nrow(rows), ")")))
+    for (index in seq_len(nrow(rows))) {
+      # The messages have already been through `cli::format_inline()` in
+      # `.diagnose_finalise()`, so they go to `cat()` as they are: inlining a
+      # second time would interpret a brace in a column name or a stratum label.
+      cli::cat_line(paste0(
+        style$colour(style$symbol), " ",
+        cli::style_bold(.diagnose_where(rows[index, ])), " ",
+        rows$message[index]
+      ))
+      hint <- rows$hint[index]
+      # One hint per distinct text: the per-stratum findings repeat a single
+      # sentence once per stratum, which is right in the table and noise here.
+      if (!is.na(hint) && !hint %in% seen_hints) {
+        seen_hints <- c(seen_hints, hint)
+        cli::cat_line(paste0(
+          "  ", cli::col_grey(cli::symbol$arrow_right), " ",
+          cli::col_grey(hint)
+        ))
+      }
+    }
+  }
+
+  collapsed <- setdiff(names(styles), spelled)
+  if (any(status %in% collapsed)) {
+    cli::cat_line()
+  }
+  for (level in collapsed) {
+    rows <- x[status == level, , drop = FALSE]
+    if (nrow(rows) == 0) {
+      next
+    }
+    style <- styles[[level]]
+    where <- unique(paste0(rows$check, "/", rows$scope))
+    cli::cat_line(paste0(
+      style$colour(style$symbol), " ",
+      cli::format_inline(
+        "{nrow(rows)} {tolower(style$heading)}: {.field {where}}"
+      )
+    ))
+  }
+
+  cli::cat_line()
+  cli::cat_line(cli::col_grey(cli::format_inline(paste0(
+    "{cli::symbol$info} {nrow(x)} finding{?s}. ",
+    "Use {.code dplyr::filter()} or {.code tibble::as_tibble()} for the table."
+  ))))
+
+  invisible(x)
+}
+
+#' The one-line tally under the header
+#'
+#' @param counts A named integer vector, one entry per status.
+#'
+#' @return A single string.
+#'
+#' @keywords internal
+#' @noRd
+.diagnose_tally <- function(counts) {
+  # `ok`, `not_run` and `skipped` name what HAPPENED to a check rather than what
+  # was found, so they read the same at any count; the three that name a finding
+  # take a plural.
+  singular <- c(
+    error = "error", warning = "warning", note = "note",
+    ok = "passed", not_run = "not run", skipped = "skipped"
+  )
+  plural <- c(
+    error = "errors", warning = "warnings", note = "notes",
+    ok = "passed", not_run = "not run", skipped = "skipped"
+  )
+  styles <- .diagnose_status_style()
+  present <- counts[counts > 0]
+  if (length(present) == 0) {
+    return(cli::col_grey("Nothing to report."))
+  }
+  parts <- vapply(names(present), function(level) {
+    count <- present[[level]]
+    wording <- if (count == 1L) singular[[level]] else plural[[level]]
+    styles[[level]]$colour(paste0(count, " ", wording))
+  }, character(1), USE.NAMES = FALSE)
+  paste0(paste(parts, collapse = cli::col_grey(", ")), cli::col_grey("."))
+}
+
+#' Where a finding is, as `check/scope [stratum]`
+#'
+#' @param row One row of a findings tibble.
+#'
+#' @return A single string.
+#'
+#' @keywords internal
+#' @noRd
+.diagnose_where <- function(row) {
+  where <- paste0(row$check, "/", row$scope)
+  if (identical(row$stratum, "all")) {
+    return(paste0(where, ":"))
+  }
+  paste0(where, " [", row$stratum, "]:")
+}
+

@@ -163,6 +163,16 @@ took a fit from \strong{314s to 50s} for a tail carrying under 1\% of cases. Use
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{tbl_now_to_baselinenowcast(x, max_delay = 30)   # delays 0-29, 30 columns
 }\if{html}{\out{</div>}}
+
+Past a point it stops being about speed. \pkg{baselinenowcast} needs \strong{more
+reference dates than delay columns} -- it spends \code{max_delay} of them
+estimating the delay distribution and keeps two back for the uncertainty
+model -- so a triangle that is as wide as it is tall cannot be fitted at all.
+A \strong{snapshot ("as of") series} is exactly that shape: every snapshot
+restates the whole history, so the oldest event date carries a delay as long
+as the series and almost every cell of that width is a zero. The converter
+still builds the triangle; \code{\link[=run_nowcast]{run_nowcast()}} is where it is refused, with the
+cap to use.
 }
 
 \section{Negative delays}{

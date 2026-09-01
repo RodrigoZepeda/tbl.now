@@ -6,7 +6,7 @@
 \alias{delay_summary}
 \alias{zero_run_summary}
 \alias{prop_censored}
-\alias{prop_confirmation_type}
+\alias{prop_validation_type}
 \alias{prop_strata}
 \alias{prop_covariate_levels}
 \alias{case_autocorrelation}
@@ -18,28 +18,28 @@
 \usage{
 cases_per_date(
   x,
-  axis = c("event", "report", "confirmation"),
+  axis = c("event", "report", "validation"),
   by_strata = NULL,
   strata = NULL
 )
 
 delay_summary(
   x,
-  delay = c("event_to_report", "event_to_confirmation", "report_to_confirmation"),
+  delay = c("event_to_report", "event_to_validation", "report_to_validation"),
   by_strata = NULL,
   strata = NULL
 )
 
 zero_run_summary(
   x,
-  axis = c("event", "report", "confirmation"),
+  axis = c("event", "report", "validation"),
   by_strata = NULL,
   strata = NULL
 )
 
 prop_censored(x, by_strata = NULL, strata = NULL)
 
-prop_confirmation_type(x, by_strata = NULL, strata = NULL)
+prop_validation_type(x, by_strata = NULL, strata = NULL)
 
 prop_strata(x, strata = NULL)
 
@@ -48,7 +48,7 @@ prop_covariate_levels(x, by_strata = NULL, strata = NULL)
 case_autocorrelation(
   x,
   lags = 1,
-  axis = c("event", "report", "confirmation"),
+  axis = c("event", "report", "validation"),
   by_strata = NULL,
   strata = NULL
 )
@@ -71,7 +71,7 @@ cumulative_growth(x, k = 7, by_strata = NULL, strata = NULL)
 \item{x}{A \code{tbl_now} object.}
 
 \item{axis}{Which time axis to describe: \code{"event"}, \code{"report"} or
-\code{"confirmation"}.}
+\code{"validation"}.}
 
 \item{by_strata}{Logical. Add one set of rows per stratum on top of the
 pooled (\code{"all"}) rows. Defaults to \code{TRUE} when the object has strata.}
@@ -80,9 +80,9 @@ pooled (\code{"all"}) rows. Defaults to \code{TRUE} when the object has strata.}
 \code{get_strata(x)}.}
 
 \item{delay}{Which delay to describe: \code{"event_to_report"} (the reporting
-delay), \code{"event_to_confirmation"} (the same span measured to the
-confirmation, so the two are comparable) or \code{"report_to_confirmation"}
-(the laboratory's turnaround, the \code{.confirmation_delay} column).}
+delay), \code{"event_to_validation"} (the same span measured to the
+validation, so the two are comparable) or \code{"report_to_validation"}
+(the laboratory's turnaround, the \code{.validation_delay} column).}
 
 \item{lags}{Integer vector of lags.}
 
@@ -115,7 +115,7 @@ be stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}}, compared acro
 \item \code{delay_summary()} -- the case-weighted delay distribution.
 \item \code{zero_run_summary()} -- lengths of the runs of consecutive zero dates.
 \item \code{prop_censored()} -- proportion of cases flagged censored.
-\item \code{prop_confirmation_type()} -- proportion of cases per confirmation outcome.
+\item \code{prop_validation_type()} -- proportion of cases per validation outcome.
 \item \code{prop_strata()} -- proportion of cases per stratum.
 \item \code{prop_covariate_levels()} -- proportion of cases per level of each
 categorical covariate.
@@ -124,7 +124,8 @@ categorical covariate.
 \item \code{triangle_occupancy()} -- how full the reporting triangle is, and how
 stale the object is.
 \item \code{reporting_completeness()} -- share of each event date's eventual total
-that had arrived by delay \code{d}.
+that had arrived by delay \code{d}, as a distribution over event dates
+(\code{mean}, \code{sd}, the quantiles) plus the pooled share in \code{prop}.
 \item \code{cumulative_growth()} -- ratio of one delay's running total to the
 previous one's.
 }
@@ -154,7 +155,11 @@ triangle_occupancy(ndata)
 
 # The two that matter most for nowcasting: what share of a week's eventual
 # total had arrived by delay d, and how fast the total is still growing.
-reporting_completeness(ndata, delays = 0:3)
+# Both are distributions over event dates, so they fill `mean`/`q50` -- and
+# completeness also `prop`, the pooled share -- rather than the scalar
+# `value` column.
+reporting_completeness(ndata, delays = 0:3) |>
+  dplyr::select(quantity, stratum, n, mean, q50, prop)
 cumulative_growth(ndata, k = 3)
 
 # Every block shares one schema, so they stack.
@@ -169,6 +174,6 @@ dplyr::bind_rows(
 documents the schema; \code{\link[=diagnose]{diagnose()}} for what is \emph{wrong} with the data rather
 than what is in it; \link[=autoplot.tbl_now]{autoplot()} for the same information as
 pictures. The
-\href{https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html}{\emph{Describing and diagnosing a tbl_now} article}
+\href{https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html}{\emph{Diagnosing a tbl_now} article}
 walks through them in order.
 }

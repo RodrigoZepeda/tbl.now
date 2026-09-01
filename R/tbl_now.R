@@ -21,7 +21,7 @@
 #' The minimum you must supply is `event_date` and `report_date` (or one of them
 #' plus a `delay` column, from which the other is reconstructed). Everything else
 #' is optional and can be added later with [add_strata()], [add_covariates()],
-#' [add_confirmation()] and the rest of the [add()] family.
+#' [add_validation_date()] and the rest of the [add()] family.
 #'
 #' Once the object exists the usual path is [summary()][tbl_now_summary] to see
 #' what is in the data, [diagnose()] to see what is wrong with it,
@@ -89,26 +89,26 @@
 #' "count-incidence" or "count-cumulative". See section below for
 #' an explanation on data types.
 #'
-#' @param confirmation_date (optional)
+#' @param validation_date (optional)
 #' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 #' column holding a **third** date: the day the report was resolved. Influenza is
 #' the picture to keep in mind -- symptoms begin (the event), the patient sees a
 #' doctor (the report), and days later a swab comes back. The assumed timeline is
-#' `event_date <= report_date <= confirmation_date <= now`. Leave `NULL` (the
-#' default) for the usual two-date object. See [add_confirmation()].
+#' `event_date <= report_date <= validation_date <= now`. Leave `NULL` (the
+#' default) for the usual two-date object. See [add_validation_date()].
 #'
-#' @param confirmation_type (optional)
+#' @param validation_type (optional)
 #' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 #' column saying what the resolution *was*: `"confirmed"`, `"retracted"` (it was
 #' reported, but it is not a case after all), `"pending"` or `NA`. **`"pending"`
-#' means reported and still waiting**, so it carries no confirmation date --
+#' means reported and still waiting**, so it carries no validation date --
 #' which is a different thing from a result that was never recorded (`NA`). A
-#' confirmation date with no type warns rather than guessing, because a date
+#' validation date with no type warns rather than guessing, because a date
 #' alone cannot say whether the case was confirmed or retracted.
 #'
-#' @param confirmation_units (optional) Character. Either `"auto"` (default),
+#' @param validation_units (optional) Character. Either `"auto"` (default),
 #' `"days"`, `"weeks"`, `"months"`, `"years"` or `"numeric"` -- the grid the
-#' confirmation date lives on, resolved the same way as `report_units`.
+#' validation date lives on, resolved the same way as `report_units`.
 #'
 #' @param verbose (optional) Logical. Whether to throw a message. Default = `TRUE`.
 #'
@@ -150,9 +150,9 @@
 #'   \item{report_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `report_date`}
 #'   \item{data_type}{Either `linelist`, `count-incidence` or `count-cumulative` depending on whether it is linelist data
 #'   or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)}
-#'   \item{confirmation_date}{Name of the column with the (optional) third date: when the report was resolved.}
-#'   \item{confirmation_type}{Name of the column saying what that resolution was (`"confirmed"`, `"retracted"`, `"pending"`).}
-#'   \item{confirmation_units}{Units of `confirmation_date`, resolved like `report_units`.}
+#'   \item{validation_date}{Name of the column with the (optional) third date: when the report was resolved.}
+#'   \item{validation_type}{Name of the column saying what that resolution was (`"confirmed"`, `"retracted"`, `"pending"`).}
+#'   \item{validation_units}{Units of `validation_date`, resolved like `report_units`.}
 #'   \item{computed_temporal_effect_cols}{Names of the temporal-effect columns that have actually been materialised in the data by [compute_temporal_effects()].}
 #' }
 #'
@@ -280,9 +280,9 @@ tbl_now <- function(data,
                     covariates = NULL,
                     case_count = NULL,
                     is_censored = NULL,
-                    confirmation_date = NULL,
-                    confirmation_type = NULL,
-                    confirmation_units = "auto",
+                    validation_date = NULL,
+                    validation_type = NULL,
+                    validation_units = "auto",
                     now = NULL,
                     event_units = "auto",
                     report_units = "auto",
@@ -313,8 +313,8 @@ tbl_now <- function(data,
   covariates_quo <- rlang::enquo(covariates)
   case_count_quo <- rlang::enquo(case_count)
   is_censored_quo <- rlang::enquo(is_censored)
-  confirmation_date_quo <- rlang::enquo(confirmation_date)
-  confirmation_type_quo <- rlang::enquo(confirmation_type)
+  validation_date_quo <- rlang::enquo(validation_date)
+  validation_type_quo <- rlang::enquo(validation_type)
 
   # Get event date column
   if (!rlang::quo_is_null(event_date_quo)) {
@@ -408,27 +408,27 @@ tbl_now <- function(data,
   is_censored_select <- .tbl_now_eval_select(is_censored_quo, data)
   is_censored <- colnames(data)[is_censored_select]
 
-  confirmation_date_select <- .tbl_now_eval_select(confirmation_date_quo, data)
-  confirmation_date <- colnames(data)[confirmation_date_select]
-  if (length(confirmation_date) == 0) confirmation_date <- NULL
+  validation_date_select <- .tbl_now_eval_select(validation_date_quo, data)
+  validation_date <- colnames(data)[validation_date_select]
+  if (length(validation_date) == 0) validation_date <- NULL
 
-  confirmation_type_select <- .tbl_now_eval_select(confirmation_type_quo, data)
-  confirmation_type <- colnames(data)[confirmation_type_select]
-  if (length(confirmation_type) == 0) confirmation_type <- NULL
+  validation_type_select <- .tbl_now_eval_select(validation_type_quo, data)
+  validation_type <- colnames(data)[validation_type_select]
+  if (length(validation_type) == 0) validation_type <- NULL
 
-  if (is.null(confirmation_date) && !is.null(confirmation_type)) {
+  if (is.null(validation_date) && !is.null(validation_type)) {
     cli::cli_abort(c(
-      "{.arg confirmation_type} was given without a {.arg confirmation_date}.",
+      "{.arg validation_type} was given without a {.arg validation_date}.",
       "i" = "An outcome needs a date to sit on. Supply both, or neither."
     ))
   }
 
   # Fill in / validate the outcome column, and check the timeline.
-  resolved_confirmation <- .resolve_confirmation_type(
-    data, confirmation_date, confirmation_type, verbose = verbose
+  resolved_validation <- .resolve_validation_type(
+    data, validation_date, validation_type, verbose = verbose
   )
-  data <- resolved_confirmation$data
-  confirmation_type <- resolved_confirmation$confirmation_type
+  data <- resolved_validation$data
+  validation_type <- resolved_validation$validation_type
   if (length(is_censored) == 0) is_censored <- NULL
 
   strata_select <- .tbl_now_eval_select(strata_quo, data)
@@ -480,29 +480,29 @@ tbl_now <- function(data,
   # Infer automatic variables------
 
   # Infer the now
-  # The event <= report <= confirmation timeline is checked by
+  # The event <= report <= validation timeline is checked by
   # `validate_tbl_now()` at the end of this function, through the same findings
   # engine `diagnose()` uses. Checking it here as well would warn twice.
 
-  # A confirmation is an OBSERVATION, so it moves the `now` forward exactly as a
+  # A validation is an OBSERVATION, so it moves the `now` forward exactly as a
   # report does: the as-of moment is the last thing anybody knew.
   now <- infer_now(data,
     now = now, event_date = event_date, report_date = report_date,
-    confirmation_date = confirmation_date
+    validation_date = validation_date
   )
 
   # Infer the date_units whether it is daily, weekly, monthly or yearly
   event_units <- infer_units(data, date_column = event_date, date_units = event_units)
   report_units <- infer_units(data, date_column = report_date, date_units = report_units)
-  confirmation_units <- if (is.null(confirmation_date)) {
+  validation_units <- if (is.null(validation_date)) {
     NULL
   } else {
-    # Early in an outbreak there may be only one confirmation, or none, and a
+    # Early in an outbreak there may be only one validation, or none, and a
     # single date has no spacing to infer a grid from. Fall back to the REPORT
-    # units rather than refusing the object: the confirmation lives on the same
+    # units rather than refusing the object: the validation lives on the same
     # calendar as the report it resolves.
     tryCatch(
-      infer_units(data, date_column = confirmation_date, date_units = confirmation_units),
+      infer_units(data, date_column = validation_date, date_units = validation_units),
       error = function(e) report_units
     )
   }
@@ -539,9 +539,9 @@ tbl_now <- function(data,
   attr(data, "report_units") <- report_units
   attr(data, "data_type") <- data_type
   attr(data, "is_censored") <- is_censored
-  attr(data, "confirmation_date") <- confirmation_date
-  attr(data, "confirmation_type") <- confirmation_type
-  attr(data, "confirmation_units") <- confirmation_units
+  attr(data, "validation_date") <- validation_date
+  attr(data, "validation_type") <- validation_type
+  attr(data, "validation_units") <- validation_units
 
   # Add all other attributes from ...
   for (attr_name in names(other_attrs)) {
@@ -567,14 +567,14 @@ tbl_now <- function(data,
     force = force
   )
 
-  # `.confirmation_num` sits on the SAME anchor as `.event_num`/`.report_num`
+  # `.validation_num` sits on the SAME anchor as `.event_num`/`.report_num`
   # (the earliest event date), so the three are directly comparable, and
-  # `.confirmation_delay` is the report-to-resolution time.
-  if (!is.null(confirmation_date)) {
-    data <- .add_confirmation_num(
+  # `.validation_delay` is the report-to-resolution time.
+  if (!is.null(validation_date)) {
+    data <- .add_validation_num(
       data,
-      event_date = event_date, confirmation_date = confirmation_date,
-      confirmation_units = confirmation_units, force = force
+      event_date = event_date, validation_date = validation_date,
+      validation_units = validation_units, force = force
     )
   }
 

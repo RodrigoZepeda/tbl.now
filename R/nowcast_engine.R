@@ -371,14 +371,20 @@ is_nowcast_engine <- function(x) {
 #'
 #' @param model,type,n_draws (`engine_diseasenowcasting()`) Arguments of
 #'   [diseasenowcasting::nowcast()]. `model` is where the epidemic and
-#'   confirmation processes are chosen, e.g.
+#'   validation processes are chosen, e.g.
 #'   `diseasenowcasting::model(epidemic = diseasenowcasting::ar1_epidemic())`.
 #'   On `count-cumulative` data that revises downwards you also want a
-#'   `confirmation` process, or the negative increments have nowhere to go.
+#'   `validation` process, or the negative increments have nowhere to go.
 #'
-#' @param draws,delays_unit (`engine_baselinenowcast()`) Number of nowcast
-#'   samples, and the unit of the reporting triangle's delay axis (inferred from
-#'   the object's units when `NULL`).
+#' @param draws,delays_unit,max_delay (`engine_baselinenowcast()`) Number of
+#'   nowcast samples, the unit of the reporting triangle's delay axis (inferred
+#'   from the object's units when `NULL`), and how many delay periods to keep --
+#'   `max_delay = 10` keeps delays 0-9, as in [tbl_now_to_baselinenowcast()].
+#'   The last one is not only about speed: `baselinenowcast` needs more
+#'   reference dates than delay columns, so a **snapshot ("as of") series** --
+#'   which re-reports every past period in every snapshot, and therefore has a
+#'   delay axis as long as the series itself -- cannot be fitted at all until
+#'   the axis is capped. The error says which number to use.
 #'
 #' @param preprocess_args,expectation,reference,report,fit
 #'   (`engine_epinowcast()`) `preprocess_args` is a list for
@@ -442,12 +448,15 @@ engine_diseasenowcasting <- function(..., model = NULL, type = NULL,
 #' @rdname nowcast_engines
 #' @export
 engine_baselinenowcast <- function(..., draws = 1000, delays_unit = NULL,
-                                   min_date = NULL,
+                                   max_delay = NULL, min_date = NULL,
                                    quantile_levels = nowcast_quantile_levels(),
                                    label = NULL) {
   .new_engine(
     "baselinenowcast",
-    c(list(draws = draws, delays_unit = delays_unit), list(...)),
+    c(
+      list(draws = draws, delays_unit = delays_unit, max_delay = max_delay),
+      list(...)
+    ),
     min_date, quantile_levels, label
   )
 }

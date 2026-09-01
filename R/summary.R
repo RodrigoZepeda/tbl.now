@@ -34,7 +34,7 @@
 #'     `"zero_run"`, `"composition"`, `"autocorrelation"`, `"completeness"`,
 #'     `"growth"` or `"coverage"`.}
 #'   \item{`quantity`}{What the row describes, including the category for the
-#'     compositional rows (`"confirmation_type = confirmed"`).}
+#'     compositional rows (`"validation_type = confirmed"`).}
 #'   \item{`stratum`}{Which subset of the data the row describes: `"all"` for
 #'     the pooled rows, or the stratum label otherwise.}
 #'   \item{`n`}{Number of observations behind the row -- dates for `"cases"`,
@@ -46,9 +46,14 @@
 #'   \item{`min`, `q25`, `q50`, `q75`, `q90`, `max`}{Quantiles. See the note
 #'     below on which estimator is used.}
 #'   \item{`prop_zero`}{Proportion of dates on the grid that are exactly zero.}
-#'   \item{`prop`}{Proportion of cases in this category (compositional rows).}
+#'   \item{`prop`}{Proportion of cases in this category (compositional rows),
+#'     or the pooled share that had arrived by delay `d` (`"completeness"`
+#'     rows).}
 #'   \item{`value`}{A single scalar that is not a distribution: an
-#'     autocorrelation, a gap, an occupancy.}
+#'     autocorrelation, a gap, an occupancy. The `"completeness"` and
+#'     `"growth"` rows are distributions over event dates, so they populate
+#'     `mean`/`sd`/the quantiles (and `prop`) instead and leave `value`
+#'     empty.}
 #'   \item{`date_min`, `date_max`}{Date range. Present only when the result
 #'     contains `"coverage"` rows.}
 #'   \item{`unobserved_cells`}{A `"coverage"` row counting the `NA`-count rows
@@ -112,10 +117,12 @@
 #' overview |> dplyr::filter(component == "delay")
 #'
 #' # How much of each week's eventual total had arrived by delay d? This is the
-#' # reporting-delay problem, in one table.
+#' # reporting-delay problem, in one table. Completeness is a distribution over
+#' # event dates, so it lives in `mean`/`q50` (the typical event date) and
+#' # `prop` (the pooled share), not in the scalar `value` column.
 #' overview |>
 #'   dplyr::filter(component == "completeness", stratum == "all") |>
-#'   dplyr::select(quantity, value)
+#'   dplyr::select(quantity, n, mean, q50, prop)
 #'
 #' # Pooled rows only, ignoring the strata.
 #' summary(ndata, by_strata = FALSE)
@@ -131,10 +138,10 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
   blocks <- list(
     .summary_cases(context, "event"),
     .summary_cases(context, "report"),
-    .summary_cases(context, "confirmation"),
+    .summary_cases(context, "validation"),
     .summary_zero_runs(context, "event"),
     .summary_zero_runs(context, "report"),
-    .summary_zero_runs(context, "confirmation"),
+    .summary_zero_runs(context, "validation"),
     .summary_autocorrelation(context, "event", lags),
     .summary_autocorrelation(context, "report", lags),
     .summary_composition(context),
@@ -153,8 +160,8 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
   } else {
     blocks <- c(blocks, list(
       .summary_delays(context, "event_to_report"),
-      .summary_delays(context, "event_to_confirmation"),
-      .summary_delays(context, "report_to_confirmation")
+      .summary_delays(context, "event_to_validation"),
+      .summary_delays(context, "report_to_validation")
     ))
   }
 
@@ -179,7 +186,7 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #' * `delay_summary()` -- the case-weighted delay distribution.
 #' * `zero_run_summary()` -- lengths of the runs of consecutive zero dates.
 #' * `prop_censored()` -- proportion of cases flagged censored.
-#' * `prop_confirmation_type()` -- proportion of cases per confirmation outcome.
+#' * `prop_validation_type()` -- proportion of cases per validation outcome.
 #' * `prop_strata()` -- proportion of cases per stratum.
 #' * `prop_covariate_levels()` -- proportion of cases per level of each
 #'   categorical covariate.
@@ -188,17 +195,18 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #' * `triangle_occupancy()` -- how full the reporting triangle is, and how
 #'   stale the object is.
 #' * `reporting_completeness()` -- share of each event date's eventual total
-#'   that had arrived by delay `d`.
+#'   that had arrived by delay `d`, as a distribution over event dates
+#'   (`mean`, `sd`, the quantiles) plus the pooled share in `prop`.
 #' * `cumulative_growth()` -- ratio of one delay's running total to the
 #'   previous one's.
 #'
 #' @param x A `tbl_now` object.
 #' @param axis Which time axis to describe: `"event"`, `"report"` or
-#'   `"confirmation"`.
+#'   `"validation"`.
 #' @param delay Which delay to describe: `"event_to_report"` (the reporting
-#'   delay), `"event_to_confirmation"` (the same span measured to the
-#'   confirmation, so the two are comparable) or `"report_to_confirmation"`
-#'   (the laboratory's turnaround, the `.confirmation_delay` column).
+#'   delay), `"event_to_validation"` (the same span measured to the
+#'   validation, so the two are comparable) or `"report_to_validation"`
+#'   (the laboratory's turnaround, the `.validation_delay` column).
 #' @param lags Integer vector of lags.
 #' @param delays Integer vector of delays to report completeness at. Defaults
 #'   to every observed delay.
@@ -220,7 +228,7 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #' documents the schema; [diagnose()] for what is *wrong* with the data rather
 #' than what is in it; [autoplot()][autoplot.tbl_now] for the same information as
 #' pictures. The
-#' [*Describing and diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+#' [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' walks through them in order.
 #'
 #' @examples
@@ -248,7 +256,11 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #'
 #' # The two that matter most for nowcasting: what share of a week's eventual
 #' # total had arrived by delay d, and how fast the total is still growing.
-#' reporting_completeness(ndata, delays = 0:3)
+#' # Both are distributions over event dates, so they fill `mean`/`q50` -- and
+#' # completeness also `prop`, the pooled share -- rather than the scalar
+#' # `value` column.
+#' reporting_completeness(ndata, delays = 0:3) |>
+#'   dplyr::select(quantity, stratum, n, mean, q50, prop)
 #' cumulative_growth(ndata, k = 3)
 #'
 #' # Every block shares one schema, so they stack.
@@ -263,7 +275,7 @@ NULL
 
 #' @rdname nowcast_summary_components
 #' @export
-cases_per_date <- function(x, axis = c("event", "report", "confirmation"),
+cases_per_date <- function(x, axis = c("event", "report", "validation"),
                            by_strata = NULL, strata = NULL) {
   axis <- match.arg(axis)
   context <- .summary_context(x, by_strata, strata, "cases_per_date")
@@ -273,8 +285,8 @@ cases_per_date <- function(x, axis = c("event", "report", "confirmation"),
 #' @rdname nowcast_summary_components
 #' @export
 delay_summary <- function(x,
-                          delay = c("event_to_report", "event_to_confirmation",
-                                    "report_to_confirmation"),
+                          delay = c("event_to_report", "event_to_validation",
+                                    "report_to_validation"),
                           by_strata = NULL, strata = NULL) {
   delay <- match.arg(delay)
   if (identical(get_data_type(x), "count-cumulative")) {
@@ -293,7 +305,7 @@ delay_summary <- function(x,
 
 #' @rdname nowcast_summary_components
 #' @export
-zero_run_summary <- function(x, axis = c("event", "report", "confirmation"),
+zero_run_summary <- function(x, axis = c("event", "report", "validation"),
                              by_strata = NULL, strata = NULL) {
   axis <- match.arg(axis)
   context <- .summary_context(x, by_strata, strata, "zero_run_summary")
@@ -309,9 +321,9 @@ prop_censored <- function(x, by_strata = NULL, strata = NULL) {
 
 #' @rdname nowcast_summary_components
 #' @export
-prop_confirmation_type <- function(x, by_strata = NULL, strata = NULL) {
-  context <- .summary_context(x, by_strata, strata, "prop_confirmation_type")
-  .summary_finalise(list(.summary_confirmation_types(context)))
+prop_validation_type <- function(x, by_strata = NULL, strata = NULL) {
+  context <- .summary_context(x, by_strata, strata, "prop_validation_type")
+  .summary_finalise(list(.summary_validation_types(context)))
 }
 
 #' @rdname nowcast_summary_components
@@ -331,7 +343,7 @@ prop_covariate_levels <- function(x, by_strata = NULL, strata = NULL) {
 #' @rdname nowcast_summary_components
 #' @export
 case_autocorrelation <- function(x, lags = 1,
-                                 axis = c("event", "report", "confirmation"),
+                                 axis = c("event", "report", "validation"),
                                  by_strata = NULL, strata = NULL) {
   axis <- match.arg(axis)
   context <- .summary_context(x, by_strata, strata, "case_autocorrelation")
@@ -434,21 +446,21 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
     cases$censored <- as.logical(observations[[censored_col]])
   }
 
-  if (has_confirmation(x)) {
-    cases$confirmation_date <- observations[[get_confirmation_date(x)]]
-    type_col <- get_confirmation_type(x)
-    cases$confirmation_type <- if (is.null(type_col)) {
+  if (has_validation(x)) {
+    cases$validation_date <- observations[[get_validation_date(x)]]
+    type_col <- get_validation_type(x)
+    cases$validation_type <- if (is.null(type_col)) {
       NA_character_
     } else {
       as.character(observations[[type_col]])
     }
     # Measured from the EVENT, so it is directly comparable with
-    # `event_to_report`; `.confirmation_delay` is the laboratory's own
+    # `event_to_report`; `.validation_delay` is the laboratory's own
     # turnaround, measured from the report. They are different quantities.
-    cases$event_to_confirmation <-
-      as.numeric(observations[[".confirmation_num"]] -
+    cases$event_to_validation <-
+      as.numeric(observations[[".validation_num"]] -
                    observations[[".event_num"]])
-    cases$report_to_confirmation <- as.numeric(observations[[".confirmation_delay"]])
+    cases$report_to_validation <- as.numeric(observations[[".validation_delay"]])
   }
 
   cases$stratum <- if (length(strata_cols) > 0) {
@@ -492,7 +504,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 #'
 #' `$` on a tibble warns for an unknown column, and half the blocks here ask
 #' about columns that only exist when the object has a censoring flag or a
-#' confirmation process.
+#' validation process.
 #'
 #' @param data The case table.
 #' @param name Column name.
@@ -553,7 +565,13 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
   }
   if (!"n" %in% names(out)) out[["n"]] <- NA_integer_
 
-  dplyr::relocate(out, dplyr::any_of(.summary_schema()))
+  out <- dplyr::relocate(out, dplyr::any_of(.summary_schema()))
+
+  # The class goes on at the one exit `summary()` and every component share, so
+  # a single block prints the way the whole summary does and stacking blocks
+  # with `bind_rows()` keeps the class instead of reverting to a plain tibble.
+  class(out) <- unique(c("tbl_now_summary_table", class(out)))
+  out
 }
 
 # Statistics ------------------------------------------------------------------
@@ -629,7 +647,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 #' The column, units and grid end of one time axis
 #'
 #' @param context A summary context.
-#' @param axis `"event"`, `"report"` or `"confirmation"`.
+#' @param axis `"event"`, `"report"` or `"validation"`.
 #'
 #' @return A list with the case-table column name and the axis units, or `NULL`
 #'   when the object does not have that axis.
@@ -641,10 +659,10 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
   switch(axis,
     event = list(column = "event_date", units = get_event_units(x)),
     report = list(column = "report_date", units = get_report_units(x)),
-    confirmation = if (has_confirmation(x)) {
+    validation = if (has_validation(x)) {
       list(
-        column = "confirmation_date",
-        units = get_confirmation_units(x) %||% get_report_units(x)
+        column = "validation_date",
+        units = get_validation_units(x) %||% get_report_units(x)
       )
     } else {
       NULL
@@ -654,12 +672,12 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 
 #' Case counts per date on one axis, on the complete grid
 #'
-#' Pending confirmations are dropped from the confirmation axis: a pending case
-#' has no confirmation date, so counting it would invent an arrival on a date it
+#' Pending validations are dropped from the validation axis: a pending case
+#' has no validation date, so counting it would invent an arrival on a date it
 #' does not have.
 #'
 #' @param context A summary context.
-#' @param axis `"event"`, `"report"` or `"confirmation"`.
+#' @param axis `"event"`, `"report"` or `"validation"`.
 #' @param rows Logical vector selecting the rows of the case table.
 #' @param subset Optional further filter, a logical vector over the same rows.
 #'
@@ -702,7 +720,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 #' comparable and a stratum that starts late shows its leading zeros.
 #'
 #' @param context A summary context.
-#' @param axis `"event"`, `"report"` or `"confirmation"`.
+#' @param axis `"event"`, `"report"` or `"validation"`.
 #'
 #' @return A vector of dates (or numbers), possibly empty.
 #'
@@ -724,7 +742,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 #' Case counts per date, for every stratum
 #'
 #' @param context A summary context.
-#' @param axis `"event"`, `"report"` or `"confirmation"`.
+#' @param axis `"event"`, `"report"` or `"validation"`.
 #'
 #' @return A tibble of `"cases"` rows.
 #'
@@ -735,7 +753,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 
   quantity <- paste0("per_", axis, "_date")
   cases <- context$cases
-  types <- .summary_confirmation_levels(context)
+  types <- .summary_validation_levels(context)
 
   rows <- lapply(context$labels, function(label) {
     selected <- .summary_rows(context, label)
@@ -753,10 +771,10 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 
     # "Cases per type of validation", but only when there is more than one type
     # to tell apart -- a single-outcome column repeats the row above it.
-    if (identical(axis, "confirmation") && length(types) > 1) {
+    if (identical(axis, "validation") && length(types) > 1) {
       block <- c(block, lapply(types, function(type) {
         .summary_series_row(
-          context, axis, selected, cases[["confirmation_type"]] %in% type,
+          context, axis, selected, cases[["validation_type"]] %in% type,
           "cases", paste0(quantity, " [", type, "]"), label
         )
       }))
@@ -799,25 +817,25 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 #' @param delay Which of the three delays.
 #'
 #' @return A tibble of `"delay"` rows, or `NULL` when the object has no
-#'   confirmation and a confirmation delay was asked for.
+#'   validation and a validation delay was asked for.
 #'
 #' @keywords internal
 #' @noRd
 .summary_delays <- function(context, delay) {
   cases <- context$cases
   if (!delay %in% names(cases)) return(NULL)
-  types <- .summary_confirmation_levels(context)
-  uses_confirmation <- delay %in%
-    c("event_to_confirmation", "report_to_confirmation")
+  types <- .summary_validation_levels(context)
+  uses_validation <- delay %in%
+    c("event_to_validation", "report_to_validation")
 
   rows <- lapply(context$labels, function(label) {
     selected <- .summary_rows(context, label)
     block <- list(.summary_delay_row(context, delay, selected, NULL, delay, label))
 
-    if (uses_confirmation && length(types) > 1) {
+    if (uses_validation && length(types) > 1) {
       block <- c(block, lapply(types, function(type) {
         .summary_delay_row(
-          context, delay, selected, cases[["confirmation_type"]] %in% type,
+          context, delay, selected, cases[["validation_type"]] %in% type,
           paste0(delay, " [", type, "]"), label
         )
       }))
@@ -952,7 +970,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 .summary_composition <- function(context) {
   dplyr::bind_rows(
     .summary_censoring(context),
-    .summary_confirmation_types(context),
+    .summary_validation_types(context),
     .summary_strata_shares(context),
     .summary_covariate_shares(context)
   )
@@ -984,16 +1002,16 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
   dplyr::bind_rows(rows)
 }
 
-#' Proportion of cases per confirmation outcome
+#' Proportion of cases per validation outcome
 #'
 #' @param context A summary context.
 #'
-#' @return A tibble of `"composition"` rows, or `NULL` without a confirmation.
+#' @return A tibble of `"composition"` rows, or `NULL` without a validation.
 #'
 #' @keywords internal
 #' @noRd
-.summary_confirmation_types <- function(context) {
-  types <- .summary_confirmation_levels(context)
+.summary_validation_types <- function(context) {
+  types <- .summary_validation_levels(context)
   if (length(types) == 0) return(NULL)
   cases <- context$cases
 
@@ -1001,9 +1019,9 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
     selected <- .summary_rows(context, label)
     denominator <- sum(cases$count[selected])
     dplyr::bind_rows(lapply(types, function(type) {
-      matched <- selected & cases[["confirmation_type"]] %in% type
+      matched <- selected & cases[["validation_type"]] %in% type
       .summary_share_row(
-        paste0("confirmation_type = ", type), label,
+        paste0("validation_type = ", type), label,
         n = sum(matched), total = sum(cases$count[matched]),
         denominator = denominator
       )
@@ -1103,21 +1121,21 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
   )
 }
 
-#' The confirmation outcomes actually present in the data
+#' The validation outcomes actually present in the data
 #'
 #' @param context A summary context.
 #'
-#' @return A character vector, empty when there is no confirmation.
+#' @return A character vector, empty when there is no validation.
 #'
 #' @keywords internal
 #' @noRd
-.summary_confirmation_levels <- function(context) {
-  types <- .summary_column(context$cases, "confirmation_type")
+.summary_validation_levels <- function(context) {
+  types <- .summary_column(context$cases, "validation_type")
   if (is.null(types)) return(character(0))
   present <- unique(types[!is.na(types)])
   # Report them in the package's own order rather than alphabetically, so
   # `confirmed` always comes before `retracted`.
-  known <- intersect(.confirmation_levels(), present)
+  known <- intersect(.validation_levels(), present)
   c(known, sort(setdiff(present, known)))
 }
 
@@ -1131,7 +1149,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 #' @noRd
 .summary_coverage <- function(context) {
   cases <- context$cases
-  axes <- c("event", "report", "confirmation")
+  axes <- c("event", "report", "validation")
 
   rows <- lapply(context$labels, function(label) {
     selected <- .summary_rows(context, label)
@@ -1394,4 +1412,130 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
   })
 
   dplyr::bind_rows(rows)
+}
+
+# Printing ---------------------------------------------------------------------
+
+#' Print a `tbl_now` summary
+#'
+#' @description `r lifecycle::badge("experimental")`
+#'
+#' Prints the table [summary()][tbl_now_summary] returned one **component** at a
+#' time, dropping the columns that component does not populate. The full schema
+#' is wide because it has to hold every block's statistics at once; no single
+#' block fills more than a handful of them, and a table that is mostly `NA` is
+#' hard to read for a reason that has nothing to do with the data.
+#'
+#' The object is an ordinary tibble underneath, so
+#' `print(tibble::as_tibble(x))` gives the whole schema back and every `dplyr`
+#' verb still works on it.
+#'
+#' @param x A summary tibble, from [summary()][tbl_now_summary] or one of the
+#'   [nowcast_summary_components].
+#' @param ... Unused.
+#' @param n Maximum number of rows to show per component. `Inf` shows all of
+#'   them.
+#'
+#' @return `x`, invisibly.
+#'
+#' @seealso [summary()][tbl_now_summary], [nowcast_summary_components]
+#'
+#' @examples
+#' data(denguedat)
+#' ndata <- tbl_now(denguedat,
+#'   event_date = "onset_week", report_date = "report_week",
+#'   strata = "gender", verbose = FALSE
+#' )
+#'
+#' summary(ndata)
+#'
+#' # One block on its own prints the same way.
+#' delay_summary(ndata)
+#'
+#' # Still a tibble.
+#' print(tibble::as_tibble(summary(ndata)))
+#'
+#' @name print.tbl_now_summary_table
+#' @md
+#' @exportS3Method base::print
+print.tbl_now_summary_table <- function(x, ..., n = 10) {
+  # The class survives `select()` as well as `filter()`, and the blocks cannot
+  # be laid out from columns that are no longer there. Fall back to the tibble
+  # rather than erroring on a pipeline that is perfectly reasonable --
+  # `summary(x) |> select(quantity, value)` is how the articles read it.
+  if (!all(c("component", "quantity", "stratum") %in% names(x))) {
+    return(NextMethod())
+  }
+
+  # stdout (`cat_*`), not messages (`cli_*`): print output must survive
+  # `message = FALSE`, `sink()` and `capture.output()`.
+  cli::cat_rule(left = cli::format_inline("Summary of a {.cls tbl_now}"))
+
+  if (nrow(x) == 0) {
+    cli::cat_line(cli::format_inline("{.emph Nothing to summarise.}"))
+    return(invisible(x))
+  }
+
+  strata <- setdiff(unique(x$stratum), "all")
+  cli::cat_line(cli::col_grey(cli::format_inline(paste0(
+    "{nrow(x)} row{?s} in {length(unique(x$component))} component{?s}",
+    if (length(strata) > 0) "; strata: {.val {strata}}" else "",
+    "."
+  ))))
+
+  for (component in unique(x$component)) {
+    block <- x[x$component == component, , drop = FALSE]
+    cli::cat_line()
+    cli::cat_line(cli::style_bold(component))
+    cli::cat_line(.summary_block_lines(block, n))
+  }
+
+  cli::cat_line()
+  cli::cat_line(cli::col_grey(cli::format_inline(paste0(
+    "{cli::symbol$info} Use {.code dplyr::filter()} or ",
+    "{.code tibble::as_tibble()} for the full schema."
+  ))))
+
+  invisible(x)
+}
+
+#' One component of a summary, as printable lines
+#'
+#' @param block The rows of one component.
+#' @param n Maximum number of rows to show.
+#'
+#' @return A character vector of lines.
+#'
+#' @keywords internal
+#' @noRd
+.summary_block_lines <- function(block, n) {
+  shown <- if (is.finite(n) && nrow(block) > n) {
+    utils::head(block, n)
+  } else {
+    block
+  }
+
+  # `component` is the heading, and a column no row of this block populates says
+  # nothing about it -- the schema is wide because it holds every block at once.
+  keep <- vapply(shown, function(column) !all(is.na(column)), logical(1))
+  keep[names(shown) == "component"] <- FALSE
+  # A single stratum in the block is already named in the header of the whole
+  # summary, and an unstratified object has nothing but `"all"`.
+  if (length(unique(shown$stratum)) == 1L) {
+    keep[names(shown) == "stratum"] <- FALSE
+  }
+
+  table <- dplyr::as_tibble(shown[, keep, drop = FALSE])
+  # `format()` on a tibble returns its printed lines, so the table reaches
+  # stdout without a bare `print()` inside package code. The first line is
+  # pillar's "# A tibble: n x m" header, which duplicates the count this print
+  # method already gave.
+  lines <- format(table, n = nrow(table))[-1]
+
+  if (nrow(shown) < nrow(block)) {
+    lines <- c(lines, cli::col_grey(cli::format_inline(
+      "{cli::symbol$info} {nrow(block) - nrow(shown)} more row{?s}."
+    )))
+  }
+  lines
 }

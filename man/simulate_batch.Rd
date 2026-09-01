@@ -105,6 +105,6 @@ found$report_date[found$batch]
 \code{\link[=diagnose_batches]{diagnose_batches()}} and \code{\link[=diagnose_batch_shape]{diagnose_batch_shape()}}, the tests this exists to
 validate; \code{\link[=censor_delays_above]{censor_delays_above()}} for recording a real batch rather than
 planting one. The
-\href{https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html}{\emph{Diagnosing reporting batches} article}
+\href{https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html}{\emph{Diagnosing a tbl_now} article}
 uses this to calibrate the screen.
 }

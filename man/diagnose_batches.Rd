@@ -10,7 +10,7 @@ diagnose_batches(
   baseline_window = NULL,
   period = NULL,
   null_model = c("auto", "poisson", "robust"),
-  axis = c("report", "confirmation"),
+  axis = c("report", "validation"),
   alpha = 0.05
 )
 }
@@ -43,11 +43,11 @@ the robust null. \code{"poisson"} and \code{"robust"} force the choice; note tha
 \code{"poisson"} is anti-conservative (over-flags) on overdispersed counts.}
 
 \item{axis}{Which time axis to scan for arrivals: \code{"report"} (default) or
-\code{"confirmation"}. The question is the same either way -- did an unusual
+\code{"validation"}. The question is the same either way -- did an unusual
 number of records land on this date? -- so a laboratory clearing its
 backlog is found exactly as a surveillance system clearing its inbox is.
-\code{"confirmation"} needs a confirmation process (see \code{\link[=add_confirmation]{add_confirmation()}})
-and ignores cases that are still \code{"pending"}, which have no confirmation
+\code{"validation"} needs a validation process (see \code{\link[=add_validation_date]{add_validation_date()}})
+and ignores cases that are still \code{"pending"}, which have no validation
 date to arrive on.}
 
 \item{alpha}{Significance level for the Benjamini-Hochberg \code{batch} flag.
@@ -154,6 +154,6 @@ coordinates behind the test, without the hypothesis test on top;
 \code{\link[=simulate_batch]{simulate_batch()}} to plant a known batch and check the screen finds it;
 \code{\link[=plot_reporting_process]{plot_reporting_process()}} and \code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}} to see it;
 \link[=add]{add_is_censored()} to record a batch once you believe it. The
-\href{https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html}{\emph{Diagnosing reporting batches} article}
+\href{https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html}{\emph{Diagnosing a tbl_now} article}
 works through a real example.
 }

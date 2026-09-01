@@ -1,5 +1,14 @@
 url: https://rodrigozepeda.github.io/tbl.now/
 
+# The deploy in `.github/workflows/pkgdown.yaml` uses `clean: false`, so a page
+# removed from `docs/` is NOT removed from the live site -- it just stops being
+# updated. A renamed article therefore leaves its old URL serving pre-rename
+# content indefinitely, which is worse than a 404 because it still looks
+# current. These redirects overwrite those pages instead.
+redirects:
+  - ["articles/batch-reporting.html", "articles/diagnosing-a-tbl-now.html"]
+  - ["articles/describing-and-diagnosing.html", "articles/diagnosing-a-tbl-now.html"]
+
 home:
   title: tbl.now — Tibble now
   description: >
@@ -67,9 +76,7 @@ reference:
   contents:
   - nowcast_data_getters
   - get_latest_first
-  - confirmation_getters
   - add
-  - confirmation_setters
   - update.tbl_now
 
 - title: Reshaping
@@ -86,11 +93,11 @@ reference:
   - temporal_effects
   - add_temporal_effects
 
-- title: The confirmation process
+- title: The validation process
   desc: The optional third date, and the outcomes it carries.
   contents:
-  - confirmation_counts
-  - confirmation_delay
+  - validation_counts
+  - validation_delay
 
 - title: Summarising
   desc: >
@@ -99,6 +106,7 @@ reference:
   contents:
   - tbl_now_summary
   - nowcast_summary_components
+  - print.tbl_now_summary_table
 
 - title: Diagnosing
   desc: >
@@ -107,6 +115,7 @@ reference:
   contents:
   - diagnose
   - nowcast_diagnose_components
+  - print.tbl_now_diagnosis
   - diagnose_drift
   - diagnose_changepoint
   - diagnose_batches
@@ -120,7 +129,7 @@ reference:
   - autoplot.tbl_now
   - diagnostic_plot
   - calendar_effect_plots
-  - plot_confirmation_status
+  - plot_validation_status
   - plot_cycles
   - plot_delay_distribution
   - plot_delay_drift

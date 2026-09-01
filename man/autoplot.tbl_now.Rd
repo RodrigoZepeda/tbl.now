@@ -197,6 +197,6 @@ the panels here as standalone functions: \code{\link[=plot_observed_cases]{plot_
 \code{\link[=plot_delay_drift]{plot_delay_drift()}};
 \link[=tbl_now_summary]{summary()} and \code{\link[=diagnose]{diagnose()}} for the same information as
 tables. The
-\href{https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html}{\emph{Describing and diagnosing a tbl_now} article}
+\href{https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html}{\emph{Diagnosing a tbl_now} article}
 reads the panels one at a time.
 }
