@@ -8,14 +8,14 @@
 plot_reporting_process(
   x,
   plotly = FALSE,
-  axis = c("report", "confirmation"),
+  axis = c("report", "validation"),
   palette = .tbl_now_palette()
 )
 
 plot_epidemic_process(
   x,
   plotly = FALSE,
-  axis = c("report", "confirmation"),
+  axis = c("report", "validation"),
   palette = .tbl_now_palette()
 )
 }
@@ -26,11 +26,11 @@ plot_epidemic_process(
 zoom) instead of a static \pkg{ggplot2} plot. Default \code{FALSE}.}
 
 \item{axis}{Which time axis to draw: \code{"report"} (default) or
-\code{"confirmation"}. On the confirmation axis the picture answers the
+\code{"validation"}. On the validation axis the picture answers the
 laboratory's version of the question -- when results arrived, rather than
-when reports did. Needs a confirmation process (see
-\link[=confirmation_setters]{add_confirmation()}); cases still \code{"pending"} have no
-confirmation date and are left out.}
+when reports did. Needs a validation process (see
+\link[=add]{add_validation_date()}); cases still \code{"pending"} have no
+validation date and are left out.}
 
 \item{palette}{A named colour palette. Defaults to the package palette.}
 }

@@ -230,3 +230,60 @@ test_that("autoplot() draws a fan", {
   expect_s3_class(autoplot(nowcast, levels = 0.9), "ggplot")
   expect_error(autoplot(nowcast, levels = 0.42), "not available")
 })
+
+# Printing ---------------------------------------------------------------------
+
+test_that("printing a nowcast leads with the value at the now edge", {
+  predictions <- dplyr::tibble(
+    onset_week = rep(as.Date("2020-01-05") + c(0, 7), each = 3),
+    .quantile_level = rep(c(0.025, 0.5, 0.975), times = 2),
+    .value = c(5, 10, 20, 8, 14, 31)
+  )
+  nowcast <- tbl_nowcast(
+    predictions = predictions, method = "toy", event_date = "onset_week",
+    now = as.Date("2020-01-12")
+  )
+
+  # `cli_*` writes to the MESSAGE stream, which `capture.output()` does not see;
+  # a print method has to reach stdout.
+  printed <- capture.output(print(nowcast))
+
+  # The LAST event date, not `now`: on a weekly grid they are the same date only
+  # by accident, and printing `now` over a number belonging to the week before
+  # it would be a lie about which period was estimated.
+  expect_true(any(grepl("Nowcast at \"2020-01-12\"", printed)))
+  expect_true(any(grepl("14 [8, 31]", printed, fixed = TRUE)))
+})
+
+test_that("the value at the now edge is reported per stratum", {
+  predictions <- dplyr::tibble(
+    onset_week = as.Date("2020-01-05"),
+    gender = rep(c("Female", "Male"), each = 3),
+    .quantile_level = rep(c(0.05, 0.5, 0.95), times = 2),
+    .value = c(1, 2, 3, 40, 50, 60)
+  )
+  nowcast <- tbl_nowcast(
+    predictions = predictions, method = "toy", event_date = "onset_week",
+    strata = "gender", now = as.Date("2020-01-05")
+  )
+
+  printed <- capture.output(print(nowcast))
+
+  expect_true(any(grepl("Female: 2 [1, 3]", printed, fixed = TRUE)))
+  expect_true(any(grepl("Male: 50 [40, 60]", printed, fixed = TRUE)))
+  expect_true(any(grepl("5-95% interval", printed)))
+})
+
+test_that("a single quantile level prints a point estimate and no interval", {
+  nowcast <- tbl_nowcast(
+    predictions = dplyr::tibble(
+      onset_week = as.Date("2020-01-05"), .quantile_level = 0.5, .value = 7
+    ),
+    method = "toy", event_date = "onset_week"
+  )
+
+  printed <- capture.output(print(nowcast))
+
+  expect_true(any(grepl("(q50)", printed, fixed = TRUE)))
+  expect_false(any(grepl("interval", printed)))
+})

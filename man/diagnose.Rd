@@ -109,7 +109,7 @@ construction into a noisy one for data that has always been accepted.}
 \item{\code{ok}}{The check ran and found nothing.}
 \item{\code{not_run}}{A signpost: this question needs a statistical test, and
 \code{message} names the call that answers it.}
-\item{\code{skipped}}{Could not be assessed -- no confirmation process, the
+\item{\code{skipped}}{Could not be assessed -- no validation process, the
 wrong data type, or an optional package that is not installed.}
 }
 }
@@ -143,6 +143,6 @@ nrow(diagnose(ndata))
 data rather than what is wrong with it;
 \code{\link[=validate_tbl_now]{validate_tbl_now()}} for the same findings raised as errors and warnings;
 \code{\link[=diagnostic_plot]{diagnostic_plot()}} for the picture version. The
-\href{https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html}{\emph{Describing and diagnosing a tbl_now} article}
+\href{https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html}{\emph{Diagnosing a tbl_now} article}
 goes through the findings one at a time.
 }

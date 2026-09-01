@@ -52,7 +52,7 @@
 #' @param alpha Level for the `classification` labels. Default `0.05`.
 #'
 #' @param axis Which time axis to scan for arrivals: `"report"` (default) or
-#'   `"confirmation"`. Needs a confirmation process (see [add_confirmation()]);
+#'   `"validation"`. Needs a validation process (see [add_validation_date()]);
 #'   cases still `"pending"` are left out.
 #' @returns A tibble of class `transport_discriminant`, one row per (report date,
 #'   stratum), with columns `report_date`, `stratum`, `reported`, `baseline`,
@@ -75,7 +75,7 @@ transport_discriminant <- function(x,
                                     baseline_window = NULL,
                                     period          = NULL,
                                     alpha           = 0.05,
-                                    axis            = c("report", "confirmation")) {
+                                    axis            = c("report", "validation")) {
   axis <- match.arg(axis)
   .batch_experimental_warning("transport_discriminant")
   .batch_check_tbl_now(x)

@@ -21,6 +21,33 @@
 #' create or delete a column -- it only changes which existing column the object
 #' treats as playing that role.
 #'
+#' @section The validation process, the optional third date:
+#'
+#' `add_validation_date()`, `change_validation_date()` and
+#' `remove_validation_date()` set the **third** date a surveillance record can
+#' carry: after the event happened and after it was reported, somebody decided
+#' whether it was real. For influenza that is the laboratory result -- and it
+#' can come back negative, in which case the case is *retracted* rather than
+#' confirmed.
+#'
+#' Attaching one is the only verb on this page that changes more than a name:
+#'
+#' * **`now` moves.** A validation is an observation, so the as-of moment
+#'   becomes the latest of the report and validation dates. Validation refuses
+#'   an object whose `now` falls before a validation that has already happened.
+#' * **Two columns appear.** `.validation_num` is the date on the same numeric
+#'   anchor as `.event_num`/`.report_num`; `.validation_delay` is the time from
+#'   report to resolution. Both are protected, like `.delay`.
+#' * **Counting gains a dimension.** [to_count()] groups by the validation date
+#'   and outcome as well, so a confirmed and a retracted case on the same
+#'   `(event, report)` pair stay separate rather than being summed together.
+#' * **The timeline is checked.** `event_date <= report_date <=
+#'   validation_date`; rows that break it are warned about, not silently
+#'   accepted.
+#'
+#' A date on its own cannot say whether the test came back positive or negative,
+#' so leaving `validation_type` out gives every dated row `NA` and warns.
+#'
 #' @details
 #' Columns are chosen with
 #' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html), so
@@ -133,6 +160,31 @@
 #'   change_case_count(inflated) |>
 #'   get_case_count()
 #'
+#' ## ---- The validation process, the optional third date -----------------
+#'
+#' data(hai_bucaramanga)
+#' hai <- hai_bucaramanga |>
+#'   dplyr::filter(
+#'     !is.na(specimen_date), !is.na(report_date), !is.na(received_date)
+#'   ) |>
+#'   tbl_now(
+#'     event_date = specimen_date, report_date = report_date,
+#'     data_type = "linelist", verbose = FALSE
+#'   )
+#'
+#' ## Specimen taken -> reported -> (here) the laboratory receipt as the
+#' # validation step. A date alone cannot say how the case resolved, so this
+#' # warns until an outcome column is supplied.
+#' hai <- suppressWarnings(add_validation_date(hai, received_date))
+#' get_validation_date(hai)
+#'
+#' hai$outcome <- ifelse(seq_len(nrow(hai)) %% 10 == 0, "retracted", "confirmed")
+#' hai <- change_validation_date(hai, received_date, validation_type = outcome)
+#' table(hai[[get_validation_type(hai)]])
+#'
+#' ## Dropping it leaves an ordinary two-date object.
+#' has_validation(remove_validation_date(hai))
+#'
 #' ## ---- Temporal effects --------------------------------------------------
 #'
 #' # Recorded lazily: `replace_*` swaps the specification, `remove_*` forgets it.
@@ -154,7 +206,6 @@
 #' [tbl_now()] for setting these when the object is first built;
 #' the [getters][nowcast_data_getters] for reading them back;
 #' [tbl_now_attributes()] to list them all at once;
-#' [add_confirmation()][confirmation_setters] for the third-date attributes;
 #' [add_temporal_effects()] and [temporal_effects()] for calendar structure;
 #' [update()][update.tbl_now] for appending new rows rather than editing attributes.
 #'
@@ -174,13 +225,13 @@ change_now <- function(x, now = NULL) {
   }
 
   # Re-infer now. The CONFIRMATION date counts: it is an observation like any
-  # other, so leaving it out moves `now` backwards past a confirmation that has
+  # other, so leaving it out moves `now` backwards past a validation that has
   # already happened -- which `validate_tbl_now()` below then rejects.
   now <- tryCatch(
     infer_now(x,
       now = now, event_date = get_event_date(x),
       report_date = get_report_date(x),
-      confirmation_date = get_confirmation_date(x)
+      validation_date = get_validation_date(x)
     ),
     error = function(e) get_now(x)
   )

@@ -1,95 +1,95 @@
-# The confirmation process: a THIRD date, after the event and the report.
+# The validation process: a THIRD date, after the event and the report.
 #
 # Influenza is the motivating case. A case has
 #
 #   event_date         when the person fell ill (symptom onset)
 #   report_date        when the system heard about it (the medical visit)
-#   confirmation_date  when the laboratory settled it (the test result)
+#   validation_date  when the laboratory settled it (the test result)
 #
 # and the test can come back either way, so a report is not the end of the
 # story: it can be CONFIRMED (positive) or RETRACTED (negative, the case never
 # was one). Until the result arrives the case is PENDING.
 #
-# The honest timeline is `event_date <= report_date <= confirmation_date`, and
+# The honest timeline is `event_date <= report_date <= validation_date`, and
 # the package checks it rather than assuming it.
 #
-# Everything here is optional. An object with no `confirmation_date` behaves
+# Everything here is optional. An object with no `validation_date` behaves
 # exactly as it did before this file existed.
 
-#' The values `confirmation_type` may take
+#' The values `validation_type` may take
 #'
 #' `"pending"` is the default state of every case: reported, not yet resolved.
 #' `"confirmed"` and `"retracted"` are the two ways a case leaves that state.
 #' `NA` means the outcome is genuinely unknown -- which is what a
-#' `confirmation_date` with no `confirmation_type` gives you, because a date
+#' `validation_date` with no `validation_type` gives you, because a date
 #' alone cannot say whether the test was positive or negative.
 #'
 #' @return A character vector of the allowed values.
 #'
 #' @keywords internal
 #' @noRd
-.confirmation_levels <- function() {
+.validation_levels <- function() {
   c("confirmed", "retracted", "pending")
 }
 
-#' Build (or validate) the `confirmation_type` column
+#' Build (or validate) the `validation_type` column
 #'
 #' @param data A data frame.
-#' @param confirmation_date Name of the confirmation-date column, or `NULL`.
-#' @param confirmation_type Name of the type column, or `NULL`.
+#' @param validation_date Name of the validation-date column, or `NULL`.
+#' @param validation_type Name of the type column, or `NULL`.
 #' @param verbose Logical.
 #'
-#' @return The data frame, with a `confirmation_type` column when one is needed.
+#' @return The data frame, with a `validation_type` column when one is needed.
 #'
 #' @keywords internal
 #' @noRd
-.resolve_confirmation_type <- function(data, confirmation_date, confirmation_type,
+.resolve_validation_type <- function(data, validation_date, validation_type,
                                        verbose = TRUE) {
-  if (is.null(confirmation_date)) {
-    return(list(data = data, confirmation_type = confirmation_type))
+  if (is.null(validation_date)) {
+    return(list(data = data, validation_type = validation_type))
   }
 
-  dates <- data[[confirmation_date]]
+  dates <- data[[validation_date]]
   has_date <- !is.na(dates)
 
-  if (is.null(confirmation_type)) {
+  if (is.null(validation_type)) {
     # Every case starts pending; a date resolves it -- but a date alone cannot
     # say WHICH way. A negative test has a date too, so calling it "confirmed"
     # would invert the meaning of the data. `NA` and a warning is the honest
     # answer: the outcome is recorded as unknown until the caller says.
-    confirmation_type <- ".confirmation_type"
-    data[[confirmation_type]] <- ifelse(has_date, NA_character_, "pending")
+    validation_type <- ".validation_type"
+    data[[validation_type]] <- ifelse(has_date, NA_character_, "pending")
 
     if (any(has_date)) {
-      allowed <- .confirmation_levels()
+      allowed <- .validation_levels()
       cli::cli_warn(c(
         paste0(
-          "{sum(has_date)} row{?s} have a {.arg confirmation_date} but no ",
-          "{.arg confirmation_type}, so their outcome is {.val NA}."
+          "{sum(has_date)} row{?s} have a {.arg validation_date} but no ",
+          "{.arg validation_type}, so their outcome is {.val NA}."
         ),
         "i" = paste0(
           "A date alone cannot say whether the case was confirmed or ",
           "retracted -- a negative test has a date too."
         ),
         "i" = paste0(
-          "Pass {.arg confirmation_type} (a column of {.val {allowed}}) ",
+          "Pass {.arg validation_type} (a column of {.val {allowed}}) ",
           "to say which."
         )
       ))
     }
-    return(list(data = data, confirmation_type = confirmation_type))
+    return(list(data = data, validation_type = validation_type))
   }
 
-  values <- as.character(data[[confirmation_type]])
+  values <- as.character(data[[validation_type]])
   # A row with no date has not been resolved, whatever the column says.
   values[!has_date & is.na(values)] <- "pending"
 
-  allowed <- .confirmation_levels()
+  allowed <- .validation_levels()
   unknown <- setdiff(stats::na.omit(unique(values)), allowed)
   if (length(unknown) > 0) {
     cli::cli_abort(c(
       paste0(
-        "{.arg confirmation_type} contains {length(unknown)} unrecognised ",
+        "{.arg validation_type} contains {length(unknown)} unrecognised ",
         "value{?s}: {.val {unknown}}."
       ),
       "i" = "Allowed values are {.val {allowed}}, or {.val NA}."
@@ -101,138 +101,84 @@
   if (any(resolved_without_date) && isTRUE(verbose)) {
     cli::cli_warn(
       "{sum(resolved_without_date)} row{?s} are {.val confirmed}/{.val retracted}
-       but carry no {.arg confirmation_date}."
+       but carry no {.arg validation_date}."
     )
   }
 
-  data[[confirmation_type]] <- values
-  list(data = data, confirmation_type = confirmation_type)
+  data[[validation_type]] <- values
+  list(data = data, validation_type = validation_type)
 }
 
 # Getters -----
 
-#' Confirmation attributes of a `tbl_now`
-#'
-#' @description `r lifecycle::badge("experimental")`
-#'
-#' A `tbl_now` may carry a **third** date beyond the event and the report: the
-#' date a case was resolved, either confirmed or retracted. Think of influenza:
-#' symptom onset is the event, the medical visit is the report, and the
-#' laboratory result is the confirmation -- which can come back negative, in
-#' which case the case is *retracted* rather than confirmed.
-#'
-#' These getters return the **column names** the object was told about, not the
-#' data. Get the values with `x[[get_confirmation_date(x)]]`, as with every
-#' other getter in the package.
-#'
-#' @param x A `tbl_now` object.
-#'
-#' @return
-#' * `get_confirmation_date()` -- the confirmation-date column name, or `NULL`.
-#' * `get_confirmation_type()` -- the outcome column name, or `NULL`.
-#' * `get_confirmation_units()` -- `"days"`, `"weeks"`, `"months"`, `"years"`,
-#'   `"numeric"`, or `NULL` when the object carries no confirmation.
-#' * `has_confirmation()` -- `TRUE` when the object carries a confirmation date.
-#'
-#' @seealso
-#' [add_confirmation()][confirmation_setters] to attach one;
-#' [get_latest_confirmed()][confirmation_counts] and
-#' [get_net_confirmed()][confirmation_counts] to count the outcomes;
-#' [confirmation_delay] for how long resolution takes;
-#' [nowcast_data_getters] for the event- and report-date attributes.
-#'
-#' @examples
-#' data(hai_bucaramanga)
-#'
-#' # Specimen taken -> received at the laboratory -> result reported.
-#' hai <- hai_bucaramanga |>
-#'   dplyr::filter(!is.na(specimen_date), !is.na(report_date)) |>
-#'   tbl_now(
-#'     event_date = specimen_date,
-#'     report_date = report_date,
-#'     data_type = "linelist",
-#'     verbose = FALSE
-#'   )
-#'
-#' # No third date was declared, so there is no confirmation process ...
-#' has_confirmation(hai)
-#' get_confirmation_date(hai)
-#'
-#' # ... until one is attached. Here the laboratory receipt plays that role.
-#' hai <- suppressWarnings(add_confirmation(hai, received_date))
-#' has_confirmation(hai)
-#' get_confirmation_date(hai)
-#' get_confirmation_units(hai)
-#'
-#' # As always, the getter gives you the column NAME; index to get the values.
-#' head(hai[[get_confirmation_date(hai)]])
-#'
-#' @name confirmation_getters
-NULL
+# The four getters are documented on `nowcast_data_getters` in R/getters.R,
+# alongside `get_event_date()` and `get_report_date()`: the third date is one
+# more thing the object was told about itself, not a separate idea, and a reader
+# holding a `tbl_now` should find all of its attributes on one page.
 
-#' @rdname confirmation_getters
+#' @rdname nowcast_data_getters
 #' @export
-get_confirmation_date <- function(x) {
-  attr(x, "confirmation_date", exact = TRUE)
+get_validation_date <- function(x) {
+  attr(x, "validation_date", exact = TRUE)
 }
 
-#' @rdname confirmation_getters
+#' @rdname nowcast_data_getters
 #' @export
-get_confirmation_type <- function(x) {
-  attr(x, "confirmation_type", exact = TRUE)
+get_validation_type <- function(x) {
+  attr(x, "validation_type", exact = TRUE)
 }
 
-#' @rdname confirmation_getters
+#' @rdname nowcast_data_getters
 #' @export
-get_confirmation_units <- function(x) {
-  attr(x, "confirmation_units", exact = TRUE)
+get_validation_units <- function(x) {
+  attr(x, "validation_units", exact = TRUE)
 }
 
-#' @rdname confirmation_getters
+#' @rdname nowcast_data_getters
 #' @export
-has_confirmation <- function(x) {
-  !is.null(get_confirmation_date(x))
+has_validation <- function(x) {
+  !is.null(get_validation_date(x))
 }
 
-#' The generated confirmation columns, when the object has any
+#' The generated validation columns, when the object has any
 #'
-#' `.confirmation_num` is the confirmation date on the same numeric anchor as
-#' `.event_num` and `.report_num`; `.confirmation_delay` is
-#' `.confirmation_num - .report_num`, the time from report to resolution. That
-#' second one is the quantity [diagnose_confirmation_delay()] compares between
+#' `.validation_num` is the validation date on the same numeric anchor as
+#' `.event_num` and `.report_num`; `.validation_delay` is
+#' `.validation_num - .report_num`, the time from report to resolution. That
+#' second one is the quantity [diagnose_validation_delay()] compares between
 #' confirmed and retracted cases.
 #'
 #' @param x A `tbl_now` object.
 #'
-#' @return A character vector, empty when the object carries no confirmation.
+#' @return A character vector, empty when the object carries no validation.
 #'
 #' @keywords internal
 #' @noRd
-.confirmation_generated_cols <- function(x) {
-  if (!has_confirmation(x)) {
+.validation_generated_cols <- function(x) {
+  if (!has_validation(x)) {
     return(character(0))
   }
-  c(".confirmation_num", ".confirmation_delay")
+  c(".validation_num", ".validation_delay")
 }
 
-#' Add `.confirmation_num` and `.confirmation_delay`
+#' Add `.validation_num` and `.validation_delay`
 #'
 #' Anchored on the same earliest event date `time_cols_to_numeric()` uses, so
-#' `.event_num`, `.report_num` and `.confirmation_num` are on one scale and
+#' `.event_num`, `.report_num` and `.validation_num` are on one scale and
 #' differences between them mean what they look like.
 #'
 #' @param data A data frame that already has `.report_num`.
-#' @param event_date,confirmation_date Column names.
-#' @param confirmation_units The confirmation date's units.
+#' @param event_date,validation_date Column names.
+#' @param validation_units The validation date's units.
 #' @param force Overwrite reserved columns rather than aborting.
 #'
 #' @return The data frame with the two columns added.
 #'
 #' @keywords internal
 #' @noRd
-.add_confirmation_num <- function(data, event_date, confirmation_date,
-                                  confirmation_units, force = FALSE) {
-  for (reserved in c(".confirmation_num", ".confirmation_delay")) {
+.add_validation_num <- function(data, event_date, validation_date,
+                                  validation_units, force = FALSE) {
+  for (reserved in c(".validation_num", ".validation_delay")) {
     if (reserved %in% colnames(data) && !force) {
       cli::cli_abort(
         "Data already has a column named {.val {reserved}}, which this class
@@ -242,14 +188,14 @@ has_confirmation <- function(x) {
   }
 
   anchor <- suppressWarnings(min(data[[event_date]], na.rm = TRUE))
-  confirmation <- data[[confirmation_date]]
+  validation <- data[[validation_date]]
 
-  data[[".confirmation_num"]] <- if (identical(confirmation_units, "numeric")) {
-    as.numeric(confirmation) - as.numeric(anchor)
+  data[[".validation_num"]] <- if (identical(validation_units, "numeric")) {
+    as.numeric(validation) - as.numeric(anchor)
   } else {
-    .date_difference_in_units(confirmation, anchor, confirmation_units)
+    .date_difference_in_units(validation, anchor, validation_units)
   }
-  data[[".confirmation_delay"]] <- data[[".confirmation_num"]] - data[[".report_num"]]
+  data[[".validation_delay"]] <- data[[".validation_num"]] - data[[".report_num"]]
   data
 }
 
@@ -275,129 +221,54 @@ has_confirmation <- function(x) {
 
 # Setters -----
 
-#' Attach, change or drop a confirmation process
-#'
-#' @description `r lifecycle::badge("experimental")`
-#'
-#' A confirmation is the **third** date in a surveillance record: after the event
-#' happened and after it was reported, somebody decided whether it was real. For
-#' influenza that is the laboratory result -- and it can come back negative, in
-#' which case the case is *retracted* rather than confirmed.
-#'
-#' `add_confirmation()` attaches one to an object that has none;
-#' `change_confirmation()` replaces whatever is there; `remove_confirmation()`
-#' drops it, leaving an ordinary two-date `tbl_now`.
-#'
-#' @param x A `tbl_now` object.
-#' @param confirmation_date The confirmation-date column (tidy-select: a bare
-#'   name or a string).
-#' @param confirmation_type Optional column holding `"confirmed"`,
-#'   `"retracted"` or `"pending"`. When you leave it out, rows with a
-#'   confirmation date get `NA` and a warning: a date on its own cannot say
-#'   whether the test came back positive or negative.
-#' @param confirmation_units `"auto"` (default) infers the grid from the column,
-#'   as `event_units` does.
-#'
-#' @return A `tbl_now`.
-#'
-#' @section What attaching one changes:
-#'
-#' * **`now` moves.** A confirmation is an observation, so the as-of moment
-#'   becomes the latest of the report and confirmation dates. Validation refuses
-#'   an object whose `now` falls before a confirmation that has already
-#'   happened.
-#' * **Two columns appear.** `.confirmation_num` is the date on the same numeric
-#'   anchor as `.event_num`/`.report_num`; `.confirmation_delay` is the time
-#'   from report to resolution. Both are protected, like `.delay`.
-#' * **Counting gains a dimension.** [to_count()] groups by the confirmation
-#'   date and outcome as well, so a confirmed and a retracted case on the same
-#'   `(event, report)` pair stay separate rather than being summed together.
-#' * **The timeline is checked.** `event_date <= report_date <=
-#'   confirmation_date`; rows that break it are warned about, not silently
-#'   accepted.
-#'
-#' @seealso
-#' [confirmation_getters] to read the attributes back;
-#' [confirmation_counts] to count confirmed, retracted and pending cases;
-#' [confirmation_delay] and [diagnose_confirmation_delay()] for how long
-#' resolution takes; [plot_confirmation_status()] to see it;
-#' [add()] for the event- and report-date attributes.
-#'
-#' @examples
-#' data(hai_bucaramanga)
-#'
-#' ## specimen taken -> reported -> (here) the laboratory receipt as the
-#' # confirmation step.
-#' hai <- hai_bucaramanga |>
-#'   dplyr::filter(
-#'     !is.na(specimen_date), !is.na(report_date), !is.na(received_date)
-#'   ) |>
-#'   tbl_now(
-#'     event_date = specimen_date, report_date = report_date,
-#'     data_type = "linelist", verbose = FALSE
-#'   )
-#'
-#' hai <- suppressWarnings(add_confirmation(hai, received_date))
-#' has_confirmation(hai)
-#' get_confirmation_date(hai)
-#'
-#' # A date alone cannot say whether the case was confirmed or retracted, which
-#' # is why the call above warns. Supplying the outcome column removes the doubt.
-#' hai$outcome <- ifelse(seq_len(nrow(hai)) %% 10 == 0, "retracted", "confirmed")
-#' hai <- change_confirmation(hai, received_date, confirmation_type = outcome)
-#' get_confirmation_type(hai)
-#' table(hai[[get_confirmation_type(hai)]])
-#'
-#' # Dropping it leaves an ordinary two-date object.
-#' hai <- remove_confirmation(hai)
-#' has_confirmation(hai)
-#'
-#' @name confirmation_setters
-NULL
+# The three verbs are documented on `add` in R/adders_changers_and_removers.R,
+# alongside `change_event_date()`: attaching a third date is one more attribute
+# edit, and a reader looking for "how do I tell the object about this column"
+# should find every answer on one page.
 
-#' @rdname confirmation_setters
+#' @rdname add
 #' @export
-add_confirmation <- function(x, confirmation_date, confirmation_type = NULL,
-                             confirmation_units = "auto") {
-  .assert_tbl_now(x, "add_confirmation")
-  if (has_confirmation(x)) {
+add_validation_date <- function(x, validation_date, validation_type = NULL,
+                             validation_units = "auto") {
+  .assert_tbl_now(x, "add_validation_date")
+  if (has_validation(x)) {
     cli::cli_abort(c(
-      "{.arg x} already has a confirmation date
-       ({.val {get_confirmation_date(x)}}).",
-      "i" = "Use {.fn change_confirmation} to replace it."
+      "{.arg x} already has a validation date
+       ({.val {get_validation_date(x)}}).",
+      "i" = "Use {.fn change_validation_date} to replace it."
     ))
   }
-  .set_confirmation(
-    x, {{ confirmation_date }}, {{ confirmation_type }}, confirmation_units
+  .set_validation(
+    x, {{ validation_date }}, {{ validation_type }}, validation_units
   )
 }
 
-#' @rdname confirmation_setters
+#' @rdname add
 #' @export
-change_confirmation <- function(x, confirmation_date, confirmation_type = NULL,
-                                confirmation_units = "auto") {
-  .assert_tbl_now(x, "change_confirmation")
-  .set_confirmation(
-    x, {{ confirmation_date }}, {{ confirmation_type }}, confirmation_units
+change_validation_date <- function(x, validation_date, validation_type = NULL,
+                                validation_units = "auto") {
+  .assert_tbl_now(x, "change_validation_date")
+  .set_validation(
+    x, {{ validation_date }}, {{ validation_type }}, validation_units
   )
 }
 
-#' @rdname confirmation_setters
+#' @rdname add
 #' @export
-remove_confirmation <- function(x) {
-  .assert_tbl_now(x, "remove_confirmation")
-  if (!has_confirmation(x)) {
+remove_validation_date <- function(x) {
+  .assert_tbl_now(x, "remove_validation_date")
+  if (!has_validation(x)) {
     return(x)
   }
 
   generated <- c(
     ".event_num", ".report_num", ".delay",
-    ".confirmation_num", ".confirmation_delay"
+    ".validation_num", ".validation_delay"
   )
-  # A `.confirmation_type` we built ourselves is ours to remove; one the user
+  # A `.validation_type` we built ourselves is ours to remove; one the user
   # supplied is their column and stays.
-  ours <- if (identical(get_confirmation_type(x), ".confirmation_type")) {
-    ".confirmation_type"
+  ours <- if (identical(get_validation_type(x), ".validation_type")) {
+    ".validation_type"
   } else {
     character(0)
   }
@@ -417,21 +288,21 @@ remove_confirmation <- function(x) {
   )
 }
 
-#' Rebuild a `tbl_now` with a confirmation process attached
+#' Rebuild a `tbl_now` with a validation process attached
 #'
-#' @inheritParams confirmation_setters
+#' @inheritParams tbl_now
 #'
 #' @return A `tbl_now`.
 #'
 #' @keywords internal
 #' @noRd
-.set_confirmation <- function(x, confirmation_date, confirmation_type,
-                              confirmation_units) {
+.set_validation <- function(x, validation_date, validation_type,
+                              validation_units) {
   # Every generated column has to go: `tbl_now()` rebuilds them and refuses to
   # write over one that is already there.
   generated <- c(
     ".event_num", ".report_num", ".delay",
-    ".confirmation_num", ".confirmation_delay"
+    ".validation_num", ".validation_delay"
   )
   bare <- .strip_tbl_now(x)
   bare <- bare[, setdiff(colnames(bare), generated), drop = FALSE]
@@ -441,9 +312,9 @@ remove_confirmation <- function(x) {
     event_date = get_event_date(x), report_date = get_report_date(x),
     case_count = get_case_count(x), strata = get_strata(x),
     covariates = get_covariates(x), is_censored = get_is_censored(x),
-    confirmation_date = {{ confirmation_date }},
-    confirmation_type = {{ confirmation_type }},
-    confirmation_units = confirmation_units,
+    validation_date = {{ validation_date }},
+    validation_type = {{ validation_type }},
+    validation_units = validation_units,
     data_type = get_data_type(x),
     event_units = get_event_units(x), report_units = get_report_units(x),
     t_effects = get_temporal_effect_cols(x),
@@ -451,24 +322,24 @@ remove_confirmation <- function(x) {
   )
 }
 
-#' Columns the confirmation process adds to a grouping
+#' Columns the validation process adds to a grouping
 #'
 #' A confirmed and a retracted case on the same `(event, report)` pair are two
 #' different things, so aggregating over them would sum a case with its own
-#' retraction. Grouping keeps them apart -- and keeps the confirmation DATE too,
+#' retraction. Grouping keeps them apart -- and keeps the validation DATE too,
 #' because that is the third time axis the whole feature exists to carry.
 #'
 #' @param x A `tbl_now` object.
 #'
-#' @return A character vector, empty when the object carries no confirmation.
+#' @return A character vector, empty when the object carries no validation.
 #'
 #' @keywords internal
 #' @noRd
-.confirmation_group_cols <- function(x) {
-  if (!has_confirmation(x)) {
+.validation_group_cols <- function(x) {
+  if (!has_validation(x)) {
     return(character(0))
   }
-  c(get_confirmation_date(x), ".confirmation_num", get_confirmation_type(x))
+  c(get_validation_date(x), ".validation_num", get_validation_type(x))
 }
 
 # Counting outcomes -----
@@ -477,7 +348,7 @@ remove_confirmation <- function(x) {
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
-#' Once a `tbl_now` carries a confirmation process, "how many cases were there"
+#' Once a `tbl_now` carries a validation process, "how many cases were there"
 #' has three different answers, and which one you want depends on the question:
 #'
 #' * **`get_latest_reported_cases()`** (the existing function) counts everything
@@ -494,10 +365,10 @@ remove_confirmation <- function(x) {
 #' likelihood is built for -- see
 #' [diseasenowcasting::confirmation_process()].
 #'
-#' @param x A `tbl_now` with a confirmation process (see [add_confirmation()]).
+#' @param x A `tbl_now` with a validation process (see [add_validation_date()]).
 #'
 #' @param delay For `get_nth_confirmed()`, a single non-negative number (or
-#'   `Inf`): the longest confirmation delay to count, in confirmation units.
+#'   `Inf`): the longest validation delay to count, in validation units.
 #'
 #' @return A `tibble` with the event-date column, the strata columns and a count
 #'   column named after the object's own `case_count` (or `n` for a line list).
@@ -510,15 +381,15 @@ remove_confirmation <- function(x) {
 #'
 #' By the **event date**, as every other `get_*_cases()` function is. A case
 #' confirmed three weeks after onset still belongs to the week it began. If you
-#' want counts by confirmation date instead, group on
-#' `get_confirmation_date(x)` yourself -- that is a different question (how busy
+#' want counts by validation date instead, group on
+#' `get_validation_date(x)` yourself -- that is a different question (how busy
 #' was the laboratory) and this package does not silently answer it.
 #'
 #' @seealso
 #' [get_latest_reported_cases()][get_latest_first] for the same counts on the
-#' reporting process; [add_confirmation()][confirmation_setters] to attach a
-#' confirmation; [confirmation_delay] for how long resolution takes;
-#' [plot_confirmation_status()] to see confirmed, retracted and pending over time.
+#' reporting process; [add_validation_date()][add] to attach a
+#' validation; [validation_delay] for how long resolution takes;
+#' [plot_validation_status()] to see confirmed, retracted and pending over time.
 #'
 #' @examples
 #' cases <- data.frame(
@@ -529,7 +400,7 @@ remove_confirmation <- function(x) {
 #' )
 #' flu <- tbl_now(cases,
 #'   event_date = onset, report_date = visit,
-#'   confirmation_date = result, confirmation_type = outcome,
+#'   validation_date = result, validation_type = outcome,
 #'   data_type = "linelist", verbose = FALSE
 #' )
 #'
@@ -543,16 +414,16 @@ remove_confirmation <- function(x) {
 #' get_initial_confirmed(flu)
 #' get_nth_confirmed(flu, delay = 1)
 #'
-#' @name confirmation_counts
+#' @name validation_counts
 NULL
 
-#' @rdname confirmation_counts
+#' @rdname validation_counts
 #' @export
 get_latest_confirmed <- function(x) {
   .count_by_outcome(x, "get_latest_confirmed", net = FALSE)
 }
 
-#' @rdname confirmation_counts
+#' @rdname validation_counts
 #' @export
 get_net_confirmed <- function(x) {
   .count_by_outcome(x, "get_net_confirmed", net = TRUE)
@@ -570,10 +441,10 @@ get_net_confirmed <- function(x) {
 #' @noRd
 .count_by_outcome <- function(x, fn, net, within_delay = NULL) {
   .assert_tbl_now(x, fn)
-  if (!has_confirmation(x)) {
+  if (!has_validation(x)) {
     cli::cli_abort(c(
-      "{.fn {fn}} needs a confirmation process, and {.arg x} has none.",
-      "i" = "Attach one with {.fn add_confirmation}.",
+      "{.fn {fn}} needs a validation process, and {.arg x} has none.",
+      "i" = "Attach one with {.fn add_validation_date}.",
       "i" = "For counts of everything reported, use
              {.fn get_latest_reported_cases}."
     ))
@@ -581,7 +452,7 @@ get_net_confirmed <- function(x) {
 
   event_col <- get_event_date(x)
   strata <- get_strata(x) %||% character(0)
-  type_col <- get_confirmation_type(x)
+  type_col <- get_validation_type(x)
   count_in <- get_case_count(x)
   count_out <- count_in %||% "n"
 
@@ -599,8 +470,8 @@ get_net_confirmed <- function(x) {
   # "Resolved within `within_delay`" -- anything slower has not been resolved
   # AS OF that delay, so it does not count yet.
   if (!is.null(within_delay)) {
-    resolved_in_time <- is.finite(observations[[".confirmation_delay"]]) &
-      observations[[".confirmation_delay"]] <= within_delay
+    resolved_in_time <- is.finite(observations[[".validation_delay"]]) &
+      observations[[".validation_delay"]] <= within_delay
     weight[!resolved_in_time] <- 0
   }
 
@@ -617,9 +488,9 @@ get_net_confirmed <- function(x) {
   out
 }
 
-# Does the confirmation delay depend on the outcome? -----
+# Does the validation delay depend on the outcome? -----
 
-#' Compare confirmation delays between confirmed and retracted cases
+#' Compare validation delays between confirmed and retracted cases
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
@@ -629,22 +500,22 @@ get_net_confirmed <- function(x) {
 #' assumes it is will be wrong about how many pending cases are still to be
 #' confirmed.
 #'
-#' `diagnose_confirmation_delay()` compares the two delay distributions;
-#' `plot_confirmation_delay()` shows them.
+#' `diagnose_validation_delay()` compares the two delay distributions;
+#' `plot_validation_delay()` shows them.
 #'
-#' @param x A `tbl_now` with a confirmation process.
+#' @param x A `tbl_now` with a validation process.
 #' @param by Optional stratum column to compare within; `NULL` (default) pools.
 #'
 #' @return
-#' `diagnose_confirmation_delay()` returns a one-row-per-comparison `tibble` with
+#' `diagnose_validation_delay()` returns a one-row-per-comparison `tibble` with
 #' `stratum`, `n_confirmed`, `n_retracted`, `median_confirmed`,
 #' `median_retracted`, `difference`, `statistic` and `p.value`.
 #'
-#' `plot_confirmation_delay()` returns a `ggplot`.
+#' `plot_validation_delay()` returns a `ggplot`.
 #'
 #' @section The test:
 #'
-#' A two-sided **Wilcoxon rank-sum** test on the confirmation delays. It is used
+#' A two-sided **Wilcoxon rank-sum** test on the validation delays. It is used
 #' rather than a t-test because reporting delays are strongly right-skewed and
 #' frequently have a point mass at zero, so a difference in means is neither
 #' robust nor the quantity of interest -- what matters is whether one outcome
@@ -656,15 +527,15 @@ get_net_confirmed <- function(x) {
 #' median days) alongside it.
 #'
 #' Rows with a missing or negative delay are dropped, and how many is reported
-#' in the `dropped` attribute of the result. A negative confirmation delay means
-#' the record is confirmed before it was reported, which the timeline forbids.
+#' in the `dropped` attribute of the result. A negative validation delay means
+#' the record is validated before it was reported, which the timeline forbids.
 #'
 #' @seealso
-#' [add_confirmation()][confirmation_setters] to attach a confirmation process;
-#' [censor_confirmation_delays_above()][censor_delays_above] for resolutions that
-#' never arrive; [confirmation_counts] for counting the outcomes;
+#' [add_validation_date()][add] to attach a validation process;
+#' [censor_validation_delays_above()][censor_delays_above] for resolutions that
+#' never arrive; [validation_counts] for counting the outcomes;
 #' [diagnose_drift()] for the same question about the *reporting* delay over time.
-#' The [*Describing and diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+#' The [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' puts this alongside the other checks.
 #'
 #' @examples
@@ -677,28 +548,28 @@ get_net_confirmed <- function(x) {
 #' )
 #' flu <- tbl_now(cases,
 #'   event_date = onset, report_date = visit,
-#'   confirmation_date = result, confirmation_type = outcome,
+#'   validation_date = result, validation_type = outcome,
 #'   data_type = "linelist", verbose = FALSE
 #' )
 #'
-#' # Retractions here come back about four days later than confirmations, and
+#' # Retractions here come back about four days later than validations, and
 #' # the test says so.
-#' diagnose_confirmation_delay(flu)
+#' diagnose_validation_delay(flu)
 #'
 #' # The same comparison as a picture.
-#' plot_confirmation_delay(flu)
+#' plot_validation_delay(flu)
 #'
-#' @name confirmation_delay
+#' @name validation_delay
 NULL
 
-#' @rdname confirmation_delay
+#' @rdname validation_delay
 #' @export
-diagnose_confirmation_delay <- function(x, by = NULL) {
-  delays <- .confirmation_delay_table(x, by, "diagnose_confirmation_delay")
+diagnose_validation_delay <- function(x, by = NULL) {
+  delays <- .validation_delay_table(x, by, "diagnose_validation_delay")
 
   results <- lapply(split(delays, delays$stratum), function(piece) {
-    confirmed <- piece$.confirmation_delay[piece$outcome == "confirmed"]
-    retracted <- piece$.confirmation_delay[piece$outcome == "retracted"]
+    confirmed <- piece$.validation_delay[piece$outcome == "confirmed"]
+    retracted <- piece$.validation_delay[piece$outcome == "retracted"]
 
     if (length(confirmed) < 2 || length(retracted) < 2) {
       return(dplyr::tibble(
@@ -726,19 +597,19 @@ diagnose_confirmation_delay <- function(x, by = NULL) {
   out
 }
 
-#' @rdname confirmation_delay
+#' @rdname validation_delay
 #' @export
-plot_confirmation_delay <- function(x, by = NULL) {
+plot_validation_delay <- function(x, by = NULL) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_confirmation_delay}.")
+    cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_validation_delay}.")
   }
-  delays <- .confirmation_delay_table(x, by, "plot_confirmation_delay")
+  delays <- .validation_delay_table(x, by, "plot_validation_delay")
   palette <- .tbl_now_palette()
 
   ggplot2::ggplot(
     delays,
     ggplot2::aes(
-      x = .data$.confirmation_delay, y = .data$outcome, fill = .data$outcome
+      x = .data$.validation_delay, y = .data$outcome, fill = .data$outcome
     )
   ) +
     ggplot2::geom_boxplot(outlier.alpha = 0.25, width = 0.6) +
@@ -752,7 +623,7 @@ plot_confirmation_delay <- function(x, by = NULL) {
       guide = "none"
     ) +
     ggplot2::labs(
-      x = paste0("Confirmation delay (", get_confirmation_units(x), ")"),
+      x = paste0("Validation delay (", get_validation_units(x), ")"),
       y = NULL,
       title = "Time from report to resolution",
       subtitle = "Reporting delay process"
@@ -760,27 +631,27 @@ plot_confirmation_delay <- function(x, by = NULL) {
     ggplot2::theme_minimal(base_size = 10)
 }
 
-#' The confirmation delays, tidied for comparison
+#' The validation delays, tidied for comparison
 #'
 #' @param x A `tbl_now`.
 #' @param by Optional stratum column.
 #' @param fn Calling function, for messages.
 #'
-#' @return A tibble of `stratum`, `outcome` and `.confirmation_delay`, with a
+#' @return A tibble of `stratum`, `outcome` and `.validation_delay`, with a
 #'   `dropped` attribute counting the unusable rows.
 #'
 #' @keywords internal
 #' @noRd
-.confirmation_delay_table <- function(x, by, fn) {
+.validation_delay_table <- function(x, by, fn) {
   .assert_tbl_now(x, fn)
-  if (!has_confirmation(x)) {
+  if (!has_validation(x)) {
     cli::cli_abort(c(
-      "{.fn {fn}} needs a confirmation process, and {.arg x} has none.",
-      "i" = "Attach one with {.fn add_confirmation}."
+      "{.fn {fn}} needs a validation process, and {.arg x} has none.",
+      "i" = "Attach one with {.fn add_validation_date}."
     ))
   }
 
-  type_col <- get_confirmation_type(x)
+  type_col <- get_validation_type(x)
   observations <- dplyr::as_tibble(.declass_tbl_now(dplyr::ungroup(x)))
   observations$outcome <- as.character(observations[[type_col]])
 
@@ -797,14 +668,14 @@ plot_confirmation_delay <- function(x, by = NULL) {
   usable <- observations |>
     dplyr::filter(
       .data$outcome %in% c("confirmed", "retracted"),
-      !is.na(.data$.confirmation_delay),
-      .data$.confirmation_delay >= 0
+      !is.na(.data$.validation_delay),
+      .data$.validation_delay >= 0
     ) |>
-    dplyr::select("stratum", "outcome", ".confirmation_delay")
+    dplyr::select("stratum", "outcome", ".validation_delay")
 
   if (nrow(usable) == 0) {
     cli::cli_abort(c(
-      "No usable confirmation delays.",
+      "No usable validation delays.",
       "i" = "Rows need a {.val confirmed} or {.val retracted} outcome and a
              non-negative delay."
     ))
@@ -814,16 +685,16 @@ plot_confirmation_delay <- function(x, by = NULL) {
   usable
 }
 
-#' Confirmation arguments for rebuilding a `tbl_now`
+#' Validation arguments for rebuilding a `tbl_now`
 #'
 #' Several verbs rebuild the object by calling `tbl_now()` with an explicit list
 #' of attributes (`summarise()`, `reframe()`, `update()`, ...). Every such list
-#' is a place the confirmation process can be silently dropped, which is how a
+#' is a place the validation process can be silently dropped, which is how a
 #' three-date object quietly becomes a two-date one -- and the `now` moves
 #' backwards with it.
 #'
 #' This returns the arguments to splice into that call, and returns nothing when
-#' the object has no confirmation or the rebuilt data no longer carries its
+#' the object has no validation or the rebuilt data no longer carries its
 #' columns.
 #'
 #' @param x The original `tbl_now`.
@@ -833,27 +704,27 @@ plot_confirmation_delay <- function(x, by = NULL) {
 #'
 #' @keywords internal
 #' @noRd
-.confirmation_rebuild_args <- function(x, data) {
-  confirmation_date <- get_confirmation_date(x)
-  if (is.null(confirmation_date) || !confirmation_date %in% colnames(data)) {
+.validation_rebuild_args <- function(x, data) {
+  validation_date <- get_validation_date(x)
+  if (is.null(validation_date) || !validation_date %in% colnames(data)) {
     return(list())
   }
-  type_col <- get_confirmation_type(x)
+  type_col <- get_validation_type(x)
   list(
-    confirmation_date = confirmation_date,
-    confirmation_type = if (!is.null(type_col) && type_col %in% colnames(data)) {
+    validation_date = validation_date,
+    validation_type = if (!is.null(type_col) && type_col %in% colnames(data)) {
       type_col
     } else {
       NULL
     },
-    confirmation_units = get_confirmation_units(x) %||% "auto"
+    validation_units = get_validation_units(x) %||% "auto"
   )
 }
 
-#' @rdname confirmation_counts
+#' @rdname validation_counts
 #'
-#' @param delay Longest confirmation delay to count, in the object's
-#'   confirmation units. `get_nth_confirmed(x, delay = 7)` answers "how many
+#' @param delay Longest validation delay to count, in the object's
+#'   validation units. `get_nth_confirmed(x, delay = 7)` answers "how many
 #'   cases per event date had been resolved within a week of being reported".
 #' @export
 get_nth_confirmed <- function(x, delay) {
@@ -864,7 +735,7 @@ get_nth_confirmed <- function(x, delay) {
   .count_by_outcome(x, "get_nth_confirmed", net = FALSE, within_delay = delay)
 }
 
-#' @rdname confirmation_counts
+#' @rdname validation_counts
 #' @export
 get_initial_confirmed <- function(x) {
   # Delay 0: resolved in the same period it was reported -- the rapid-test case.
@@ -873,38 +744,38 @@ get_initial_confirmed <- function(x) {
 
 #' @rdname censor_delays_above
 #' @export
-censor_confirmation_delays_above <- function(x, max_delay, verbose = TRUE) {
-  .assert_tbl_now(x, "censor_confirmation_delays_above")
-  if (!has_confirmation(x)) {
+censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
+  .assert_tbl_now(x, "censor_validation_delays_above")
+  if (!has_validation(x)) {
     cli::cli_abort(c(
-      "{.fn censor_confirmation_delays_above} needs a confirmation process.",
-      "i" = "Attach one with {.fn add_confirmation}."
+      "{.fn censor_validation_delays_above} needs a validation process.",
+      "i" = "Attach one with {.fn add_validation_date}."
     ))
   }
   if (!is.numeric(max_delay) || length(max_delay) != 1L || max_delay < 0) {
     cli::cli_abort("{.arg max_delay} must be a single non-negative number.")
   }
 
-  delays <- x[[".confirmation_delay"]]
+  delays <- x[[".validation_delay"]]
   too_long <- is.finite(delays) & delays > max_delay
 
   if (any(too_long)) {
-    confirmation_col <- get_confirmation_date(x)
-    type_col <- get_confirmation_type(x)
-    # Both together: a `confirmation_type` of "confirmed" with no date is the
+    validation_col <- get_validation_date(x)
+    type_col <- get_validation_type(x)
+    # Both together: a `validation_type` of "confirmed" with no date is the
     # contradiction `tbl_now()` warns about, so the outcome goes back to
     # "pending" at the same time as the date is removed.
-    x[[confirmation_col]][too_long] <- NA
+    x[[validation_col]][too_long] <- NA
     x[[type_col]][too_long] <- "pending"
-    x[[".confirmation_num"]][too_long] <- NA_real_
-    x[[".confirmation_delay"]][too_long] <- NA_real_
+    x[[".validation_num"]][too_long] <- NA_real_
+    x[[".validation_delay"]][too_long] <- NA_real_
   }
 
   if (isTRUE(verbose)) {
     cli::cli_inform(c(
       "i" = paste0(
-        "Returned {sum(too_long)} case{?s} with a confirmation delay > ",
-        "{max_delay} {get_confirmation_units(x)} to {.val pending}."
+        "Returned {sum(too_long)} case{?s} with a validation delay > ",
+        "{max_delay} {get_validation_units(x)} to {.val pending}."
       )
     ))
   }
@@ -924,7 +795,7 @@ censor_confirmation_delays_above <- function(x, max_delay, verbose = TRUE) {
 #' back the confirmed counts can be trusted -- and a day that is 80% pending is
 #' a day whose confirmed count means very little.
 #'
-#' @param x A `tbl_now` with a confirmation process.
+#' @param x A `tbl_now` with a validation process.
 #' @param by Optional stratum column to facet by.
 #' @param proportion When `TRUE` (default) the bands are shares summing to 1;
 #'   `FALSE` shows the counts instead, which keeps the epidemic curve visible.
@@ -937,7 +808,7 @@ censor_confirmation_delays_above <- function(x, max_delay, verbose = TRUE) {
 #' the same right-truncation a nowcast exists to correct, one axis over. What is
 #' *not* normal is a pending band that stays wide far from the `now`: those cases
 #' were reported and then never resolved, and they will never be. Consider
-#' [censor_confirmation_delays_above()].
+#' [censor_validation_delays_above()].
 #'
 #' A `retracted` share that changes over time is worth investigating: it usually
 #' means the testing criteria or the case definition changed, not that the
@@ -949,7 +820,7 @@ censor_confirmation_delays_above <- function(x, max_delay, verbose = TRUE) {
 #' epidemic process), `retracted` in the accent red (it was removed by the
 #' reporting process), and `pending` in grey (not yet known either way).
 #'
-#' @seealso [diagnose_confirmation_delay()], [get_latest_confirmed()].
+#' @seealso [diagnose_validation_delay()], [get_latest_confirmed()].
 #'
 #' @examples
 #' cases <- data.frame(
@@ -961,27 +832,27 @@ censor_confirmation_delays_above <- function(x, max_delay, verbose = TRUE) {
 #' cases$result[cases$outcome == "pending"] <- as.Date(NA)
 #' flu <- tbl_now(cases,
 #'   event_date = onset, report_date = visit,
-#'   confirmation_date = result, confirmation_type = outcome,
+#'   validation_date = result, validation_type = outcome,
 #'   data_type = "linelist", verbose = FALSE
 #' )
 #'
-#' plot_confirmation_status(flu)
+#' plot_validation_status(flu)
 #'
 #' @export
-plot_confirmation_status <- function(x, by = NULL, proportion = TRUE) {
+plot_validation_status <- function(x, by = NULL, proportion = TRUE) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_confirmation_status}.")
+    cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_validation_status}.")
   }
-  .assert_tbl_now(x, "plot_confirmation_status")
-  if (!has_confirmation(x)) {
+  .assert_tbl_now(x, "plot_validation_status")
+  if (!has_validation(x)) {
     cli::cli_abort(c(
-      "{.fn plot_confirmation_status} needs a confirmation process.",
-      "i" = "Attach one with {.fn add_confirmation}."
+      "{.fn plot_validation_status} needs a validation process.",
+      "i" = "Attach one with {.fn add_validation_date}."
     ))
   }
 
   event_col <- get_event_date(x)
-  type_col <- get_confirmation_type(x)
+  type_col <- get_validation_type(x)
   count_col <- get_case_count(x)
   palette <- .tbl_now_palette()
 

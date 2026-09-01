@@ -75,11 +75,11 @@
 #'   overdispersion).
 #' @param n_permutations Number of permutations. Default `999`.
 #' @param axis Which time axis to scan for arrivals: `"report"` (default) or
-#'   `"confirmation"`. The question is the same either way -- did an unusual
+#'   `"validation"`. The question is the same either way -- did an unusual
 #'   number of records land on this date? -- so a laboratory clearing its
 #'   backlog is found exactly as a surveillance system clearing its inbox is.
-#'   `"confirmation"` needs a confirmation process (see [add_confirmation()])
-#'   and ignores cases that are still `"pending"`, which have no confirmation
+#'   `"validation"` needs a validation process (see [add_validation_date()])
+#'   and ignores cases that are still `"pending"`, which have no validation
 #'   date to arrive on.
 #' @param seed Optional RNG seed.
 #'
@@ -117,7 +117,7 @@ diagnose_batch_shape <- function(x,
                              guard          = 1L,
                              permute        = c("items", "blocks"),
                              n_permutations = 999L,
-                             axis           = c("report", "confirmation"),
+                             axis           = c("report", "validation"),
                              seed           = NULL) {
   permute <- match.arg(permute)
   axis    <- match.arg(axis)

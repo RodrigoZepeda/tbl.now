@@ -115,7 +115,7 @@ update.tbl_now <- function(object, ..., new_data,
       now = NULL,
       event_date = get_event_date(object),
       report_date = get_report_date(object),
-      confirmation_date = get_confirmation_date(object)
+      validation_date = get_validation_date(object)
     )
     attr(updated_data, "now") <- now
   }
@@ -128,8 +128,8 @@ update.tbl_now <- function(object, ..., new_data,
   if (grepl("count", get_data_type(object)) && remove_duplicates) {
     suppressWarnings(
       updated_data <- updated_data |>
-        # Pass the object: with a confirmation process the generated set also
-        # holds `.confirmation_num`/`.confirmation_delay`, and leaving those in
+        # Pass the object: with a validation process the generated set also
+        # holds `.validation_num`/`.validation_delay`, and leaving those in
         # the de-duplication key would make every row look distinct.
         dplyr::distinct(
           dplyr::pick(-dplyr::one_of(get_protected_generated_cols(object))),
@@ -276,23 +276,23 @@ update.tbl_now <- function(object, ..., new_data,
     updated_data <- updated_data |> dplyr::select(-dplyr::all_of(stale_t_effect_cols))
   }
 
-  # The confirmation process rides along, when the object had one AND the merged
+  # The validation process rides along, when the object had one AND the merged
   # data still carries its columns. Losing it here would silently turn a
   # three-date object back into a two-date one, and the `now` would move
   # backwards with it.
-  confirmation_date <- get_confirmation_date(object)
-  if (!is.null(confirmation_date) && !confirmation_date %in% colnames(updated_data)) {
+  validation_date <- get_validation_date(object)
+  if (!is.null(validation_date) && !validation_date %in% colnames(updated_data)) {
     cli::cli_warn(c(
-      "The confirmation date {.val {confirmation_date}} is not in the updated
-       data, so the confirmation process was dropped.",
+      "The validation date {.val {validation_date}} is not in the updated
+       data, so the validation process was dropped.",
       "i" = "Include that column in {.arg new_data} to keep it."
     ))
-    confirmation_date <- NULL
+    validation_date <- NULL
   }
-  confirmation_type <- if (is.null(confirmation_date)) {
+  validation_type <- if (is.null(validation_date)) {
     NULL
   } else {
-    type_col <- get_confirmation_type(object)
+    type_col <- get_validation_type(object)
     if (!is.null(type_col) && type_col %in% colnames(updated_data)) type_col else NULL
   }
 
@@ -302,9 +302,9 @@ update.tbl_now <- function(object, ..., new_data,
     strata = get_strata(updated_data),
     covariates = get_covariates(updated_data),
     is_censored = result_is_censored,
-    confirmation_date = confirmation_date,
-    confirmation_type = confirmation_type,
-    confirmation_units = get_confirmation_units(object) %||% "auto",
+    validation_date = validation_date,
+    validation_type = validation_type,
+    validation_units = get_validation_units(object) %||% "auto",
     event_units = get_event_units(object),
     report_units = get_report_units(object),
     data_type = get_data_type(object),

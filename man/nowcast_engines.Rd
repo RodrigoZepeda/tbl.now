@@ -24,6 +24,7 @@ engine_baselinenowcast(
   ...,
   draws = 1000,
   delays_unit = NULL,
+  max_delay = NULL,
   min_date = NULL,
   quantile_levels = nowcast_quantile_levels(),
   label = NULL
@@ -82,10 +83,10 @@ functions it is whatever their named arguments do not already cover.}
 
 \item{model, type, n_draws}{(\code{engine_diseasenowcasting()}) Arguments of
 \code{\link[diseasenowcasting:nowcast]{diseasenowcasting::nowcast()}}. \code{model} is where the epidemic and
-confirmation processes are chosen, e.g.
+validation processes are chosen, e.g.
 \code{diseasenowcasting::model(epidemic = diseasenowcasting::ar1_epidemic())}.
 On \code{count-cumulative} data that revises downwards you also want a
-\code{confirmation} process, or the negative increments have nowhere to go.}
+\code{validation} process, or the negative increments have nowhere to go.}
 
 \item{min_date}{How much history to fit on. One of
 \itemize{
@@ -118,9 +119,15 @@ ensemble weights derived from one. Defaults to the method name. Give one
 when the same package appears twice with different settings, which is the
 whole reason two \code{diseasenowcasting} models can be weighted separately.}
 
-\item{draws, delays_unit}{(\code{engine_baselinenowcast()}) Number of nowcast
-samples, and the unit of the reporting triangle's delay axis (inferred from
-the object's units when \code{NULL}).}
+\item{draws, delays_unit, max_delay}{(\code{engine_baselinenowcast()}) Number of
+nowcast samples, the unit of the reporting triangle's delay axis (inferred
+from the object's units when \code{NULL}), and how many delay periods to keep --
+\code{max_delay = 10} keeps delays 0-9, as in \code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast()}}.
+The last one is not only about speed: \code{baselinenowcast} needs more
+reference dates than delay columns, so a \strong{snapshot ("as of") series} --
+which re-reports every past period in every snapshot, and therefore has a
+delay axis as long as the series itself -- cannot be fitted at all until
+the axis is capped. The error says which number to use.}
 
 \item{preprocess_args, expectation, reference, report, fit}{(\code{engine_epinowcast()}) \code{preprocess_args} is a list for
 \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}, e.g. \code{list(max_delay = 30)}; the other four are

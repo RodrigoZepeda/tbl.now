@@ -60,7 +60,7 @@ What it records
 
 <td align="center">
 
-<img src="inst/figures/event_date.svg" height="70" alt="event_date">
+<img src="man/figures/event_date.svg" height="70" alt="event_date">
 </td>
 
 <td align="left">
@@ -81,7 +81,7 @@ hospitalisation, death, …). <strong>Required.</strong>
 
 <td align="center">
 
-<img src="inst/figures/report_date.svg" height="70" alt="report_date">
+<img src="man/figures/report_date.svg" height="70" alt="report_date">
 </td>
 
 <td align="left">
@@ -102,7 +102,7 @@ unless it is reconstructed from <code>delay</code>.
 
 <td align="center">
 
-<img src="inst/figures/now.svg" height="70" alt="now">
+<img src="man/figures/now.svg" height="70" alt="now">
 </td>
 
 <td align="left">
@@ -122,7 +122,7 @@ view. <em>Optional</em>; defaults to the latest date.
 
 <td align="center">
 
-<img src="inst/figures/strata.svg" height="70" alt="strata">
+<img src="man/figures/strata.svg" height="70" alt="strata">
 </td>
 
 <td align="left">
@@ -142,7 +142,7 @@ Columns you want a separate nowcast for (e.g. gender, region).
 
 <td align="center">
 
-<img src="inst/figures/covariates.svg" height="70" alt="covariates">
+<img src="man/figures/covariates.svg" height="70" alt="covariates">
 </td>
 
 <td align="left">
@@ -162,7 +162,7 @@ broken down by (e.g. temperature or precipitation). <em>Optional</em>.
 
 <td align="center">
 
-<img src="inst/figures/case_count.svg" height="70" alt="case_count">
+<img src="man/figures/case_count.svg" height="70" alt="case_count">
 </td>
 
 <td align="left">
@@ -182,7 +182,7 @@ The column holding the counts when the data is given as aggregated
 
 <td align="center">
 
-<img src="inst/figures/datatype.svg" height="70" alt="data_type">
+<img src="man/figures/datatype.svg" height="70" alt="data_type">
 </td>
 
 <td align="left">
@@ -205,13 +205,13 @@ axis). <em>Optional</em>; inferred by default.
 
 <td align="center">
 
-<img src="inst/figures/units.svg" height="70" alt="units">
+<img src="man/figures/units.svg" height="70" alt="units">
 </td>
 
 <td align="left">
 
 <code>event_units</code>, <code>report_units</code>,
-<code>confirmation_units</code>
+<code>validation_units</code>
 </td>
 
 <td align="left">
@@ -227,7 +227,7 @@ The time grid each date lives on: <code>days</code>, <code>weeks</code>,
 
 <td align="center">
 
-<img src="inst/figures/censoring.svg" height="70" alt="is_censored">
+<img src="man/figures/censoring.svg" height="70" alt="is_censored">
 </td>
 
 <td align="left">
@@ -247,12 +247,12 @@ back-fill dump. <em>Optional</em>.
 
 <td align="center">
 
-<img src="inst/figures/validation_date.svg" height="70" alt="confirmation">
+<img src="man/figures/validation_date.svg" height="70" alt="validation">
 </td>
 
 <td align="left">
 
-<code>confirmation_date</code>, <code>confirmation_type</code>
+<code>validation_date</code>, <code>validation_type</code>
 </td>
 
 <td align="left">
@@ -268,7 +268,7 @@ resolved to (<code>confirmed</code>, <code>retracted</code>,
 
 <td align="center">
 
-<img src="inst/figures/temporal_effects.svg" height="70" alt="temporal_effects">
+<img src="man/figures/temporal_effects.svg" height="70" alt="temporal_effects">
 </td>
 
 <td align="left">
@@ -379,9 +379,9 @@ and checkout our articles starting with the
   the full anatomy of a `tbl_now`, data types, and temporal effects.
 - End-to-end tutorial on real, messy surveillance data — cleaning,
   diagnostics and nowcasting:
-  <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
+  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
 - Tutorial on detecting batches and other reporting-delay artifacts:
-  <https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html>
+  <https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html>
 - Comparing nowcasting engines on one dataset:
   <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
 - Package reference:

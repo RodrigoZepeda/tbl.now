@@ -79,7 +79,7 @@
 #' [diagnose_batches()] and [diagnose_batch_shape()], the tests this exists to
 #' validate; [censor_delays_above()] for recording a real batch rather than
 #' planting one. The
-#' [*Diagnosing reporting batches* article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html)
+#' [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' uses this to calibrate the screen.
 #'
 #' @examples
@@ -297,11 +297,11 @@ simulate_batch <- function(x,
   if (!is.null(existing_now)) {
     tbl_now_arguments$now <- existing_now
   }
-  # A confirmation is real data about the case; holding its report back does not
+  # A validation is real data about the case; holding its report back does not
   # unmake the laboratory result, so it is carried through. It CAN leave a report
-  # sitting after its own confirmation -- that is a true statement about the
+  # sitting after its own validation -- that is a true statement about the
   # simulated system, and `tbl_now()`'s ordering check is what says so.
-  tbl_now_arguments <- c(tbl_now_arguments, .confirmation_rebuild_args(data, observations))
+  tbl_now_arguments <- c(tbl_now_arguments, .validation_rebuild_args(data, observations))
 
   suppressWarnings(do.call(tbl_now, tbl_now_arguments))
 }

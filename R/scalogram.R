@@ -7,8 +7,8 @@
 #' @noRd
 .scalo_series <- function(x, type, axis = "report") {
   inc         <- .batch_report_increments(x, axis = axis)
-  report_unit <- if (identical(axis, "confirmation")) {
-    get_confirmation_units(x) %||% get_report_units(x) %||% "days"
+  report_unit <- if (identical(axis, "validation")) {
+    get_validation_units(x) %||% get_report_units(x) %||% "days"
   } else {
     get_report_units(x) %||% "days"
   }
@@ -56,10 +56,10 @@
 #' @param palette A named colour palette. Defaults to the package palette.
 #'
 #' @param axis Which time axis to draw: `"report"` (default) or
-#'   `"confirmation"`. On the confirmation axis the picture answers the
+#'   `"validation"`. On the validation axis the picture answers the
 #'   laboratory's version of the question -- when results arrived, rather than
-#'   when reports did. Needs a confirmation process (see [add_confirmation()]);
-#'   cases still `"pending"` have no confirmation date and are left out.
+#'   when reports did. Needs a validation process (see [add_validation_date()]);
+#'   cases still `"pending"` have no validation date and are left out.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
 #'
 #' @seealso
@@ -78,7 +78,7 @@
 #' @md
 plot_scalogram <- function(x, type = c("reporting", "epidemic"), windowrad = 1,
                            wname = "PAUL", format = "%d/%b/%y",
-                           plotly = FALSE, axis = c("report", "confirmation"),
+                           plotly = FALSE, axis = c("report", "validation"),
                            palette = .tbl_now_palette()) {
   type <- match.arg(type)
   axis <- match.arg(axis)

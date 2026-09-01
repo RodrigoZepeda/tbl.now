@@ -47,10 +47,10 @@
 #' @keywords internal
 #' @noRd
 .diag_context <- function(x, increments, max_delay = NULL, axis = "report") {
-  # On the confirmation axis every "report" in these pictures is a confirmation,
+  # On the validation axis every "report" in these pictures is a validation,
   # so the unit and the wording follow the axis rather than being hard-coded.
-  report_unit <- if (identical(axis, "confirmation")) {
-    get_confirmation_units(x) %||% get_report_units(x) %||% "days"
+  report_unit <- if (identical(axis, "validation")) {
+    get_validation_units(x) %||% get_report_units(x) %||% "days"
   } else {
     get_report_units(x) %||% "days"
   }
@@ -58,7 +58,7 @@
   list(
     has_strata  = length(get_strata(x)) > 0L,
     axis        = axis,
-    arrival     = if (identical(axis, "confirmation")) "confirmation" else "report",
+    arrival     = if (identical(axis, "validation")) "validation" else "report",
     report_unit = report_unit,
     event_unit  = event_unit,
     unit_days   = .tbl_now_units_to_days(report_unit),
@@ -105,11 +105,11 @@
 #'   zoom) instead of a static \pkg{ggplot2} plot. Default `FALSE`.
 #' @param palette A named colour palette. Defaults to the package palette.
 #' @param axis Which time axis to draw: `"report"` (default) or
-#'   `"confirmation"`. On the confirmation axis the picture answers the
+#'   `"validation"`. On the validation axis the picture answers the
 #'   laboratory's version of the question -- when results arrived, rather than
-#'   when reports did. Needs a confirmation process (see
-#'   [add_confirmation()][confirmation_setters]); cases still `"pending"` have no
-#'   confirmation date and are left out.
+#'   when reports did. Needs a validation process (see
+#'   [add_validation_date()][add]); cases still `"pending"` have no
+#'   validation date and are left out.
 #'
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
 #'
@@ -132,7 +132,7 @@
 #'
 #' @name plot_epidemic_process
 #' @export
-plot_reporting_process <- function(x, plotly = FALSE, axis = c("report", "confirmation"),
+plot_reporting_process <- function(x, plotly = FALSE, axis = c("report", "validation"),
                                    palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
   .diag_check(x)
@@ -143,7 +143,7 @@ plot_reporting_process <- function(x, plotly = FALSE, axis = c("report", "confir
 
 #' @rdname plot_epidemic_process
 #' @export
-plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "confirmation"),
+plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "validation"),
                                   palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
   .diag_check(x)
@@ -220,10 +220,10 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "confirm
 #'   static plot. Default `FALSE`.
 #' @param palette A named colour palette. Defaults to the package palette.
 #' @param axis Which time axis to draw: `"report"` (default) or
-#'   `"confirmation"`. On the confirmation axis the picture answers the
+#'   `"validation"`. On the validation axis the picture answers the
 #'   laboratory's version of the question -- when results arrived, rather than
-#'   when reports did. Needs a confirmation process (see [add_confirmation()]);
-#'   cases still `"pending"` have no confirmation date and are left out.
+#'   when reports did. Needs a validation process (see [add_validation_date()]);
+#'   cases still `"pending"` have no validation date and are left out.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
 #' @seealso
 #' [plot_reporting_hexamap()] for the same grid drawn so that event date, report
@@ -243,7 +243,7 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "confirm
 #' @md
 plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
                                     mark_batches = 0L, plotly = FALSE,
-                                    axis = c("report", "confirmation"),
+                                    axis = c("report", "validation"),
                                     palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
   .diag_check(x)
@@ -387,8 +387,8 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
     .diag_count_scale(palette, "fill") +
     ggplot2::labs(
       x = "Event date", y = sprintf("Delay (%s)", ctx$report_unit),
-      title = if (identical(ctx$arrival, "confirmation")) {
-        "Confirmation triangle"
+      title = if (identical(ctx$arrival, "validation")) {
+        "Validation triangle"
       } else {
         "Reporting triangle"
       },
@@ -418,12 +418,12 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 #'   static plot. Default `FALSE`.
 #' @param palette A named colour palette. Defaults to the package palette.
 #' @param axis Which time axis the delay is measured to: `"report"` (default)
-#'   or `"confirmation"`. Both are measured *from the event*, so the two are
+#'   or `"validation"`. Both are measured *from the event*, so the two are
 #'   directly comparable -- run each in turn and the gap between them is the
 #'   time the laboratory adds. (This is not the same quantity as the
-#'   `.confirmation_delay` column, which is the laboratory's own turnaround,
-#'   measured from the report.) Needs a confirmation process (see
-#'   [add_confirmation()]); cases still `"pending"` are left out.
+#'   `.validation_delay` column, which is the laboratory's own turnaround,
+#'   measured from the report.) Needs a validation process (see
+#'   [add_validation_date()]); cases still `"pending"` are left out.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
 #' @seealso
 #' [plot_delay_distribution()] for the pooled delay distribution rather than one
@@ -438,7 +438,7 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 #' @export
 #' @md
 plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
-                                plotly = FALSE, axis = c("report", "confirmation"),
+                                plotly = FALSE, axis = c("report", "validation"),
                                 palette = .tbl_now_palette()) {
   by <- match.arg(by)
   axis <- match.arg(axis)
@@ -472,8 +472,8 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
     ggplot2::labs(
       x = sprintf("Delay (%s)", ctx$report_unit),
       y = sprintf("Share of the date's %ss", ctx$arrival),
-      title = if (identical(ctx$arrival, "confirmation")) {
-        "Confirmation delay profiles"
+      title = if (identical(ctx$arrival, "validation")) {
+        "Validation delay profiles"
       } else {
         "Delay profiles"
       },
@@ -613,12 +613,12 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, palette = .tbl_n
 #' @param palette A named colour palette. Defaults to the package palette.
 #'
 #' @param axis Which time axis the delay is measured to: `"report"` (default)
-#'   or `"confirmation"`. Both are measured *from the event*, so the two are
+#'   or `"validation"`. Both are measured *from the event*, so the two are
 #'   directly comparable -- run each in turn and the gap between them is the
 #'   time the laboratory adds. (This is not the same quantity as the
-#'   `.confirmation_delay` column, which is the laboratory's own turnaround,
-#'   measured from the report.) Needs a confirmation process (see
-#'   [add_confirmation()]); cases still `"pending"` are left out.
+#'   `.validation_delay` column, which is the laboratory's own turnaround,
+#'   measured from the report.) Needs a validation process (see
+#'   [add_validation_date()]); cases still `"pending"` are left out.
 #' @returns A \pkg{patchwork} object, or a single plot when one panel is selected
 #'   (or a \pkg{plotly} widget when `plotly = TRUE`).
 #'
@@ -644,7 +644,7 @@ diagnostic_plot <- function(x,
                             max_delay = NULL,
                             ...,
                             plotly    = FALSE,
-                            axis      = c("report", "confirmation"),
+                            axis      = c("report", "validation"),
                             palette   = .tbl_now_palette()) {
   by <- match.arg(by)
   axis <- match.arg(axis)

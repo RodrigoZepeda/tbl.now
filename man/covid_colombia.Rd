@@ -35,7 +35,7 @@ with the number of cases \code{n}.
 In the nowcasting context the \strong{event date} is \code{notification_date} (when the
 case symptom onset was recorded in the system) and the \strong{report date} is
 \code{diagnosis_date} (when the laboratory result was entered).  The delay between
-the two reflects the time from symptom onset to laboratory confirmation and
+the two reflects the time from symptom onset to laboratory validation and
 data entry -- the quantity the nowcasting model estimates and corrects for.
 
 The dataset covers the full first three years of the Colombian epidemic

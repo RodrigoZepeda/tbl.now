@@ -201,7 +201,7 @@ tbl_now_to_epidist(nowagg)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\link{confirmation_setters} and \link{confirmation_delay}, since \pkg{epidist} is about
+\link{add} and \link{validation_delay}, since \pkg{epidist} is about
 delay distributions and a \code{tbl_now} may carry two of them;
 \code{\link[=censor_delays_above]{censor_delays_above()}} for the long delays that would otherwise dominate a
 fitted distribution;

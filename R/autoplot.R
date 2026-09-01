@@ -2131,7 +2131,7 @@ ggplot2::autoplot
 #' [plot_delay_drift()];
 #' [summary()][tbl_now_summary] and [diagnose()] for the same information as
 #' tables. The
-#' [*Describing and diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+#' [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' reads the panels one at a time.
 #'
 #' @importFrom rlang .data

@@ -70,6 +70,6 @@ try(validate_tbl_now(data.frame(x = 1:3)))
 \code{\link[=diagnose]{diagnose()}} for the same findings returned as a tibble, plus the softer
 notes; \code{\link[=tbl_now]{tbl_now()}} to build a valid object; \code{\link[=tbl_now_attributes]{tbl_now_attributes()}} to see what
 it recorded. The
-\href{https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html}{\emph{Describing and diagnosing a tbl_now} article}
+\href{https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html}{\emph{Diagnosing a tbl_now} article}
 explains what each finding means.
 }

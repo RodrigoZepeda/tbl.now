@@ -15,7 +15,7 @@ plot_delay_drift(
   changepoint = FALSE,
   level = 0.95,
   plotly = FALSE,
-  axis = c("report", "confirmation"),
+  axis = c("report", "validation"),
   palette = .tbl_now_palette()
 )
 }
@@ -51,12 +51,12 @@ with a vertical line, when one is detected (p < 0.05). See
 static plot. Default \code{FALSE}.}
 
 \item{axis}{Which time axis the delay is measured to: \code{"report"} (default)
-or \code{"confirmation"}. Both are measured \emph{from the event}, so the two are
+or \code{"validation"}. Both are measured \emph{from the event}, so the two are
 directly comparable -- run each in turn and the gap between them is the
 time the laboratory adds. (This is not the same quantity as the
-\code{.confirmation_delay} column, which is the laboratory's own turnaround,
-measured from the report.) Needs a confirmation process (see
-\code{\link[=add_confirmation]{add_confirmation()}}); cases still \code{"pending"} are left out.}
+\code{.validation_delay} column, which is the laboratory's own turnaround,
+measured from the report.) Needs a validation process (see
+\code{\link[=add_validation_date]{add_validation_date()}}); cases still \code{"pending"} are left out.}
 
 \item{palette}{A named colour palette (defaults to the package palette).}
 }

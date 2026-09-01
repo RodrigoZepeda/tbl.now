@@ -10,7 +10,7 @@ transport_discriminant(
   baseline_window = NULL,
   period = NULL,
   alpha = 0.05,
-  axis = c("report", "confirmation")
+  axis = c("report", "validation")
 )
 }
 \arguments{
@@ -26,7 +26,7 @@ reporting cadence.}
 \item{alpha}{Level for the \code{classification} labels. Default \code{0.05}.}
 
 \item{axis}{Which time axis to scan for arrivals: \code{"report"} (default) or
-\code{"confirmation"}. Needs a confirmation process (see \code{\link[=add_confirmation]{add_confirmation()}});
+\code{"validation"}. Needs a validation process (see \code{\link[=add_validation_date]{add_validation_date()}});
 cases still \code{"pending"} are left out.}
 }
 \value{

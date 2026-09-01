@@ -1,3 +1,100 @@
+# tbl.now 0.28.0
+
+## Breaking: the confirmation process is now the validation process
+
+The optional third date a `tbl_now` can carry is called a **validation** rather
+than a confirmation, throughout. The old spelling is gone, not deprecated -- it
+had not shipped.
+
+| was | is |
+|---|---|
+| `add_confirmation()`, `change_confirmation()`, `remove_confirmation()` | `add_validation_date()`, `change_validation_date()`, `remove_validation_date()` |
+| `get_confirmation_date()`, `get_confirmation_type()`, `get_confirmation_units()`, `has_confirmation()` | `get_validation_date()`, `get_validation_type()`, `get_validation_units()`, `has_validation()` |
+| `confirmation_counts`, `confirmation_delay` | `validation_counts`, `validation_delay` |
+| `censor_confirmation_delays_above()`, `diagnose_confirmation_delay()` | `censor_validation_delays_above()`, `diagnose_validation_delay()` |
+| `plot_confirmation_delay()`, `plot_confirmation_status()`, `prop_confirmation_type()` | `plot_validation_delay()`, `plot_validation_status()`, `prop_validation_type()` |
+| `confirmation_date`, `confirmation_type`, `confirmation_units` arguments | `validation_date`, `validation_type`, `validation_units` |
+| `.confirmation_num`, `.confirmation_delay` columns | `.validation_num`, `.validation_delay` |
+| `axis = "confirmation"` | `axis = "validation"` |
+| `"event_to_confirmation"`, `"report_to_confirmation"` | `"event_to_validation"`, `"report_to_validation"` |
+
+The **outcome values are unchanged**: a case is still `"confirmed"`,
+`"retracted"` or `"pending"`. Validation is what the process does; confirmed is
+one of the things it can conclude.
+
+`diseasenowcasting::confirmation_process()` is that package's name and is
+untouched -- `model(confirmation = confirmation_process())` still reads exactly
+as it did.
+
+## Documentation: fewer, fuller reference pages
+
+* The validation getters now live on `?nowcast_data_getters`, next to
+  `get_event_date()`, and the validation setters on `?add`, next to
+  `change_event_date()`. Someone asking "what did this object record, and how do
+  I change it" now finds every answer on one page instead of four.
+* *Describing and diagnosing a tbl_now* and *Diagnosing reporting batches* are
+  now **one article**,
+  [*Diagnosing a tbl_now*](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html),
+  running structure-first: what is in the data (`summary()`), what is
+  structurally wrong with it (`diagnose()`), and then the statistical tests
+  `diagnose()` signposts but refuses to run.
+* The attribute diagrams in the README now appear on the pkgdown site. They
+  lived in `inst/figures/`, which pkgdown does not copy; `man/figures/` is the
+  directory it publishes, and GitHub renders it just as happily.
+* `summary()`'s `"completeness"` and `"growth"` rows are distributions over
+  event dates, so they populate `mean`/`sd`/the quantiles (and, for
+  completeness, `prop`) and leave the scalar `value` column empty. The
+  documented examples selected `value` and got a column of `NA`; they now select
+  the columns that carry the answer.
+
+## Fixed: `baselinenowcast` on a snapshot ("as of") series
+
+A snapshot stream restates the whole history in every snapshot, so its delay
+axis is as long as the series itself and the reporting triangle comes out
+square. `baselinenowcast` needs more reference dates than delay columns -- it
+spends `max_delay` of them estimating the delay distribution and keeps two back
+for the uncertainty model -- so it refused, with a message about reference-time
+arithmetic that mentioned neither the delay axis nor anything to do about it.
+Three of the six shipped datasets are that shape.
+
+* `engine_baselinenowcast()` gains **`max_delay`**, the number of delay periods
+  to keep, forwarded to `tbl_now_to_baselinenowcast()`. `?run_nowcast` already
+  documented it ("`max_delay` caps the triangle's width"); what actually
+  happened is that it fell into `...` and reached the modelling call, which has
+  no such argument and ignored it.
+* A triangle too wide to fit is now refused by `tbl.now`, naming the delay axis
+  and a concrete cap -- the delay covering 99% of the reported cases:
+
+  ```r
+  run_nowcast(x, engine_baselinenowcast(max_delay = 21))
+  ```
+
+Note that a snapshot series must be **declared** `data_type = "count-cumulative"`.
+`infer_data_type()` reads a single downward revision as incidence, by design,
+and a revised running total has them; left to the inference, every delay carries
+a whole period's count instead of an increment and nothing downstream can tell.
+
+## New: `diagnose()` and `summary()` print as reports
+
+Both still return the tibbles they always returned, and every `dplyr` verb still
+works on them. What changed is what you see when you print one.
+
+* `diagnose()` -- and each of its blocks -- prints the errors, warnings and
+  notes in full, each with its hint, and counts the checks that passed, that
+  were deliberately not run, and that could not be assessed. `print(x, all =
+  TRUE)` spells those out too.
+* `summary()` -- and each of its blocks -- prints one block per component,
+  dropping the columns that component does not populate. The schema is wide
+  because it holds every block at once; no block fills more than a handful of
+  it.
+* `tibble::as_tibble()` gives the plain table back in both cases.
+
+## New: a nowcast prints its value at the `now` edge
+
+`print()` on a `tbl_nowcast` now leads with the number it was fitted to produce
+-- the estimate and interval at the last event date it covers, one line per
+stratum -- before the quantile table, which starts at the oldest event date.
+
 # tbl.now 0.27.0
 
 ## Breaking: a nowcast is specified with an `engine()`

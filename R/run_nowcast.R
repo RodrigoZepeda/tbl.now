@@ -66,6 +66,10 @@
 #' @param draws (`"baselinenowcast"` only) Number of nowcast samples to draw.
 #' @param delays_unit (`"baselinenowcast"` only) Unit of the reporting
 #'   triangle's delay axis; inferred from the object's time units when `NULL`.
+#' @param max_delay (`"baselinenowcast"` only) Number of delay periods to keep,
+#'   forwarded to [tbl_now_to_baselinenowcast()]. `NULL` keeps every delay,
+#'   which a snapshot ("as of") series cannot be fitted with -- see
+#'   [engine_baselinenowcast()][nowcast_engines].
 #' @param preprocess_args (`"epinowcast"` only) A list of arguments for
 #'   [tbl_now_to_epinowcast()], e.g. `list(max_delay = 20)`.
 #' @param specs (`"NobBS"` only) The `specs` list of `NobBS::NobBS()`. The

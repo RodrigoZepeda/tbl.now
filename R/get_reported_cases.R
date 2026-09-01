@@ -38,8 +38,8 @@
 #' * any strata, censoring indicator and temporal-effect columns the object carried.
 #'
 #' @seealso
-#' [get_latest_confirmed()][confirmation_counts] and friends for the same idea on
-#' the confirmation process; [to_count()] for the underlying data shapes;
+#' [get_latest_confirmed()][validation_counts] and friends for the same idea on
+#' the validation process; [to_count()] for the underlying data shapes;
 #' [score_nowcast()], which uses the latest counts as truth;
 #' [reporting_completeness()][nowcast_summary_components] for the same
 #' information as a proportion.

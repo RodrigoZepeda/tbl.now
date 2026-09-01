@@ -138,7 +138,7 @@ quantile(iaas_now$.delay, c(0.5, 0.75, 0.9, 0.99), na.rm = TRUE)
 }
 \seealso{
 \code{\link[=tbl_now]{tbl_now()}} to declare the date columns, and
-\link[=confirmation_setters]{add_confirmation()} for the third one this dataset
+\link[=add]{add_validation_date()} for the third one this dataset
 has; \code{\link[=diagnose]{diagnose()}} and \code{\link[=diagnose_drift]{diagnose_drift()}}, which this dataset is deliberately
 messy enough to exercise; the package's other datasets -- \link{denguedat},
 \link{mpoxdat}, \link{flusight}, \link{covid_colombia} and \link{covid_us}.

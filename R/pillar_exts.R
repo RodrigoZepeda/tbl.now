@@ -8,8 +8,8 @@
 #' Turns the list of lazy temporal-effect specs stored on a `tbl_now` into a
 #' single string for the print footer, e.g.
 #' `"[event_date] week_of_year, season(52) | [report_date] holidays"`.
-#' Confirmation columns are annotated `[confirmation_date]` and
-#' `[confirmation_type]`.
+#' Validation columns are annotated `[validation_date]` and
+#' `[validation_type]`.
 #'
 #' @param specs The list of specs as returned by [get_temporal_effects()].
 #'
@@ -64,16 +64,16 @@ tbl_format_footer.tbl_now <- function(x, ...) {
   footer <- cli::cli_fmt({
     cli::cli_rule()
     cli::cli_text("Now: {.val {get_now(x)}} | Event date: {.val {get_event_date(x)}} | Report date: {.val {get_report_date(x)}}")
-    if (has_confirmation(x)) {
+    if (has_validation(x)) {
       # The third date is easy to forget is there, and it changes what `now`
       # means, so the footer says so rather than leaving it to be discovered.
-      confirmation_col <- get_confirmation_date(x)
+      validation_col <- get_validation_date(x)
       resolved <- sum(
-        !is.na(x[[get_confirmation_type(x)]]) &
-          x[[get_confirmation_type(x)]] != "pending"
+        !is.na(x[[get_validation_type(x)]]) &
+          x[[get_validation_type(x)]] != "pending"
       )
       cli::cli_text(
-        "Confirmation date: {.val {confirmation_col}} ({.val {get_confirmation_units(x)}}) | resolved: {.val {resolved}}/{.val {nrow(x)}}"
+        "Validation date: {.val {validation_col}} ({.val {get_validation_units(x)}}) | resolved: {.val {resolved}}/{.val {nrow(x)}}"
       )
     }
     if (length(get_is_censored(x)) > 0) {
@@ -120,10 +120,10 @@ ctl_new_pillar.tbl_now <- function(controller, x, width, ...) {
       annotation <- "[strata]"
     } else if (!is.null(get_covariates(controller)) && (cval %in% get_covariates(controller))) {
       annotation <- "[covariate]"
-    } else if (identical(cval, get_confirmation_date(controller))) {
-      annotation <- "[confirmation_date]"
-    } else if (identical(cval, get_confirmation_type(controller))) {
-      annotation <- "[confirmation_type]"
+    } else if (identical(cval, get_validation_date(controller))) {
+      annotation <- "[validation_date]"
+    } else if (identical(cval, get_validation_type(controller))) {
+      annotation <- "[validation_type]"
     } else if (identical(cval, get_is_censored(controller))) {
       annotation <- "[is_censored]"
     } else if (identical(cval, get_case_count(controller))) {

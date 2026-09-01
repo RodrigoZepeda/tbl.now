@@ -50,10 +50,10 @@
 #' @param palette A named colour palette. Defaults to the package palette.
 #'
 #' @param axis Which time axis to draw: `"report"` (default) or
-#'   `"confirmation"`. On the confirmation axis the picture answers the
+#'   `"validation"`. On the validation axis the picture answers the
 #'   laboratory's version of the question -- when results arrived, rather than
-#'   when reports did. Needs a confirmation process (see [add_confirmation()]);
-#'   cases still `"pending"` have no confirmation date and are left out.
+#'   when reports did. Needs a validation process (see [add_validation_date()]);
+#'   cases still `"pending"` have no validation date and are left out.
 #' @returns A \pkg{ggplot2} object.
 #'
 #' @references Jalal, H. and Burke, D. S. (2020). Hexamaps for Age-Period-Cohort
@@ -74,7 +74,7 @@
 plot_reporting_hexamap <- function(x, max_delay = NULL, complete = FALSE,
                                    iso = NULL, iso_minor = NULL,
                                    format = "%d/%b/%y", max_cells = 12000L,
-                                   trans = "sqrt", axis = c("report", "confirmation"),
+                                   trans = "sqrt", axis = c("report", "validation"),
                                    palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
   .diag_check(x)

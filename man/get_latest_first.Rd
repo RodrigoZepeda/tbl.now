@@ -83,8 +83,8 @@ get_nth_reported_cases(dengue, delay = 2)
 
 }
 \seealso{
-\link[=confirmation_counts]{get_latest_confirmed()} and friends for the same idea on
-the confirmation process; \code{\link[=to_count]{to_count()}} for the underlying data shapes;
+\link[=validation_counts]{get_latest_confirmed()} and friends for the same idea on
+the validation process; \code{\link[=to_count]{to_count()}} for the underlying data shapes;
 \code{\link[=score_nowcast]{score_nowcast()}}, which uses the latest counts as truth;
 \link[=nowcast_summary_components]{reporting_completeness()} for the same
 information as a proportion.

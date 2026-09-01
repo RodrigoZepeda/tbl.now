@@ -11,7 +11,7 @@ diagnose_batch_shape(
   guard = 1L,
   permute = c("items", "blocks"),
   n_permutations = 999L,
-  axis = c("report", "confirmation"),
+  axis = c("report", "validation"),
   seed = NULL
 )
 }
@@ -34,11 +34,11 @@ overdispersion).}
 \item{n_permutations}{Number of permutations. Default \code{999}.}
 
 \item{axis}{Which time axis to scan for arrivals: \code{"report"} (default) or
-\code{"confirmation"}. The question is the same either way -- did an unusual
+\code{"validation"}. The question is the same either way -- did an unusual
 number of records land on this date? -- so a laboratory clearing its
 backlog is found exactly as a surveillance system clearing its inbox is.
-\code{"confirmation"} needs a confirmation process (see \code{\link[=add_confirmation]{add_confirmation()}})
-and ignores cases that are still \code{"pending"}, which have no confirmation
+\code{"validation"} needs a validation process (see \code{\link[=add_validation_date]{add_validation_date()}})
+and ignores cases that are still \code{"pending"}, which have no validation
 date to arrive on.}
 
 \item{seed}{Optional RNG seed.}

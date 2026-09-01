@@ -99,7 +99,7 @@ stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}} and filtered with
 \code{"zero_run"}, \code{"composition"}, \code{"autocorrelation"}, \code{"completeness"},
 \code{"growth"} or \code{"coverage"}.}
 \item{\code{quantity}}{What the row describes, including the category for the
-compositional rows (\code{"confirmation_type = confirmed"}).}
+compositional rows (\code{"validation_type = confirmed"}).}
 \item{\code{stratum}}{Which subset of the data the row describes: \code{"all"} for
 the pooled rows, or the stratum label otherwise.}
 \item{\code{n}}{Number of observations behind the row -- dates for \code{"cases"},
@@ -111,9 +111,14 @@ expanding the counts to one row per case.}
 \item{\code{min}, \code{q25}, \code{q50}, \code{q75}, \code{q90}, \code{max}}{Quantiles. See the note
 below on which estimator is used.}
 \item{\code{prop_zero}}{Proportion of dates on the grid that are exactly zero.}
-\item{\code{prop}}{Proportion of cases in this category (compositional rows).}
+\item{\code{prop}}{Proportion of cases in this category (compositional rows),
+or the pooled share that had arrived by delay \code{d} (\code{"completeness"}
+rows).}
 \item{\code{value}}{A single scalar that is not a distribution: an
-autocorrelation, a gap, an occupancy.}
+autocorrelation, a gap, an occupancy. The \code{"completeness"} and
+\code{"growth"} rows are distributions over event dates, so they populate
+\code{mean}/\code{sd}/the quantiles (and \code{prop}) instead and leave \code{value}
+empty.}
 \item{\code{date_min}, \code{date_max}}{Date range. Present only when the result
 contains \code{"coverage"} rows.}
 \item{\code{unobserved_cells}}{A \code{"coverage"} row counting the \code{NA}-count rows
@@ -138,10 +143,12 @@ overview
 overview |> dplyr::filter(component == "delay")
 
 # How much of each week's eventual total had arrived by delay d? This is the
-# reporting-delay problem, in one table.
+# reporting-delay problem, in one table. Completeness is a distribution over
+# event dates, so it lives in `mean`/`q50` (the typical event date) and
+# `prop` (the pooled share), not in the scalar `value` column.
 overview |>
   dplyr::filter(component == "completeness", stratum == "all") |>
-  dplyr::select(quantity, value)
+  dplyr::select(quantity, n, mean, q50, prop)
 
 # Pooled rows only, ignoring the strata.
 summary(ndata, by_strata = FALSE)

@@ -237,6 +237,12 @@ S7::method(print, tbl_nowcast) <- function(x, ..., n = 6) {
     }
   ))
 
+  # The number the object was fitted to produce. Everything above it is
+  # metadata, and the quantile table below it starts at the OLDEST event date --
+  # so without this the one row a reader came for is the one row they have to go
+  # looking for.
+  .cat_nowcast_at_now(x)
+
   if (nrow(x@predictions) > 0) {
     # `format()` on a tibble returns its printed lines, so the table reaches
     # stdout without a bare `print()` call inside package code.
@@ -250,6 +256,111 @@ S7::method(print, tbl_nowcast) <- function(x, ..., n = 6) {
   }
 
   invisible(x)
+}
+
+#' The nowcast at the `now` edge, one line per stratum
+#'
+#' The last event date the nowcast covers, not `now` itself: they differ
+#' whenever the event grid steps in weeks and `now` falls mid-week, and printing
+#' `now` over a number belonging to the week before it would be a lie about
+#' which period was estimated. The date actually used is in the header.
+#'
+#' @param x A [tbl_nowcast].
+#'
+#' @return `NULL`, invisibly.
+#'
+#' @keywords internal
+#' @noRd
+.cat_nowcast_at_now <- function(x) {
+  predictions <- dplyr::as_tibble(x@predictions)
+  if (nrow(predictions) == 0) {
+    return(invisible(NULL))
+  }
+
+  event_col <- x@event_date
+  dates <- predictions[[event_col]]
+  if (all(is.na(dates))) {
+    return(invisible(NULL))
+  }
+  edge <- max(dates, na.rm = TRUE)
+  at_now <- predictions[!is.na(dates) & dates == edge, , drop = FALSE]
+  levels <- sort(unique(at_now$.quantile_level))
+  if (length(levels) == 0) {
+    return(invisible(NULL))
+  }
+
+  # The median if it was asked for, the level nearest it otherwise: an engine
+  # given an asymmetric `quantile_levels` still has a central estimate to show.
+  point <- levels[which.min(abs(levels - 0.5))]
+  lower <- levels[1]
+  upper <- levels[length(levels)]
+  has_interval <- lower < point && upper > point
+
+  strata_cols <- x@strata
+  labels <- if (length(strata_cols) > 0) {
+    .tbl_now_strata_label(at_now, strata_cols)
+  } else {
+    rep("", nrow(at_now))
+  }
+
+  value_at <- function(rows, level) {
+    hit <- rows$.value[rows$.quantile_level == level]
+    if (length(hit) == 0) NA_real_ else hit[1]
+  }
+
+  lines <- vapply(sort(unique(labels)), function(label) {
+    rows <- at_now[labels == label, , drop = FALSE]
+    estimate <- .format_nowcast_value(value_at(rows, point))
+    interval <- if (has_interval) {
+      paste0(
+        " [", .format_nowcast_value(value_at(rows, lower)),
+        ", ", .format_nowcast_value(value_at(rows, upper)), "]"
+      )
+    } else {
+      ""
+    }
+    prefix <- if (nzchar(label)) paste0(label, ": ") else ""
+    paste0(prefix, estimate, interval)
+  }, character(1), USE.NAMES = FALSE)
+
+  # `paste0()` rather than a `\\` continuation inside the template: cli renders
+  # the continuation literally (DEVELOPMENT_SKILL section 9).
+  span <- if (has_interval) {
+    paste0(", ", lower * 100, "-", upper * 100, "% interval")
+  } else {
+    ""
+  }
+
+  cli::cat_line()
+  cli::cat_line(cli::format_inline(paste0(
+    "Nowcast at {.val {as.character(edge)}} (q{point * 100}{span}):"
+  )))
+  cli::cat_bullet(lines)
+  cli::cat_line()
+
+  invisible(NULL)
+}
+
+#' Format one nowcast quantile for printing
+#'
+#' Counts, so whole numbers print whole; a linear-pool ensemble or a
+#' redistributed increment can land between two, and those keep one decimal
+#' rather than being rounded into a number the object does not hold.
+#'
+#' @param value A single number.
+#'
+#' @return A single string.
+#'
+#' @keywords internal
+#' @noRd
+.format_nowcast_value <- function(value) {
+  if (length(value) == 0 || is.na(value)) {
+    return("NA")
+  }
+  if (isTRUE(all.equal(value, round(value)))) {
+    return(format(round(value), big.mark = ",", trim = TRUE))
+  }
+  format(round(value, 1), big.mark = ",", nsmall = 1, trim = TRUE)
 }
 
 #' Coerce a `tbl_nowcast` into a `tibble`

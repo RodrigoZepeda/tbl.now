@@ -111,5 +111,5 @@ if (!inherits(fit, "try-error")) {
 why their \code{sd} values differ slightly;
 \code{\link[=tbl_now_to_EpiNow2]{tbl_now_to_EpiNow2()}} for the conversion;
 \link[=tidy.nowcast]{tidy()} for tidying a \emph{case-count} nowcast rather than a delay
-distribution; \link{confirmation_delay} for the delay this is estimating.
+distribution; \link{validation_delay} for the delay this is estimating.
 }
