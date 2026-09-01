@@ -8,7 +8,7 @@ articles:
   articles/example: example.html
   articles/nowcasting-models: nowcasting-models.html
   tbl.now: tbl.now.html
-last_built: 2026-09-01T17:31Z
+last_built: 2026-09-01T18:29Z
 urls:
   reference: https://rodrigozepeda.github.io/tbl.now/reference
   article: https://rodrigozepeda.github.io/tbl.now/articles

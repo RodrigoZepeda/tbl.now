@@ -252,21 +252,21 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <p>Once transformed, it can help you diagnose data problems or modeling requirements with your database:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-3-1.png" alt="" width="100%"></p>
+<p><img src="reference/figures/README-unnamed-chunk-3-1.png" alt="" width="100%" class="r-plt"></p>
 <p>And it can be used to run any of multiple nowcast libraries through the <code><a href="reference/engine.html">engine()</a></code> and <code>run_nowcast</code> specifications. For example, baselinenowcast:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue_nowcast_1</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">dengue_nowcast_1</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-5-1.png" alt="" width="100%"></p>
+<p><img src="reference/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" class="r-plt"></p>
 <p>or diseasenowcasting:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue_nowcast_2</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">dengue_nowcast_2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-7-1.png" alt="" width="100%"></p>
+<p><img src="reference/figures/README-unnamed-chunk-7-1.png" alt="" width="100%" class="r-plt"></p>
 <p>It can also generate ensemble nowcasts combining multiple engines or multiple realizations from the same engine:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue_ensemble</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span></span>
@@ -275,7 +275,7 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">dengue_ensemble</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-9-1.png" alt="" width="100%"></p>
+<p><img src="reference/figures/README-unnamed-chunk-9-1.png" alt="" width="100%" class="r-plt"></p>
 <p>If this seems exciting to you, install the development version from <a href="https://github.com/" class="external-link">GitHub</a>:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak") # &lt;- uncomment if you do not have `pak`</span></span>
