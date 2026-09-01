@@ -390,7 +390,7 @@ test_that("prop_censored() reports the case-weighted censored share", {
   censored <- tbl_now(
     cbind(fixture_frame(), flagged = c(FALSE, TRUE, TRUE, FALSE)),
     event_date = "onset", report_date = "report", case_count = "n",
-    is_censored = "flagged", data_type = "count-incidence",
+    is_censored_report = "flagged", data_type = "count-incidence",
     now = as.Date("2024-01-05"), verbose = FALSE
   )
   row <- pick(prop_censored(censored), "composition", "censored")

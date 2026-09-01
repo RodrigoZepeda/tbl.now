@@ -491,18 +491,19 @@ plot_epidemic_process(ideal) + plot_reporting_process(ideal)
 
 `covid_us` comes from the CDC's individual-level
 [COVID-19 Case Surveillance Public Use Data](https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data/vbim-akqf/about_data).
-These represent cases whose event date (`cdc_case_earliest_dt`)
-*and* report date (`cdc_report_dt`) both fall before September 2020. The picture shows
-what it would have looked back then.
+It carries three dates. Here we use the first and the last: symptom onset
+(`onset_dt`) as the event, and registration at CDC (`cdc_report_dt`) as the
+report. The middle one, `pos_spec_dt`, is the specimen collection, and it is
+pooled away along with `current_status` and `sex` -- the batch question is about
+when reports *arrived*, not about who they were.
 
 ```{r data}
 data(covid_us)
 
 covid_early <- covid_us |>
-  filter(cdc_case_earliest_dt < as.Date("2020-09-01") &
-           cdc_report_dt < as.Date("2020-09-01"))
+  summarise(n = sum(n), .by = c(onset_dt, cdc_report_dt))
 
-tn <- tbl_now(covid_early, event_date = cdc_case_earliest_dt,
+tn <- tbl_now(covid_early, event_date = onset_dt,
               report_date = cdc_report_dt, case_count = n,
               data_type = "count-incidence", verbose = FALSE)
 ```
@@ -533,10 +534,11 @@ This plot, which we have previously shown, shows how many reports arrived by dat
 plot_reporting_process(ideal)
 ```
 
-On the real data the reporting is spikier; however, a couple of peaks in June 2020 stick up
-where smooth epidemic reporting should be. Those are reporting artefacts either pure 
-backlog releases, or a mix of backlog + a genuine surge (we'll come back to this characterization later). The tallest is a single 
-day of about 160K reports, well above the 20-40K that arrive on a typical day that summer.
+On the real data the reporting is spikier; a handful of peaks stick up where smooth
+epidemic reporting should be. Those are reporting artefacts either pure
+backlog releases, or a mix of backlog + a genuine surge (we'll come back to this characterization later). The tallest is a single
+day of about 50K reports on 12 December 2020, sixteen times the 3K that arrive on a
+typical day; 10 June and 5 September are the other conspicuous ones.
 
 ```{r proc-covid, fig.cap="Reporting process of the COVID-19 data"}
 plot_reporting_process(tn)
@@ -567,8 +569,8 @@ plot_reporting_triangle(ideal) + (plot_reporting_process(ideal))
 ```
 
 On COVID-19, the triangle is a broad blue-grey haze (most cases reported over many
-months) crossed by two bright diagonals. They correspond to the same
-spikes seen for June 2020:
+months) crossed by bright diagonals. They correspond to the same
+spikes seen in the reporting process:
 
 ```{r tri-covid, eval = FALSE}
 plot_reporting_triangle(tn)
@@ -592,7 +594,7 @@ reporting bulk sits along the short-delay bottom edge.
 plot_reporting_hexamap(ideal)
 ```
 
-On covid the vertical stripes are the spring/summer-2020 backlog releases. The
+On covid the vertical stripes are the 2020 backlog releases. The
 delay axis is capped with `max_delay` to keep the map to where the reports are.
 
 ```{r hex-covid, eval = TRUE, fig.width = 8.5, fig.height = 8}
@@ -640,7 +642,7 @@ plot_scalogram(ideal)
 plot_scalogram(ideal, format = "%b") + plot_reporting_process(ideal)
 ```
 
-and again the same June dates being the most identified with additional dates having less of a clear pattern:
+and again the same release dates being the most identified, with additional dates having less of a clear pattern:
 
 ```{r, eval = FALSE}
 plot_scalogram(tn)
@@ -815,11 +817,12 @@ diagnose_batches(ideal) |>
   select(report_date, reported, baseline, deficit, delta, p_transport_bh, batch)
 ```
 
-On covid we pass `period = 7` to divide out the weekly reporting cadence. The
-confirmed batches (the Benjamini-Hochberg-corrected `batch` flag) are the
-spring/summer-2020 releases -- each reported far more than its neighbours *and* was
-preceded by a matching deficit. The clearest is **10 June 2020**, nearly ten times
-its baseline:
+On covid we pass `period = 7` to divide out the weekly reporting cadence. Only
+one date survives the Benjamini-Hochberg-corrected `batch` flag: **7 November
+2020**, which reported about twice its baseline *and* was preceded by a matching
+deficit of roughly the same size. That pairing is the whole test -- the taller
+spikes of 12 December and 10 June are not flagged, because nothing was withheld
+beforehand to release, which makes them surges rather than batches:
 
 ```{r screen-covid, eval = FALSE}
 diagnose_batches(tn, period = 7) |>
@@ -866,7 +869,7 @@ diagnose_drift(tn)
 diagnose_drift(ideal)
 ```
 
-The change-point function also detects that by April the COVID-19 delay distribution has completely changed from before. In the case of the ideal example the change is not  long enough to be detected: 
+The change-point function also detects that by early June the COVID-19 delay distribution has completely changed from before. In the case of the ideal example the change is not  long enough to be detected: 
 
 ```{r, warning=FALSE}
 diagnose_changepoint(tn)

@@ -569,7 +569,7 @@ test_that("get_initial_confirmed() and get_nth_confirmed() count by delay", {
   expect_error(get_nth_confirmed(flu, "two"), "single number")
 })
 
-test_that("censor_validation_delays_above() returns stragglers to pending", {
+test_that("censor_validation_delays_above() flags stragglers, keeping them", {
   cases <- data.frame(
     onset = as.Date("2021-01-04") + 0:4,
     visit = as.Date("2021-01-05") + 0:4,
@@ -584,15 +584,42 @@ test_that("censor_validation_delays_above() returns stragglers to pending", {
 
   censored <- suppressMessages(censor_validation_delays_above(flu, 30))
 
-  expect_equal(sum(censored[["outcome"]] == "pending"), 1L)
-  expect_equal(sum(censored[["outcome"]] == "confirmed"), 4L)
-  # The date goes with the outcome: a "confirmed" row with no date is the
-  # contradiction `tbl_now()` warns about, and a date we refuse to believe is
-  # not a resolution.
-  expect_true(is.na(censored[["result"]][4]))
-  expect_true(is.na(censored[[".validation_delay"]][4]))
-  # ...and the confirmed count falls by exactly that one case.
-  expect_equal(sum(get_latest_confirmed(censored)[["n"]]), 4)
+  # The flag is created when the object has none, exactly as on the report axis.
+  flag <- get_is_censored_validation(censored)
+  expect_identical(flag, ".is_censored_validation")
+  expect_identical(censored[[flag]], c(FALSE, FALSE, FALSE, TRUE, FALSE))
+
+  # Nothing is deleted and no outcome is rewritten: the delay is a bound, but
+  # the case was still confirmed, on the date it says.
+  expect_equal(sum(censored[["outcome"]] == "confirmed"), 5L)
+  expect_false(is.na(censored[["result"]][4]))
+  expect_equal(censored[[".validation_delay"]][4], 90)
+  expect_equal(sum(get_latest_confirmed(censored)[["n"]]), 5)
+})
+
+test_that("censor_validation_delays_above() merges with existing flags", {
+  cases <- data.frame(
+    onset = as.Date("2021-01-04") + 0:4,
+    visit = as.Date("2021-01-05") + 0:4,
+    result = as.Date("2021-01-05") + 0:4 + c(1, 2, 1, 90, 2),
+    outcome = rep("confirmed", 5)
+  )
+  flu <- tbl_now(cases,
+    event_date = "onset", report_date = "visit",
+    validation_date = "result", validation_type = "outcome",
+    data_type = "linelist", verbose = FALSE
+  )
+
+  # Censor at 30, then again at a LOOSER threshold. A delay you have already
+  # refused to take at face value does not become exact because a later call
+  # was more permissive.
+  twice <- suppressMessages(
+    censor_validation_delays_above(
+      suppressMessages(censor_validation_delays_above(flu, 30)), 200
+    )
+  )
+  flag <- get_is_censored_validation(twice)
+  expect_identical(twice[[flag]], c(FALSE, FALSE, FALSE, TRUE, FALSE))
 })
 
 test_that("plot_validation_status() shows the resolution front", {

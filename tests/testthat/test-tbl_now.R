@@ -8,7 +8,7 @@ ll_data <- tibble(
   report_week = as.Date(c("2023-01-03", "2023-01-03", "2023-01-03", "2023-01-05")),
   gender = c("M", "F", "M", "F"),
   age_group = c("A", "B", "A", "B"),
-  is_censored_col = c(FALSE, FALSE, TRUE, FALSE)
+  is_censored_report_col = c(FALSE, FALSE, TRUE, FALSE)
 )
 
 # Count data (data_type should be "count" because of the 'n' column)
@@ -116,16 +116,16 @@ test_that("tbl_now infers 'count' data_type correctly", {
   expect_equal(attr(result, "data_type"), "count-cumulative")
 })
 
-test_that("tbl_now handles optional 'is_censored' column", {
+test_that("tbl_now handles optional 'is_censored_report' column", {
   result <- tbl_now(
     data = ll_data,
     event_date = "onset_week",
     report_date = "report_week",
-    is_censored = "is_censored_col",
+    is_censored_report = "is_censored_report_col",
     date_units = "days",
     verbose = FALSE
   )
-  expect_equal(attr(result, "is_censored"), "is_censored_col")
+  expect_equal(attr(result, "is_censored_report"), "is_censored_report_col")
 })
 
 test_that("tbl_now errors when date columns are missing or invalid", {

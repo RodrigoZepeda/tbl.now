@@ -9,9 +9,9 @@
 \alias{change_event_date}
 \alias{change_report_date}
 \alias{change_case_count}
-\alias{change_is_censored}
-\alias{remove_is_censored}
-\alias{add_is_censored}
+\alias{change_is_censored_report}
+\alias{remove_is_censored_report}
+\alias{add_is_censored_report}
 \alias{change_strata}
 \alias{remove_strata}
 \alias{add_strata}
@@ -22,14 +22,17 @@
 \alias{remove_all_covariates}
 \alias{replace_temporal_effects}
 \alias{remove_temporal_effects}
+\alias{change_is_censored_validation}
+\alias{add_is_censored_validation}
+\alias{remove_is_censored_validation}
 \alias{add_validation_date}
 \alias{change_validation_date}
 \alias{remove_validation_date}
 \title{Set, change and remove the attributes of a \code{tbl_now}}
 \usage{
-change_now(x, now = NULL)
+change_now(x, now = NULL, verbose = TRUE)
 
-update_now(x)
+update_now(x, verbose = TRUE)
 
 change_event_date(x, event_date)
 
@@ -37,11 +40,11 @@ change_report_date(x, report_date)
 
 change_case_count(x, case_count)
 
-change_is_censored(x, is_censored)
+change_is_censored_report(x, is_censored_report)
 
-remove_is_censored(x)
+remove_is_censored_report(x)
 
-add_is_censored(x, is_censored)
+add_is_censored_report(x, is_censored_report)
 
 change_strata(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
 
@@ -63,18 +66,26 @@ replace_temporal_effects(x, t_effects)
 
 remove_temporal_effects(x)
 
+change_is_censored_validation(x, is_censored_validation)
+
+add_is_censored_validation(x, is_censored_validation)
+
+remove_is_censored_validation(x)
+
 add_validation_date(
   x,
   validation_date,
   validation_type = NULL,
-  validation_units = "auto"
+  validation_units = "auto",
+  validation_levels = NULL
 )
 
 change_validation_date(
   x,
   validation_date,
   validation_type = NULL,
-  validation_units = "auto"
+  validation_units = "auto",
+  validation_levels = NULL
 )
 
 remove_validation_date(x)
@@ -85,6 +96,8 @@ remove_validation_date(x)
 \item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
 nowcast. If no \code{now} is given then the function automatically uses the last
 \code{event_date}.}
+
+\item{verbose}{(optional) Logical. Whether to throw a message. Default = \code{TRUE}.}
 
 \item{event_date}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 name of the column containing the event date. Optional when \code{delay} is
@@ -100,14 +113,14 @@ provided together with \code{event_date}; the report date will be computed as
 Name of the column with the case counts if \code{data_type} is "count-incidence"
 or "count-cumulative".}
 
-\item{is_censored}{(optional)
+\item{is_censored_report}{(optional)
 \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL} (default).
 The name of a column containing either \code{TRUE} or \code{FALSE} indicating whether
 the \code{report_date} is correctly specified or corresponds to a \code{batch} and thus
 is censored. In other words, if the \code{report_date} is accurately measured
-set \code{is_censored = FALSE} but if the \code{report_date} corresponds to an error
+set \code{is_censored_report = FALSE} but if the \code{report_date} corresponds to an error
 and is only an upper bound of the real report date
-set \code{is_censored = TRUE}.}
+set \code{is_censored_report = TRUE}.}
 
 \item{...}{\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 columns for the attribute being set. For \code{strata} and \code{covariates} this may
@@ -122,6 +135,13 @@ and strata)}
 
 \item{t_effects}{(optional) Either \code{NULL} (default), a \code{\link[=temporal_effects]{temporal_effects()}} object
 or a character vector with the names of the columns containing the temporal effects.}
+
+\item{is_censored_validation}{(optional)
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL} (default).
+The validation-axis counterpart of \code{is_censored_report}: the name of a
+logical column marking rows whose \strong{validation delay} is a bound rather
+than a measurement. Requires a \code{validation_date}. See
+\link[=censor_delays_above]{censor_validation_delays_above()}.}
 
 \item{validation_date}{(optional)
 \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
@@ -143,6 +163,15 @@ alone cannot say whether the case was confirmed or retracted.}
 \item{validation_units}{(optional) Character. Either \code{"auto"} (default),
 \code{"days"}, \code{"weeks"}, \code{"months"}, \code{"years"} or \code{"numeric"} -- the grid the
 validation date lives on, resolved the same way as \code{report_units}.}
+
+\item{validation_levels}{(optional) \code{NULL} (default) or a \strong{named} character
+vector translating the labels in \code{validation_type} into the canonical
+outcomes, for data that was not recorded in English:
+\code{c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")}.
+The names are the labels in your data, the values are the canonical ones. The
+column is rewritten to the canonical values and the dictionary is kept as an
+attribute, readable with \code{get_validation_levels()}. Only
+\code{"confirmed"}, \code{"retracted"}, \code{"pending"} and \code{NA} are ever stored.}
 }
 \value{
 A \code{tbl_now} object with the attribute updated. The data are returned
@@ -233,6 +262,21 @@ accepted.
 
 A date on its own cannot say whether the test came back positive or negative,
 so leaving \code{validation_type} out gives every dated row \code{NA} and warns.
+
+Two optional pieces travel with the third date. \code{validation_levels} is a
+named dictionary translating the labels in your data into the four values
+\code{validation_type} may hold -- \code{c(confirmado = "confirmed", ...)} -- so the
+recoding happens once rather than in every script. And
+\code{add_is_censored_validation()} names a logical column marking rows whose
+\emph{validation delay} is a bound rather than a measurement, the validation-axis
+twin of \code{add_is_censored_report()}; \link[=censor_delays_above]{censor_validation_delays_above()}
+sets it for you.
+
+\code{change_now()} is validation-aware in both directions. Moving \code{now} forward
+does nothing to the data; moving it \strong{backwards}, which is how a backtest
+asks what was known at an earlier date, returns every validation dated after
+that moment to \code{"pending"} and masks its date. A resolution that has not
+happened yet is not a resolution.
 }
 
 \examples{
@@ -278,13 +322,13 @@ ndata$corrected_onset <- ndata$onset_week - lubridate::days(1)
 ndata <- ndata |> change_event_date(corrected_onset)
 get_event_date(ndata)
 
-## ---- The censoring indicator -----------------------------------------
+## ---- The censoring indicators ----------------------------------------
 
 ## TRUE means the report date is only an upper bound (e.g. a backlog dump).
-ndata$is_censored <- FALSE
-ndata <- ndata |> add_is_censored(is_censored)
-get_is_censored(ndata)
-ndata <- remove_is_censored(ndata)
+ndata$is_censored_report <- FALSE
+ndata <- ndata |> add_is_censored_report(is_censored_report)
+get_is_censored_report(ndata)
+ndata <- remove_is_censored_report(ndata)
 
 ## ---- `now` -----------------------------------------------------------
 
@@ -304,28 +348,37 @@ counts |>
 
 ## ---- The validation process, the optional third date -----------------
 
-data(hai_bucaramanga)
-hai <- hai_bucaramanga |>
-  dplyr::filter(
-    !is.na(specimen_date), !is.na(report_date), !is.na(received_date)
-  ) |>
+data(covid_us)
+covid <- covid_us |>
+  dplyr::filter(onset_dt >= as.Date("2020-11-01")) |>
   tbl_now(
-    event_date = specimen_date, report_date = report_date,
-    data_type = "linelist", verbose = FALSE
+    event_date = onset_dt, report_date = pos_spec_dt,
+    case_count = n, data_type = "count-incidence",
+    verbose = FALSE, warn_non_uniqueness = FALSE
   )
 
-## Specimen taken -> reported -> (here) the laboratory receipt as the
-# validation step. A date alone cannot say how the case resolved, so this
-# warns until an outcome column is supplied.
-hai <- suppressWarnings(add_validation_date(hai, received_date))
-get_validation_date(hai)
+## Onset -> positive specimen -> registration at CDC. A date alone cannot say
+# how the case resolved, so this warns until an outcome column is supplied.
+covid <- suppressWarnings(add_validation_date(covid, cdc_report_dt))
+get_validation_date(covid)
 
-hai$outcome <- ifelse(seq_len(nrow(hai)) \%\% 10 == 0, "retracted", "confirmed")
-hai <- change_validation_date(hai, received_date, validation_type = outcome)
-table(hai[[get_validation_type(hai)]])
+## CDC's own labels are not this package's four, which is what
+# `validation_levels` translates.
+covid <- change_validation_date(covid, cdc_report_dt,
+  validation_type = current_status,
+  validation_levels = c(
+    "Laboratory-confirmed case" = "confirmed", "Probable Case" = "pending"
+  )
+)
+table(covid[[get_validation_type(covid)]])
+get_validation_levels(covid)
 
-## Dropping it leaves an ordinary two-date object.
-has_validation(remove_validation_date(hai))
+## A validation delay you refuse to believe is a bound, not a measurement.
+covid <- censor_validation_delays_above(covid, 45, verbose = FALSE)
+get_is_censored_validation(covid)
+
+## Dropping the third date leaves an ordinary two-date object.
+has_validation(remove_validation_date(covid))
 
 ## ---- Temporal effects --------------------------------------------------
 

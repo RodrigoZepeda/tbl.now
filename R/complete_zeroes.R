@@ -173,7 +173,7 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
       dplyr::distinct(dplyr::across(dplyr::all_of(tbl.now::get_strata(x)))),
     x |>
       as.data.frame() |>
-      dplyr::distinct(dplyr::across(dplyr::all_of(tbl.now::get_is_censored(x)))),
+      dplyr::distinct(dplyr::across(dplyr::all_of(tbl.now::get_is_censored_report(x)))),
   ) |>
     # Add the additional rows you lose by not completing them
     dplyr::bind_rows(
@@ -183,7 +183,7 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
         dplyr::distinct(
           dplyr::across(
             dplyr::all_of(
-              c(get_strata(x), get_is_censored(x), get_event_date(x), get_report_date(x), ".delay")
+              c(get_strata(x), get_is_censored_report(x), get_event_date(x), get_report_date(x), ".delay")
             )
           )
         )
@@ -212,10 +212,10 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
   complete_x <- complete_x |>
     dplyr::filter(!!as.symbol(get_report_date(x)) <= !!report_bound)
 
-  # Now complete. Include the is_censored column in the join key (when present)
+  # Now complete. Include the is_censored_report column in the join key (when present)
   # so the censored indicator is not duplicated/suffixed and lost.
   join_keys <- c(
-    get_event_date(x), get_strata(x), get_is_censored(x),
+    get_event_date(x), get_strata(x), get_is_censored_report(x),
     get_report_date(x), ".delay"
   )
   x <- x |>
@@ -239,7 +239,7 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
         x <- x |>
           dplyr::arrange(!!as.symbol(get_report_date(x))) |>
           dplyr::group_by(dplyr::across(dplyr::all_of(
-            c(get_event_date(x), get_strata(x), get_is_censored(x))
+            c(get_event_date(x), get_strata(x), get_is_censored_report(x))
           )))
 
         x <- x |>

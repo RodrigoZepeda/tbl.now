@@ -720,7 +720,7 @@ setup_additional_test_data <- function() {
     region = c("North", "South", "North", "South"),
     temperature = c(25.5, 26.0, 24.8, 25.2),
     humidity = c(0.6, 0.65, 0.7, 0.68),
-    is_censored = c(FALSE, FALSE, TRUE, FALSE)
+    is_censored_report = c(FALSE, FALSE, TRUE, FALSE)
   )
 
   ndata <- tbl_now(
@@ -729,7 +729,7 @@ setup_additional_test_data <- function() {
     report_date = "report_week",
     strata = "gender",
     covariates = "temperature",
-    is_censored = "is_censored",
+    is_censored_report = "is_censored_report",
     verbose = FALSE
   )
 
@@ -916,20 +916,20 @@ test_that("change_case_count works with tidy select", {
 })
 
 # ============================================================================
-# Additional tests for change_is_censored()
+# Additional tests for change_is_censored_report()
 # ============================================================================
 
-test_that("change_is_censored accepts NULL", {
+test_that("change_is_censored_report accepts NULL", {
   skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
-  result <- change_is_censored(ndata, NULL)
+  result <- change_is_censored_report(ndata, NULL)
 
-  expect_null(get_is_censored(result))
+  expect_null(get_is_censored_report(result))
 })
 
-test_that("change_is_censored fails with non-logical column", {
+test_that("change_is_censored_report fails with non-logical column", {
   skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
@@ -937,79 +937,79 @@ test_that("change_is_censored fails with non-logical column", {
   ndata$numeric_censor <- c(0, 1, 0, 1)
 
   expect_error(
-    change_is_censored(ndata, numeric_censor),
+    change_is_censored_report(ndata, numeric_censor),
     "must be logical"
   )
 })
 
-test_that("change_is_censored works with tidy select", {
+test_that("change_is_censored_report works with tidy select", {
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
-  ndata$is_censored_new <- c(TRUE, FALSE, TRUE, FALSE)
+  ndata$is_censored_report_new <- c(TRUE, FALSE, TRUE, FALSE)
 
-  result <- change_is_censored(ndata, dplyr::starts_with("is_censored_new"))
+  result <- change_is_censored_report(ndata, dplyr::starts_with("is_censored_report_new"))
 
-  expect_equal(get_is_censored(result), "is_censored_new")
+  expect_equal(get_is_censored_report(result), "is_censored_report_new")
 })
 
 # ============================================================================
-# Additional tests for remove_is_censored()
+# Additional tests for remove_is_censored_report()
 # ============================================================================
 
-test_that("remove_is_censored sets is_censored to NULL", {
+test_that("remove_is_censored_report sets is_censored_report to NULL", {
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
-  expect_equal(get_is_censored(ndata), "is_censored")
+  expect_equal(get_is_censored_report(ndata), "is_censored_report")
 
-  result <- remove_is_censored(ndata)
+  result <- remove_is_censored_report(ndata)
 
-  expect_null(get_is_censored(result))
+  expect_null(get_is_censored_report(result))
 })
 
-test_that("remove_is_censored works when is_censored is already NULL", {
+test_that("remove_is_censored_report works when is_censored_report is already NULL", {
   skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
-    change_is_censored(NULL)
+    change_is_censored_report(NULL)
 
-  expect_null(get_is_censored(ndata))
+  expect_null(get_is_censored_report(ndata))
 
-  result <- remove_is_censored(ndata)
+  result <- remove_is_censored_report(ndata)
 
-  expect_null(get_is_censored(result))
+  expect_null(get_is_censored_report(result))
   expect_s3_class(result, "tbl_now")
 })
 
 # ============================================================================
-# Additional tests for add_is_censored()
+# Additional tests for add_is_censored_report()
 # ============================================================================
 
-test_that("add_is_censored adds is_censored when none exists", {
+test_that("add_is_censored_report adds is_censored_report when none exists", {
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
-    remove_is_censored()
+    remove_is_censored_report()
 
-  expect_null(get_is_censored(ndata))
+  expect_null(get_is_censored_report(ndata))
 
   ndata$new_censored <- c(TRUE, TRUE, FALSE, FALSE)
-  result <- add_is_censored(ndata, new_censored)
+  result <- add_is_censored_report(ndata, new_censored)
 
-  expect_equal(get_is_censored(result), "new_censored")
+  expect_equal(get_is_censored_report(result), "new_censored")
 })
 
-test_that("add_is_censored fails when is_censored already exists", {
+test_that("add_is_censored_report fails when is_censored_report already exists", {
   skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
-  expect_equal(get_is_censored(ndata), "is_censored")
+  expect_equal(get_is_censored_report(ndata), "is_censored_report")
 
   ndata$new_censored <- c(FALSE, FALSE, FALSE, FALSE)
 
   expect_error(
-    add_is_censored(ndata, new_censored),
+    add_is_censored_report(ndata, new_censored),
     "Already has value"
   )
 })

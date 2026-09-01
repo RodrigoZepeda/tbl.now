@@ -153,7 +153,7 @@ flagged report date drew from; \code{\link[=transport_discriminant]{transport_di
 coordinates behind the test, without the hypothesis test on top;
 \code{\link[=simulate_batch]{simulate_batch()}} to plant a known batch and check the screen finds it;
 \code{\link[=plot_reporting_process]{plot_reporting_process()}} and \code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}} to see it;
-\link[=add]{add_is_censored()} to record a batch once you believe it. The
+\link[=add]{add_is_censored_report()} to record a batch once you believe it. The
 \href{https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html}{\emph{Diagnosing a tbl_now} article}
 works through a real example.
 }

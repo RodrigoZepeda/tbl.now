@@ -48,6 +48,21 @@
 #' A date on its own cannot say whether the test came back positive or negative,
 #' so leaving `validation_type` out gives every dated row `NA` and warns.
 #'
+#' Two optional pieces travel with the third date. `validation_levels` is a
+#' named dictionary translating the labels in your data into the four values
+#' `validation_type` may hold -- `c(confirmado = "confirmed", ...)` -- so the
+#' recoding happens once rather than in every script. And
+#' `add_is_censored_validation()` names a logical column marking rows whose
+#' *validation delay* is a bound rather than a measurement, the validation-axis
+#' twin of `add_is_censored_report()`; [censor_validation_delays_above()][censor_delays_above]
+#' sets it for you.
+#'
+#' `change_now()` is validation-aware in both directions. Moving `now` forward
+#' does nothing to the data; moving it **backwards**, which is how a backtest
+#' asks what was known at an earlier date, returns every validation dated after
+#' that moment to `"pending"` and masks its date. A resolution that has not
+#' happened yet is not a resolution.
+#'
 #' @details
 #' Columns are chosen with
 #' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html), so
@@ -136,13 +151,13 @@
 #' ndata <- ndata |> change_event_date(corrected_onset)
 #' get_event_date(ndata)
 #'
-#' ## ---- The censoring indicator -----------------------------------------
+#' ## ---- The censoring indicators ----------------------------------------
 #'
 #' ## TRUE means the report date is only an upper bound (e.g. a backlog dump).
-#' ndata$is_censored <- FALSE
-#' ndata <- ndata |> add_is_censored(is_censored)
-#' get_is_censored(ndata)
-#' ndata <- remove_is_censored(ndata)
+#' ndata$is_censored_report <- FALSE
+#' ndata <- ndata |> add_is_censored_report(is_censored_report)
+#' get_is_censored_report(ndata)
+#' ndata <- remove_is_censored_report(ndata)
 #'
 #' ## ---- `now` -----------------------------------------------------------
 #'
@@ -162,28 +177,37 @@
 #'
 #' ## ---- The validation process, the optional third date -----------------
 #'
-#' data(hai_bucaramanga)
-#' hai <- hai_bucaramanga |>
-#'   dplyr::filter(
-#'     !is.na(specimen_date), !is.na(report_date), !is.na(received_date)
-#'   ) |>
+#' data(covid_us)
+#' covid <- covid_us |>
+#'   dplyr::filter(onset_dt >= as.Date("2020-11-01")) |>
 #'   tbl_now(
-#'     event_date = specimen_date, report_date = report_date,
-#'     data_type = "linelist", verbose = FALSE
+#'     event_date = onset_dt, report_date = pos_spec_dt,
+#'     case_count = n, data_type = "count-incidence",
+#'     verbose = FALSE, warn_non_uniqueness = FALSE
 #'   )
 #'
-#' ## Specimen taken -> reported -> (here) the laboratory receipt as the
-#' # validation step. A date alone cannot say how the case resolved, so this
-#' # warns until an outcome column is supplied.
-#' hai <- suppressWarnings(add_validation_date(hai, received_date))
-#' get_validation_date(hai)
+#' ## Onset -> positive specimen -> registration at CDC. A date alone cannot say
+#' # how the case resolved, so this warns until an outcome column is supplied.
+#' covid <- suppressWarnings(add_validation_date(covid, cdc_report_dt))
+#' get_validation_date(covid)
 #'
-#' hai$outcome <- ifelse(seq_len(nrow(hai)) %% 10 == 0, "retracted", "confirmed")
-#' hai <- change_validation_date(hai, received_date, validation_type = outcome)
-#' table(hai[[get_validation_type(hai)]])
+#' ## CDC's own labels are not this package's four, which is what
+#' # `validation_levels` translates.
+#' covid <- change_validation_date(covid, cdc_report_dt,
+#'   validation_type = current_status,
+#'   validation_levels = c(
+#'     "Laboratory-confirmed case" = "confirmed", "Probable Case" = "pending"
+#'   )
+#' )
+#' table(covid[[get_validation_type(covid)]])
+#' get_validation_levels(covid)
 #'
-#' ## Dropping it leaves an ordinary two-date object.
-#' has_validation(remove_validation_date(hai))
+#' ## A validation delay you refuse to believe is a bound, not a measurement.
+#' covid <- censor_validation_delays_above(covid, 45, verbose = FALSE)
+#' get_is_censored_validation(covid)
+#'
+#' ## Dropping the third date leaves an ordinary two-date object.
+#' has_validation(remove_validation_date(covid))
 #'
 #' ## ---- Temporal effects --------------------------------------------------
 #'
@@ -215,7 +239,7 @@ NULL
 
 #' @rdname add
 #' @export
-change_now <- function(x, now = NULL) {
+change_now <- function(x, now = NULL, verbose = TRUE) {
   if (!inherits(x, "tbl_now")) {
     cli::cli_abort("{.arg x} must be a {.code tbl_now} object")
   }
@@ -224,9 +248,9 @@ change_now <- function(x, now = NULL) {
     cli::cli_abort("{.arg now} must be a Date of length 1")
   }
 
-  # Re-infer now. The CONFIRMATION date counts: it is an observation like any
-  # other, so leaving it out moves `now` backwards past a validation that has
-  # already happened -- which `validate_tbl_now()` below then rejects.
+  # Re-infer now. The VALIDATION date counts when `now` is being inferred: it is
+  # an observation like any other, so leaving it out would move `now` backwards
+  # past a resolution that has already happened.
   now <- tryCatch(
     infer_now(x,
       now = now, event_date = get_event_date(x),
@@ -235,6 +259,13 @@ change_now <- function(x, now = NULL) {
     ),
     error = function(e) get_now(x)
   )
+
+  # Moving `now` BACKWARDS is the whole point of this verb -- it is how a
+  # backtest asks "what did this look like as of an earlier date". A validation
+  # dated after that moment has simply not happened yet, so it reverts to
+  # pending rather than making the object invalid.
+  x <- .mask_validations_after(x, now, verbose = verbose)
+
   attr(x, "now") <- now
 
 
@@ -243,10 +274,68 @@ change_now <- function(x, now = NULL) {
   return(x)
 }
 
+#' Return validations that have not happened yet to `"pending"`
+#'
+#' A validation dated after the as-of moment is not an error in the data, it is
+#' the future. Masking it is the same operation
+#' `censor_validation_delays_above()` performs for a resolution you refuse to
+#' believe, applied for a different reason.
+#'
+#' @param x A `tbl_now`.
+#' @param now The new as-of moment.
+#' @param verbose Logical. Whether to report how many rows were masked.
+#'
+#' @return `x`, with future validations masked.
+#'
+#' @keywords internal
+#' @noRd
+.mask_validations_after <- function(x, now, verbose = TRUE) {
+  if (!has_validation(x) || is.null(now)) {
+    return(x)
+  }
+
+  validation_col <- get_validation_date(x)
+  dates <- x[[validation_col]]
+  future <- !is.na(dates) & dates > now
+  if (!any(future)) {
+    return(x)
+  }
+
+  type_col <- get_validation_type(x)
+  x[[validation_col]][future] <- NA
+  if (!is.null(type_col) && type_col %in% colnames(x)) {
+    # A "confirmed" with no date is the contradiction `tbl_now()` warns about,
+    # so the outcome moves with the date.
+    x[[type_col]][future] <- "pending"
+  }
+  if (".validation_num" %in% colnames(x)) {
+    x[[".validation_num"]][future] <- NA_real_
+  }
+  if (".validation_delay" %in% colnames(x)) {
+    x[[".validation_delay"]][future] <- NA_real_
+  }
+  # A resolution that has not happened has no delay, and therefore no bound on
+  # one either.
+  censored_col <- get_is_censored_validation(x)
+  if (!is.null(censored_col) && censored_col %in% colnames(x)) {
+    x[[censored_col]][future] <- FALSE
+  }
+
+  if (isTRUE(verbose)) {
+    cli::cli_inform(c(
+      "i" = paste0(
+        "Returned {sum(future)} validation{?s} dated after ",
+        "{.val {as.character(now)}} to {.val pending}."
+      )
+    ))
+  }
+  x
+}
+
 #' @rdname add
 #' @export
-update_now <- function(x) {
-  change_now(x)
+update_now <- function(x, verbose = TRUE) {
+  change_now(x, verbose = verbose)
 }
 
 
@@ -377,10 +466,10 @@ change_case_count <- function(x, case_count) {
 
 #' @rdname add
 #' @export
-# Change the `is_censored` to a different column name
-change_is_censored <- function(x, is_censored) {
+# Change the `is_censored_report` to a different column name
+change_is_censored_report <- function(x, is_censored_report) {
   # Get the event date
-  value_pos <- tidyselect::eval_select(rlang::expr({{ is_censored }}), x)
+  value_pos <- tidyselect::eval_select(rlang::expr({{ is_censored_report }}), x)
 
   if (length(value_pos) == 0) {
     value <- NULL
@@ -393,14 +482,14 @@ change_is_censored <- function(x, is_censored) {
   }
 
   if (length(value) > 1) {
-    cli::cli_abort("{.arg is_censored} must be the name of one column (length 1)")
+    cli::cli_abort("{.arg is_censored_report} must be the name of one column (length 1)")
   }
 
   if (!is.null(value) && !rlang::is_logical(x[[value]])) {
     cli::cli_abort("Column {.val {value}} must be logical")
   }
 
-  attr(x, "is_censored") <- value
+  attr(x, "is_censored_report") <- value
 
   validate_tbl_now(x)
 
@@ -409,32 +498,32 @@ change_is_censored <- function(x, is_censored) {
 
 #' @rdname add
 #' @export
-# Remove `value`  from is_censored
-remove_is_censored <- function(x) {
+# Remove `value`  from is_censored_report
+remove_is_censored_report <- function(x) {
   if (get_data_type(x) == "count-cumulative") {
     cli::cli_alert_warning(
-      "Removing is_censored column from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
+      "Removing is_censored_report column from count-cumulative data might have unintended consequences. We suggest manually aggregating the data and then calling `tbl_now`"
     )
   }
-  change_is_censored(x, NULL)
+  change_is_censored_report(x, NULL)
 }
 
 #' @rdname add
 #' @export
 # Adds `value`  to existing strata
-add_is_censored <- function(x, is_censored) {
-  if (length(get_is_censored(x)) > 0) {
+add_is_censored_report <- function(x, is_censored_report) {
+  if (length(get_is_censored_report(x)) > 0) {
     cli::cli_abort(
       paste0(
-        "Already has value {.val {get_is_censored(x)}} as censored indicator.",
-        " Use {.help remove_is_censored} to remove it before adding or",
-        " {.help change_is_censored} to change it."
+        "Already has value {.val {get_is_censored_report(x)}} as censored indicator.",
+        " Use {.help remove_is_censored_report} to remove it before adding or",
+        " {.help change_is_censored_report} to change it."
       )
     )
   }
 
   # Add to censored
-  change_is_censored(x, {{ is_censored }})
+  change_is_censored_report(x, {{ is_censored_report }})
 }
 
 #' @rdname add

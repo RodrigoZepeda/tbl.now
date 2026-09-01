@@ -130,8 +130,31 @@ An optional third date indicating when the report was resolved (see
 
 <td align="left">
 
-What the validation date resolved to (either <code>confirmed</code>,
-<code>retracted</code>, <code>pending</code>). <em>Optional</em>.
+What the validation date resolved to. Only <code>confirmed</code>,
+<code>retracted</code>, <code>pending</code> or <code>NA</code> are ever
+stored; use <code>validation_levels</code> for data recorded in other
+words. <em>Optional</em>.
+</td>
+
+</tr>
+
+<tr>
+
+<td align="center">
+
+<img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation_levels">
+</td>
+
+<td align="left">
+
+<code>validation_levels</code>
+</td>
+
+<td align="left">
+
+A named dictionary translating the labels in
+<code>validation_type</code> into those four, e.g. <code>c(confirmado =
+“confirmed”)</code>. <em>Optional</em>.
 </td>
 
 </tr>
@@ -265,18 +288,38 @@ The time grid each date lives on: <code>days</code>, <code>weeks</code>,
 
 <td align="center">
 
-<img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored">
+<img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored_report">
 </td>
 
 <td align="left">
 
-<code>is_censored</code>
+<code>is_censored_report</code>
 </td>
 
 <td align="left">
 
 Flags report dates that are only an upper bound, e.g. a batch or
 back-fill dump. <em>Optional</em>.
+</td>
+
+</tr>
+
+<tr>
+
+<td align="center">
+
+<img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored_validation">
+</td>
+
+<td align="left">
+
+<code>is_censored_validation</code>
+</td>
+
+<td align="left">
+
+The same on the validation axis: flags rows whose <em>validation</em>
+delay is a bound rather than a measurement. <em>Optional</em>.
 </td>
 
 </tr>
@@ -394,10 +437,10 @@ and checkout our articles starting with the
 - Introduction vignette:
   <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
   the full anatomy of a `tbl_now`, data types, and temporal effects.
-- End-to-end tutorial on real, messy surveillance data — cleaning,
-  diagnostics and nowcasting:
+- End-to-end tutorial on real, messy surveillance data \<U+2014\>
+  cleaning, diagnostics and nowcasting:
   <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
-- Tutorial on diagnosing your dataset — what is in it, what is
+- Tutorial on diagnosing your dataset \<U+2014\> what is in it, what is
   structurally wrong with it, and detecting batches and other
   reporting-delay artifacts:
   <https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html>

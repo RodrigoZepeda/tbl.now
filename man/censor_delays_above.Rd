@@ -20,12 +20,11 @@ the object's event units (reporting) or validation units (validation).}
 Default \code{TRUE}.}
 }
 \value{
-\code{censor_delays_above()} returns the \code{tbl_now} with its \code{is_censored} column
+\code{censor_delays_above()} returns the \code{tbl_now} with its \code{is_censored_report} column
 updated, creating it when absent.
 
-\code{censor_validation_delays_above()} returns the \code{tbl_now} with the offending
-rows' \code{validation_type} set to \code{"pending"} and their validation date set to
-\code{NA} -- a resolution you refuse to believe is not a resolution.
+\code{censor_validation_delays_above()} returns the \code{tbl_now} with its
+\code{is_censored_validation} column updated, creating it when absent.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -40,17 +39,24 @@ functions mark them as \strong{censored}: the object keeps the case, but records
 its delay as \emph{"at least this long"} instead of \emph{"exactly this long"}.
 \itemize{
 \item \code{censor_delays_above()} does this for the \strong{reporting} delay, by setting the
-\code{is_censored} flag.
+\code{is_censored_report} flag.
 \item \code{censor_validation_delays_above()} does the same for the \strong{validation}
-delay -- a case still waiting on a laboratory result months later is, in
-practice, never going to be resolved -- by returning it to \code{"pending"}.
+delay -- a case whose laboratory result took months to come back -- by
+setting the \code{is_censored_validation} flag.
 }
 }
 \details{
 The reporting delay is read from the generated \code{.delay} column (report date
-minus event date, in the object's event units). Existing censoring flags are
-merged rather than overwritten, so a report that was already censored stays
-censored.
+minus event date, in the object's event units); the validation delay from
+\code{.validation_delay} (validation date minus report date, in validation
+units). Existing censoring flags are merged rather than overwritten, so a
+delay that was already censored stays censored.
+
+Both functions keep the case \strong{and its date}. Nothing is deleted and no
+outcome is rewritten: the flag says the delay is a bound rather than a
+measurement, and it is up to the model to use that. A case that was
+confirmed after 200 days is still a confirmed case, and
+\link[=validation_counts]{get_latest_confirmed()} still counts it.
 }
 \examples{
 # Four cases, one of which took 300 days to be reported.
@@ -66,7 +72,7 @@ tn$.delay
 
 # Anything slower than 60 days is recorded as a lower bound, not a fact.
 censored <- censor_delays_above(tn, max_delay = 60)
-censored[[get_is_censored(censored)]]
+censored[[get_is_censored_report(censored)]]
 
 # The validation counterpart: a laboratory result that took 90 days.
 cases <- data.frame(
@@ -81,13 +87,16 @@ flu <- tbl_now(cases,
   data_type = "linelist", verbose = FALSE
 )
 
-# That one goes back to "pending"; the other four stay confirmed.
-table(censor_validation_delays_above(flu, 30, verbose = FALSE)[["outcome"]])
+# That one is flagged; all five stay confirmed, and the date is kept.
+flagged <- censor_validation_delays_above(flu, 30, verbose = FALSE)
+flagged[[get_is_censored_validation(flagged)]]
+table(flagged[["outcome"]])
 
 }
 \seealso{
-\link[=add]{add_is_censored()} and \link[=add]{change_is_censored()} to set the flag by
-hand; \code{\link[=diagnose_validation_delay]{diagnose_validation_delay()}} and \code{\link[=plot_delay_distribution]{plot_delay_distribution()}} to find
+\link[=add]{add_is_censored_report()} and \link[=add]{change_is_censored_report()} to set the flag by
+hand, and \link[=add]{add_is_censored_validation()} for the validation axis;
+\code{\link[=diagnose_validation_delay]{diagnose_validation_delay()}} and \code{\link[=plot_delay_distribution]{plot_delay_distribution()}} to find
 the threshold worth using; \code{\link[=diagnose_truncation]{diagnose_truncation()}} for the delays that are
 missing rather than long; \code{\link[=complete_zeroes]{complete_zeroes()}} for the opposite problem.
 }

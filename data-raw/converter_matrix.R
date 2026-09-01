@@ -47,9 +47,11 @@ build <- list(
   covid_us = function() {
     data(covid_us, envir = environment())
     covid_us |>
-      filter(cdc_case_earliest_dt >= as.Date("2021-06-01")) |>
-      tbl_now(event_date = cdc_case_earliest_dt, report_date = cdc_report_dt,
-              case_count = n, data_type = "count-incidence", verbose = FALSE)
+      filter(onset_dt >= as.Date("2020-10-01")) |>
+      dplyr::summarise(n = sum(n), .by = c(onset_dt, pos_spec_dt, sex)) |>
+      tbl_now(event_date = onset_dt, report_date = pos_spec_dt,
+              case_count = n, strata = sex, data_type = "count-incidence",
+              verbose = FALSE)
   },
   mpoxdat = function() {
     data(mpoxdat, envir = environment())

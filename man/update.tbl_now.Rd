@@ -20,7 +20,7 @@
 
 \item{...}{Additional arguments to pass to \code{tbl_now}}
 
-\item{new_data}{Another \code{tbl_now} with the same \code{strata}, \code{covariates}, \code{is_censored},
+\item{new_data}{Another \code{tbl_now} with the same \code{strata}, \code{covariates}, \code{is_censored_report},
 and \code{temporal_effects} or a \code{data.frame} with additional (newer) data
 not present in \code{x}}
 

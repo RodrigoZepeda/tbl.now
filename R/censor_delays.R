@@ -12,16 +12,23 @@
 #' its delay as *"at least this long"* instead of *"exactly this long"*.
 #'
 #' * `censor_delays_above()` does this for the **reporting** delay, by setting the
-#'   `is_censored` flag.
+#'   `is_censored_report` flag.
 #' * `censor_validation_delays_above()` does the same for the **validation**
-#'   delay -- a case still waiting on a laboratory result months later is, in
-#'   practice, never going to be resolved -- by returning it to `"pending"`.
+#'   delay -- a case whose laboratory result took months to come back -- by
+#'   setting the `is_censored_validation` flag.
 #'
 #' @details
 #' The reporting delay is read from the generated `.delay` column (report date
-#' minus event date, in the object's event units). Existing censoring flags are
-#' merged rather than overwritten, so a report that was already censored stays
-#' censored.
+#' minus event date, in the object's event units); the validation delay from
+#' `.validation_delay` (validation date minus report date, in validation
+#' units). Existing censoring flags are merged rather than overwritten, so a
+#' delay that was already censored stays censored.
+#'
+#' Both functions keep the case **and its date**. Nothing is deleted and no
+#' outcome is rewritten: the flag says the delay is a bound rather than a
+#' measurement, and it is up to the model to use that. A case that was
+#' confirmed after 200 days is still a confirmed case, and
+#' [get_latest_confirmed()][validation_counts] still counts it.
 #'
 #' @param x A `tbl_now` object. `censor_validation_delays_above()` requires one
 #'   that carries a validation process (see [add_validation_date()][add]).
@@ -31,16 +38,16 @@
 #'   Default `TRUE`.
 #'
 #' @returns
-#' `censor_delays_above()` returns the `tbl_now` with its `is_censored` column
+#' `censor_delays_above()` returns the `tbl_now` with its `is_censored_report` column
 #' updated, creating it when absent.
 #'
-#' `censor_validation_delays_above()` returns the `tbl_now` with the offending
-#' rows' `validation_type` set to `"pending"` and their validation date set to
-#' `NA` -- a resolution you refuse to believe is not a resolution.
+#' `censor_validation_delays_above()` returns the `tbl_now` with its
+#' `is_censored_validation` column updated, creating it when absent.
 #'
 #' @seealso
-#' [add_is_censored()][add] and [change_is_censored()][add] to set the flag by
-#' hand; [diagnose_validation_delay()] and [plot_delay_distribution()] to find
+#' [add_is_censored_report()][add] and [change_is_censored_report()][add] to set the flag by
+#' hand, and [add_is_censored_validation()][add] for the validation axis;
+#' [diagnose_validation_delay()] and [plot_delay_distribution()] to find
 #' the threshold worth using; [diagnose_truncation()] for the delays that are
 #' missing rather than long; [complete_zeroes()] for the opposite problem.
 #'
@@ -58,7 +65,7 @@
 #'
 #' # Anything slower than 60 days is recorded as a lower bound, not a fact.
 #' censored <- censor_delays_above(tn, max_delay = 60)
-#' censored[[get_is_censored(censored)]]
+#' censored[[get_is_censored_report(censored)]]
 #'
 #' # The validation counterpart: a laboratory result that took 90 days.
 #' cases <- data.frame(
@@ -73,8 +80,10 @@
 #'   data_type = "linelist", verbose = FALSE
 #' )
 #'
-#' # That one goes back to "pending"; the other four stay confirmed.
-#' table(censor_validation_delays_above(flu, 30, verbose = FALSE)[["outcome"]])
+#' # That one is flagged; all five stay confirmed, and the date is kept.
+#' flagged <- censor_validation_delays_above(flu, 30, verbose = FALSE)
+#' flagged[[get_is_censored_validation(flagged)]]
+#' table(flagged[["outcome"]])
 #'
 #' @name censor_delays_above
 #' @export
@@ -92,20 +101,20 @@ censor_delays_above <- function(x, max_delay, verbose = TRUE) {
 
   # Merge with any existing censoring flags (don't un-censor what was already
   # censored); create the column if the tbl_now has none yet.
-  censored_col_name <- get_is_censored(x)
+  censored_col_name <- get_is_censored_report(x)
   if (!is.null(censored_col_name) && censored_col_name %in% names(x)) {
     already_censored <- as.logical(x[[censored_col_name]])
     already_censored[is.na(already_censored)] <- FALSE
     x[[censored_col_name]] <- already_censored | is_too_long
   } else {
-    x[[".is_censored"]] <- is_too_long
-    x <- add_is_censored(x, ".is_censored")
+    x[[".is_censored_report"]] <- is_too_long
+    x <- add_is_censored_report(x, ".is_censored_report")
   }
 
   if (verbose) {
     cli::cli_inform(c(
       "i" = "Marked {sum(is_too_long)} report{?s} with delay > {max_delay} {get_event_units(x)}{?s} as censored.",
-      "*" = "This delay is now an upper bound (is_censored)."
+      "*" = "This delay is now an upper bound (is_censored_report)."
     ))
   }
 
