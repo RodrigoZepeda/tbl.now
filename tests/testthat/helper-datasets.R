@@ -43,6 +43,7 @@ dataset_tbl_now <- function(name) {
       # unique and every target that needs one slot per cell rejects it.
       covid_us |>
         dplyr::filter(onset_dt >= as.Date("2020-10-01")) |>
+        dplyr::filter(sex %in% c("Male","Female","Unknown")) |>
         dplyr::summarise(
           n = sum(.data$n),
           .by = c("onset_dt", "pos_spec_dt", "sex")
