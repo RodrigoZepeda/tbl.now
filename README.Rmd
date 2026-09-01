@@ -9,7 +9,14 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
-  out.width = "100%"
+  out.width = "100%",
+  # Tag every figure with pkgdown's `r-plt` class so the pkgdown site's
+  # dark-mode rule (`[data-bs-theme="dark"] img.r-plt { filter: invert(...) }`,
+  # from `pkgdown/BS5/assets/pkgdown.scss`) inverts README plots the same way
+  # it already does for vignette figures. pkgdown does not re-render the README
+  # (it is pre-knit here), so without this the home-page figures stay light in
+  # dark mode. The attribute is inert on GitHub.
+  out.extra = 'class="r-plt"'
 )
 options(tibble.width = Inf, width = 160, pillar.width = 160)
 set.seed(247865)

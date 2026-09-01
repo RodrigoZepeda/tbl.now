@@ -330,7 +330,7 @@ requirements with your database:
 autoplot(denguedat)
 ```
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" alt="" width="100%" />
+<img src="man/figures/README-unnamed-chunk-3-1.png" alt="" width="100%" class="r-plt" />
 
 And it can be used to run any of multiple nowcast libraries through the
 `engine()` and `run_nowcast` specifications. For example,
@@ -345,7 +345,7 @@ dengue_nowcast_1 <- denguedat |>
 autoplot(dengue_nowcast_1)
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" class="r-plt" />
 
 or diseasenowcasting:
 
@@ -358,7 +358,7 @@ dengue_nowcast_2 <- denguedat |>
 autoplot(dengue_nowcast_2)
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" alt="" width="100%" />
+<img src="man/figures/README-unnamed-chunk-7-1.png" alt="" width="100%" class="r-plt" />
 
 It can also generate ensemble nowcasts combining multiple engines or
 multiple realizations from the same engine:
@@ -374,7 +374,7 @@ dengue_ensemble <- nowcast_ensemble(
 autoplot(dengue_ensemble)
 ```
 
-<img src="man/figures/README-unnamed-chunk-9-1.png" alt="" width="100%" />
+<img src="man/figures/README-unnamed-chunk-9-1.png" alt="" width="100%" class="r-plt" />
 
 If this seems exciting to you, install the development version from
 [GitHub](https://github.com/):
