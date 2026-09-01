@@ -58,7 +58,7 @@ What it records
 
 <td align="center">
 
-<img src="man/figures/event_date.svg" height="70" alt="event_date">
+<img src="man/figures/event_date.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="event_date">
 </td>
 
 <td align="left">
@@ -79,7 +79,7 @@ hospitalisation, death, …). <strong>Required.</strong>
 
 <td align="center">
 
-<img src="man/figures/report_date.svg" height="70" alt="report_date">
+<img src="man/figures/report_date.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="report_date">
 </td>
 
 <td align="left">
@@ -100,7 +100,7 @@ unless it is reconstructed from <code>delay</code>.
 
 <td align="center">
 
-<img src="man/figures/now.svg" height="70" alt="now">
+<img src="man/figures/now.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="now">
 </td>
 
 <td align="left">
@@ -120,7 +120,7 @@ view. <em>Optional</em>; defaults to the latest date.
 
 <td align="center">
 
-<img src="man/figures/strata.svg" height="70" alt="strata">
+<img src="man/figures/strata.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="strata">
 </td>
 
 <td align="left">
@@ -140,7 +140,7 @@ Columns you want a separate nowcast for (e.g. gender, region).
 
 <td align="center">
 
-<img src="man/figures/covariates.svg" height="70" alt="covariates">
+<img src="man/figures/covariates.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="covariates">
 </td>
 
 <td align="left">
@@ -160,7 +160,7 @@ broken down by (e.g. temperature or precipitation). <em>Optional</em>.
 
 <td align="center">
 
-<img src="man/figures/case_count.svg" height="70" alt="case_count">
+<img src="man/figures/case_count.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="case_count">
 </td>
 
 <td align="left">
@@ -180,7 +180,7 @@ The column holding the counts when the data is given as aggregated
 
 <td align="center">
 
-<img src="man/figures/datatype.svg" height="70" alt="data_type">
+<img src="man/figures/datatype.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="data_type">
 </td>
 
 <td align="left">
@@ -203,7 +203,7 @@ axis). <em>Optional</em>; inferred by default.
 
 <td align="center">
 
-<img src="man/figures/units.svg" height="70" alt="units">
+<img src="man/figures/units.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="units">
 </td>
 
 <td align="left">
@@ -225,7 +225,7 @@ The time grid each date lives on: <code>days</code>, <code>weeks</code>,
 
 <td align="center">
 
-<img src="man/figures/censoring.svg" height="70" alt="is_censored">
+<img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored">
 </td>
 
 <td align="left">
@@ -245,7 +245,7 @@ back-fill dump. <em>Optional</em>.
 
 <td align="center">
 
-<img src="man/figures/validation_date.svg" height="70" alt="validation">
+<img src="man/figures/validation_date.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation">
 </td>
 
 <td align="left">
@@ -266,7 +266,7 @@ resolved to (<code>confirmed</code>, <code>retracted</code>,
 
 <td align="center">
 
-<img src="man/figures/temporal_effects.svg" height="70" alt="temporal_effects">
+<img src="man/figures/temporal_effects.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="temporal_effects">
 </td>
 
 <td align="left">
@@ -378,9 +378,11 @@ and checkout our articles starting with the
 - End-to-end tutorial on real, messy surveillance data — cleaning,
   diagnostics and nowcasting:
   <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
-- Tutorial on detecting batches and other reporting-delay artifacts:
+- Tutorial on diagnosing your dataset — what is in it, what is
+  structurally wrong with it, and detecting batches and other
+  reporting-delay artifacts:
   <https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html>
-- Comparing nowcasting engines on one dataset:
+- Using different nowcasting engines for the same dataset:
   <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
 - Ensemble nowcasting across different engines
   <https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html>
