@@ -42,6 +42,14 @@ get_temporal_effect_cols(x)
 get_is_censored(x)
 
 get_case_count(x)
+
+get_validation_date(x)
+
+get_validation_type(x)
+
+get_validation_units(x)
+
+has_validation(x)
 ```
 
 ## Arguments
@@ -105,6 +113,21 @@ A column name, a count, or a metadata value, depending on the function:
   [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md);
   `character(0)` when none have been.
 
+- `get_validation_date()`, `get_validation_type()`:
+
+  Character, or `NULL`. The name of the column holding the date a case
+  was resolved, and of the column holding how it resolved.
+
+- `get_validation_units()`:
+
+  The grid the validation date lives on, or `NULL` when the object
+  carries no validation process.
+
+- `has_validation()`:
+
+  `TRUE` when the object carries a validation date. Every code path must
+  work when it is `FALSE`, because most objects have no third date.
+
 ## Details
 
 Most of these return a **column name**, not the column itself. To get
@@ -115,6 +138,18 @@ attribute, so `is.null(get_strata(x))` is the test for "unstratified".
 The two counting helpers, `get_num_strata()` and `get_num_covariates()`,
 return `0` instead, which is usually easier to work with.
 
+## The validation process, the optional third date
+
+A `tbl_now` may carry a **third** date beyond the event and the report:
+the date a case was resolved, either confirmed or retracted. Think of
+influenza: symptom onset is the event, the medical visit is the report,
+and the laboratory result is the validation – which can come back
+negative, in which case the case is *retracted* rather than confirmed.
+
+It is optional and most objects do not have one, so `has_validation()`
+gates the four getters below it: they all return `NULL` on an object
+that was never given a third date.
+
 ## See also
 
 [`tbl_now_attributes()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.md)
@@ -122,9 +157,14 @@ to get all of them at once;
 [`add()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md),
 [change()](https://rodrigozepeda.github.io/tbl.now/reference/add.md) and
 [remove()](https://rodrigozepeda.github.io/tbl.now/reference/add.md) to
-set them;
-[confirmation_getters](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md)
-for the third-date attributes;
+set them, including
+[add_validation_date()](https://rodrigozepeda.github.io/tbl.now/reference/add.md);
+[get_latest_confirmed()](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+and
+[get_net_confirmed()](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+to count the outcomes;
+[validation_delay](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
+for how long resolution takes;
 [get_latest_reported_cases()](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
 and friends for reading the counts rather than the metadata.
 
@@ -207,4 +247,31 @@ get_temporal_effects(ndata)
 #> 
 get_temporal_effect_cols(ndata)
 #> [1] ".event_month_of_year"
+
+# The third date is optional, so ask before you read it.
+has_validation(ndata)
+#> [1] FALSE
+get_validation_date(ndata)
+#> NULL
+
+## Once one is attached, the same name-then-index pattern applies.
+data(hai_bucaramanga)
+hai <- hai_bucaramanga |>
+  dplyr::filter(!is.na(specimen_date), !is.na(report_date)) |>
+  tbl_now(
+    event_date = specimen_date, report_date = report_date,
+    data_type = "linelist", verbose = FALSE
+  ) |>
+  add_validation_date(received_date) |>
+  suppressWarnings()
+
+has_validation(hai)
+#> [1] TRUE
+get_validation_date(hai)
+#> [1] "received_date"
+get_validation_units(hai)
+#> [1] "days"
+head(hai[[get_validation_date(hai)]])
+#> [1] "2018-10-01" "2018-01-27" "2018-01-27" "2018-04-20" "2018-01-22"
+#> [6] "2018-01-02"
 ```

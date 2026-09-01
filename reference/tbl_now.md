@@ -30,9 +30,9 @@ tbl_now(
   covariates = NULL,
   case_count = NULL,
   is_censored = NULL,
-  confirmation_date = NULL,
-  confirmation_type = NULL,
-  confirmation_units = "auto",
+  validation_date = NULL,
+  validation_type = NULL,
+  validation_units = "auto",
   now = NULL,
   event_units = "auto",
   report_units = "auto",
@@ -113,7 +113,7 @@ tbl_now(
   the `report_date` corresponds to an error and is only an upper bound
   of the real report date set `is_censored = TRUE`.
 
-- confirmation_date:
+- validation_date:
 
   (optional)
   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
@@ -121,26 +121,26 @@ tbl_now(
   Influenza is the picture to keep in mind – symptoms begin (the event),
   the patient sees a doctor (the report), and days later a swab comes
   back. The assumed timeline is
-  `event_date <= report_date <= confirmation_date <= now`. Leave `NULL`
+  `event_date <= report_date <= validation_date <= now`. Leave `NULL`
   (the default) for the usual two-date object. See
-  [`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md).
+  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md).
 
-- confirmation_type:
+- validation_type:
 
   (optional)
   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   column saying what the resolution *was*: `"confirmed"`, `"retracted"`
   (it was reported, but it is not a case after all), `"pending"` or
   `NA`. **`"pending"` means reported and still waiting**, so it carries
-  no confirmation date – which is a different thing from a result that
-  was never recorded (`NA`). A confirmation date with no type warns
-  rather than guessing, because a date alone cannot say whether the case
-  was confirmed or retracted.
+  no validation date – which is a different thing from a result that was
+  never recorded (`NA`). A validation date with no type warns rather
+  than guessing, because a date alone cannot say whether the case was
+  confirmed or retracted.
 
-- confirmation_units:
+- validation_units:
 
   (optional) Character. Either `"auto"` (default), `"days"`, `"weeks"`,
-  `"months"`, `"years"` or `"numeric"` – the grid the confirmation date
+  `"months"`, `"years"` or `"numeric"` – the grid the validation date
   lives on, resolved the same way as `report_units`.
 
 - now:
@@ -221,7 +221,7 @@ them plus a `delay` column, from which the other is reconstructed).
 Everything else is optional and can be added later with
 [`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md),
 [`add_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md),
-[`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)
+[`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 and the rest of the
 [`add()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 family.
@@ -297,19 +297,19 @@ function:
   report date's incidence) or cumulative (overall known cases at report
   date)
 
-- confirmation_date:
+- validation_date:
 
   Name of the column with the (optional) third date: when the report was
   resolved.
 
-- confirmation_type:
+- validation_type:
 
   Name of the column saying what that resolution was (`"confirmed"`,
   `"retracted"`, `"pending"`).
 
-- confirmation_units:
+- validation_units:
 
-  Units of `confirmation_date`, resolved like `report_units`.
+  Units of `validation_date`, resolved like `report_units`.
 
 - computed_temporal_effect_cols:
 

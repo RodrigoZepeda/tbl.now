@@ -225,9 +225,8 @@ and
 [summary()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.md)
 and
 [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-for the same information as tables. The [*Describing and diagnosing a
-tbl_now*
-article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+for the same information as tables. The [*Diagnosing a tbl_now*
+article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 reads the panels one at a time.
 
 ## Examples

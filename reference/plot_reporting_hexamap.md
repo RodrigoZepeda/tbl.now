@@ -22,7 +22,7 @@ plot_reporting_hexamap(
   format = "%d/%b/%y",
   max_cells = 12000L,
   trans = "sqrt",
-  axis = c("report", "confirmation"),
+  axis = c("report", "validation"),
   palette = .tbl_now_palette()
 )
 ```
@@ -68,12 +68,12 @@ plot_reporting_hexamap(
 
 - axis:
 
-  Which time axis to draw: `"report"` (default) or `"confirmation"`. On
-  the confirmation axis the picture answers the laboratory's version of
+  Which time axis to draw: `"report"` (default) or `"validation"`. On
+  the validation axis the picture answers the laboratory's version of
   the question – when results arrived, rather than when reports did.
-  Needs a confirmation process (see
-  [`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md));
-  cases still `"pending"` have no confirmation date and are left out.
+  Needs a validation process (see
+  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
+  cases still `"pending"` have no validation date and are left out.
 
 - palette:
 

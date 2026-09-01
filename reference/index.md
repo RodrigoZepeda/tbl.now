@@ -46,6 +46,10 @@ Read what the object was told about itself, and change it.
   [`get_temporal_effect_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_validation_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`has_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   **\[experimental\]** :
 
   Read what a `tbl_now` was told about itself
@@ -55,14 +59,6 @@ Read what the object was told about itself, and change it.
   [`get_nth_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
   **\[stable\]** : Reported cases at a chosen point in the reporting
   process
-
-- [`get_confirmation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md)
-  [`get_confirmation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md)
-  [`get_confirmation_units()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md)
-  [`has_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md)
-  **\[experimental\]** :
-
-  Confirmation attributes of a `tbl_now`
 
 - [`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`update_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
@@ -82,14 +78,12 @@ Read what the object was told about itself, and change it.
   [`remove_all_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`replace_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`change_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`remove_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   **\[stable\]** :
 
   Set, change and remove the attributes of a `tbl_now`
-
-- [`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)
-  [`change_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)
-  [`remove_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)
-  **\[experimental\]** : Attach, change or drop a confirmation process
 
 - [`update(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.md)
   **\[experimental\]** :
@@ -106,7 +100,7 @@ Put the data on the grid a model needs.
 - [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
   **\[experimental\]** : Fill in the days when nothing was reported
 - [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
-  [`censor_confirmation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+  [`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
   **\[experimental\]** : Treat implausibly long delays as censored
   rather than exact
 - [`is_weekday()`](https://rodrigozepeda.github.io/tbl.now/reference/is_weekday.md)
@@ -125,20 +119,20 @@ Calendar structure, recorded lazily and materialised on demand.
 
   Attach calendar effects to a `tbl_now`, and turn them into columns
 
-## The confirmation process
+## The validation process
 
 The optional third date, and the outcomes it carries.
 
-- [`get_latest_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md)
-  [`get_net_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md)
-  [`get_nth_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md)
-  [`get_initial_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md)
+- [`get_latest_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+  [`get_net_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+  [`get_nth_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+  [`get_initial_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
   **\[experimental\]** : Confirmed, retracted and net counts per event
   date
-- [`diagnose_confirmation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md)
-  [`plot_confirmation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md)
-  **\[experimental\]** : Compare confirmation delays between confirmed
-  and retracted cases
+- [`diagnose_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
+  [`plot_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
+  **\[experimental\]** : Compare validation delays between confirmed and
+  retracted cases
 
 ## Summarising
 
@@ -154,7 +148,7 @@ returns a tibble, and every block of it is also a function of its own.
   [`delay_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`zero_run_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`prop_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-  [`prop_confirmation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+  [`prop_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
@@ -165,6 +159,11 @@ returns a tibble, and every block of it is also a function of its own.
   **\[experimental\]** :
 
   Individual blocks of a `tbl_now` summary
+
+- [`print(`*`<tbl_now_summary_table>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_summary_table.md)
+  **\[experimental\]** :
+
+  Print a `tbl_now` summary
 
 ## Diagnosing
 
@@ -191,6 +190,11 @@ listed after it.
   **\[experimental\]** :
 
   Individual blocks of a `tbl_now` diagnosis
+
+- [`print(`*`<tbl_now_diagnosis>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_diagnosis.md)
+  **\[experimental\]** :
+
+  Print a `tbl_now` diagnosis
 
 - [`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
   **\[experimental\]** : Test whether the reporting-delay distribution
@@ -237,7 +241,7 @@ One grid, or any panel of it on its own.
   **\[experimental\]** : Calendar effects on the case counts or on the
   reporting delay
 
-- [`plot_confirmation_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_confirmation_status.md)
+- [`plot_validation_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_validation_status.md)
   **\[experimental\]** : How much of each day has been resolved
 
 - [`plot_cycles()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_cycles.md)

@@ -15,17 +15,17 @@ relevant nowcasting variables:
 
 |   | Argument | What it records |
 |:--:|:---|:---|
-| ![event_date](inst/figures/event_date.svg) | `event_date` | The column storing **event dates**; i.e. when the epidemiological phenomenon of interest happened (symptom onset, hospitalisation, death, …). **Required.** |
-| ![report_date](inst/figures/report_date.svg) | `report_date` | The column storing **report dates**; i.e. when that event became known to the surveillance system. **Required**, unless it is reconstructed from `delay`. |
-| ![now](inst/figures/now.svg) | `now` | The date the nowcast is anchored to — “today” from the model’s point of view. *Optional*; defaults to the latest date. |
-| ![strata](inst/figures/strata.svg) | `strata` | Columns you want a separate nowcast for (e.g. gender, region). *Optional*. |
-| ![covariates](inst/figures/covariates.svg) | `covariates` | Columns that inform the nowcast but that you do *not* want it broken down by (e.g. temperature or precipitation). *Optional*. |
-| ![case_count](inst/figures/case_count.svg) | `case_count` | The column holding the counts when the data is given as aggregated (rather than line-list). *Optional*. |
-| ![data_type](inst/figures/datatype.svg) | `data_type` | Whether the data represents a `linelist` (each row is a case), `count-incidence`(each row is a collection of cases per event-report date) or `count-cumulative`(each row is the cummulative number cases for that event accumulating in the report axis). *Optional*; inferred by default. |
-| ![units](inst/figures/units.svg) | `event_units`, `report_units`, `confirmation_units` | The time grid each date lives on: `days`, `weeks`, `months`, `years` or `numeric`. *Optional*; inferred (`“auto”`) by default. |
-| ![is_censored](inst/figures/censoring.svg) | `is_censored` | Flags report dates that are only an upper bound, e.g. a batch or back-fill dump. *Optional*. |
-| ![confirmation](inst/figures/validation_date.svg) | `confirmation_date`, `confirmation_type` | An optional third date — when the report was resolved — and what it resolved to (`confirmed`, `retracted`, `pending`). *Optional*. |
-| ![temporal_effects](inst/figures/temporal_effects.svg) | `t_effects` | Columns holding temporal effects (day of week, holidays, …) that some models can use. *Optional*. |
+| ![event_date](reference/figures/event_date.svg) | `event_date` | The column storing **event dates**; i.e. when the epidemiological phenomenon of interest happened (symptom onset, hospitalisation, death, …). **Required.** |
+| ![report_date](reference/figures/report_date.svg) | `report_date` | The column storing **report dates**; i.e. when that event became known to the surveillance system. **Required**, unless it is reconstructed from `delay`. |
+| ![now](reference/figures/now.svg) | `now` | The date the nowcast is anchored to — “today” from the model’s point of view. *Optional*; defaults to the latest date. |
+| ![strata](reference/figures/strata.svg) | `strata` | Columns you want a separate nowcast for (e.g. gender, region). *Optional*. |
+| ![covariates](reference/figures/covariates.svg) | `covariates` | Columns that inform the nowcast but that you do *not* want it broken down by (e.g. temperature or precipitation). *Optional*. |
+| ![case_count](reference/figures/case_count.svg) | `case_count` | The column holding the counts when the data is given as aggregated (rather than line-list). *Optional*. |
+| ![data_type](reference/figures/datatype.svg) | `data_type` | Whether the data represents a `linelist` (each row is a case), `count-incidence`(each row is a collection of cases per event-report date) or `count-cumulative`(each row is the cummulative number cases for that event accumulating in the report axis). *Optional*; inferred by default. |
+| ![units](reference/figures/units.svg) | `event_units`, `report_units`, `validation_units` | The time grid each date lives on: `days`, `weeks`, `months`, `years` or `numeric`. *Optional*; inferred (`“auto”`) by default. |
+| ![is_censored](reference/figures/censoring.svg) | `is_censored` | Flags report dates that are only an upper bound, e.g. a batch or back-fill dump. *Optional*. |
+| ![validation](reference/figures/validation_date.svg) | `validation_date`, `validation_type` | An optional third date — when the report was resolved — and what it resolved to (`confirmed`, `retracted`, `pending`). *Optional*. |
+| ![temporal_effects](reference/figures/temporal_effects.svg) | `t_effects` | Columns holding temporal effects (day of week, holidays, …) that some models can use. *Optional*. |
 
 You can specify an object as a `tbl.now` with the `tbl_now` command:
 
@@ -125,11 +125,10 @@ and checkout our articles starting with the
   the full anatomy of a `tbl_now`, data types, and temporal effects.
 - End-to-end tutorial on real, messy surveillance data — cleaning,
   diagnostics and nowcasting:
-  <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
-- Tutorial on diagnosing problems with your dataset, detecting batches
-  and other reporting-delay artifacts:
-  <https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html>
-- Using different nowcasting engines for the same dataset:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
+- Tutorial on detecting batches and other reporting-delay artifacts:
+  <https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html>
+- Comparing nowcasting engines on one dataset:
   <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
 - Ensemble nowcasting across different engines
   <https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html>

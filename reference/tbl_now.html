@@ -31,7 +31,7 @@ dates without being told again."><meta property="og:image" content="https://rodr
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,9 +43,8 @@ dates without being told again."><meta property="og:image" content="https://rodr
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -101,9 +100,9 @@ dates without being told again.</p>
 <span>  covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  case_count <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  is_censored <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  confirmation_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  confirmation_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  confirmation_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
+<span>  validation_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  validation_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  validation_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  now <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  event_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  report_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
@@ -181,31 +180,31 @@ and is only an upper bound of the real report date
 set <code>is_censored = TRUE</code>.</p></dd>
 
 
-<dt id="arg-confirmation-date">confirmation_date<a class="anchor" aria-label="anchor" href="#arg-confirmation-date"></a></dt>
+<dt id="arg-validation-date">validation_date<a class="anchor" aria-label="anchor" href="#arg-validation-date"></a></dt>
 <dd><p>(optional)
 <a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a>
 column holding a <strong>third</strong> date: the day the report was resolved. Influenza is
 the picture to keep in mind – symptoms begin (the event), the patient sees a
 doctor (the report), and days later a swab comes back. The assumed timeline is
-<code>event_date &lt;= report_date &lt;= confirmation_date &lt;= now</code>. Leave <code>NULL</code> (the
-default) for the usual two-date object. See <code><a href="confirmation_setters.html">add_confirmation()</a></code>.</p></dd>
+<code>event_date &lt;= report_date &lt;= validation_date &lt;= now</code>. Leave <code>NULL</code> (the
+default) for the usual two-date object. See <code><a href="add.html">add_validation_date()</a></code>.</p></dd>
 
 
-<dt id="arg-confirmation-type">confirmation_type<a class="anchor" aria-label="anchor" href="#arg-confirmation-type"></a></dt>
+<dt id="arg-validation-type">validation_type<a class="anchor" aria-label="anchor" href="#arg-validation-type"></a></dt>
 <dd><p>(optional)
 <a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a>
 column saying what the resolution <em>was</em>: <code>"confirmed"</code>, <code>"retracted"</code> (it was
 reported, but it is not a case after all), <code>"pending"</code> or <code>NA</code>. <strong><code>"pending"</code>
-means reported and still waiting</strong>, so it carries no confirmation date –
+means reported and still waiting</strong>, so it carries no validation date –
 which is a different thing from a result that was never recorded (<code>NA</code>). A
-confirmation date with no type warns rather than guessing, because a date
+validation date with no type warns rather than guessing, because a date
 alone cannot say whether the case was confirmed or retracted.</p></dd>
 
 
-<dt id="arg-confirmation-units">confirmation_units<a class="anchor" aria-label="anchor" href="#arg-confirmation-units"></a></dt>
+<dt id="arg-validation-units">validation_units<a class="anchor" aria-label="anchor" href="#arg-validation-units"></a></dt>
 <dd><p>(optional) Character. Either <code>"auto"</code> (default),
 <code>"days"</code>, <code>"weeks"</code>, <code>"months"</code>, <code>"years"</code> or <code>"numeric"</code> – the grid the
-confirmation date lives on, resolved the same way as <code>report_units</code>.</p></dd>
+validation date lives on, resolved the same way as <code>report_units</code>.</p></dd>
 
 
 <dt id="arg-now">now<a class="anchor" aria-label="anchor" href="#arg-now"></a></dt>
@@ -278,7 +277,7 @@ strata, covariates and so on, plus the <code>now</code> of the nowcast. List the
     <p>The minimum you must supply is <code>event_date</code> and <code>report_date</code> (or one of them
 plus a <code>delay</code> column, from which the other is reconstructed). Everything else
 is optional and can be added later with <code><a href="add.html">add_strata()</a></code>, <code><a href="add.html">add_covariates()</a></code>,
-<code><a href="confirmation_setters.html">add_confirmation()</a></code> and the rest of the <code><a href="add.html">add()</a></code> family.</p>
+<code><a href="add.html">add_validation_date()</a></code> and the rest of the <code><a href="add.html">add()</a></code> family.</p>
 <p>Once the object exists the usual path is <a href="tbl_now_summary.html">summary()</a> to see
 what is in the data, <code><a href="diagnose.html">diagnose()</a></code> to see what is wrong with it,
 <a href="autoplot.tbl_now.html">autoplot()</a> to look at it, and <code><a href="run_nowcast.html">run_nowcast()</a></code> to fit a
@@ -325,14 +324,14 @@ by the <code><a href="validate_tbl_now.html">validate_tbl_now()</a></code> funct
 <dd><p>Either <code>linelist</code>, <code>count-incidence</code> or <code>count-cumulative</code> depending on whether it is linelist data
 or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)</p></dd>
 
-<dt>confirmation_date</dt>
+<dt>validation_date</dt>
 <dd><p>Name of the column with the (optional) third date: when the report was resolved.</p></dd>
 
-<dt>confirmation_type</dt>
+<dt>validation_type</dt>
 <dd><p>Name of the column saying what that resolution was (<code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code>).</p></dd>
 
-<dt>confirmation_units</dt>
-<dd><p>Units of <code>confirmation_date</code>, resolved like <code>report_units</code>.</p></dd>
+<dt>validation_units</dt>
+<dd><p>Units of <code>validation_date</code>, resolved like <code>report_units</code>.</p></dd>
 
 <dt>computed_temporal_effect_cols</dt>
 <dd><p>Names of the temporal-effect columns that have actually been materialised in the data by <code><a href="add_temporal_effects.html">compute_temporal_effects()</a></code>.</p></dd>

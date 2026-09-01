@@ -5,9 +5,8 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE-text.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/SKILL.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/example.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/index.html</loc></url>
@@ -28,10 +27,6 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/covid_colombia.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/covid_us.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/denguedat.html</loc></url>
@@ -62,7 +57,6 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/nowcast_tidy.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_confirmation_status.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_cycles.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.html</loc></url>
@@ -73,6 +67,9 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_transport_discriminant.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_validation_status.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_diagnosis.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_summary_table.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/reexports.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.html</loc></url>
@@ -105,5 +102,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.html</loc></url>
 </urlset>
 

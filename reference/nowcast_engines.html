@@ -21,7 +21,7 @@ is about driving it through run_nowcast()."><meta property="og:image" content="h
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,9 +33,8 @@ is about driving it through run_nowcast()."><meta property="og:image" content="h
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -91,6 +90,7 @@ is about driving it through <code><a href="run_nowcast.html">run_nowcast()</a></
 <span>  <span class="va">...</span>,</span>
 <span>  draws <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  delays_unit <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  max_delay <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  min_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  quantile_levels <span class="op">=</span> <span class="fu"><a href="nowcast_quantile_levels.html">nowcast_quantile_levels</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  label <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -156,10 +156,10 @@ functions it is whatever their named arguments do not already cover.</p></dd>
 <dt id="arg-model-type-n-draws">model, type, n_draws<a class="anchor" aria-label="anchor" href="#arg-model-type-n-draws"></a></dt>
 <dd><p>(<code>engine_diseasenowcasting()</code>) Arguments of
 <code>diseasenowcasting::nowcast()</code>. <code>model</code> is where the epidemic and
-confirmation processes are chosen, e.g.
+validation processes are chosen, e.g.
 <code>diseasenowcasting::model(epidemic = diseasenowcasting::ar1_epidemic())</code>.
 On <code>count-cumulative</code> data that revises downwards you also want a
-<code>confirmation</code> process, or the negative increments have nowhere to go.</p></dd>
+<code>validation</code> process, or the negative increments have nowhere to go.</p></dd>
 
 
 <dt id="arg-min-date">min_date<a class="anchor" aria-label="anchor" href="#arg-min-date"></a></dt>
@@ -194,10 +194,16 @@ when the same package appears twice with different settings, which is the
 whole reason two <code>diseasenowcasting</code> models can be weighted separately.</p></dd>
 
 
-<dt id="arg-draws-delays-unit">draws, delays_unit<a class="anchor" aria-label="anchor" href="#arg-draws-delays-unit"></a></dt>
-<dd><p>(<code>engine_baselinenowcast()</code>) Number of nowcast
-samples, and the unit of the reporting triangle's delay axis (inferred from
-the object's units when <code>NULL</code>).</p></dd>
+<dt id="arg-draws-delays-unit-max-delay">draws, delays_unit, max_delay<a class="anchor" aria-label="anchor" href="#arg-draws-delays-unit-max-delay"></a></dt>
+<dd><p>(<code>engine_baselinenowcast()</code>) Number of
+nowcast samples, the unit of the reporting triangle's delay axis (inferred
+from the object's units when <code>NULL</code>), and how many delay periods to keep –
+<code>max_delay = 10</code> keeps delays 0-9, as in <code><a href="tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code>.
+The last one is not only about speed: <code>baselinenowcast</code> needs more
+reference dates than delay columns, so a <strong>snapshot ("as of") series</strong> –
+which re-reports every past period in every snapshot, and therefore has a
+delay axis as long as the series itself – cannot be fitted at all until
+the axis is capped. The error says which number to use.</p></dd>
 
 
 <dt id="arg-preprocess-args-expectation-reference-report-fit">preprocess_args, expectation, reference, report, fit<a class="anchor" aria-label="anchor" href="#arg-preprocess-args-expectation-reference-report-fit"></a></dt>

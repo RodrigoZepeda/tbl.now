@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,9 +41,8 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+<li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -281,14 +280,14 @@ reporting on this extract stopped before the extract did.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"skipped"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">check</span>, <span class="va">scope</span>, <span class="va">message</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 3</span></span></span>
-<span><span class="co">#&gt;   check      scope                  message                                                                               </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                                                 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> duplicates key                    A line list is one row per case, so identical rows are two cases rather than a repeat.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> negatives  count                  A line list has no count column to go negative.                                       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> ordering   event_to_confirmation  The object carries no confirmation process.                                           </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ordering   report_to_confirmation The object carries no confirmation process.                                           </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> signposts  confirmation           The object carries no confirmation process.                                           </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> strata     pending                The object carries no confirmation process.</span></span></code></pre></div>
+<span><span class="co">#&gt;   check      scope                message                                                                               </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                                                 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> duplicates key                  A line list is one row per case, so identical rows are two cases rather than a repeat.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> negatives  count                A line list has no count column to go negative.                                       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> ordering   event_to_validation  The object carries no validation process.                                             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ordering   report_to_validation The object carries no validation process.                                             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> signposts  validation           The object carries no validation process.                                             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> strata     pending              The object carries no validation process.</span></span></code></pre></div>
 <p><code>skipped</code> is not <code>ok</code>. <code>ok</code> means a
 check ran and found nothing; <code>skipped</code> means it could not run
 at all, and a check that cannot be performed is never reported as a
@@ -304,12 +303,12 @@ hand.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_diagnose_components.html">diagnose_signposts</a></span><span class="op">(</span><span class="va">hai_raw_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">scope</span>, <span class="va">status</span>, <span class="va">message</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 3</span></span></span>
-<span><span class="co">#&gt;   scope                status  message                                            </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                              </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> confirmation_batches not_run <span style="color: #949494;">"</span>Run: diagnose_batches(x, axis = \"confirmation\")<span style="color: #949494;">"</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> report               not_run <span style="color: #949494;">"</span>Run: diagnose_drift(x, axis = \"report\")<span style="color: #949494;">"</span>        </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> report_batches       not_run <span style="color: #949494;">"</span>Run: diagnose_batches(x, axis = \"report\")<span style="color: #949494;">"</span>      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> confirmation         skipped <span style="color: #949494;">"</span>The object carries no confirmation process.<span style="color: #949494;">"</span></span></span></code></pre></div>
+<span><span class="co">#&gt;   scope              status  message                                          </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                            </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> report             not_run <span style="color: #949494;">"</span>Run: diagnose_drift(x, axis = \"report\")<span style="color: #949494;">"</span>      </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> report_batches     not_run <span style="color: #949494;">"</span>Run: diagnose_batches(x, axis = \"report\")<span style="color: #949494;">"</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> validation_batches not_run <span style="color: #949494;">"</span>Run: diagnose_batches(x, axis = \"validation\")<span style="color: #949494;">"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> validation         skipped <span style="color: #949494;">"</span>The object carries no validation process.<span style="color: #949494;">"</span></span></span></code></pre></div>
 <p><code><a href="../reference/diagnose.html">diagnose()</a></code> is <strong>structural</strong>: it never runs
 a statistical test, so it is fast and its answer never depends on a
 random seed. Whether the delay drifts, and whether reports arrive in
@@ -1159,10 +1158,11 @@ loud rather than burying.</p>
 for the full anatomy of a <code>tbl_now</code>, data types, and temporal
 effects.</li>
 <li>End-to-end tutorial on real, messy surveillance data — cleaning,
-diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/Example.html">https://rodrigozepeda.github.io/tbl.now/articles/Example.html</a>
+diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
 </li>
-<li>Tutorial on diagnosing problems with your dataset, detecting batches
-and other reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html">https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html</a>
+<li>Tutorial on diagnosing your dataset — what is in it, what is
+structurally wrong with it, and detecting batches and other
+reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>
 </li>
 <li>Using different nowcasting engines for the same dataset: <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>
 </li>

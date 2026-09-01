@@ -20,7 +20,7 @@ diagnose_batch_shape(
   guard = 1L,
   permute = c("items", "blocks"),
   n_permutations = 999L,
-  axis = c("report", "confirmation"),
+  axis = c("report", "validation"),
   seed = NULL
 )
 ```
@@ -62,13 +62,13 @@ diagnose_batch_shape(
 - axis:
 
   Which time axis to scan for arrivals: `"report"` (default) or
-  `"confirmation"`. The question is the same either way – did an unusual
+  `"validation"`. The question is the same either way – did an unusual
   number of records land on this date? – so a laboratory clearing its
   backlog is found exactly as a surveillance system clearing its inbox
-  is. `"confirmation"` needs a confirmation process (see
-  [`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md))
-  and ignores cases that are still `"pending"`, which have no
-  confirmation date to arrive on.
+  is. `"validation"` needs a validation process (see
+  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md))
+  and ignores cases that are still `"pending"`, which have no validation
+  date to arrive on.
 
 - seed:
 

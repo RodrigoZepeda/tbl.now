@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,9 +41,8 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+<li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -552,6 +551,10 @@ directly, so it fills <code>predictions</code> and leaves
 <span><span class="co">#&gt; • event dates: <span style="color: #0000BB;">144</span></span></span>
 <span><span class="co">#&gt; • quantile levels: <span style="color: #0000BB;">0.025</span>, <span style="color: #0000BB;">0.05</span>, <span style="color: #0000BB;">0.1</span>, <span style="color: #0000BB;">0.25</span>, <span style="color: #0000BB;">0.5</span>, <span style="color: #0000BB;">0.75</span>, <span style="color: #0000BB;">0.9</span>, <span style="color: #0000BB;">0.95</span>, and <span style="color: #0000BB;">0.975</span></span></span>
 <span><span class="co">#&gt; • draws: <span style="font-style: italic;">none</span> (quantiles only)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Nowcast at <span style="color: #0000BB;">"2010-10-04"</span> (q50, 2.5-97.5% interval):</span></span>
+<span><span class="co">#&gt; • 280 [40, 1,476.8]</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 3</span></span></span>
 <span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -750,6 +753,10 @@ a method is just a function:</p>
 <span><span class="co">#&gt; • event dates: <span style="color: #0000BB;">144</span></span></span>
 <span><span class="co">#&gt; • quantile levels: <span style="color: #0000BB;">0.025</span>, <span style="color: #0000BB;">0.05</span>, <span style="color: #0000BB;">0.1</span>, <span style="color: #0000BB;">0.25</span>, <span style="color: #0000BB;">0.5</span>, <span style="color: #0000BB;">0.75</span>, <span style="color: #0000BB;">0.9</span>, <span style="color: #0000BB;">0.95</span>, and <span style="color: #0000BB;">0.975</span></span></span>
 <span><span class="co">#&gt; • draws: <span style="color: #0000BB;">2000</span></span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Nowcast at <span style="color: #0000BB;">"2010-10-04"</span> (q50, 2.5-97.5% interval):</span></span>
+<span><span class="co">#&gt; • 280 [40, 1,544]</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 3</span></span></span>
 <span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>

@@ -69,8 +69,8 @@ problem that nowcasting exists to solve.
 
 ## See also
 
-[get_latest_confirmed()](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md)
-and friends for the same idea on the confirmation process;
+[get_latest_confirmed()](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+and friends for the same idea on the validation process;
 [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
 for the underlying data shapes;
 [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md),

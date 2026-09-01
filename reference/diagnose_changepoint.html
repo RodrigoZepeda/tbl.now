@@ -21,7 +21,7 @@ skew and serial dependence of a delay series."><meta property="og:image" content
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,9 +33,8 @@ skew and serial dependence of a delay series."><meta property="og:image" content
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -86,7 +85,7 @@ skew and serial dependence of a delay series.</p>
 <span>  mature_only <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  level <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"confirmation"</span><span class="op">)</span></span>
+<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -135,12 +134,12 @@ separately per stratum.</p></dd>
 
 <dt id="arg-axis">axis<a class="anchor" aria-label="anchor" href="#arg-axis"></a></dt>
 <dd><p>Which time axis the delay is measured to: <code>"report"</code> (default)
-or <code>"confirmation"</code>. Both are measured <em>from the event</em>, so the two are
+or <code>"validation"</code>. Both are measured <em>from the event</em>, so the two are
 directly comparable – run each in turn and the gap between them is the
 time the laboratory adds. (This is not the same quantity as the
-<code>.confirmation_delay</code> column, which is the laboratory's own turnaround,
-measured from the report.) Needs a confirmation process (see
-<code><a href="confirmation_setters.html">add_confirmation()</a></code>); cases still <code>"pending"</code> are left out.</p></dd>
+<code>.validation_delay</code> column, which is the laboratory's own turnaround,
+measured from the report.) Needs a validation process (see
+<code><a href="add.html">add_validation_date()</a></code>); cases still <code>"pending"</code> are left out.</p></dd>
 
 </dl></div>
     <div class="section level2">

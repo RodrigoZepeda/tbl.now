@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,9 +46,8 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+<li><a class="dropdown-item" href="articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -103,7 +102,7 @@ What it records
 <tbody>
 <tr>
 <td align="center">
-<img src="inst/figures/event_date.svg" height="70" alt="event_date">
+<img src="reference/figures/event_date.svg" height="70" alt="event_date">
 </td>
 <td align="left">
 <code>event_date</code>
@@ -114,7 +113,7 @@ The column storing <strong>event dates</strong>; i.e. when the epidemiological 
 </tr>
 <tr>
 <td align="center">
-<img src="inst/figures/report_date.svg" height="70" alt="report_date">
+<img src="reference/figures/report_date.svg" height="70" alt="report_date">
 </td>
 <td align="left">
 <code>report_date</code>
@@ -125,7 +124,7 @@ The column storing <strong>report dates</strong>; i.e. when that event became k
 </tr>
 <tr>
 <td align="center">
-<img src="inst/figures/now.svg" height="70" alt="now">
+<img src="reference/figures/now.svg" height="70" alt="now">
 </td>
 <td align="left">
 <code>now</code>
@@ -136,7 +135,7 @@ The date the nowcast is anchored to — “today” from the model’s point of 
 </tr>
 <tr>
 <td align="center">
-<img src="inst/figures/strata.svg" height="70" alt="strata">
+<img src="reference/figures/strata.svg" height="70" alt="strata">
 </td>
 <td align="left">
 <code>strata</code>
@@ -147,7 +146,7 @@ Columns you want a separate nowcast for (e.g. gender, region). <em>Optional</em
 </tr>
 <tr>
 <td align="center">
-<img src="inst/figures/covariates.svg" height="70" alt="covariates">
+<img src="reference/figures/covariates.svg" height="70" alt="covariates">
 </td>
 <td align="left">
 <code>covariates</code>
@@ -158,7 +157,7 @@ Columns that inform the nowcast but that you do <em>not</em> want it broken down
 </tr>
 <tr>
 <td align="center">
-<img src="inst/figures/case_count.svg" height="70" alt="case_count">
+<img src="reference/figures/case_count.svg" height="70" alt="case_count">
 </td>
 <td align="left">
 <code>case_count</code>
@@ -169,7 +168,7 @@ The column holding the counts when the data is given as aggregated (rather than 
 </tr>
 <tr>
 <td align="center">
-<img src="inst/figures/datatype.svg" height="70" alt="data_type">
+<img src="reference/figures/datatype.svg" height="70" alt="data_type">
 </td>
 <td align="left">
 <code>data_type</code>
@@ -180,10 +179,10 @@ Whether the data represents a <code>linelist</code> (each row is a case), <code>
 </tr>
 <tr>
 <td align="center">
-<img src="inst/figures/units.svg" height="70" alt="units">
+<img src="reference/figures/units.svg" height="70" alt="units">
 </td>
 <td align="left">
-<code>event_units</code>, <code>report_units</code>, <code>confirmation_units</code>
+<code>event_units</code>, <code>report_units</code>, <code>validation_units</code>
 </td>
 <td align="left">
 The time grid each date lives on: <code>days</code>, <code>weeks</code>, <code>months</code>, <code>years</code> or <code>numeric</code>. <em>Optional</em>; inferred (<code>“auto”</code>) by default.
@@ -191,7 +190,7 @@ The time grid each date lives on: <code>days</code>, <code>weeks</code>, <code>m
 </tr>
 <tr>
 <td align="center">
-<img src="inst/figures/censoring.svg" height="70" alt="is_censored">
+<img src="reference/figures/censoring.svg" height="70" alt="is_censored">
 </td>
 <td align="left">
 <code>is_censored</code>
@@ -202,10 +201,10 @@ Flags report dates that are only an upper bound, e.g. a batch or back-fill dump
 </tr>
 <tr>
 <td align="center">
-<img src="inst/figures/validation_date.svg" height="70" alt="confirmation">
+<img src="reference/figures/validation_date.svg" height="70" alt="validation">
 </td>
 <td align="left">
-<code>confirmation_date</code>, <code>confirmation_type</code>
+<code>validation_date</code>, <code>validation_type</code>
 </td>
 <td align="left">
 An optional third date — when the report was resolved — and what it resolved to (<code>confirmed</code>, <code>retracted</code>, <code>pending</code>). <em>Optional</em>.
@@ -213,7 +212,7 @@ An optional third date — when the report was resolved — and what it resolved
 </tr>
 <tr>
 <td align="center">
-<img src="inst/figures/temporal_effects.svg" height="70" alt="temporal_effects">
+<img src="reference/figures/temporal_effects.svg" height="70" alt="temporal_effects">
 </td>
 <td align="left">
 <code>t_effects</code>
@@ -277,11 +276,11 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 </h2>
 <ul>
 <li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a> for the full anatomy of a <code>tbl_now</code>, data types, and temporal effects.</li>
-<li>End-to-end tutorial on real, messy surveillance data — cleaning, diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/Example.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/Example.html</a>
+<li>End-to-end tutorial on real, messy surveillance data — cleaning, diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
 </li>
-<li>Tutorial on diagnosing problems with your dataset, detecting batches and other reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html</a>
+<li>Tutorial on detecting batches and other reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>
 </li>
-<li>Using different nowcasting engines for the same dataset: <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>
+<li>Comparing nowcasting engines on one dataset: <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>
 </li>
 <li>Ensemble nowcasting across different engines <a href="https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html</a>
 </li>

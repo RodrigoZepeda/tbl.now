@@ -188,9 +188,8 @@ Check the epidist issue tracker for the current status.
 
 ## See also
 
-[confirmation_setters](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)
-and
-[confirmation_delay](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md),
+[add](https://rodrigozepeda.github.io/tbl.now/reference/add.md) and
+[validation_delay](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md),
 since epidist is about delay distributions and a `tbl_now` may carry two
 of them;
 [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)

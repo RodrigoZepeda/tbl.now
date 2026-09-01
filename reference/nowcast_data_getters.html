@@ -21,7 +21,7 @@ x[[get_event_date(x)]] and your code works on any tbl_now."><meta property="og:i
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,9 +33,8 @@ x[[get_event_date(x)]] and your code works on any tbl_now."><meta property="og:i
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -103,7 +102,15 @@ assuming a column is called <code>onset_week</code>, write
 <span></span>
 <span><span class="fu">get_is_censored</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">get_case_count</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">get_case_count</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">get_validation_date</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">get_validation_type</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">get_validation_units</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">has_validation</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -158,6 +165,20 @@ object carries, or <code>NULL</code>. This is the <em>request</em>, not the data
 columns actually materialised in the data by
 <code><a href="add_temporal_effects.html">compute_temporal_effects()</a></code>; <code>character(0)</code> when none have been.</p></dd>
 
+<dt><code>get_validation_date()</code>, <code>get_validation_type()</code></dt>
+<dd><p>Character, or
+<code>NULL</code>. The name of the column holding the date a case was resolved, and
+of the column holding how it resolved.</p></dd>
+
+<dt><code>get_validation_units()</code></dt>
+<dd><p>The grid the validation date lives on,
+or <code>NULL</code> when the object carries no validation process.</p></dd>
+
+<dt><code>has_validation()</code></dt>
+<dd><p><code>TRUE</code> when the object carries a validation
+date. Every code path must work when it is <code>FALSE</code>, because most objects
+have no third date.</p></dd>
+
 
 </dl></div>
     <div class="section level2">
@@ -170,10 +191,27 @@ helpers, <code>get_num_strata()</code> and <code>get_num_covariates()</code>, re
 which is usually easier to work with.</p>
     </div>
     <div class="section level2">
+    <h2 id="the-validation-process-the-optional-third-date">The validation process, the optional third date<a class="anchor" aria-label="anchor" href="#the-validation-process-the-optional-third-date"></a></h2>
+
+
+
+<p>A <code>tbl_now</code> may carry a <strong>third</strong> date beyond the event and the report: the
+date a case was resolved, either confirmed or retracted. Think of influenza:
+symptom onset is the event, the medical visit is the report, and the
+laboratory result is the validation – which can come back negative, in
+which case the case is <em>retracted</em> rather than confirmed.</p>
+<p>It is optional and most objects do not have one, so <code>has_validation()</code> gates
+the four getters below it: they all return <code>NULL</code> on an object that was never
+given a third date.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="tbl_now_attributes.html">tbl_now_attributes()</a></code> to get all of them at once;
-<code><a href="add.html">add()</a></code>, <a href="add.html">change()</a> and <a href="add.html">remove()</a> to set them;
-<a href="confirmation_getters.html">confirmation_getters</a> for the third-date attributes;
+<code><a href="add.html">add()</a></code>, <a href="add.html">change()</a> and <a href="add.html">remove()</a> to set them, including
+<a href="add.html">add_validation_date()</a>;
+<a href="validation_counts.html">get_latest_confirmed()</a> and
+<a href="validation_counts.html">get_net_confirmed()</a> to count the outcomes;
+<a href="validation_delay.html">validation_delay</a> for how long resolution takes;
 <a href="get_latest_first.html">get_latest_reported_cases()</a> and friends for reading the
 counts rather than the metadata.</p></div>
     </div>
@@ -256,6 +294,33 @@ counts rather than the metadata.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="fu">get_temporal_effect_cols</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] ".event_month_of_year"</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The third date is optional, so ask before you read it.</span></span></span>
+<span class="r-in"><span><span class="fu">has_validation</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-in"><span><span class="fu">get_validation_date</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## Once one is attached, the same name-then-index pattern applies.</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">hai</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    event_date <span class="op">=</span> <span class="va">specimen_date</span>, report_date <span class="op">=</span> <span class="va">report_date</span>,</span></span>
+<span class="r-in"><span>    data_type <span class="op">=</span> <span class="st">"linelist"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="add.html">add_validation_date</a></span><span class="op">(</span><span class="va">received_date</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">has_validation</span><span class="op">(</span><span class="va">hai</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-in"><span><span class="fu">get_validation_date</span><span class="op">(</span><span class="va">hai</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "received_date"</span>
+<span class="r-in"><span><span class="fu">get_validation_units</span><span class="op">(</span><span class="va">hai</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "days"</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">hai</span><span class="op">[[</span><span class="fu">get_validation_date</span><span class="op">(</span><span class="va">hai</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "2018-10-01" "2018-01-27" "2018-01-27" "2018-04-20" "2018-01-22"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [6] "2018-01-02"</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

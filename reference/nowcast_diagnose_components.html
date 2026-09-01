@@ -5,7 +5,7 @@ can be stacked with dplyr::bind_rows() or used on their own.
 diagnose_declarations() – the attributes and the columns they name:
 types, existence, collisions, columns the object was never told about, and
 temporal effects that were added but never materialised.
-diagnose_ordering() – the event &amp;lt;= report &amp;lt;= confirmation timeline.
+diagnose_ordering() – the event &amp;lt;= report &amp;lt;= validation timeline.
 diagnose_missing() – NA values, per column and per stratum. An NA
 count is reported neutrally: in a reporting triangle it means not yet
 observed, which is correct data rather than a defect.
@@ -18,7 +18,7 @@ diagnose_now() – anything dated after now, and how stale the object is.
 diagnose_truncation() – how many recent event dates are still immature,
 and how much of their eventual total is probably still missing.
 diagnose_strata() – the smallest and the sparsest stratum, and the
-confirmations still pending.
+validations still pending.
 diagnose_signposts() – the questions diagnose() deliberately does not
 answer, and the call that answers each one.
 
@@ -28,7 +28,7 @@ can be stacked with dplyr::bind_rows() or used on their own.
 diagnose_declarations() – the attributes and the columns they name:
 types, existence, collisions, columns the object was never told about, and
 temporal effects that were added but never materialised.
-diagnose_ordering() – the event &amp;lt;= report &amp;lt;= confirmation timeline.
+diagnose_ordering() – the event &amp;lt;= report &amp;lt;= validation timeline.
 diagnose_missing() – NA values, per column and per stratum. An NA
 count is reported neutrally: in a reporting triangle it means not yet
 observed, which is correct data rather than a defect.
@@ -41,7 +41,7 @@ diagnose_now() – anything dated after now, and how stale the object is.
 diagnose_truncation() – how many recent event dates are still immature,
 and how much of their eventual total is probably still missing.
 diagnose_strata() – the smallest and the sparsest stratum, and the
-confirmations still pending.
+validations still pending.
 diagnose_signposts() – the questions diagnose() deliberately does not
 answer, and the call that answers each one.
 
@@ -53,7 +53,7 @@ answer, and the call that answers each one.
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,9 +65,8 @@ answer, and the call that answers each one.
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -102,7 +101,7 @@ answer, and the call that answers each one.
 can be stacked with <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">dplyr::bind_rows()</a></code> or used on their own.</p><ul><li><p><code>diagnose_declarations()</code> – the attributes and the columns they name:
 types, existence, collisions, columns the object was never told about, and
 temporal effects that were added but never materialised.</p></li>
-<li><p><code>diagnose_ordering()</code> – the <code>event &lt;= report &lt;= confirmation</code> timeline.</p></li>
+<li><p><code>diagnose_ordering()</code> – the <code>event &lt;= report &lt;= validation</code> timeline.</p></li>
 <li><p><code>diagnose_missing()</code> – <code>NA</code> values, per column and per stratum. An <code>NA</code>
 <em>count</em> is reported neutrally: in a reporting triangle it means <em>not yet
 observed</em>, which is correct data rather than a defect.</p></li>
@@ -115,7 +114,7 @@ downward revision leaves behind when cumulative data is de-accumulated.</p></li>
 <li><p><code>diagnose_truncation()</code> – how many recent event dates are still immature,
 and how much of their eventual total is probably still missing.</p></li>
 <li><p><code>diagnose_strata()</code> – the smallest and the sparsest stratum, and the
-confirmations still pending.</p></li>
+validations still pending.</p></li>
 <li><p><code>diagnose_signposts()</code> – the questions <code><a href="diagnose.html">diagnose()</a></code> deliberately does not
 answer, and the call that answers each one.</p></li>
 </ul></div>
@@ -188,7 +187,7 @@ because it runs on every <code>dplyr</code> verb.</p></dd>
 wrong with it; <code><a href="diagnose_drift.html">diagnose_drift()</a></code>, <code><a href="diagnose_changepoint.html">diagnose_changepoint()</a></code> and
 <code><a href="diagnose_batches.html">diagnose_batches()</a></code> for the statistical tests <code>diagnose_signposts()</code> points
 you at. The
-<a href="https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html"><em>Describing and diagnosing a tbl_now</em> article</a>
+<a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html"><em>Diagnosing a tbl_now</em> article</a>
 explains how to read each finding.</p></div>
     </div>
 
@@ -204,102 +203,137 @@ explains how to read each finding.</p></div>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Is the object described correctly, and do the dates make sense?</span></span></span>
 <span class="r-in"><span><span class="fu">diagnose_declarations</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 10</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   check        scope stratum status n_affected n_total  prop message hint  rows </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lis&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> declarations temp… all     ok              0       0    <span style="color: #BB0000;">NA</span> 0 temp… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> declarations unde… all     ok              0       6     0 Every … <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">2 passed</span><span style="color: #555555;">.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Passed (2)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">declarations/temporal_effects:</span> 0 temporal effect columns are materialised.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">declarations/undeclared:</span> Every column is declared or protected.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 2 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span><span class="fu">diagnose_ordering</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 10</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   check    scope     stratum status n_affected n_total  prop message hint  rows </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lis&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> ordering event_to… all     ok              0   <span style="text-decoration: underline;">52</span>987     0 Every … <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> ordering event_to… all     skipp…         <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> The ob… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> ordering report_t… all     skipp…         <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> The ob… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">1 passed</span><span style="color: #555555;">, 2 skipped.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Passed (1)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">ordering/event_to_report:</span> Every report is on or after its event.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Skipped (2)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> <span style="font-weight: bold;">ordering/event_to_validation:</span> The object carries no validation process.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> <span style="font-weight: bold;">ordering/report_to_validation:</span> The object carries no validation process.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span><span class="fu">diagnose_units</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 10</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   check scope       stratum status n_affected n_total  prop message  hint  rows </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lis&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> units declared    all     ok              0       2     0 <span style="color: #949494;">"</span>The de… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> units delay       all     ok              0   <span style="text-decoration: underline;">52</span>987     0 <span style="color: #949494;">"</span>Every … <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> units event_grid  all     ok              0   <span style="text-decoration: underline;">52</span>987     0 <span style="color: #949494;">"</span>\"onse… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> units report_grid all     ok              0   <span style="text-decoration: underline;">52</span>987     0 <span style="color: #949494;">"</span>\"repo… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">4 passed</span><span style="color: #555555;">.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Passed (4)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/declared:</span> The declared units agree: "weeks" and "weeks".</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/delay:</span> Every `.delay` is a whole number of units.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/event_grid:</span> "onset_week" lands on the object's "weeks" grid.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/report_grid:</span> "report_week" lands on the object's "weeks" grid.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 4 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span><span class="fu">diagnose_now</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 10</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   check scope        stratum status n_affected n_total  prop message hint  rows </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lis&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> now   now_gap_eve… Female  note            3      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The l… Ever… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> now   now_gap_eve… Male    note            3      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The l… Ever… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> now   now_gap_eve… all     note            3      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The l… Ever… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> now   now_gap_rep… Male    note            1      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The l… Ever… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> now   event_date   all     ok              0   <span style="text-decoration: underline;">52</span>987     0 <span style="color: #949494;">"</span>No ev… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> now   now_gap_rep… Female  ok              0      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The l… Ever… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> now   now_gap_rep… all     ok              0      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The l… Ever… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> now   report_date  all     ok              0       1     0 <span style="color: #949494;">"</span>now i… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">4 notes</span><span style="color: #555555;">, </span><span style="color: #00BB00;">4 passed</span><span style="color: #555555;">.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Notes (4)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_event [Female]:</span> The last event date is 3 weeks before now ("2010-12-20").</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">Everything in that window is still arriving; it is what a nowcast is for, and it is also what makes the last points of any plot look like a decline.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_event [Male]:</span> The last event date is 3 weeks before now ("2010-12-20").</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_event:</span> The last event date is 3 weeks before now ("2010-12-20").</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_report [Male]:</span> The last report date is 1 week before now ("2010-12-20").</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 4 passed: <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_report</span>, and <span style="color: #00BB00;">now/report_date</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 8 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Is anything missing, repeated, negative, or cut off at the recent edge?</span></span></span>
 <span class="r-in"><span><span class="fu">diagnose_missing</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 10</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   check   scope      stratum status n_affected n_total  prop message hint  rows </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lis&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> missing gender     all     ok              0   <span style="text-decoration: underline;">52</span>987     0 <span style="color: #949494;">"</span>No mi… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> missing onset_week all     ok              0   <span style="text-decoration: underline;">52</span>987     0 <span style="color: #949494;">"</span>No mi… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> missing report_we… all     ok              0   <span style="text-decoration: underline;">52</span>987     0 <span style="color: #949494;">"</span>No mi… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">3 passed</span><span style="color: #555555;">.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Passed (3)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">missing/gender:</span> No missing values in the stratum column "gender".</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">missing/onset_week:</span> No missing values in the event_date column "onset_week".</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">missing/report_week:</span> No missing values in the report_date column "report_week".</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span><span class="fu">diagnose_duplicates</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 10</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   check      scope stratum status  n_affected n_total  prop message  hint  rows </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lis&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> duplicates key   all     skipped         <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> A line … <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">1 skipped.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Skipped (1)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> <span style="font-weight: bold;">duplicates/key:</span> A line list is one row per case, so identical rows are two cases rather than a repeat.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 1 finding. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span><span class="fu">diagnose_negatives</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 10</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   check     scope stratum status  n_affected n_total  prop message   hint  rows </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lis&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> negatives count all     skipped         <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> A line l… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">1 skipped.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Skipped (1)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> <span style="font-weight: bold;">negatives/count:</span> A line list has no count column to go negative.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 1 finding. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span><span class="fu">diagnose_truncation</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 10</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   check      scope stratum status n_affected n_total    prop message hint  rows </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lis&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> truncation even… Female  note            1    <span style="text-decoration: underline;">1</span>082 9.24<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span> 1 even… <span style="color: #949494;">"</span>Thi… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> truncation even… Male    note            1    <span style="text-decoration: underline;">1</span>082 9.24<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span> 1 even… <span style="color: #949494;">"</span>Thi… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> truncation even… all     note            1    <span style="text-decoration: underline;">1</span>091 9.17<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span> 1 even… <span style="color: #949494;">"</span>Thi… <span style="color: #949494;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">3 notes</span><span style="color: #555555;">.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Notes (3)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date [Female]:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date [Male]:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Are the strata usable, and which statistical tests does the data call for?</span></span></span>
 <span class="r-in"><span><span class="fu">diagnose_strata</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 10</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   check  scope    stratum status  n_affected n_total    prop message hint  rows </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lis&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> strata size     Male    note         <span style="text-decoration: underline;">26</span>395   <span style="text-decoration: underline;">52</span>987  0.498  <span style="color: #949494;">"</span>The s… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> strata sparsity Female  note            13    <span style="text-decoration: underline;">1</span>095  0.011<span style="text-decoration: underline;">9</span> <span style="color: #949494;">"</span>The s… A st… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> strata pending  all     skipped         <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> <span style="color: #BB0000;">NA</span>      <span style="color: #949494;">"</span>The o… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">2 notes</span><span style="color: #555555;">, 1 skipped.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Notes (2)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/size [Male]:</span> The smallest stratum is "Male" with 26395 cases, 49.8% of the total.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/sparsity [Female]:</span> The sparsest stratum is "Female": 1.2% of the event dates on the grid carry no cases at all.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> 1 skipped: <span style="color: #00BB00;">strata/pending</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span><span class="fu">diagnose_signposts</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 10</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   check     scope    stratum status n_affected n_total  prop message hint  rows </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lis&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> signposts confirm… all     not_r…         <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>Run: … `dia… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> signposts report   all     not_r…         <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>Run: … `dia… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> signposts report_… all     not_r…         <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>Run: … `dia… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> signposts confirm… all     skipp…         <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The o… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">3 not run</span><span style="color: #555555;">, 1 skipped.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Not run (3)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">→</span> <span style="font-weight: bold;">signposts/report:</span> Run: diagnose_drift(x, axis = "report")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">`diagnose()` runs no statistical test: a trend test needs a method, a maturity window and an alpha, and those are the caller's to choose.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">→</span> <span style="font-weight: bold;">signposts/report_batches:</span> Run: diagnose_batches(x, axis = "report")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">`diagnose()` runs no statistical test: batch detection needs a look-back, a null model and a multiplicity correction.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">→</span> <span style="font-weight: bold;">signposts/validation_batches:</span> Run: diagnose_batches(x, axis = "validation")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> 1 skipped: <span style="color: #00BB00;">signposts/validation</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 4 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Each returns the same schema, so they stack the way diagnose() stacks them.</span></span></span>
 <span class="r-in"><span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="fu">diagnose_units</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  <span class="fu">diagnose_now</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 12 × 10</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    check scope       stratum status n_affected n_total  prop message hint  rows </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lis&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> units declared    all     ok              0       2     0 <span style="color: #949494;">"</span>The d… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> units delay       all     ok              0   <span style="text-decoration: underline;">52</span>987     0 <span style="color: #949494;">"</span>Every… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> units event_grid  all     ok              0   <span style="text-decoration: underline;">52</span>987     0 <span style="color: #949494;">"</span>\"ons… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> units report_grid all     ok              0   <span style="text-decoration: underline;">52</span>987     0 <span style="color: #949494;">"</span>\"rep… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> now   now_gap_ev… Female  note            3      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The l… Ever… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> now   now_gap_ev… Male    note            3      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The l… Ever… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> now   now_gap_ev… all     note            3      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The l… Ever… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> now   now_gap_re… Male    note            1      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The l… Ever… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> now   event_date  all     ok              0   <span style="text-decoration: underline;">52</span>987     0 <span style="color: #949494;">"</span>No ev… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> now   now_gap_re… Female  ok              0      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The l… Ever… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> now   now_gap_re… all     ok              0      <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The l… Ever… <span style="color: #949494;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> now   report_date all     ok              0       1     0 <span style="color: #949494;">"</span>now i… <span style="color: #BB0000;">NA</span>    <span style="color: #949494;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">4 notes</span><span style="color: #555555;">, </span><span style="color: #00BB00;">8 passed</span><span style="color: #555555;">.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Notes (4)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_event [Female]:</span> The last event date is 3 weeks before now ("2010-12-20").</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">Everything in that window is still arriving; it is what a nowcast is for, and it is also what makes the last points of any plot look like a decline.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_event [Male]:</span> The last event date is 3 weeks before now ("2010-12-20").</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_event:</span> The last event date is 3 weeks before now ("2010-12-20").</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_report [Male]:</span> The last report date is 1 week before now ("2010-12-20").</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 8 passed: <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/delay</span>, <span style="color: #00BB00;">units/event_grid</span>, <span style="color: #00BB00;">units/report_grid</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_report</span>, and <span style="color: #00BB00;">now/report_date</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 12 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

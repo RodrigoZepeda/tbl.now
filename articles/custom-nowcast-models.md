@@ -430,6 +430,10 @@ nowcast
 #> • event dates: 144
 #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
 #> • draws: none (quantiles only)
+#> 
+#> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
+#> • 280 [40, 1,476.8]
+#> 
 #> # A tibble: 6 × 3
 #>   onset_week .quantile_level .value
 #>   <date>               <dbl>  <dbl>
@@ -664,6 +668,10 @@ bootstrapped
 #> • event dates: 144
 #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
 #> • draws: 2000
+#> 
+#> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
+#> • 280 [40, 1,544]
+#> 
 #> # A tibble: 6 × 3
 #>   onset_week .quantile_level .value
 #>   <date>               <dbl>  <dbl>

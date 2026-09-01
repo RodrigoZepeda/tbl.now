@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,9 +41,8 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+<li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -119,7 +118,7 @@ modeling workflow.</p>
 models.</p></li>
 <li><p>Preserve <a href="https://tidyverse.org/" class="external-link">tidyverse</a>
 compatibility so users can continue to apply familiar <a href="https://dplyr.tidyverse.org/" class="external-link">dplyr</a> operations.</p></li>
-<li><p><a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html">Diagnose
+<li><p><a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">Diagnose
 reporting artefacts</a> directly from the data (such as reporting-delay
 drift and change points) as well as batch (backlog) reporting.</p></li>
 <li><p>Facilitate integration into iterative modeling workflows with <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html">different
@@ -137,10 +136,10 @@ nowcasting packages</a> <span class="citation">(<a href="#ref-gelman2020bayesian
 </h2>
 <p>In an epidemiological nowcast, we typically observe at least two key
 dates<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;More key dates are possible such as a
-&lt;code&gt;confirmation_date&lt;/code&gt;. For example in the case of influenza one
+&lt;code&gt;validation_date&lt;/code&gt;. For example in the case of influenza one
 might consider the &lt;code&gt;event_date&lt;/code&gt; = symptom onset, the
 &lt;code&gt;report_date&lt;/code&gt; = when the patient was first diagnosed by a
-medical professional, and &lt;code&gt;confirmation_date&lt;/code&gt; = when the
+medical professional, and &lt;code&gt;validation_date&lt;/code&gt; = when the
 positive test’s results for influenza were recorded. We will come back
 to these multiple dates later.&lt;/p&gt;"><sup>1</sup></a>:</p>
 <ul>
@@ -908,26 +907,26 @@ columns.</p>
 </div>
 </div>
 <div class="section level3">
-<h3 id="the-confirmation-process">The confirmation process<a class="anchor" aria-label="anchor" href="#the-confirmation-process"></a>
+<h3 id="the-validation-process">The validation process<a class="anchor" aria-label="anchor" href="#the-validation-process"></a>
 </h3>
 <p>Some surveillance systems have a <strong>third</strong> date. A case
 is not only reported – it is later <em>resolved</em>: a laboratory
 issues the result that confirms it, or rules it out. Influenza is the
 standard picture: symptoms begin (the event), the patient visits a
 doctor (the report), and days later a swab comes back positive (the
-confirmation) or negative (a <em>retraction</em> – the case was reported
+validation) or negative (a <em>retraction</em> – the case was reported
 but is not a case after all).</p>
 <p>A <code>tbl_now</code> can carry this with
-<code>confirmation_date</code>, an optional
-<code>confirmation_type</code>, and its own
-<code>confirmation_units</code>. The timeline it assumes is</p>
+<code>validation_date</code>, an optional <code>validation_type</code>,
+and its own <code>validation_units</code>. The timeline it assumes
+is</p>
 <p><span class="math display">\text{event date} \le \text{report date}
-\le \text{confirmation date} \le \text{now}</span></p>
-<p><code>confirmation_type</code> takes the values
+\le \text{validation date} \le \text{now}</span></p>
+<p><code>validation_type</code> takes the values
 <code>"confirmed"</code>, <code>"retracted"</code>,
 <code>"pending"</code> or <code>NA</code>. <strong>Pending</strong> is
 the important one: it means the case has been reported and is still
-waiting for a result, so it has <em>no</em> confirmation date. That is a
+waiting for a result, so it has <em>no</em> validation date. That is a
 different thing from a case whose result you simply never recorded,
 which is <code>NA</code>.</p>
 <p>We will use <code>hai_bucaramanga</code>, an open extract of
@@ -944,8 +943,8 @@ laboratory received it, and when the laboratory issued the result.</p>
 <span>    <span class="va">received_date</span> <span class="op">&gt;=</span> <span class="va">specimen_date</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
-<span>    <span class="co"># A result was issued: that is the confirmation. Everything else is still</span></span>
-<span>    <span class="co"># waiting, and a case that is waiting has no confirmation date.</span></span>
+<span>    <span class="co"># A result was issued: that is the validation. Everything else is still</span></span>
+<span>    <span class="co"># waiting, and a case that is waiting has no validation date.</span></span>
 <span>    result_date <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span></span>
 <span>      <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span> <span class="op">&amp;</span> <span class="va">report_date</span> <span class="op">&gt;=</span> <span class="va">received_date</span>,</span>
 <span>      <span class="va">report_date</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="cn">NA</span><span class="op">)</span></span>
@@ -963,8 +962,8 @@ laboratory received it, and when the laboratory issued the result.</p>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
 <span>    event_date        <span class="op">=</span> <span class="va">specimen_date</span>, <span class="co"># the specimen was taken</span></span>
 <span>    report_date       <span class="op">=</span> <span class="va">received_date</span>, <span class="co"># the laboratory received it</span></span>
-<span>    confirmation_date <span class="op">=</span> <span class="va">result_date</span>, <span class="co"># the laboratory issued a result</span></span>
-<span>    confirmation_type <span class="op">=</span> <span class="va">result</span>,</span>
+<span>    validation_date <span class="op">=</span> <span class="va">result_date</span>, <span class="co"># the laboratory issued a result</span></span>
+<span>    validation_type <span class="op">=</span> <span class="va">result</span>,</span>
 <span>    data_type         <span class="op">=</span> <span class="st">"linelist"</span>,</span>
 <span>    verbose           <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span>  <span class="op">)</span></span>
@@ -988,18 +987,18 @@ laboratory received it, and when the laboratory issued the result.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>    13 2018-10-03    2018-10-03    2018-12-03  Urine       Urin… Enterobacter…</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2019-12-01</span> | Event date: <span style="color: #0000BB;">"specimen_date"</span> | Report date: <span style="color: #0000BB;">"received_date"</span></span></span>
-<span><span class="co">#&gt; # Confirmation date: <span style="color: #0000BB;">"result_date"</span> (<span style="color: #0000BB;">"days"</span>) | resolved: <span style="color: #0000BB;">201</span>/<span style="color: #0000BB;">222</span></span></span>
+<span><span class="co">#&gt; # Validation date: <span style="color: #0000BB;">"result_date"</span> (<span style="color: #0000BB;">"days"</span>) | resolved: <span style="color: #0000BB;">201</span>/<span style="color: #0000BB;">222</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 212 more rows</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 13 more variables: sex &lt;fct&gt;, age_group &lt;ord&gt;, case_type &lt;fct&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   final_condition &lt;fct&gt;, icu_type &lt;fct&gt;, institution &lt;int&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   result_date &lt;date&gt;, result &lt;chr&gt;, .event_num &lt;dbl&gt;, .report_num &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   .delay &lt;dbl&gt;, .confirmation_num &lt;dbl&gt;, .confirmation_delay &lt;dbl&gt;</span></span></span></code></pre></div>
-<p>The footer now carries a confirmation line – the column, its units,
-and how many cases have actually been resolved. Two derived columns
-appear alongside <code>.delay</code>: <code>.confirmation_num</code>
-(the confirmation date on the same numeric grid as the other dates) and
-<code>.confirmation_delay</code>, the laboratory’s
+<span><span class="co">#&gt; <span style="color: #949494;">#   .delay &lt;dbl&gt;, .validation_num &lt;dbl&gt;, .validation_delay &lt;dbl&gt;</span></span></span></code></pre></div>
+<p>The footer now carries a validation line – the column, its units, and
+how many cases have actually been resolved. Two derived columns appear
+alongside <code>.delay</code>: <code>.validation_num</code> (the
+validation date on the same numeric grid as the other dates) and
+<code>.validation_delay</code>, the laboratory’s
 <strong>turnaround</strong> – the time from report to result, which is a
 different quantity from the reporting delay.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
@@ -1008,18 +1007,18 @@ different quantity from the reporting delay.</p>
 <span><span class="co">#&gt; [1] 0</span></span>
 <span></span>
 <span><span class="co"># Turnaround: laboratory to result.</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">$</span><span class="va">.confirmation_delay</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">$</span><span class="va">.validation_delay</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 2</span></span></code></pre></div>
-<p>Confirmation also moves <code>now</code>. A result issued on a date
+<p>Validation also moves <code>now</code>. A result issued on a date
 means you were, by definition, still observing the system on that date,
-so <code>now</code> is never earlier than the last confirmation – even
+so <code>now</code> is never earlier than the last validation – even
 when reporting stopped before it.</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "2019-12-01"</span></span>
-<span><span class="fu"><a href="../reference/confirmation_getters.html">get_confirmation_units</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_validation_units</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "days"</span></span>
-<span><span class="fu"><a href="../reference/confirmation_getters.html">has_confirmation</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/nowcast_data_getters.html">has_validation</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <div class="section level4">
 <h4 id="counting-cases-when-some-of-them-can-be-undone">Counting cases when some of them can be undone<a class="anchor" aria-label="anchor" href="#counting-cases-when-some-of-them-can-be-undone"></a>
@@ -1027,14 +1026,14 @@ when reporting stopped before it.</p>
 <p>Once cases can be retracted, “how many cases were there?” has more
 than one answer, and the right one depends on the question:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/confirmation_counts.html">get_latest_confirmed</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span> <span class="co"># cases the laboratory confirmed</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/validation_counts.html">get_latest_confirmed</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span> <span class="co"># cases the laboratory confirmed</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 2</span></span></span>
 <span><span class="co">#&gt;   specimen_date     n</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2017-01-12        1</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2017-02-12        1</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2017-03-11        1</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/confirmation_counts.html">get_net_confirmed</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span> <span class="co"># confirmed minus retracted</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/validation_counts.html">get_net_confirmed</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span> <span class="co"># confirmed minus retracted</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 2</span></span></span>
 <span><span class="co">#&gt;   specimen_date     n</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -1044,29 +1043,28 @@ than one answer, and the right one depends on the question:</p>
 <p><code>get_nth_confirmed(x, delay)</code> counts only the cases
 resolved <em>within</em> a given number of periods – what you would have
 known that soon after the report – and
-<code><a href="../reference/confirmation_counts.html">get_initial_confirmed()</a></code> is the same-period case. These
+<code><a href="../reference/validation_counts.html">get_initial_confirmed()</a></code> is the same-period case. These
 mirror <code><a href="../reference/get_latest_first.html">get_nth_reported_cases()</a></code> and
 <code><a href="../reference/get_latest_first.html">get_initial_reported_cases()</a></code> on the report axis.</p>
-<p>If your data records absurdly long confirmation delays – a result
+<p>If your data records absurdly long validation delays – a result
 “issued” two years later is usually a data-entry artefact, not a
-laboratory – <code><a href="../reference/censor_delays_above.html">censor_confirmation_delays_above()</a></code> returns
-those cases to <code>"pending"</code>, which is what they really
-were.</p>
+laboratory – <code><a href="../reference/censor_delays_above.html">censor_validation_delays_above()</a></code> returns those
+cases to <code>"pending"</code>, which is what they really were.</p>
 </div>
 <div class="section level4">
 <h4 id="how-much-of-the-epidemic-has-been-resolved">How much of the epidemic has been resolved?<a class="anchor" aria-label="anchor" href="#how-much-of-the-epidemic-has-been-resolved"></a>
 </h4>
-<p><code><a href="../reference/plot_confirmation_status.html">plot_confirmation_status()</a></code> shows the share of cases
+<p><code><a href="../reference/plot_validation_status.html">plot_validation_status()</a></code> shows the share of cases
 confirmed, retracted and pending over time. A pending share that grows
 towards the right-hand edge is normal – recent cases have not had time
 to come back from the laboratory – but a pending share that grows in the
 <em>middle</em> of the series is a laboratory falling behind.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_confirmation_status.html">plot_confirmation_status</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_validation_status.html">plot_validation_status</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tbl.now_files/figure-html/unnamed-chunk-25-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level4">
-<h4 id="the-confirmation-axis">The confirmation axis<a class="anchor" aria-label="anchor" href="#the-confirmation-axis"></a>
+<h4 id="the-validation-axis">The validation axis<a class="anchor" aria-label="anchor" href="#the-validation-axis"></a>
 </h4>
 <p>Every reporting diagnostic in the package asks one question: did an
 unusual number of records arrive on this date, and with what delay? That
@@ -1075,26 +1073,26 @@ so the diagnostics take an <code>axis</code> argument instead of being
 duplicated:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The same picture, drawn for the laboratory instead of the surveillance desk.</span></span>
-<span><span class="fu"><a href="../reference/plot_reporting_triangle.html">plot_reporting_triangle</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"confirmation"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/plot_delay_profiles.html">plot_delay_profiles</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"confirmation"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"confirmation"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/diagnostic_plot.html">diagnostic_plot</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"confirmation"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_reporting_triangle.html">plot_reporting_triangle</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_delay_profiles.html">plot_delay_profiles</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/diagnostic_plot.html">diagnostic_plot</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># A laboratory clearing a backlog is a batch, exactly as a surveillance system</span></span>
 <span><span class="co"># clearing its inbox is.</span></span>
-<span><span class="fu"><a href="../reference/diagnose_batches.html">diagnose_batches</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"confirmation"</span><span class="op">)</span></span></code></pre></div>
-<p>Two notes on what <code>axis = "confirmation"</code> means. Delays
-are still measured <strong>from the event</strong>, so the report and
-confirmation axes are directly comparable and the gap between them is
-the time the laboratory adds. And cases that are still
-<code>"pending"</code> are excluded: they have no confirmation date, so
+<span><span class="fu"><a href="../reference/diagnose_batches.html">diagnose_batches</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span></code></pre></div>
+<p>Two notes on what <code>axis = "validation"</code> means. Delays are
+still measured <strong>from the event</strong>, so the report and
+validation axes are directly comparable and the gap between them is the
+time the laboratory adds. And cases that are still
+<code>"pending"</code> are excluded: they have no validation date, so
 counting them would invent an arrival on a date they do not have.</p>
-<p>Finally, when a system produces both confirmations and retractions
-you can ask whether they take equally long – a laboratory that rules
-cases out faster than it confirms them will bias any nowcast that treats
-the two alike. <code><a href="../reference/confirmation_delay.html">diagnose_confirmation_delay()</a></code> tests exactly
-that (a Wilcoxon rank-sum test on the two delay distributions) and
-<code><a href="../reference/confirmation_delay.html">plot_confirmation_delay()</a></code> draws it. The Bucaramanga extract
+<p>Finally, when a system produces both validations and retractions you
+can ask whether they take equally long – a laboratory that rules cases
+out faster than it confirms them will bias any nowcast that treats the
+two alike. <code><a href="../reference/validation_delay.html">diagnose_validation_delay()</a></code> tests exactly that
+(a Wilcoxon rank-sum test on the two delay distributions) and
+<code><a href="../reference/validation_delay.html">plot_validation_delay()</a></code> draws it. The Bucaramanga extract
 records no retractions, so there is nothing to compare here.</p>
 </div>
 </div>
@@ -1645,7 +1643,7 @@ them:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> event_to_report  <span style="text-decoration: underline;">5</span>154 <span style="text-decoration: underline;">52</span>987  1.74  1.21     1     3    26</span></span></code></pre></div>
 <p>The others are <code><a href="../reference/nowcast_summary_components.html">cases_per_date()</a></code>,
 <code><a href="../reference/nowcast_summary_components.html">zero_run_summary()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_censored()</a></code>,
-<code><a href="../reference/nowcast_summary_components.html">prop_confirmation_type()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_strata()</a></code>,
+<code><a href="../reference/nowcast_summary_components.html">prop_validation_type()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_strata()</a></code>,
 <code><a href="../reference/nowcast_summary_components.html">prop_covariate_levels()</a></code>,
 <code><a href="../reference/nowcast_summary_components.html">case_autocorrelation()</a></code>, <code><a href="../reference/nowcast_summary_components.html">date_ranges()</a></code>,
 <code><a href="../reference/nowcast_summary_components.html">triangle_occupancy()</a></code>, <code><a href="../reference/nowcast_summary_components.html">reporting_completeness()</a></code>
@@ -1692,16 +1690,16 @@ each one — the two sections that follow:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_diagnose_components.html">diagnose_signposts</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">scope</span>, <span class="va">status</span>, <span class="va">message</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 3</span></span></span>
-<span><span class="co">#&gt;   scope                status  message                                          </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                            </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> confirmation_batches not_run <span style="color: #949494;">"</span>Run: diagnose_batches(x, axis = \"confirmation\…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> report               not_run <span style="color: #949494;">"</span>Run: diagnose_drift(x, axis = \"report\")<span style="color: #949494;">"</span>      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> report_batches       not_run <span style="color: #949494;">"</span>Run: diagnose_batches(x, axis = \"report\")<span style="color: #949494;">"</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> confirmation         skipped <span style="color: #949494;">"</span>The object carries no confirmation process.<span style="color: #949494;">"</span></span></span></code></pre></div>
+<span><span class="co">#&gt;   scope              status  message                                          </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                            </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> report             not_run <span style="color: #949494;">"</span>Run: diagnose_drift(x, axis = \"report\")<span style="color: #949494;">"</span>      </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> report_batches     not_run <span style="color: #949494;">"</span>Run: diagnose_batches(x, axis = \"report\")<span style="color: #949494;">"</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> validation_batches not_run <span style="color: #949494;">"</span>Run: diagnose_batches(x, axis = \"validation\")<span style="color: #949494;">"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> validation         skipped <span style="color: #949494;">"</span>The object carries no validation process.<span style="color: #949494;">"</span></span></span></code></pre></div>
 <p><code>skipped</code> is a distinct status from <code>ok</code>, and
 the difference matters: <code>ok</code> means the check ran and found
 nothing, whereas <code>skipped</code> means it could not run at all —
-here because <code>dengue_now</code> carries no confirmation process. A
+here because <code>dengue_now</code> carries no validation process. A
 check that cannot be performed is never silently reported as a pass.</p>
 <p>Like <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, every block is callable on its own —
 <code><a href="../reference/nowcast_diagnose_components.html">diagnose_declarations()</a></code>, <code><a href="../reference/nowcast_diagnose_components.html">diagnose_ordering()</a></code>,
@@ -1768,7 +1766,7 @@ estimated change date together with the before/after delay level:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all    median  <span style="text-decoration: underline;">1</span>090 1998-01-19      <span style="text-decoration: underline;">38</span>402 2.17<span style="color: #949494;">e</span><span style="color: #BB0000;">- 3</span>   1.53  1.39 -<span style="color: #BB0000;">0.136</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> all    spread  <span style="text-decoration: underline;">1</span>090 1997-09-01      <span style="text-decoration: underline;">93</span>409 5.77<span style="color: #949494;">e</span><span style="color: #BB0000;">-18</span>   2.55  1.91 -<span style="color: #BB0000;">0.639</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: changepoint_detected &lt;lgl&gt;</span></span></span></code></pre></div>
-<p>You can get more information in the <a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html">corresponding
+<p>You can get more information in the <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">corresponding
 article</a>.</p>
 </div>
 <div class="section level3">
@@ -1796,7 +1794,7 @@ turns this into a per-report-date diagnostic that separates the two:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2010-09-13       383    272.  all       132.  -<span style="color: #BB0000;">21.0</span>    0.000<span style="text-decoration: underline;">063</span>9</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: p_transport_bh &lt;dbl&gt;, batch &lt;lgl&gt;</span></span></span></code></pre></div>
 <p>Additional information on dealing with batches and other reporting
-delay artifacts can be found in the corresponding <a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html">article</a>.</p>
+delay artifacts can be found in the corresponding <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">article</a>.</p>
 </div>
 </div>
 <div class="section level2">

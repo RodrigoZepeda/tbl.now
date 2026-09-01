@@ -21,7 +21,7 @@ model is chosen."><meta property="og:image" content="https://rodrigozepeda.githu
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,9 +33,8 @@ model is chosen."><meta property="og:image" content="https://rodrigozepeda.githu
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -83,7 +82,7 @@ model is chosen.</p>
 <span>  baseline_window <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  period <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  null_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"poisson"</span>, <span class="st">"robust"</span><span class="op">)</span>,</span>
-<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"confirmation"</span><span class="op">)</span>,</span>
+<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.05</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -131,11 +130,11 @@ the robust null. <code>"poisson"</code> and <code>"robust"</code> force the choi
 
 <dt id="arg-axis">axis<a class="anchor" aria-label="anchor" href="#arg-axis"></a></dt>
 <dd><p>Which time axis to scan for arrivals: <code>"report"</code> (default) or
-<code>"confirmation"</code>. The question is the same either way – did an unusual
+<code>"validation"</code>. The question is the same either way – did an unusual
 number of records land on this date? – so a laboratory clearing its
 backlog is found exactly as a surveillance system clearing its inbox is.
-<code>"confirmation"</code> needs a confirmation process (see <code><a href="confirmation_setters.html">add_confirmation()</a></code>)
-and ignores cases that are still <code>"pending"</code>, which have no confirmation
+<code>"validation"</code> needs a validation process (see <code><a href="add.html">add_validation_date()</a></code>)
+and ignores cases that are still <code>"pending"</code>, which have no validation
 date to arrive on.</p></dd>
 
 
@@ -226,7 +225,7 @@ coordinates behind the test, without the hypothesis test on top;
 <code><a href="simulate_batch.html">simulate_batch()</a></code> to plant a known batch and check the screen finds it;
 <code><a href="plot_epidemic_process.html">plot_reporting_process()</a></code> and <code><a href="plot_reporting_triangle.html">plot_reporting_triangle()</a></code> to see it;
 <a href="add.html">add_is_censored()</a> to record a batch once you believe it. The
-<a href="https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html"><em>Diagnosing reporting batches</em> article</a>
+<a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html"><em>Diagnosing a tbl_now</em> article</a>
 works through a real example.</p></div>
     </div>
 

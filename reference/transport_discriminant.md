@@ -19,7 +19,7 @@ transport_discriminant(
   baseline_window = NULL,
   period = NULL,
   alpha = 0.05,
-  axis = c("report", "confirmation")
+  axis = c("report", "validation")
 )
 ```
 
@@ -49,8 +49,8 @@ transport_discriminant(
 - axis:
 
   Which time axis to scan for arrivals: `"report"` (default) or
-  `"confirmation"`. Needs a confirmation process (see
-  [`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md));
+  `"validation"`. Needs a validation process (see
+  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
   cases still `"pending"` are left out.
 
 ## Value

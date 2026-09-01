@@ -169,7 +169,7 @@ delay diagnostics that assume a unimodal delay.
 
 [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
 to declare the date columns, and
-[add_confirmation()](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)
+[add_validation_date()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 for the third one this dataset has;
 [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
 and

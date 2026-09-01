@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,9 +19,8 @@
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -50,13 +49,106 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.28.0" id="tblnow-0280">tbl.now 0.28.0<a class="anchor" aria-label="anchor" href="#tblnow-0280"></a></h2>
+<div class="section level3">
+<h3 id="breaking-the-confirmation-process-is-now-the-validation-process-0-28-0">Breaking: the confirmation process is now the validation process<a class="anchor" aria-label="anchor" href="#breaking-the-confirmation-process-is-now-the-validation-process-0-28-0"></a></h3>
+<p>The optional third date a <code>tbl_now</code> can carry is called a <strong>validation</strong> rather than a confirmation, throughout. The old spelling is gone, not deprecated – it had not shipped.</p>
+<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>was</th>
+<th>is</th>
+</tr></thead><tbody><tr><td>
+<code>add_confirmation()</code>, <code>change_confirmation()</code>, <code>remove_confirmation()</code>
+</td>
+<td>
+<code><a href="../reference/add.html">add_validation_date()</a></code>, <code><a href="../reference/add.html">change_validation_date()</a></code>, <code><a href="../reference/add.html">remove_validation_date()</a></code>
+</td>
+</tr><tr><td>
+<code>get_confirmation_date()</code>, <code>get_confirmation_type()</code>, <code>get_confirmation_units()</code>, <code>has_confirmation()</code>
+</td>
+<td>
+<code><a href="../reference/nowcast_data_getters.html">get_validation_date()</a></code>, <code><a href="../reference/nowcast_data_getters.html">get_validation_type()</a></code>, <code><a href="../reference/nowcast_data_getters.html">get_validation_units()</a></code>, <code><a href="../reference/nowcast_data_getters.html">has_validation()</a></code>
+</td>
+</tr><tr><td>
+<code>confirmation_counts</code>, <code>confirmation_delay</code>
+</td>
+<td>
+<code>validation_counts</code>, <code>validation_delay</code>
+</td>
+</tr><tr><td>
+<code>censor_confirmation_delays_above()</code>, <code>diagnose_confirmation_delay()</code>
+</td>
+<td>
+<code><a href="../reference/censor_delays_above.html">censor_validation_delays_above()</a></code>, <code><a href="../reference/validation_delay.html">diagnose_validation_delay()</a></code>
+</td>
+</tr><tr><td>
+<code>plot_confirmation_delay()</code>, <code>plot_confirmation_status()</code>, <code>prop_confirmation_type()</code>
+</td>
+<td>
+<code><a href="../reference/validation_delay.html">plot_validation_delay()</a></code>, <code><a href="../reference/plot_validation_status.html">plot_validation_status()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_validation_type()</a></code>
+</td>
+</tr><tr><td>
+<code>confirmation_date</code>, <code>confirmation_type</code>, <code>confirmation_units</code> arguments</td>
+<td>
+<code>validation_date</code>, <code>validation_type</code>, <code>validation_units</code>
+</td>
+</tr><tr><td>
+<code>.confirmation_num</code>, <code>.confirmation_delay</code> columns</td>
+<td>
+<code>.validation_num</code>, <code>.validation_delay</code>
+</td>
+</tr><tr><td><code>axis = "confirmation"</code></td>
+<td><code>axis = "validation"</code></td>
+</tr><tr><td>
+<code>"event_to_confirmation"</code>, <code>"report_to_confirmation"</code>
+</td>
+<td>
+<code>"event_to_validation"</code>, <code>"report_to_validation"</code>
+</td>
+</tr></tbody></table><p>The <strong>outcome values are unchanged</strong>: a case is still <code>"confirmed"</code>, <code>"retracted"</code> or <code>"pending"</code>. Validation is what the process does; confirmed is one of the things it can conclude.</p>
+<p><code>diseasenowcasting::confirmation_process()</code> is that package’s name and is untouched – <code>model(confirmation = confirmation_process())</code> still reads exactly as it did.</p>
+</div>
+<div class="section level3">
+<h3 id="documentation-fewer-fuller-reference-pages-0-28-0">Documentation: fewer, fuller reference pages<a class="anchor" aria-label="anchor" href="#documentation-fewer-fuller-reference-pages-0-28-0"></a></h3>
+<ul><li>The validation getters now live on <code><a href="../reference/nowcast_data_getters.html">?nowcast_data_getters</a></code>, next to <code><a href="../reference/nowcast_data_getters.html">get_event_date()</a></code>, and the validation setters on <code><a href="../reference/add.html">?add</a></code>, next to <code><a href="../reference/add.html">change_event_date()</a></code>. Someone asking “what did this object record, and how do I change it” now finds every answer on one page instead of four.</li>
+<li>
+<em>Describing and diagnosing a tbl_now</em> and <em>Diagnosing reporting batches</em> are now <strong>one article</strong>, <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html"><em>Diagnosing a tbl_now</em></a>, running structure-first: what is in the data (<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>), what is structurally wrong with it (<code><a href="../reference/diagnose.html">diagnose()</a></code>), and then the statistical tests <code><a href="../reference/diagnose.html">diagnose()</a></code> signposts but refuses to run.</li>
+<li>The attribute diagrams in the README now appear on the pkgdown site. They lived in <code>inst/figures/</code>, which pkgdown does not copy; <code>man/figures/</code> is the directory it publishes, and GitHub renders it just as happily.</li>
+<li>
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>’s <code>"completeness"</code> and <code>"growth"</code> rows are distributions over event dates, so they populate <code>mean</code>/<code>sd</code>/the quantiles (and, for completeness, <code>prop</code>) and leave the scalar <code>value</code> column empty. The documented examples selected <code>value</code> and got a column of <code>NA</code>; they now select the columns that carry the answer.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-baselinenowcast-on-a-snapshot-as-of-series-0-28-0">Fixed: <code>baselinenowcast</code> on a snapshot (“as of”) series<a class="anchor" aria-label="anchor" href="#fixed-baselinenowcast-on-a-snapshot-as-of-series-0-28-0"></a></h3>
+<p>A snapshot stream restates the whole history in every snapshot, so its delay axis is as long as the series itself and the reporting triangle comes out square. <code>baselinenowcast</code> needs more reference dates than delay columns – it spends <code>max_delay</code> of them estimating the delay distribution and keeps two back for the uncertainty model – so it refused, with a message about reference-time arithmetic that mentioned neither the delay axis nor anything to do about it. Three of the six shipped datasets are that shape.</p>
+<ul><li><p><code><a href="../reference/nowcast_engines.html">engine_baselinenowcast()</a></code> gains <strong><code>max_delay</code></strong>, the number of delay periods to keep, forwarded to <code><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code>. <code><a href="../reference/run_nowcast.html">?run_nowcast</a></code> already documented it (“<code>max_delay</code> caps the triangle’s width”); what actually happened is that it fell into <code>...</code> and reached the modelling call, which has no such argument and ignored it.</p></li>
+<li>
+<p>A triangle too wide to fit is now refused by <code>tbl.now</code>, naming the delay axis and a concrete cap – the delay covering 99% of the reported cases:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">x</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">21</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</li>
+</ul><p>Note that a snapshot series must be <strong>declared</strong> <code>data_type = "count-cumulative"</code>. <code>infer_data_type()</code> reads a single downward revision as incidence, by design, and a revised running total has them; left to the inference, every delay carries a whole period’s count instead of an increment and nothing downstream can tell.</p>
+</div>
+<div class="section level3">
+<h3 id="new-diagnose-and-summary-print-as-reports-0-28-0">New: <code>diagnose()</code> and <code>summary()</code> print as reports<a class="anchor" aria-label="anchor" href="#new-diagnose-and-summary-print-as-reports-0-28-0"></a></h3>
+<p>Both still return the tibbles they always returned, and every <code>dplyr</code> verb still works on them. What changed is what you see when you print one.</p>
+<ul><li>
+<code><a href="../reference/diagnose.html">diagnose()</a></code> – and each of its blocks – prints the errors, warnings and notes in full, each with its hint, and counts the checks that passed, that were deliberately not run, and that could not be assessed. <code>print(x, all = TRUE)</code> spells those out too.</li>
+<li>
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> – and each of its blocks – prints one block per component, dropping the columns that component does not populate. The schema is wide because it holds every block at once; no block fills more than a handful of it.</li>
+<li>
+<code><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">tibble::as_tibble()</a></code> gives the plain table back in both cases.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-a-nowcast-prints-its-value-at-the-now-edge-0-28-0">New: a nowcast prints its value at the <code>now</code> edge<a class="anchor" aria-label="anchor" href="#new-a-nowcast-prints-its-value-at-the-now-edge-0-28-0"></a></h3>
+<p><code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> on a <code>tbl_nowcast</code> now leads with the number it was fitted to produce – the estimate and interval at the last event date it covers, one line per stratum – before the quantile table, which starts at the oldest event date.</p>
+</div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.27.0" id="tblnow-0270">tbl.now 0.27.0<a class="anchor" aria-label="anchor" href="#tblnow-0270"></a></h2>
 <div class="section level3">
 <h3 id="breaking-a-nowcast-is-specified-with-an-engine-0-27-0">Breaking: a nowcast is specified with an <code>engine()</code>
 <a class="anchor" aria-label="anchor" href="#breaking-a-nowcast-is-specified-with-an-engine-0-27-0"></a></h3>
 <p><code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> and <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> used to take a method <strong>name</strong> plus a <code>...</code> (and, for the backtest, a <code>method_args</code> list of lists keyed by label). Both failed the same silent way: an argument that missed its backend simply vanished, and you got a fitted model at its default with nothing on the object to say so.</p>
 <p>An <strong>engine</strong> is one modelling package plus every argument it needs:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">x</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_nobbs</a></span><span class="op">(</span>max_D <span class="op">=</span> <span class="fl">10</span>, moving_window <span class="op">=</span> <span class="fl">64</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/nowcast_backtest.html">nowcast_backtest</a></span><span class="op">(</span><span class="va">x</span>,</span>
@@ -96,7 +188,7 @@
 <h3 id="breaking-score_nowcast--as_scoringutils-take-a-tbl_now-as-truth-0-27-0">Breaking: <code>score_nowcast()</code> / <code>as_scoringutils()</code> take a <code>tbl_now</code> as <code>truth</code>
 <a class="anchor" aria-label="anchor" href="#breaking-score_nowcast--as_scoringutils-take-a-tbl_now-as-truth-0-27-0"></a></h3>
 <p><code>observed_col</code> is <strong>removed</strong>, and a plain data frame is no longer accepted. The <code>tbl_now</code> already knows which column holds the observed counts – it is <code><a href="../reference/nowcast_data_getters.html">get_case_count()</a></code>, or the count <code><a href="../reference/to_count.html">to_count()</a></code> produces from a line list – so naming it was a burden on the caller and the old default (<em>“the last column that is neither the event date nor a stratum”</em>) was a guess that could mis-score silently.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/score_nowcast.html">score_nowcast</a></span><span class="op">(</span><span class="va">nc</span>, truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span>     <span class="co"># the FULL tbl_now, line list or counts</span></span>
 <span><span class="fu"><a href="../reference/score_nowcast.html">as_scoringutils</a></span><span class="op">(</span><span class="va">nc</span>, truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -105,7 +197,7 @@
 <p>A documentation audit read every exported function and found the same argument wearing different names in different places. 116 of the 148 exports already took <code>x</code> first; these were the exceptions.</p>
 <ul><li>
 <p><strong><code><a href="../reference/nowcast_fit.html">nowcast_fit()</a></code> and <code><a href="../reference/nowcast_tidy.html">nowcast_tidy()</a></code> take <code>engine</code>, not <code>method</code>.</strong> This is the one that affects code outside the package: if you wrote a backend, rename the first argument of your methods.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># before</span></span>
 <span><span class="va">nowcast_fit.mymodel</span>  <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">method</span>, <span class="va">x</span>, <span class="va">...</span>, <span class="va">quantile_levels</span>, <span class="va">verbose</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
 <span><span class="va">nowcast_tidy.mymodel</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">method</span>, <span class="va">fit</span>, <span class="va">x</span>, <span class="va">...</span>, <span class="va">quantile_levels</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
@@ -116,9 +208,9 @@
 <p>What arrives has always been the engine – <code><a href="../reference/engine.html">engine()</a></code>’s own documentation defines an engine as “the object <code><a href="../reference/nowcast_fit.html">nowcast_fit()</a></code> and <code><a href="../reference/nowcast_tidy.html">nowcast_tidy()</a></code> dispatch on” – and the old name was left over from the removed <code>nowcast_method()</code>. The argument is only a dispatch handle, so no method body needed changing; <code>R CMD check</code>’s S3 consistency check will flag yours until you rename it.</p>
 <p><code>engine(method = )</code> and <code><a href="../reference/list_nowcast_methods.html">list_nowcast_methods()</a></code> <strong>keep</strong> “method”, where it correctly means the <em>name</em> of a backend rather than a configured engine.</p>
 </li>
-<li><p><strong><code>data</code> becomes <code>x</code></strong> in <code><a href="../reference/diagnose_batches.html">diagnose_batches()</a></code>, <code><a href="../reference/diagnose_batch_shape.html">diagnose_batch_shape()</a></code>, <code><a href="../reference/simulate_batch.html">simulate_batch()</a></code>, <code><a href="../reference/transport_discriminant.html">transport_discriminant()</a></code>, <code><a href="../reference/censor_delays_above.html">censor_delays_above()</a></code> and <code><a href="../reference/censor_delays_above.html">censor_confirmation_delays_above()</a></code>. Positional calls are unaffected. Two internal helpers also named <code>data</code> in their error messages, so <code>diagnose_batches(x = &lt;not a tbl_now&gt;)</code> used to complain about an argument that did not exist.</p></li>
+<li><p><strong><code>data</code> becomes <code>x</code></strong> in <code><a href="../reference/diagnose_batches.html">diagnose_batches()</a></code>, <code><a href="../reference/diagnose_batch_shape.html">diagnose_batch_shape()</a></code>, <code><a href="../reference/simulate_batch.html">simulate_batch()</a></code>, <code><a href="../reference/transport_discriminant.html">transport_discriminant()</a></code>, <code><a href="../reference/censor_delays_above.html">censor_delays_above()</a></code> and <code>censor_confirmation_delays_above()</code>. Positional calls are unaffected. Two internal helpers also named <code>data</code> in their error messages, so <code>diagnose_batches(x = &lt;not a tbl_now&gt;)</code> used to complain about an argument that did not exist.</p></li>
 <li>
-<p><strong><code>quiet</code> becomes <code>verbose</code></strong> in <code><a href="../reference/censor_delays_above.html">censor_delays_above()</a></code> and <code><a href="../reference/censor_delays_above.html">censor_confirmation_delays_above()</a></code>, with the sense inverted and defaulting to <code>TRUE</code>, matching the twenty other functions that control messaging this way. Write <code>verbose = FALSE</code> where you wrote <code>quiet = TRUE</code>.</p>
+<p><strong><code>quiet</code> becomes <code>verbose</code></strong> in <code><a href="../reference/censor_delays_above.html">censor_delays_above()</a></code> and <code>censor_confirmation_delays_above()</code>, with the sense inverted and defaulting to <code>TRUE</code>, matching the twenty other functions that control messaging this way. Write <code>verbose = FALSE</code> where you wrote <code>quiet = TRUE</code>.</p>
 <p>The converters that carry <strong>both</strong> <code>verbose</code> and <code>quiet</code> keep both: they are different channels – <code>verbose</code> is the conversion summary, <code>quiet</code> is the lossy-conversion warning – and the documentation now says so.</p>
 </li>
 </ul></div>
@@ -196,7 +288,7 @@
 <div class="section level3">
 <h3 id="one-surveillance-line-list-per-stratum-0-26-0">One <code>surveillance</code> line list per stratum<a class="anchor" aria-label="anchor" href="#one-surveillance-line-list-per-stratum-0-26-0"></a></h3>
 <p><code><a href="../reference/tbl_now_surveillance.html">tbl_now_to_surveillance()</a></code> gains <code>format = "linelist_list"</code>, which returns one line list <strong>per stratum</strong> as a <code>tbl_now_surveillance_list</code> instead of one frame with a pasted <code>strata</code> column. <code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code> has no strata argument, so a stratified analysis is one fit per stratum, and the split no longer has to be done by hand:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pieces</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_surveillance.html">tbl_now_to_surveillance</a></span><span class="op">(</span><span class="va">x</span>, format <span class="op">=</span> <span class="st">"linelist_list"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">pieces</span>, <span class="kw">function</span><span class="op">(</span><span class="va">piece</span><span class="op">)</span> <span class="fu">surveillance</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">nowcast</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">piece</span>, <span class="va">...</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>It mirrors <code>tbl_now_to_baselinenowcast(format = "triangle_list")</code> throughout: the result is a <strong>plain list</strong>, so <code><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply()</a></code>, <code>[[</code> and friends work unchanged; it is length one and named <code>"all"</code> when the object declares no strata, so the return type never depends on whether strata happen to be attached; it prints what it is; and <code><a href="../reference/as_tbl_now.html">as_tbl_now()</a></code> binds it back into a <code>tbl_now</code>, restoring the original date-column names, the strata and the covariates. Count input comes back as a <code>"linelist"</code> – one row per case, totals unchanged – because that is what a <code>surveillance</code> line list holds.</p>
@@ -235,7 +327,7 @@
 <h3 id="diagnose-a-structural-health-check-0-24-0">
 <code>diagnose()</code>: a structural health check<a class="anchor" aria-label="anchor" href="#diagnose-a-structural-health-check-0-24-0"></a></h3>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> describes a <code>tbl_now</code>; <code><a href="../reference/diagnose.html">diagnose()</a></code> looks for what is <strong>wrong</strong> with it. One row is one finding, sorted worst first, and the offending row indices come with it:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">findings</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span>
 <span><span class="va">findings</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">&lt;=</span> <span class="st">"note"</span><span class="op">)</span></span>
 <span></span>
@@ -275,7 +367,7 @@
 </tr><tr><td><code>test_delay_changepoint()</code></td>
 <td><code><a href="../reference/diagnose_changepoint.html">diagnose_changepoint()</a></code></td>
 </tr><tr><td><code>test_confirmation_delay()</code></td>
-<td><code><a href="../reference/confirmation_delay.html">diagnose_confirmation_delay()</a></code></td>
+<td><code>diagnose_confirmation_delay()</code></td>
 </tr><tr><td><code>batch_test()</code></td>
 <td><code><a href="../reference/diagnose_batches.html">diagnose_batches()</a></code></td>
 </tr><tr><td><code>batch_shape_test()</code></td>
@@ -305,7 +397,7 @@
 <h3 id="summary-describes-the-object-the-way-a-nowcaster-reads-it-0-23-0">
 <code>summary()</code> describes the object the way a nowcaster reads it<a class="anchor" aria-label="anchor" href="#summary-describes-the-object-the-way-a-nowcaster-reads-it-0-23-0"></a></h3>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> on a <code>tbl_now</code> now returns a tibble rather than the column-by-column listing <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary.data.frame()</a></code> produces, which said nothing about the structure the class exists to carry. One row is one statistic of one quantity of one stratum:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">component</span> <span class="op">==</span> <span class="st">"delay"</span><span class="op">)</span></span></code></pre></div>
 <p>It covers the case counts on each of the object’s time axes (event, report and, where there is one, confirmation), the delay distributions between them, the lengths of the runs of zero dates, the compositional shares (censored, per confirmation outcome, per stratum, per categorical covariate level), the lag-1 autocorrelation of each series, the reporting-completeness curve, the totals, the date ranges and <code>now</code>, and how full the reporting triangle is.</p>
 <p>Three decisions worth knowing about:</p>
@@ -321,7 +413,7 @@
 <div class="section level3">
 <h3 id="every-block-of-the-summary-is-its-own-function-0-23-0">Every block of the summary is its own function<a class="anchor" aria-label="anchor" href="#every-block-of-the-summary-is-its-own-function-0-23-0"></a></h3>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> is exactly the <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows()</a></code> of these, and each returns the same schema, so they stack:</p>
-<p><code><a href="../reference/nowcast_summary_components.html">cases_per_date()</a></code>, <code><a href="../reference/nowcast_summary_components.html">delay_summary()</a></code>, <code><a href="../reference/nowcast_summary_components.html">zero_run_summary()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_censored()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_confirmation_type()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_strata()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_covariate_levels()</a></code>, <code><a href="../reference/nowcast_summary_components.html">case_autocorrelation()</a></code>, <code><a href="../reference/nowcast_summary_components.html">date_ranges()</a></code>, <code><a href="../reference/nowcast_summary_components.html">triangle_occupancy()</a></code>, <code><a href="../reference/nowcast_summary_components.html">reporting_completeness()</a></code> and <code><a href="../reference/nowcast_summary_components.html">cumulative_growth()</a></code>.</p>
+<p><code><a href="../reference/nowcast_summary_components.html">cases_per_date()</a></code>, <code><a href="../reference/nowcast_summary_components.html">delay_summary()</a></code>, <code><a href="../reference/nowcast_summary_components.html">zero_run_summary()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_censored()</a></code>, <code>prop_confirmation_type()</code>, <code><a href="../reference/nowcast_summary_components.html">prop_strata()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_covariate_levels()</a></code>, <code><a href="../reference/nowcast_summary_components.html">case_autocorrelation()</a></code>, <code><a href="../reference/nowcast_summary_components.html">date_ranges()</a></code>, <code><a href="../reference/nowcast_summary_components.html">triangle_occupancy()</a></code>, <code><a href="../reference/nowcast_summary_components.html">reporting_completeness()</a></code> and <code><a href="../reference/nowcast_summary_components.html">cumulative_growth()</a></code>.</p>
 <p><code><a href="../reference/nowcast_summary_components.html">delay_summary()</a></code> names the three delays explicitly – <code>"event_to_report"</code>, <code>"event_to_confirmation"</code> and <code>"report_to_confirmation"</code> – because the first two are measured from the event and the last is the laboratory’s own turnaround, measured from the report, and confusing them is a documented hazard.</p>
 </div>
 <div class="section level3">
@@ -379,7 +471,7 @@
 <ul><li>
 <code><a href="../reference/tbl_now.html">tbl_now()</a></code> gains <code>confirmation_date</code>, <code>confirmation_type</code> and <code>confirmation_units</code>. <code>confirmation_type</code> takes <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code> or <code>NA</code>; <strong>pending</strong> means reported and still waiting, so it has no confirmation date, which is a different thing from a result you never recorded (<code>NA</code>). Two columns are derived: <code>.confirmation_num</code> (on the same numeric grid as the other dates) and <code>.confirmation_delay</code>, the laboratory’s turnaround, measured <strong>from the report</strong>.</li>
 <li>
-<code><a href="../reference/confirmation_setters.html">add_confirmation()</a></code>, <code><a href="../reference/confirmation_setters.html">change_confirmation()</a></code>, <code><a href="../reference/confirmation_setters.html">remove_confirmation()</a></code>, <code><a href="../reference/confirmation_getters.html">get_confirmation_date()</a></code>, <code><a href="../reference/confirmation_getters.html">get_confirmation_type()</a></code>, <code><a href="../reference/confirmation_getters.html">get_confirmation_units()</a></code> and <code><a href="../reference/confirmation_getters.html">has_confirmation()</a></code>.</li>
+<code>add_confirmation()</code>, <code>change_confirmation()</code>, <code>remove_confirmation()</code>, <code>get_confirmation_date()</code>, <code>get_confirmation_type()</code>, <code>get_confirmation_units()</code> and <code>has_confirmation()</code>.</li>
 <li>A date with no type warns rather than guessing: a date alone cannot say whether the case was confirmed or retracted. A confirmation before its own report warns too.</li>
 <li>
 <code>now</code> is confirmation-aware. A result issued on a date means the system was still being observed then, so <code>now</code> is never earlier than the last confirmation, and setting one earlier is an error.</li>
@@ -387,13 +479,13 @@
 <li>The print footer gains a confirmation line: the column, its units, and how many cases are resolved.</li>
 </ul><div class="section level4">
 <h4 id="counting-when-cases-can-be-undone-0-21-0">Counting when cases can be undone<a class="anchor" aria-label="anchor" href="#counting-when-cases-can-be-undone-0-21-0"></a></h4>
-<p><code><a href="../reference/confirmation_counts.html">get_latest_confirmed()</a></code>, <code><a href="../reference/confirmation_counts.html">get_net_confirmed()</a></code> (confirmed minus retracted), <code>get_nth_confirmed(x, delay)</code> and <code><a href="../reference/confirmation_counts.html">get_initial_confirmed()</a></code> – the confirmation mirrors of the report-axis getters. <code><a href="../reference/censor_delays_above.html">censor_confirmation_delays_above()</a></code> returns implausibly long confirmations to <code>"pending"</code>, which is what they really were.</p>
+<p><code><a href="../reference/validation_counts.html">get_latest_confirmed()</a></code>, <code><a href="../reference/validation_counts.html">get_net_confirmed()</a></code> (confirmed minus retracted), <code>get_nth_confirmed(x, delay)</code> and <code><a href="../reference/validation_counts.html">get_initial_confirmed()</a></code> – the confirmation mirrors of the report-axis getters. <code>censor_confirmation_delays_above()</code> returns implausibly long confirmations to <code>"pending"</code>, which is what they really were.</p>
 </div>
 <div class="section level4">
 <h4 id="diagnostics-on-the-confirmation-axis-0-21-0">Diagnostics on the confirmation axis<a class="anchor" aria-label="anchor" href="#diagnostics-on-the-confirmation-axis-0-21-0"></a></h4>
 <p>A laboratory clearing a backlog looks exactly like a surveillance system clearing its inbox, so rather than duplicate every diagnostic, they take an <code>axis = c("report", "confirmation")</code> argument: <code>batch_test()</code>, <code>batch_screen()</code>, <code>batch_shape_test()</code>, <code><a href="../reference/transport_discriminant.html">transport_discriminant()</a></code>, <code><a href="../reference/plot_epidemic_process.html">plot_reporting_process()</a></code>, <code><a href="../reference/plot_epidemic_process.html">plot_epidemic_process()</a></code>, <code><a href="../reference/plot_reporting_triangle.html">plot_reporting_triangle()</a></code>, <code><a href="../reference/plot_delay_profiles.html">plot_delay_profiles()</a></code>, <code><a href="../reference/plot_reporting_hexamap.html">plot_reporting_hexamap()</a></code>, <code><a href="../reference/plot_scalogram.html">plot_scalogram()</a></code>, <code><a href="../reference/plot_delay_drift.html">plot_delay_drift()</a></code>, <code>test_delay_drift()</code>, <code>test_delay_changepoint()</code> and <code><a href="../reference/diagnostic_plot.html">diagnostic_plot()</a></code>.</p>
 <p>On the confirmation axis, delays are still measured <strong>from the event</strong>, so the two axes are directly comparable and the gap between them is the time the laboratory adds. Cases still <code>"pending"</code> are excluded – counting them would invent an arrival on a date they do not have.</p>
-<p>New in their own right: <code><a href="../reference/plot_confirmation_status.html">plot_confirmation_status()</a></code> (the confirmed / retracted / pending shares over time), and <code>test_confirmation_delay()</code> / <code><a href="../reference/confirmation_delay.html">plot_confirmation_delay()</a></code>, which ask whether retractions come back faster than confirmations – a laboratory that rules cases out sooner than it confirms them biases any nowcast that treats the two alike.</p>
+<p>New in their own right: <code>plot_confirmation_status()</code> (the confirmed / retracted / pending shares over time), and <code>test_confirmation_delay()</code> / <code>plot_confirmation_delay()</code>, which ask whether retractions come back faster than confirmations – a laboratory that rules cases out sooner than it confirms them biases any nowcast that treats the two alike.</p>
 </div>
 </div>
 <div class="section level3">
@@ -489,7 +581,7 @@ i Declare it with `add_strata()` to nowcast it separately.</code></pre>
 <code>nowcast_truth()</code> is now internal<a class="anchor" aria-label="anchor" href="#nowcast_truth-is-now-internal-0-19-0"></a></h3>
 <p>It was <code><a href="../reference/get_latest_first.html">get_latest_reported_cases()</a></code> with the class stripped, undeclared columns summed away and the count renamed <code>.observed</code> – the values were identical. A second public name for that is a second thing to learn for no gain.</p>
 <p><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code> and <code><a href="../reference/score_nowcast.html">as_scoringutils()</a></code> now accept the <strong><code>tbl_now</code> itself</strong> as <code>truth</code> and do the reshaping internally, which is shorter than what it replaces:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/score_nowcast.html">score_nowcast</a></span><span class="op">(</span><span class="va">nowcast</span>, truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span>          <span class="co"># was: truth = nowcast_truth(dengue)</span></span></code></pre></div>
 <p>A data frame of observed counts still works, as does <code>NULL</code>.</p>
 </div>

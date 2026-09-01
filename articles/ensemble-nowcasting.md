@@ -1024,10 +1024,11 @@ needs no modelling package, and what shipping one in a package involves.
   the full anatomy of a `tbl_now`, data types, and temporal effects.
 - End-to-end tutorial on real, messy surveillance data — cleaning,
   diagnostics and nowcasting:
-  <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
-- Tutorial on diagnosing problems with your dataset, detecting batches
-  and other reporting-delay artifacts:
-  <https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html>
+  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
+- Tutorial on diagnosing your dataset — what is in it, what is
+  structurally wrong with it, and detecting batches and other
+  reporting-delay artifacts:
+  <https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html>
 - Using different nowcasting engines for the same dataset:
   <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
 - Ensemble nowcasting across different engines

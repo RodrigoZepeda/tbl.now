@@ -20,7 +20,7 @@ diagnose_batches(
   baseline_window = NULL,
   period = NULL,
   null_model = c("auto", "poisson", "robust"),
-  axis = c("report", "confirmation"),
+  axis = c("report", "validation"),
   alpha = 0.05
 )
 ```
@@ -71,13 +71,13 @@ diagnose_batches(
 - axis:
 
   Which time axis to scan for arrivals: `"report"` (default) or
-  `"confirmation"`. The question is the same either way – did an unusual
+  `"validation"`. The question is the same either way – did an unusual
   number of records land on this date? – so a laboratory clearing its
   backlog is found exactly as a surveillance system clearing its inbox
-  is. `"confirmation"` needs a confirmation process (see
-  [`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md))
-  and ignores cases that are still `"pending"`, which have no
-  confirmation date to arrive on.
+  is. `"validation"` needs a validation process (see
+  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md))
+  and ignores cases that are still `"pending"`, which have no validation
+  date to arrive on.
 
 - alpha:
 
@@ -190,9 +190,8 @@ and
 [`plot_reporting_triangle()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.md)
 to see it;
 [add_is_censored()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-to record a batch once you believe it. The [*Diagnosing reporting
-batches*
-article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html)
+to record a batch once you believe it. The [*Diagnosing a tbl_now*
+article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 works through a real example.
 
 ## Examples

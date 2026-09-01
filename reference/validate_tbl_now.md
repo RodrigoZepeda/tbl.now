@@ -67,8 +67,8 @@ for the same findings returned as a tibble, plus the softer notes;
 [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
 to build a valid object;
 [`tbl_now_attributes()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.md)
-to see what it recorded. The [*Describing and diagnosing a tbl_now*
-article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+to see what it recorded. The [*Diagnosing a tbl_now*
+article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 explains what each finding means.
 
 ## Examples

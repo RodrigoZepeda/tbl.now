@@ -203,6 +203,17 @@ does:
 
     tbl_now_to_baselinenowcast(x, max_delay = 30)   # delays 0-29, 30 columns
 
+Past a point it stops being about speed. baselinenowcast needs **more
+reference dates than delay columns** – it spends `max_delay` of them
+estimating the delay distribution and keeps two back for the uncertainty
+model – so a triangle that is as wide as it is tall cannot be fitted at
+all. A **snapshot ("as of") series** is exactly that shape: every
+snapshot restates the whole history, so the oldest event date carries a
+delay as long as the series and almost every cell of that width is a
+zero. The converter still builds the triangle;
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
+is where it is refused, with the cap to use.
+
 ## Negative delays
 
 A reporting triangle is indexed by delay from **0**, so a report that

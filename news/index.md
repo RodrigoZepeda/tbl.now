@@ -1,5 +1,126 @@
 # Changelog
 
+## tbl.now 0.28.0
+
+### Breaking: the confirmation process is now the validation process
+
+The optional third date a `tbl_now` can carry is called a **validation**
+rather than a confirmation, throughout. The old spelling is gone, not
+deprecated – it had not shipped.
+
+| was | is |
+|----|----|
+| `add_confirmation()`, `change_confirmation()`, `remove_confirmation()` | [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md), [`change_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md), [`remove_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md) |
+| `get_confirmation_date()`, `get_confirmation_type()`, `get_confirmation_units()`, `has_confirmation()` | [`get_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`get_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`get_validation_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`has_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
+| `confirmation_counts`, `confirmation_delay` | `validation_counts`, `validation_delay` |
+| `censor_confirmation_delays_above()`, `diagnose_confirmation_delay()` | [`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md), [`diagnose_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md) |
+| `plot_confirmation_delay()`, `plot_confirmation_status()`, `prop_confirmation_type()` | [`plot_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md), [`plot_validation_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_validation_status.md), [`prop_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md) |
+| `confirmation_date`, `confirmation_type`, `confirmation_units` arguments | `validation_date`, `validation_type`, `validation_units` |
+| `.confirmation_num`, `.confirmation_delay` columns | `.validation_num`, `.validation_delay` |
+| `axis = "confirmation"` | `axis = "validation"` |
+| `"event_to_confirmation"`, `"report_to_confirmation"` | `"event_to_validation"`, `"report_to_validation"` |
+
+The **outcome values are unchanged**: a case is still `"confirmed"`,
+`"retracted"` or `"pending"`. Validation is what the process does;
+confirmed is one of the things it can conclude.
+
+`diseasenowcasting::confirmation_process()` is that package’s name and
+is untouched – `model(confirmation = confirmation_process())` still
+reads exactly as it did.
+
+### Documentation: fewer, fuller reference pages
+
+- The validation getters now live on
+  [`?nowcast_data_getters`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md),
+  next to
+  [`get_event_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md),
+  and the validation setters on
+  [`?add`](https://rodrigozepeda.github.io/tbl.now/reference/add.md),
+  next to
+  [`change_event_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md).
+  Someone asking “what did this object record, and how do I change it”
+  now finds every answer on one page instead of four.
+- *Describing and diagnosing a tbl_now* and *Diagnosing reporting
+  batches* are now **one article**, [*Diagnosing a
+  tbl_now*](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html),
+  running structure-first: what is in the data
+  ([`summary()`](https://rdrr.io/r/base/summary.html)), what is
+  structurally wrong with it
+  ([`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)),
+  and then the statistical tests
+  [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+  signposts but refuses to run.
+- The attribute diagrams in the README now appear on the pkgdown site.
+  They lived in `inst/figures/`, which pkgdown does not copy;
+  `man/figures/` is the directory it publishes, and GitHub renders it
+  just as happily.
+- [`summary()`](https://rdrr.io/r/base/summary.html)’s `"completeness"`
+  and `"growth"` rows are distributions over event dates, so they
+  populate `mean`/`sd`/the quantiles (and, for completeness, `prop`) and
+  leave the scalar `value` column empty. The documented examples
+  selected `value` and got a column of `NA`; they now select the columns
+  that carry the answer.
+
+### Fixed: `baselinenowcast` on a snapshot (“as of”) series
+
+A snapshot stream restates the whole history in every snapshot, so its
+delay axis is as long as the series itself and the reporting triangle
+comes out square. `baselinenowcast` needs more reference dates than
+delay columns – it spends `max_delay` of them estimating the delay
+distribution and keeps two back for the uncertainty model – so it
+refused, with a message about reference-time arithmetic that mentioned
+neither the delay axis nor anything to do about it. Three of the six
+shipped datasets are that shape.
+
+- [`engine_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
+  gains **`max_delay`**, the number of delay periods to keep, forwarded
+  to
+  [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md).
+  [`?run_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
+  already documented it (“`max_delay` caps the triangle’s width”); what
+  actually happened is that it fell into `...` and reached the modelling
+  call, which has no such argument and ignored it.
+
+- A triangle too wide to fit is now refused by `tbl.now`, naming the
+  delay axis and a concrete cap – the delay covering 99% of the reported
+  cases:
+
+  ``` r
+
+  run_nowcast(x, engine_baselinenowcast(max_delay = 21))
+  ```
+
+Note that a snapshot series must be **declared**
+`data_type = "count-cumulative"`. `infer_data_type()` reads a single
+downward revision as incidence, by design, and a revised running total
+has them; left to the inference, every delay carries a whole period’s
+count instead of an increment and nothing downstream can tell.
+
+### New: `diagnose()` and `summary()` print as reports
+
+Both still return the tibbles they always returned, and every `dplyr`
+verb still works on them. What changed is what you see when you print
+one.
+
+- [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+  – and each of its blocks – prints the errors, warnings and notes in
+  full, each with its hint, and counts the checks that passed, that were
+  deliberately not run, and that could not be assessed.
+  `print(x, all = TRUE)` spells those out too.
+- [`summary()`](https://rdrr.io/r/base/summary.html) – and each of its
+  blocks – prints one block per component, dropping the columns that
+  component does not populate. The schema is wide because it holds every
+  block at once; no block fills more than a handful of it.
+- [`tibble::as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
+  gives the plain table back in both cases.
+
+### New: a nowcast prints its value at the `now` edge
+
+[`print()`](https://rdrr.io/r/base/print.html) on a `tbl_nowcast` now
+leads with the number it was fitted to produce – the estimate and
+interval at the last event date it covers, one line per stratum – before
+the quantile table, which starts at the oldest event date.
+
 ## tbl.now 0.27.0
 
 ### Breaking: a nowcast is specified with an `engine()`
@@ -151,20 +272,17 @@ exports already took `x` first; these were the exceptions.
   [`simulate_batch()`](https://rodrigozepeda.github.io/tbl.now/reference/simulate_batch.md),
   [`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md),
   [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
-  and
-  [`censor_confirmation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md).
-  Positional calls are unaffected. Two internal helpers also named
-  `data` in their error messages, so
-  `diagnose_batches(x = <not a tbl_now>)` used to complain about an
-  argument that did not exist.
+  and `censor_confirmation_delays_above()`. Positional calls are
+  unaffected. Two internal helpers also named `data` in their error
+  messages, so `diagnose_batches(x = <not a tbl_now>)` used to complain
+  about an argument that did not exist.
 
 - **`quiet` becomes `verbose`** in
   [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
-  and
-  [`censor_confirmation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md),
-  with the sense inverted and defaulting to `TRUE`, matching the twenty
-  other functions that control messaging this way. Write
-  `verbose = FALSE` where you wrote `quiet = TRUE`.
+  and `censor_confirmation_delays_above()`, with the sense inverted and
+  defaulting to `TRUE`, matching the twenty other functions that control
+  messaging this way. Write `verbose = FALSE` where you wrote
+  `quiet = TRUE`.
 
   The converters that carry **both** `verbose` and `quiet` keep both:
   they are different channels – `verbose` is the conversion summary,
@@ -569,7 +687,7 @@ that they are tests. **The old names are gone**, not deprecated:
 |----|----|
 | `test_delay_drift()` | [`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md) |
 | `test_delay_changepoint()` | [`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md) |
-| `test_confirmation_delay()` | [`diagnose_confirmation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md) |
+| `test_confirmation_delay()` | `diagnose_confirmation_delay()` |
 | `batch_test()` | [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md) |
 | `batch_shape_test()` | [`diagnose_batch_shape()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batch_shape.md) |
 
@@ -685,7 +803,7 @@ these, and each returns the same schema, so they stack:
 [`delay_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`zero_run_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`prop_confirmation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+`prop_confirmation_type()`,
 [`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
@@ -857,14 +975,10 @@ after all). The assumed timeline is
   derived: `.confirmation_num` (on the same numeric grid as the other
   dates) and `.confirmation_delay`, the laboratory’s turnaround,
   measured **from the report**.
-- [`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md),
-  [`change_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md),
-  [`remove_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md),
-  [`get_confirmation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md),
-  [`get_confirmation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md),
-  [`get_confirmation_units()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md)
-  and
-  [`has_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md).
+- `add_confirmation()`, `change_confirmation()`,
+  `remove_confirmation()`, `get_confirmation_date()`,
+  `get_confirmation_type()`, `get_confirmation_units()` and
+  `has_confirmation()`.
 - A date with no type warns rather than guessing: a date alone cannot
   say whether the case was confirmed or retracted. A confirmation before
   its own report warns too.
@@ -883,14 +997,13 @@ after all). The assumed timeline is
 
 #### Counting when cases can be undone
 
-[`get_latest_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md),
-[`get_net_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md)
+[`get_latest_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md),
+[`get_net_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
 (confirmed minus retracted), `get_nth_confirmed(x, delay)` and
-[`get_initial_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md)
+[`get_initial_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
 – the confirmation mirrors of the report-axis getters.
-[`censor_confirmation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
-returns implausibly long confirmations to `"pending"`, which is what
-they really were.
+`censor_confirmation_delays_above()` returns implausibly long
+confirmations to `"pending"`, which is what they really were.
 
 #### Diagnostics on the confirmation axis
 
@@ -914,14 +1027,11 @@ so the two axes are directly comparable and the gap between them is the
 time the laboratory adds. Cases still `"pending"` are excluded –
 counting them would invent an arrival on a date they do not have.
 
-New in their own right:
-[`plot_confirmation_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_confirmation_status.md)
-(the confirmed / retracted / pending shares over time), and
-`test_confirmation_delay()` /
-[`plot_confirmation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md),
-which ask whether retractions come back faster than confirmations – a
-laboratory that rules cases out sooner than it confirms them biases any
-nowcast that treats the two alike.
+New in their own right: `plot_confirmation_status()` (the confirmed /
+retracted / pending shares over time), and `test_confirmation_delay()` /
+`plot_confirmation_delay()`, which ask whether retractions come back
+faster than confirmations – a laboratory that rules cases out sooner
+than it confirms them biases any nowcast that treats the two alike.
 
 ### Other changes
 

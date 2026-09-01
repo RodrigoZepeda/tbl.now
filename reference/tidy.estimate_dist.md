@@ -93,7 +93,7 @@ differ slightly;
 for the conversion;
 [tidy()](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
 for tidying a *case-count* nowcast rather than a delay distribution;
-[confirmation_delay](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md)
+[validation_delay](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
 for the delay this is estimating.
 
 ## Examples
@@ -131,10 +131,10 @@ fit <- try(
   ),
   silent = TRUE
 )
-#> WARN [2026-08-31 22:08:05] estimate_dist (chain: 1): Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> WARN [2026-09-01 03:52:23] estimate_dist (chain: 1): Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#bulk-ess - 
-#> WARN [2026-08-31 22:08:05] estimate_dist (chain: 1): Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> WARN [2026-09-01 03:52:23] estimate_dist (chain: 1): Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#tail-ess - 
 

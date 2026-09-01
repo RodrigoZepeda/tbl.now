@@ -118,6 +118,10 @@ nowcast_ensemble(toy("a", 0), toy("b", 4), verbose = FALSE)
 #> • event dates: 1
 #> • quantile levels: 0.25, 0.5, and 0.75
 #> • draws: none (quantiles only)
+#> 
+#> Nowcast at "2020-01-05" (q50, 25-75% interval):
+#> • 12 [10, 15]
+#> 
 #> # A tibble: 3 × 3
 #>   onset_week .quantile_level .value
 #>   <date>               <dbl>  <dbl>
@@ -132,6 +136,10 @@ nowcast_ensemble(toy("a", 0), toy("b", 4), weights = c(a = 0.75, b = 0.25), verb
 #> • event dates: 1
 #> • quantile levels: 0.25, 0.5, and 0.75
 #> • draws: none (quantiles only)
+#> 
+#> Nowcast at "2020-01-05" (q50, 25-75% interval):
+#> • 11 [9, 14]
+#> 
 #> # A tibble: 3 × 3
 #>   onset_week .quantile_level .value
 #>   <date>               <dbl>  <dbl>

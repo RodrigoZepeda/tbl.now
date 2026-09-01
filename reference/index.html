@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,9 +19,8 @@
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -104,7 +103,7 @@
 
       <dl><dt>
 
-          <code><a href="nowcast_data_getters.html">get_event_date()</a></code> <code><a href="nowcast_data_getters.html">get_report_date()</a></code> <code><a href="nowcast_data_getters.html">get_strata()</a></code> <code><a href="nowcast_data_getters.html">get_num_strata()</a></code> <code><a href="nowcast_data_getters.html">get_covariates()</a></code> <code><a href="nowcast_data_getters.html">get_num_covariates()</a></code> <code><a href="nowcast_data_getters.html">get_now()</a></code> <code><a href="nowcast_data_getters.html">get_report_units()</a></code> <code><a href="nowcast_data_getters.html">get_event_units()</a></code> <code><a href="nowcast_data_getters.html">get_data_type()</a></code> <code><a href="nowcast_data_getters.html">get_temporal_effects()</a></code> <code><a href="nowcast_data_getters.html">get_temporal_effect_cols()</a></code> <code><a href="nowcast_data_getters.html">get_is_censored()</a></code> <code><a href="nowcast_data_getters.html">get_case_count()</a></code>
+          <code><a href="nowcast_data_getters.html">get_event_date()</a></code> <code><a href="nowcast_data_getters.html">get_report_date()</a></code> <code><a href="nowcast_data_getters.html">get_strata()</a></code> <code><a href="nowcast_data_getters.html">get_num_strata()</a></code> <code><a href="nowcast_data_getters.html">get_covariates()</a></code> <code><a href="nowcast_data_getters.html">get_num_covariates()</a></code> <code><a href="nowcast_data_getters.html">get_now()</a></code> <code><a href="nowcast_data_getters.html">get_report_units()</a></code> <code><a href="nowcast_data_getters.html">get_event_units()</a></code> <code><a href="nowcast_data_getters.html">get_data_type()</a></code> <code><a href="nowcast_data_getters.html">get_temporal_effects()</a></code> <code><a href="nowcast_data_getters.html">get_temporal_effect_cols()</a></code> <code><a href="nowcast_data_getters.html">get_is_censored()</a></code> <code><a href="nowcast_data_getters.html">get_case_count()</a></code> <code><a href="nowcast_data_getters.html">get_validation_date()</a></code> <code><a href="nowcast_data_getters.html">get_validation_type()</a></code> <code><a href="nowcast_data_getters.html">get_validation_units()</a></code> <code><a href="nowcast_data_getters.html">has_validation()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Read what a <code>tbl_now</code> was told about itself</dd>
@@ -118,24 +117,10 @@
 
         <dt>
 
-          <code><a href="confirmation_getters.html">get_confirmation_date()</a></code> <code><a href="confirmation_getters.html">get_confirmation_type()</a></code> <code><a href="confirmation_getters.html">get_confirmation_units()</a></code> <code><a href="confirmation_getters.html">has_confirmation()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
-        </dt>
-        <dd>Confirmation attributes of a <code>tbl_now</code></dd>
-
-        <dt>
-
-          <code><a href="add.html">change_now()</a></code> <code><a href="add.html">update_now()</a></code> <code><a href="add.html">change_event_date()</a></code> <code><a href="add.html">change_report_date()</a></code> <code><a href="add.html">change_case_count()</a></code> <code><a href="add.html">change_is_censored()</a></code> <code><a href="add.html">remove_is_censored()</a></code> <code><a href="add.html">add_is_censored()</a></code> <code><a href="add.html">change_strata()</a></code> <code><a href="add.html">remove_strata()</a></code> <code><a href="add.html">add_strata()</a></code> <code><a href="add.html">remove_all_strata()</a></code> <code><a href="add.html">change_covariates()</a></code> <code><a href="add.html">remove_covariates()</a></code> <code><a href="add.html">add_covariates()</a></code> <code><a href="add.html">remove_all_covariates()</a></code> <code><a href="add.html">replace_temporal_effects()</a></code> <code><a href="add.html">remove_temporal_effects()</a></code>
+          <code><a href="add.html">change_now()</a></code> <code><a href="add.html">update_now()</a></code> <code><a href="add.html">change_event_date()</a></code> <code><a href="add.html">change_report_date()</a></code> <code><a href="add.html">change_case_count()</a></code> <code><a href="add.html">change_is_censored()</a></code> <code><a href="add.html">remove_is_censored()</a></code> <code><a href="add.html">add_is_censored()</a></code> <code><a href="add.html">change_strata()</a></code> <code><a href="add.html">remove_strata()</a></code> <code><a href="add.html">add_strata()</a></code> <code><a href="add.html">remove_all_strata()</a></code> <code><a href="add.html">change_covariates()</a></code> <code><a href="add.html">remove_covariates()</a></code> <code><a href="add.html">add_covariates()</a></code> <code><a href="add.html">remove_all_covariates()</a></code> <code><a href="add.html">replace_temporal_effects()</a></code> <code><a href="add.html">remove_temporal_effects()</a></code> <code><a href="add.html">add_validation_date()</a></code> <code><a href="add.html">change_validation_date()</a></code> <code><a href="add.html">remove_validation_date()</a></code>
           <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Set, change and remove the attributes of a <code>tbl_now</code></dd>
-
-        <dt>
-
-          <code><a href="confirmation_setters.html">add_confirmation()</a></code> <code><a href="confirmation_setters.html">change_confirmation()</a></code> <code><a href="confirmation_setters.html">remove_confirmation()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
-        </dt>
-        <dd>Attach, change or drop a confirmation process</dd>
 
         <dt>
 
@@ -169,7 +154,7 @@
 
         <dt>
 
-          <code><a href="censor_delays_above.html">censor_delays_above()</a></code> <code><a href="censor_delays_above.html">censor_confirmation_delays_above()</a></code>
+          <code><a href="censor_delays_above.html">censor_delays_above()</a></code> <code><a href="censor_delays_above.html">censor_validation_delays_above()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Treat implausibly long delays as censored rather than exact</dd>
@@ -204,7 +189,7 @@
         </dt>
         <dd>Attach calendar effects to a <code>tbl_now</code>, and turn them into columns</dd>
       </dl></div><div class="section level2">
-      <h2 id="the-confirmation-process">The confirmation process<a class="anchor" aria-label="anchor" href="#the-confirmation-process"></a></h2>
+      <h2 id="the-validation-process">The validation process<a class="anchor" aria-label="anchor" href="#the-validation-process"></a></h2>
 
       <div class="section-desc"><p>The optional third date, and the outcomes it carries.</p></div>
 
@@ -215,17 +200,17 @@
 
       <dl><dt>
 
-          <code><a href="confirmation_counts.html">get_latest_confirmed()</a></code> <code><a href="confirmation_counts.html">get_net_confirmed()</a></code> <code><a href="confirmation_counts.html">get_nth_confirmed()</a></code> <code><a href="confirmation_counts.html">get_initial_confirmed()</a></code>
+          <code><a href="validation_counts.html">get_latest_confirmed()</a></code> <code><a href="validation_counts.html">get_net_confirmed()</a></code> <code><a href="validation_counts.html">get_nth_confirmed()</a></code> <code><a href="validation_counts.html">get_initial_confirmed()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Confirmed, retracted and net counts per event date</dd>
 
         <dt>
 
-          <code><a href="confirmation_delay.html">diagnose_confirmation_delay()</a></code> <code><a href="confirmation_delay.html">plot_confirmation_delay()</a></code>
+          <code><a href="validation_delay.html">diagnose_validation_delay()</a></code> <code><a href="validation_delay.html">plot_validation_delay()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
-        <dd>Compare confirmation delays between confirmed and retracted cases</dd>
+        <dd>Compare validation delays between confirmed and retracted cases</dd>
       </dl></div><div class="section level2">
       <h2 id="summarising">Summarising<a class="anchor" aria-label="anchor" href="#summarising"></a></h2>
 
@@ -245,10 +230,17 @@
 
         <dt>
 
-          <code><a href="nowcast_summary_components.html">cases_per_date()</a></code> <code><a href="nowcast_summary_components.html">delay_summary()</a></code> <code><a href="nowcast_summary_components.html">zero_run_summary()</a></code> <code><a href="nowcast_summary_components.html">prop_censored()</a></code> <code><a href="nowcast_summary_components.html">prop_confirmation_type()</a></code> <code><a href="nowcast_summary_components.html">prop_strata()</a></code> <code><a href="nowcast_summary_components.html">prop_covariate_levels()</a></code> <code><a href="nowcast_summary_components.html">case_autocorrelation()</a></code> <code><a href="nowcast_summary_components.html">date_ranges()</a></code> <code><a href="nowcast_summary_components.html">triangle_occupancy()</a></code> <code><a href="nowcast_summary_components.html">reporting_completeness()</a></code> <code><a href="nowcast_summary_components.html">cumulative_growth()</a></code>
+          <code><a href="nowcast_summary_components.html">cases_per_date()</a></code> <code><a href="nowcast_summary_components.html">delay_summary()</a></code> <code><a href="nowcast_summary_components.html">zero_run_summary()</a></code> <code><a href="nowcast_summary_components.html">prop_censored()</a></code> <code><a href="nowcast_summary_components.html">prop_validation_type()</a></code> <code><a href="nowcast_summary_components.html">prop_strata()</a></code> <code><a href="nowcast_summary_components.html">prop_covariate_levels()</a></code> <code><a href="nowcast_summary_components.html">case_autocorrelation()</a></code> <code><a href="nowcast_summary_components.html">date_ranges()</a></code> <code><a href="nowcast_summary_components.html">triangle_occupancy()</a></code> <code><a href="nowcast_summary_components.html">reporting_completeness()</a></code> <code><a href="nowcast_summary_components.html">cumulative_growth()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Individual blocks of a <code>tbl_now</code> summary</dd>
+
+        <dt>
+
+          <code><a href="print.tbl_now_summary_table.html">print(<i>&lt;tbl_now_summary_table&gt;</i>)</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Print a <code>tbl_now</code> summary</dd>
       </dl></div><div class="section level2">
       <h2 id="diagnosing">Diagnosing<a class="anchor" aria-label="anchor" href="#diagnosing"></a></h2>
 
@@ -272,6 +264,13 @@
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Individual blocks of a <code>tbl_now</code> diagnosis</dd>
+
+        <dt>
+
+          <code><a href="print.tbl_now_diagnosis.html">print(<i>&lt;tbl_now_diagnosis&gt;</i>)</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Print a <code>tbl_now</code> diagnosis</dd>
 
         <dt>
 
@@ -347,7 +346,7 @@
 
         <dt>
 
-          <code><a href="plot_confirmation_status.html">plot_confirmation_status()</a></code>
+          <code><a href="plot_validation_status.html">plot_validation_status()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>How much of each day has been resolved</dd>

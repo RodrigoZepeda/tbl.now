@@ -15,17 +15,17 @@ relevant nowcasting variables:
 
 |   | Argument | What it records |
 |:--:|:---|:---|
-| ![event_date](inst/figures/event_date.svg) | `event_date` | The column storing **event dates**; i.e. when the epidemiological phenomenon of interest happened (symptom onset, hospitalisation, death, …). **Required.** |
-| ![report_date](inst/figures/report_date.svg) | `report_date` | The column storing **report dates**; i.e. when that event became known to the surveillance system. **Required**, unless it is reconstructed from `delay`. |
-| ![now](inst/figures/now.svg) | `now` | The date the nowcast is anchored to — “today” from the model’s point of view. *Optional*; defaults to the latest date. |
-| ![strata](inst/figures/strata.svg) | `strata` | Columns you want a separate nowcast for (e.g. gender, region). *Optional*. |
-| ![covariates](inst/figures/covariates.svg) | `covariates` | Columns that inform the nowcast but that you do *not* want it broken down by (e.g. temperature or precipitation). *Optional*. |
-| ![case_count](inst/figures/case_count.svg) | `case_count` | The column holding the counts when the data is given as aggregated (rather than line-list). *Optional*. |
-| ![data_type](inst/figures/datatype.svg) | `data_type` | Whether the data represents a `linelist` (each row is a case), `count-incidence`(each row is a collection of cases per event-report date) or `count-cumulative`(each row is the cummulative number cases for that event accumulating in the report axis). *Optional*; inferred by default. |
-| ![units](inst/figures/units.svg) | `event_units`, `report_units`, `confirmation_units` | The time grid each date lives on: `days`, `weeks`, `months`, `years` or `numeric`. *Optional*; inferred (`“auto”`) by default. |
-| ![is_censored](inst/figures/censoring.svg) | `is_censored` | Flags report dates that are only an upper bound, e.g. a batch or back-fill dump. *Optional*. |
-| ![confirmation](inst/figures/validation_date.svg) | `confirmation_date`, `confirmation_type` | An optional third date — when the report was resolved — and what it resolved to (`confirmed`, `retracted`, `pending`). *Optional*. |
-| ![temporal_effects](inst/figures/temporal_effects.svg) | `t_effects` | Columns holding temporal effects (day of week, holidays, …) that some models can use. *Optional*. |
+| ![event_date](reference/figures/event_date.svg) | `event_date` | The column storing **event dates**; i.e. when the epidemiological phenomenon of interest happened (symptom onset, hospitalisation, death, …). **Required.** |
+| ![report_date](reference/figures/report_date.svg) | `report_date` | The column storing **report dates**; i.e. when that event became known to the surveillance system. **Required**, unless it is reconstructed from `delay`. |
+| ![now](reference/figures/now.svg) | `now` | The date the nowcast is anchored to — “today” from the model’s point of view. *Optional*; defaults to the latest date. |
+| ![strata](reference/figures/strata.svg) | `strata` | Columns you want a separate nowcast for (e.g. gender, region). *Optional*. |
+| ![covariates](reference/figures/covariates.svg) | `covariates` | Columns that inform the nowcast but that you do *not* want it broken down by (e.g. temperature or precipitation). *Optional*. |
+| ![case_count](reference/figures/case_count.svg) | `case_count` | The column holding the counts when the data is given as aggregated (rather than line-list). *Optional*. |
+| ![data_type](reference/figures/datatype.svg) | `data_type` | Whether the data represents a `linelist` (each row is a case), `count-incidence`(each row is a collection of cases per event-report date) or `count-cumulative`(each row is the cummulative number cases for that event accumulating in the report axis). *Optional*; inferred by default. |
+| ![units](reference/figures/units.svg) | `event_units`, `report_units`, `validation_units` | The time grid each date lives on: `days`, `weeks`, `months`, `years` or `numeric`. *Optional*; inferred (`“auto”`) by default. |
+| ![is_censored](reference/figures/censoring.svg) | `is_censored` | Flags report dates that are only an upper bound, e.g. a batch or back-fill dump. *Optional*. |
+| ![validation](reference/figures/validation_date.svg) | `validation_date`, `validation_type` | An optional third date — when the report was resolved — and what it resolved to (`confirmed`, `retracted`, `pending`). *Optional*. |
+| ![temporal_effects](reference/figures/temporal_effects.svg) | `t_effects` | Columns holding temporal effects (day of week, holidays, …) that some models can use. *Optional*. |
 
 You can specify an object as a `tbl.now` with the `tbl_now` command:
 
@@ -125,11 +125,10 @@ and checkout our articles starting with the
   the full anatomy of a `tbl_now`, data types, and temporal effects.
 - End-to-end tutorial on real, messy surveillance data — cleaning,
   diagnostics and nowcasting:
-  <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
-- Tutorial on diagnosing problems with your dataset, detecting batches
-  and other reporting-delay artifacts:
-  <https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html>
-- Using different nowcasting engines for the same dataset:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
+- Tutorial on detecting batches and other reporting-delay artifacts:
+  <https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html>
+- Comparing nowcasting engines on one dataset:
   <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
 - Ensemble nowcasting across different engines
   <https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html>
@@ -186,6 +185,10 @@ Read what the object was told about itself, and change it.
   [`get_temporal_effect_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_validation_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`has_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   **\[experimental\]** :
 
   Read what a `tbl_now` was told about itself
@@ -195,14 +198,6 @@ Read what the object was told about itself, and change it.
   [`get_nth_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
   **\[stable\]** : Reported cases at a chosen point in the reporting
   process
-
-- [`get_confirmation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md)
-  [`get_confirmation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md)
-  [`get_confirmation_units()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md)
-  [`has_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md)
-  **\[experimental\]** :
-
-  Confirmation attributes of a `tbl_now`
 
 - [`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`update_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
@@ -222,14 +217,12 @@ Read what the object was told about itself, and change it.
   [`remove_all_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`replace_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`change_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`remove_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   **\[stable\]** :
 
   Set, change and remove the attributes of a `tbl_now`
-
-- [`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)
-  [`change_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)
-  [`remove_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)
-  **\[experimental\]** : Attach, change or drop a confirmation process
 
 - [`update(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.md)
   **\[experimental\]** :
@@ -246,7 +239,7 @@ Put the data on the grid a model needs.
 - [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
   **\[experimental\]** : Fill in the days when nothing was reported
 - [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
-  [`censor_confirmation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+  [`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
   **\[experimental\]** : Treat implausibly long delays as censored
   rather than exact
 - [`is_weekday()`](https://rodrigozepeda.github.io/tbl.now/reference/is_weekday.md)
@@ -265,20 +258,20 @@ Calendar structure, recorded lazily and materialised on demand.
 
   Attach calendar effects to a `tbl_now`, and turn them into columns
 
-## The confirmation process
+## The validation process
 
 The optional third date, and the outcomes it carries.
 
-- [`get_latest_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md)
-  [`get_net_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md)
-  [`get_nth_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md)
-  [`get_initial_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md)
+- [`get_latest_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+  [`get_net_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+  [`get_nth_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+  [`get_initial_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
   **\[experimental\]** : Confirmed, retracted and net counts per event
   date
-- [`diagnose_confirmation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md)
-  [`plot_confirmation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md)
-  **\[experimental\]** : Compare confirmation delays between confirmed
-  and retracted cases
+- [`diagnose_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
+  [`plot_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
+  **\[experimental\]** : Compare validation delays between confirmed and
+  retracted cases
 
 ## Summarising
 
@@ -294,7 +287,7 @@ returns a tibble, and every block of it is also a function of its own.
   [`delay_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`zero_run_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`prop_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-  [`prop_confirmation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+  [`prop_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
@@ -305,6 +298,11 @@ returns a tibble, and every block of it is also a function of its own.
   **\[experimental\]** :
 
   Individual blocks of a `tbl_now` summary
+
+- [`print(`*`<tbl_now_summary_table>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_summary_table.md)
+  **\[experimental\]** :
+
+  Print a `tbl_now` summary
 
 ## Diagnosing
 
@@ -331,6 +329,11 @@ listed after it.
   **\[experimental\]** :
 
   Individual blocks of a `tbl_now` diagnosis
+
+- [`print(`*`<tbl_now_diagnosis>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_diagnosis.md)
+  **\[experimental\]** :
+
+  Print a `tbl_now` diagnosis
 
 - [`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
   **\[experimental\]** : Test whether the reporting-delay distribution
@@ -377,7 +380,7 @@ One grid, or any panel of it on its own.
   **\[experimental\]** : Calendar effects on the case counts or on the
   reporting delay
 
-- [`plot_confirmation_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_confirmation_status.md)
+- [`plot_validation_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_validation_status.md)
   **\[experimental\]** : How much of each day has been resolved
 
 - [`plot_cycles()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_cycles.md)
@@ -646,12 +649,10 @@ The methods that keep the class alive inside a pipeline.
 
 ### All vignettes
 
-- [Diagnosing reporting batches and other reporting-delay
-  artifacts](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.md):
 - [Adding your own nowcasting
   model](https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.md):
-- [Describing and diagnosing a
-  tbl_now](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.md):
+- [Diagnosing a
+  tbl_now](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.md):
 - [One call, many models: run_nowcast(), custom backends and
   ensembles](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.md):
 - [A complete nowcasting workflow: hospital-acquired infections in

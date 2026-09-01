@@ -212,14 +212,14 @@ diagnose(hai_raw_now) |>
   filter(status == "skipped") |>
   select(check, scope, message)
 #> # A tibble: 6 × 3
-#>   check      scope                  message                                                                               
-#>   <chr>      <chr>                  <chr>                                                                                 
-#> 1 duplicates key                    A line list is one row per case, so identical rows are two cases rather than a repeat.
-#> 2 negatives  count                  A line list has no count column to go negative.                                       
-#> 3 ordering   event_to_confirmation  The object carries no confirmation process.                                           
-#> 4 ordering   report_to_confirmation The object carries no confirmation process.                                           
-#> 5 signposts  confirmation           The object carries no confirmation process.                                           
-#> 6 strata     pending                The object carries no confirmation process.
+#>   check      scope                message                                                                               
+#>   <chr>      <chr>                <chr>                                                                                 
+#> 1 duplicates key                  A line list is one row per case, so identical rows are two cases rather than a repeat.
+#> 2 negatives  count                A line list has no count column to go negative.                                       
+#> 3 ordering   event_to_validation  The object carries no validation process.                                             
+#> 4 ordering   report_to_validation The object carries no validation process.                                             
+#> 5 signposts  validation           The object carries no validation process.                                             
+#> 6 strata     pending              The object carries no validation process.
 ```
 
 `skipped` is not `ok`. `ok` means a check ran and found nothing;
@@ -241,12 +241,12 @@ deliberately refuses to answer:
 diagnose_signposts(hai_raw_now) |>
   select(scope, status, message)
 #> # A tibble: 4 × 3
-#>   scope                status  message                                            
-#>   <chr>                <ord>   <chr>                                              
-#> 1 confirmation_batches not_run "Run: diagnose_batches(x, axis = \"confirmation\")"
-#> 2 report               not_run "Run: diagnose_drift(x, axis = \"report\")"        
-#> 3 report_batches       not_run "Run: diagnose_batches(x, axis = \"report\")"      
-#> 4 confirmation         skipped "The object carries no confirmation process."
+#>   scope              status  message                                          
+#>   <chr>              <ord>   <chr>                                            
+#> 1 report             not_run "Run: diagnose_drift(x, axis = \"report\")"      
+#> 2 report_batches     not_run "Run: diagnose_batches(x, axis = \"report\")"    
+#> 3 validation_batches not_run "Run: diagnose_batches(x, axis = \"validation\")"
+#> 4 validation         skipped "The object carries no validation process."
 ```
 
 [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
@@ -1195,10 +1195,11 @@ burying.
   the full anatomy of a `tbl_now`, data types, and temporal effects.
 - End-to-end tutorial on real, messy surveillance data — cleaning,
   diagnostics and nowcasting:
-  <https://rodrigozepeda.github.io/tbl.now/articles/Example.html>
-- Tutorial on diagnosing problems with your dataset, detecting batches
-  and other reporting-delay artifacts:
-  <https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html>
+  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
+- Tutorial on diagnosing your dataset — what is in it, what is
+  structurally wrong with it, and detecting batches and other
+  reporting-delay artifacts:
+  <https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html>
 - Using different nowcasting engines for the same dataset:
   <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
 - Ensemble nowcasting across different engines

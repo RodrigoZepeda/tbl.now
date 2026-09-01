@@ -101,6 +101,10 @@ tbl_nowcast(predictions = predictions, method = "toy", event_date = "onset_week"
 #> • event dates: 2
 #> • quantile levels: 0.5 and 0.9
 #> • draws: none (quantiles only)
+#> 
+#> Nowcast at "2020-01-12" (q50):
+#> • 12
+#> 
 #> # A tibble: 4 × 3
 #>   onset_week .quantile_level .value
 #>   <date>               <dbl>  <dbl>

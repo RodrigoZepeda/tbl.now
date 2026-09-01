@@ -41,7 +41,7 @@ More concretely, `tbl.now` was designed to:
   operations.
 
 - [Diagnose reporting
-  artefacts](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html)
+  artefacts](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
   directly from the data (such as reporting-delay drift and change
   points) as well as batch (backlog) reporting.
 
@@ -763,27 +763,27 @@ df_now |>
   add_temporal_effects(temporal_effects(day_of_week = TRUE),  date_type = "report_date")
 ```
 
-### The confirmation process
+### The validation process
 
 Some surveillance systems have a **third** date. A case is not only
 reported – it is later *resolved*: a laboratory issues the result that
 confirms it, or rules it out. Influenza is the standard picture:
 symptoms begin (the event), the patient visits a doctor (the report),
-and days later a swab comes back positive (the confirmation) or negative
+and days later a swab comes back positive (the validation) or negative
 (a *retraction* – the case was reported but is not a case after all).
 
-A `tbl_now` can carry this with `confirmation_date`, an optional
-`confirmation_type`, and its own `confirmation_units`. The timeline it
+A `tbl_now` can carry this with `validation_date`, an optional
+`validation_type`, and its own `validation_units`. The timeline it
 assumes is
 
-\text{event date} \le \text{report date} \le \text{confirmation date}
-\le \text{now}
+\text{event date} \le \text{report date} \le \text{validation date} \le
+\text{now}
 
-`confirmation_type` takes the values `"confirmed"`, `"retracted"`,
+`validation_type` takes the values `"confirmed"`, `"retracted"`,
 `"pending"` or `NA`. **Pending** is the important one: it means the case
 has been reported and is still waiting for a result, so it has *no*
-confirmation date. That is a different thing from a case whose result
-you simply never recorded, which is `NA`.
+validation date. That is a different thing from a case whose result you
+simply never recorded, which is `NA`.
 
 We will use `hai_bucaramanga`, an open extract of healthcare-associated
 infections from Bucaramanga, Colombia, which records all three dates:
@@ -801,8 +801,8 @@ hai <- hai_bucaramanga |>
     received_date >= specimen_date
   ) |>
   mutate(
-    # A result was issued: that is the confirmation. Everything else is still
-    # waiting, and a case that is waiting has no confirmation date.
+    # A result was issued: that is the validation. Everything else is still
+    # waiting, and a case that is waiting has no validation date.
     result_date = if_else(
       !is.na(report_date) & report_date >= received_date,
       report_date, as.Date(NA)
@@ -824,8 +824,8 @@ hai_now <- hai |>
   tbl_now(
     event_date        = specimen_date, # the specimen was taken
     report_date       = received_date, # the laboratory received it
-    confirmation_date = result_date, # the laboratory issued a result
-    confirmation_type = result,
+    validation_date = result_date, # the laboratory issued a result
+    validation_type = result,
     data_type         = "linelist",
     verbose           = FALSE
   )
@@ -849,19 +849,19 @@ hai_now
 #> 10    13 2018-10-03    2018-10-03    2018-12-03  Urine       Urin… Enterobacter…
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2019-12-01 | Event date: "specimen_date" | Report date: "received_date"
-#> # Confirmation date: "result_date" ("days") | resolved: 201/222
+#> # Validation date: "result_date" ("days") | resolved: 201/222
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 212 more rows
 #> # ℹ 13 more variables: sex <fct>, age_group <ord>, case_type <fct>,
 #> #   final_condition <fct>, icu_type <fct>, institution <int>,
 #> #   result_date <date>, result <chr>, .event_num <dbl>, .report_num <dbl>,
-#> #   .delay <dbl>, .confirmation_num <dbl>, .confirmation_delay <dbl>
+#> #   .delay <dbl>, .validation_num <dbl>, .validation_delay <dbl>
 ```
 
-The footer now carries a confirmation line – the column, its units, and
+The footer now carries a validation line – the column, its units, and
 how many cases have actually been resolved. Two derived columns appear
-alongside `.delay`: `.confirmation_num` (the confirmation date on the
-same numeric grid as the other dates) and `.confirmation_delay`, the
+alongside `.delay`: `.validation_num` (the validation date on the same
+numeric grid as the other dates) and `.validation_delay`, the
 laboratory’s **turnaround** – the time from report to result, which is a
 different quantity from the reporting delay.
 
@@ -872,22 +872,22 @@ median(hai_now$.delay, na.rm = TRUE)
 #> [1] 0
 
 # Turnaround: laboratory to result.
-median(hai_now$.confirmation_delay, na.rm = TRUE)
+median(hai_now$.validation_delay, na.rm = TRUE)
 #> [1] 2
 ```
 
-Confirmation also moves `now`. A result issued on a date means you were,
+Validation also moves `now`. A result issued on a date means you were,
 by definition, still observing the system on that date, so `now` is
-never earlier than the last confirmation – even when reporting stopped
+never earlier than the last validation – even when reporting stopped
 before it.
 
 ``` r
 
 get_now(hai_now)
 #> [1] "2019-12-01"
-get_confirmation_units(hai_now)
+get_validation_units(hai_now)
 #> [1] "days"
-has_confirmation(hai_now)
+has_validation(hai_now)
 #> [1] TRUE
 ```
 
@@ -917,22 +917,21 @@ head(get_net_confirmed(hai_now), 3) # confirmed minus retracted
 `get_nth_confirmed(x, delay)` counts only the cases resolved *within* a
 given number of periods – what you would have known that soon after the
 report – and
-[`get_initial_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_counts.md)
+[`get_initial_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
 is the same-period case. These mirror
 [`get_nth_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
 and
 [`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
 on the report axis.
 
-If your data records absurdly long confirmation delays – a result
-“issued” two years later is usually a data-entry artefact, not a
-laboratory –
-[`censor_confirmation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+If your data records absurdly long validation delays – a result “issued”
+two years later is usually a data-entry artefact, not a laboratory –
+[`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
 returns those cases to `"pending"`, which is what they really were.
 
 #### How much of the epidemic has been resolved?
 
-[`plot_confirmation_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_confirmation_status.md)
+[`plot_validation_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_validation_status.md)
 shows the share of cases confirmed, retracted and pending over time. A
 pending share that grows towards the right-hand edge is normal – recent
 cases have not had time to come back from the laboratory – but a pending
@@ -941,12 +940,12 @@ behind.
 
 ``` r
 
-plot_confirmation_status(hai_now)
+plot_validation_status(hai_now)
 ```
 
 ![](tbl.now_files/figure-html/unnamed-chunk-25-1.png)
 
-#### The confirmation axis
+#### The validation axis
 
 Every reporting diagnostic in the package asks one question: did an
 unusual number of records arrive on this date, and with what delay? That
@@ -956,31 +955,31 @@ so the diagnostics take an `axis` argument instead of being duplicated:
 ``` r
 
 # The same picture, drawn for the laboratory instead of the surveillance desk.
-plot_reporting_triangle(hai_now, axis = "confirmation")
-plot_delay_profiles(hai_now, axis = "confirmation")
-plot_delay_drift(hai_now, axis = "confirmation")
-diagnostic_plot(hai_now, axis = "confirmation")
+plot_reporting_triangle(hai_now, axis = "validation")
+plot_delay_profiles(hai_now, axis = "validation")
+plot_delay_drift(hai_now, axis = "validation")
+diagnostic_plot(hai_now, axis = "validation")
 
 # A laboratory clearing a backlog is a batch, exactly as a surveillance system
 # clearing its inbox is.
-diagnose_batches(hai_now, axis = "confirmation")
+diagnose_batches(hai_now, axis = "validation")
 ```
 
-Two notes on what `axis = "confirmation"` means. Delays are still
-measured **from the event**, so the report and confirmation axes are
-directly comparable and the gap between them is the time the laboratory
-adds. And cases that are still `"pending"` are excluded: they have no
-confirmation date, so counting them would invent an arrival on a date
-they do not have.
+Two notes on what `axis = "validation"` means. Delays are still measured
+**from the event**, so the report and validation axes are directly
+comparable and the gap between them is the time the laboratory adds. And
+cases that are still `"pending"` are excluded: they have no validation
+date, so counting them would invent an arrival on a date they do not
+have.
 
-Finally, when a system produces both confirmations and retractions you
-can ask whether they take equally long – a laboratory that rules cases
-out faster than it confirms them will bias any nowcast that treats the
-two alike.
-[`diagnose_confirmation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md)
+Finally, when a system produces both validations and retractions you can
+ask whether they take equally long – a laboratory that rules cases out
+faster than it confirms them will bias any nowcast that treats the two
+alike.
+[`diagnose_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
 tests exactly that (a Wilcoxon rank-sum test on the two delay
 distributions) and
-[`plot_confirmation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md)
+[`plot_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
 draws it. The Bucaramanga extract records no retractions, so there is
 nothing to compare here.
 
@@ -1567,7 +1566,7 @@ The others are
 [`cases_per_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`zero_run_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`prop_confirmation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`prop_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
@@ -1625,17 +1624,17 @@ that answers each one — the two sections that follow:
 diagnose_signposts(dengue_now) |>
   select(scope, status, message)
 #> # A tibble: 4 × 3
-#>   scope                status  message                                          
-#>   <chr>                <ord>   <chr>                                            
-#> 1 confirmation_batches not_run "Run: diagnose_batches(x, axis = \"confirmation\…
-#> 2 report               not_run "Run: diagnose_drift(x, axis = \"report\")"      
-#> 3 report_batches       not_run "Run: diagnose_batches(x, axis = \"report\")"    
-#> 4 confirmation         skipped "The object carries no confirmation process."
+#>   scope              status  message                                          
+#>   <chr>              <ord>   <chr>                                            
+#> 1 report             not_run "Run: diagnose_drift(x, axis = \"report\")"      
+#> 2 report_batches     not_run "Run: diagnose_batches(x, axis = \"report\")"    
+#> 3 validation_batches not_run "Run: diagnose_batches(x, axis = \"validation\")"
+#> 4 validation         skipped "The object carries no validation process."
 ```
 
 `skipped` is a distinct status from `ok`, and the difference matters:
 `ok` means the check ran and found nothing, whereas `skipped` means it
-could not run at all — here because `dengue_now` carries no confirmation
+could not run at all — here because `dengue_now` carries no validation
 process. A check that cannot be performed is never silently reported as
 a pass.
 
@@ -1729,7 +1728,7 @@ diagnose_changepoint(dengue_now, stat = c("median", "spread"))
 ```
 
 You can get more information in the [corresponding
-article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html).
+article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html).
 
 ### Detecting batch reporting
 
@@ -1760,7 +1759,7 @@ batches |>
 
 Additional information on dealing with batches and other reporting delay
 artifacts can be found in the corresponding
-[article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html).
+[article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html).
 
 ## Other functions (utilities)
 
@@ -2118,10 +2117,10 @@ Wickham, Hadley, Mine Çetinkaya-Rundel, and Garrett Grolemund. 2023. *R
 for Data Science: Import, Tidy, Transform, Visualize, and Model Data*.
 O’Reilly Media, Inc.
 
-[^1]: More key dates are possible such as a `confirmation_date`. For
+[^1]: More key dates are possible such as a `validation_date`. For
     example in the case of influenza one might consider the `event_date`
     = symptom onset, the `report_date` = when the patient was first
-    diagnosed by a medical professional, and `confirmation_date` = when
+    diagnosed by a medical professional, and `validation_date` = when
     the positive test’s results for influenza were recorded. We will
     come back to these multiple dates later.
 

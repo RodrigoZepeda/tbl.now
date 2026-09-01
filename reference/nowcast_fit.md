@@ -36,6 +36,7 @@ nowcast_fit(
   ...,
   draws = 1000,
   delays_unit = NULL,
+  max_delay = NULL,
   quantile_levels = nowcast_quantile_levels(),
   verbose = TRUE
 )
@@ -142,6 +143,15 @@ nowcast_fit(
 
   (`"baselinenowcast"` only) Unit of the reporting triangle's delay
   axis; inferred from the object's time units when `NULL`.
+
+- max_delay:
+
+  (`"baselinenowcast"` only) Number of delay periods to keep, forwarded
+  to
+  [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md).
+  `NULL` keeps every delay, which a snapshot ("as of") series cannot be
+  fitted with – see
+  [engine_baselinenowcast()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md).
 
 - preprocess_args:
 

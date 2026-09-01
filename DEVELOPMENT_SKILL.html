@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,9 +19,8 @@
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -138,20 +137,20 @@
 </tr><tr><td><code>computed_temporal_effect_cols</code></td>
 <td>materialised effect column names</td>
 <td><code><a href="reference/nowcast_data_getters.html">get_temporal_effect_cols()</a></code></td>
-</tr><tr><td><code>confirmation_date</code></td>
-<td>column name of the confirmation date, or <code>NULL</code>
+</tr><tr><td><code>validation_date</code></td>
+<td>column name of the validation date, or <code>NULL</code>
 </td>
 <td>
-<code><a href="reference/confirmation_getters.html">get_confirmation_date()</a></code>, <code><a href="reference/confirmation_getters.html">has_confirmation()</a></code>
+<code><a href="reference/nowcast_data_getters.html">get_validation_date()</a></code>, <code><a href="reference/nowcast_data_getters.html">has_validation()</a></code>
 </td>
-</tr><tr><td><code>confirmation_type</code></td>
+</tr><tr><td><code>validation_type</code></td>
 <td>column name of the outcome, or <code>NULL</code>
 </td>
-<td><code><a href="reference/confirmation_getters.html">get_confirmation_type()</a></code></td>
-</tr><tr><td><code>confirmation_units</code></td>
+<td><code><a href="reference/nowcast_data_getters.html">get_validation_type()</a></code></td>
+</tr><tr><td><code>validation_units</code></td>
 <td>same set as <code>report_units</code>
 </td>
-<td><code><a href="reference/confirmation_getters.html">get_confirmation_units()</a></code></td>
+<td><code><a href="reference/nowcast_data_getters.html">get_validation_units()</a></code></td>
 </tr></tbody></table></div>
 <div class="section level3">
 <h3 id="the-rules">The rules<a class="anchor" aria-label="anchor" href="#the-rules"></a></h3>
@@ -167,18 +166,18 @@
 <strong>Temporal effects are lazy.</strong> <code><a href="reference/nowcast_data_getters.html">get_temporal_effects()</a></code> returns <em>specs</em>; the columns do not exist until <code><a href="reference/add_temporal_effects.html">compute_temporal_effects()</a></code> runs. Converters call <code>.materialize_temporal_effects()</code> for this. Calling <code><a href="reference/add_temporal_effects.html">compute_temporal_effects()</a></code> before <code><a href="reference/add_temporal_effects.html">add_temporal_effects()</a></code> is a no-op.</li>
 </ol></div>
 <div class="section level3">
-<h3 id="the-confirmation-process-the-optional-third-date">The confirmation process (the optional third date)<a class="anchor" aria-label="anchor" href="#the-confirmation-process-the-optional-third-date"></a></h3>
-<p><code>event &lt;= report &lt;= confirmation &lt;= now</code>. It is <strong>optional</strong>: most objects have no confirmation, so every code path must work when <code>has_confirmation(x)</code> is <code>FALSE</code>, and <code>.confirmation_group_cols(x)</code> returns <code>character(0)</code> there so it can be spliced into a grouping unconditionally.</p>
+<h3 id="the-validation-process-the-optional-third-date">The validation process (the optional third date)<a class="anchor" aria-label="anchor" href="#the-validation-process-the-optional-third-date"></a></h3>
+<p><code>event &lt;= report &lt;= validation &lt;= now</code>. It is <strong>optional</strong>: most objects have no validation, so every code path must work when <code>has_validation(x)</code> is <code>FALSE</code>, and <code>.validation_group_cols(x)</code> returns <code>character(0)</code> there so it can be spliced into a grouping unconditionally.</p>
 <ol style="list-style-type: decimal"><li>
-<strong>Every rebuild must carry it.</strong> <code>do.call(tbl_now, c(list(...), .confirmation_rebuild_args(x, data)))</code>. This is the same silent-drop hazard as strata: <code>summarise()</code>, <code>group_by()</code>, <code>ungroup()</code>, <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code> and <code><a href="reference/align_weeks.html">align_weeks()</a></code> each rebuild by hand, and each one dropped the confirmation until it was spliced in. <strong>Grep for <code>do.call(tbl_now</code> before adding an attribute</strong> and fix every site.</li>
+<strong>Every rebuild must carry it.</strong> <code>do.call(tbl_now, c(list(...), .validation_rebuild_args(x, data)))</code>. This is the same silent-drop hazard as strata: <code>summarise()</code>, <code>group_by()</code>, <code>ungroup()</code>, <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code> and <code><a href="reference/align_weeks.html">align_weeks()</a></code> each rebuild by hand, and each one dropped the validation until it was spliced in. <strong>Grep for <code>do.call(tbl_now</code> before adding an attribute</strong> and fix every site.</li>
 <li>
-<strong><code>"pending"</code> means no date, not a missing date.</strong> A pending case is reported and still waiting. Anything that counts arrivals on the confirmation axis must drop pending rows – counting them invents an arrival on a date they do not have.</li>
+<strong><code>"pending"</code> means no date, not a missing date.</strong> A pending case is reported and still waiting. Anything that counts arrivals on the validation axis must drop pending rows – counting them invents an arrival on a date they do not have.</li>
 <li>
-<strong>Two different delays.</strong> <code>.confirmation_delay</code> is the laboratory’s turnaround, measured <strong>from the report</strong>. The <code>axis = "confirmation"</code> diagnostics measure <strong>from the event</strong>, so the two axes are comparable. Do not mix them up.</li>
+<strong>Two different delays.</strong> <code>.validation_delay</code> is the laboratory’s turnaround, measured <strong>from the report</strong>. The <code>axis = "validation"</code> diagnostics measure <strong>from the event</strong>, so the two axes are comparable. Do not mix them up.</li>
 <li>
-<strong>Do not duplicate a diagnostic for the new axis.</strong> Add <code>axis = c("report", "confirmation")</code> and forward it to <code>.batch_report_increments()</code> / <code>.batch_registration()</code>, which is where the axis is actually swapped. One switch point, no parallel implementations.</li>
+<strong>Do not duplicate a diagnostic for the new axis.</strong> Add <code>axis = c("report", "validation")</code> and forward it to <code>.batch_report_increments()</code> / <code>.batch_registration()</code>, which is where the axis is actually swapped. One switch point, no parallel implementations.</li>
 <li>
-<strong><code>now</code> is confirmation-aware.</strong> <code>infer_now()</code> takes the max over both, and setting <code>now</code> before the last confirmation is an error.</li>
+<strong><code>now</code> is validation-aware.</strong> <code>infer_now()</code> takes the max over both, and setting <code>now</code> before the last validation is an error.</li>
 </ol></div>
 <div class="section level3">
 <h3 id="protected-columns">Protected columns<a class="anchor" aria-label="anchor" href="#protected-columns"></a></h3>
@@ -410,7 +409,7 @@
 <p><strong>One <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> at the top of a precompute script is not reproducibility.</strong> It only pins anything if every engine consumes the same random numbers in the same order, so refitting a SUBSET lands somewhere different from a full run. This bit twice: it is how the <code>1e8</code> EpiNow2 fit above appeared and then refused to reappear, and refitting <code>baselinenowcast</code> alone silently changed its estimates, because its bootstrap resamples off the same RNG. It is not a Stan problem – it is every stochastic engine.</p>
 <p>Seed per <code>(engine, stratum)</code> <strong>immediately before each fit</strong>, so a fit depends only on which fit it is, not on what ran before it or whether anything did. <code>nowcast_models_precompute.R</code> seeds once before the run; both engines then reproduce to <code>max abs diff == 0</code> with the RNG deliberately perturbed in between.</p>
 </li>
-<li><p><strong>A uniqueness key that omits an attribute reports real rows as duplicates.</strong> <code><a href="reference/validate_tbl_now.html">validate_tbl_now()</a></code>’s non-uniqueness warning built its <code>distinct()</code> key from the dates, strata, covariates and effect columns. When confirmation arrived, a case and its own retraction – same event, same report, opposite outcome – came out as “exact duplicates”, advising <code><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">dplyr::distinct()</a></code>, which would have <strong>deleted the retraction</strong>. Any column that legitimately distinguishes two rows belongs in that key.</p></li>
+<li><p><strong>A uniqueness key that omits an attribute reports real rows as duplicates.</strong> <code><a href="reference/validate_tbl_now.html">validate_tbl_now()</a></code>’s non-uniqueness warning built its <code>distinct()</code> key from the dates, strata, covariates and effect columns. When validation arrived, a case and its own retraction – same event, same report, opposite outcome – came out as “exact duplicates”, advising <code><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">dplyr::distinct()</a></code>, which would have <strong>deleted the retraction</strong>. Any column that legitimately distinguishes two rows belongs in that key.</p></li>
 <li><p><strong><code>.quietly_if()</code>/<code><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings()</a></code> around a backend hides the warnings that matter.</strong> Suppress messages only. (Recorded twice now: <code>run_engine()</code> and <code><a href="reference/nowcast_fit.html">nowcast_fit()</a></code>.)</p></li>
 </ul><hr></div>
 <div class="section level2">
@@ -457,12 +456,12 @@
 <h3 id="the-schema-is-the-contract">The schema is the contract<a class="anchor" aria-label="anchor" href="#the-schema-is-the-contract"></a></h3>
 <p>Every function in each family returns the same columns, so <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and <code><a href="reference/diagnose.html">diagnose()</a></code> are literally the <code>bind_rows()</code> of their components — and there is a test asserting exactly that. When you add a block:</p>
 <ul><li>return the <strong>full schema</strong>, and let blocks <strong>omit</strong> columns they do not populate. <code>bind_rows()</code> then infers each column’s type. Handing it a logical <code>NA</code> where a <code>Date</code> belongs is an error, not a coercion — which is why <code>date_min</code>/<code>date_max</code> appear only when a coverage row is present.</li>
-<li>put the <em>subset being described</em> in <code>stratum</code> and the <em>category</em> in <code>quantity</code>. <code>"confirmation_type = confirmed"</code> is a quantity; <code>"Female"</code> is a stratum. Mixing them makes a compositional row impossible to interpret.</li>
+<li>put the <em>subset being described</em> in <code>stratum</code> and the <em>category</em> in <code>quantity</code>. <code>"validation_type = confirmed"</code> is a quantity; <code>"Female"</code> is a stratum. Mixing them makes a compositional row impossible to interpret.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="skipped-is-not-ok-and-the-difference-is-load-bearing">
 <code>skipped</code> is not <code>ok</code>, and the difference is load-bearing<a class="anchor" aria-label="anchor" href="#skipped-is-not-ok-and-the-difference-is-load-bearing"></a></h3>
-<p><code>ok</code> means the check ran and found nothing. <code>skipped</code> means it could not run — no confirmation process, the wrong data type, an optional package absent. A check that cannot be performed must never be reported as a pass; silence that reads as approval is the main way a health check misleads.</p>
+<p><code>ok</code> means the check ran and found nothing. <code>skipped</code> means it could not run — no validation process, the wrong data type, an optional package absent. A check that cannot be performed must never be reported as a pass; silence that reads as approval is the main way a health check misleads.</p>
 <p>The example that keeps coming up: <strong><code><a href="reference/diagnose.html">diagnose()</a></code> refuses to look for duplicates in a line list</strong>, because one row is one case, so two identical rows are two infections. That is a <code>skipped</code> with a reason, not an <code>ok</code>, and not a bug.</p>
 </div>
 <div class="section level3">

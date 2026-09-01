@@ -106,9 +106,9 @@ and
 [`diagnose_batch_shape()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batch_shape.md),
 the tests this exists to validate;
 [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
-for recording a real batch rather than planting one. The [*Diagnosing
-reporting batches*
-article](https://rodrigozepeda.github.io/tbl.now/articles/batch-reporting.html)
+for recording a real batch rather than planting one. The [*Diagnosing a
+tbl_now*
+article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 uses this to calibrate the screen.
 
 ## Examples

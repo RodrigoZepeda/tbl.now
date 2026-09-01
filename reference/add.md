@@ -64,6 +64,22 @@ remove_all_covariates(x)
 replace_temporal_effects(x, t_effects)
 
 remove_temporal_effects(x)
+
+add_validation_date(
+  x,
+  validation_date,
+  validation_type = NULL,
+  validation_units = "auto"
+)
+
+change_validation_date(
+  x,
+  validation_date,
+  validation_type = NULL,
+  validation_units = "auto"
+)
+
+remove_validation_date(x)
 ```
 
 ## Arguments
@@ -134,6 +150,36 @@ remove_temporal_effects(x)
   object or a character vector with the names of the columns containing
   the temporal effects.
 
+- validation_date:
+
+  (optional)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  column holding a **third** date: the day the report was resolved.
+  Influenza is the picture to keep in mind – symptoms begin (the event),
+  the patient sees a doctor (the report), and days later a swab comes
+  back. The assumed timeline is
+  `event_date <= report_date <= validation_date <= now`. Leave `NULL`
+  (the default) for the usual two-date object. See
+  `add_validation_date()`.
+
+- validation_type:
+
+  (optional)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  column saying what the resolution *was*: `"confirmed"`, `"retracted"`
+  (it was reported, but it is not a case after all), `"pending"` or
+  `NA`. **`"pending"` means reported and still waiting**, so it carries
+  no validation date – which is a different thing from a result that was
+  never recorded (`NA`). A validation date with no type warns rather
+  than guessing, because a date alone cannot say whether the case was
+  confirmed or retracted.
+
+- validation_units:
+
+  (optional) Character. Either `"auto"` (default), `"days"`, `"weeks"`,
+  `"months"`, `"years"` or `"numeric"` – the grid the validation date
+  lives on, resolved the same way as `report_units`.
+
 ## Value
 
 A `tbl_now` object with the attribute updated. The data are returned
@@ -179,6 +225,41 @@ latest date actually present:
     get_now(update_now(ndata_1992))
     #> [1] "1991-12-30"
 
+## The validation process, the optional third date
+
+`add_validation_date()`, `change_validation_date()` and
+`remove_validation_date()` set the **third** date a surveillance record
+can carry: after the event happened and after it was reported, somebody
+decided whether it was real. For influenza that is the laboratory result
+– and it can come back negative, in which case the case is *retracted*
+rather than confirmed.
+
+Attaching one is the only verb on this page that changes more than a
+name:
+
+- **`now` moves.** A validation is an observation, so the as-of moment
+  becomes the latest of the report and validation dates. Validation
+  refuses an object whose `now` falls before a validation that has
+  already happened.
+
+- **Two columns appear.** `.validation_num` is the date on the same
+  numeric anchor as `.event_num`/`.report_num`; `.validation_delay` is
+  the time from report to resolution. Both are protected, like `.delay`.
+
+- **Counting gains a dimension.**
+  [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
+  groups by the validation date and outcome as well, so a confirmed and
+  a retracted case on the same `(event, report)` pair stay separate
+  rather than being summed together.
+
+- **The timeline is checked.**
+  `event_date <= report_date <= validation_date`; rows that break it are
+  warned about, not silently accepted.
+
+A date on its own cannot say whether the test came back positive or
+negative, so leaving `validation_type` out gives every dated row `NA`
+and warns.
+
 ## See also
 
 [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
@@ -187,8 +268,6 @@ for setting these when the object is first built; the
 for reading them back;
 [`tbl_now_attributes()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_attributes.md)
 to list them all at once;
-[add_confirmation()](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)
-for the third-date attributes;
 [`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
 and
 [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
@@ -275,6 +354,60 @@ counts |>
   change_case_count(inflated) |>
   get_case_count()
 #> [1] "inflated"
+
+## ---- The validation process, the optional third date -----------------
+
+data(hai_bucaramanga)
+hai <- hai_bucaramanga |>
+  dplyr::filter(
+    !is.na(specimen_date), !is.na(report_date), !is.na(received_date)
+  ) |>
+  tbl_now(
+    event_date = specimen_date, report_date = report_date,
+    data_type = "linelist", verbose = FALSE
+  )
+#> Warning: 16 rows have a `report_date` before `event_date`
+#> ℹ A negative reporting delay is not a delay; the two date columns may be
+#>   swapped, or the rows may be data-entry errors.
+
+## Specimen taken -> reported -> (here) the laboratory receipt as the
+# validation step. A date alone cannot say how the case resolved, so this
+# warns until an outcome column is supplied.
+hai <- suppressWarnings(add_validation_date(hai, received_date))
+get_validation_date(hai)
+#> [1] "received_date"
+
+hai$outcome <- ifelse(seq_len(nrow(hai)) %% 10 == 0, "retracted", "confirmed")
+hai <- change_validation_date(hai, received_date, validation_type = outcome)
+#> Warning: 16 rows have a `report_date` before `event_date`
+#> ℹ A negative reporting delay is not a delay; the two date columns may be
+#>   swapped, or the rows may be data-entry errors.
+#> Warning: 125 rows are validated BEFORE they were reported.
+#> ℹ The timeline is `event_date <= report_date <= validation_date`; a negative
+#>   validation delay is not a delay. First affected rows: 2, 3, 4, 5, and 6.
+#> Warning: 16 rows have a `report_date` before `event_date`
+#> ℹ A negative reporting delay is not a delay; the two date columns may be
+#>   swapped, or the rows may be data-entry errors.
+#> Warning: 125 rows are validated BEFORE they were reported.
+#> ℹ The timeline is `event_date <= report_date <= validation_date`; a negative
+#>   validation delay is not a delay. First affected rows: 2, 3, 4, 5, and 6.
+table(hai[[get_validation_type(hai)]])
+#> 
+#> confirmed retracted 
+#>       197        21 
+
+## Dropping it leaves an ordinary two-date object.
+has_validation(remove_validation_date(hai))
+#> Warning: 16 rows have a `report_date` before `event_date`
+#> ℹ A negative reporting delay is not a delay; the two date columns may be
+#>   swapped, or the rows may be data-entry errors.
+#> Warning: 125 rows are validated BEFORE they were reported.
+#> ℹ The timeline is `event_date <= report_date <= validation_date`; a negative
+#>   validation delay is not a delay. First affected rows: 2, 3, 4, 5, and 6.
+#> Warning: 16 rows have a `report_date` before `event_date`
+#> ℹ A negative reporting delay is not a delay; the two date columns may be
+#>   swapped, or the rows may be data-entry errors.
+#> [1] FALSE
 
 ## ---- Temporal effects --------------------------------------------------
 

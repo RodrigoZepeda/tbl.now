@@ -181,6 +181,10 @@ nc
 #> • event dates: 26
 #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
 #> • draws: none (quantiles only)
+#> 
+#> Nowcast at "2010-11-29" (q50, 2.5-97.5% interval):
+#> • 35 [28, 42]
+#> 
 #> # A tibble: 6 × 3
 #>   onset_week .quantile_level .value
 #>   <date>               <dbl>  <dbl>
@@ -199,6 +203,10 @@ run_nowcast(dengue, example_engine(spread = 0.5), verbose = FALSE)
 #> • event dates: 26
 #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
 #> • draws: none (quantiles only)
+#> 
+#> Nowcast at "2010-11-29" (q50, 2.5-97.5% interval):
+#> • 35 [18, 52]
+#> 
 #> # A tibble: 6 × 3
 #>   onset_week .quantile_level .value
 #>   <date>               <dbl>  <dbl>

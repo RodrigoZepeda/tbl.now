@@ -19,7 +19,7 @@ the fast-reporting bulk sits along the short-delay bottom edge."><meta property=
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,9 +31,8 @@ the fast-reporting bulk sits along the short-delay bottom edge."><meta property=
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -83,7 +82,7 @@ the fast-reporting bulk sits along the short-delay bottom edge.</p>
 <span>  format <span class="op">=</span> <span class="st">"%d/%b/%y"</span>,</span>
 <span>  max_cells <span class="op">=</span> <span class="fl">12000L</span>,</span>
 <span>  trans <span class="op">=</span> <span class="st">"sqrt"</span>,</span>
-<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"confirmation"</span><span class="op">)</span>,</span>
+<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
 <span>  palette <span class="op">=</span> <span class="fu">.tbl_now_palette</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -127,10 +126,10 @@ Default <code>"%d/%b/%y"</code>.</p></dd>
 
 <dt id="arg-axis">axis<a class="anchor" aria-label="anchor" href="#arg-axis"></a></dt>
 <dd><p>Which time axis to draw: <code>"report"</code> (default) or
-<code>"confirmation"</code>. On the confirmation axis the picture answers the
+<code>"validation"</code>. On the validation axis the picture answers the
 laboratory's version of the question – when results arrived, rather than
-when reports did. Needs a confirmation process (see <code><a href="confirmation_setters.html">add_confirmation()</a></code>);
-cases still <code>"pending"</code> have no confirmation date and are left out.</p></dd>
+when reports did. Needs a validation process (see <code><a href="add.html">add_validation_date()</a></code>);
+cases still <code>"pending"</code> have no validation date and are left out.</p></dd>
 
 
 <dt id="arg-palette">palette<a class="anchor" aria-label="anchor" href="#arg-palette"></a></dt>

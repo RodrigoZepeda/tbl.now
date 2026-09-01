@@ -15,8 +15,8 @@ long"*.
 - `censor_delays_above()` does this for the **reporting** delay, by
   setting the `is_censored` flag.
 
-- `censor_confirmation_delays_above()` does the same for the
-  **confirmation** delay – a case still waiting on a laboratory result
+- `censor_validation_delays_above()` does the same for the
+  **validation** delay – a case still waiting on a laboratory result
   months later is, in practice, never going to be resolved – by
   returning it to `"pending"`.
 
@@ -25,21 +25,21 @@ long"*.
 ``` r
 censor_delays_above(x, max_delay, verbose = TRUE)
 
-censor_confirmation_delays_above(x, max_delay, verbose = TRUE)
+censor_validation_delays_above(x, max_delay, verbose = TRUE)
 ```
 
 ## Arguments
 
 - x:
 
-  A `tbl_now` object. `censor_confirmation_delays_above()` requires one
-  that carries a confirmation process (see
-  [add_confirmation()](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md)).
+  A `tbl_now` object. `censor_validation_delays_above()` requires one
+  that carries a validation process (see
+  [add_validation_date()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)).
 
 - max_delay:
 
   Numeric. Delays strictly greater than this are censored, in the
-  object's event units (reporting) or confirmation units (confirmation).
+  object's event units (reporting) or validation units (validation).
 
 - verbose:
 
@@ -51,10 +51,10 @@ censor_confirmation_delays_above(x, max_delay, verbose = TRUE)
 `censor_delays_above()` returns the `tbl_now` with its `is_censored`
 column updated, creating it when absent.
 
-`censor_confirmation_delays_above()` returns the `tbl_now` with the
-offending rows' `confirmation_type` set to `"pending"` and their
-confirmation date set to `NA` – a resolution you refuse to believe is
-not a resolution.
+`censor_validation_delays_above()` returns the `tbl_now` with the
+offending rows' `validation_type` set to `"pending"` and their
+validation date set to `NA` – a resolution you refuse to believe is not
+a resolution.
 
 ## Details
 
@@ -69,7 +69,7 @@ censored stays censored.
 and
 [change_is_censored()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 to set the flag by hand;
-[`diagnose_confirmation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_delay.md)
+[`diagnose_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
 and
 [`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.md)
 to find the threshold worth using;
@@ -100,7 +100,7 @@ censored <- censor_delays_above(tn, max_delay = 60)
 censored[[get_is_censored(censored)]]
 #> [1] FALSE FALSE FALSE  TRUE
 
-# The confirmation counterpart: a laboratory result that took 90 days.
+# The validation counterpart: a laboratory result that took 90 days.
 cases <- data.frame(
   onset = as.Date("2021-01-04") + 0:4,
   visit = as.Date("2021-01-05") + 0:4,
@@ -109,12 +109,12 @@ cases <- data.frame(
 )
 flu <- tbl_now(cases,
   event_date = onset, report_date = visit,
-  confirmation_date = result, confirmation_type = outcome,
+  validation_date = result, validation_type = outcome,
   data_type = "linelist", verbose = FALSE
 )
 
 # That one goes back to "pending"; the other four stay confirmed.
-table(censor_confirmation_delays_above(flu, 30, verbose = FALSE)[["outcome"]])
+table(censor_validation_delays_above(flu, 30, verbose = FALSE)[["outcome"]])
 #> 
 #> confirmed   pending 
 #>         4         1 

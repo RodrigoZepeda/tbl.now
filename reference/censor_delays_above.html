@@ -9,7 +9,7 @@ functions mark them as censored: the object keeps the case, but records
 its delay as "at least this long" instead of "exactly this long".
 censor_delays_above() does this for the reporting delay, by setting the
 is_censored flag.
-censor_confirmation_delays_above() does the same for the confirmation
+censor_validation_delays_above() does the same for the validation
 delay – a case still waiting on a laboratory result months later is, in
 practice, never going to be resolved – by returning it to "pending".
 
@@ -23,7 +23,7 @@ functions mark them as censored: the object keeps the case, but records
 its delay as "at least this long" instead of "exactly this long".
 censor_delays_above() does this for the reporting delay, by setting the
 is_censored flag.
-censor_confirmation_delays_above() does the same for the confirmation
+censor_validation_delays_above() does the same for the validation
 delay – a case still waiting on a laboratory result months later is, in
 practice, never going to be resolved – by returning it to "pending".
 
@@ -35,7 +35,7 @@ practice, never going to be resolved – by returning it to "pending".
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,9 +47,8 @@ practice, never going to be resolved – by returning it to "pending".
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/batch-reporting.html">Diagnosing reporting batches and other reporting-delay artifacts</a></li>
-    <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/describing-and-diagnosing.html">Describing and diagnosing a tbl_now</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
@@ -88,7 +87,7 @@ nowcast think reporting is far slower than it is.</p>
 functions mark them as <strong>censored</strong>: the object keeps the case, but records
 its delay as <em>"at least this long"</em> instead of <em>"exactly this long"</em>.</p><ul><li><p><code>censor_delays_above()</code> does this for the <strong>reporting</strong> delay, by setting the
 <code>is_censored</code> flag.</p></li>
-<li><p><code>censor_confirmation_delays_above()</code> does the same for the <strong>confirmation</strong>
+<li><p><code>censor_validation_delays_above()</code> does the same for the <strong>validation</strong>
 delay – a case still waiting on a laboratory result months later is, in
 practice, never going to be resolved – by returning it to <code>"pending"</code>.</p></li>
 </ul></div>
@@ -97,7 +96,7 @@ practice, never going to be resolved – by returning it to <code>"pending"</cod
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">censor_delays_above</span><span class="op">(</span><span class="va">x</span>, <span class="va">max_delay</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">censor_confirmation_delays_above</span><span class="op">(</span><span class="va">x</span>, <span class="va">max_delay</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">censor_validation_delays_above</span><span class="op">(</span><span class="va">x</span>, <span class="va">max_delay</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -105,13 +104,13 @@ practice, never going to be resolved – by returning it to <code>"pending"</cod
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>A <code>tbl_now</code> object. <code>censor_confirmation_delays_above()</code> requires one
-that carries a confirmation process (see <a href="confirmation_setters.html">add_confirmation()</a>).</p></dd>
+<dd><p>A <code>tbl_now</code> object. <code>censor_validation_delays_above()</code> requires one
+that carries a validation process (see <a href="add.html">add_validation_date()</a>).</p></dd>
 
 
 <dt id="arg-max-delay">max_delay<a class="anchor" aria-label="anchor" href="#arg-max-delay"></a></dt>
 <dd><p>Numeric. Delays strictly greater than this are censored, in
-the object's event units (reporting) or confirmation units (confirmation).</p></dd>
+the object's event units (reporting) or validation units (validation).</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -123,8 +122,8 @@ Default <code>TRUE</code>.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>censor_delays_above()</code> returns the <code>tbl_now</code> with its <code>is_censored</code> column
 updated, creating it when absent.</p>
-<p><code>censor_confirmation_delays_above()</code> returns the <code>tbl_now</code> with the offending
-rows' <code>confirmation_type</code> set to <code>"pending"</code> and their confirmation date set to
+<p><code>censor_validation_delays_above()</code> returns the <code>tbl_now</code> with the offending
+rows' <code>validation_type</code> set to <code>"pending"</code> and their validation date set to
 <code>NA</code> – a resolution you refuse to believe is not a resolution.</p>
     </div>
     <div class="section level2">
@@ -137,7 +136,7 @@ censored.</p>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><a href="add.html">add_is_censored()</a> and <a href="add.html">change_is_censored()</a> to set the flag by
-hand; <code><a href="confirmation_delay.html">diagnose_confirmation_delay()</a></code> and <code><a href="plot_delay_distribution.html">plot_delay_distribution()</a></code> to find
+hand; <code><a href="validation_delay.html">diagnose_validation_delay()</a></code> and <code><a href="plot_delay_distribution.html">plot_delay_distribution()</a></code> to find
 the threshold worth using; <code><a href="nowcast_diagnose_components.html">diagnose_truncation()</a></code> for the delays that are
 missing rather than long; <code><a href="complete_zeroes.html">complete_zeroes()</a></code> for the opposite problem.</p></div>
     </div>
@@ -163,7 +162,7 @@ missing rather than long; <code><a href="complete_zeroes.html">complete_zeroes()
 <span class="r-in"><span><span class="va">censored</span><span class="op">[[</span><span class="fu"><a href="nowcast_data_getters.html">get_is_censored</a></span><span class="op">(</span><span class="va">censored</span><span class="op">)</span><span class="op">]</span><span class="op">]</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE FALSE FALSE  TRUE</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># The confirmation counterpart: a laboratory result that took 90 days.</span></span></span>
+<span class="r-in"><span><span class="co"># The validation counterpart: a laboratory result that took 90 days.</span></span></span>
 <span class="r-in"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  onset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021-01-04"</span><span class="op">)</span> <span class="op">+</span> <span class="fl">0</span><span class="op">:</span><span class="fl">4</span>,</span></span>
 <span class="r-in"><span>  visit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021-01-05"</span><span class="op">)</span> <span class="op">+</span> <span class="fl">0</span><span class="op">:</span><span class="fl">4</span>,</span></span>
@@ -172,12 +171,12 @@ missing rather than long; <code><a href="complete_zeroes.html">complete_zeroes()
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">flu</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">cases</span>,</span></span>
 <span class="r-in"><span>  event_date <span class="op">=</span> <span class="va">onset</span>, report_date <span class="op">=</span> <span class="va">visit</span>,</span></span>
-<span class="r-in"><span>  confirmation_date <span class="op">=</span> <span class="va">result</span>, confirmation_type <span class="op">=</span> <span class="va">outcome</span>,</span></span>
+<span class="r-in"><span>  validation_date <span class="op">=</span> <span class="va">result</span>, validation_type <span class="op">=</span> <span class="va">outcome</span>,</span></span>
 <span class="r-in"><span>  data_type <span class="op">=</span> <span class="st">"linelist"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># That one goes back to "pending"; the other four stay confirmed.</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu">censor_confirmation_delays_above</span><span class="op">(</span><span class="va">flu</span>, <span class="fl">30</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">[[</span><span class="st">"outcome"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu">censor_validation_delays_above</span><span class="op">(</span><span class="va">flu</span>, <span class="fl">30</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">[[</span><span class="st">"outcome"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> confirmed   pending </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         4         1 </span>

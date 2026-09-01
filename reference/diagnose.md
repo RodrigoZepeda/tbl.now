@@ -171,8 +171,8 @@ and filtered with
 
 - `skipped`:
 
-  Could not be assessed – no confirmation process, the wrong data type,
-  or an optional package that is not installed.
+  Could not be assessed – no validation process, the wrong data type, or
+  an optional package that is not installed.
 
 ## See also
 
@@ -184,8 +184,8 @@ is wrong with it;
 [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
 for the same findings raised as errors and warnings;
 [`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md)
-for the picture version. The [*Describing and diagnosing a tbl_now*
-article](https://rodrigozepeda.github.io/tbl.now/articles/describing-and-diagnosing.html)
+for the picture version. The [*Diagnosing a tbl_now*
+article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 goes through the findings one at a time.
 
 ## Examples
@@ -201,45 +201,68 @@ ndata <- tbl_now(denguedat,
 
 # Everything, worst first
 diagnose(ndata)
-#> # A tibble: 32 × 10
-#>    check    scope stratum status n_affected n_total     prop message hint  rows 
-#>    <chr>    <chr> <chr>   <ord>       <dbl>   <dbl>    <dbl> <chr>   <chr> <lis>
-#>  1 now      now_… Female  note            3      NA NA       "The l… "Eve… <int>
-#>  2 now      now_… Male    note            3      NA NA       "The l… "Eve… <int>
-#>  3 now      now_… all     note            3      NA NA       "The l… "Eve… <int>
-#>  4 now      now_… Male    note            1      NA NA       "The l… "Eve… <int>
-#>  5 strata   size  Male    note        26395   52987  4.98e-1 "The s…  NA   <int>
-#>  6 strata   spar… Female  note           13    1095  1.19e-2 "The s… "A s… <int>
-#>  7 truncat… even… Female  note            1    1082  9.24e-4 "1 eve… "Thi… <int>
-#>  8 truncat… even… Male    note            1    1082  9.24e-4 "1 eve… "Thi… <int>
-#>  9 truncat… even… all     note            1    1091  9.17e-4 "1 eve… "Thi… <int>
-#> 10 declara… temp… all     ok              0       0 NA       "0 tem…  NA   <int>
-#> # ℹ 22 more rows
+#> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────
+#> 9 notes, 14 passed, 3 not run, 6 skipped.
+#> 
+#> Notes (9)
+#> ℹ now/now_gap_event [Female]: The last event date is 3 weeks before now ("2010-12-20").
+#>   → Everything in that window is still arriving; it is what a nowcast is for, and it is also what makes the last points of any plot look like a decline.
+#> ℹ now/now_gap_event [Male]: The last event date is 3 weeks before now ("2010-12-20").
+#> ℹ now/now_gap_event: The last event date is 3 weeks before now ("2010-12-20").
+#> ℹ now/now_gap_report [Male]: The last report date is 1 week before now ("2010-12-20").
+#> ℹ strata/size [Male]: The smallest stratum is "Male" with 26395 cases, 49.8% of the total.
+#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 1.2% of the event dates on the grid carry no cases at all.
+#>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it.
+#> ℹ truncation/event_date [Female]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.
+#>   → This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.
+#> ℹ truncation/event_date [Male]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
+#> ℹ truncation/event_date: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
+#> 
+#> Not run (3)
+#> → signposts/report: Run: diagnose_drift(x, axis = "report")
+#>   → `diagnose()` runs no statistical test: a trend test needs a method, a maturity window and an alpha, and those are the caller's to choose.
+#> → signposts/report_batches: Run: diagnose_batches(x, axis = "report")
+#>   → `diagnose()` runs no statistical test: batch detection needs a look-back, a null model and a multiplicity correction.
+#> → signposts/validation_batches: Run: diagnose_batches(x, axis = "validation")
+#> 
+#> ✔ 14 passed: declarations/temporal_effects, declarations/undeclared, missing/gender, missing/onset_week, missing/report_week, now/event_date, now/now_gap_report, now/report_date, ordering/event_to_report, units/declared, units/delay, units/event_grid, and units/report_grid
+#> ─ 6 skipped: duplicates/key, negatives/count, ordering/event_to_validation, ordering/report_to_validation, signposts/validation, and strata/pending
+#> 
+#> ℹ 32 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 
 # Only what needs acting on
 diagnose(ndata) |> dplyr::filter(status <= "note")
-#> # A tibble: 9 × 10
-#>   check     scope stratum status n_affected n_total     prop message hint  rows 
-#>   <chr>     <chr> <chr>   <ord>       <dbl>   <dbl>    <dbl> <chr>   <chr> <lis>
-#> 1 now       now_… Female  note            3      NA NA       "The l… "Eve… <int>
-#> 2 now       now_… Male    note            3      NA NA       "The l… "Eve… <int>
-#> 3 now       now_… all     note            3      NA NA       "The l… "Eve… <int>
-#> 4 now       now_… Male    note            1      NA NA       "The l… "Eve… <int>
-#> 5 strata    size  Male    note        26395   52987  4.98e-1 "The s…  NA   <int>
-#> 6 strata    spar… Female  note           13    1095  1.19e-2 "The s… "A s… <int>
-#> 7 truncati… even… Female  note            1    1082  9.24e-4 "1 eve… "Thi… <int>
-#> 8 truncati… even… Male    note            1    1082  9.24e-4 "1 eve… "Thi… <int>
-#> 9 truncati… even… all     note            1    1091  9.17e-4 "1 eve… "Thi… <int>
+#> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────
+#> 9 notes.
+#> 
+#> Notes (9)
+#> ℹ now/now_gap_event [Female]: The last event date is 3 weeks before now ("2010-12-20").
+#>   → Everything in that window is still arriving; it is what a nowcast is for, and it is also what makes the last points of any plot look like a decline.
+#> ℹ now/now_gap_event [Male]: The last event date is 3 weeks before now ("2010-12-20").
+#> ℹ now/now_gap_event: The last event date is 3 weeks before now ("2010-12-20").
+#> ℹ now/now_gap_report [Male]: The last report date is 1 week before now ("2010-12-20").
+#> ℹ strata/size [Male]: The smallest stratum is "Male" with 26395 cases, 49.8% of the total.
+#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 1.2% of the event dates on the grid carry no cases at all.
+#>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it.
+#> ℹ truncation/event_date [Female]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.
+#>   → This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.
+#> ℹ truncation/event_date [Male]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
+#> ℹ truncation/event_date: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
+#> 
+#> ℹ 9 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 
 # One block on its own
 diagnose(ndata, checks = "units")
-#> # A tibble: 4 × 10
-#>   check scope       stratum status n_affected n_total  prop message  hint  rows 
-#>   <chr> <chr>       <chr>   <ord>       <dbl>   <dbl> <dbl> <chr>    <chr> <lis>
-#> 1 units declared    all     ok              0       2     0 "The de… NA    <int>
-#> 2 units delay       all     ok              0   52987     0 "Every … NA    <int>
-#> 3 units event_grid  all     ok              0   52987     0 "\"onse… NA    <int>
-#> 4 units report_grid all     ok              0   52987     0 "\"repo… NA    <int>
+#> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────
+#> 4 passed.
+#> 
+#> Passed (4)
+#> ✔ units/declared: The declared units agree: "weeks" and "weeks".
+#> ✔ units/delay: Every `.delay` is a whole number of units.
+#> ✔ units/event_grid: "onset_week" lands on the object's "weeks" grid.
+#> ✔ units/report_grid: "report_week" lands on the object's "weeks" grid.
+#> 
+#> ℹ 4 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 
 ## `diagnose()` never stops your pipeline -- it hands back a table for you to
 ## read. Use validate_tbl_now() when you want a broken object to be an error.

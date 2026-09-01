@@ -14,7 +14,7 @@ plot_delay_profiles(
   by = c("report", "event"),
   max_delay = NULL,
   plotly = FALSE,
-  axis = c("report", "confirmation"),
+  axis = c("report", "validation"),
   palette = .tbl_now_palette()
 )
 ```
@@ -44,13 +44,12 @@ plot_delay_profiles(
 - axis:
 
   Which time axis the delay is measured to: `"report"` (default) or
-  `"confirmation"`. Both are measured *from the event*, so the two are
+  `"validation"`. Both are measured *from the event*, so the two are
   directly comparable – run each in turn and the gap between them is the
   time the laboratory adds. (This is not the same quantity as the
-  `.confirmation_delay` column, which is the laboratory's own
-  turnaround, measured from the report.) Needs a confirmation process
-  (see
-  [`add_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_setters.md));
+  `.validation_delay` column, which is the laboratory's own turnaround,
+  measured from the report.) Needs a validation process (see
+  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
   cases still `"pending"` are left out.
 
 - palette:

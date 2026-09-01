@@ -88,9 +88,9 @@ Rules that follow from this, and that you must not break:
 | `report_units` | same | [`get_report_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 | `temporal_effects` | **lazy** effect specs | [`get_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 | `computed_temporal_effect_cols` | materialised effect column names | [`get_temporal_effect_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `confirmation_date` | column name of the confirmation date, or `NULL` | [`get_confirmation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md), [`has_confirmation()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md) |
-| `confirmation_type` | column name of the outcome, or `NULL` | [`get_confirmation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md) |
-| `confirmation_units` | same set as `report_units` | [`get_confirmation_units()`](https://rodrigozepeda.github.io/tbl.now/reference/confirmation_getters.md) |
+| `validation_date` | column name of the validation date, or `NULL` | [`get_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`has_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
+| `validation_type` | column name of the outcome, or `NULL` | [`get_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
+| `validation_units` | same set as `report_units` | [`get_validation_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 
 ### The rules
 
@@ -120,38 +120,38 @@ Rules that follow from this, and that you must not break:
     [`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
     is a no-op.
 
-### The confirmation process (the optional third date)
+### The validation process (the optional third date)
 
-`event <= report <= confirmation <= now`. It is **optional**: most
-objects have no confirmation, so every code path must work when
-`has_confirmation(x)` is `FALSE`, and `.confirmation_group_cols(x)`
-returns `character(0)` there so it can be spliced into a grouping
+`event <= report <= validation <= now`. It is **optional**: most objects
+have no validation, so every code path must work when
+`has_validation(x)` is `FALSE`, and `.validation_group_cols(x)` returns
+`character(0)` there so it can be spliced into a grouping
 unconditionally.
 
 1.  **Every rebuild must carry it.**
-    `do.call(tbl_now, c(list(...), .confirmation_rebuild_args(x, data)))`.
+    `do.call(tbl_now, c(list(...), .validation_rebuild_args(x, data)))`.
     This is the same silent-drop hazard as strata: `summarise()`,
     `group_by()`, `ungroup()`,
     [`update()`](https://rdrr.io/r/stats/update.html) and
     [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
-    each rebuild by hand, and each one dropped the confirmation until it
+    each rebuild by hand, and each one dropped the validation until it
     was spliced in. **Grep for `do.call(tbl_now` before adding an
     attribute** and fix every site.
 2.  **`"pending"` means no date, not a missing date.** A pending case is
     reported and still waiting. Anything that counts arrivals on the
-    confirmation axis must drop pending rows – counting them invents an
+    validation axis must drop pending rows – counting them invents an
     arrival on a date they do not have.
-3.  **Two different delays.** `.confirmation_delay` is the laboratory’s
-    turnaround, measured **from the report**. The
-    `axis = "confirmation"` diagnostics measure **from the event**, so
-    the two axes are comparable. Do not mix them up.
+3.  **Two different delays.** `.validation_delay` is the laboratory’s
+    turnaround, measured **from the report**. The `axis = "validation"`
+    diagnostics measure **from the event**, so the two axes are
+    comparable. Do not mix them up.
 4.  **Do not duplicate a diagnostic for the new axis.** Add
-    `axis = c("report", "confirmation")` and forward it to
+    `axis = c("report", "validation")` and forward it to
     `.batch_report_increments()` / `.batch_registration()`, which is
     where the axis is actually swapped. One switch point, no parallel
     implementations.
-5.  **`now` is confirmation-aware.** `infer_now()` takes the max over
-    both, and setting `now` before the last confirmation is an error.
+5.  **`now` is validation-aware.** `infer_now()` takes the max over
+    both, and setting `now` before the last validation is an error.
 
 ### Protected columns
 
@@ -887,9 +887,9 @@ stores `list(...)` unmerged and never had the problem.
   duplicates.**
   [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)’s
   non-uniqueness warning built its `distinct()` key from the dates,
-  strata, covariates and effect columns. When confirmation arrived, a
-  case and its own retraction – same event, same report, opposite
-  outcome – came out as “exact duplicates”, advising
+  strata, covariates and effect columns. When validation arrived, a case
+  and its own retraction – same event, same report, opposite outcome –
+  came out as “exact duplicates”, advising
   [`dplyr::distinct()`](https://dplyr.tidyverse.org/reference/distinct.html),
   which would have **deleted the retraction**. Any column that
   legitimately distinguishes two rows belongs in that key.
@@ -1034,14 +1034,14 @@ test asserting exactly that. When you add a block:
   which is why `date_min`/`date_max` appear only when a coverage row is
   present.
 - put the *subset being described* in `stratum` and the *category* in
-  `quantity`. `"confirmation_type = confirmed"` is a quantity;
-  `"Female"` is a stratum. Mixing them makes a compositional row
-  impossible to interpret.
+  `quantity`. `"validation_type = confirmed"` is a quantity; `"Female"`
+  is a stratum. Mixing them makes a compositional row impossible to
+  interpret.
 
 ### `skipped` is not `ok`, and the difference is load-bearing
 
 `ok` means the check ran and found nothing. `skipped` means it could not
-run — no confirmation process, the wrong data type, an optional package
+run — no validation process, the wrong data type, an optional package
 absent. A check that cannot be performed must never be reported as a
 pass; silence that reads as approval is the main way a health check
 misleads.
