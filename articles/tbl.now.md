@@ -227,11 +227,22 @@ attributes are:
 - **covariates** (optional): predictor variables that may improve the
   nowcast (e.g., weather covariates).
 
-- **is_censored** (optional): identifies cases where the report date
-  represents not the exact date it was reported but an upper limit to
-  that exact date (i.e. left-censored). As an example, one can consider
-  a system error and reports from a lab are not registered until a week
-  after.
+- **is_censored_report** (optional): identifies cases where the report
+  date represents not the exact date it was reported but an upper limit
+  to that exact date (i.e. left-censored). As an example, one can
+  consider a system error and reports from a lab are not registered
+  until a week after.
+
+- **is_censored_validation** (optional): the same flag on the validation
+  axis. It marks rows whose *validation* delay – the time from report to
+  resolution – is a bound rather than a measurement. See the [validation
+  process](#the-validation-process) section.
+
+- **validation_levels** (optional): a named dictionary translating the
+  labels in `validation_type` into the four values that column may hold.
+  Surveillance data is not always recorded in English, and this is how
+  `c(confirmado = "confirmed")` becomes `"confirmed"` once rather than
+  in every script that touches the data.
 
 - **case_count** (optional): the column storing case counts when the
   dataset is aggregated.
@@ -520,7 +531,7 @@ tbl_example |>
 The function ensures that:
 
 - Rows are grouped by `event_date`, `report_date`, and any `strata`, and
-  `is_censored`.
+  `is_censored_report`.
 
 - The `case_count` column is summed within each group.
 
@@ -780,82 +791,105 @@ assumes is
 \text{now}
 
 `validation_type` takes the values `"confirmed"`, `"retracted"`,
-`"pending"` or `NA`. **Pending** is the important one: it means the case
-has been reported and is still waiting for a result, so it has *no*
-validation date. That is a different thing from a case whose result you
-simply never recorded, which is `NA`.
+`"pending"` or `NA`, **and nothing else**. **Pending** is the important
+one: it means the case has been reported and is still waiting for a
+result, so it has *no* validation date. That is a different thing from a
+case whose result you simply never recorded, which is `NA`.
 
-We will use `hai_bucaramanga`, an open extract of healthcare-associated
-infections from Bucaramanga, Colombia, which records all three dates:
-when the specimen was taken, when the laboratory received it, and when
-the laboratory issued the result.
+We will use `covid_us`, the CDC’s COVID-19 case surveillance data for
+2020, which records all three dates: when symptoms began, when the first
+positive specimen was collected, and when the case was registered at CDC
+with a status.
 
 ``` r
 
-data("hai_bucaramanga")
+data("covid_us")
 
-hai <- hai_bucaramanga |>
-  distinct() |>
-  filter(
-    !is.na(specimen_date), !is.na(received_date),
-    received_date >= specimen_date
-  ) |>
-  mutate(
-    # A result was issued: that is the validation. Everything else is still
-    # waiting, and a case that is waiting has no validation date.
-    result_date = if_else(
-      !is.na(report_date) & report_date >= received_date,
-      report_date, as.Date(NA)
-    ),
-    result = if_else(is.na(result_date), "pending", "confirmed")
-  )
-
-table(hai$result)
+head(covid_us, 3)
+#>     onset_dt pos_spec_dt cdc_report_dt            current_status    sex n
+#> 1 2020-01-01  2020-01-01    2020-01-01             Probable Case Female 1
+#> 2 2020-01-01  2020-03-25    2020-09-05 Laboratory-confirmed case Female 1
+#> 3 2020-01-01  2020-03-27    2020-05-13 Laboratory-confirmed case Female 1
+table(covid_us$current_status)
 #> 
-#> confirmed   pending 
-#>       201        21
+#> Laboratory-confirmed case             Probable Case 
+#>                    165663                     27290
 ```
 
-The three dates map onto the three roles directly:
+#### `validation_levels`: getting other people’s words into those four
+
+CDC does not say `"confirmed"`; it says `"Laboratory-confirmed case"`.
+Recoding that by hand before every call is the kind of step that gets
+forgotten in one script out of five, so the object does it once.
+`validation_levels` is a **named** vector whose names are the labels in
+your data and whose values are the canonical outcomes:
 
 ``` r
 
-hai_now <- hai |>
+covid_now <- covid_us |>
+  filter(onset_dt >= as.Date("2020-09-01")) |>
   tbl_now(
-    event_date        = specimen_date, # the specimen was taken
-    report_date       = received_date, # the laboratory received it
-    validation_date = result_date, # the laboratory issued a result
-    validation_type = result,
-    data_type         = "linelist",
-    verbose           = FALSE
+    event_date        = onset_dt,      # symptoms began
+    report_date       = pos_spec_dt,   # the first positive specimen
+    validation_date   = cdc_report_dt, # the case was registered at CDC
+    validation_type   = current_status,
+    validation_levels = c(
+      "Laboratory-confirmed case" = "confirmed",
+      "Probable Case"             = "pending"
+    ),
+    case_count = n,
+    strata     = sex,
+    data_type  = "count-incidence",
+    verbose    = FALSE
   )
 
-hai_now
-#> # A tibble:  222 × 20
-#> # Data type: "linelist"
+table(covid_now$current_status)
+#> 
+#> confirmed   pending 
+#>     55354     20269
+get_validation_levels(covid_now)
+#> Laboratory-confirmed case             Probable Case 
+#>               "confirmed"                 "pending"
+```
+
+The column now holds the canonical values, and the dictionary is kept on
+the object so you can still see what the data said. The same works for
+data recorded in another language:
+`c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")`.
+Anything the dictionary does not name, and that is not already one of
+the four, is an error rather than a silently accepted category.
+
+A note on this particular dataset: CDC never withdraws a case, so
+`"retracted"` does not occur in `covid_us`. It is a two-outcome
+validation process.
+
+``` r
+
+covid_now
+#> # A tibble:  75,623 × 11
+#> # Data type: "count-incidence"
 #> # Frequency: Event: `days` | Report: `days`
-#>       id specimen_date received_date report_date specimen    test  microorganism
-#>    <int> <date>        <date>        <date>      <fct>       <fct> <chr>        
-#>    [...] [event_date]  [report_date] [...]       [...]       [...] [...]        
-#>  1     1 2018-10-01    2018-10-01    2018-01-13  Whole blood Bloo… Burkholderia…
-#>  2     2 2018-11-01    2018-11-01    NA          Whole blood Bloo… Klebsiella p…
-#>  3     3 2018-01-27    2018-01-27    2018-01-31  Whole blood Bloo… Stenotrophom…
-#>  4     4 2018-01-27    2018-01-27    2018-01-30  Whole blood Bloo… Klebsiella p…
-#>  5     5 2018-04-20    2018-04-20    2018-04-26  Urine       Urin… Klebsiella p…
-#>  6     6 2018-01-22    2018-01-22    2018-01-25  Whole blood Bloo… Klebsiella p…
-#>  7     7 2018-01-02    2018-01-02    2018-03-02  Whole blood Bloo… Klebsiella p…
-#>  8     8 2018-06-28    2018-06-28    2018-06-30  Whole blood Bloo… Acinetobacte…
-#>  9    10 2018-12-02    2018-12-02    NA          Whole blood Bloo… Enterococcus…
-#> 10    13 2018-10-03    2018-10-03    2018-12-03  Urine       Urin… Enterobacter…
+#>    onset_dt     pos_spec_dt  cdc_report_dt current_status sex       n .event_num
+#>    <date>       <date>       <date>        <chr>          <chr> <int>      <dbl>
+#>    [event_date] [report_dat… [validation_… [validation_t… [str… [cas…      [...]
+#>  1 2020-09-01   2020-09-01   2020-09-01    confirmed      Fema…    80          0
+#>  2 2020-09-01   2020-09-01   2020-09-01    confirmed      Male     50          0
+#>  3 2020-09-01   2020-09-01   2020-09-01    confirmed      Unkn…     5          0
+#>  4 2020-09-01   2020-09-01   2020-09-01    pending        Fema…     2          0
+#>  5 2020-09-01   2020-09-01   2020-09-01    pending        Male      1          0
+#>  6 2020-09-01   2020-09-01   2020-09-02    confirmed      Fema…    58          0
+#>  7 2020-09-01   2020-09-01   2020-09-02    confirmed      Male     44          0
+#>  8 2020-09-01   2020-09-01   2020-09-02    pending        Fema…     1          0
+#>  9 2020-09-01   2020-09-01   2020-09-02    pending        Male      3          0
+#> 10 2020-09-01   2020-09-01   2020-09-03    confirmed      Fema…   104          0
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2019-12-01 | Event date: "specimen_date" | Report date: "received_date"
-#> # Validation date: "result_date" ("days") | resolved: 201/222
+#> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
+#> # Validation date: "cdc_report_dt" ("days") | resolved: 55354/75623
+#> # Strata: "sex"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 212 more rows
-#> # ℹ 13 more variables: sex <fct>, age_group <ord>, case_type <fct>,
-#> #   final_condition <fct>, icu_type <fct>, institution <int>,
-#> #   result_date <date>, result <chr>, .event_num <dbl>, .report_num <dbl>,
-#> #   .delay <dbl>, .validation_num <dbl>, .validation_delay <dbl>
+#> # ℹ 75,613 more rows
+#> # ℹ 4 more variables: .report_num <dbl>, .delay <dbl>, .validation_num <dbl>,
+#> #   .validation_delay <dbl>
 ```
 
 The footer now carries a validation line – the column, its units, and
@@ -867,13 +901,13 @@ different quantity from the reporting delay.
 
 ``` r
 
-# Reporting delay: specimen to laboratory.
-median(hai_now$.delay, na.rm = TRUE)
-#> [1] 0
+# Reporting delay: onset to positive specimen.
+median(covid_now$.delay, na.rm = TRUE)
+#> [1] 4
 
-# Turnaround: laboratory to result.
-median(hai_now$.validation_delay, na.rm = TRUE)
-#> [1] 2
+# Turnaround: specimen to registration at CDC.
+median(covid_now$.validation_delay, na.rm = TRUE)
+#> [1] 6
 ```
 
 Validation also moves `now`. A result issued on a date means you were,
@@ -883,12 +917,32 @@ before it.
 
 ``` r
 
-get_now(hai_now)
-#> [1] "2019-12-01"
-get_validation_units(hai_now)
+get_now(covid_now)
+#> [1] "2020-12-31"
+get_validation_units(covid_now)
 #> [1] "days"
-has_validation(hai_now)
+has_validation(covid_now)
 #> [1] TRUE
+```
+
+It also moves *backwards* correctly.
+[`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+is how you ask what the data looked like at an earlier moment – the loop
+a backtest walks – and a validation dated after that moment has simply
+not happened yet, so it reverts to `"pending"` with its date masked
+rather than making the object invalid:
+
+``` r
+
+as_of_october <- change_now(covid_now, as.Date("2020-10-15"), verbose = FALSE)
+#> Warning: Attribute 'now' (2020-10-15) seems to be in the past (before maximum
+#> report_date (2020-12-31))
+#> ℹ Set it with `change_now()`, or let `update_now()` take the maximum.
+
+get_now(as_of_october)
+#> [1] "2020-10-15"
+sum(as_of_october$n[as_of_october$current_status == "pending"])
+#> [1] 775645
 ```
 
 #### Counting cases when some of them can be undone
@@ -898,20 +952,20 @@ one answer, and the right one depends on the question:
 
 ``` r
 
-head(get_latest_confirmed(hai_now), 3) # cases the laboratory confirmed
-#> # A tibble: 3 × 2
-#>   specimen_date     n
-#>   <date>        <dbl>
-#> 1 2017-01-12        1
-#> 2 2017-02-12        1
-#> 3 2017-03-11        1
-head(get_net_confirmed(hai_now), 3) # confirmed minus retracted
-#> # A tibble: 3 × 2
-#>   specimen_date     n
-#>   <date>        <dbl>
-#> 1 2017-01-12        1
-#> 2 2017-02-12        1
-#> 3 2017-03-11        1
+head(get_latest_confirmed(covid_now), 3) # cases the laboratory confirmed
+#> # A tibble: 3 × 3
+#>   onset_dt   sex         n
+#>   <date>     <chr>   <dbl>
+#> 1 2020-09-01 Female   1753
+#> 2 2020-09-01 Male     1507
+#> 3 2020-09-01 Missing     1
+head(get_net_confirmed(covid_now), 3) # confirmed minus retracted
+#> # A tibble: 3 × 3
+#>   onset_dt   sex         n
+#>   <date>     <chr>   <dbl>
+#> 1 2020-09-01 Female   1753
+#> 2 2020-09-01 Male     1507
+#> 3 2020-09-01 Missing     1
 ```
 
 `get_nth_confirmed(x, delay)` counts only the cases resolved *within* a
@@ -924,10 +978,32 @@ and
 [`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
 on the report axis.
 
+#### Validation delays you do not believe
+
 If your data records absurdly long validation delays – a result “issued”
 two years later is usually a data-entry artefact, not a laboratory –
 [`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
-returns those cases to `"pending"`, which is what they really were.
+marks them with the **`is_censored_validation`** flag. It is the
+validation-axis twin of `is_censored_report`, and it works the same way:
+the case and its date are kept, and the *delay* is recorded as a bound
+rather than a measurement, for models that can use censored
+observations.
+
+``` r
+
+capped <- censor_validation_delays_above(covid_now, max_delay = 60, verbose = FALSE)
+
+get_is_censored_validation(capped)
+#> [1] ".is_censored_validation"
+sum(capped$n[capped[[get_is_censored_validation(capped)]]])
+#> [1] 2286
+```
+
+Nothing is deleted and no outcome is rewritten, so
+[`get_latest_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+still counts those cases. Set the flag by hand with
+[`add_is_censored_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+when your data already carries one.
 
 #### How much of the epidemic has been resolved?
 
@@ -940,10 +1016,10 @@ behind.
 
 ``` r
 
-plot_validation_status(hai_now)
+plot_validation_status(covid_now)
 ```
 
-![](tbl.now_files/figure-html/unnamed-chunk-25-1.png)
+![](tbl.now_files/figure-html/unnamed-chunk-28-1.png)
 
 #### The validation axis
 
@@ -955,14 +1031,14 @@ so the diagnostics take an `axis` argument instead of being duplicated:
 ``` r
 
 # The same picture, drawn for the laboratory instead of the surveillance desk.
-plot_reporting_triangle(hai_now, axis = "validation")
-plot_delay_profiles(hai_now, axis = "validation")
-plot_delay_drift(hai_now, axis = "validation")
-diagnostic_plot(hai_now, axis = "validation")
+plot_reporting_triangle(covid_now, axis = "validation")
+plot_delay_profiles(covid_now, axis = "validation")
+plot_delay_drift(covid_now, axis = "validation")
+diagnostic_plot(covid_now, axis = "validation")
 
 # A laboratory clearing a backlog is a batch, exactly as a surveillance system
 # clearing its inbox is.
-diagnose_batches(hai_now, axis = "validation")
+diagnose_batches(covid_now, axis = "validation")
 ```
 
 Two notes on what `axis = "validation"` means. Delays are still measured
@@ -980,8 +1056,8 @@ alike.
 tests exactly that (a Wilcoxon rank-sum test on the two delay
 distributions) and
 [`plot_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
-draws it. The Bucaramanga extract records no retractions, so there is
-nothing to compare here.
+draws it. `covid_us` records no retractions, so there is nothing to
+compare here.
 
 ### Getting, removing and changing attributes
 
@@ -1336,7 +1412,7 @@ We explore each of the panels below
 ### The delay distribution
 
 ![Empirical delay
-distribution](tbl.now_files/figure-html/unnamed-chunk-40-1.png)
+distribution](tbl.now_files/figure-html/unnamed-chunk-43-1.png)
 
 Empirical delay distribution
 
@@ -1346,7 +1422,7 @@ histogram of the reporting delay.
 ### The observed epidemic process
 
 ![Observed epidemic
-process](tbl.now_files/figure-html/unnamed-chunk-41-1.png)
+process](tbl.now_files/figure-html/unnamed-chunk-44-1.png)
 
 Observed epidemic process
 
@@ -1356,7 +1432,7 @@ per `event_date`.
 ### The calendar effects
 
 ![Day of the week and week of the year
-effects](tbl.now_files/figure-html/unnamed-chunk-42-1.png)
+effects](tbl.now_files/figure-html/unnamed-chunk-45-1.png)
 
 Day of the week and week of the year effects
 
@@ -1375,7 +1451,7 @@ effects](#holiday-effects)
 ### The cycles
 
 ![Periodogram showing the Fourier season's dominant
-peak](tbl.now_files/figure-html/unnamed-chunk-43-1.png)
+peak](tbl.now_files/figure-html/unnamed-chunk-46-1.png)
 
 Periodogram showing the Fourier season’s dominant peak
 
@@ -1404,7 +1480,7 @@ pass `strata = "gender"` to group on a subset.
 autoplot(dengue_now, strata = "gender", by_strata = TRUE)
 ```
 
-![](tbl.now_files/figure-html/unnamed-chunk-44-1.png)
+![](tbl.now_files/figure-html/unnamed-chunk-47-1.png)
 
 #### One panel at a time: the `plot_*()` functions
 
@@ -1996,20 +2072,20 @@ tn <- tbl_now(df,
 # the 300-day report becomes censored (an upper bound on its delay)
 censor_delays_above(tn, max_delay = 60)
 #> ℹ Marked 1 report with delay > 60 days as censored.
-#> • This delay is now an upper bound (is_censored).
+#> • This delay is now an upper bound (is_censored_report).
 #> # A tibble:  4 × 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
-#>   onset        reported      .event_num .report_num .delay .is_censored 
-#>   <date>       <date>             <dbl>       <dbl>  <dbl> <lgl>        
-#>   [event_date] [report_date]      [...]       [...]  [...] [is_censored]
-#> 1 2020-01-01   2020-01-02             0           1      1 FALSE        
-#> 2 2020-01-01   2020-01-06             0           5      5 FALSE        
-#> 3 2020-01-02   2020-01-03             1           2      1 FALSE        
-#> 4 2020-01-03   2020-10-27             2         300    298 TRUE         
+#>   onset        reported      .event_num .report_num .delay .is_censored_report 
+#>   <date>       <date>             <dbl>       <dbl>  <dbl> <lgl>               
+#>   [event_date] [report_date]      [...]       [...]  [...] [is_censored_report]
+#> 1 2020-01-01   2020-01-02             0           1      1 FALSE               
+#> 2 2020-01-01   2020-01-06             0           5      5 FALSE               
+#> 3 2020-01-02   2020-01-03             1           2      1 FALSE               
+#> 4 2020-01-03   2020-10-27             2         300    298 TRUE                
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2020-10-27 | Event date: "onset" | Report date: "reported"
-#> # left-censored indicator: ".is_censored"
+#> # left-censored indicator: ".is_censored_report"
 #> # ────────────────────────────────────────────────────────────────────────────────
 ```
 

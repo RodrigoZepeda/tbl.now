@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,6 +48,73 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.29.0" id="tblnow-0290">tbl.now 0.29.0<a class="anchor" aria-label="anchor" href="#tblnow-0290"></a></h2>
+<div class="section level3">
+<h3 id="breaking-is_censored-is-now-is_censored_report-0-29-0">Breaking: <code>is_censored</code> is now <code>is_censored_report</code> (#54)<a class="anchor" aria-label="anchor" href="#breaking-is_censored-is-now-is_censored_report-0-29-0"></a></h3>
+<p>There are two censoring axes now, so the unqualified name had to go. The old spelling is removed outright, not deprecated:</p>
+<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>was</th>
+<th>is</th>
+</tr></thead><tbody><tr><td><code>tbl_now(is_censored = )</code></td>
+<td><code>tbl_now(is_censored_report = )</code></td>
+</tr><tr><td><code>get_is_censored()</code></td>
+<td><code><a href="../reference/nowcast_data_getters.html">get_is_censored_report()</a></code></td>
+</tr><tr><td>
+<code>add_is_censored()</code>, <code>change_is_censored()</code>, <code>remove_is_censored()</code>
+</td>
+<td>
+<code><a href="../reference/add.html">add_is_censored_report()</a></code>, <code><a href="../reference/add.html">change_is_censored_report()</a></code>, <code><a href="../reference/add.html">remove_is_censored_report()</a></code>
+</td>
+</tr><tr><td>
+<code>is_censored</code> attribute</td>
+<td>
+<code>is_censored_report</code> attribute</td>
+</tr><tr><td>
+<code>.is_censored</code> (the column <code><a href="../reference/censor_delays_above.html">censor_delays_above()</a></code> creates)</td>
+<td><code>.is_censored_report</code></td>
+</tr></tbody></table></div>
+<div class="section level3">
+<h3 id="new-is_censored_validation-the-validation-axis-censoring-flag-0-29-0">New: <code>is_censored_validation</code>, the validation-axis censoring flag (#53)<a class="anchor" aria-label="anchor" href="#new-is_censored_validation-the-validation-axis-censoring-flag-0-29-0"></a></h3>
+<p>The twin of <code>is_censored_report</code>, for models that use censored validation delays. It marks rows whose time from report to resolution is a <strong>bound</strong> rather than a measurement.</p>
+<ul><li>
+<code>tbl_now(is_censored_validation = )</code>, <code><a href="../reference/nowcast_data_getters.html">get_is_censored_validation()</a></code>, <code><a href="../reference/add.html">add_is_censored_validation()</a></code>, <code><a href="../reference/add.html">change_is_censored_validation()</a></code>, <code><a href="../reference/add.html">remove_is_censored_validation()</a></code>. It requires a <code>validation_date</code>: there is no validation delay to bound without one.</li>
+<li>The column is protected, is carried through every <code>dplyr</code> verb and through <code><a href="../reference/to_count.html">to_count()</a></code>, <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code> and <code><a href="../reference/align_weeks.html">align_weeks()</a></code>, and joins the grouping keys – a censored resolution and an exact one on the same <code>(event, report, outcome)</code> triple stay two rows rather than being summed into one.</li>
+</ul><div class="section level4">
+<h4 id="breaking-censor_validation_delays_above-flags-instead-of-erasing-0-29-0">Breaking: <code>censor_validation_delays_above()</code> flags instead of erasing<a class="anchor" aria-label="anchor" href="#breaking-censor_validation_delays_above-flags-instead-of-erasing-0-29-0"></a></h4>
+<p>It used to set the offending rows’ <code>validation_type</code> to <code>"pending"</code> and delete their validation date. That was wrong: a case confirmed after 200 days is still a confirmed case, and the object should say so. It now sets <code>is_censored_validation</code> and leaves the date and the outcome alone, exactly as <code><a href="../reference/censor_delays_above.html">censor_delays_above()</a></code> does on the report axis. <code><a href="../reference/validation_counts.html">get_latest_confirmed()</a></code> therefore still counts those cases.</p>
+</div>
+</div>
+<div class="section level3">
+<h3 id="new-validation_levels-for-data-not-recorded-in-english-0-29-0">New: <code>validation_levels</code>, for data not recorded in English (#54)<a class="anchor" aria-label="anchor" href="#new-validation_levels-for-data-not-recorded-in-english-0-29-0"></a></h3>
+<p><code>validation_type</code> may hold only <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code> or <code>NA</code> – that was already enforced, and the error now names the way out. <code>tbl_now(validation_levels = )</code> is that way out: a named dictionary whose names are the labels in your data and whose values are the canonical four.</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">casos</span>,</span>
+<span>  validation_type   <span class="op">=</span> <span class="va">desenlace</span>,</span>
+<span>  validation_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    confirmado <span class="op">=</span> <span class="st">"confirmed"</span>, retractado <span class="op">=</span> <span class="st">"retracted"</span>, pendiente <span class="op">=</span> <span class="st">"pending"</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The column is rewritten to the canonical values; the dictionary is kept on the object and read back with <code><a href="../reference/nowcast_data_getters.html">get_validation_levels()</a></code>. A dictionary that would recode a canonical value into a different one is refused, because it would flip the column on every rebuild.</p>
+</div>
+<div class="section level3">
+<h3 id="fixed-change_now-re-censors-instead-of-erroring-0-29-0">Fixed: <code>change_now()</code> re-censors instead of erroring (#51)<a class="anchor" aria-label="anchor" href="#fixed-change_now-re-censors-instead-of-erroring-0-29-0"></a></h3>
+<p>Moving <code>now</code> <strong>backwards</strong> is what <code><a href="../reference/add.html">change_now()</a></code> is for – it is how a backtest walks through time. On an object carrying a validation process it aborted for every <code>now</code> earlier than the last validation, which is nearly every historical as-of date.</p>
+<p>It now masks validations dated after the new <code>now</code>: the validation date becomes <code>NA</code> and the outcome returns to <code>"pending"</code>, because a resolution that has not happened yet is not a resolution. <code><a href="../reference/add.html">change_now()</a></code> and <code><a href="../reference/add.html">update_now()</a></code> gain <code>verbose</code> to silence the report of how many rows were masked.</p>
+</div>
+<div class="section level3">
+<h3 id="covid_us-carries-a-validation-process-0-29-0">
+<code>covid_us</code> carries a validation process (#52)<a class="anchor" aria-label="anchor" href="#covid_us-carries-a-validation-process-0-29-0"></a></h3>
+<p>No shipped dataset had one, so every example fabricated an outcome by row position. <code>covid_us</code> is rebuilt from the same CDC source with the two date columns that were being left on the floor, and it now runs onset -&gt; positive specimen -&gt; registration at CDC:</p>
+<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>was</th>
+<th>is</th>
+</tr></thead><tbody><tr><td>
+<code>cdc_case_earliest_dt</code>, <code>cdc_report_dt</code>, <code>n</code> (2020-2021)</td>
+<td>
+<code>onset_dt</code>, <code>pos_spec_dt</code>, <code>cdc_report_dt</code>, <code>current_status</code>, <code>sex</code>, <code>n</code> (2020)</td>
+</tr></tbody></table><p><code>cdc_case_earliest_dt</code> is CDC-derived and equals <code>onset_dt</code> for 99.997% of the rows kept, so it is gone as redundant; <code>sex</code> is a stratum, and <code>current_status</code> is the validation outcome – in CDC’s own words, so that mapping it is a worked example of <code>validation_levels</code>. The relationship between outcome and validation delay is real rather than fabricated: probable cases are registered a median of 2 days after the specimen, laboratory-confirmed ones 4 days. CDC does not withdraw cases, so <code>"retracted"</code> does not occur.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.28.0" id="tblnow-0280">tbl.now 0.28.0<a class="anchor" aria-label="anchor" href="#tblnow-0280"></a></h2>
 <div class="section level3">
@@ -121,7 +188,7 @@
 <ul><li><p><code><a href="../reference/nowcast_engines.html">engine_baselinenowcast()</a></code> gains <strong><code>max_delay</code></strong>, the number of delay periods to keep, forwarded to <code><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code>. <code><a href="../reference/run_nowcast.html">?run_nowcast</a></code> already documented it (“<code>max_delay</code> caps the triangle’s width”); what actually happened is that it fell into <code>...</code> and reached the modelling call, which has no such argument and ignored it.</p></li>
 <li>
 <p>A triangle too wide to fit is now refused by <code>tbl.now</code>, naming the delay axis and a concrete cap – the delay covering 99% of the reported cases:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">x</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">21</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </li>
 </ul><p>Note that a snapshot series must be <strong>declared</strong> <code>data_type = "count-cumulative"</code>. <code>infer_data_type()</code> reads a single downward revision as incidence, by design, and a revised running total has them; left to the inference, every delay carries a whole period’s count instead of an increment and nothing downstream can tell.</p>
@@ -148,7 +215,7 @@
 <a class="anchor" aria-label="anchor" href="#breaking-a-nowcast-is-specified-with-an-engine-0-27-0"></a></h3>
 <p><code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> and <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> used to take a method <strong>name</strong> plus a <code>...</code> (and, for the backtest, a <code>method_args</code> list of lists keyed by label). Both failed the same silent way: an argument that missed its backend simply vanished, and you got a fitted model at its default with nothing on the object to say so.</p>
 <p>An <strong>engine</strong> is one modelling package plus every argument it needs:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">x</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_nobbs</a></span><span class="op">(</span>max_D <span class="op">=</span> <span class="fl">10</span>, moving_window <span class="op">=</span> <span class="fl">64</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/nowcast_backtest.html">nowcast_backtest</a></span><span class="op">(</span><span class="va">x</span>,</span>
@@ -188,7 +255,7 @@
 <h3 id="breaking-score_nowcast--as_scoringutils-take-a-tbl_now-as-truth-0-27-0">Breaking: <code>score_nowcast()</code> / <code>as_scoringutils()</code> take a <code>tbl_now</code> as <code>truth</code>
 <a class="anchor" aria-label="anchor" href="#breaking-score_nowcast--as_scoringutils-take-a-tbl_now-as-truth-0-27-0"></a></h3>
 <p><code>observed_col</code> is <strong>removed</strong>, and a plain data frame is no longer accepted. The <code>tbl_now</code> already knows which column holds the observed counts – it is <code><a href="../reference/nowcast_data_getters.html">get_case_count()</a></code>, or the count <code><a href="../reference/to_count.html">to_count()</a></code> produces from a line list – so naming it was a burden on the caller and the old default (<em>“the last column that is neither the event date nor a stratum”</em>) was a guess that could mis-score silently.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/score_nowcast.html">score_nowcast</a></span><span class="op">(</span><span class="va">nc</span>, truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span>     <span class="co"># the FULL tbl_now, line list or counts</span></span>
 <span><span class="fu"><a href="../reference/score_nowcast.html">as_scoringutils</a></span><span class="op">(</span><span class="va">nc</span>, truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -197,7 +264,7 @@
 <p>A documentation audit read every exported function and found the same argument wearing different names in different places. 116 of the 148 exports already took <code>x</code> first; these were the exceptions.</p>
 <ul><li>
 <p><strong><code><a href="../reference/nowcast_fit.html">nowcast_fit()</a></code> and <code><a href="../reference/nowcast_tidy.html">nowcast_tidy()</a></code> take <code>engine</code>, not <code>method</code>.</strong> This is the one that affects code outside the package: if you wrote a backend, rename the first argument of your methods.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># before</span></span>
 <span><span class="va">nowcast_fit.mymodel</span>  <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">method</span>, <span class="va">x</span>, <span class="va">...</span>, <span class="va">quantile_levels</span>, <span class="va">verbose</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
 <span><span class="va">nowcast_tidy.mymodel</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">method</span>, <span class="va">fit</span>, <span class="va">x</span>, <span class="va">...</span>, <span class="va">quantile_levels</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
@@ -288,7 +355,7 @@
 <div class="section level3">
 <h3 id="one-surveillance-line-list-per-stratum-0-26-0">One <code>surveillance</code> line list per stratum<a class="anchor" aria-label="anchor" href="#one-surveillance-line-list-per-stratum-0-26-0"></a></h3>
 <p><code><a href="../reference/tbl_now_surveillance.html">tbl_now_to_surveillance()</a></code> gains <code>format = "linelist_list"</code>, which returns one line list <strong>per stratum</strong> as a <code>tbl_now_surveillance_list</code> instead of one frame with a pasted <code>strata</code> column. <code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code> has no strata argument, so a stratified analysis is one fit per stratum, and the split no longer has to be done by hand:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pieces</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_surveillance.html">tbl_now_to_surveillance</a></span><span class="op">(</span><span class="va">x</span>, format <span class="op">=</span> <span class="st">"linelist_list"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">pieces</span>, <span class="kw">function</span><span class="op">(</span><span class="va">piece</span><span class="op">)</span> <span class="fu">surveillance</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">nowcast</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">piece</span>, <span class="va">...</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>It mirrors <code>tbl_now_to_baselinenowcast(format = "triangle_list")</code> throughout: the result is a <strong>plain list</strong>, so <code><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply()</a></code>, <code>[[</code> and friends work unchanged; it is length one and named <code>"all"</code> when the object declares no strata, so the return type never depends on whether strata happen to be attached; it prints what it is; and <code><a href="../reference/as_tbl_now.html">as_tbl_now()</a></code> binds it back into a <code>tbl_now</code>, restoring the original date-column names, the strata and the covariates. Count input comes back as a <code>"linelist"</code> – one row per case, totals unchanged – because that is what a <code>surveillance</code> line list holds.</p>
@@ -327,7 +394,7 @@
 <h3 id="diagnose-a-structural-health-check-0-24-0">
 <code>diagnose()</code>: a structural health check<a class="anchor" aria-label="anchor" href="#diagnose-a-structural-health-check-0-24-0"></a></h3>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> describes a <code>tbl_now</code>; <code><a href="../reference/diagnose.html">diagnose()</a></code> looks for what is <strong>wrong</strong> with it. One row is one finding, sorted worst first, and the offending row indices come with it:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">findings</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span>
 <span><span class="va">findings</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">&lt;=</span> <span class="st">"note"</span><span class="op">)</span></span>
 <span></span>
@@ -397,7 +464,7 @@
 <h3 id="summary-describes-the-object-the-way-a-nowcaster-reads-it-0-23-0">
 <code>summary()</code> describes the object the way a nowcaster reads it<a class="anchor" aria-label="anchor" href="#summary-describes-the-object-the-way-a-nowcaster-reads-it-0-23-0"></a></h3>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> on a <code>tbl_now</code> now returns a tibble rather than the column-by-column listing <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary.data.frame()</a></code> produces, which said nothing about the structure the class exists to carry. One row is one statistic of one quantity of one stratum:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">component</span> <span class="op">==</span> <span class="st">"delay"</span><span class="op">)</span></span></code></pre></div>
 <p>It covers the case counts on each of the object’s time axes (event, report and, where there is one, confirmation), the delay distributions between them, the lengths of the runs of zero dates, the compositional shares (censored, per confirmation outcome, per stratum, per categorical covariate level), the lag-1 autocorrelation of each series, the reporting-completeness curve, the totals, the date ranges and <code>now</code>, and how full the reporting triangle is.</p>
 <p>Three decisions worth knowing about:</p>
@@ -581,7 +648,7 @@ i Declare it with `add_strata()` to nowcast it separately.</code></pre>
 <code>nowcast_truth()</code> is now internal<a class="anchor" aria-label="anchor" href="#nowcast_truth-is-now-internal-0-19-0"></a></h3>
 <p>It was <code><a href="../reference/get_latest_first.html">get_latest_reported_cases()</a></code> with the class stripped, undeclared columns summed away and the count renamed <code>.observed</code> – the values were identical. A second public name for that is a second thing to learn for no gain.</p>
 <p><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code> and <code><a href="../reference/score_nowcast.html">as_scoringutils()</a></code> now accept the <strong><code>tbl_now</code> itself</strong> as <code>truth</code> and do the reshaping internally, which is shorter than what it replaces:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/score_nowcast.html">score_nowcast</a></span><span class="op">(</span><span class="va">nowcast</span>, truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span>          <span class="co"># was: truth = nowcast_truth(dengue)</span></span></code></pre></div>
 <p>A data frame of observed counts still works, as does <code>NULL</code>.</p>
 </div>

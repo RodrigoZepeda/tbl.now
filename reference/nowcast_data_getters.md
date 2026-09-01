@@ -39,7 +39,7 @@ get_temporal_effects(x)
 
 get_temporal_effect_cols(x)
 
-get_is_censored(x)
+get_is_censored_report(x)
 
 get_case_count(x)
 
@@ -48,6 +48,10 @@ get_validation_date(x)
 get_validation_type(x)
 
 get_validation_units(x)
+
+get_is_censored_validation(x)
+
+get_validation_levels(x)
 
 has_validation(x)
 ```
@@ -80,10 +84,16 @@ A column name, a count, or a metadata value, depending on the function:
 
   Integer count, `0` when there are none.
 
-- `get_is_censored()`:
+- `get_is_censored_report()`:
 
   Character, or `NULL`. The name of the column flagging reports whose
   date is only an upper bound.
+
+- `get_is_censored_validation()`:
+
+  Character, or `NULL`. The same on the validation axis: the column
+  flagging rows whose *validation* delay is a bound rather than a
+  measurement.
 
 - `get_now()`:
 
@@ -122,6 +132,11 @@ A column name, a count, or a metadata value, depending on the function:
 
   The grid the validation date lives on, or `NULL` when the object
   carries no validation process.
+
+- `get_validation_levels()`:
+
+  The named dictionary translating the labels in the data into the
+  canonical outcomes, or `NULL` when the column was already canonical.
 
 - `has_validation()`:
 
@@ -206,7 +221,9 @@ get_num_covariates(ndata)
 #> [1] 0
 
 # Likewise for a censoring indicator that was never supplied.
-get_is_censored(ndata)
+get_is_censored_report(ndata)
+#> NULL
+get_is_censored_validation(ndata)
 #> NULL
 
 # The as-of moment, and the calendar grid the dates live on.

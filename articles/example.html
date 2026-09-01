@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -842,7 +842,7 @@ delay distribution for the restricted window is defensible.</li>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/censor_delays_above.html">censor_delays_above</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Marked 10 reports with delay &gt; 20 weeks as censored.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> This delay is now an upper bound (is_censored).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> This delay is now an upper bound (is_censored_report).</span></span>
 <span></span>
 <span><span class="va">hai_model</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  462 × 19</span></span></span>
@@ -863,11 +863,11 @@ delay distribution for the restricted window is defensible.</li>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>   598 2020-07-28    <span style="color: #BB0000;">NA</span>            2020-07-29  Urine       Urine cult… Candida trop… Fema… 50-59     Laborato… Alive           Adult              1 2020-07-27</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2023-01-30</span> | Event date: <span style="color: #0000BB;">"event_week"</span> | Report date: <span style="color: #0000BB;">"report_week"</span></span></span>
-<span><span class="co">#&gt; # left-censored indicator: <span style="color: #0000BB;">".is_censored"</span></span></span>
+<span><span class="co">#&gt; # left-censored indicator: <span style="color: #0000BB;">".is_censored_report"</span></span></span>
 <span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"icu_type"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 452 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 5 more variables: report_week &lt;date&gt;, .event_num &lt;dbl&gt;, .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;, .is_censored &lt;lgl&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 5 more variables: report_week &lt;date&gt;, .event_num &lt;dbl&gt;, .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;, .is_censored_report &lt;lgl&gt;</span></span></span></code></pre></div>
 <p><code><a href="../reference/censor_delays_above.html">censor_delays_above()</a></code> is doing real work: it caps the
 delay dimension at 20 weeks so the model is not asked to estimate
 probabilities for delays that occur a handful of times in the whole

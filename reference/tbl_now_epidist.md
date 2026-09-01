@@ -22,7 +22,7 @@ window to have a strictly positive width.
   `data_type = "linelist"`. The `event_units`/`report_units` are
   inferred from the primary censoring-window width (a 7-day window -\>
   `"weeks"`), and a left-censored secondary window `[origin, report]` is
-  decoded back to `is_censored = TRUE` with the report taken from
+  decoded back to `is_censored_report = TRUE` with the report taken from
   `secondary_upper`.
 
 - `"interval"`: instead attach the upper bounds `primary_upper`
@@ -39,7 +39,7 @@ interval columns:
   -\> 7 days, ..., or `censoring_window` if supplied);
 
 - the secondary event spans `[report_date, report_date + w]` normally,
-  but for rows flagged by `is_censored` it is left-censored to
+  but for rows flagged by `is_censored_report` it is left-censored to
   `[event_date, report_date]` (the report is known only to have happened
   at or before its report date, and cannot precede the event, i.e.
   epidist time 0) — encoding the `tbl_now` convention that a censored
@@ -238,7 +238,7 @@ tbl_now_to_epidist(nowll)
 #> ── Converting <tbl_now> into epidist linelist data 
 #> • pdate_lwr <- "pdate_lwr", sdate_lwr <- "sdate_lwr"
 #> • censoring window: 1 day (from "days")
-#> • left-censored rows (is_censored): 0
+#> • left-censored rows (is_censored_report): 0
 #> ℹ No observation time column provided, using 2020-03-07 as the observation date (the maximum of the secondary event upper bound).
 #> # A tibble: 3 × 10
 #>   ptime_lwr ptime_upr stime_lwr stime_upr obs_time pdate_lwr  pdate_upr 
@@ -280,7 +280,7 @@ tbl_now_to_epidist(nowagg)
 #> ── Converting <tbl_now> into epidist aggregate data 
 #> • pdate_lwr <- "pdate_lwr", sdate_lwr <- "sdate_lwr"
 #> • censoring window: 1 day (from "days")
-#> • left-censored rows (is_censored): 0
+#> • left-censored rows (is_censored_report): 0
 #> • n <- "n"
 #> ℹ No observation time column provided, using 2020-03-06 as the observation date (the maximum of the secondary event upper bound).
 #> # A tibble: 2 × 11

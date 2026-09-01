@@ -82,7 +82,8 @@ Rules that follow from this, and that you must not break:
 | `case_count` | column name of the count (count types only) | [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 | `strata` | character vector of stratifying columns | [`get_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`get_num_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 | `covariates` | character vector of covariate columns | [`get_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`get_num_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `is_censored` | column name of the censoring flag, or `NULL` | [`get_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
+| `is_censored_report` | column name of the report-axis censoring flag, or `NULL` | [`get_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
+| `is_censored_validation` | the same on the validation axis, or `NULL` | [`get_is_censored_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 | `now` | the “as of” date | [`get_now()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 | `event_units` | `"days"`, `"weeks"`, `"months"`, `"years"`, `"numeric"` | [`get_event_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 | `report_units` | same | [`get_report_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
@@ -91,6 +92,7 @@ Rules that follow from this, and that you must not break:
 | `validation_date` | column name of the validation date, or `NULL` | [`get_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`has_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 | `validation_type` | column name of the outcome, or `NULL` | [`get_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 | `validation_units` | same set as `report_units` | [`get_validation_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
+| `validation_levels` | dictionary of non-canonical outcome labels, or `NULL` | [`get_validation_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 
 ### The rules
 
@@ -150,8 +152,27 @@ unconditionally.
     `.batch_report_increments()` / `.batch_registration()`, which is
     where the axis is actually swapped. One switch point, no parallel
     implementations.
-5.  **`now` is validation-aware.** `infer_now()` takes the max over
-    both, and setting `now` before the last validation is an error.
+5.  **`now` is validation-aware, in both directions.** `infer_now()`
+    takes the max over both. Setting `now` *before* a validation is not
+    an error, it is a backtest:
+    [`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+    calls `.mask_validations_after()`, which returns every validation
+    dated after the new `now` to `"pending"` and masks its date,
+    `.validation_num`, `.validation_delay` and censoring flag. The
+    validator’s rule (nothing is known after `now`) is unchanged – what
+    changed is that the verb now satisfies it instead of failing it.
+6.  **`validation_type` holds four values and no others**, and
+    `validation_levels` is the only way in for anything else. The
+    dictionary is applied by `.resolve_validation_type()` BEFORE the
+    check, and it must be idempotent: it runs again on every rebuild, so
+    `.check_validation_levels()` refuses a mapping that would move a
+    canonical value.
+7.  **Censoring has two axes.** `is_censored_report` is a bound on the
+    reporting delay, `is_censored_validation` on the validation delay.
+    Both are protected, both are grouping keys, and
+    `.tbl_now_collapse_censoring()` collapses both. Neither ever deletes
+    a case or rewrites an outcome – that is what makes it *censoring*
+    rather than deletion.
 
 ### Protected columns
 

@@ -29,10 +29,12 @@ tbl_now(
   strata = NULL,
   covariates = NULL,
   case_count = NULL,
-  is_censored = NULL,
+  is_censored_report = NULL,
   validation_date = NULL,
   validation_type = NULL,
   validation_units = "auto",
+  validation_levels = NULL,
+  is_censored_validation = NULL,
   now = NULL,
   event_units = "auto",
   report_units = "auto",
@@ -102,16 +104,16 @@ tbl_now(
   or `NULL` Name of the column with the case counts if `data_type` is
   "count-incidence" or "count-cumulative".
 
-- is_censored:
+- is_censored_report:
 
   (optional)
   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` (default). The name of a column containing either `TRUE` or
   `FALSE` indicating whether the `report_date` is correctly specified or
   corresponds to a `batch` and thus is censored. In other words, if the
-  `report_date` is accurately measured set `is_censored = FALSE` but if
-  the `report_date` corresponds to an error and is only an upper bound
-  of the real report date set `is_censored = TRUE`.
+  `report_date` is accurately measured set `is_censored_report = FALSE`
+  but if the `report_date` corresponds to an error and is only an upper
+  bound of the real report date set `is_censored_report = TRUE`.
 
 - validation_date:
 
@@ -142,6 +144,29 @@ tbl_now(
   (optional) Character. Either `"auto"` (default), `"days"`, `"weeks"`,
   `"months"`, `"years"` or `"numeric"` – the grid the validation date
   lives on, resolved the same way as `report_units`.
+
+- validation_levels:
+
+  (optional) `NULL` (default) or a **named** character vector
+  translating the labels in `validation_type` into the canonical
+  outcomes, for data that was not recorded in English:
+  `c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")`.
+  The names are the labels in your data, the values are the canonical
+  ones. The column is rewritten to the canonical values and the
+  dictionary is kept as an attribute, readable with
+  [`get_validation_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md).
+  Only `"confirmed"`, `"retracted"`, `"pending"` and `NA` are ever
+  stored.
+
+- is_censored_validation:
+
+  (optional)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  or `NULL` (default). The validation-axis counterpart of
+  `is_censored_report`: the name of a logical column marking rows whose
+  **validation delay** is a bound rather than a measurement. Requires a
+  `validation_date`. See
+  [censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md).
 
 - now:
 
@@ -275,7 +300,7 @@ function:
 
   Date of the `now` for a nowcast.
 
-- is_censored:
+- is_censored_report:
 
   Column indicating whether the measurement is noisy (only upper bound)
   or not.
@@ -310,6 +335,16 @@ function:
 - validation_units:
 
   Units of `validation_date`, resolved like `report_units`.
+
+- validation_levels:
+
+  The (optional) dictionary translating the labels in `validation_type`
+  into the canonical outcomes.
+
+- is_censored_validation:
+
+  Column indicating whether the *validation* delay is only a bound (the
+  validation-axis counterpart of `is_censored_report`).
 
 - computed_temporal_effect_cols:
 

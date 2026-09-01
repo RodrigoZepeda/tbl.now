@@ -42,9 +42,9 @@ update(
 
 - new_data:
 
-  Another `tbl_now` with the same `strata`, `covariates`, `is_censored`,
-  and `temporal_effects` or a `data.frame` with additional (newer) data
-  not present in `x`
+  Another `tbl_now` with the same `strata`, `covariates`,
+  `is_censored_report`, and `temporal_effects` or a `data.frame` with
+  additional (newer) data not present in `x`
 
 - strata:
 

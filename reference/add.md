@@ -29,9 +29,9 @@ column the object treats as playing that role.
 ## Usage
 
 ``` r
-change_now(x, now = NULL)
+change_now(x, now = NULL, verbose = TRUE)
 
-update_now(x)
+update_now(x, verbose = TRUE)
 
 change_event_date(x, event_date)
 
@@ -39,11 +39,11 @@ change_report_date(x, report_date)
 
 change_case_count(x, case_count)
 
-change_is_censored(x, is_censored)
+change_is_censored_report(x, is_censored_report)
 
-remove_is_censored(x)
+remove_is_censored_report(x)
 
-add_is_censored(x, is_censored)
+add_is_censored_report(x, is_censored_report)
 
 change_strata(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
 
@@ -65,18 +65,26 @@ replace_temporal_effects(x, t_effects)
 
 remove_temporal_effects(x)
 
+change_is_censored_validation(x, is_censored_validation)
+
+add_is_censored_validation(x, is_censored_validation)
+
+remove_is_censored_validation(x)
+
 add_validation_date(
   x,
   validation_date,
   validation_type = NULL,
-  validation_units = "auto"
+  validation_units = "auto",
+  validation_levels = NULL
 )
 
 change_validation_date(
   x,
   validation_date,
   validation_type = NULL,
-  validation_units = "auto"
+  validation_units = "auto",
+  validation_levels = NULL
 )
 
 remove_validation_date(x)
@@ -93,6 +101,10 @@ remove_validation_date(x)
   (optional) Date or `NULL` (default). The date that is considered the
   `now` of the nowcast. If no `now` is given then the function
   automatically uses the last `event_date`.
+
+- verbose:
+
+  (optional) Logical. Whether to throw a message. Default = `TRUE`.
 
 - event_date:
 
@@ -115,16 +127,16 @@ remove_validation_date(x)
   or `NULL` Name of the column with the case counts if `data_type` is
   "count-incidence" or "count-cumulative".
 
-- is_censored:
+- is_censored_report:
 
   (optional)
   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   or `NULL` (default). The name of a column containing either `TRUE` or
   `FALSE` indicating whether the `report_date` is correctly specified or
   corresponds to a `batch` and thus is censored. In other words, if the
-  `report_date` is accurately measured set `is_censored = FALSE` but if
-  the `report_date` corresponds to an error and is only an upper bound
-  of the real report date set `is_censored = TRUE`.
+  `report_date` is accurately measured set `is_censored_report = FALSE`
+  but if the `report_date` corresponds to an error and is only an upper
+  bound of the real report date set `is_censored_report = TRUE`.
 
 - ...:
 
@@ -149,6 +161,16 @@ remove_validation_date(x)
   [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
   object or a character vector with the names of the columns containing
   the temporal effects.
+
+- is_censored_validation:
+
+  (optional)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  or `NULL` (default). The validation-axis counterpart of
+  `is_censored_report`: the name of a logical column marking rows whose
+  **validation delay** is a bound rather than a measurement. Requires a
+  `validation_date`. See
+  [censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md).
 
 - validation_date:
 
@@ -179,6 +201,19 @@ remove_validation_date(x)
   (optional) Character. Either `"auto"` (default), `"days"`, `"weeks"`,
   `"months"`, `"years"` or `"numeric"` – the grid the validation date
   lives on, resolved the same way as `report_units`.
+
+- validation_levels:
+
+  (optional) `NULL` (default) or a **named** character vector
+  translating the labels in `validation_type` into the canonical
+  outcomes, for data that was not recorded in English:
+  `c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")`.
+  The names are the labels in your data, the values are the canonical
+  ones. The column is rewritten to the canonical values and the
+  dictionary is kept as an attribute, readable with
+  [`get_validation_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md).
+  Only `"confirmed"`, `"retracted"`, `"pending"` and `NA` are ever
+  stored.
 
 ## Value
 
@@ -260,6 +295,22 @@ A date on its own cannot say whether the test came back positive or
 negative, so leaving `validation_type` out gives every dated row `NA`
 and warns.
 
+Two optional pieces travel with the third date. `validation_levels` is a
+named dictionary translating the labels in your data into the four
+values `validation_type` may hold – `c(confirmado = "confirmed", ...)` –
+so the recoding happens once rather than in every script. And
+`add_is_censored_validation()` names a logical column marking rows whose
+*validation delay* is a bound rather than a measurement, the
+validation-axis twin of `add_is_censored_report()`;
+[censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+sets it for you.
+
+`change_now()` is validation-aware in both directions. Moving `now`
+forward does nothing to the data; moving it **backwards**, which is how
+a backtest asks what was known at an earlier date, returns every
+validation dated after that moment to `"pending"` and masks its date. A
+resolution that has not happened yet is not a resolution.
+
 ## See also
 
 [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
@@ -327,14 +378,14 @@ ndata <- ndata |> change_event_date(corrected_onset)
 get_event_date(ndata)
 #> [1] "corrected_onset"
 
-## ---- The censoring indicator -----------------------------------------
+## ---- The censoring indicators ----------------------------------------
 
 ## TRUE means the report date is only an upper bound (e.g. a backlog dump).
-ndata$is_censored <- FALSE
-ndata <- ndata |> add_is_censored(is_censored)
-get_is_censored(ndata)
-#> [1] "is_censored"
-ndata <- remove_is_censored(ndata)
+ndata$is_censored_report <- FALSE
+ndata <- ndata |> add_is_censored_report(is_censored_report)
+get_is_censored_report(ndata)
+#> [1] "is_censored_report"
+ndata <- remove_is_censored_report(ndata)
 
 ## ---- `now` -----------------------------------------------------------
 
@@ -357,56 +408,44 @@ counts |>
 
 ## ---- The validation process, the optional third date -----------------
 
-data(hai_bucaramanga)
-hai <- hai_bucaramanga |>
-  dplyr::filter(
-    !is.na(specimen_date), !is.na(report_date), !is.na(received_date)
-  ) |>
+data(covid_us)
+covid <- covid_us |>
+  dplyr::filter(onset_dt >= as.Date("2020-11-01")) |>
   tbl_now(
-    event_date = specimen_date, report_date = report_date,
-    data_type = "linelist", verbose = FALSE
+    event_date = onset_dt, report_date = pos_spec_dt,
+    case_count = n, data_type = "count-incidence",
+    verbose = FALSE, warn_non_uniqueness = FALSE
   )
-#> Warning: 16 rows have a `report_date` before `event_date`
-#> ℹ A negative reporting delay is not a delay; the two date columns may be
-#>   swapped, or the rows may be data-entry errors.
 
-## Specimen taken -> reported -> (here) the laboratory receipt as the
-# validation step. A date alone cannot say how the case resolved, so this
-# warns until an outcome column is supplied.
-hai <- suppressWarnings(add_validation_date(hai, received_date))
-get_validation_date(hai)
-#> [1] "received_date"
+## Onset -> positive specimen -> registration at CDC. A date alone cannot say
+# how the case resolved, so this warns until an outcome column is supplied.
+covid <- suppressWarnings(add_validation_date(covid, cdc_report_dt))
+get_validation_date(covid)
+#> [1] "cdc_report_dt"
 
-hai$outcome <- ifelse(seq_len(nrow(hai)) %% 10 == 0, "retracted", "confirmed")
-hai <- change_validation_date(hai, received_date, validation_type = outcome)
-#> Warning: 16 rows have a `report_date` before `event_date`
-#> ℹ A negative reporting delay is not a delay; the two date columns may be
-#>   swapped, or the rows may be data-entry errors.
-#> Warning: 125 rows are validated BEFORE they were reported.
-#> ℹ The timeline is `event_date <= report_date <= validation_date`; a negative
-#>   validation delay is not a delay. First affected rows: 2, 3, 4, 5, and 6.
-#> Warning: 16 rows have a `report_date` before `event_date`
-#> ℹ A negative reporting delay is not a delay; the two date columns may be
-#>   swapped, or the rows may be data-entry errors.
-#> Warning: 125 rows are validated BEFORE they were reported.
-#> ℹ The timeline is `event_date <= report_date <= validation_date`; a negative
-#>   validation delay is not a delay. First affected rows: 2, 3, 4, 5, and 6.
-table(hai[[get_validation_type(hai)]])
+## CDC's own labels are not this package's four, which is what
+# `validation_levels` translates.
+covid <- change_validation_date(covid, cdc_report_dt,
+  validation_type = current_status,
+  validation_levels = c(
+    "Laboratory-confirmed case" = "confirmed", "Probable Case" = "pending"
+  )
+)
+table(covid[[get_validation_type(covid)]])
 #> 
-#> confirmed retracted 
-#>       197        21 
+#> confirmed   pending 
+#>     27273     11961 
+get_validation_levels(covid)
+#> Laboratory-confirmed case             Probable Case 
+#>               "confirmed"                 "pending" 
 
-## Dropping it leaves an ordinary two-date object.
-has_validation(remove_validation_date(hai))
-#> Warning: 16 rows have a `report_date` before `event_date`
-#> ℹ A negative reporting delay is not a delay; the two date columns may be
-#>   swapped, or the rows may be data-entry errors.
-#> Warning: 125 rows are validated BEFORE they were reported.
-#> ℹ The timeline is `event_date <= report_date <= validation_date`; a negative
-#>   validation delay is not a delay. First affected rows: 2, 3, 4, 5, and 6.
-#> Warning: 16 rows have a `report_date` before `event_date`
-#> ℹ A negative reporting delay is not a delay; the two date columns may be
-#>   swapped, or the rows may be data-entry errors.
+## A validation delay you refuse to believe is a bound, not a measurement.
+covid <- censor_validation_delays_above(covid, 45, verbose = FALSE)
+get_is_censored_validation(covid)
+#> [1] ".is_censored_validation"
+
+## Dropping the third date leaves an ordinary two-date object.
+has_validation(remove_validation_date(covid))
 #> [1] FALSE
 
 ## ---- Temporal effects --------------------------------------------------

@@ -21,7 +21,7 @@ x[[get_event_date(x)]] and your code works on any tbl_now."><meta property="og:i
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,7 +100,7 @@ assuming a column is called <code>onset_week</code>, write
 <span></span>
 <span><span class="fu">get_temporal_effect_cols</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">get_is_censored</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">get_is_censored_report</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">get_case_count</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
@@ -109,6 +109,10 @@ assuming a column is called <code>onset_week</code>, write
 <span><span class="fu">get_validation_type</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">get_validation_units</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">get_is_censored_validation</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">get_validation_levels</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">has_validation</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -140,9 +144,14 @@ or <code>NULL</code> when there are none.</p></dd>
 <dd><p>Integer count, <code>0</code> when
 there are none.</p></dd>
 
-<dt><code>get_is_censored()</code></dt>
+<dt><code>get_is_censored_report()</code></dt>
 <dd><p>Character, or <code>NULL</code>. The name of the column
 flagging reports whose date is only an upper bound.</p></dd>
+
+<dt><code>get_is_censored_validation()</code></dt>
+<dd><p>Character, or <code>NULL</code>. The same on the
+validation axis: the column flagging rows whose <em>validation</em> delay is a
+bound rather than a measurement.</p></dd>
 
 <dt><code>get_now()</code></dt>
 <dd><p>The <code>Date</code> (or number) the nowcast is anchored on.</p></dd>
@@ -173,6 +182,11 @@ of the column holding how it resolved.</p></dd>
 <dt><code>get_validation_units()</code></dt>
 <dd><p>The grid the validation date lives on,
 or <code>NULL</code> when the object carries no validation process.</p></dd>
+
+<dt><code>get_validation_levels()</code></dt>
+<dd><p>The named dictionary translating the
+labels in the data into the canonical outcomes, or <code>NULL</code> when the
+column was already canonical.</p></dd>
 
 <dt><code>has_validation()</code></dt>
 <dd><p><code>TRUE</code> when the object carries a validation
@@ -253,7 +267,9 @@ counts rather than the metadata.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Likewise for a censoring indicator that was never supplied.</span></span></span>
-<span class="r-in"><span><span class="fu">get_is_censored</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">get_is_censored_report</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-in"><span><span class="fu">get_is_censored_validation</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># The as-of moment, and the calendar grid the dates live on.</span></span></span>

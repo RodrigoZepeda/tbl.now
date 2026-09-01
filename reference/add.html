@@ -41,7 +41,7 @@ treats as playing that role."><meta property="og:image" content="https://rodrigo
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -103,9 +103,9 @@ treats as playing that role.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">change_now</span><span class="op">(</span><span class="va">x</span>, now <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">change_now</span><span class="op">(</span><span class="va">x</span>, now <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">update_now</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">update_now</span><span class="op">(</span><span class="va">x</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">change_event_date</span><span class="op">(</span><span class="va">x</span>, <span class="va">event_date</span><span class="op">)</span></span>
 <span></span>
@@ -113,11 +113,11 @@ treats as playing that role.</p>
 <span></span>
 <span><span class="fu">change_case_count</span><span class="op">(</span><span class="va">x</span>, <span class="va">case_count</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">change_is_censored</span><span class="op">(</span><span class="va">x</span>, <span class="va">is_censored</span><span class="op">)</span></span>
+<span><span class="fu">change_is_censored_report</span><span class="op">(</span><span class="va">x</span>, <span class="va">is_censored_report</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">remove_is_censored</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">remove_is_censored_report</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">add_is_censored</span><span class="op">(</span><span class="va">x</span>, <span class="va">is_censored</span><span class="op">)</span></span>
+<span><span class="fu">add_is_censored_report</span><span class="op">(</span><span class="va">x</span>, <span class="va">is_censored_report</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">change_strata</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, warn_now <span class="op">=</span> <span class="cn">TRUE</span>, warn_non_uniqueness <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
@@ -139,18 +139,26 @@ treats as playing that role.</p>
 <span></span>
 <span><span class="fu">remove_temporal_effects</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
+<span><span class="fu">change_is_censored_validation</span><span class="op">(</span><span class="va">x</span>, <span class="va">is_censored_validation</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">add_is_censored_validation</span><span class="op">(</span><span class="va">x</span>, <span class="va">is_censored_validation</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">remove_is_censored_validation</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu">add_validation_date</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">validation_date</span>,</span>
 <span>  validation_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  validation_units <span class="op">=</span> <span class="st">"auto"</span></span>
+<span>  validation_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
+<span>  validation_levels <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">change_validation_date</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">validation_date</span>,</span>
 <span>  validation_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  validation_units <span class="op">=</span> <span class="st">"auto"</span></span>
+<span>  validation_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
+<span>  validation_levels <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">remove_validation_date</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
@@ -168,6 +176,10 @@ treats as playing that role.</p>
 <dd><p>(optional) Date or <code>NULL</code> (default). The date that is considered the <code>now</code> of the
 nowcast. If no <code>now</code> is given then the function automatically uses the last
 <code>event_date</code>.</p></dd>
+
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>(optional) Logical. Whether to throw a message. Default = <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-event-date">event_date<a class="anchor" aria-label="anchor" href="#arg-event-date"></a></dt>
@@ -190,15 +202,15 @@ Name of the column with the case counts if <code>data_type</code> is "count-inci
 or "count-cumulative".</p></dd>
 
 
-<dt id="arg-is-censored">is_censored<a class="anchor" aria-label="anchor" href="#arg-is-censored"></a></dt>
+<dt id="arg-is-censored-report">is_censored_report<a class="anchor" aria-label="anchor" href="#arg-is-censored-report"></a></dt>
 <dd><p>(optional)
 <a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a> or <code>NULL</code> (default).
 The name of a column containing either <code>TRUE</code> or <code>FALSE</code> indicating whether
 the <code>report_date</code> is correctly specified or corresponds to a <code>batch</code> and thus
 is censored. In other words, if the <code>report_date</code> is accurately measured
-set <code>is_censored = FALSE</code> but if the <code>report_date</code> corresponds to an error
+set <code>is_censored_report = FALSE</code> but if the <code>report_date</code> corresponds to an error
 and is only an upper bound of the real report date
-set <code>is_censored = TRUE</code>.</p></dd>
+set <code>is_censored_report = TRUE</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -221,6 +233,15 @@ and strata)</p></dd>
 <dt id="arg-t-effects">t_effects<a class="anchor" aria-label="anchor" href="#arg-t-effects"></a></dt>
 <dd><p>(optional) Either <code>NULL</code> (default), a <code><a href="temporal_effects.html">temporal_effects()</a></code> object
 or a character vector with the names of the columns containing the temporal effects.</p></dd>
+
+
+<dt id="arg-is-censored-validation">is_censored_validation<a class="anchor" aria-label="anchor" href="#arg-is-censored-validation"></a></dt>
+<dd><p>(optional)
+<a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a> or <code>NULL</code> (default).
+The validation-axis counterpart of <code>is_censored_report</code>: the name of a
+logical column marking rows whose <strong>validation delay</strong> is a bound rather
+than a measurement. Requires a <code>validation_date</code>. See
+<a href="censor_delays_above.html">censor_validation_delays_above()</a>.</p></dd>
 
 
 <dt id="arg-validation-date">validation_date<a class="anchor" aria-label="anchor" href="#arg-validation-date"></a></dt>
@@ -248,6 +269,17 @@ alone cannot say whether the case was confirmed or retracted.</p></dd>
 <dd><p>(optional) Character. Either <code>"auto"</code> (default),
 <code>"days"</code>, <code>"weeks"</code>, <code>"months"</code>, <code>"years"</code> or <code>"numeric"</code> – the grid the
 validation date lives on, resolved the same way as <code>report_units</code>.</p></dd>
+
+
+<dt id="arg-validation-levels">validation_levels<a class="anchor" aria-label="anchor" href="#arg-validation-levels"></a></dt>
+<dd><p>(optional) <code>NULL</code> (default) or a <strong>named</strong> character
+vector translating the labels in <code>validation_type</code> into the canonical
+outcomes, for data that was not recorded in English:
+<code>c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")</code>.
+The names are the labels in your data, the values are the canonical ones. The
+column is rewritten to the canonical values and the dictionary is kept as an
+attribute, readable with <code><a href="nowcast_data_getters.html">get_validation_levels()</a></code>. Only
+<code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code> and <code>NA</code> are ever stored.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -312,6 +344,19 @@ and outcome as well, so a confirmed and a retracted case on the same
 accepted.</p></li>
 </ul><p>A date on its own cannot say whether the test came back positive or negative,
 so leaving <code>validation_type</code> out gives every dated row <code>NA</code> and warns.</p>
+<p>Two optional pieces travel with the third date. <code>validation_levels</code> is a
+named dictionary translating the labels in your data into the four values
+<code>validation_type</code> may hold – <code>c(confirmado = "confirmed", ...)</code> – so the
+recoding happens once rather than in every script. And
+<code>add_is_censored_validation()</code> names a logical column marking rows whose
+<em>validation delay</em> is a bound rather than a measurement, the validation-axis
+twin of <code>add_is_censored_report()</code>; <a href="censor_delays_above.html">censor_validation_delays_above()</a>
+sets it for you.</p>
+<p><code>change_now()</code> is validation-aware in both directions. Moving <code>now</code> forward
+does nothing to the data; moving it <strong>backwards</strong>, which is how a backtest
+asks what was known at an earlier date, returns every validation dated after
+that moment to <code>"pending"</code> and masks its date. A resolution that has not
+happened yet is not a resolution.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -373,14 +418,14 @@ the <a href="nowcast_data_getters.html">getters</a> for reading them back;
 <span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_event_date</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "corrected_onset"</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">## ---- The censoring indicator -----------------------------------------</span></span></span>
+<span class="r-in"><span><span class="co">## ---- The censoring indicators ----------------------------------------</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## TRUE means the report date is only an upper bound (e.g. a backlog dump).</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">is_censored</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">add_is_censored</span><span class="op">(</span><span class="va">is_censored</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_is_censored</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "is_censored"</span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu">remove_is_censored</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">is_censored_report</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">add_is_censored_report</span><span class="op">(</span><span class="va">is_censored_report</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_is_censored_report</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "is_censored_report"</span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu">remove_is_censored_report</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## ---- `now` -----------------------------------------------------------</span></span></span>
 <span class="r-in"><span></span></span>
@@ -403,56 +448,44 @@ the <a href="nowcast_data_getters.html">getters</a> for reading them back;
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## ---- The validation process, the optional third date -----------------</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">hai</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">received_date</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">covid_us</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">covid</span> <span class="op">&lt;-</span> <span class="va">covid_us</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">onset_dt</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-11-01"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    event_date <span class="op">=</span> <span class="va">specimen_date</span>, report_date <span class="op">=</span> <span class="va">report_date</span>,</span></span>
-<span class="r-in"><span>    data_type <span class="op">=</span> <span class="st">"linelist"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span>    event_date <span class="op">=</span> <span class="va">onset_dt</span>, report_date <span class="op">=</span> <span class="va">pos_spec_dt</span>,</span></span>
+<span class="r-in"><span>    case_count <span class="op">=</span> <span class="va">n</span>, data_type <span class="op">=</span> <span class="st">"count-incidence"</span>,</span></span>
+<span class="r-in"><span>    verbose <span class="op">=</span> <span class="cn">FALSE</span>, warn_non_uniqueness <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>16 rows have a `report_date` before `event_date`</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A negative reporting delay is not a delay; the two date columns may be</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   swapped, or the rows may be data-entry errors.</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">## Specimen taken -&gt; reported -&gt; (here) the laboratory receipt as the</span></span></span>
-<span class="r-in"><span><span class="co"># validation step. A date alone cannot say how the case resolved, so this</span></span></span>
-<span class="r-in"><span><span class="co"># warns until an outcome column is supplied.</span></span></span>
-<span class="r-in"><span><span class="va">hai</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="fu">add_validation_date</span><span class="op">(</span><span class="va">hai</span>, <span class="va">received_date</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_validation_date</a></span><span class="op">(</span><span class="va">hai</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "received_date"</span>
+<span class="r-in"><span><span class="co">## Onset -&gt; positive specimen -&gt; registration at CDC. A date alone cannot say</span></span></span>
+<span class="r-in"><span><span class="co"># how the case resolved, so this warns until an outcome column is supplied.</span></span></span>
+<span class="r-in"><span><span class="va">covid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="fu">add_validation_date</span><span class="op">(</span><span class="va">covid</span>, <span class="va">cdc_report_dt</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_validation_date</a></span><span class="op">(</span><span class="va">covid</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "cdc_report_dt"</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">hai</span><span class="op">$</span><span class="va">outcome</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">hai</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%%</a></span> <span class="fl">10</span> <span class="op">==</span> <span class="fl">0</span>, <span class="st">"retracted"</span>, <span class="st">"confirmed"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">hai</span> <span class="op">&lt;-</span> <span class="fu">change_validation_date</span><span class="op">(</span><span class="va">hai</span>, <span class="va">received_date</span>, validation_type <span class="op">=</span> <span class="va">outcome</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>16 rows have a `report_date` before `event_date`</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A negative reporting delay is not a delay; the two date columns may be</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   swapped, or the rows may be data-entry errors.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>125 rows are validated BEFORE they were reported.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> The timeline is `event_date &lt;= report_date &lt;= validation_date`; a negative</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   validation delay is not a delay. First affected rows: 2, 3, 4, 5, and 6.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>16 rows have a `report_date` before `event_date`</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A negative reporting delay is not a delay; the two date columns may be</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   swapped, or the rows may be data-entry errors.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>125 rows are validated BEFORE they were reported.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> The timeline is `event_date &lt;= report_date &lt;= validation_date`; a negative</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   validation delay is not a delay. First affected rows: 2, 3, 4, 5, and 6.</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">hai</span><span class="op">[[</span><span class="fu"><a href="nowcast_data_getters.html">get_validation_type</a></span><span class="op">(</span><span class="va">hai</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## CDC's own labels are not this package's four, which is what</span></span></span>
+<span class="r-in"><span><span class="co"># `validation_levels` translates.</span></span></span>
+<span class="r-in"><span><span class="va">covid</span> <span class="op">&lt;-</span> <span class="fu">change_validation_date</span><span class="op">(</span><span class="va">covid</span>, <span class="va">cdc_report_dt</span>,</span></span>
+<span class="r-in"><span>  validation_type <span class="op">=</span> <span class="va">current_status</span>,</span></span>
+<span class="r-in"><span>  validation_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="st">"Laboratory-confirmed case"</span> <span class="op">=</span> <span class="st">"confirmed"</span>, <span class="st">"Probable Case"</span> <span class="op">=</span> <span class="st">"pending"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">covid</span><span class="op">[[</span><span class="fu"><a href="nowcast_data_getters.html">get_validation_type</a></span><span class="op">(</span><span class="va">covid</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> confirmed retracted </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       197        21 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> confirmed   pending </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     27273     11961 </span>
+<span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_validation_levels</a></span><span class="op">(</span><span class="va">covid</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Laboratory-confirmed case             Probable Case </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               "confirmed"                 "pending" </span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">## Dropping it leaves an ordinary two-date object.</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">has_validation</a></span><span class="op">(</span><span class="fu">remove_validation_date</span><span class="op">(</span><span class="va">hai</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>16 rows have a `report_date` before `event_date`</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A negative reporting delay is not a delay; the two date columns may be</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   swapped, or the rows may be data-entry errors.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>125 rows are validated BEFORE they were reported.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> The timeline is `event_date &lt;= report_date &lt;= validation_date`; a negative</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   validation delay is not a delay. First affected rows: 2, 3, 4, 5, and 6.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>16 rows have a `report_date` before `event_date`</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A negative reporting delay is not a delay; the two date columns may be</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   swapped, or the rows may be data-entry errors.</span>
+<span class="r-in"><span><span class="co">## A validation delay you refuse to believe is a bound, not a measurement.</span></span></span>
+<span class="r-in"><span><span class="va">covid</span> <span class="op">&lt;-</span> <span class="fu"><a href="censor_delays_above.html">censor_validation_delays_above</a></span><span class="op">(</span><span class="va">covid</span>, <span class="fl">45</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_is_censored_validation</a></span><span class="op">(</span><span class="va">covid</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] ".is_censored_validation"</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## Dropping the third date leaves an ordinary two-date object.</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">has_validation</a></span><span class="op">(</span><span class="fu">remove_validation_date</span><span class="op">(</span><span class="va">covid</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## ---- Temporal effects --------------------------------------------------</span></span></span>

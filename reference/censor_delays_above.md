@@ -13,12 +13,11 @@ records its delay as *"at least this long"* instead of *"exactly this
 long"*.
 
 - `censor_delays_above()` does this for the **reporting** delay, by
-  setting the `is_censored` flag.
+  setting the `is_censored_report` flag.
 
 - `censor_validation_delays_above()` does the same for the
-  **validation** delay – a case still waiting on a laboratory result
-  months later is, in practice, never going to be resolved – by
-  returning it to `"pending"`.
+  **validation** delay – a case whose laboratory result took months to
+  come back – by setting the `is_censored_validation` flag.
 
 ## Usage
 
@@ -48,27 +47,35 @@ censor_validation_delays_above(x, max_delay, verbose = TRUE)
 
 ## Value
 
-`censor_delays_above()` returns the `tbl_now` with its `is_censored`
-column updated, creating it when absent.
+`censor_delays_above()` returns the `tbl_now` with its
+`is_censored_report` column updated, creating it when absent.
 
-`censor_validation_delays_above()` returns the `tbl_now` with the
-offending rows' `validation_type` set to `"pending"` and their
-validation date set to `NA` – a resolution you refuse to believe is not
-a resolution.
+`censor_validation_delays_above()` returns the `tbl_now` with its
+`is_censored_validation` column updated, creating it when absent.
 
 ## Details
 
 The reporting delay is read from the generated `.delay` column (report
-date minus event date, in the object's event units). Existing censoring
-flags are merged rather than overwritten, so a report that was already
-censored stays censored.
+date minus event date, in the object's event units); the validation
+delay from `.validation_delay` (validation date minus report date, in
+validation units). Existing censoring flags are merged rather than
+overwritten, so a delay that was already censored stays censored.
+
+Both functions keep the case **and its date**. Nothing is deleted and no
+outcome is rewritten: the flag says the delay is a bound rather than a
+measurement, and it is up to the model to use that. A case that was
+confirmed after 200 days is still a confirmed case, and
+[get_latest_confirmed()](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+still counts it.
 
 ## See also
 
-[add_is_censored()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+[add_is_censored_report()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 and
-[change_is_censored()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-to set the flag by hand;
+[change_is_censored_report()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+to set the flag by hand, and
+[add_is_censored_validation()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+for the validation axis;
 [`diagnose_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
 and
 [`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.md)
@@ -96,8 +103,8 @@ tn$.delay
 # Anything slower than 60 days is recorded as a lower bound, not a fact.
 censored <- censor_delays_above(tn, max_delay = 60)
 #> ℹ Marked 1 report with delay > 60 days as censored.
-#> • This delay is now an upper bound (is_censored).
-censored[[get_is_censored(censored)]]
+#> • This delay is now an upper bound (is_censored_report).
+censored[[get_is_censored_report(censored)]]
 #> [1] FALSE FALSE FALSE  TRUE
 
 # The validation counterpart: a laboratory result that took 90 days.
@@ -113,9 +120,12 @@ flu <- tbl_now(cases,
   data_type = "linelist", verbose = FALSE
 )
 
-# That one goes back to "pending"; the other four stay confirmed.
-table(censor_validation_delays_above(flu, 30, verbose = FALSE)[["outcome"]])
+# That one is flagged; all five stay confirmed, and the date is kept.
+flagged <- censor_validation_delays_above(flu, 30, verbose = FALSE)
+flagged[[get_is_censored_validation(flagged)]]
+#> [1] FALSE FALSE FALSE  TRUE FALSE
+table(flagged[["outcome"]])
 #> 
-#> confirmed   pending 
-#>         4         1 
+#> confirmed 
+#>         5 
 ```

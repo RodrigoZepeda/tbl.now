@@ -177,7 +177,7 @@ linelist.
 > calls
 > [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
 > first, which groups by
-> `(event_date, report_date, .event_num, .report_num, strata, is_censored, covariates, temporal-effect cols)`
+> `(event_date, report_date, .event_num, .report_num, strata, is_censored_report, covariates, temporal-effect cols)`
 > and sums the counts — so any **extra column you did *not* declare as a
 > stratum is summed away**, not plotted. (If a column like `race` is
 > present but not a stratum, its rows are correctly collapsed.) A
@@ -253,29 +253,29 @@ integer, character, or factor.
 
 ## Skill: mark whether data is left-censored
 
-`is_censored` flags reports that arrive in artificial **batches**
+`is_censored_report` flags reports that arrive in artificial **batches**
 representing left-censoring rather than true reporting dynamics (e.g. a
 lab outage where a week of reports all land on the same later day). The
-`is_censored` attribute stores the **name of a logical column**
+`is_censored_report` attribute stores the **name of a logical column**
 (`TRUE`/`FALSE` per row).
 
 ``` r
 
 df <- df |> mutate(was_batched = report_date == as.Date("2021-03-15"))
 tn <- tbl_now(df, event_date = onset, report_date = reported,
-              is_censored = was_batched, verbose = FALSE)
+              is_censored_report = was_batched, verbose = FALSE)
 
 # or after creation:
-tn <- add_is_censored(tn, was_batched)     # errors if one is already set
-tn <- change_is_censored(tn, was_batched)  # replace (pass NULL to clear)
-tn <- remove_is_censored(tn)
+tn <- add_is_censored_report(tn, was_batched)     # errors if one is already set
+tn <- change_is_censored_report(tn, was_batched)  # replace (pass NULL to clear)
+tn <- remove_is_censored_report(tn)
 
-get_is_censored(tn)   # column name, or NULL if not censored
+get_is_censored_report(tn)   # column name, or NULL if not censored
 ```
 
-To tell whether a dataset is censored: `is.null(get_is_censored(tn))` →
-`TRUE` means *no* censoring indicator is set. The censoring column
-itself must be logical or
+To tell whether a dataset is censored:
+`is.null(get_is_censored_report(tn))` → `TRUE` means *no* censoring
+indicator is set. The censoring column itself must be logical or
 [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
 rejects it.
 
@@ -294,6 +294,66 @@ therefore collapses it first, warning either way:
 [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
 keeps it — a delay-distribution fit is the one consumer that can use
 censoring.
+
+### The validation axis has its own flag
+
+`is_censored_validation` is the exact twin of `is_censored_report`, one
+axis over: it marks rows whose **validation delay** (report →
+resolution) is a bound rather than a measurement. It requires a
+`validation_date` — there is no validation delay to bound without one.
+
+``` r
+
+tn <- tbl_now(df, ..., validation_date = result, validation_type = outcome,
+              is_censored_validation = slow_result)
+
+tn <- add_is_censored_validation(tn, slow_result)
+tn <- change_is_censored_validation(tn, slower)   # NULL to clear
+tn <- remove_is_censored_validation(tn)
+get_is_censored_validation(tn)                    # column name, or NULL
+
+# Or let the threshold set it. The case, its date and its outcome are KEPT;
+# only the delay becomes a bound, so get_latest_confirmed() still counts it.
+tn <- censor_validation_delays_above(tn, max_delay = 60)
+```
+
+Both flags join the grouping keys, so a censored resolution and an exact
+one on the same `(event, report, outcome)` triple stay two rows rather
+than being summed into one. The converters collapse both, by the same
+table above.
+
+------------------------------------------------------------------------
+
+## Skill: `validation_type` and other people’s words
+
+`validation_type` may hold **only** `"confirmed"`, `"retracted"`,
+`"pending"` or `NA`. Anything else is an error at construction and at
+every rebuild.
+
+`validation_levels` is how data recorded in other words gets into those
+four: a **named** vector whose names are the labels in your data and
+whose values are the canonical outcomes.
+
+``` r
+
+tn <- tbl_now(casos, ...,
+  validation_type   = desenlace,
+  validation_levels = c(confirmado = "confirmed", retractado = "retracted",
+                        pendiente = "pending")
+)
+
+get_validation_levels(tn)   # the dictionary, or NULL
+```
+
+The column is rewritten to the canonical values and the dictionary is
+stored on the object, so it survives `dplyr` and every rebuild. A
+dictionary that would recode a canonical value into a *different* one is
+refused: recoding runs again on every rebuild, so it has to be
+idempotent.
+
+`covid_us` is the shipped worked example — CDC says
+`"Laboratory-confirmed case"` and `"Probable Case"`, and mapping those
+is what the argument is for.
 
 ------------------------------------------------------------------------
 
@@ -1355,7 +1415,9 @@ update(tn, new_data = new_rows)      # bind newer data, preserving attributes
 align_weeks(tn, date_col)            # snap dates to a consistent epiweek day -> integer .delay
 week_2_date(df, week_col, year_col)  # epiweek + year -> Date
 is_weekday(date, weekend_days = c("Sat","Sun"))
-change_now(tn, as.Date("2023-06-01"))   # move the as-of date (re-censors later reports)
+change_now(tn, as.Date("2023-06-01"))   # move the as-of date. Moving it BACKWARDS
+                                        # returns validations dated after it to
+                                        # "pending" and masks their date
 tbl_now_attributes(tn)               # list of just the tbl_now-specific attributes
 ```
 
@@ -1412,7 +1474,10 @@ get_event_units(x) / get_report_units(x) # "days"|"weeks"|"months"|"years"|"nume
 get_now(x)                                # Date — the as-of date
 get_strata(x) / get_num_strata(x)
 get_covariates(x) / get_num_covariates(x)
-get_case_count(x) / get_is_censored(x)    # column name or NULL
+get_case_count(x) / get_is_censored_report(x)    # column name or NULL
+get_is_censored_validation(x)             # the validation-axis flag, or NULL
+get_validation_date(x) / get_validation_type(x) / get_validation_units(x)
+get_validation_levels(x) / has_validation(x)
 get_data_type(x)                          # "linelist"|"count-incidence"|"count-cumulative"
 get_temporal_effects(x)                   # list of lazy specs
 get_temporal_effect_cols(x)               # computed column names

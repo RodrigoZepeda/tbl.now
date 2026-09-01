@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -659,18 +659,20 @@ report-date perspectives:</p>
 <h4 id="the-real-data">The real data<a class="anchor" aria-label="anchor" href="#the-real-data"></a>
 </h4>
 <p><code>covid_us</code> comes from the CDC’s individual-level <a href="https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data/vbim-akqf/about_data" class="external-link">COVID-19
-Case Surveillance Public Use Data</a>. These represent cases whose event
-date (<code>cdc_case_earliest_dt</code>) <em>and</em> report date
-(<code>cdc_report_dt</code>) both fall before September 2020. The
-picture shows what it would have looked back then.</p>
+Case Surveillance Public Use Data</a>. It carries three dates. Here we
+use the first and the last: symptom onset (<code>onset_dt</code>) as the
+event, and registration at CDC (<code>cdc_report_dt</code>) as the
+report. The middle one, <code>pos_spec_dt</code>, is the specimen
+collection, and it is pooled away along with <code>current_status</code>
+and <code>sex</code> – the batch question is about when reports
+<em>arrived</em>, not about who they were.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">covid_us</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">covid_early</span> <span class="op">&lt;-</span> <span class="va">covid_us</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cdc_case_earliest_dt</span> <span class="op">&lt;</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-09-01"</span><span class="op">)</span> <span class="op">&amp;</span></span>
-<span>           <span class="va">cdc_report_dt</span> <span class="op">&lt;</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-09-01"</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>, .by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">onset_dt</span>, <span class="va">cdc_report_dt</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">covid_early</span>, event_date <span class="op">=</span> <span class="va">cdc_case_earliest_dt</span>,</span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">covid_early</span>, event_date <span class="op">=</span> <span class="va">onset_dt</span>,</span>
 <span>              report_date <span class="op">=</span> <span class="va">cdc_report_dt</span>, case_count <span class="op">=</span> <span class="va">n</span>,</span>
 <span>              data_type <span class="op">=</span> <span class="st">"count-incidence"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p>Half of all cases were reported within a few days, but the tail is
@@ -678,7 +680,7 @@ long: some cases take weeks or months to surface.</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">tn</span><span class="op">$</span><span class="va">.delay</span>, <span class="va">tn</span><span class="op">$</span><span class="va">n</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.75</span>, <span class="fl">0.9</span>, <span class="fl">0.99</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; 50% 75% 90% 99% </span></span>
-<span><span class="co">#&gt;   4  13  42  88</span></span></code></pre></div>
+<span><span class="co">#&gt;   6  12  30 149</span></span></code></pre></div>
 <p>We can see this dataset again from both the event-date and the
 report-date perspectives:</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
@@ -700,12 +702,13 @@ over their neighbours.</p>
 Reporting process of the simulated data
 </p>
 </div>
-<p>On the real data the reporting is spikier; however, a couple of peaks
-in June 2020 stick up where smooth epidemic reporting should be. Those
-are reporting artefacts either pure backlog releases, or a mix of
-backlog + a genuine surge (we’ll come back to this characterization
-later). The tallest is a single day of about 160K reports, well above
-the 20-40K that arrive on a typical day that summer.</p>
+<p>On the real data the reporting is spikier; a handful of peaks stick
+up where smooth epidemic reporting should be. Those are reporting
+artefacts either pure backlog releases, or a mix of backlog + a genuine
+surge (we’ll come back to this characterization later). The tallest is a
+single day of about 50K reports on 12 December 2020, sixteen times the
+3K that arrive on a typical day; 10 June and 5 September are the other
+conspicuous ones.</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_epidemic_process.html">plot_reporting_process</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -739,8 +742,8 @@ Classical reporting triangle of the simulated data
 </p>
 </div>
 <p>On COVID-19, the triangle is a broad blue-grey haze (most cases
-reported over many months) crossed by two bright diagonals. They
-correspond to the same spikes seen for June 2020:</p>
+reported over many months) crossed by bright diagonals. They correspond
+to the same spikes seen in the reporting process:</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_reporting_triangle.html">plot_reporting_triangle</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -766,9 +769,9 @@ bottom edge.</p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_reporting_hexamap.html">plot_reporting_hexamap</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span></code></pre></div>
 <p><img src="diagnosing-a-tbl-now_files/figure-html/hex-sim-1.png" class="r-plt" alt="" width="960"></p>
-<p>On covid the vertical stripes are the spring/summer-2020 backlog
-releases. The delay axis is capped with <code>max_delay</code> to keep
-the map to where the reports are.</p>
+<p>On covid the vertical stripes are the 2020 backlog releases. The
+delay axis is capped with <code>max_delay</code> to keep the map to
+where the reports are.</p>
 <div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_reporting_hexamap.html">plot_reporting_hexamap</a></span><span class="op">(</span><span class="va">tn</span>, max_delay <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span></code></pre></div>
 <p><img src="diagnosing-a-tbl-now_files/figure-html/hex-covid-1.png" class="r-plt" alt="" width="1020"></p>
@@ -794,7 +797,7 @@ batch:</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_scalogram.html">plot_scalogram</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span></code></pre></div>
 <p><img src="diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-13-1.png" class="r-plt" alt="" width="1200"></p>
-<p>and again the same June dates being the most identified with
+<p>and again the same release dates being the most identified, with
 additional dates having less of a clear pattern:</p>
 <div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_scalogram.html">plot_scalogram</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span></code></pre></div>
@@ -883,20 +886,20 @@ their <code>deficit</code> (how depleted the days just before were) and
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2024-02-26      <span style="text-decoration: underline;">1</span>773     336.    972.  465.       7.03<span style="color: #949494;">e</span><span style="color: #BB0000;">-47</span> TRUE</span></span></code></pre>
 <p>On covid we pass <code>period = 7</code> to divide out the weekly
-reporting cadence. The confirmed batches (the
-Benjamini-Hochberg-corrected <code>batch</code> flag) are the
-spring/summer-2020 releases – each reported far more than its neighbours
-<em>and</em> was preceded by a matching deficit. The clearest is
-<strong>10 June 2020</strong>, nearly ten times its baseline:</p>
+reporting cadence. Only one date survives the
+Benjamini-Hochberg-corrected <code>batch</code> flag: <strong>7 November
+2020</strong>, which reported about twice its baseline <em>and</em> was
+preceded by a matching deficit of roughly the same size. That pairing is
+the whole test – the taller spikes of 12 December and 10 June are not
+flagged, because nothing was withheld beforehand to release, which makes
+them surges rather than batches:</p>
 <div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_batches.html">diagnose_batches</a></span><span class="op">(</span><span class="va">tn</span>, period <span class="op">=</span> <span class="fl">7</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">batch</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 7</span></span></span>
-<span><span class="co">#&gt;   report_date reported baseline deficit   delta p_transport_bh batch</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-06-10    <span style="text-decoration: underline;">162</span>150   <span style="text-decoration: underline;">16</span>713.  <span style="text-decoration: underline;">25</span>372. <span style="text-decoration: underline;">120</span>065.     0.000<span style="text-decoration: underline;">002</span>96 TRUE </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-06-20     <span style="text-decoration: underline;">33</span>784   <span style="text-decoration: underline;">17</span>009.  <span style="text-decoration: underline;">21</span>427.  -<span style="color: #BB0000; text-decoration: underline;">4</span><span style="color: #BB0000;">652.</span>     0.000<span style="text-decoration: underline;">102</span>   TRUE </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-03-24     <span style="text-decoration: underline;">13</span>532    <span style="text-decoration: underline;">4</span>712.  <span style="text-decoration: underline;">11</span>449.  -<span style="color: #BB0000; text-decoration: underline;">2</span><span style="color: #BB0000;">629.</span>     0.000<span style="text-decoration: underline;">013</span>8  TRUE</span></span></code></pre>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 7</span></span></span>
+<span><span class="co">#&gt;   report_date reported baseline deficit delta p_transport_bh batch</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-11-07     <span style="text-decoration: underline;">15</span>882    <span style="text-decoration: underline;">8</span>174.   <span style="text-decoration: underline;">8</span>053. -<span style="color: #BB0000;">345.</span>        0.004<span style="text-decoration: underline;">05</span> TRUE</span></span></code></pre>
 <p>The sensitivity of the batch flag can be adapted with
 <code>alpha</code>.</p>
 </div>
@@ -930,26 +933,27 @@ happen so it does not detect a drift:</p>
 <div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_drift.html">diagnose_drift</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 9</span></span></span>
-<span><span class="co">#&gt;   strata stat       n    tau sens_slope statistic  p_value method    drift</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all    median   182 -<span style="color: #BB0000;">0.601</span>     -<span style="color: #BB0000;">0.286</span>     -<span style="color: #BB0000;">3.91</span> 9.17<span style="color: #949494;">e</span><span style="color: #BB0000;">- 5</span> hamed-rao TRUE </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> all    spread   182 -<span style="color: #BB0000;">0.871</span>     -<span style="color: #BB0000;">0.912</span>     -<span style="color: #BB0000;">6.13</span> 8.55<span style="color: #949494;">e</span><span style="color: #BB0000;">-10</span> hamed-rao TRUE</span></span>
+<span><span class="co">#&gt;   strata stat       n    tau sens_slope statistic     p_value method    drift</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all    median   305 -<span style="color: #BB0000;">0.793</span>     -<span style="color: #BB0000;">0.108</span>     -<span style="color: #BB0000;">3.81</span> 0.000<span style="text-decoration: underline;">142</span>    hamed-rao TRUE </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> all    spread   305 -<span style="color: #BB0000;">0.730</span>     -<span style="color: #BB0000;">0.669</span>     -<span style="color: #BB0000;">5.29</span> 0.000<span style="text-decoration: underline;">000</span>120 hamed-rao TRUE</span></span>
 <span><span class="fu"><a href="../reference/diagnose_drift.html">diagnose_drift</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 9</span></span></span>
 <span><span class="co">#&gt;   strata stat       n     tau sens_slope statistic p_value method    drift</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all    median   100  0.012<span style="text-decoration: underline;">9</span>          0     0.151   0.880 hamed-rao FALSE</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> all    spread   100 -<span style="color: #BB0000;">0.020</span><span style="color: #BB0000; text-decoration: underline;">4</span>          0    -<span style="color: #BB0000;">0.305</span>   0.760 hamed-rao FALSE</span></span></code></pre></div>
-<p>The change-point function also detects that by April the COVID-19
-delay distribution has completely changed from before. In the case of
-the ideal example the change is not long enough to be detected:</p>
+<p>The change-point function also detects that by early June the
+COVID-19 delay distribution has completely changed from before. In the
+case of the ideal example the change is not long enough to be
+detected:</p>
 <div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_changepoint.html">diagnose_changepoint</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 10</span></span></span>
-<span><span class="co">#&gt;   strata stat       n changepoint statistic  p_value before after shift changepoint_detected</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>               </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all    median   182 2020-04-06       <span style="text-decoration: underline;">5</span>881 2.71<span style="color: #949494;">e</span><span style="color: #BB0000;">-15</span>   40.7  6.35 -<span style="color: #BB0000;">34.3</span> TRUE                </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> all    spread   182 2020-04-01       <span style="text-decoration: underline;">8</span>076 1.84<span style="color: #949494;">e</span><span style="color: #BB0000;">-28</span>  127.  44.0  -<span style="color: #BB0000;">82.7</span> TRUE</span></span>
+<span><span class="co">#&gt;   strata stat       n changepoint statistic  p_value before after  shift changepoint_detected</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all    median   305 2020-06-07      <span style="text-decoration: underline;">21</span>432 1.79<span style="color: #949494;">e</span><span style="color: #BB0000;">-42</span>   55.8  6.41  -<span style="color: #BB0000;">49.4</span> TRUE                </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> all    spread   305 2020-06-18      <span style="text-decoration: underline;">20</span>419 1.36<span style="color: #949494;">e</span><span style="color: #BB0000;">-38</span>  128.  28.1  -<span style="color: #BB0000;">100.</span>  TRUE</span></span>
 <span><span class="fu"><a href="../reference/diagnose_changepoint.html">diagnose_changepoint</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 10</span></span></span>
 <span><span class="co">#&gt;   strata stat       n changepoint statistic p_value before after  shift changepoint_detected</span></span>

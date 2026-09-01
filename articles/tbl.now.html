@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -309,11 +309,22 @@ the nowcast should be computed separately (e.g., age group,
 sex).</p></li>
 <li><p><strong>covariates</strong> (optional): predictor variables that
 may improve the nowcast (e.g., weather covariates).</p></li>
-<li><p><strong>is_censored</strong> (optional): identifies cases where
-the report date represents not the exact date it was reported but an
-upper limit to that exact date (i.e. left-censored). As an example, one
-can consider a system error and reports from a lab are not registered
-until a week after.</p></li>
+<li><p><strong>is_censored_report</strong> (optional): identifies cases
+where the report date represents not the exact date it was reported but
+an upper limit to that exact date (i.e. left-censored). As an example,
+one can consider a system error and reports from a lab are not
+registered until a week after.</p></li>
+<li><p><strong>is_censored_validation</strong> (optional): the same flag
+on the validation axis. It marks rows whose <em>validation</em> delay –
+the time from report to resolution – is a bound rather than a
+measurement. See the <a href="#the-validation-process">validation
+process</a> section.</p></li>
+<li><p><strong>validation_levels</strong> (optional): a named dictionary
+translating the labels in <code>validation_type</code> into the four
+values that column may hold. Surveillance data is not always recorded in
+English, and this is how <code>c(confirmado = "confirmed")</code>
+becomes <code>"confirmed"</code> once rather than in every script that
+touches the data.</p></li>
 <li><p><strong>case_count</strong> (optional): the column storing case
 counts when the dataset is aggregated.</p></li>
 <li><p><strong>temporal_effects</strong> (optional): a lazy
@@ -683,7 +694,7 @@ function that collapses duplicates by summing the
 <ul>
 <li><p>Rows are grouped by <code>event_date</code>,
 <code>report_date</code>, and any <code>strata</code>, and
-<code>is_censored</code>.</p></li>
+<code>is_censored_report</code>.</p></li>
 <li><p>The <code>case_count</code> column is summed within each
 group.</p></li>
 <li><p>Attributes are preserved so the resulting object remains a valid
@@ -924,76 +935,98 @@ is</p>
 \le \text{validation date} \le \text{now}</span></p>
 <p><code>validation_type</code> takes the values
 <code>"confirmed"</code>, <code>"retracted"</code>,
-<code>"pending"</code> or <code>NA</code>. <strong>Pending</strong> is
-the important one: it means the case has been reported and is still
-waiting for a result, so it has <em>no</em> validation date. That is a
-different thing from a case whose result you simply never recorded,
-which is <code>NA</code>.</p>
-<p>We will use <code>hai_bucaramanga</code>, an open extract of
-healthcare-associated infections from Bucaramanga, Colombia, which
-records all three dates: when the specimen was taken, when the
-laboratory received it, and when the laboratory issued the result.</p>
+<code>"pending"</code> or <code>NA</code>, <strong>and nothing
+else</strong>. <strong>Pending</strong> is the important one: it means
+the case has been reported and is still waiting for a result, so it has
+<em>no</em> validation date. That is a different thing from a case whose
+result you simply never recorded, which is <code>NA</code>.</p>
+<p>We will use <code>covid_us</code>, the CDC’s COVID-19 case
+surveillance data for 2020, which records all three dates: when symptoms
+began, when the first positive specimen was collected, and when the case
+was registered at CDC with a status.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"hai_bucaramanga"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"covid_us"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">hai</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span>
-<span>    <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">received_date</span><span class="op">)</span>,</span>
-<span>    <span class="va">received_date</span> <span class="op">&gt;=</span> <span class="va">specimen_date</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
-<span>    <span class="co"># A result was issued: that is the validation. Everything else is still</span></span>
-<span>    <span class="co"># waiting, and a case that is waiting has no validation date.</span></span>
-<span>    result_date <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span></span>
-<span>      <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span> <span class="op">&amp;</span> <span class="va">report_date</span> <span class="op">&gt;=</span> <span class="va">received_date</span>,</span>
-<span>      <span class="va">report_date</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="cn">NA</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">covid_us</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt;     onset_dt pos_spec_dt cdc_report_dt            current_status    sex n</span></span>
+<span><span class="co">#&gt; 1 2020-01-01  2020-01-01    2020-01-01             Probable Case Female 1</span></span>
+<span><span class="co">#&gt; 2 2020-01-01  2020-03-25    2020-09-05 Laboratory-confirmed case Female 1</span></span>
+<span><span class="co">#&gt; 3 2020-01-01  2020-03-27    2020-05-13 Laboratory-confirmed case Female 1</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">covid_us</span><span class="op">$</span><span class="va">current_status</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Laboratory-confirmed case             Probable Case </span></span>
+<span><span class="co">#&gt;                    165663                     27290</span></span></code></pre></div>
+<div class="section level4">
+<h4 id="validation_levels-getting-other-peoples-words-into-those-four">
+<code>validation_levels</code>: getting other people’s words into
+those four<a class="anchor" aria-label="anchor" href="#validation_levels-getting-other-peoples-words-into-those-four"></a>
+</h4>
+<p>CDC does not say <code>"confirmed"</code>; it says
+<code>"Laboratory-confirmed case"</code>. Recoding that by hand before
+every call is the kind of step that gets forgotten in one script out of
+five, so the object does it once. <code>validation_levels</code> is a
+<strong>named</strong> vector whose names are the labels in your data
+and whose values are the canonical outcomes:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">covid_now</span> <span class="op">&lt;-</span> <span class="va">covid_us</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">onset_dt</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-09-01"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
+<span>    event_date        <span class="op">=</span> <span class="va">onset_dt</span>,      <span class="co"># symptoms began</span></span>
+<span>    report_date       <span class="op">=</span> <span class="va">pos_spec_dt</span>,   <span class="co"># the first positive specimen</span></span>
+<span>    validation_date   <span class="op">=</span> <span class="va">cdc_report_dt</span>, <span class="co"># the case was registered at CDC</span></span>
+<span>    validation_type   <span class="op">=</span> <span class="va">current_status</span>,</span>
+<span>    validation_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>      <span class="st">"Laboratory-confirmed case"</span> <span class="op">=</span> <span class="st">"confirmed"</span>,</span>
+<span>      <span class="st">"Probable Case"</span>             <span class="op">=</span> <span class="st">"pending"</span></span>
 <span>    <span class="op">)</span>,</span>
-<span>    result <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">result_date</span><span class="op">)</span>, <span class="st">"pending"</span>, <span class="st">"confirmed"</span><span class="op">)</span></span>
+<span>    case_count <span class="op">=</span> <span class="va">n</span>,</span>
+<span>    strata     <span class="op">=</span> <span class="va">sex</span>,</span>
+<span>    data_type  <span class="op">=</span> <span class="st">"count-incidence"</span>,</span>
+<span>    verbose    <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">hai</span><span class="op">$</span><span class="va">result</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">$</span><span class="va">current_status</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; confirmed   pending </span></span>
-<span><span class="co">#&gt;       201        21</span></span></code></pre></div>
-<p>The three dates map onto the three roles directly:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">hai_now</span> <span class="op">&lt;-</span> <span class="va">hai</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
-<span>    event_date        <span class="op">=</span> <span class="va">specimen_date</span>, <span class="co"># the specimen was taken</span></span>
-<span>    report_date       <span class="op">=</span> <span class="va">received_date</span>, <span class="co"># the laboratory received it</span></span>
-<span>    validation_date <span class="op">=</span> <span class="va">result_date</span>, <span class="co"># the laboratory issued a result</span></span>
-<span>    validation_type <span class="op">=</span> <span class="va">result</span>,</span>
-<span>    data_type         <span class="op">=</span> <span class="st">"linelist"</span>,</span>
-<span>    verbose           <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span>  <span class="op">)</span></span>
-<span></span>
-<span><span class="va">hai_now</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  222 × 20</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span></span>
+<span><span class="co">#&gt;     55354     20269</span></span>
+<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_validation_levels</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Laboratory-confirmed case             Probable Case </span></span>
+<span><span class="co">#&gt;               "confirmed"                 "pending"</span></span></code></pre></div>
+<p>The column now holds the canonical values, and the dictionary is kept
+on the object so you can still see what the data said. The same works
+for data recorded in another language:
+<code>c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")</code>.
+Anything the dictionary does not name, and that is not already one of
+the four, is an error rather than a silently accepted category.</p>
+<p>A note on this particular dataset: CDC never withdraws a case, so
+<code>"retracted"</code> does not occur in <code>covid_us</code>. It is
+a two-outcome validation process.</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">covid_now</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  75,623 × 11</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
-<span><span class="co">#&gt;       id specimen_date received_date report_date specimen    test  microorganism</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        </span></span>
-<span><span class="co">#&gt;    <span style="color: #949494;">[...]</span> <span style="color: #949494;">[event_date]</span>  <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[...]</span>        </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>     1 2018-10-01    2018-10-01    2018-01-13  Whole blood Bloo… Burkholderia…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span>     2 2018-11-01    2018-11-01    <span style="color: #BB0000;">NA</span>          Whole blood Bloo… Klebsiella p…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span>     3 2018-01-27    2018-01-27    2018-01-31  Whole blood Bloo… Stenotrophom…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span>     4 2018-01-27    2018-01-27    2018-01-30  Whole blood Bloo… Klebsiella p…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span>     5 2018-04-20    2018-04-20    2018-04-26  Urine       Urin… Klebsiella p…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span>     6 2018-01-22    2018-01-22    2018-01-25  Whole blood Bloo… Klebsiella p…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span>     7 2018-01-02    2018-01-02    2018-03-02  Whole blood Bloo… Klebsiella p…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>     8 2018-06-28    2018-06-28    2018-06-30  Whole blood Bloo… Acinetobacte…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>    10 2018-12-02    2018-12-02    <span style="color: #BB0000;">NA</span>          Whole blood Bloo… Enterococcus…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>    13 2018-10-03    2018-10-03    2018-12-03  Urine       Urin… Enterobacter…</span></span>
+<span><span class="co">#&gt;    onset_dt     pos_spec_dt  cdc_report_dt current_status sex       n .event_num</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt;    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_dat</span>… <span style="color: #949494;">[validation_</span>… <span style="color: #949494;">[validation_t</span>… <span style="color: #949494;">[str</span>… <span style="color: #949494;">[cas</span>…      <span style="color: #949494;">[...]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2020-09-01   2020-09-01   2020-09-01    confirmed      Fema…    80          0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2020-09-01   2020-09-01   2020-09-01    confirmed      Male     50          0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2020-09-01   2020-09-01   2020-09-01    confirmed      Unkn…     5          0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2020-09-01   2020-09-01   2020-09-01    pending        Fema…     2          0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2020-09-01   2020-09-01   2020-09-01    pending        Male      1          0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2020-09-01   2020-09-01   2020-09-02    confirmed      Fema…    58          0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2020-09-01   2020-09-01   2020-09-02    confirmed      Male     44          0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2020-09-01   2020-09-01   2020-09-02    pending        Fema…     1          0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2020-09-01   2020-09-01   2020-09-02    pending        Male      3          0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2020-09-01   2020-09-01   2020-09-03    confirmed      Fema…   104          0</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2019-12-01</span> | Event date: <span style="color: #0000BB;">"specimen_date"</span> | Report date: <span style="color: #0000BB;">"received_date"</span></span></span>
-<span><span class="co">#&gt; # Validation date: <span style="color: #0000BB;">"result_date"</span> (<span style="color: #0000BB;">"days"</span>) | resolved: <span style="color: #0000BB;">201</span>/<span style="color: #0000BB;">222</span></span></span>
+<span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-12-31</span> | Event date: <span style="color: #0000BB;">"onset_dt"</span> | Report date: <span style="color: #0000BB;">"pos_spec_dt"</span></span></span>
+<span><span class="co">#&gt; # Validation date: <span style="color: #0000BB;">"cdc_report_dt"</span> (<span style="color: #0000BB;">"days"</span>) | resolved: <span style="color: #0000BB;">55354</span>/<span style="color: #0000BB;">75623</span></span></span>
+<span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"sex"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 212 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 13 more variables: sex &lt;fct&gt;, age_group &lt;ord&gt;, case_type &lt;fct&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   final_condition &lt;fct&gt;, icu_type &lt;fct&gt;, institution &lt;int&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   result_date &lt;date&gt;, result &lt;chr&gt;, .event_num &lt;dbl&gt;, .report_num &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   .delay &lt;dbl&gt;, .validation_num &lt;dbl&gt;, .validation_delay &lt;dbl&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 75,613 more rows</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;, .validation_num &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   .validation_delay &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>The footer now carries a validation line – the column, its units, and
 how many cases have actually been resolved. Two derived columns appear
 alongside <code>.delay</code>: <code>.validation_num</code> (the
@@ -1001,55 +1034,90 @@ validation date on the same numeric grid as the other dates) and
 <code>.validation_delay</code>, the laboratory’s
 <strong>turnaround</strong> – the time from report to result, which is a
 different quantity from the reporting delay.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Reporting delay: specimen to laboratory.</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">$</span><span class="va">.delay</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0</span></span>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Reporting delay: onset to positive specimen.</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">$</span><span class="va">.delay</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 4</span></span>
 <span></span>
-<span><span class="co"># Turnaround: laboratory to result.</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">$</span><span class="va">.validation_delay</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 2</span></span></code></pre></div>
+<span><span class="co"># Turnaround: specimen to registration at CDC.</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">$</span><span class="va">.validation_delay</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 6</span></span></code></pre></div>
 <p>Validation also moves <code>now</code>. A result issued on a date
 means you were, by definition, still observing the system on that date,
 so <code>now</code> is never earlier than the last validation – even
 when reporting stopped before it.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "2019-12-01"</span></span>
-<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_validation_units</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "2020-12-31"</span></span>
+<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_validation_units</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "days"</span></span>
-<span><span class="fu"><a href="../reference/nowcast_data_getters.html">has_validation</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/nowcast_data_getters.html">has_validation</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>It also moves <em>backwards</em> correctly. <code><a href="../reference/add.html">change_now()</a></code>
+is how you ask what the data looked like at an earlier moment – the loop
+a backtest walks – and a validation dated after that moment has simply
+not happened yet, so it reverts to <code>"pending"</code> with its date
+masked rather than making the object invalid:</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">as_of_october</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add.html">change_now</a></span><span class="op">(</span><span class="va">covid_now</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-10-15"</span><span class="op">)</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Attribute 'now' (2020-10-15) seems to be in the past (before maximum</span></span>
+<span><span class="co">#&gt; report_date (2020-12-31))</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Set it with `change_now()`, or let `update_now()` take the maximum.</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">as_of_october</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "2020-10-15"</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">as_of_october</span><span class="op">$</span><span class="va">n</span><span class="op">[</span><span class="va">as_of_october</span><span class="op">$</span><span class="va">current_status</span> <span class="op">==</span> <span class="st">"pending"</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 775645</span></span></code></pre></div>
+</div>
 <div class="section level4">
 <h4 id="counting-cases-when-some-of-them-can-be-undone">Counting cases when some of them can be undone<a class="anchor" aria-label="anchor" href="#counting-cases-when-some-of-them-can-be-undone"></a>
 </h4>
 <p>Once cases can be retracted, “how many cases were there?” has more
 than one answer, and the right one depends on the question:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/validation_counts.html">get_latest_confirmed</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span> <span class="co"># cases the laboratory confirmed</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 2</span></span></span>
-<span><span class="co">#&gt;   specimen_date     n</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2017-01-12        1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2017-02-12        1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2017-03-11        1</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/validation_counts.html">get_net_confirmed</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span> <span class="co"># confirmed minus retracted</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 2</span></span></span>
-<span><span class="co">#&gt;   specimen_date     n</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2017-01-12        1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2017-02-12        1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2017-03-11        1</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/validation_counts.html">get_latest_confirmed</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span> <span class="co"># cases the laboratory confirmed</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 3</span></span></span>
+<span><span class="co">#&gt;   onset_dt   sex         n</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-09-01 Female   <span style="text-decoration: underline;">1</span>753</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-09-01 Male     <span style="text-decoration: underline;">1</span>507</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-09-01 Missing     1</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/validation_counts.html">get_net_confirmed</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span> <span class="co"># confirmed minus retracted</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 3</span></span></span>
+<span><span class="co">#&gt;   onset_dt   sex         n</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-09-01 Female   <span style="text-decoration: underline;">1</span>753</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-09-01 Male     <span style="text-decoration: underline;">1</span>507</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-09-01 Missing     1</span></span></code></pre></div>
 <p><code>get_nth_confirmed(x, delay)</code> counts only the cases
 resolved <em>within</em> a given number of periods – what you would have
 known that soon after the report – and
 <code><a href="../reference/validation_counts.html">get_initial_confirmed()</a></code> is the same-period case. These
 mirror <code><a href="../reference/get_latest_first.html">get_nth_reported_cases()</a></code> and
 <code><a href="../reference/get_latest_first.html">get_initial_reported_cases()</a></code> on the report axis.</p>
+</div>
+<div class="section level4">
+<h4 id="validation-delays-you-do-not-believe">Validation delays you do not believe<a class="anchor" aria-label="anchor" href="#validation-delays-you-do-not-believe"></a>
+</h4>
 <p>If your data records absurdly long validation delays – a result
 “issued” two years later is usually a data-entry artefact, not a
-laboratory – <code><a href="../reference/censor_delays_above.html">censor_validation_delays_above()</a></code> returns those
-cases to <code>"pending"</code>, which is what they really were.</p>
+laboratory – <code><a href="../reference/censor_delays_above.html">censor_validation_delays_above()</a></code> marks them
+with the <strong><code>is_censored_validation</code></strong> flag. It
+is the validation-axis twin of <code>is_censored_report</code>, and it
+works the same way: the case and its date are kept, and the
+<em>delay</em> is recorded as a bound rather than a measurement, for
+models that can use censored observations.</p>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">capped</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/censor_delays_above.html">censor_validation_delays_above</a></span><span class="op">(</span><span class="va">covid_now</span>, max_delay <span class="op">=</span> <span class="fl">60</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_is_censored_validation</a></span><span class="op">(</span><span class="va">capped</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] ".is_censored_validation"</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">capped</span><span class="op">$</span><span class="va">n</span><span class="op">[</span><span class="va">capped</span><span class="op">[[</span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_is_censored_validation</a></span><span class="op">(</span><span class="va">capped</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 2286</span></span></code></pre></div>
+<p>Nothing is deleted and no outcome is rewritten, so
+<code><a href="../reference/validation_counts.html">get_latest_confirmed()</a></code> still counts those cases. Set the
+flag by hand with <code><a href="../reference/add.html">add_is_censored_validation()</a></code> when your
+data already carries one.</p>
 </div>
 <div class="section level4">
 <h4 id="how-much-of-the-epidemic-has-been-resolved">How much of the epidemic has been resolved?<a class="anchor" aria-label="anchor" href="#how-much-of-the-epidemic-has-been-resolved"></a>
@@ -1059,9 +1127,9 @@ confirmed, retracted and pending over time. A pending share that grows
 towards the right-hand edge is normal – recent cases have not had time
 to come back from the laboratory – but a pending share that grows in the
 <em>middle</em> of the series is a laboratory falling behind.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_validation_status.html">plot_validation_status</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span></code></pre></div>
-<p><img src="tbl.now_files/figure-html/unnamed-chunk-25-1.png" class="r-plt" alt="" width="672"></p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_validation_status.html">plot_validation_status</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span></code></pre></div>
+<p><img src="tbl.now_files/figure-html/unnamed-chunk-28-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level4">
 <h4 id="the-validation-axis">The validation axis<a class="anchor" aria-label="anchor" href="#the-validation-axis"></a>
@@ -1071,16 +1139,16 @@ unusual number of records arrive on this date, and with what delay? That
 question is just as meaningful for results arriving from a laboratory,
 so the diagnostics take an <code>axis</code> argument instead of being
 duplicated:</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The same picture, drawn for the laboratory instead of the surveillance desk.</span></span>
-<span><span class="fu"><a href="../reference/plot_reporting_triangle.html">plot_reporting_triangle</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/plot_delay_profiles.html">plot_delay_profiles</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/diagnostic_plot.html">diagnostic_plot</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_reporting_triangle.html">plot_reporting_triangle</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_delay_profiles.html">plot_delay_profiles</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/diagnostic_plot.html">diagnostic_plot</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># A laboratory clearing a backlog is a batch, exactly as a surveillance system</span></span>
 <span><span class="co"># clearing its inbox is.</span></span>
-<span><span class="fu"><a href="../reference/diagnose_batches.html">diagnose_batches</a></span><span class="op">(</span><span class="va">hai_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/diagnose_batches.html">diagnose_batches</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span></code></pre></div>
 <p>Two notes on what <code>axis = "validation"</code> means. Delays are
 still measured <strong>from the event</strong>, so the report and
 validation axes are directly comparable and the gap between them is the
@@ -1092,7 +1160,7 @@ can ask whether they take equally long – a laboratory that rules cases
 out faster than it confirms them will bias any nowcast that treats the
 two alike. <code><a href="../reference/validation_delay.html">diagnose_validation_delay()</a></code> tests exactly that
 (a Wilcoxon rank-sum test on the two delay distributions) and
-<code><a href="../reference/validation_delay.html">plot_validation_delay()</a></code> draws it. The Bucaramanga extract
+<code><a href="../reference/validation_delay.html">plot_validation_delay()</a></code> draws it. <code>covid_us</code>
 records no retractions, so there is nothing to compare here.</p>
 </div>
 </div>
@@ -1108,7 +1176,7 @@ incrementally manipulate strata, covariates, and temporal effects.</p>
 <p>The example below demonstrates how to create a <a href="https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html">tbl_now()</a>,
 add strata and temporal effects, later modify the strata, and finally
 remove the temporal effects.</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"mpoxdat"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">mpoxdat</span> <span class="op">|&gt;</span></span>
@@ -1141,14 +1209,14 @@ remove the temporal effects.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,407 more rows</span></span></span></code></pre></div>
 <p>You can see that the strata is <code>race</code> with the
 corresponding <a href="https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.html">get_*</a>:</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_strata</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "race"</span></span></code></pre></div>
 <p>Strata can be modified with the <a href="https://rodrigozepeda.github.io/tbl.now/reference/change.html">change_*</a>
 family of functions. The following example adds a new column containing
 an uppercase version of the existing race variable and sets it as the
 new strata:</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>RACE_UPPER <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">toupper</a></span><span class="op">(</span><span class="va">race</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add.html">change_strata</a></span><span class="op">(</span><span class="va">RACE_UPPER</span><span class="op">)</span></span>
@@ -1157,7 +1225,7 @@ new strata:</p>
 <span><span class="co">#&gt; [1] "RACE_UPPER"</span></span></code></pre></div>
 <p>To attach a lazy temporal-effects spec, use <a href="https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html">add_temporal_effects()</a>,
 then materialise with <a href="https://rodrigozepeda.github.io/tbl.now/reference/compute_temporal_effects.html">compute_temporal_effects()</a>:</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -1182,7 +1250,7 @@ then materialise with <a href="https://rodrigozepeda.github.io/tbl.now/reference
 <p>Attributes can be removed using the corresponding <a href="https://rodrigozepeda.github.io/tbl.now/reference/remove.html">remove_*</a>
 functions. <code><a href="../reference/add.html">remove_temporal_effects()</a></code> drops both the spec
 and any computed columns:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add.html">remove_temporal_effects</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add.html">remove_all_strata</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -1214,7 +1282,7 @@ and any computed columns:</p>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,407 more rows</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: RACE_UPPER &lt;chr&gt;</span></span></span></code></pre></div>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span> <span class="co"># Empty list — no spec</span></span>
 <span><span class="co">#&gt; list()</span></span>
 <span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_temporal_effect_cols</a></span><span class="op">(</span><span class="va">df_now</span><span class="op">)</span> <span class="co"># character(0) — no computed cols</span></span>
@@ -1232,7 +1300,7 @@ therefore support standard <a href="https://dplyr.tidyverse.org/" class="externa
 to preserve and adapt its internal attributes when operations are
 performed. For example, renaming a strata column will automatically
 update the stored strata attribute.</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span>
 <span></span>
@@ -1247,7 +1315,7 @@ update the stored strata attribute.</p>
 <span><span class="co">#&gt; [1] "gender"</span></span></code></pre></div>
 <p>After renaming the column, the strata attribute updates
 accordingly:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>male_or_female <span class="op">=</span> <span class="va">gender</span><span class="op">)</span></span>
 <span></span>
@@ -1257,7 +1325,7 @@ accordingly:</p>
 object to drop back to a standard tibble. This occurs when the operation
 removes necessary structure—for example, collapsing all data into a
 single row with <a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise()</a>:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>number_males <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">male_or_female</span> <span class="op">==</span> <span class="st">"Male"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: Dropping `tbl_now` attributes and converting to `tibble`</span></span>
@@ -1267,7 +1335,7 @@ single row with <a href="https://dplyr.tidyverse.org/reference/summarise.html" c
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>        <span style="text-decoration: underline;">26</span>395</span></span></code></pre></div>
 <p>Other operations like mutate and select work as long as the original
 columns and the required for the attributes are kept:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>GENDER <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">toupper</a></span><span class="op">(</span><span class="va">male_or_female</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">GENDER</span>, <span class="fu"><a href="https://tidyselect.r-lib.org/reference/everything.html" class="external-link">everything</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -1305,7 +1373,7 @@ retains the strata, covariate, and temporal-effect attributes from the
 original object, and recalculates “now” estimates using the combined
 data.</p>
 <p>Below is an example using an initial dataset:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  patient <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span>,</span>
 <span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/13"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -1320,7 +1388,7 @@ data.</p>
 <span>  report_date <span class="op">=</span> <span class="va">report_date</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>And a follow-up dataset containing newly reported cases:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  patient <span class="op">=</span> <span class="fl">7</span><span class="op">:</span><span class="fl">13</span>,</span>
 <span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
@@ -1335,7 +1403,7 @@ data.</p>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>We can update the original object by incorporating the new data:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_updated</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">df_now</span>, new_data <span class="op">=</span> <span class="va">df_new</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">df_updated</span></span>
@@ -1374,7 +1442,7 @@ exist yet, so `eval=some_variable` silently drops the chunk, and a later chunk
 relying on what it defined then fails with "object not found". -->
 <p>The <a href="https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html">autoplot()</a>
 method gives a quick diagnostic overview of a <code>tbl_now</code>:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span>
 <span></span>
@@ -1391,7 +1459,7 @@ method gives a quick diagnostic overview of a <code>tbl_now</code>:</p>
 <h3 id="the-delay-distribution">The delay distribution<a class="anchor" aria-label="anchor" href="#the-delay-distribution"></a>
 </h3>
 <div class="figure">
-<img src="tbl.now_files/figure-html/unnamed-chunk-40-1.png" class="r-plt" alt="Empirical delay distribution" width="700"><p class="caption">
+<img src="tbl.now_files/figure-html/unnamed-chunk-43-1.png" class="r-plt" alt="Empirical delay distribution" width="700"><p class="caption">
 Empirical delay distribution
 </p>
 </div>
@@ -1402,7 +1470,7 @@ case-count weighted histogram of the reporting delay.</p>
 <h3 id="the-observed-epidemic-process">The observed epidemic process<a class="anchor" aria-label="anchor" href="#the-observed-epidemic-process"></a>
 </h3>
 <div class="figure">
-<img src="tbl.now_files/figure-html/unnamed-chunk-41-1.png" class="r-plt" alt="Observed epidemic process" width="700"><p class="caption">
+<img src="tbl.now_files/figure-html/unnamed-chunk-44-1.png" class="r-plt" alt="Observed epidemic process" width="700"><p class="caption">
 Observed epidemic process
 </p>
 </div>
@@ -1413,7 +1481,7 @@ reported counts per <code>event_date</code>.</p>
 <h3 id="the-calendar-effects">The calendar effects<a class="anchor" aria-label="anchor" href="#the-calendar-effects"></a>
 </h3>
 <div class="figure">
-<img src="tbl.now_files/figure-html/unnamed-chunk-42-1.png" class="r-plt" alt="Day of the week and week of the year effects" width="700"><p class="caption">
+<img src="tbl.now_files/figure-html/unnamed-chunk-45-1.png" class="r-plt" alt="Day of the week and week of the year effects" width="700"><p class="caption">
 Day of the week and week of the year effects
 </p>
 </div>
@@ -1432,7 +1500,7 @@ percent effects by <em>day type</em> (holiday or not) and by
 <h3 id="the-cycles">The cycles<a class="anchor" aria-label="anchor" href="#the-cycles"></a>
 </h3>
 <div class="figure">
-<img src="tbl.now_files/figure-html/unnamed-chunk-43-1.png" class="r-plt" alt="Periodogram showing the Fourier season's dominant peak" width="700"><p class="caption">
+<img src="tbl.now_files/figure-html/unnamed-chunk-46-1.png" class="r-plt" alt="Periodogram showing the Fourier season's dominant peak" width="700"><p class="caption">
 Periodogram showing the Fourier season’s dominant peak
 </p>
 </div>
@@ -1457,9 +1525,9 @@ normalized <em>per stratum</em> (1 = that stratum’s own average) so the
 calendar pattern is comparable across strata. By default the object’s
 <code>strata</code> are used; pass <code>strata = "gender"</code> to
 group on a subset.</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">dengue_now</span>, strata <span class="op">=</span> <span class="st">"gender"</span>, by_strata <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="tbl.now_files/figure-html/unnamed-chunk-44-1.png" class="r-plt" alt="" width="864"></p>
+<p><img src="tbl.now_files/figure-html/unnamed-chunk-47-1.png" class="r-plt" alt="" width="864"></p>
 <div class="section level4">
 <h4 id="one-panel-at-a-time-the-plot_-functions">One panel at a time: the <code>plot_*()</code> functions<a class="anchor" aria-label="anchor" href="#one-panel-at-a-time-the-plot_-functions"></a>
 </h4>
@@ -1533,7 +1601,7 @@ how the <em>reporting</em> does).</p>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The same figure, two ways:</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">dengue_now</span>, panels <span class="op">=</span> <span class="st">"calendar_week"</span><span class="op">)</span></span>
 <span></span>
@@ -1554,7 +1622,7 @@ temporal effect is read directly, so there is no need to call
 <code><a href="../reference/add_temporal_effects.html">compute_temporal_effects()</a></code> first.</p>
 <p>Holidays are a daily phenomenon, so for this example we switch to
 daily data:</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">holiday_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">reports</span>,</span>
 <span>    event_date <span class="op">=</span> <span class="va">onset</span>, report_date <span class="op">=</span> <span class="va">reported</span>, case_count <span class="op">=</span> <span class="va">n</span>,</span>
 <span>    data_type <span class="op">=</span> <span class="st">"count-incidence"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
@@ -1562,7 +1630,7 @@ daily data:</p>
 <span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span></span>
 <span>    <span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>weekend <span class="op">=</span> <span class="cn">TRUE</span>, holidays <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/almanac/man/cal_us_federal.html" class="external-link">cal_us_federal</a></span><span class="op">(</span><span class="op">)</span>, holiday_lags <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">holiday_now</span>, panels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"calendar_holiday"</span>, <span class="st">"calendar_holiday_lag"</span>,</span>
 <span>                                 <span class="st">"delay_holiday"</span>, <span class="st">"delay_holiday_lag"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tbl.now_files/figure-html/holiday-panels-1.png" class="r-plt" alt="" width="864"></p>
@@ -1600,7 +1668,7 @@ in a test.</p>
 </h3>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> stacks several blocks into one table.
 <code>component</code> says which block a row belongs to:</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">component</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 2</span></span></span>
@@ -1616,7 +1684,7 @@ in a test.</p>
 it says how much of each event date’s eventual total had arrived by
 delay <code>d</code>, which is what decides how far back a nowcast is
 even meaningful.</p>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">component</span> <span class="op">==</span> <span class="st">"completeness"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">quantity</span>, <span class="va">n</span>, <span class="va">mean</span>, <span class="va">q50</span>, <span class="va">prop</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -1634,7 +1702,7 @@ weeks has very little left to estimate.</p>
 <p>Every block is also a function of its own, returning the same schema,
 so <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> is exactly the <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows()</a></code> of
 them:</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_summary_components.html">delay_summary</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">quantity</span>, <span class="va">n</span>, <span class="va">total</span>, <span class="va">mean</span>, <span class="va">sd</span>, <span class="va">q50</span>, <span class="va">q90</span>, <span class="va">max</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 8</span></span></span>
@@ -1666,7 +1734,7 @@ first</strong>. <code>status</code> is an ordered factor —
 <code>error</code> &gt; <code>warning</code> &gt; <code>note</code> &gt;
 <code>ok</code> &gt; <code>not_run</code> &gt; <code>skipped</code> — so
 filtering to what needs acting on is a comparison:</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">&lt;=</span> <span class="st">"note"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">check</span>, <span class="va">scope</span>, <span class="va">status</span>, <span class="va">n_affected</span>, <span class="va">message</span><span class="op">)</span></span>
@@ -1686,7 +1754,7 @@ It never runs a statistical test, so it is fast and its answer never
 depends on a random seed. The questions that <em>do</em> need a test
 come back as <code>not_run</code> signposts naming the call that answers
 each one — the two sections that follow:</p>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_diagnose_components.html">diagnose_signposts</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">scope</span>, <span class="va">status</span>, <span class="va">message</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 3</span></span></span>
@@ -1723,7 +1791,7 @@ event date — a solid rolling median, a dashed rolling mean, and 25–75% /
 10–90% quantile bands. A rising or falling centre line signals
 <em>location</em> drift; widening or narrowing bands signal
 <em>spread</em> drift.</p>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tbl.now_files/figure-html/delay-drift-1.png" class="r-plt" alt="" width="864"></p>
 <p>Because the most recent event dates have not had time to be fully
@@ -1733,7 +1801,7 @@ should not be read as drift.</p>
 <p>For a formal answer, <a href="https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.html">diagnose_drift()</a>
 tests both a location statistic (the median) and a dispersion statistic
 (the 10–90 spread), on mature data only for any drift:</p>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_drift.html">diagnose_drift</a></span><span class="op">(</span><span class="va">dengue_now</span>, stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"median"</span>, <span class="st">"spread"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: <span style="color: #BBBB00;">!</span> `diagnose_drift()` is <span style="font-style: italic;">experimental</span>: results are not guaranteed and the</span></span>
 <span><span class="co">#&gt;   interface may change.</span></span>
@@ -1754,7 +1822,7 @@ suspect an <strong>abrupt</strong> shift — a reporting-system change on
 some date — use <a href="https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.html">diagnose_changepoint()</a>,
 which applies Pettitt’s nonparametric change-point test and returns the
 estimated change date together with the before/after delay level:</p>
-<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_changepoint.html">diagnose_changepoint</a></span><span class="op">(</span><span class="va">dengue_now</span>, stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"median"</span>, <span class="st">"spread"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: <span style="color: #BBBB00;">!</span> `diagnose_changepoint()` is <span style="font-style: italic;">experimental</span>: results are not guaranteed and the</span></span>
 <span><span class="co">#&gt;   interface may change.</span></span>
@@ -1779,7 +1847,7 @@ them, so a window of report dates spanning both the lull and the spike
 has an unchanged total — whereas a genuine epidemic surge adds cases and
 inflates it. <a href="https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.html">diagnose_batches()</a>
 turns this into a per-report-date diagnostic that separates the two:</p>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">batches</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/diagnose_batches.html">diagnose_batches</a></span><span class="op">(</span><span class="va">dengue_now</span>, lookback <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">batches</span> <span class="op">|&gt;</span></span>
@@ -1806,7 +1874,7 @@ delay artifacts can be found in the corresponding <a href="https://rodrigozepeda
 <p>The function <a href="https://rodrigozepeda.github.io/tbl.now/reference/week_2_date.html">week_2_date()</a>
 converts epidemiological week/year combinations into a calendar date
 aligned on the first day of the week (Sunday).</p>
-<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  epidemiological_week <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,</span>
 <span>  epidemiological_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">2024</span>, <span class="fl">5</span><span class="op">)</span></span>
@@ -1832,7 +1900,7 @@ and get_latest_reported_cases()</a> extract the number of cases first
 reported for each event date and the most recently reported totals,
 respectively. These utilities allow users to quantify revisions between
 initial and final reports.</p>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_reports</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2020/09/12"</span><span class="op">)</span>, <span class="fl">6</span><span class="op">)</span>,</span>
@@ -1866,7 +1934,7 @@ initial and final reports.</p>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-09-17</span> | Event date: <span style="color: #0000BB;">"event_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 <p>The initial reported cases:</p>
-<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_latest_first.html">get_initial_reported_cases</a></span><span class="op">(</span><span class="va">tbl_reports</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
@@ -1879,7 +1947,7 @@ initial and final reports.</p>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-09-17</span> | Event date: <span style="color: #0000BB;">"event_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 <p>and the latest totals:</p>
-<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="va">tbl_reports</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  1 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
@@ -1900,7 +1968,7 @@ function standardizes dates within the same epidemiological week to a
 single reference day (for example, the start of the week). This is
 helpful when computing differences across weekly reporting periods,
 avoiding fractional time intervals.</p>
-<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-10-31"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-11-07"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-11-13"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  epiweek <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">44</span>, <span class="fl">45</span>, <span class="fl">46</span><span class="op">)</span></span>
@@ -1915,7 +1983,7 @@ avoiding fractional time intervals.</p>
 <span><span class="co">#&gt; 3 2022-11-13      46   2022-11-13</span></span></code></pre></div>
 <p>You can verify the resulting weekday using the <a href="https://lubridate.tidyverse.org/reference/day.html" class="external-link">wday()
 function from the lubridate package</a>:</p>
-<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_aligned</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>day_label <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/day.html" class="external-link">wday</a></span><span class="op">(</span><span class="va">date_aligned</span>, label <span class="op">=</span> <span class="cn">TRUE</span>, abbr <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;         date epiweek date_aligned day_label</span></span>
@@ -1931,7 +1999,7 @@ function fills with zeroes those cases where the <code>event</code> or
 <code>report</code> weeks have not been observed.</p>
 <p>Consider for example the following data with just two observations
 per date:</p>
-<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
 <span>  event_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/12"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/14"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/14"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  report_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/13"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/15"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021/01/18"</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -1958,7 +2026,7 @@ per date:</p>
 <p>Notice that there are no observations for <code>2021/01/13</code>.
 Furthermore, if we assume that the maximum possible observed delay is of
 <code>4</code>, we can fill the unobserved cases with:</p>
-<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/complete_zeroes.html">complete_zeroes</a></span><span class="op">(</span><span class="va">ndata</span>, max_delay <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  25 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span></span>
@@ -1989,7 +2057,7 @@ the counts to zero if they have not been observed.</p>
 <p>The function <code><a href="../reference/censor_delays_above.html">censor_delays_above()</a></code> marks all delays
 above a threshold value (<code>max_delay</code>) as censored. This is
 useful to indicate extreme delays in some nowcast models:</p>
-<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  onset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-01-01"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
 <span>  reported <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-01-01"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">2</span>, <span class="fl">300</span><span class="op">)</span></span>
@@ -2002,20 +2070,20 @@ useful to indicate extreme delays in some nowcast models:</p>
 <span><span class="co"># the 300-day report becomes censored (an upper bound on its delay)</span></span>
 <span><span class="fu"><a href="../reference/censor_delays_above.html">censor_delays_above</a></span><span class="op">(</span><span class="va">tn</span>, max_delay <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Marked 1 report with delay &gt; 60 days as censored.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> This delay is now an upper bound (is_censored).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> This delay is now an upper bound (is_censored_report).</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  4 × 6</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
-<span><span class="co">#&gt;   onset        reported      .event_num .report_num .delay .is_censored </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>        </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span> <span style="color: #949494;">[is_censored]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-01-01   2020-01-02             0           1      1 FALSE        </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-01-01   2020-01-06             0           5      5 FALSE        </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-01-02   2020-01-03             1           2      1 FALSE        </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2020-01-03   2020-10-27             2         300    298 TRUE         </span></span>
+<span><span class="co">#&gt;   onset        reported      .event_num .report_num .delay .is_censored_report </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>               </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span> <span style="color: #949494;">[is_censored_report]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-01-01   2020-01-02             0           1      1 FALSE               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-01-01   2020-01-06             0           5      5 FALSE               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-01-02   2020-01-03             1           2      1 FALSE               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2020-01-03   2020-10-27             2         300    298 TRUE                </span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-10-27</span> | Event date: <span style="color: #0000BB;">"onset"</span> | Report date: <span style="color: #0000BB;">"reported"</span></span></span>
-<span><span class="co">#&gt; # left-censored indicator: <span style="color: #0000BB;">".is_censored"</span></span></span>
+<span><span class="co">#&gt; # left-censored indicator: <span style="color: #0000BB;">".is_censored_report"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -2035,7 +2103,7 @@ that package’s native object.</p></li>
 <p>Each function accepts a <code>verbose</code> argument that reports
 the choices it made (the inferred <code>now</code>, the data type, For
 example here we can convert to <code>tsibble</code>:</p>
-<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>,</span>
 <span>  event_date <span class="op">=</span> <span class="st">"onset_week"</span>,</span>
 <span>  report_date <span class="op">=</span> <span class="st">"report_week"</span>, strata <span class="op">=</span> <span class="st">"gender"</span>,</span>

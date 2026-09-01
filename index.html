@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -141,7 +141,18 @@ An optional third date indicating when the report was resolved (see <code>valida
 <code>validation_type</code>
 </td>
 <td align="left">
-What the validation date resolved to (either <code>confirmed</code>, <code>retracted</code>, <code>pending</code>). <em>Optional</em>.
+What the validation date resolved to. Only <code>confirmed</code>, <code>retracted</code>, <code>pending</code> or <code>NA</code> are ever stored; use <code>validation_levels</code> for data recorded in other words. <em>Optional</em>.
+</td>
+</tr>
+<tr>
+<td align="center">
+<img src="reference/figures/validation_type.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation_levels">
+</td>
+<td align="left">
+<code>validation_levels</code>
+</td>
+<td align="left">
+A named dictionary translating the labels in <code>validation_type</code> into those four, e.g. <code>c(confirmado = “confirmed”)</code>. <em>Optional</em>.
 </td>
 </tr>
 <tr>
@@ -212,13 +223,24 @@ The time grid each date lives on: <code>days</code>, <code>weeks</code>, <code>m
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored">
+<img src="reference/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored_report">
 </td>
 <td align="left">
-<code>is_censored</code>
+<code>is_censored_report</code>
 </td>
 <td align="left">
 Flags report dates that are only an upper bound, e.g. a batch or back-fill dump. <em>Optional</em>.
+</td>
+</tr>
+<tr>
+<td align="center">
+<img src="reference/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored_validation">
+</td>
+<td align="left">
+<code>is_censored_validation</code>
+</td>
+<td align="left">
+The same on the validation axis: flags rows whose <em>validation</em> delay is a bound rather than a measurement. <em>Optional</em>.
 </td>
 </tr>
 <tr>
@@ -287,9 +309,9 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 </h2>
 <ul>
 <li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a> for the full anatomy of a <code>tbl_now</code>, data types, and temporal effects.</li>
-<li>End-to-end tutorial on real, messy surveillance data — cleaning, diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
+<li>End-to-end tutorial on real, messy surveillance data &lt;U+2014&gt; cleaning, diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
 </li>
-<li>Tutorial on diagnosing your dataset — what is in it, what is structurally wrong with it, and detecting batches and other reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>
+<li>Tutorial on diagnosing your dataset &lt;U+2014&gt; what is in it, what is structurally wrong with it, and detecting batches and other reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>
 </li>
 <li>Using different nowcasting engines for the same dataset: <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>
 </li>

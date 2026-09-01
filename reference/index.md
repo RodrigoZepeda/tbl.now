@@ -44,11 +44,13 @@ Read what the object was told about itself, and change it.
   [`get_data_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_temporal_effect_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-  [`get_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_validation_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_is_censored_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_validation_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`has_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   **\[experimental\]** :
 
@@ -65,9 +67,9 @@ Read what the object was told about itself, and change it.
   [`change_event_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`change_report_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`change_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-  [`change_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-  [`remove_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-  [`add_is_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`change_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`remove_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`add_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`change_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`remove_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
@@ -78,6 +80,9 @@ Read what the object was told about itself, and change it.
   [`remove_all_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`replace_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`change_is_censored_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`add_is_censored_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`remove_is_censored_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`change_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`remove_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
@@ -495,7 +500,7 @@ The methods that keep the class alive inside a pipeline.
 - [`covid_colombia`](https://rodrigozepeda.github.io/tbl.now/reference/covid_colombia.md)
   : COVID-19 Notifications – Colombia 2020-2023
 - [`covid_us`](https://rodrigozepeda.github.io/tbl.now/reference/covid_us.md)
-  : covid_us: CDC COVID-19 Case Surveillance Public Use Data (2020-2021)
+  : covid_us: CDC COVID-19 Case Surveillance Public Use Data (2020)
 - [`denguedat`](https://rodrigozepeda.github.io/tbl.now/reference/denguedat.md)
   : denguedat: Dengue fever individual-level reporting data from Puerto
   Rico

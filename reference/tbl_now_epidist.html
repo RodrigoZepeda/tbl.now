@@ -17,7 +17,7 @@ data_type = "count-incidence" with case_count = "n"; otherwise
 data_type = "linelist". The event_units/report_units are inferred
 from the primary censoring-window width (a 7-day window -&amp;gt; "weeks"), and a
 left-censored secondary window [origin, report] is decoded back to
-is_censored = TRUE with the report taken from secondary_upper.
+is_censored_report = TRUE with the report taken from secondary_upper.
 "interval": instead attach the upper bounds primary_upper
 (pdate_upr) and secondary_upper (sdate_upr) as covariates
 (a warning is emitted).
@@ -30,7 +30,7 @@ the primary event spans [event_date, event_date + w], where the window
 w matches the tbl_now unit ("days" -&amp;gt; 1 day, "weeks" -&amp;gt; 7 days, ...,
 or censoring_window if supplied);
 the secondary event spans [report_date, report_date + w] normally, but
-for rows flagged by is_censored it is left-censored to
+for rows flagged by is_censored_report it is left-censored to
 [event_date, report_date] (the report is known only to have happened at
 or before its report date, and cannot precede the event, i.e.
 epidist time 0) — encoding the tbl_now convention that a censored report
@@ -60,7 +60,7 @@ data_type = "count-incidence" with case_count = "n"; otherwise
 data_type = "linelist". The event_units/report_units are inferred
 from the primary censoring-window width (a 7-day window -&amp;gt; "weeks"), and a
 left-censored secondary window [origin, report] is decoded back to
-is_censored = TRUE with the report taken from secondary_upper.
+is_censored_report = TRUE with the report taken from secondary_upper.
 "interval": instead attach the upper bounds primary_upper
 (pdate_upr) and secondary_upper (sdate_upr) as covariates
 (a warning is emitted).
@@ -73,7 +73,7 @@ the primary event spans [event_date, event_date + w], where the window
 w matches the tbl_now unit ("days" -&amp;gt; 1 day, "weeks" -&amp;gt; 7 days, ...,
 or censoring_window if supplied);
 the secondary event spans [report_date, report_date + w] normally, but
-for rows flagged by is_censored it is left-censored to
+for rows flagged by is_censored_report it is left-censored to
 [event_date, report_date] (the report is known only to have happened at
 or before its report date, and cannot precede the event, i.e.
 epidist time 0) — encoding the tbl_now convention that a censored report
@@ -93,7 +93,7 @@ argument).'><meta property="og:image" content="https://rodrigozepeda.github.io/t
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -153,7 +153,7 @@ strictly positive width.</p>
 <code>data_type = "linelist"</code>. The <code>event_units</code>/<code>report_units</code> are inferred
 from the primary censoring-window width (a 7-day window -&gt; <code>"weeks"</code>), and a
 left-censored secondary window <code>[origin, report]</code> is decoded back to
-<code>is_censored = TRUE</code> with the report taken from <code>secondary_upper</code>.</p></li>
+<code>is_censored_report = TRUE</code> with the report taken from <code>secondary_upper</code>.</p></li>
 <li><p><code>"interval"</code>: instead attach the upper bounds <code>primary_upper</code>
 (<code>pdate_upr</code>) and <code>secondary_upper</code> (<code>sdate_upr</code>) as <code>covariates</code>
 (a warning is emitted).</p></li>
@@ -163,7 +163,7 @@ it builds an <code>epidist_aggregate_data</code> when <code>x</code> holds count
 <code>w</code> matches the <code>tbl_now</code> unit (<code>"days"</code> -&gt; 1 day, <code>"weeks"</code> -&gt; 7 days, ...,
 or <code>censoring_window</code> if supplied);</p></li>
 <li><p>the secondary event spans <code>[report_date, report_date + w]</code> normally, but
-for rows flagged by <code>is_censored</code> it is left-censored to
+for rows flagged by <code>is_censored_report</code> it is left-censored to
 <code>[event_date, report_date]</code> (the report is known only to have happened at
 or before its report date, and cannot precede the event, i.e.
 epidist time 0) — encoding the <code>tbl_now</code> convention that a censored report
@@ -354,7 +354,7 @@ fits the same data with every supported package.</p></div>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── Converting <span style="color: #0000BB;">&lt;tbl_now&gt;</span> into <span style="color: #0000BB;">epidist</span> linelist data </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • pdate_lwr &lt;- <span style="color: #0000BB;">"pdate_lwr"</span>, sdate_lwr &lt;- <span style="color: #0000BB;">"sdate_lwr"</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • censoring window: <span style="color: #0000BB;">1</span> day (from <span style="color: #0000BB;">"days"</span>)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • left-censored rows (<span style="color: #00BB00;">is_censored</span>): <span style="color: #0000BB;">0</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • left-censored rows (<span style="color: #00BB00;">is_censored_report</span>): <span style="color: #0000BB;">0</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> No observation time column provided, using 2020-03-07 as the observation date (the maximum of the secondary event upper bound).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 10</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ptime_lwr ptime_upr stime_lwr stime_upr obs_time pdate_lwr  pdate_upr </span>
@@ -396,7 +396,7 @@ fits the same data with every supported package.</p></div>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── Converting <span style="color: #0000BB;">&lt;tbl_now&gt;</span> into <span style="color: #0000BB;">epidist</span> aggregate data </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • pdate_lwr &lt;- <span style="color: #0000BB;">"pdate_lwr"</span>, sdate_lwr &lt;- <span style="color: #0000BB;">"sdate_lwr"</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • censoring window: <span style="color: #0000BB;">1</span> day (from <span style="color: #0000BB;">"days"</span>)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • left-censored rows (<span style="color: #00BB00;">is_censored</span>): <span style="color: #0000BB;">0</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • left-censored rows (<span style="color: #00BB00;">is_censored_report</span>): <span style="color: #0000BB;">0</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • n &lt;- <span style="color: #0000BB;">"n"</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> No observation time column provided, using 2020-03-06 as the observation date (the maximum of the secondary event upper bound).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 11</span></span>

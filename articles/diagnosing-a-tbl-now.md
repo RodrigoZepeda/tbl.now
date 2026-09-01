@@ -656,19 +656,21 @@ plot_reporting_process(ideal)
 `covid_us` comes from the CDC’s individual-level [COVID-19 Case
 Surveillance Public Use
 Data](https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data/vbim-akqf/about_data).
-These represent cases whose event date (`cdc_case_earliest_dt`) *and*
-report date (`cdc_report_dt`) both fall before September 2020. The
-picture shows what it would have looked back then.
+It carries three dates. Here we use the first and the last: symptom
+onset (`onset_dt`) as the event, and registration at CDC
+(`cdc_report_dt`) as the report. The middle one, `pos_spec_dt`, is the
+specimen collection, and it is pooled away along with `current_status`
+and `sex` – the batch question is about when reports *arrived*, not
+about who they were.
 
 ``` r
 
 data(covid_us)
 
 covid_early <- covid_us |>
-  filter(cdc_case_earliest_dt < as.Date("2020-09-01") &
-           cdc_report_dt < as.Date("2020-09-01"))
+  summarise(n = sum(n), .by = c(onset_dt, cdc_report_dt))
 
-tn <- tbl_now(covid_early, event_date = cdc_case_earliest_dt,
+tn <- tbl_now(covid_early, event_date = onset_dt,
               report_date = cdc_report_dt, case_count = n,
               data_type = "count-incidence", verbose = FALSE)
 ```
@@ -680,7 +682,7 @@ some cases take weeks or months to surface.
 
 stats::quantile(rep(tn$.delay, tn$n), c(0.5, 0.75, 0.9, 0.99))
 #> 50% 75% 90% 99% 
-#>   4  13  42  88
+#>   6  12  30 149
 ```
 
 We can see this dataset again from both the event-date and the
@@ -710,12 +712,13 @@ data](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-7-1.png)
 
 Reporting process of the simulated data
 
-On the real data the reporting is spikier; however, a couple of peaks in
-June 2020 stick up where smooth epidemic reporting should be. Those are
-reporting artefacts either pure backlog releases, or a mix of backlog +
-a genuine surge (we’ll come back to this characterization later). The
-tallest is a single day of about 160K reports, well above the 20-40K
-that arrive on a typical day that summer.
+On the real data the reporting is spikier; a handful of peaks stick up
+where smooth epidemic reporting should be. Those are reporting artefacts
+either pure backlog releases, or a mix of backlog + a genuine surge
+(we’ll come back to this characterization later). The tallest is a
+single day of about 50K reports on 12 December 2020, sixteen times the
+3K that arrive on a typical day; 10 June and 5 September are the other
+conspicuous ones.
 
 ``` r
 
@@ -755,8 +758,8 @@ data](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-8-1.png)
 Classical reporting triangle of the simulated data
 
 On COVID-19, the triangle is a broad blue-grey haze (most cases reported
-over many months) crossed by two bright diagonals. They correspond to
-the same spikes seen for June 2020:
+over many months) crossed by bright diagonals. They correspond to the
+same spikes seen in the reporting process:
 
 ``` r
 
@@ -788,9 +791,9 @@ plot_reporting_hexamap(ideal)
 
 ![](diagnosing-a-tbl-now_files/figure-html/hex-sim-1.png)
 
-On covid the vertical stripes are the spring/summer-2020 backlog
-releases. The delay axis is capped with `max_delay` to keep the map to
-where the reports are.
+On covid the vertical stripes are the 2020 backlog releases. The delay
+axis is capped with `max_delay` to keep the map to where the reports
+are.
 
 ``` r
 
@@ -826,8 +829,8 @@ plot_scalogram(ideal)
 
 ![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-13-1.png)
 
-and again the same June dates being the most identified with additional
-dates having less of a clear pattern:
+and again the same release dates being the most identified, with
+additional dates having less of a clear pattern:
 
 ``` r
 
@@ -935,10 +938,12 @@ diagnose_batches(ideal) |>
     #> 1 2024-02-26      1773     336.    972.  465.       7.03e-47 TRUE
 
 On covid we pass `period = 7` to divide out the weekly reporting
-cadence. The confirmed batches (the Benjamini-Hochberg-corrected `batch`
-flag) are the spring/summer-2020 releases – each reported far more than
-its neighbours *and* was preceded by a matching deficit. The clearest is
-**10 June 2020**, nearly ten times its baseline:
+cadence. Only one date survives the Benjamini-Hochberg-corrected `batch`
+flag: **7 November 2020**, which reported about twice its baseline *and*
+was preceded by a matching deficit of roughly the same size. That
+pairing is the whole test – the taller spikes of 12 December and 10 June
+are not flagged, because nothing was withheld beforehand to release,
+which makes them surges rather than batches:
 
 ``` r
 
@@ -946,12 +951,10 @@ diagnose_batches(tn, period = 7) |>
   filter(batch)
 ```
 
-    #> # A tibble: 3 × 7
-    #>   report_date reported baseline deficit   delta p_transport_bh batch
-    #>   <date>         <dbl>    <dbl>   <dbl>   <dbl>          <dbl> <lgl>
-    #> 1 2020-06-10    162150   16713.  25372. 120065.     0.00000296 TRUE 
-    #> 2 2020-06-20     33784   17009.  21427.  -4652.     0.000102   TRUE 
-    #> 3 2020-03-24     13532    4712.  11449.  -2629.     0.0000138  TRUE
+    #> # A tibble: 1 × 7
+    #>   report_date reported baseline deficit delta p_transport_bh batch
+    #>   <date>         <dbl>    <dbl>   <dbl> <dbl>          <dbl> <lgl>
+    #> 1 2020-11-07     15882    8174.   8053. -345.        0.00405 TRUE
 
 The sensitivity of the batch flag can be adapted with `alpha`.
 
@@ -997,10 +1000,10 @@ a drift:
 
 diagnose_drift(tn)
 #> # A tibble: 2 × 9
-#>   strata stat       n    tau sens_slope statistic  p_value method    drift
-#>   <chr>  <chr>  <int>  <dbl>      <dbl>     <dbl>    <dbl> <chr>     <lgl>
-#> 1 all    median   182 -0.601     -0.286     -3.91 9.17e- 5 hamed-rao TRUE 
-#> 2 all    spread   182 -0.871     -0.912     -6.13 8.55e-10 hamed-rao TRUE
+#>   strata stat       n    tau sens_slope statistic     p_value method    drift
+#>   <chr>  <chr>  <int>  <dbl>      <dbl>     <dbl>       <dbl> <chr>     <lgl>
+#> 1 all    median   305 -0.793     -0.108     -3.81 0.000142    hamed-rao TRUE 
+#> 2 all    spread   305 -0.730     -0.669     -5.29 0.000000120 hamed-rao TRUE
 diagnose_drift(ideal)
 #> # A tibble: 2 × 9
 #>   strata stat       n     tau sens_slope statistic p_value method    drift
@@ -1009,18 +1012,18 @@ diagnose_drift(ideal)
 #> 2 all    spread   100 -0.0204          0    -0.305   0.760 hamed-rao FALSE
 ```
 
-The change-point function also detects that by April the COVID-19 delay
-distribution has completely changed from before. In the case of the
-ideal example the change is not long enough to be detected:
+The change-point function also detects that by early June the COVID-19
+delay distribution has completely changed from before. In the case of
+the ideal example the change is not long enough to be detected:
 
 ``` r
 
 diagnose_changepoint(tn)
 #> # A tibble: 2 × 10
-#>   strata stat       n changepoint statistic  p_value before after shift changepoint_detected
-#>   <chr>  <chr>  <int> <date>          <dbl>    <dbl>  <dbl> <dbl> <dbl> <lgl>               
-#> 1 all    median   182 2020-04-06       5881 2.71e-15   40.7  6.35 -34.3 TRUE                
-#> 2 all    spread   182 2020-04-01       8076 1.84e-28  127.  44.0  -82.7 TRUE
+#>   strata stat       n changepoint statistic  p_value before after  shift changepoint_detected
+#>   <chr>  <chr>  <int> <date>          <dbl>    <dbl>  <dbl> <dbl>  <dbl> <lgl>               
+#> 1 all    median   305 2020-06-07      21432 1.79e-42   55.8  6.41  -49.4 TRUE                
+#> 2 all    spread   305 2020-06-18      20419 1.36e-38  128.  28.1  -100.  TRUE
 diagnose_changepoint(ideal)
 #> # A tibble: 2 × 10
 #>   strata stat       n changepoint statistic p_value before after  shift changepoint_detected

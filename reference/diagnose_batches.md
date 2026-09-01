@@ -189,7 +189,7 @@ to plant a known batch and check the screen finds it;
 and
 [`plot_reporting_triangle()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.md)
 to see it;
-[add_is_censored()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+[add_is_censored_report()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 to record a batch once you believe it. The [*Diagnosing a tbl_now*
 article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 works through a real example.

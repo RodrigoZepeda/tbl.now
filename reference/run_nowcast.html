@@ -21,7 +21,7 @@ names distinct means both packages can be attached at once."><meta property="og:
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -178,7 +178,7 @@ off it, so they enter the model with no further work.</p></li>
 Without a formula referring to them they are inert.</p></li>
 <li><p>every other backend ignores them: the columns ride along so you can split
 on them, and nothing else happens.</p></li>
-</ul><p><strong>Censored delays.</strong> A per-case censoring flag (see <code><a href="add.html">add_is_censored()</a></code>) puts
+</ul><p><strong>Censored delays.</strong> A per-case censoring flag (see <code><a href="add.html">add_is_censored_report()</a></code>) puts
 a censored and an uncensored row in the same <code>(event date, report date)</code> cell,
 and a reporting triangle has one slot per cell. Every backend that goes
 through a converter therefore <strong>collapses the flag with a warning</strong> — counts

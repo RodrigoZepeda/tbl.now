@@ -31,7 +31,7 @@ dates without being told again."><meta property="og:image" content="https://rodr
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -99,10 +99,12 @@ dates without being told again.</p>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  case_count <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  is_censored <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  is_censored_report <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  validation_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  validation_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  validation_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
+<span>  validation_levels <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  is_censored_validation <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  now <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  event_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  report_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
@@ -169,15 +171,15 @@ Name of the column with the case counts if <code>data_type</code> is "count-inci
 or "count-cumulative".</p></dd>
 
 
-<dt id="arg-is-censored">is_censored<a class="anchor" aria-label="anchor" href="#arg-is-censored"></a></dt>
+<dt id="arg-is-censored-report">is_censored_report<a class="anchor" aria-label="anchor" href="#arg-is-censored-report"></a></dt>
 <dd><p>(optional)
 <a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a> or <code>NULL</code> (default).
 The name of a column containing either <code>TRUE</code> or <code>FALSE</code> indicating whether
 the <code>report_date</code> is correctly specified or corresponds to a <code>batch</code> and thus
 is censored. In other words, if the <code>report_date</code> is accurately measured
-set <code>is_censored = FALSE</code> but if the <code>report_date</code> corresponds to an error
+set <code>is_censored_report = FALSE</code> but if the <code>report_date</code> corresponds to an error
 and is only an upper bound of the real report date
-set <code>is_censored = TRUE</code>.</p></dd>
+set <code>is_censored_report = TRUE</code>.</p></dd>
 
 
 <dt id="arg-validation-date">validation_date<a class="anchor" aria-label="anchor" href="#arg-validation-date"></a></dt>
@@ -205,6 +207,26 @@ alone cannot say whether the case was confirmed or retracted.</p></dd>
 <dd><p>(optional) Character. Either <code>"auto"</code> (default),
 <code>"days"</code>, <code>"weeks"</code>, <code>"months"</code>, <code>"years"</code> or <code>"numeric"</code> – the grid the
 validation date lives on, resolved the same way as <code>report_units</code>.</p></dd>
+
+
+<dt id="arg-validation-levels">validation_levels<a class="anchor" aria-label="anchor" href="#arg-validation-levels"></a></dt>
+<dd><p>(optional) <code>NULL</code> (default) or a <strong>named</strong> character
+vector translating the labels in <code>validation_type</code> into the canonical
+outcomes, for data that was not recorded in English:
+<code>c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")</code>.
+The names are the labels in your data, the values are the canonical ones. The
+column is rewritten to the canonical values and the dictionary is kept as an
+attribute, readable with <code><a href="nowcast_data_getters.html">get_validation_levels()</a></code>. Only
+<code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code> and <code>NA</code> are ever stored.</p></dd>
+
+
+<dt id="arg-is-censored-validation">is_censored_validation<a class="anchor" aria-label="anchor" href="#arg-is-censored-validation"></a></dt>
+<dd><p>(optional)
+<a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a> or <code>NULL</code> (default).
+The validation-axis counterpart of <code>is_censored_report</code>: the name of a
+logical column marking rows whose <strong>validation delay</strong> is a bound rather
+than a measurement. Requires a <code>validation_date</code>. See
+<a href="censor_delays_above.html">censor_validation_delays_above()</a>.</p></dd>
 
 
 <dt id="arg-now">now<a class="anchor" aria-label="anchor" href="#arg-now"></a></dt>
@@ -311,7 +333,7 @@ by the <code><a href="validate_tbl_now.html">validate_tbl_now()</a></code> funct
 <dt>now</dt>
 <dd><p>Date of the <code>now</code> for a nowcast.</p></dd>
 
-<dt>is_censored</dt>
+<dt>is_censored_report</dt>
 <dd><p>Column indicating whether the measurement is noisy (only upper bound) or not.</p></dd>
 
 <dt>event_units</dt>
@@ -332,6 +354,12 @@ or count data with incidence (each report date's incidence) or cumulative (overa
 
 <dt>validation_units</dt>
 <dd><p>Units of <code>validation_date</code>, resolved like <code>report_units</code>.</p></dd>
+
+<dt>validation_levels</dt>
+<dd><p>The (optional) dictionary translating the labels in <code>validation_type</code> into the canonical outcomes.</p></dd>
+
+<dt>is_censored_validation</dt>
+<dd><p>Column indicating whether the <em>validation</em> delay is only a bound (the validation-axis counterpart of <code>is_censored_report</code>).</p></dd>
 
 <dt>computed_temporal_effect_cols</dt>
 <dd><p>Names of the temporal-effect columns that have actually been materialised in the data by <code><a href="add_temporal_effects.html">compute_temporal_effects()</a></code>.</p></dd>

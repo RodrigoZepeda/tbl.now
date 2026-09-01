@@ -850,7 +850,7 @@ hai_model <- hai_weekly |>
   ) |>
   censor_delays_above(max_delay = 20)
 #> ℹ Marked 10 reports with delay > 20 weeks as censored.
-#> • This delay is now an upper bound (is_censored).
+#> • This delay is now an upper bound (is_censored_report).
 
 hai_model
 #> # A tibble:  462 × 19
@@ -871,11 +871,11 @@ hai_model
 #> 10   598 2020-07-28    NA            2020-07-29  Urine       Urine cult… Candida trop… Fema… 50-59     Laborato… Alive           Adult              1 2020-07-27
 #> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-01-30 | Event date: "event_week" | Report date: "report_week"
-#> # left-censored indicator: ".is_censored"
+#> # left-censored indicator: ".is_censored_report"
 #> # Strata: "icu_type"
 #> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 452 more rows
-#> # ℹ 5 more variables: report_week <date>, .event_num <dbl>, .report_num <dbl>, .delay <dbl>, .is_censored <lgl>
+#> # ℹ 5 more variables: report_week <date>, .event_num <dbl>, .report_num <dbl>, .delay <dbl>, .is_censored_report <lgl>
 ```
 
 [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)

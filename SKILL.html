@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -158,7 +158,7 @@
 <p><code>cumulative → incidence</code> <strong>de-accumulates</strong>: within each event date (× grouping), ordered by report date, the increment is the cumulative total minus the previous one. Because cumulative totals can be revised <em>downward</em>, an increment can be <strong>negative</strong> — that is a legitimate net down-revision, and delay diagnostics drop non-positive weights. (This is why <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> etc. now work on <code>count-cumulative</code> data such as FluSight.) A downstream model needing non-negative increments — e.g. <code><a href="reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code> — still refuses cumulative input.</p>
 <p><strong>Not supported</strong> (errors): <code>count-* → linelist</code> (cannot un-count aggregated data). So if you might need individual records, keep the linelist.</p>
 <blockquote>
-<p><strong>Pre-aggregation is automatic.</strong> Every function that needs incidence calls <code><a href="reference/to_count.html">to_count()</a></code> first, which groups by <code>(event_date, report_date, .event_num, .report_num, strata, is_censored, covariates, temporal-effect cols)</code> and sums the counts — so any <strong>extra column you did <em>not</em> declare as a stratum is summed away</strong>, not plotted. (If a column like <code>race</code> is present but not a stratum, its rows are correctly collapsed.) A <code>tbl_now</code> with such extra columns prints a non-uniqueness warning at construction to flag this.</p>
+<p><strong>Pre-aggregation is automatic.</strong> Every function that needs incidence calls <code><a href="reference/to_count.html">to_count()</a></code> first, which groups by <code>(event_date, report_date, .event_num, .report_num, strata, is_censored_report, covariates, temporal-effect cols)</code> and sums the counts — so any <strong>extra column you did <em>not</em> declare as a stratum is summed away</strong>, not plotted. (If a column like <code>race</code> is present but not a stratum, its rows are correctly collapsed.) A <code>tbl_now</code> with such extra columns prints a non-uniqueness warning at construction to flag this.</p>
 </blockquote>
 <hr></div>
 <div class="section level2">
@@ -202,19 +202,19 @@
 <hr></div>
 <div class="section level2">
 <h2 id="skill-mark-whether-data-is-left-censored">Skill: mark whether data is left-censored<a class="anchor" aria-label="anchor" href="#skill-mark-whether-data-is-left-censored"></a></h2>
-<p><code>is_censored</code> flags reports that arrive in artificial <strong>batches</strong> representing left-censoring rather than true reporting dynamics (e.g. a lab outage where a week of reports all land on the same later day). The <code>is_censored</code> attribute stores the <strong>name of a logical column</strong> (<code>TRUE</code>/<code>FALSE</code> per row).</p>
+<p><code>is_censored_report</code> flags reports that arrive in artificial <strong>batches</strong> representing left-censoring rather than true reporting dynamics (e.g. a lab outage where a week of reports all land on the same later day). The <code>is_censored_report</code> attribute stores the <strong>name of a logical column</strong> (<code>TRUE</code>/<code>FALSE</code> per row).</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>was_batched <span class="op">=</span> <span class="va">report_date</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021-03-15"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>, event_date <span class="op">=</span> <span class="va">onset</span>, report_date <span class="op">=</span> <span class="va">reported</span>,</span>
-<span>              is_censored <span class="op">=</span> <span class="va">was_batched</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span>              is_censored_report <span class="op">=</span> <span class="va">was_batched</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># or after creation:</span></span>
-<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">add_is_censored</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">was_batched</span><span class="op">)</span>     <span class="co"># errors if one is already set</span></span>
-<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">change_is_censored</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">was_batched</span><span class="op">)</span>  <span class="co"># replace (pass NULL to clear)</span></span>
-<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">remove_is_censored</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">add_is_censored_report</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">was_batched</span><span class="op">)</span>     <span class="co"># errors if one is already set</span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">change_is_censored_report</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">was_batched</span><span class="op">)</span>  <span class="co"># replace (pass NULL to clear)</span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">remove_is_censored_report</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_is_censored</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>   <span class="co"># column name, or NULL if not censored</span></span></code></pre></div>
-<p>To tell whether a dataset is censored: <code>is.null(get_is_censored(tn))</code> → <code>TRUE</code> means <em>no</em> censoring indicator is set. The censoring column itself must be logical or <code><a href="reference/validate_tbl_now.html">validate_tbl_now()</a></code> rejects it.</p>
+<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_is_censored_report</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>   <span class="co"># column name, or NULL if not censored</span></span></code></pre></div>
+<p>To tell whether a dataset is censored: <code>is.null(get_is_censored_report(tn))</code> → <code>TRUE</code> means <em>no</em> censoring indicator is set. The censoring column itself must be logical or <code><a href="reference/validate_tbl_now.html">validate_tbl_now()</a></code> rejects it.</p>
 <p><strong>The converters drop it, and say so.</strong> A flag that varies <em>within</em> an <code>(event_date, report_date)</code> cell (a per-case “upper bound only” mark, unlike one derived from the delay) puts two rows in a cell a reporting triangle has one slot for. Every converter but <code><a href="reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> therefore collapses it first, warning either way:</p>
 <table class="table"><thead><tr><th>input</th>
 <th>what happens</th>
@@ -223,11 +223,43 @@
 </tr><tr><td>line list</td>
 <td>column <strong>dropped</strong>; one row per case, unchanged</td>
 </tr></tbody></table><p><code><a href="reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> keeps it — a delay-distribution fit is the one consumer that can use censoring.</p>
+<div class="section level3">
+<h3 id="the-validation-axis-has-its-own-flag">The validation axis has its own flag<a class="anchor" aria-label="anchor" href="#the-validation-axis-has-its-own-flag"></a></h3>
+<p><code>is_censored_validation</code> is the exact twin of <code>is_censored_report</code>, one axis over: it marks rows whose <strong>validation delay</strong> (report → resolution) is a bound rather than a measurement. It requires a <code>validation_date</code> — there is no validation delay to bound without one.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>, <span class="va">...</span>, validation_date <span class="op">=</span> <span class="va">result</span>, validation_type <span class="op">=</span> <span class="va">outcome</span>,</span>
+<span>              is_censored_validation <span class="op">=</span> <span class="va">slow_result</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">add_is_censored_validation</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">slow_result</span><span class="op">)</span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">change_is_censored_validation</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">slower</span><span class="op">)</span>   <span class="co"># NULL to clear</span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">remove_is_censored_validation</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_is_censored_validation</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>                    <span class="co"># column name, or NULL</span></span>
+<span></span>
+<span><span class="co"># Or let the threshold set it. The case, its date and its outcome are KEPT;</span></span>
+<span><span class="co"># only the delay becomes a bound, so get_latest_confirmed() still counts it.</span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/censor_delays_above.html">censor_validation_delays_above</a></span><span class="op">(</span><span class="va">tn</span>, max_delay <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span></code></pre></div>
+<p>Both flags join the grouping keys, so a censored resolution and an exact one on the same <code>(event, report, outcome)</code> triple stay two rows rather than being summed into one. The converters collapse both, by the same table above.</p>
+<hr></div>
+</div>
+<div class="section level2">
+<h2 id="skill-validation_type-and-other-peoples-words">Skill: <code>validation_type</code> and other people’s words<a class="anchor" aria-label="anchor" href="#skill-validation_type-and-other-peoples-words"></a></h2>
+<p><code>validation_type</code> may hold <strong>only</strong> <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code> or <code>NA</code>. Anything else is an error at construction and at every rebuild.</p>
+<p><code>validation_levels</code> is how data recorded in other words gets into those four: a <strong>named</strong> vector whose names are the labels in your data and whose values are the canonical outcomes.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">casos</span>, <span class="va">...</span>,</span>
+<span>  validation_type   <span class="op">=</span> <span class="va">desenlace</span>,</span>
+<span>  validation_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>confirmado <span class="op">=</span> <span class="st">"confirmed"</span>, retractado <span class="op">=</span> <span class="st">"retracted"</span>,</span>
+<span>                        pendiente <span class="op">=</span> <span class="st">"pending"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_validation_levels</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>   <span class="co"># the dictionary, or NULL</span></span></code></pre></div>
+<p>The column is rewritten to the canonical values and the dictionary is stored on the object, so it survives <code>dplyr</code> and every rebuild. A dictionary that would recode a canonical value into a <em>different</em> one is refused: recoding runs again on every rebuild, so it has to be idempotent.</p>
+<p><code>covid_us</code> is the shipped worked example — CDC says <code>"Laboratory-confirmed case"</code> and <code>"Probable Case"</code>, and mapping those is what the argument is for.</p>
 <hr></div>
 <div class="section level2">
 <h2 id="skill-temporal-effects-lazy-two-step">Skill: temporal effects (lazy, two-step)<a class="anchor" aria-label="anchor" href="#skill-temporal-effects-lazy-two-step"></a></h2>
 <p>Temporal effects (calendar covariates and Fourier seasonality) are stored <strong>lazily</strong> as a spec, then <strong>materialised</strong> into columns only on demand.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1) build a spec</span></span>
 <span><span class="va">spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span></span>
 <span>  day_of_week   <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -263,7 +295,7 @@
 <li>For both sides of the same break, attach one spec per direction.</li>
 </ul><code>holiday_lags</code> requires a <code>holidays</code> calendar (either sign). Best for daily data.</li>
 <li>Replace or clear:</li>
-</ul><div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+</ul><div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">replace_temporal_effects</a></span><span class="op">(</span><span class="va">tn</span>, <span class="fu"><a href="reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>  <span class="co"># drops old computed cols</span></span>
 <span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">remove_temporal_effects</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>                                          <span class="co"># clears spec + cols</span></span></code></pre></div>
 <blockquote>
@@ -273,7 +305,7 @@
 <div class="section level2">
 <h2 id="skill-calendar-effects-for-any-country-custom-almanac-holidays">Skill: calendar effects for ANY country (custom almanac holidays)<a class="anchor" aria-label="anchor" href="#skill-calendar-effects-for-any-country-custom-almanac-holidays"></a></h2>
 <p>Holidays use the <a href="https://davisvaughan.github.io/almanac/" class="external-link"><code>almanac</code></a> package (v1.0). <code>temporal_effects(holidays = ...)</code> accepts any <code>almanac_rcalendar</code>. Do <strong>not</strong> restrict yourself to <code><a href="https://rdrr.io/pkg/almanac/man/cal_us_federal.html" class="external-link">almanac::cal_us_federal()</a></code> — build your own calendar from recurring rules with <code>rholiday(rschedule, name)</code> and <code><a href="https://rdrr.io/pkg/almanac/man/rcalendar.html" class="external-link">rcalendar()</a></code>.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavisVaughan/almanac" class="external-link">almanac</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># A fixed-date holiday: Mexican Independence Day, every Sep 16</span></span>
@@ -333,7 +365,7 @@
 <h2 id="skill-visualize-with-autoplot">Skill: visualize with <code>autoplot</code>
 <a class="anchor" aria-label="anchor" href="#skill-visualize-with-autoplot"></a></h2>
 <p><code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> (the ggplot2 generic, re-exported by <code>tbl.now</code>) returns a multi-panel <code>patchwork</code> diagnostic. <code>ggplot2</code> is a hard dependency; <code>patchwork</code> is a <strong>Suggests</strong> (install it).</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>                       <span class="co"># bare call works after library(tbl.now)</span></span></code></pre></div>
 <p>Two panel <strong>families</strong>. <em>Case-count</em> panels:</p>
@@ -358,7 +390,7 @@
 <strong>Delay periodicity periodogram</strong> (<code>"delay_seasonality"</code>) — a cycle in the delay (e.g. a weekly reporting rhythm).</li>
 </ol><p>Which panels are available depends on the object. <strong>Calendar/delay</strong> panels follow the unit: <strong>daily</strong> → day-of-week <em>and</em> week-of-year; <strong>weekly</strong> → week-of-year; <strong>monthly</strong> → month-of-year. (So on <em>daily</em> data each week-of-year box legitimately summarizes ~7 daily values — that is not a stratification artefact.) The four <strong>holiday</strong> panels follow the <em>temporal-effects spec</em>, not the unit: they appear only when there is one to describe (<code>calendar_holiday</code>/<code>delay_holiday</code> need a <code>holidays</code> calendar <strong>or</strong> <code>weekend = TRUE</code>; the <code>_lag</code> panels additionally need a non-zero <code>holiday_lags</code>). Asking for one without the effect warns and skips it. The spec is read directly — <strong>no</strong> <code><a href="reference/add_temporal_effects.html">compute_temporal_effects()</a></code> needed first.</p>
 <p>Key arguments:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span></span>
 <span>  <span class="va">tn</span>,</span>
 <span>  panels <span class="op">=</span> <span class="st">"all"</span>,         <span class="co"># "all" (default) | "calendar" | "delay_calendar" |</span></span>
@@ -387,7 +419,7 @@
 <div class="section level2">
 <h2 id="skill-summarise-a-tbl_now-summary">Skill: summarise a <code>tbl_now</code> (<code>summary</code>)<a class="anchor" aria-label="anchor" href="#skill-summarise-a-tbl_now-summary"></a></h2>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> on a <code>tbl_now</code> returns a <strong>tibble</strong>, one row per statistic of one quantity of one stratum, rather than <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary.data.frame()</a></code>’s column listing. Read the block you want with <code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">dplyr::filter()</a></code>.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>                              <span class="co"># everything</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">component</span> <span class="op">==</span> <span class="st">"delay"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">tn</span>, by_strata <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>           <span class="co"># pooled rows only</span></span>
@@ -418,7 +450,7 @@
 </tr><tr><td><code>growth</code></td>
 <td>ratio of each event date’s running total from one delay to the next (<code>count-cumulative</code> only)</td>
 </tr></tbody></table><p>Each block is also its own exported function, returning the same schema, so they stack with <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">dplyr::bind_rows()</a></code>:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/nowcast_summary_components.html">cases_per_date</a></span><span class="op">(</span><span class="va">tn</span>, axis <span class="op">=</span> <span class="st">"event"</span><span class="op">)</span>       <span class="co"># "event" / "report" / "validation"</span></span>
 <span><span class="fu"><a href="reference/nowcast_summary_components.html">delay_summary</a></span><span class="op">(</span><span class="va">tn</span>, delay <span class="op">=</span> <span class="st">"event_to_report"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_summary_components.html">zero_run_summary</a></span><span class="op">(</span><span class="va">tn</span>, axis <span class="op">=</span> <span class="st">"event"</span><span class="op">)</span></span>
@@ -442,7 +474,7 @@
 <div class="section level2">
 <h2 id="skill-health-check-a-tbl_now-diagnose">Skill: health-check a <code>tbl_now</code> (<code>diagnose</code>)<a class="anchor" aria-label="anchor" href="#skill-health-check-a-tbl_now-diagnose"></a></h2>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> describes the object; <code><a href="reference/diagnose.html">diagnose()</a></code> looks for what is <strong>wrong</strong> with it. It returns a tibble of findings sorted worst first, and it is <strong>structural and deterministic</strong> — it runs no statistical test.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>                                   <span class="co"># everything, worst first</span></span>
 <span><span class="fu"><a href="reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">&lt;=</span> <span class="st">"note"</span><span class="op">)</span>  <span class="co"># only what needs acting on</span></span>
 <span><span class="fu"><a href="reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">tn</span>, checks <span class="op">=</span> <span class="st">"units"</span><span class="op">)</span>                 <span class="co"># one block</span></span>
@@ -501,7 +533,7 @@
 </tr><tr><td><code>signposts</code></td>
 <td>the four questions <code><a href="reference/diagnose.html">diagnose()</a></code> refuses to answer</td>
 </tr></tbody></table><p>Each block is also its own exported function, same schema, so they stack with <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">dplyr::bind_rows()</a></code> — and <code>diagnose(x)</code> <em>is</em> that bind:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/nowcast_diagnose_components.html">diagnose_declarations</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>; <span class="fu"><a href="reference/nowcast_diagnose_components.html">diagnose_ordering</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>; <span class="fu"><a href="reference/nowcast_diagnose_components.html">diagnose_missing</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_diagnose_components.html">diagnose_duplicates</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>;   <span class="fu"><a href="reference/nowcast_diagnose_components.html">diagnose_units</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>;    <span class="fu"><a href="reference/nowcast_diagnose_components.html">diagnose_negatives</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_diagnose_components.html">diagnose_now</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>;          <span class="fu"><a href="reference/nowcast_diagnose_components.html">diagnose_truncation</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
@@ -517,7 +549,7 @@
 <div class="section level2">
 <h2 id="skill-diagnose-reporting-delay-drift--change-points">Skill: diagnose reporting-delay drift &amp; change points<a class="anchor" aria-label="anchor" href="#skill-diagnose-reporting-delay-drift--change-points"></a></h2>
 <p>Ask whether the reporting delay is <strong>stable over time</strong> before trusting a fixed delay model. All are experimental and index by event date.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Visual: rolling fan chart of the delay distribution (median, mean, 25-75 &amp; 10-90 bands)</span></span>
 <span><span class="fu"><a href="reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">tn</span>, window <span class="op">=</span> <span class="fl">7</span>, by_strata <span class="op">=</span> <span class="cn">FALSE</span>, changepoint <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
@@ -538,7 +570,7 @@
 <div class="section level2">
 <h2 id="skill-detect-batch-reporting-backlog-dumps">Skill: detect batch reporting (backlog dumps)<a class="anchor" aria-label="anchor" href="#skill-detect-batch-reporting-backlog-dumps"></a></h2>
 <p>A <strong>batch</strong> = a report date where a stalled desk releases a backlog. It <em>moves</em> reports later on the report axis <strong>without creating them</strong> (mass is conserved), so a window spanning the lull + the release has an unchanged total, whereas a real epidemic <strong>surge</strong> inflates it. That conservation law is the whole method — these are experimental, <strong>model-free</strong> (need only a <code>tbl_now</code>), and distinct from an epidemic surge by construction.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1) Volume screen over the report axis (per report date x stratum)</span></span>
 <span><span class="va">scr</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/diagnose_batches.html">diagnose_batches</a></span><span class="op">(</span><span class="va">tn</span>, lookback <span class="op">=</span> <span class="fl">3</span>, alpha <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span></span>
 <span><span class="va">scr</span><span class="op">[</span><span class="va">scr</span><span class="op">$</span><span class="va">batch</span>, <span class="op">]</span>            <span class="co"># the flagged report dates</span></span>
@@ -578,7 +610,7 @@
 <div class="section level2">
 <h2 id="skill-coerce-a-tbl_now-to-a-plain-tibble--dataframe">Skill: coerce a <code>tbl_now</code> to a plain tibble / data.frame<a class="anchor" aria-label="anchor" href="#skill-coerce-a-tbl_now-to-a-plain-tibble--dataframe"></a></h2>
 <p><code><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble()</a></code> (re-exported, so it works after <code><a href="https://rodrigozepeda.github.io/tbl.now/">library(tbl.now)</a></code>) and <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> drop the <code>tbl_now</code> class and metadata:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>                                    <span class="co"># plain tibble; spec stays LAZY</span></span>
 <span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="va">tn</span>, compute_temporal_effects <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>   <span class="co"># materialise effect cols first</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">tn</span>, compute_temporal_effects <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
@@ -629,7 +661,7 @@
 <td align="center">✅</td>
 <td>
 <code>to</code> only. Builds the individual-level line list <code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code> takes, renaming the dates to its own <code>dHospital</code>/<code>dReport</code> defaults. <code>format = c("linelist","linelist_list","sts")</code> — <strong><code>"linelist"</code> is the default</strong>; <code>"linelist_list"</code> returns ONE LINE LIST PER STRATUM as a thin <code>tbl_now_surveillance_list</code> (still a plain list, so <code><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply()</a></code> works), length-1 and named <code>"all"</code> when there are no strata, and <code><a href="reference/as_tbl_now.html">as_tbl_now()</a></code> rebuilds a <code>tbl_now</code> from it (as a <code>linelist</code>, since counts were expanded); <code>"sts"</code> returns the observed curve as an <code>sts</code> object instead. Count input is expanded back to one row per case</td>
-</tr></tbody></table><div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+</tr></tbody></table><div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nowobj</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now_epinowcast.html">tbl_now_from_epinowcast</a></span><span class="op">(</span><span class="fu">epinowcast</span><span class="fu">::</span><span class="va"><a href="https://package.epinowcast.org/reference/germany_covid19_hosp.html" class="external-link">germany_covid19_hosp</a></span>,</span>
 <span>                                  strata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"location"</span>, <span class="st">"age_group"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">ts</span>     <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now_tsibble.html">tbl_now_to_tsibble</a></span><span class="op">(</span><span class="va">nowobj</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -642,7 +674,7 @@
 <h2 id="skill-fit-several-models-at-once-and-ensemble-them-run_nowcast">Skill: fit several models at once and ensemble them (<code>run_nowcast</code>)<a class="anchor" aria-label="anchor" href="#skill-fit-several-models-at-once-and-ensemble-them-run_nowcast"></a></h2>
 <p>The converters are one front door: convert, fit, <code><a href="reference/tidy.nowcast.html">tidy()</a></code>. <code><a href="reference/run_nowcast.html">run_nowcast()</a></code> is the other: it does all three in one call and always returns a <strong><code>tbl_nowcast</code></strong>, the shape <code><a href="reference/nowcast_ensemble.html">nowcast_ensemble()</a></code> and <code><a href="reference/score_nowcast.html">score_nowcast()</a></code> need in order to compare models at all. Both stay supported — reach for the converter when you want to pass that package’s own arguments or inspect what it was handed.</p>
 <p><code>run_nowcast(x, engine, verbose =)</code> takes an <strong>engine</strong>: the model AND every argument it needs. <strong>The data and <code>verbose</code> are the ONLY things outside it</strong> — a bare method string is an error (0.27.0; before that it was <code>run_nowcast(x, "NobBS", max_D = 10)</code> and an argument that missed its backend vanished silently).</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nc</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">x</span>, <span class="fu"><a href="reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>draws <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/list_nowcast_methods.html">list_nowcast_methods</a></span><span class="op">(</span><span class="op">)</span>          <span class="co"># what is available in this session</span></span>
@@ -707,10 +739,10 @@
 <li>
 <strong><code>label</code></strong> — its name in a <code><a href="reference/nowcast_backtest.html">nowcast_backtest()</a></code>, defaulting to the method. This is how one package appears twice with different settings.</li>
 </ul><p><strong>Snapshot (“as of”) data needs <code>max_delay</code>.</strong> A snapshot stream restates the whole history in every snapshot, so its delay axis is as long as the series itself and the reporting triangle comes out square. <code>baselinenowcast</code> needs more reference dates than delay columns, so it cannot fit one at all; the error names the cap to use. Three of the six shipped datasets are that shape.</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">flusight_tn</span>, <span class="fu"><a href="reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">21</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>What comes back:</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nc</span>                          <span class="co"># print: the estimate at `now`, then the metadata</span></span>
 <span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="va">nc</span><span class="op">)</span>               <span class="co"># the quantile predictions (long)</span></span>
 <span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="va">nc</span>, type <span class="op">=</span> <span class="st">"draws"</span><span class="op">)</span>  <span class="co"># the draws, where the backend has them</span></span>
@@ -719,7 +751,7 @@
 <span><span class="va">nc</span><span class="op">@</span><span class="va">fit</span>                      <span class="co"># the backend's OWN object, untouched</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="scoring">Scoring<a class="anchor" aria-label="anchor" href="#scoring"></a></h3>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/score_nowcast.html">score_nowcast</a></span><span class="op">(</span><span class="va">nc</span>, truth <span class="op">=</span> <span class="va">x_full</span><span class="op">)</span>   <span class="co"># wis, ae_median, coverage_50, coverage_90</span></span>
 <span><span class="fu"><a href="reference/score_nowcast.html">as_scoringutils</a></span><span class="op">(</span><span class="va">nc</span>, truth <span class="op">=</span> <span class="va">x_full</span><span class="op">)</span> <span class="co"># hand it to scoringutils instead</span></span></code></pre></div>
 <p><code>truth</code> is the <strong>full <code>tbl_now</code></strong> (the one that still holds the reports which arrived after the nowcast’s <code>now</code>), or <code>NULL</code> to reuse the nowcast’s own source data. There is <strong>no <code>observed_col</code></strong> (removed 0.27.0): the observed counts are read off the object with <code><a href="reference/nowcast_data_getters.html">get_case_count()</a></code>, and a <strong>line list is aggregated first</strong>, so a bare data frame is refused rather than guessed at. <code>nowcast_truth()</code> was un-exported in 0.19.0: it was <code><a href="reference/get_latest_first.html">get_latest_reported_cases()</a></code> reshaped, and the reshaping now happens inside the scoring functions.</p>
@@ -727,7 +759,7 @@
 </div>
 <div class="section level3">
 <h3 id="ensembles">Ensembles<a class="anchor" aria-label="anchor" href="#ensembles"></a></h3>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">members</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fu"><a href="reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">x</span>, <span class="fu"><a href="reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>                b <span class="op">=</span> <span class="fu"><a href="reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">x</span>, <span class="fu"><a href="reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -742,7 +774,7 @@
 </ul></div>
 <div class="section level3">
 <h3 id="learning-the-weights">Learning the weights<a class="anchor" aria-label="anchor" href="#learning-the-weights"></a></h3>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bt</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nowcast_backtest.html">nowcast_backtest</a></span><span class="op">(</span><span class="va">x_full</span>,</span>
 <span>                       <span class="fu"><a href="reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>                       <span class="fu"><a href="reference/nowcast_engines.html">engine_nobbs</a></span><span class="op">(</span>max_D <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
@@ -756,17 +788,17 @@
 <div class="section level3">
 <h3 id="adding-your-own-model">Adding your own model<a class="anchor" aria-label="anchor" href="#adding-your-own-model"></a></h3>
 <p>Two S3 methods, in any package:</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a>nowcast_fit.mymodel  <span class="ot">&lt;-</span> <span class="cf">function</span>(method, x, ..., quantile_levels, <span class="at">verbose =</span> <span class="cn">TRUE</span>) { ... }</span>
-<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a>nowcast_tidy.mymodel <span class="ot">&lt;-</span> <span class="cf">function</span>(method, fit, x, ..., quantile_levels) {</span>
-<span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">predictions =</span> <span class="cn">NULL</span>, <span class="at">draws =</span> <span class="sc">&lt;</span>event_date, strata, .draw, .value<span class="sc">&gt;</span>)</span>
-<span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a>nowcast_fit.mymodel  <span class="ot">&lt;-</span> <span class="cf">function</span>(method, x, ..., quantile_levels, <span class="at">verbose =</span> <span class="cn">TRUE</span>) { ... }</span>
+<span id="cb32-2"><a href="#cb32-2" tabindex="-1"></a>nowcast_tidy.mymodel <span class="ot">&lt;-</span> <span class="cf">function</span>(method, fit, x, ..., quantile_levels) {</span>
+<span id="cb32-3"><a href="#cb32-3" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">predictions =</span> <span class="cn">NULL</span>, <span class="at">draws =</span> <span class="sc">&lt;</span>event_date, strata, .draw, .value<span class="sc">&gt;</span>)</span>
+<span id="cb32-4"><a href="#cb32-4" tabindex="-1"></a>}</span></code></pre></div>
 <p>Return <code>draws</code> where you can — the quantiles are derived for you, and it is what <code>type = "linear_pool"</code> needs. Return <code>predictions</code> (<code>&lt;event_date&gt;</code>, strata, <code>.quantile_level</code>, <code>.value</code>) otherwise. One of the two may be <code>NULL</code>, not both. See <code>vignette("ensemble-nowcasting")</code>.</p>
 <hr></div>
 </div>
 <div class="section level2">
 <h2 id="skill-get-predictions-out-of-any-nowcast-tidy">Skill: get predictions out of ANY nowcast (<code>tidy</code>)<a class="anchor" aria-label="anchor" href="#skill-get-predictions-out-of-any-nowcast-tidy"></a></h2>
 <p><code><a href="reference/tidy.nowcast.html">tidy()</a></code> is the mirror of the converters: they normalise what goes <strong>into</strong> a nowcasting package, <code><a href="reference/tidy.nowcast.html">tidy()</a></code> normalises what comes <strong>out</strong>. Same columns, same types, whichever engine produced the fit.</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>                              <span class="co"># one table, whatever `fit` is</span></span>
 <span><span class="fu"><a href="reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">fit</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.05</span>, <span class="fl">0.5</span>, <span class="fl">0.95</span><span class="op">)</span><span class="op">)</span>  <span class="co"># adds q5, q50, q95 columns</span></span>
 <span><span class="fu"><a href="reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">fit</span>, engine <span class="op">=</span> <span class="st">"NobBS"</span><span class="op">)</span>            <span class="co"># when the object is an unclassed list</span></span></code></pre></div>
@@ -798,13 +830,15 @@
 </ul><hr></div>
 <div class="section level2">
 <h2 id="skill-other-utilities">Skill: other utilities<a class="anchor" aria-label="anchor" href="#skill-other-utilities"></a></h2>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/complete_zeroes.html">complete_zeroes</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>                  <span class="co"># fill missing event/report/strata cells with 0</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">tn</span>, new_data <span class="op">=</span> <span class="va">new_rows</span><span class="op">)</span>      <span class="co"># bind newer data, preserving attributes</span></span>
 <span><span class="fu"><a href="reference/align_weeks.html">align_weeks</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">date_col</span><span class="op">)</span>            <span class="co"># snap dates to a consistent epiweek day -&gt; integer .delay</span></span>
 <span><span class="fu"><a href="reference/align_weeks.html">week_2_date</a></span><span class="op">(</span><span class="va">df</span>, <span class="va">week_col</span>, <span class="va">year_col</span><span class="op">)</span>  <span class="co"># epiweek + year -&gt; Date</span></span>
 <span><span class="fu"><a href="reference/is_weekday.html">is_weekday</a></span><span class="op">(</span><span class="va">date</span>, weekend_days <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Sat"</span>,<span class="st">"Sun"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/add.html">change_now</a></span><span class="op">(</span><span class="va">tn</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2023-06-01"</span><span class="op">)</span><span class="op">)</span>   <span class="co"># move the as-of date (re-censors later reports)</span></span>
+<span><span class="fu"><a href="reference/add.html">change_now</a></span><span class="op">(</span><span class="va">tn</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2023-06-01"</span><span class="op">)</span><span class="op">)</span>   <span class="co"># move the as-of date. Moving it BACKWARDS</span></span>
+<span>                                        <span class="co"># returns validations dated after it to</span></span>
+<span>                                        <span class="co"># "pending" and masks their date</span></span>
 <span><span class="fu"><a href="reference/tbl_now_attributes.html">tbl_now_attributes</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>               <span class="co"># list of just the tbl_now-specific attributes</span></span></code></pre></div>
 <ul><li>
 <strong><code>align_weeks</code> / weekly data:</strong> weekly dates reported on inconsistent weekdays give fractional <code>.delay</code>. Use <code>align_weeks = TRUE</code> in <code><a href="reference/tbl_now.html">tbl_now()</a></code> or <code><a href="reference/align_weeks.html">align_weeks()</a></code> afterward to force integer delays.</li>
@@ -813,7 +847,7 @@
 </ul><hr></div>
 <div class="section level2">
 <h2 id="end-to-end-example">End-to-end example<a class="anchor" aria-label="anchor" href="#end-to-end-example"></a></h2>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span>; <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span>; <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavisVaughan/almanac" class="external-link">almanac</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span></span>
@@ -834,13 +868,16 @@
 <hr></div>
 <div class="section level2">
 <h2 id="reference-getters">Reference: getters<a class="anchor" aria-label="anchor" href="#reference-getters"></a></h2>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/nowcast_data_getters.html">get_event_date</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_report_date</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>   <span class="co"># COLUMN NAMES (character), not the dates</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_event_units</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_report_units</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="co"># "days"|"weeks"|"months"|"years"|"numeric"</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                                <span class="co"># Date — the as-of date</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_strata</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_num_strata</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_covariates</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_num_covariates</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_case_count</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_is_censored</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>    <span class="co"># column name or NULL</span></span>
+<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_case_count</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_is_censored_report</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>    <span class="co"># column name or NULL</span></span>
+<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_is_censored_validation</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>             <span class="co"># the validation-axis flag, or NULL</span></span>
+<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_validation_date</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_validation_type</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_validation_units</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_validation_levels</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">has_validation</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_data_type</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                          <span class="co"># "linelist"|"count-incidence"|"count-cumulative"</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                   <span class="co"># list of lazy specs</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_temporal_effect_cols</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>               <span class="co"># computed column names</span></span>
@@ -849,25 +886,25 @@
 </div>
 <div class="section level2">
 <h2 id="reference-nowcasting--ensembles-all-experimental">Reference: nowcasting &amp; ensembles (all experimental)<a class="anchor" aria-label="anchor" href="#reference-nowcasting--ensembles-all-experimental"></a></h2>
-<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" tabindex="-1"></a><span class="fu">run_nowcast</span>(x, <span class="at">engine =</span> <span class="fu">engine_diseasenowcasting</span>(), <span class="at">verbose =</span> <span class="cn">TRUE</span>)  <span class="co"># -&gt; tbl_nowcast</span></span>
-<span id="cb35-2"><a href="#cb35-2" tabindex="-1"></a><span class="fu">engine</span>(method, ..., <span class="at">min_date =</span>, <span class="at">quantile_levels =</span>, <span class="at">label =</span>)</span>
-<span id="cb35-3"><a href="#cb35-3" tabindex="-1"></a>engine_diseasenowcasting<span class="sc">/</span>baselinenowcast<span class="sc">/</span>epinowcast<span class="sc">/</span>nobbs<span class="sc">/</span>surveillance<span class="sc">/</span><span class="fu">epinow2</span>(...)</span>
-<span id="cb35-4"><a href="#cb35-4" tabindex="-1"></a><span class="fu">is_nowcast_engine</span>(x)</span>
-<span id="cb35-5"><a href="#cb35-5" tabindex="-1"></a><span class="fu">list_nowcast_methods</span>(<span class="at">installed_only =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb35-6"><a href="#cb35-6" tabindex="-1"></a><span class="fu">nowcast_quantile_levels</span>()                       <span class="co"># the hub levels, the default</span></span>
-<span id="cb35-7"><a href="#cb35-7" tabindex="-1"></a><span class="fu">tbl_nowcast</span>(<span class="at">predictions =</span>, <span class="at">draws =</span>, ...)        <span class="co"># the constructor (for backends/tests)</span></span>
-<span id="cb35-8"><a href="#cb35-8" tabindex="-1"></a><span class="fu">is_tbl_nowcast</span>(x)</span>
-<span id="cb35-9"><a href="#cb35-9" tabindex="-1"></a></span>
-<span id="cb35-10"><a href="#cb35-10" tabindex="-1"></a><span class="fu">nowcast_ensemble</span>(..., <span class="at">type =</span>, <span class="at">weights =</span>, <span class="at">backtest =</span>, <span class="at">n_draws =</span>, <span class="at">name =</span>)</span>
-<span id="cb35-11"><a href="#cb35-11" tabindex="-1"></a><span class="fu">score_nowcast</span>(nc, <span class="at">truth =</span>) <span class="sc">/</span> <span class="fu">as_scoringutils</span>(nc, <span class="at">truth =</span>)  <span class="co"># truth = the full tbl_now</span></span>
-<span id="cb35-12"><a href="#cb35-12" tabindex="-1"></a><span class="fu">nowcast_backtest</span>(x, <span class="sc">&lt;</span>engines<span class="sc">&gt;</span>, <span class="at">now_dates =</span>, <span class="at">seed =</span>) <span class="sc">/</span> <span class="fu">nowcast_weights</span>(bt, <span class="at">type =</span>)</span>
-<span id="cb35-13"><a href="#cb35-13" tabindex="-1"></a></span>
-<span id="cb35-14"><a href="#cb35-14" tabindex="-1"></a><span class="fu">nowcast_fit</span>(method, x, ...) <span class="sc">/</span> <span class="fu">nowcast_tidy</span>(method, fit, x, ...)  <span class="co"># extension points</span></span>
-<span id="cb35-15"><a href="#cb35-15" tabindex="-1"></a><span class="fu">engine</span>(<span class="st">"nobbs"</span>)                                 <span class="co"># -&gt; the dispatch object</span></span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" tabindex="-1"></a><span class="fu">run_nowcast</span>(x, <span class="at">engine =</span> <span class="fu">engine_diseasenowcasting</span>(), <span class="at">verbose =</span> <span class="cn">TRUE</span>)  <span class="co"># -&gt; tbl_nowcast</span></span>
+<span id="cb37-2"><a href="#cb37-2" tabindex="-1"></a><span class="fu">engine</span>(method, ..., <span class="at">min_date =</span>, <span class="at">quantile_levels =</span>, <span class="at">label =</span>)</span>
+<span id="cb37-3"><a href="#cb37-3" tabindex="-1"></a>engine_diseasenowcasting<span class="sc">/</span>baselinenowcast<span class="sc">/</span>epinowcast<span class="sc">/</span>nobbs<span class="sc">/</span>surveillance<span class="sc">/</span><span class="fu">epinow2</span>(...)</span>
+<span id="cb37-4"><a href="#cb37-4" tabindex="-1"></a><span class="fu">is_nowcast_engine</span>(x)</span>
+<span id="cb37-5"><a href="#cb37-5" tabindex="-1"></a><span class="fu">list_nowcast_methods</span>(<span class="at">installed_only =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb37-6"><a href="#cb37-6" tabindex="-1"></a><span class="fu">nowcast_quantile_levels</span>()                       <span class="co"># the hub levels, the default</span></span>
+<span id="cb37-7"><a href="#cb37-7" tabindex="-1"></a><span class="fu">tbl_nowcast</span>(<span class="at">predictions =</span>, <span class="at">draws =</span>, ...)        <span class="co"># the constructor (for backends/tests)</span></span>
+<span id="cb37-8"><a href="#cb37-8" tabindex="-1"></a><span class="fu">is_tbl_nowcast</span>(x)</span>
+<span id="cb37-9"><a href="#cb37-9" tabindex="-1"></a></span>
+<span id="cb37-10"><a href="#cb37-10" tabindex="-1"></a><span class="fu">nowcast_ensemble</span>(..., <span class="at">type =</span>, <span class="at">weights =</span>, <span class="at">backtest =</span>, <span class="at">n_draws =</span>, <span class="at">name =</span>)</span>
+<span id="cb37-11"><a href="#cb37-11" tabindex="-1"></a><span class="fu">score_nowcast</span>(nc, <span class="at">truth =</span>) <span class="sc">/</span> <span class="fu">as_scoringutils</span>(nc, <span class="at">truth =</span>)  <span class="co"># truth = the full tbl_now</span></span>
+<span id="cb37-12"><a href="#cb37-12" tabindex="-1"></a><span class="fu">nowcast_backtest</span>(x, <span class="sc">&lt;</span>engines<span class="sc">&gt;</span>, <span class="at">now_dates =</span>, <span class="at">seed =</span>) <span class="sc">/</span> <span class="fu">nowcast_weights</span>(bt, <span class="at">type =</span>)</span>
+<span id="cb37-13"><a href="#cb37-13" tabindex="-1"></a></span>
+<span id="cb37-14"><a href="#cb37-14" tabindex="-1"></a><span class="fu">nowcast_fit</span>(method, x, ...) <span class="sc">/</span> <span class="fu">nowcast_tidy</span>(method, fit, x, ...)  <span class="co"># extension points</span></span>
+<span id="cb37-15"><a href="#cb37-15" tabindex="-1"></a><span class="fu">engine</span>(<span class="st">"nobbs"</span>)                                 <span class="co"># -&gt; the dispatch object</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="reference-diagnostics--batches-all-experimental">Reference: diagnostics &amp; batches (all experimental)<a class="anchor" aria-label="anchor" href="#reference-diagnostics--batches-all-experimental"></a></h2>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">x</span>, by_strata <span class="op">=</span><span class="op">)</span>                   <span class="co"># the whole summary, as a tibble</span></span>
 <span><span class="fu"><a href="reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">x</span>, checks <span class="op">=</span>, by_strata <span class="op">=</span><span class="op">)</span>        <span class="co"># the structural health check</span></span>
 <span><span class="va">diagnose_declarations</span><span class="op">/</span><span class="va">ordering</span><span class="op">/</span><span class="va">missing</span><span class="op">/</span><span class="va">duplicates</span><span class="op">/</span><span class="va">units</span><span class="op">/</span><span class="fu">negatives</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
@@ -886,7 +923,7 @@
 </div>
 <div class="section level2">
 <h2 id="reference-package-data">Reference: package data<a class="anchor" aria-label="anchor" href="#reference-package-data"></a></h2>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span>        <span class="co"># dengue surveillance linelist (weekly, Puerto Rico)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">flusight</span><span class="op">)</span>         <span class="co"># flu in the United States (count-cumulative)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">mpoxdat</span><span class="op">)</span>          <span class="co"># mpox count-incidence (a `race` column + `n` counts)</span></span>

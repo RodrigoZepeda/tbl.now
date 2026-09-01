@@ -8,10 +8,10 @@ Rather than deleting those records (which throws away a real case) these
 functions mark them as censored: the object keeps the case, but records
 its delay as "at least this long" instead of "exactly this long".
 censor_delays_above() does this for the reporting delay, by setting the
-is_censored flag.
+is_censored_report flag.
 censor_validation_delays_above() does the same for the validation
-delay – a case still waiting on a laboratory result months later is, in
-practice, never going to be resolved – by returning it to "pending".
+delay – a case whose laboratory result took months to come back – by
+setting the is_censored_validation flag.
 
 '><meta property="og:description" content='
 Every surveillance system has a handful of records that arrive absurdly late
@@ -22,10 +22,10 @@ Rather than deleting those records (which throws away a real case) these
 functions mark them as censored: the object keeps the case, but records
 its delay as "at least this long" instead of "exactly this long".
 censor_delays_above() does this for the reporting delay, by setting the
-is_censored flag.
+is_censored_report flag.
 censor_validation_delays_above() does the same for the validation
-delay – a case still waiting on a laboratory result months later is, in
-practice, never going to be resolved – by returning it to "pending".
+delay – a case whose laboratory result took months to come back – by
+setting the is_censored_validation flag.
 
 '><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -35,7 +35,7 @@ practice, never going to be resolved – by returning it to "pending".
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -86,10 +86,10 @@ nowcast think reporting is far slower than it is.</p>
 <p>Rather than deleting those records (which throws away a real case) these
 functions mark them as <strong>censored</strong>: the object keeps the case, but records
 its delay as <em>"at least this long"</em> instead of <em>"exactly this long"</em>.</p><ul><li><p><code>censor_delays_above()</code> does this for the <strong>reporting</strong> delay, by setting the
-<code>is_censored</code> flag.</p></li>
+<code>is_censored_report</code> flag.</p></li>
 <li><p><code>censor_validation_delays_above()</code> does the same for the <strong>validation</strong>
-delay – a case still waiting on a laboratory result months later is, in
-practice, never going to be resolved – by returning it to <code>"pending"</code>.</p></li>
+delay – a case whose laboratory result took months to come back – by
+setting the <code>is_censored_validation</code> flag.</p></li>
 </ul></div>
 
     <div class="section level2">
@@ -120,23 +120,29 @@ Default <code>TRUE</code>.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>censor_delays_above()</code> returns the <code>tbl_now</code> with its <code>is_censored</code> column
+    <p><code>censor_delays_above()</code> returns the <code>tbl_now</code> with its <code>is_censored_report</code> column
 updated, creating it when absent.</p>
-<p><code>censor_validation_delays_above()</code> returns the <code>tbl_now</code> with the offending
-rows' <code>validation_type</code> set to <code>"pending"</code> and their validation date set to
-<code>NA</code> – a resolution you refuse to believe is not a resolution.</p>
+<p><code>censor_validation_delays_above()</code> returns the <code>tbl_now</code> with its
+<code>is_censored_validation</code> column updated, creating it when absent.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The reporting delay is read from the generated <code>.delay</code> column (report date
-minus event date, in the object's event units). Existing censoring flags are
-merged rather than overwritten, so a report that was already censored stays
-censored.</p>
+minus event date, in the object's event units); the validation delay from
+<code>.validation_delay</code> (validation date minus report date, in validation
+units). Existing censoring flags are merged rather than overwritten, so a
+delay that was already censored stays censored.</p>
+<p>Both functions keep the case <strong>and its date</strong>. Nothing is deleted and no
+outcome is rewritten: the flag says the delay is a bound rather than a
+measurement, and it is up to the model to use that. A case that was
+confirmed after 200 days is still a confirmed case, and
+<a href="validation_counts.html">get_latest_confirmed()</a> still counts it.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><a href="add.html">add_is_censored()</a> and <a href="add.html">change_is_censored()</a> to set the flag by
-hand; <code><a href="validation_delay.html">diagnose_validation_delay()</a></code> and <code><a href="plot_delay_distribution.html">plot_delay_distribution()</a></code> to find
+    <div class="dont-index"><p><a href="add.html">add_is_censored_report()</a> and <a href="add.html">change_is_censored_report()</a> to set the flag by
+hand, and <a href="add.html">add_is_censored_validation()</a> for the validation axis;
+<code><a href="validation_delay.html">diagnose_validation_delay()</a></code> and <code><a href="plot_delay_distribution.html">plot_delay_distribution()</a></code> to find
 the threshold worth using; <code><a href="nowcast_diagnose_components.html">diagnose_truncation()</a></code> for the delays that are
 missing rather than long; <code><a href="complete_zeroes.html">complete_zeroes()</a></code> for the opposite problem.</p></div>
     </div>
@@ -158,8 +164,8 @@ missing rather than long; <code><a href="complete_zeroes.html">complete_zeroes()
 <span class="r-in"><span><span class="co"># Anything slower than 60 days is recorded as a lower bound, not a fact.</span></span></span>
 <span class="r-in"><span><span class="va">censored</span> <span class="op">&lt;-</span> <span class="fu">censor_delays_above</span><span class="op">(</span><span class="va">tn</span>, max_delay <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Marked 1 report with delay &gt; 60 days as censored.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> This delay is now an upper bound (is_censored).</span>
-<span class="r-in"><span><span class="va">censored</span><span class="op">[[</span><span class="fu"><a href="nowcast_data_getters.html">get_is_censored</a></span><span class="op">(</span><span class="va">censored</span><span class="op">)</span><span class="op">]</span><span class="op">]</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> This delay is now an upper bound (is_censored_report).</span>
+<span class="r-in"><span><span class="va">censored</span><span class="op">[[</span><span class="fu"><a href="nowcast_data_getters.html">get_is_censored_report</a></span><span class="op">(</span><span class="va">censored</span><span class="op">)</span><span class="op">]</span><span class="op">]</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE FALSE FALSE  TRUE</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># The validation counterpart: a laboratory result that took 90 days.</span></span></span>
@@ -175,11 +181,14 @@ missing rather than long; <code><a href="complete_zeroes.html">complete_zeroes()
 <span class="r-in"><span>  data_type <span class="op">=</span> <span class="st">"linelist"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># That one goes back to "pending"; the other four stay confirmed.</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu">censor_validation_delays_above</span><span class="op">(</span><span class="va">flu</span>, <span class="fl">30</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">[[</span><span class="st">"outcome"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># That one is flagged; all five stay confirmed, and the date is kept.</span></span></span>
+<span class="r-in"><span><span class="va">flagged</span> <span class="op">&lt;-</span> <span class="fu">censor_validation_delays_above</span><span class="op">(</span><span class="va">flu</span>, <span class="fl">30</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">flagged</span><span class="op">[[</span><span class="fu"><a href="nowcast_data_getters.html">get_is_censored_validation</a></span><span class="op">(</span><span class="va">flagged</span><span class="op">)</span><span class="op">]</span><span class="op">]</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE FALSE FALSE  TRUE FALSE</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">flagged</span><span class="op">[[</span><span class="st">"outcome"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> confirmed   pending </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         4         1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> confirmed </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         5 </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
