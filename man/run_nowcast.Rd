@@ -115,7 +115,7 @@ Without a formula referring to them they are inert.
 on them, and nothing else happens.
 }
 
-\strong{Censored delays.} A per-case censoring flag (see \code{\link[=add_is_censored]{add_is_censored()}}) puts
+\strong{Censored delays.} A per-case censoring flag (see \code{\link[=add_is_censored_report]{add_is_censored_report()}}) puts
 a censored and an uncensored row in the same \verb{(event date, report date)} cell,
 and a reporting triangle has one slot per cell. Every backend that goes
 through a converter therefore \strong{collapses the flag with a warning} — counts

@@ -12,10 +12,12 @@ tbl_now(
   strata = NULL,
   covariates = NULL,
   case_count = NULL,
-  is_censored = NULL,
+  is_censored_report = NULL,
   validation_date = NULL,
   validation_type = NULL,
   validation_units = "auto",
+  validation_levels = NULL,
+  is_censored_validation = NULL,
   now = NULL,
   event_units = "auto",
   report_units = "auto",
@@ -64,14 +66,14 @@ is not of interest to generate nowcasts by precipitation levels.}
 Name of the column with the case counts if \code{data_type} is "count-incidence"
 or "count-cumulative".}
 
-\item{is_censored}{(optional)
+\item{is_censored_report}{(optional)
 \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL} (default).
 The name of a column containing either \code{TRUE} or \code{FALSE} indicating whether
 the \code{report_date} is correctly specified or corresponds to a \code{batch} and thus
 is censored. In other words, if the \code{report_date} is accurately measured
-set \code{is_censored = FALSE} but if the \code{report_date} corresponds to an error
+set \code{is_censored_report = FALSE} but if the \code{report_date} corresponds to an error
 and is only an upper bound of the real report date
-set \code{is_censored = TRUE}.}
+set \code{is_censored_report = TRUE}.}
 
 \item{validation_date}{(optional)
 \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
@@ -93,6 +95,22 @@ alone cannot say whether the case was confirmed or retracted.}
 \item{validation_units}{(optional) Character. Either \code{"auto"} (default),
 \code{"days"}, \code{"weeks"}, \code{"months"}, \code{"years"} or \code{"numeric"} -- the grid the
 validation date lives on, resolved the same way as \code{report_units}.}
+
+\item{validation_levels}{(optional) \code{NULL} (default) or a \strong{named} character
+vector translating the labels in \code{validation_type} into the canonical
+outcomes, for data that was not recorded in English:
+\code{c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")}.
+The names are the labels in your data, the values are the canonical ones. The
+column is rewritten to the canonical values and the dictionary is kept as an
+attribute, readable with \code{get_validation_levels()}. Only
+\code{"confirmed"}, \code{"retracted"}, \code{"pending"} and \code{NA} are ever stored.}
+
+\item{is_censored_validation}{(optional)
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL} (default).
+The validation-axis counterpart of \code{is_censored_report}: the name of a
+logical column marking rows whose \strong{validation delay} is a bound rather
+than a measurement. Requires a \code{validation_date}. See
+\link[=censor_delays_above]{censor_validation_delays_above()}.}
 
 \item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
 nowcast. If no \code{now} is given then the function automatically uses the last
@@ -182,7 +200,7 @@ by the \code{\link[=validate_tbl_now]{validate_tbl_now()}} function:
 \item{case_count}{Column containing the number of observations for that moment if \code{data_type} is \code{count-incidence} or \code{count-cumulative}.}
 \item{temporal_effects}{Names of the columns refering to the temporal effects.}
 \item{now}{Date of the \code{now} for a nowcast.}
-\item{is_censored}{Column indicating whether the measurement is noisy (only upper bound) or not.}
+\item{is_censored_report}{Column indicating whether the measurement is noisy (only upper bound) or not.}
 \item{event_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}. Corresponds to the units of \code{event_date}}
 \item{report_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}. Corresponds to the units of \code{report_date}}
 \item{data_type}{Either \code{linelist}, \code{count-incidence} or \code{count-cumulative} depending on whether it is linelist data
@@ -190,6 +208,8 @@ or count data with incidence (each report date's incidence) or cumulative (overa
 \item{validation_date}{Name of the column with the (optional) third date: when the report was resolved.}
 \item{validation_type}{Name of the column saying what that resolution was (\code{"confirmed"}, \code{"retracted"}, \code{"pending"}).}
 \item{validation_units}{Units of \code{validation_date}, resolved like \code{report_units}.}
+\item{validation_levels}{The (optional) dictionary translating the labels in \code{validation_type} into the canonical outcomes.}
+\item{is_censored_validation}{Column indicating whether the \emph{validation} delay is only a bound (the validation-axis counterpart of \code{is_censored_report}).}
 \item{computed_temporal_effect_cols}{Names of the temporal-effect columns that have actually been materialised in the data by \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}.}
 }
 

@@ -23,7 +23,7 @@ censored_fixture <- function(type = c("linelist", "count-incidence")) {
     event_date = "onset_week", report_date = "report_week",
     data_type = "linelist", verbose = FALSE
   ) |>
-    add_is_censored("upper_bound_only")
+    add_is_censored_report("upper_bound_only")
 
   if (type == "linelist") ll else to_count(ll, to = "count-incidence")
 }
@@ -122,7 +122,7 @@ test_that("collapsing drops the flag but keeps every other column", {
   )
 
   expect_true(is_tbl_now(collapsed))
-  expect_null(get_is_censored(collapsed))
+  expect_null(get_is_censored_report(collapsed))
   expect_false("upper_bound_only" %in% names(collapsed))
   expect_true(all(
     setdiff(names(counts), "upper_bound_only") %in% names(collapsed)
@@ -138,7 +138,7 @@ test_that("collapsing a line list keeps one row per case", {
   )
 
   expect_true(is_tbl_now(collapsed))
-  expect_null(get_is_censored(collapsed))
+  expect_null(get_is_censored_report(collapsed))
   expect_false("upper_bound_only" %in% names(collapsed))
   expect_equal(nrow(collapsed), nrow(ll))
 })

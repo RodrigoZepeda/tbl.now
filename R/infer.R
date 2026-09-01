@@ -185,7 +185,7 @@ infer_units <- function(data, date_column, date_units) {
 #' @keywords internal
 #' @noRd
 infer_data_type <- function(data, data_type, event_date, report_date, strata = NULL,
-                            is_censored = NULL, case_count = NULL, verbose = FALSE) {
+                            is_censored_report = NULL, case_count = NULL, verbose = FALSE) {
   if (!is.null(case_count) && length(case_count) != 1) {
     cli::cli_abort("Invalid length = {length(case_count)} for `case_count`. It must be a vector of length 1.")
   }
@@ -199,7 +199,7 @@ infer_data_type <- function(data, data_type, event_date, report_date, strata = N
   if (data_type == "auto" && !is.null(case_count) && (case_count %in% colnames(data))) {
     # Check that the data is different
     distinct_data <- data |>
-      dplyr::distinct(dplyr::across(dplyr::all_of(c(event_date, report_date, strata, is_censored)))) |>
+      dplyr::distinct(dplyr::across(dplyr::all_of(c(event_date, report_date, strata, is_censored_report)))) |>
       nrow()
 
     if (distinct_data != nrow(data)) {
@@ -211,7 +211,7 @@ infer_data_type <- function(data, data_type, event_date, report_date, strata = N
     # Check that data should be always increasing by strata, event date, report date
     # for that purpose get the differences
     summarized_difs <- data |>
-      dplyr::group_by(dplyr::across(dplyr::all_of(c(event_date, strata, is_censored)))) |>
+      dplyr::group_by(dplyr::across(dplyr::all_of(c(event_date, strata, is_censored_report)))) |>
       dplyr::arrange(!!as.symbol(report_date)) |>
       dplyr::mutate(!!as.symbol("difference") := !!as.symbol(case_count) - dplyr::lag(!!as.symbol(case_count))) |>
       dplyr::filter(!is.na(!!as.symbol("difference"))) |>

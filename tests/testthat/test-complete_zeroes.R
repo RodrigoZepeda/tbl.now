@@ -184,7 +184,7 @@ test_that("complete_zeroes emits message when temporal-effect columns exist", {
   expect_message(complete_zeroes(x), "compute_temporal_effects")
 })
 
-# === complete_zeroes with an is_censored column ===========================
+# === complete_zeroes with an is_censored_report column ===========================
 
 make_censored_incidence <- function() {
   d <- dplyr::tibble(
@@ -201,16 +201,16 @@ make_censored_incidence <- function() {
   )
   tbl_now(d,
     event_date = event, report_date = report, case_count = n,
-    is_censored = cens, data_type = "count-incidence",
+    is_censored_report = cens, data_type = "count-incidence",
     event_units = "days", report_units = "days", verbose = FALSE
   )
 }
 
-test_that("complete_zeroes works with an is_censored column (count-incidence)", {
+test_that("complete_zeroes works with an is_censored_report column (count-incidence)", {
   cz <- complete_zeroes(make_censored_incidence())
 
   expect_true(is_tbl_now(cz))
-  expect_equal(get_is_censored(cz), "cens")
+  expect_equal(get_is_censored_report(cz), "cens")
   # the censored column survives and has no NAs
   expect_false(anyNA(cz[["cens"]]))
   # completion happens for BOTH censored states
@@ -221,7 +221,7 @@ test_that("complete_zeroes works with an is_censored column (count-incidence)", 
   expect_setequal(unique(filled[["cens"]]), c(FALSE, TRUE))
 })
 
-test_that("complete_zeroes works with is_censored on count-cumulative data", {
+test_that("complete_zeroes works with is_censored_report on count-cumulative data", {
   cz <- make_censored_incidence() |>
     to_count("count-cumulative") |>
     complete_zeroes()

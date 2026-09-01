@@ -64,7 +64,12 @@ Specifically a `tbl_now` is a data structure that keeps track of the following a
 <tr>
 <td align="center"><img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation"></td>
 <td align="left"><code>validation_type</code></td>
-<td align="left">What the validation date resolved to (either <code>confirmed</code>, <code>retracted</code>, <code>pending</code>). <em>Optional</em>.</td>
+<td align="left">What the validation date resolved to. Only <code>confirmed</code>, <code>retracted</code>, <code>pending</code> or <code>NA</code> are ever stored; use <code>validation_levels</code> for data recorded in other words. <em>Optional</em>.</td>
+</tr>
+<tr>
+<td align="center"><img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation_levels"></td>
+<td align="left"><code>validation_levels</code></td>
+<td align="left">A named dictionary translating the labels in <code>validation_type</code> into those four, e.g. <code>c(confirmado = "confirmed")</code>. <em>Optional</em>.</td>
 </tr>
 <tr>
 <td align="center"><img src="man/figures/now.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="now"></td>
@@ -97,9 +102,14 @@ Specifically a `tbl_now` is a data structure that keeps track of the following a
 <td align="left">The time grid each date lives on: <code>days</code>, <code>weeks</code>, <code>months</code>, <code>years</code> or <code>numeric</code>. <em>Optional</em>; inferred (<code>"auto"</code>) by default.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored"></td>
-<td align="left"><code>is_censored</code></td>
+<td align="center"><img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored_report"></td>
+<td align="left"><code>is_censored_report</code></td>
 <td align="left">Flags report dates that are only an upper bound, e.g. a batch or back-fill dump. <em>Optional</em>.</td>
+</tr>
+<tr>
+<td align="center"><img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored_validation"></td>
+<td align="left"><code>is_censored_validation</code></td>
+<td align="left">The same on the validation axis: flags rows whose <em>validation</em> delay is a bound rather than a measurement. <em>Optional</em>.</td>
 </tr>
 <tr>
 <td align="center"><img src="man/figures/temporal_effects.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="temporal_effects"></td>

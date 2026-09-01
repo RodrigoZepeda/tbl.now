@@ -439,7 +439,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
     event_to_report = as.numeric(observations[[".delay"]])
   )
 
-  censored_col <- get_is_censored(x)
+  censored_col <- get_is_censored_report(x)
   if (!is.null(censored_col)) {
     # The checker allows 0/1 as well as TRUE/FALSE, so normalise once here
     # rather than in each block.

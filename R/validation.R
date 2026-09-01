@@ -32,11 +32,95 @@
   c("confirmed", "retracted", "pending")
 }
 
+#' Check a user dictionary of `validation_type` labels
+#'
+#' Surveillance data is not always recorded in English, and recoding it by hand
+#' before every call is exactly the kind of step that gets forgotten. A
+#' dictionary lets the object do it once: the names are the labels as they
+#' appear in the data, the values are the canonical outcomes.
+#'
+#' @param validation_levels A named character vector, or `NULL`.
+#'
+#' @return `validation_levels`, unchanged, or `NULL`.
+#'
+#' @keywords internal
+#' @noRd
+.check_validation_levels <- function(validation_levels) {
+  if (is.null(validation_levels)) {
+    return(NULL)
+  }
+
+  allowed <- .validation_levels()
+  labels <- names(validation_levels)
+
+  if (!is.character(validation_levels) || is.null(labels) ||
+    anyNA(labels) || !all(nzchar(labels))) {
+    cli::cli_abort(c(
+      "{.arg validation_levels} must be a NAMED character vector.",
+      "i" = "The names are the labels in your data, the values are the
+             canonical outcomes.",
+      "*" = "For example
+             {.code c(confirmado = \"confirmed\", pendiente = \"pending\")}."
+    ))
+  }
+
+  if (anyDuplicated(labels) > 0) {
+    repeated <- unique(labels[duplicated(labels)])
+    cli::cli_abort(
+      "{.arg validation_levels} maps {.val {repeated}} more than once."
+    )
+  }
+
+  unknown <- setdiff(unique(unname(validation_levels)), allowed)
+  if (length(unknown) > 0) {
+    cli::cli_abort(c(
+      "{.arg validation_levels} maps to {length(unknown)} value{?s} that
+       {?is/are} not an outcome: {.val {unknown}}.",
+      "i" = "The right-hand side must be one of {.val {allowed}}."
+    ))
+  }
+
+  # Recoding runs again on every rebuild (`summarise()`, `update()`, ...), so a
+  # dictionary that renames a canonical value into a DIFFERENT one would flip
+  # the column back and forth. Mapping a canonical value to itself is fine.
+  canonical <- intersect(labels, allowed)
+  flipped <- canonical[unname(validation_levels[canonical]) != canonical]
+  if (length(flipped) > 0) {
+    cli::cli_abort(c(
+      "{.arg validation_levels} remaps the canonical value{?s}
+       {.val {flipped}} to something else.",
+      "i" = "That recoding is not repeatable: every rebuild of the object
+             would apply it again."
+    ))
+  }
+
+  validation_levels
+}
+
+#' Translate `validation_type` values through the dictionary
+#'
+#' @param values A character vector of outcomes as recorded.
+#' @param validation_levels The dictionary, or `NULL`.
+#'
+#' @return A character vector of canonical outcomes.
+#'
+#' @keywords internal
+#' @noRd
+.recode_validation_type <- function(values, validation_levels) {
+  if (is.null(validation_levels) || length(values) == 0) {
+    return(values)
+  }
+  hit <- match(values, names(validation_levels))
+  ifelse(is.na(hit), values, unname(validation_levels)[hit])
+}
+
 #' Build (or validate) the `validation_type` column
 #'
 #' @param data A data frame.
 #' @param validation_date Name of the validation-date column, or `NULL`.
 #' @param validation_type Name of the type column, or `NULL`.
+#' @param validation_levels A named character dictionary of non-canonical
+#'   labels, or `NULL`.
 #' @param verbose Logical.
 #'
 #' @return The data frame, with a `validation_type` column when one is needed.
@@ -44,6 +128,7 @@
 #' @keywords internal
 #' @noRd
 .resolve_validation_type <- function(data, validation_date, validation_type,
+                                       validation_levels = NULL,
                                        verbose = TRUE) {
   if (is.null(validation_date)) {
     return(list(data = data, validation_type = validation_type))
@@ -80,19 +165,30 @@
     return(list(data = data, validation_type = validation_type))
   }
 
-  values <- as.character(data[[validation_type]])
+  # The dictionary runs FIRST, so everything downstream -- the check below, the
+  # counts, the plots -- only ever sees the canonical four.
+  values <- .recode_validation_type(
+    as.character(data[[validation_type]]), validation_levels
+  )
   # A row with no date has not been resolved, whatever the column says.
   values[!has_date & is.na(values)] <- "pending"
 
   allowed <- .validation_levels()
   unknown <- setdiff(stats::na.omit(unique(values)), allowed)
   if (length(unknown) > 0) {
+    hint <- if (is.null(validation_levels)) {
+      "Map them with {.arg validation_levels}, e.g.
+       {.code c(confirmado = \"confirmed\")}."
+    } else {
+      "{.arg validation_levels} maps none of them."
+    }
     cli::cli_abort(c(
       paste0(
         "{.arg validation_type} contains {length(unknown)} unrecognised ",
         "value{?s}: {.val {unknown}}."
       ),
-      "i" = "Allowed values are {.val {allowed}}, or {.val NA}."
+      "i" = "Allowed values are {.val {allowed}}, or {.val NA}.",
+      "i" = hint
     ))
   }
 
@@ -132,6 +228,18 @@ get_validation_type <- function(x) {
 #' @export
 get_validation_units <- function(x) {
   attr(x, "validation_units", exact = TRUE)
+}
+
+#' @rdname nowcast_data_getters
+#' @export
+get_is_censored_validation <- function(x) {
+  attr(x, "is_censored_validation", exact = TRUE)
+}
+
+#' @rdname nowcast_data_getters
+#' @export
+get_validation_levels <- function(x) {
+  attr(x, "validation_levels", exact = TRUE)
 }
 
 #' @rdname nowcast_data_getters
@@ -228,8 +336,68 @@ has_validation <- function(x) {
 
 #' @rdname add
 #' @export
+change_is_censored_validation <- function(x, is_censored_validation) {
+  .assert_tbl_now(x, "change_is_censored_validation")
+
+  value_pos <- tidyselect::eval_select(
+    rlang::expr({{ is_censored_validation }}), x
+  )
+  value <- if (length(value_pos) == 0) NULL else colnames(x)[value_pos]
+
+  if (length(value) > 1) {
+    cli::cli_abort(
+      "{.arg is_censored_validation} must be the name of one column (length 1)"
+    )
+  }
+
+  if (!is.null(value) && !has_validation(x)) {
+    cli::cli_abort(c(
+      "{.arg x} has no validation process, so a validation delay cannot be
+       censored.",
+      "i" = "Attach one with {.fn add_validation_date} first."
+    ))
+  }
+
+  if (!is.null(value) && !rlang::is_logical(x[[value]])) {
+    cli::cli_abort("Column {.val {value}} must be logical")
+  }
+
+  attr(x, "is_censored_validation") <- value
+
+  validate_tbl_now(x)
+
+  return(x)
+}
+
+#' @rdname add
+#' @export
+add_is_censored_validation <- function(x, is_censored_validation) {
+  if (length(get_is_censored_validation(x)) > 0) {
+    cli::cli_abort(
+      paste0(
+        "Already has value {.val {get_is_censored_validation(x)}} as the ",
+        "validation censoring indicator.",
+        " Use {.help remove_is_censored_validation} to remove it before adding",
+        " or {.help change_is_censored_validation} to change it."
+      )
+    )
+  }
+
+  change_is_censored_validation(x, {{ is_censored_validation }})
+}
+
+#' @rdname add
+#' @export
+remove_is_censored_validation <- function(x) {
+  .assert_tbl_now(x, "remove_is_censored_validation")
+  change_is_censored_validation(x, NULL)
+}
+
+#' @rdname add
+#' @export
 add_validation_date <- function(x, validation_date, validation_type = NULL,
-                             validation_units = "auto") {
+                             validation_units = "auto",
+                             validation_levels = NULL) {
   .assert_tbl_now(x, "add_validation_date")
   if (has_validation(x)) {
     cli::cli_abort(c(
@@ -239,17 +407,20 @@ add_validation_date <- function(x, validation_date, validation_type = NULL,
     ))
   }
   .set_validation(
-    x, {{ validation_date }}, {{ validation_type }}, validation_units
+    x, {{ validation_date }}, {{ validation_type }}, validation_units,
+    validation_levels
   )
 }
 
 #' @rdname add
 #' @export
 change_validation_date <- function(x, validation_date, validation_type = NULL,
-                                validation_units = "auto") {
+                                validation_units = "auto",
+                                validation_levels = NULL) {
   .assert_tbl_now(x, "change_validation_date")
   .set_validation(
-    x, {{ validation_date }}, {{ validation_type }}, validation_units
+    x, {{ validation_date }}, {{ validation_type }}, validation_units,
+    validation_levels
   )
 }
 
@@ -273,6 +444,12 @@ remove_validation_date <- function(x) {
     character(0)
   }
 
+  # A censoring flag we built ourselves goes with the process it belonged to;
+  # one the user supplied is their column and stays as data, unreferenced.
+  if (identical(get_is_censored_validation(x), ".is_censored_validation")) {
+    ours <- c(ours, ".is_censored_validation")
+  }
+
   bare <- .strip_tbl_now(x)
   bare <- bare[, setdiff(colnames(bare), c(generated, ours)), drop = FALSE]
 
@@ -280,7 +457,7 @@ remove_validation_date <- function(x) {
     bare,
     event_date = get_event_date(x), report_date = get_report_date(x),
     case_count = get_case_count(x), strata = get_strata(x),
-    covariates = get_covariates(x), is_censored = get_is_censored(x),
+    covariates = get_covariates(x), is_censored_report = get_is_censored_report(x),
     data_type = get_data_type(x),
     event_units = get_event_units(x), report_units = get_report_units(x),
     t_effects = get_temporal_effect_cols(x),
@@ -297,7 +474,7 @@ remove_validation_date <- function(x) {
 #' @keywords internal
 #' @noRd
 .set_validation <- function(x, validation_date, validation_type,
-                              validation_units) {
+                              validation_units, validation_levels = NULL) {
   # Every generated column has to go: `tbl_now()` rebuilds them and refuses to
   # write over one that is already there.
   generated <- c(
@@ -311,10 +488,12 @@ remove_validation_date <- function(x) {
     bare,
     event_date = get_event_date(x), report_date = get_report_date(x),
     case_count = get_case_count(x), strata = get_strata(x),
-    covariates = get_covariates(x), is_censored = get_is_censored(x),
+    covariates = get_covariates(x), is_censored_report = get_is_censored_report(x),
     validation_date = {{ validation_date }},
     validation_type = {{ validation_type }},
     validation_units = validation_units,
+    validation_levels = validation_levels %||% get_validation_levels(x),
+    is_censored_validation = get_is_censored_validation(x),
     data_type = get_data_type(x),
     event_units = get_event_units(x), report_units = get_report_units(x),
     t_effects = get_temporal_effect_cols(x),
@@ -339,7 +518,13 @@ remove_validation_date <- function(x) {
   if (!has_validation(x)) {
     return(character(0))
   }
-  c(get_validation_date(x), ".validation_num", get_validation_type(x))
+  # The censoring flag joins them for the same reason: a resolution whose delay
+  # is only a bound is not the same observation as one measured exactly, so
+  # summing the two together would report a bound as a fact.
+  c(
+    get_validation_date(x), ".validation_num", get_validation_type(x),
+    get_is_censored_validation(x)
+  )
 }
 
 # Counting outcomes -----
@@ -710,6 +895,7 @@ plot_validation_delay <- function(x, by = NULL) {
     return(list())
   }
   type_col <- get_validation_type(x)
+  censored_col <- get_is_censored_validation(x)
   list(
     validation_date = validation_date,
     validation_type = if (!is.null(type_col) && type_col %in% colnames(data)) {
@@ -717,7 +903,14 @@ plot_validation_delay <- function(x, by = NULL) {
     } else {
       NULL
     },
-    validation_units = get_validation_units(x) %||% "auto"
+    validation_units = get_validation_units(x) %||% "auto",
+    validation_levels = get_validation_levels(x),
+    is_censored_validation = if (!is.null(censored_col) &&
+      censored_col %in% colnames(data)) {
+      censored_col
+    } else {
+      NULL
+    }
   )
 }
 
@@ -759,24 +952,26 @@ censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
   delays <- x[[".validation_delay"]]
   too_long <- is.finite(delays) & delays > max_delay
 
-  if (any(too_long)) {
-    validation_col <- get_validation_date(x)
-    type_col <- get_validation_type(x)
-    # Both together: a `validation_type` of "confirmed" with no date is the
-    # contradiction `tbl_now()` warns about, so the outcome goes back to
-    # "pending" at the same time as the date is removed.
-    x[[validation_col]][too_long] <- NA
-    x[[type_col]][too_long] <- "pending"
-    x[[".validation_num"]][too_long] <- NA_real_
-    x[[".validation_delay"]][too_long] <- NA_real_
+  # Merge with any flags already set: a delay you have already decided not to
+  # take at face value does not become exact because a later, looser threshold
+  # was applied.
+  censored_col_name <- get_is_censored_validation(x)
+  if (!is.null(censored_col_name) && censored_col_name %in% names(x)) {
+    already_censored <- as.logical(x[[censored_col_name]])
+    already_censored[is.na(already_censored)] <- FALSE
+    x[[censored_col_name]] <- already_censored | too_long
+  } else {
+    x[[".is_censored_validation"]] <- too_long
+    x <- add_is_censored_validation(x, ".is_censored_validation")
   }
 
   if (isTRUE(verbose)) {
     cli::cli_inform(c(
       "i" = paste0(
-        "Returned {sum(too_long)} case{?s} with a validation delay > ",
-        "{max_delay} {get_validation_units(x)} to {.val pending}."
-      )
+        "Marked {sum(too_long)} case{?s} with a validation delay > ",
+        "{max_delay} {get_validation_units(x)} as censored."
+      ),
+      "*" = "That delay is now a lower bound (is_censored_validation)."
     ))
   }
   x

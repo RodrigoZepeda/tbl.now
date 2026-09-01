@@ -15,7 +15,7 @@ dtf <- expand.grid(
 
 dfnow <- tbl_now(dtf,
   event_date = "event", report_date = "report_date",
-  strata = c("sex", "region"), is_censored = "censored",
+  strata = c("sex", "region"), is_censored_report = "censored",
   case_count = "cases", verbose = FALSE
 )
 

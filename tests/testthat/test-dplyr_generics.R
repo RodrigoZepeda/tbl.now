@@ -229,7 +229,7 @@ setup_test_data <- function() {
     gender = c("Male", "Female", "Male", "Female"),
     age_group = c("20-30", "30-40", "20-30", "40-50"),
     temperature = c(25.5, 26.0, 24.8, 25.2),
-    is_censored = c(T, F, F, F),
+    is_censored_report = c(T, F, F, F),
     value = c(10, 20, 30, 40)
   )
 
@@ -239,7 +239,7 @@ setup_test_data <- function() {
     report_date = "report_week",
     strata = "gender",
     covariates = "temperature",
-    is_censored = "is_censored",
+    is_censored_report = "is_censored_report",
     verbose = FALSE
   )
 
@@ -321,12 +321,12 @@ test_that("validate_tbl_now fails when report or event date is not date", {
   }
 })
 
-test_that("validate_tbl_now fails when is_censored is not logical", {
+test_that("validate_tbl_now fails when is_censored_report is not logical", {
   skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
   ndata <- ndata |>
-    dplyr::mutate(!!as.symbol(attr(ndata, "is_censored")) := as.character(!!as.symbol(attr(ndata, "is_censored"))))
+    dplyr::mutate(!!as.symbol(attr(ndata, "is_censored_report")) := as.character(!!as.symbol(attr(ndata, "is_censored_report"))))
 
   expect_error(
     suppressWarnings(validate_tbl_now(ndata)),
@@ -360,25 +360,25 @@ test_that("validate_tbl_now fails when data_type is not count, linelist or offic
   )
 })
 
-test_that("validate_tbl_now fails when is_censored is not specified correctly", {
+test_that("validate_tbl_now fails when is_censored_report is not specified correctly", {
   skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
-  attr(ndata, "is_censored") <- 2
+  attr(ndata, "is_censored_report") <- 2
 
   expect_error(
     suppressWarnings(validate_tbl_now(ndata)),
-    "is_censored.*must be"
+    "is_censored_report.*must be"
   )
 
-  attr(ndata, "is_censored") <- c("a", "b")
+  attr(ndata, "is_censored_report") <- c("a", "b")
   expect_error(
     suppressWarnings(validate_tbl_now(ndata)),
-    "is_censored.*must be"
+    "is_censored_report.*must be"
   )
 
-  attr(ndata, "is_censored") <- "not_a_column"
+  attr(ndata, "is_censored_report") <- "not_a_column"
   expect_error(
     suppressWarnings(validate_tbl_now(ndata)),
     "Column.*not found in data"
@@ -549,7 +549,7 @@ test_that("[.tbl_now handles column selection", {
   test_data <- setup_test_data()
 
   # Select specific columns including protected ones
-  result <- test_data$ndata[, c("onset_week", "report_week", "gender", ".event_num", ".report_num", "is_censored", ".delay")]
+  result <- test_data$ndata[, c("onset_week", "report_week", "gender", ".event_num", ".report_num", "is_censored_report", ".delay")]
 
   expect_s3_class(result, "tbl_now")
   expect_true("onset_week" %in% colnames(result))
@@ -996,7 +996,7 @@ test_that("select maintains tbl_now with protected columns", {
   test_data <- setup_test_data()
 
   result <- test_data$ndata |>
-    dplyr::select(onset_week, report_week, gender, .event_num, .report_num, is_censored, .delay)
+    dplyr::select(onset_week, report_week, gender, .event_num, .report_num, is_censored_report, .delay)
 
   expect_s3_class(result, "tbl_now")
 })

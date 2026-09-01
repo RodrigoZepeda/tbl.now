@@ -52,7 +52,7 @@ setup_test_data <- function() {
     temperature = c(25.5, 25.5, 26.0, 25.5, 26.0)
   )
 
-  # Linelist with is_censored
+  # Linelist with is_censored_report
   linelist_with_censored <- data.frame(
     onset_week = as.Date(c(
       "2020-07-08", "2020-07-08", "2020-07-08",
@@ -62,7 +62,7 @@ setup_test_data <- function() {
       "2020-07-11", "2020-07-11", "2020-07-12",
       "2020-07-18", "2020-07-18"
     )),
-    is_censored = c(TRUE, FALSE, TRUE, FALSE, TRUE)
+    is_censored_report = c(TRUE, FALSE, TRUE, FALSE, TRUE)
   )
 
   list(
@@ -297,8 +297,8 @@ test_that("to_count preserves covariate attributes", {
   expect_equal(get_num_covariates(result), 1)
 })
 
-# Tests for to_count.tbl_now() with is_censored ----
-test_that("to_count groups by is_censored when present", {
+# Tests for to_count.tbl_now() with is_censored_report ----
+test_that("to_count groups by is_censored_report when present", {
   skip_on_cran()
   test_data <- setup_test_data()
 
@@ -306,7 +306,7 @@ test_that("to_count groups by is_censored when present", {
     test_data$linelist_with_censored,
     event_date = "onset_week",
     report_date = "report_week",
-    is_censored = "is_censored",
+    is_censored_report = "is_censored_report",
     data_type = "linelist",
     report_units = "days",
     event_units = "days",
@@ -317,7 +317,7 @@ test_that("to_count groups by is_censored when present", {
 
   expect_s3_class(result, "tbl_now")
   expect_true("n" %in% colnames(result))
-  expect_true("is_censored" %in% colnames(result))
+  expect_true("is_censored_report" %in% colnames(result))
 })
 
 test_that("to_count creates separate counts for censored vs non-censored", {
@@ -328,7 +328,7 @@ test_that("to_count creates separate counts for censored vs non-censored", {
     test_data$linelist_with_censored,
     event_date = "onset_week",
     report_date = "report_week",
-    is_censored = "is_censored",
+    is_censored_report = "is_censored_report",
     data_type = "linelist",
     report_units = "days",
     event_units = "days",
@@ -338,7 +338,7 @@ test_that("to_count creates separate counts for censored vs non-censored", {
   result <- to_count(ndata, to = "count-incidence")
 
   # Should have rows with TRUE and FALSE
-  censored_vals <- unique(result$is_censored)
+  censored_vals <- unique(result$is_censored_report)
   expect_true(any(censored_vals == TRUE))
   expect_true(any(censored_vals == FALSE))
 })

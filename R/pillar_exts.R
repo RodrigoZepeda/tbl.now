@@ -76,8 +76,13 @@ tbl_format_footer.tbl_now <- function(x, ...) {
         "Validation date: {.val {validation_col}} ({.val {get_validation_units(x)}}) | resolved: {.val {resolved}}/{.val {nrow(x)}}"
       )
     }
-    if (length(get_is_censored(x)) > 0) {
-      cli::cli_text("left-censored indicator: {.val {get_is_censored(x)}}")
+    if (length(get_is_censored_report(x)) > 0) {
+      cli::cli_text("left-censored indicator: {.val {get_is_censored_report(x)}}")
+    }
+    if (length(get_is_censored_validation(x)) > 0) {
+      cli::cli_text(
+        "censored validation indicator: {.val {get_is_censored_validation(x)}}"
+      )
     }
     if (get_num_strata(x) > 0) {
       cli::cli_text("Strata: {.val {get_strata(x)}}")
@@ -124,8 +129,10 @@ ctl_new_pillar.tbl_now <- function(controller, x, width, ...) {
       annotation <- "[validation_date]"
     } else if (identical(cval, get_validation_type(controller))) {
       annotation <- "[validation_type]"
-    } else if (identical(cval, get_is_censored(controller))) {
-      annotation <- "[is_censored]"
+    } else if (identical(cval, get_is_censored_report(controller))) {
+      annotation <- "[is_censored_report]"
+    } else if (identical(cval, get_is_censored_validation(controller))) {
+      annotation <- "[is_censored_validation]"
     } else if (identical(cval, get_case_count(controller))) {
       annotation <- "[cases]"
     } else if (length(get_temporal_effect_cols(controller)) > 0 &&

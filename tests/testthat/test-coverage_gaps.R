@@ -112,37 +112,37 @@ test_that("change_case_count accepts NULL (clears case_count on linelist data)",
   expect_null(get_case_count(result))
 })
 
-# --- change_is_censored ---
-test_that("change_is_censored sets is_censored column", {
+# --- change_is_censored_report ---
+test_that("change_is_censored_report sets is_censored_report column", {
   x <- base_daily()
   x$cens <- c(FALSE, TRUE, FALSE, FALSE, FALSE)
-  result <- change_is_censored(x, cens)
-  expect_equal(get_is_censored(result), "cens")
+  result <- change_is_censored_report(x, cens)
+  expect_equal(get_is_censored_report(result), "cens")
 })
 
-test_that("change_is_censored accepts NULL (clears is_censored)", {
+test_that("change_is_censored_report accepts NULL (clears is_censored_report)", {
   x <- base_daily()
   x$cens <- c(FALSE, TRUE, FALSE, FALSE, FALSE)
-  x2 <- change_is_censored(x, cens)
-  result <- change_is_censored(x2, NULL)
-  expect_null(get_is_censored(result))
+  x2 <- change_is_censored_report(x, cens)
+  result <- change_is_censored_report(x2, NULL)
+  expect_null(get_is_censored_report(result))
 })
 
-# --- remove_is_censored ---
-test_that("remove_is_censored clears is_censored", {
+# --- remove_is_censored_report ---
+test_that("remove_is_censored_report clears is_censored_report", {
   x <- base_daily()
   x$cens <- c(FALSE, TRUE, FALSE, FALSE, FALSE)
-  x2 <- change_is_censored(x, cens)
-  result <- remove_is_censored(x2)
-  expect_null(get_is_censored(result))
+  x2 <- change_is_censored_report(x, cens)
+  result <- remove_is_censored_report(x2)
+  expect_null(get_is_censored_report(result))
 })
 
-test_that("remove_is_censored emits message on count-cumulative data", {
+test_that("remove_is_censored_report emits message on count-cumulative data", {
   # cli_alert_warning fires as a message, not an R warning
   x <- base_cumulative()
   x$cens <- c(FALSE, FALSE, FALSE, FALSE)
-  x2 <- change_is_censored(x, cens)
-  expect_message(remove_is_censored(x2), "cumulative")
+  x2 <- change_is_censored_report(x, cens)
+  expect_message(remove_is_censored_report(x2), "cumulative")
 })
 
 # --- remove_strata / remove_all_strata ---
@@ -683,7 +683,7 @@ test_that("tbl_now errors when .report_num already exists without force", {
 })
 
 # ============================================================
-# change_report_date / change_case_count / change_is_censored — error branches
+# change_report_date / change_case_count / change_is_censored_report — error branches
 # ============================================================
 
 test_that("change_report_date errors when column not found", {
@@ -697,9 +697,9 @@ test_that("change_case_count errors on non-numeric column", {
   expect_error(change_case_count(x, sex), "numeric")
 })
 
-test_that("change_is_censored errors on non-logical column", {
+test_that("change_is_censored_report errors on non-logical column", {
   x <- base_daily()
-  expect_error(change_is_censored(x, weather), "logical")
+  expect_error(change_is_censored_report(x, weather), "logical")
 })
 
 test_that("replace_temporal_effects errors on non-temporal_effects object", {

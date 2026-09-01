@@ -1184,11 +1184,11 @@ test_that("update_check_data_frame_internal validates case_count exists for coun
   )
 })
 
-test_that("update_check_data_frame_internal validates is_censored exists", {
+test_that("update_check_data_frame_internal validates is_censored_report exists", {
   skip_on_cran()
   test_data <- setup_test_data()
 
-  test_data$initial_data$is_censored <- c(FALSE, FALSE, TRUE, FALSE, FALSE)
+  test_data$initial_data$is_censored_report <- c(FALSE, FALSE, TRUE, FALSE, FALSE)
 
   initial_tbl <- tbl_now(
     test_data$initial_data,
@@ -1196,14 +1196,14 @@ test_that("update_check_data_frame_internal validates is_censored exists", {
     report_date = "report_week",
     report_units = "weeks",
     event_units = "weeks",
-    is_censored = "is_censored",
+    is_censored_report = "is_censored_report",
     verbose = FALSE
   )
 
-  # Update without is_censored column
+  # Update without is_censored_report column
   expect_error(
     update(initial_tbl, new_data = test_data$update_data),
-    "is_censored.*not found"
+    "is_censored_report.*not found"
   )
 })
 
@@ -1840,7 +1840,7 @@ test_that("update_check_tbl_now_internal fails with different case_count", {
   )
 })
 
-test_that("update_check_tbl_now_internal fails with different is_censored", {
+test_that("update_check_tbl_now_internal fails with different is_censored_report", {
   skip_on_cran()
   test_data <- setup_test_data()
 
@@ -1851,7 +1851,7 @@ test_that("update_check_tbl_now_internal fails with different is_censored", {
     event_date = "onset_week",
     report_date = "report_week",
     case_count = "n",
-    is_censored = "censored1",
+    is_censored_report = "censored1",
     report_units = "weeks",
     event_units = "weeks",
     verbose = FALSE
@@ -1864,7 +1864,7 @@ test_that("update_check_tbl_now_internal fails with different is_censored", {
     event_date = "onset_week",
     report_date = "report_week",
     case_count = "n",
-    is_censored = "censored2",
+    is_censored_report = "censored2",
     report_units = "weeks",
     event_units = "weeks",
     verbose = FALSE
@@ -1872,7 +1872,7 @@ test_that("update_check_tbl_now_internal fails with different is_censored", {
 
   expect_error(
     update(initial_tbl, new_data = new_tbl),
-    "is_censored.*censored1.*is_censored.*censored2"
+    "is_censored_report.*censored1.*is_censored_report.*censored2"
   )
 })
 
