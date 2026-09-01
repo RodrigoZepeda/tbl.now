@@ -100,6 +100,46 @@ unless it is reconstructed from <code>delay</code>.
 
 <td align="center">
 
+<img src="man/figures/validation_date.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation">
+</td>
+
+<td align="left">
+
+<code>validation_date</code>
+</td>
+
+<td align="left">
+
+An optional third date indicating when the report was resolved (see
+<code>validation_type</code>). <em>Optional</em>.
+</td>
+
+</tr>
+
+<tr>
+
+<td align="center">
+
+<img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation">
+</td>
+
+<td align="left">
+
+<code>validation_type</code>
+</td>
+
+<td align="left">
+
+What the validation date resolved to (either <code>confirmed</code>,
+<code>retracted</code>, <code>pending</code>). <em>Optional</em>.
+</td>
+
+</tr>
+
+<tr>
+
+<td align="center">
+
 <img src="man/figures/now.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="now">
 </td>
 
@@ -237,27 +277,6 @@ The time grid each date lives on: <code>days</code>, <code>weeks</code>,
 
 Flags report dates that are only an upper bound, e.g. a batch or
 back-fill dump. <em>Optional</em>.
-</td>
-
-</tr>
-
-<tr>
-
-<td align="center">
-
-<img src="man/figures/validation_date.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation">
-</td>
-
-<td align="left">
-
-<code>validation_date</code>, <code>validation_type</code>
-</td>
-
-<td align="left">
-
-An optional third date — when the report was resolved — and what it
-resolved to (<code>confirmed</code>, <code>retracted</code>,
-<code>pending</code>). <em>Optional</em>.
 </td>
 
 </tr>

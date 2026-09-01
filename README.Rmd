@@ -50,6 +50,16 @@ Specifically a `tbl_now` is a data structure that keeps track of the following a
 <td align="left">The column storing <strong>report dates</strong>; i.e. when that event became known to the surveillance system. <strong>Required</strong>, unless it is reconstructed from <code>delay</code>.</td>
 </tr>
 <tr>
+<td align="center"><img src="man/figures/validation_date.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation"></td>
+<td align="left"><code>validation_date</code></td>
+<td align="left">An optional third date indicating when the report was resolved (see <code>validation_type</code>). <em>Optional</em>.</td>
+</tr>
+<tr>
+<td align="center"><img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation"></td>
+<td align="left"><code>validation_type</code></td>
+<td align="left">What the validation date resolved to (either <code>confirmed</code>, <code>retracted</code>, <code>pending</code>). <em>Optional</em>.</td>
+</tr>
+<tr>
 <td align="center"><img src="man/figures/now.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="now"></td>
 <td align="left"><code>now</code></td>
 <td align="left">The date the nowcast is anchored to &mdash; &ldquo;today&rdquo; from the model's point of view. <em>Optional</em>; defaults to the latest date.</td>
@@ -83,11 +93,6 @@ Specifically a `tbl_now` is a data structure that keeps track of the following a
 <td align="center"><img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored"></td>
 <td align="left"><code>is_censored</code></td>
 <td align="left">Flags report dates that are only an upper bound, e.g. a batch or back-fill dump. <em>Optional</em>.</td>
-</tr>
-<tr>
-<td align="center"><img src="man/figures/validation_date.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation"></td>
-<td align="left"><code>validation_date</code>, <code>validation_type</code></td>
-<td align="left">An optional third date &mdash; when the report was resolved &mdash; and what it resolved to (<code>confirmed</code>, <code>retracted</code>, <code>pending</code>). <em>Optional</em>.</td>
 </tr>
 <tr>
 <td align="center"><img src="man/figures/temporal_effects.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="temporal_effects"></td>
