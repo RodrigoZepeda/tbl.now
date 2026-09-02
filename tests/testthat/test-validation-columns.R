@@ -70,7 +70,7 @@ test_that("is_censored_validation holds TRUE exactly where the delay is long", {
 test_that("the two censoring axes are independent", {
   flu <- validated_linelist()
   both <- suppressMessages(
-    censor_delays_above(censor_validation_delays_above(flu, 30), 0)
+    censor_reporting_delays_above(censor_validation_delays_above(flu, 30), 0)
   )
 
   expect_identical(get_is_censored_report(both), ".is_censored_report")
@@ -501,7 +501,7 @@ test_that("both censoring axes can be set on one grouped object", {
   grouped <- validated_linelist() |> dplyr::group_by(!!as.symbol("sex"))
 
   both <- suppressMessages(
-    censor_delays_above(censor_validation_delays_above(grouped, 30), 0)
+    censor_reporting_delays_above(censor_validation_delays_above(grouped, 30), 0)
   )
 
   expect_equal(dplyr::group_vars(both), "sex")

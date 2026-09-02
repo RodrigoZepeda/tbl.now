@@ -499,9 +499,9 @@ fixed$reported
 fixed$.is_censored_report
 ```
 
-`censor_delays()` expresses the same idea as a delay rather than a date
-(`censor_delays(x, .delay > 60, to_delay = 60)` caps the outliers), and
-`censor_delays_above()` is the threshold shorthand for it.
+`censor_reporting_delays()` expresses the same idea as a delay rather than a date
+(`censor_reporting_delays(x, .delay > 60, to_delay = 60)` caps the outliers), and
+`censor_reporting_delays_above()` is the threshold shorthand for it.
 
 ### Temporal effects
 
@@ -1376,7 +1376,7 @@ Which looks at all the possible report dates and event dates and sets the counts
 
 ### Censoring extreme delays
 
-The function `censor_delays_above()` marks all delays above a threshold value (`max_delay`) as censored. This is useful to indicate extreme delays in some nowcast models:
+The function `censor_reporting_delays_above()` marks all delays above a threshold value (`max_delay`) as censored. This is useful to indicate extreme delays in some nowcast models:
 
 ```{r}
 df <- data.frame(
@@ -1389,7 +1389,7 @@ tn <- tbl_now(df,
 )
 
 # the 300-day report becomes censored (an upper bound on its delay)
-censor_delays_above(tn, max_delay = 60)
+censor_reporting_delays_above(tn, max_delay = 60)
 ```
 
 ### Converting to data formats from other packages

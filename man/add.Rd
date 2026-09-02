@@ -141,7 +141,7 @@ or a character vector with the names of the columns containing the temporal effe
 The validation-axis counterpart of \code{is_censored_report}: the name of a
 logical column marking rows whose \strong{validation delay} is a bound rather
 than a measurement. Requires a \code{validation_date}. See
-\link[=censor_delays_above]{censor_validation_delays_above()}.}
+\link[=censor_reporting_delays_above]{censor_validation_delays_above()}.}
 
 \item{validation_date}{(optional)
 \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
@@ -269,7 +269,7 @@ named dictionary translating the labels in your data into the four values
 recoding happens once rather than in every script. And
 \code{add_is_censored_validation()} names a logical column marking rows whose
 \emph{validation delay} is a bound rather than a measurement, the validation-axis
-twin of \code{add_is_censored_report()}; \link[=censor_delays_above]{censor_validation_delays_above()}
+twin of \code{add_is_censored_report()}; \link[=censor_reporting_delays_above]{censor_validation_delays_above()}
 sets it for you.
 
 \code{change_now()} is validation-aware in both directions. Moving \code{now} forward

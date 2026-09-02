@@ -54,7 +54,7 @@
 #' recoding happens once rather than in every script. And
 #' `add_is_censored_validation()` names a logical column marking rows whose
 #' *validation delay* is a bound rather than a measurement, the validation-axis
-#' twin of `add_is_censored_report()`; [censor_validation_delays_above()][censor_delays_above]
+#' twin of `add_is_censored_report()`; [censor_validation_delays_above()][censor_reporting_delays_above]
 #' sets it for you.
 #'
 #' `change_now()` is validation-aware in both directions. Moving `now` forward

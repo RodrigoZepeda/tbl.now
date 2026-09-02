@@ -11,7 +11,7 @@
 #                                           modelled when it is not
 #
 # The fixture uses PER-CASE censoring, which varies within a cell. The other
-# kind -- derived from the delay by `censor_delays_above()` -- is constant within
+# kind -- derived from the delay by `censor_reporting_delays_above()` -- is constant within
 # a cell and collapses harmlessly, so a test built on it would pass whether the
 # handling were right or wrong.
 

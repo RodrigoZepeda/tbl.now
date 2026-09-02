@@ -37,7 +37,7 @@
 #'
 #' @seealso
 #' [to_count()] for the data shapes this operates on;
-#' [censor_delays_above()] for the opposite problem, delays that are too long;
+#' [censor_reporting_delays_above()] for the opposite problem, delays that are too long;
 #' [diagnose_missing()] and [diagnose_truncation()] to find the gaps first;
 #' [plot_reporting_triangle()] to see the rectangle being filled.
 #'

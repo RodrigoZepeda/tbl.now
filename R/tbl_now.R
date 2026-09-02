@@ -131,7 +131,7 @@
 #' The validation-axis counterpart of `is_censored_report`: the name of a
 #' logical column marking rows whose **validation delay** is a bound rather
 #' than a measurement. Requires a `validation_date`. See
-#' [censor_validation_delays_above()][censor_delays_above].
+#' [censor_validation_delays_above()][censor_reporting_delays_above].
 #'
 #' @param verbose (optional) Logical. Whether to throw a message. Default = `TRUE`.
 #'

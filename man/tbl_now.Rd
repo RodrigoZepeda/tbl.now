@@ -111,7 +111,7 @@ attribute, readable with \code{get_validation_levels()}. Only
 The validation-axis counterpart of \code{is_censored_report}: the name of a
 logical column marking rows whose \strong{validation delay} is a bound rather
 than a measurement. Requires a \code{validation_date}. See
-\link[=censor_delays_above]{censor_validation_delays_above()}.}
+\link[=censor_reporting_delays_above]{censor_validation_delays_above()}.}
 
 \item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
 nowcast. If no \code{now} is given then the function automatically uses the last

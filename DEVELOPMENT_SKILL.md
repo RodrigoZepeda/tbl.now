@@ -361,7 +361,7 @@ Every converter that ends in a triangle or a keyed table must call
 distribution is the one job that can *use* censoring, so it keeps the flag.
 
 Note the two kinds of flag, because they behave differently and only one causes
-trouble: one derived from the delay (`censor_delays_above()`) is constant within
+trouble: one derived from the delay (`censor_reporting_delays_above()`) is constant within
 a cell and harmless; a per-case administrative flag varies within a cell and
 breaks things. Test with the second kind or your test proves nothing.
 
@@ -538,7 +538,7 @@ or quietly compute a different answer the first time a user pipes it after
 This has now happened six times in the same shape, and each time the function
 was fully tested -- ungrouped:
 
-* `censor_delays_above()` aborted inside `add_is_censored_report()`, which
+* `censor_reporting_delays_above()` aborted inside `add_is_censored_report()`, which
   refuses a `grouped_tbl_now` outright.
 * `censor_validation_delays_above()` had the identical bug on the other axis,
   and shipped in a release whose whole subject was that axis.

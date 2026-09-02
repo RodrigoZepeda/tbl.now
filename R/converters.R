@@ -1930,7 +1930,7 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' @seealso
 #' [add] and [validation_delay], since \pkg{epidist} is about
 #' delay distributions and a `tbl_now` may carry two of them;
-#' [censor_delays_above()] for the long delays that would otherwise dominate a
+#' [censor_reporting_delays_above()] for the long delays that would otherwise dominate a
 #' fitted distribution;
 #' [tidy()][tidy.epidist_fit] for the fitted result.
 #' [as_tbl_now()] for the generic that dispatches to the `*_from_*()` side;

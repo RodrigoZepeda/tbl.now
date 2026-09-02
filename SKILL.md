@@ -249,21 +249,36 @@ logical or `validate_tbl_now()` rejects it.
 **Setting the flag from a rule, and fixing the date at the same time:**
 
 ```r
-censor_delays_above(tn, max_delay = 60)          # delay > 60 units -> flag
-censor_delays(tn, .delay > 60)                   # any condition -> flag
-censor_delays(tn, .delay > 60, to_delay = 60)    # ... and cap the report date
-censor_reports(tn, is.na(report_date))           # missing report -> `now` + flag
+# Reporting axis (event -> report), sets `is_censored_report`
+censor_reports(tn, is.na(report_date))                  # missing report -> `now` + flag
 censor_reports(tn, report_date == as.Date("2222-02-22"),
-               to_report = Sys.Date())           # a "never" sentinel -> a date
-censor_validation_delays_above(tn, 30)           # slow lab result -> validation flag
+               to_report = Sys.Date())                  # a "never" sentinel -> a date
+censor_reporting_delays(tn, .delay > 60)                # any condition -> flag
+censor_reporting_delays(tn, .delay > 60, to_delay = 60) # ... and cap the report date
+censor_reporting_delays_above(tn, max_delay = 60)       # EVERY delay > 60 -> flag
+
+# Validation axis (report -> resolution), sets `is_censored_validation`
+censor_validations(tn, is.na(result))                   # missing result -> `now` + flag
+censor_validation_delays(tn, .validation_delay > 30, to_delay = 30)
+censor_validation_delays_above(tn, max_delay = 30)      # EVERY turnaround > 30 -> flag
 ```
 
-`condition` is a `filter()`-style expression evaluated in the data (`.delay` is
-visible); `NA` is **not** a match. Existing flags are merged, never cleared, and
-the flag column is created as `.is_censored_report` when there is none.
-Replacing a date rebuilds the object, moves `now` forward if the replacement
-lands after it, and drops any `.report_*` temporal-effect column that has just
-gone stale.
+Six verbs: two axes x {by date, by delay, threshold}. The `*_above()` pair is the
+threshold shorthand -- **every** delay strictly greater than `max_delay` is
+considered censored, every other row is left alone.
+
+`condition` is a `filter()`-style expression evaluated in the data (`.delay` and
+`.validation_delay` are visible); `NA` is **not** a match. Existing flags are
+merged, never cleared, and the flag column is created as `.is_censored_report` /
+`.is_censored_validation` when there is none. Replacing a date rebuilds the
+object, moves `now` forward if the replacement lands after it, and drops any
+`.report_*` temporal-effect column that has just gone stale.
+
+**Pending cases are skipped by the validation verbs.** `"pending"` means reported
+and still waiting, so the case has no validation date; writing one would assert a
+resolution that never happened. `censor_validations()` and
+`censor_validation_delays()` leave those rows alone and say how many they
+skipped. Flagging without a replacement is unaffected -- no date is written.
 
 **The converters drop it, and say so.** A flag that varies *within* an
 `(event_date, report_date)` cell (a per-case "upper bound only" mark, unlike one

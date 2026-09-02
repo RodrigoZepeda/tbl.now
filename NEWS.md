@@ -31,7 +31,7 @@ hai |> aggregate_time_units(to = "weeks")
 
 ## New: censor by condition, and replace the date (#57)
 
-`censor_reports()` and `censor_delays()` take a `filter()`-style condition and
+`censor_reports()` and `censor_reporting_delays()` take a `filter()`-style condition and
 record the matching rows as *bounds* rather than measurements -- optionally
 replacing the date at the same time. This is the fix for the two dates that are
 not really dates: the missing one, and the sentinel far in the future.
@@ -39,15 +39,32 @@ not really dates: the missing one, and the sentinel far in the future.
 ```r
 hai |> censor_reports(is.na(report_date), to_report = Sys.Date())
 hai |> censor_reports(report_date == as.Date("2222-02-22"), to_report = Sys.Date())
-tn  |> censor_delays(.delay > 60, to_delay = 60)
+tn  |> censor_reporting_delays(.delay > 60, to_delay = 60)
 ```
 
-`censor_delays_above()` is now the threshold special case of `censor_delays()`
-and shares its implementation; its behaviour is unchanged. All four censoring
-functions -- these two plus `censor_delays_above()` and
-`censor_validation_delays_above()` -- are documented together on `?censoring`,
-and the two reporting-axis ones set the `is_censored_report` flag renamed in
-0.29.0.
+### The censoring family is now six verbs, two axes by three ways to select
+
+| | by date | by delay | threshold |
+|---|---|---|---|
+| **reporting** (`is_censored_report`) | `censor_reports()` | `censor_reporting_delays()` | `censor_reporting_delays_above()` |
+| **validation** (`is_censored_validation`) | `censor_validations()` | `censor_validation_delays()` | `censor_validation_delays_above()` |
+
+* `censor_delays_above()` is renamed **`censor_reporting_delays_above()`** and
+  `censor_delays()` (added earlier in this release, never shipped) is renamed
+  **`censor_reporting_delays()`**, so every name says which axis it moves. Their
+  behaviour is unchanged, and the `_above()` help now says plainly that it
+  considers as censored **every** delay longer than `max_delay`.
+* `censor_validations()` and `censor_validation_delays()` are new: the
+  validation-axis twins of `censor_reports()` and `censor_reporting_delays()`.
+* All six are documented together on `?censoring`.
+
+**`"pending"` cases are skipped when a validation date would be written**, with a
+warning saying how many. A pending case is reported and still waiting, so it has
+no resolution date; writing one would assert a resolution that never happened and
+make the case look resolved to everything counting arrivals on that axis. Set
+`validation_type` to `"confirmed"` or `"retracted"` first if the case really was
+resolved. Flagging without a replacement is unaffected -- no date is written, so
+nothing is contradicted.
 
 * `NA` is not a match: a condition that cannot be evaluated on a row is not a
   condition that row met.
@@ -81,8 +98,8 @@ reads a daily event date against a weekly report date, and an explicit
   column it is, and points at `units`.
 * Censoring a grouped `tbl_now` aborted inside `add_is_censored_report()` /
   `add_is_censored_validation()`, which refuse a `grouped_tbl_now`. All four
-  censoring verbs -- `censor_reports()`, `censor_delays()`,
-  `censor_delays_above()` and `censor_validation_delays_above()` -- now ungroup,
+  censoring verbs -- `censor_reports()`, `censor_reporting_delays()`,
+  `censor_reporting_delays_above()` and `censor_validation_delays_above()` -- now ungroup,
   work, and put the grouping back.
 * The two censoring axes share one implementation of "merge this flag in without
   un-censoring anything", rather than a copy each.
@@ -123,7 +140,7 @@ spelling is removed outright, not deprecated:
 | `get_is_censored()` | `get_is_censored_report()` |
 | `add_is_censored()`, `change_is_censored()`, `remove_is_censored()` | `add_is_censored_report()`, `change_is_censored_report()`, `remove_is_censored_report()` |
 | `is_censored` attribute | `is_censored_report` attribute |
-| `.is_censored` (the column `censor_delays_above()` creates) | `.is_censored_report` |
+| `.is_censored` (the column `censor_reporting_delays_above()` creates) | `.is_censored_report` |
 
 ## New: `is_censored_validation`, the validation-axis censoring flag (#53)
 
@@ -146,7 +163,7 @@ It used to set the offending rows' `validation_type` to `"pending"` and delete
 their validation date. That was wrong: a case confirmed after 200 days is still
 a confirmed case, and the object should say so. It now sets
 `is_censored_validation` and leaves the date and the outcome alone, exactly as
-`censor_delays_above()` does on the report axis. `get_latest_confirmed()`
+`censor_reporting_delays_above()` does on the report axis. `get_latest_confirmed()`
 therefore still counts those cases.
 
 ## New: `validation_levels`, for data not recorded in English (#54)
@@ -410,13 +427,13 @@ wearing different names in different places. 116 of the 148 exports already took
   correctly means the *name* of a backend rather than a configured engine.
 
 * **`data` becomes `x`** in `diagnose_batches()`, `diagnose_batch_shape()`,
-  `simulate_batch()`, `transport_discriminant()`, `censor_delays_above()` and
+  `simulate_batch()`, `transport_discriminant()`, `censor_reporting_delays_above()` and
   `censor_confirmation_delays_above()`. Positional calls are unaffected. Two
   internal helpers also named `data` in their error messages, so
   `diagnose_batches(x = <not a tbl_now>)` used to complain about an argument that
   did not exist.
 
-* **`quiet` becomes `verbose`** in `censor_delays_above()` and
+* **`quiet` becomes `verbose`** in `censor_reporting_delays_above()` and
   `censor_confirmation_delays_above()`, with the sense inverted and defaulting to
   `TRUE`, matching the twenty other functions that control messaging this way.
   Write `verbose = FALSE` where you wrote `quiet = TRUE`.
@@ -541,7 +558,7 @@ public-health practitioners first and statisticians second.
   links still resolve: `change` and `remove` onto `add`;
   `plot_reporting_process` onto `plot_epidemic_process`; `names_tbl_now` and
   `money_tbl_now` onto `assign_tbl`; `as_scoringutils` onto `score_nowcast`;
-  `censor_confirmation_delays_above` onto `censor_delays_above`; `is_tbl_now` onto
+  `censor_confirmation_delays_above` onto `censor_reporting_delays_above`; `is_tbl_now` onto
   `validate_tbl_now`; `week_2_date` onto `align_weeks`;
   `compute_temporal_effects` onto `add_temporal_effects`.
 * Every exported topic now has `@seealso`, `@return` and a runnable example; every
@@ -2420,13 +2437,13 @@ requiring `baselinenowcast` to be installed.
 * Fixed bug that errored `complete_zeroes` when `is_censored` was given. 
 * Removed explicit zeroes from the converters (`tbl_now_from_*`) as they
 are not necessary in `tbl_now`. 
-* Added `censor_delays_above()` to flag reports with an implausibly long delay
+* Added `censor_reporting_delays_above()` to flag reports with an implausibly long delay
 as censored (their delay becomes an upper bound).
 * Improved documentation and README
 * Documented all internal functions with roxygen (`@keywords internal` + `@noRd`)
 and ensured every exported function has a `@return`.
 * Homogenized `lifecycle` badges. 
-* Brought the `censor_delays_above` function from `diseasenowcasting` to `tbl_now`. 
+* Brought the `censor_reporting_delays_above` function from `diseasenowcasting` to `tbl_now`. 
 * `tbl_now_from_epinowcast()` now accepts not only the raw long input but also a
 preprocessed `enw_preprocess_data` object or a fitted `epinowcast` object
 (grouping auto-detected), matching the format `epinowcast` uses for summaries

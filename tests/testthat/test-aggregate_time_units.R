@@ -617,10 +617,10 @@ test_that("aggregation composes with censoring in either order", {
   x <- make_daily_counts("count-incidence")
 
   censored_first <- aggregate_time_units(
-    censor_delays(x, .delay > 1, verbose = FALSE),
+    censor_reporting_delays(x, .delay > 1, verbose = FALSE),
     to = "weeks", verbose = FALSE
   )
-  aggregated_first <- censor_delays(
+  aggregated_first <- censor_reporting_delays(
     aggregate_time_units(x, to = "weeks", verbose = FALSE),
     .delay > 0,
     verbose = FALSE

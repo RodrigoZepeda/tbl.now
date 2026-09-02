@@ -436,7 +436,7 @@ test_that("estimate_dist keeps the censoring flag the others must drop", {
   # censoring flag, so this target does not collapse it -- exactly the carve-out
   # `tbl_now_to_epidist()` has.
   x <- epinow2_weekly()
-  censored <- suppressMessages(censor_delays_above(x, max_delay = 3))
+  censored <- suppressMessages(censor_reporting_delays_above(x, max_delay = 3))
 
   censoring_warnings <- function(expr) {
     seen <- character(0)
