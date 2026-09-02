@@ -27,7 +27,7 @@ a tbl_now from."><meta property="og:image" content="https://rodrigozepeda.github
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -232,6 +232,9 @@ time; <code><a href="is_weekday.html">is_weekday()</a></code>, which numbers wee
 <span class="r-in"><span>  report_date <span class="op">=</span> <span class="st">"as_of"</span>, case_count <span class="op">=</span> <span class="st">"observation"</span>,</span></span>
 <span class="r-in"><span>  strata <span class="op">=</span> <span class="st">"location_name"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>755 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># `as_of` is sometimes a Saturday and sometimes a Wednesday, so some delays</span></span></span>
 <span class="r-in"><span><span class="co"># land between whole weeks.</span></span></span>

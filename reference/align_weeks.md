@@ -176,6 +176,9 @@ flutbl <- tbl_now(texas,
   report_date = "as_of", case_count = "observation",
   strata = "location_name", verbose = FALSE
 )
+#> Warning: 755 rows have a fractional `.delay`.
+#> ℹ A fractional delay is what a converter chokes on: the two date columns are on
+#>   different grids. `align_weeks()` is the fix for weekly data.
 
 # `as_of` is sometimes a Saturday and sometimes a Wednesday, so some delays
 # land between whole weeks.

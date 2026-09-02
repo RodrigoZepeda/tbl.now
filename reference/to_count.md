@@ -69,6 +69,23 @@ or it will be summed away.
 `linelist` data cannot be reconstructed from `count-*` data. Asking for
 it throws an error, because aggregated data cannot be un-counted.
 
+## Grouping is dropped, and said so
+
+`to_count()` **ungroups**, and warns when it does. It is the one verb in
+the package that does not put the caller's grouping back, and the reason
+is that it changes what a row *is*: after aggregating, one row is an
+(event date, report date) cell rather than one of the rows that were
+grouped, so the grouping no longer describes anything in the object.
+
+A grouping is also not how you keep a column out of the sum. Declare it
+–
+[`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+or
+[`add_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+– and it becomes part of the cell key. The reported-cases getters do
+respect a grouping, because they select rather than reshape; see
+[`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md).
+
 ## Statistical details
 
 Converting `count-cumulative` to `count-incidence` **de-accumulates**

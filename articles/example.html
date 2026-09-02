@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -840,7 +840,7 @@ delay distribution for the restricted window is defensible.</li>
 <span>    data_type   <span class="op">=</span> <span class="st">"linelist"</span>,</span>
 <span>    verbose     <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/censor_delays_above.html">censor_delays_above</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/censoring.html">censor_reporting_delays_above</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Marked 10 reports with delay &gt; 20 weeks as censored.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> This delay is now an upper bound (is_censored_report).</span></span>
 <span></span>
@@ -868,10 +868,10 @@ delay distribution for the restricted window is defensible.</li>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 452 more rows</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 5 more variables: report_week &lt;date&gt;, .event_num &lt;dbl&gt;, .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;, .is_censored_report &lt;lgl&gt;</span></span></span></code></pre></div>
-<p><code><a href="../reference/censor_delays_above.html">censor_delays_above()</a></code> is doing real work: it caps the
-delay dimension at 20 weeks so the model is not asked to estimate
-probabilities for delays that occur a handful of times in the whole
-series.</p>
+<p><code><a href="../reference/censoring.html">censor_reporting_delays_above()</a></code> is doing real work: it
+caps the delay dimension at 20 weeks so the model is not asked to
+estimate probabilities for delays that occur a handful of times in the
+whole series.</p>
 <p><code>diseasenowcasting</code> consumes a <code>tbl_now</code>
 <strong>directly</strong> — no converter, no restating of which column
 is which:</p>
@@ -1127,7 +1127,7 @@ article</a>.</p>
 <span><span class="fu"><a href="../reference/diagnose_changepoint.html">diagnose_changepoint</a></span><span class="op">(</span><span class="va">hai_now</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 7. Let those findings set the model window and the maximum delay.</span></span>
-<span><span class="va">hai_model</span> <span class="op">&lt;-</span> <span class="va">hai_now</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/censor_delays_above.html">censor_delays_above</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
+<span><span class="va">hai_model</span> <span class="op">&lt;-</span> <span class="va">hai_now</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/censoring.html">censor_reporting_delays_above</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 8. Hand it to whichever engine you like.</span></span>
 <span><span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu">nowcast</span><span class="op">(</span><span class="va">hai_model</span><span class="op">)</span>         <span class="co"># diseasenowcasting</span></span>

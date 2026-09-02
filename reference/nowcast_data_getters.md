@@ -174,9 +174,9 @@ to get all of them at once;
 [remove()](https://rodrigozepeda.github.io/tbl.now/reference/add.md) to
 set them, including
 [add_validation_date()](https://rodrigozepeda.github.io/tbl.now/reference/add.md);
-[get_latest_confirmed()](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
-and
-[get_net_confirmed()](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+[get_latest_validated_cases()](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
+and [get_latest_validated_cases(type =
+"net")](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
 to count the outcomes;
 [validation_delay](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
 for how long resolution takes;

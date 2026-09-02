@@ -848,7 +848,7 @@ hai_model <- hai_weekly |>
     data_type   = "linelist",
     verbose     = FALSE
   ) |>
-  censor_delays_above(max_delay = 20)
+  censor_reporting_delays_above(max_delay = 20)
 #> ℹ Marked 10 reports with delay > 20 weeks as censored.
 #> • This delay is now an upper bound (is_censored_report).
 
@@ -878,7 +878,7 @@ hai_model
 #> # ℹ 5 more variables: report_week <date>, .event_num <dbl>, .report_num <dbl>, .delay <dbl>, .is_censored_report <lgl>
 ```
 
-[`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+[`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
 is doing real work: it caps the delay dimension at 20 weeks so the model
 is not asked to estimate probabilities for delays that occur a handful
 of times in the whole series.
@@ -1162,7 +1162,7 @@ diagnose_drift(hai_now)
 diagnose_changepoint(hai_now)
 
 # 7. Let those findings set the model window and the maximum delay.
-hai_model <- hai_now |> censor_delays_above(max_delay = 20)
+hai_model <- hai_now |> censor_reporting_delays_above(max_delay = 20)
 
 # 8. Hand it to whichever engine you like.
 diseasenowcasting::nowcast(hai_model)         # diseasenowcasting

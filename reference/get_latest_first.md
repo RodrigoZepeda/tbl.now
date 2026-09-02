@@ -1,4 +1,4 @@
-# Reported cases at a chosen point in the reporting process
+# Cases at a chosen point in the reporting process
 
 **\[stable\]**
 
@@ -10,11 +10,11 @@ you pick which of those numbers you want.
 ## Usage
 
 ``` r
-get_latest_reported_cases(x)
+get_latest_reported_cases(x, type = "total")
 
-get_initial_reported_cases(x)
+get_initial_reported_cases(x, type = "total")
 
-get_nth_reported_cases(x, delay)
+get_nth_reported_cases(x, delay, type = "total")
 ```
 
 ## Arguments
@@ -23,16 +23,54 @@ get_nth_reported_cases(x, delay)
 
   A `tbl_now` object.
 
+- type:
+
+  Which cases to count. One of:
+
+  `"total"`
+
+  :   (default) every case, whatever the outcome. On the validation axis
+      that means every case that has been settled at all.
+
+  `"confirmed"`, `"retracted"`, `"pending"`
+
+  :   only the cases with that outcome. `"pending"` is a reporting-axis
+      question only – a pending case has no validation date – and the
+      validation getters refuse it.
+
+  `"unknown"`
+
+  :   the cases whose `validation_type` is `NA`: settled, but the data
+      does not say which way.
+
+  `"net"`
+
+  :   confirmed **minus** retracted – the running total as a
+      surveillance system publishes it, which can go **down** when a
+      case is withdrawn. This is the quantity a `count-cumulative`
+      stream actually reports, and the one diseasenowcasting's
+      signed-increment (Skellam / SkNB) likelihood is built for; see
+      `diseasenowcasting::confirmation_process()`.
+
+  `"by_type"`
+
+  :   one row per outcome instead of one number: the outcome column
+      joins the keys, so you get pending, confirmed and retracted side
+      by side.
+
+  On an object with no validation process anything but `"total"` warns
+  and pools, because there is no outcome to filter on.
+
 - delay:
 
   A single non-negative number (or `Inf`) giving the maximum reporting
-  delay, in report units, to include. Only used by
+  delay, in event units, to include. Only used by
   `get_nth_reported_cases()`.
 
 ## Value
 
-A `count-cumulative` `tbl_now` with one row per event date (and
-stratum), containing:
+A `count-cumulative` `tbl_now` with one row per event date (and stratum,
+and grouping column), containing:
 
 - the event-date column – when the cases happened. Its numeric version
   is `.event_num`.
@@ -45,8 +83,18 @@ stratum), containing:
 
 - `.delay` – the delay of the selected report.
 
-- any strata, censoring indicator and temporal-effect columns the object
-  carried.
+- any strata, covariate, censoring indicator and temporal-effect columns
+  the object carried, plus the caller's grouping columns.
+
+The **validation** columns are not carried: the count pools over many
+validation dates, so the result has no single one and does not pretend
+to. `type = "by_type"` is the exception – it keeps the outcome column,
+declared as a covariate, because that is the whole point of the call and
+an undeclared column is one
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
+would pool away. Use
+[get_latest_validated_cases()](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
+when you want the third date on the result.
 
 ## Details
 
@@ -67,9 +115,25 @@ stratum), containing:
 The gap between the first and the latest count *is* the reporting delay
 problem that nowcasting exists to solve.
 
+## Grouping is respected
+
+Unlike
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md),
+these functions **keep the caller's grouping** and answer by it: the
+grouping columns join the event date and the strata as keys, and come
+back on the result. That is what lets you ask for the latest count by a
+**covariate** – a column that matters but is not something you nowcast
+by – which grouping is the only way to express.
+
+They can do this because they *select* a point in the process rather
+than reshaping the object: one row in is still one case (or one cell)
+out.
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
+cannot, and warns instead.
+
 ## See also
 
-[get_latest_confirmed()](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+[get_latest_validated_cases()](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
 and friends for the same idea on the validation process;
 [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
 for the underlying data shapes;
@@ -97,7 +161,7 @@ first
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week   report_week   .event_num .report_num gender         n .delay
-#>    <date>       <date>             <dbl>       <dbl> <chr>      <int>  <dbl>
+#>    <date>       <date>             <dbl>       <dbl> <chr>      <dbl>  <dbl>
 #>    [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
 #>  1 1990-01-01   1990-01-01             0           0 Female         2      0
 #>  2 1990-01-01   1990-01-01             0           0 Male           1      0
@@ -122,7 +186,7 @@ latest
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week   report_week   .event_num .report_num gender         n .delay
-#>    <date>       <date>             <dbl>       <dbl> <chr>      <int>  <dbl>
+#>    <date>       <date>             <dbl>       <dbl> <chr>      <dbl>  <dbl>
 #>    [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
 #>  1 1990-01-01   1990-03-05             0           9 Female        39      9
 #>  2 1990-01-01   1990-02-12             0           6 Male          22      6
@@ -150,7 +214,7 @@ get_nth_reported_cases(dengue, delay = 2)
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week   report_week   .event_num .report_num gender         n .delay
-#>    <date>       <date>             <dbl>       <dbl> <chr>      <int>  <dbl>
+#>    <date>       <date>             <dbl>       <dbl> <chr>      <dbl>  <dbl>
 #>    [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
 #>  1 1990-01-01   1990-01-15             0           2 Female        31      2
 #>  2 1990-01-01   1990-01-15             0           2 Male          19      2
@@ -167,4 +231,11 @@ get_nth_reported_cases(dengue, delay = 2)
 #> # Strata: "gender"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 2,141 more rows
+
+# A grouping is answered by, not dropped.
+dengue |>
+  dplyr::group_by(gender) |>
+  get_latest_reported_cases() |>
+  dplyr::group_vars()
+#> [1] "gender"
 ```

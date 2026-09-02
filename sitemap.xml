@@ -17,6 +17,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/news/index.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/add.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/aggregate_time_units.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/as_tibble.tbl_now.html</loc></url>
@@ -25,7 +26,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_nowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/censoring.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/covid_colombia.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/covid_us.html</loc></url>
@@ -102,7 +103,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.html</loc></url>
 </urlset>
 

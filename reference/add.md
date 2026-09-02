@@ -170,7 +170,7 @@ remove_validation_date(x)
   `is_censored_report`: the name of a logical column marking rows whose
   **validation delay** is a bound rather than a measurement. Requires a
   `validation_date`. See
-  [censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md).
+  [censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md).
 
 - validation_date:
 
@@ -302,7 +302,7 @@ so the recoding happens once rather than in every script. And
 `add_is_censored_validation()` names a logical column marking rows whose
 *validation delay* is a bound rather than a measurement, the
 validation-axis twin of `add_is_censored_report()`;
-[censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+[censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
 sets it for you.
 
 `change_now()` is validation-aware in both directions. Moving `now`
@@ -375,6 +375,9 @@ ndata |>
 # tells the object to use the corrected column instead.
 ndata$corrected_onset <- ndata$onset_week - lubridate::days(1)
 ndata <- ndata |> change_event_date(corrected_onset)
+#> Warning: 52987 rows have a fractional `.delay`.
+#> ℹ A fractional delay is what a converter chokes on: the two date columns are on
+#>   different grids. `align_weeks()` is the fix for weekly data.
 get_event_date(ndata)
 #> [1] "corrected_onset"
 
@@ -383,27 +386,45 @@ get_event_date(ndata)
 ## TRUE means the report date is only an upper bound (e.g. a backlog dump).
 ndata$is_censored_report <- FALSE
 ndata <- ndata |> add_is_censored_report(is_censored_report)
+#> Warning: 52987 rows have a fractional `.delay`.
+#> ℹ A fractional delay is what a converter chokes on: the two date columns are on
+#>   different grids. `align_weeks()` is the fix for weekly data.
 get_is_censored_report(ndata)
 #> [1] "is_censored_report"
 ndata <- remove_is_censored_report(ndata)
+#> Warning: 52987 rows have a fractional `.delay`.
+#> ℹ A fractional delay is what a converter chokes on: the two date columns are on
+#>   different grids. `align_weeks()` is the fix for weekly data.
 
 ## ---- `now` -----------------------------------------------------------
 
 # Set it by hand ...
 get_now(change_now(ndata, now = as.Date("2011-01-01")))
+#> Warning: 52987 rows have a fractional `.delay`.
+#> ℹ A fractional delay is what a converter chokes on: the two date columns are on
+#>   different grids. `align_weeks()` is the fix for weekly data.
 #> [1] "2011-01-01"
 
 # ... or snap it back to the latest date actually observed.
 get_now(update_now(ndata))
+#> Warning: 52987 rows have a fractional `.delay`.
+#> ℹ A fractional delay is what a converter chokes on: the two date columns are on
+#>   different grids. `align_weeks()` is the fix for weekly data.
 #> [1] "2010-12-20"
 
 ## ---- Count data: which column holds the counts ------------------------
 
 counts <- to_count(ndata, to = "count-incidence")
+#> Warning: 52987 rows have a fractional `.delay`.
+#> ℹ A fractional delay is what a converter chokes on: the two date columns are on
+#>   different grids. `align_weeks()` is the fix for weekly data.
 counts |>
   dplyr::mutate(inflated = round(1.15 * n)) |>
   change_case_count(inflated) |>
   get_case_count()
+#> Warning: 52987 rows have a fractional `.delay`.
+#> ℹ A fractional delay is what a converter chokes on: the two date columns are on
+#>   different grids. `align_weeks()` is the fix for weekly data.
 #> [1] "inflated"
 
 ## ---- The validation process, the optional third date -----------------

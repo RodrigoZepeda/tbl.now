@@ -2,15 +2,17 @@
 
 **\[experimental\]**
 
-Two ways of asking the same question – *is this object a well-formed
-[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)?*
+Two different questions about an object, and one function for each.
 
-- `is_tbl_now()` answers quietly with `TRUE` or `FALSE`. Use it in an
-  `if`.
+- `is_tbl_now()` asks **"is this the class?"**. It answers quietly with
+  `TRUE` or `FALSE`, and it is cheap: a class check, the attributes a
+  `tbl_now` cannot do without, and the columns those attributes name.
+  Use it in an `if`.
 
-- `validate_tbl_now()` answers loudly: it stops with an error explaining
-  what is wrong, and warns about the merely suspicious. Use it when you
-  want the pipeline to halt rather than carry on with a broken object.
+- `validate_tbl_now()` asks **"is the data in it sane?"**. It answers
+  loudly: it stops with an error explaining what is wrong, and warns
+  about the merely suspicious. Use it when you want the pipeline to halt
+  rather than carry on with a broken object.
 
 Neither checks whether the data are *good* – only whether the object is
 put together correctly. For the quality of the data itself, use
@@ -60,6 +62,15 @@ is the *data* presentation, and additionally reports the `note`-level
 observations that would make every `dplyr` verb noisy if they were
 emitted here.
 
+`is_tbl_now()` deliberately runs **none** of that. It used to, and the
+cost was paid twice over: the findings engine ran on every
+`.assert_tbl_now()`, and the warnings it raised escaped – so an object
+the user had already chosen to keep re-reported its problems from
+wherever the predicate happened to be called. An object can therefore be
+a `tbl_now` (`is_tbl_now()` is `TRUE`) and still have data
+`validate_tbl_now()` warns about. That is the point: the class is a
+container, and a container is not a claim that what is in it is clean.
+
 ## See also
 
 [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
@@ -84,6 +95,14 @@ ndata <- tbl_now(denguedat,
 is_tbl_now(ndata)
 #> [1] TRUE
 validate_tbl_now(ndata)
+
+# `is_tbl_now()` is a question about the CLASS, so it stays quiet about the
+# data. This object's report dates include an `NA`, which validate_tbl_now()
+# warns about -- and which does not stop it being a `tbl_now`.
+messy <- ndata
+messy$report_week[1] <- NA
+is_tbl_now(messy)
+#> [1] TRUE
 
 # A plain data.frame is not a tbl_now ...
 is_tbl_now(data.frame(x = 1:3))

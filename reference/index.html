@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -113,7 +113,7 @@
           <code><a href="get_latest_first.html">get_latest_reported_cases()</a></code> <code><a href="get_latest_first.html">get_initial_reported_cases()</a></code> <code><a href="get_latest_first.html">get_nth_reported_cases()</a></code>
           <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
-        <dd>Reported cases at a chosen point in the reporting process</dd>
+        <dd>Cases at a chosen point in the reporting process</dd>
 
         <dt>
 
@@ -140,6 +140,13 @@
 
       <dl><dt>
 
+          <code><a href="aggregate_time_units.html">aggregate_time_units()</a></code>
+          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+        </dt>
+        <dd>Coarsen a <code>tbl_now</code> onto a bigger time unit</dd>
+
+        <dt>
+
           <code><a href="align_weeks.html">align_weeks()</a></code> <code><a href="align_weeks.html">week_2_date()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
@@ -154,10 +161,10 @@
 
         <dt>
 
-          <code><a href="censor_delays_above.html">censor_delays_above()</a></code> <code><a href="censor_delays_above.html">censor_validation_delays_above()</a></code>
+          <code><a href="censoring.html">censor_reporting_delays_above()</a></code> <code><a href="censoring.html">censor_reports()</a></code> <code><a href="censoring.html">censor_reporting_delays()</a></code> <code><a href="censoring.html">censor_validations()</a></code> <code><a href="censoring.html">censor_validation_delays()</a></code> <code><a href="censoring.html">censor_validation_delays_above()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
-        <dd>Treat implausibly long delays as censored rather than exact</dd>
+        <dd>Record a report or a delay as a bound rather than a fact</dd>
 
         <dt>
 
@@ -200,10 +207,10 @@
 
       <dl><dt>
 
-          <code><a href="validation_counts.html">get_latest_confirmed()</a></code> <code><a href="validation_counts.html">get_net_confirmed()</a></code> <code><a href="validation_counts.html">get_nth_confirmed()</a></code> <code><a href="validation_counts.html">get_initial_confirmed()</a></code>
+          <code><a href="validated_cases.html">get_latest_validated_cases()</a></code> <code><a href="validated_cases.html">get_initial_validated_cases()</a></code> <code><a href="validated_cases.html">get_nth_validated_cases()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
-        <dd>Confirmed, retracted and net counts per event date</dd>
+        <dd>Cases at a chosen point in the validation process</dd>
 
         <dt>
 

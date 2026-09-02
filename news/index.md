@@ -1,5 +1,302 @@
 # Changelog
 
+## tbl.now 0.31.0
+
+### Breaking: the `*_confirmed()` counters are gone, replaced by a validated-cases family (#64)
+
+`get_latest_confirmed()`, `get_net_confirmed()`,
+`get_initial_confirmed()` and `get_nth_confirmed()` are **removed**.
+They answered a version of the question
+[`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+already answered, in a different return shape (a plain tibble), with a
+delay measured from a different anchor – so the two families could not
+be read against each other.
+
+In their place, the reporting getters have an exact twin on the
+validation axis:
+
+``` r
+
+get_initial_validated_cases(x)                     # as of the FIRST result back
+get_latest_validated_cases(x)                      # everything settled so far
+get_nth_validated_cases(x, delay = 7)              # settled within 7 periods
+get_latest_validated_cases(x, type = "confirmed")  # was get_latest_confirmed()
+get_latest_validated_cases(x, type = "net")        # was get_net_confirmed()
+get_latest_validated_cases(x, type = "by_type")    # every outcome, side by side
+```
+
+- They return the **same `count-cumulative` `tbl_now`** the reporting
+  getters return, carrying all three dates and the generated numeric
+  columns, rather than a bare tibble.
+- `type =` is new on **both** families, so the reporting axis can be
+  filtered the same way: `"total"` (default), `"confirmed"`,
+  `"retracted"`, `"pending"`, `"unknown"`, `"net"`, or `"by_type"` for
+  one row per outcome. On an object with no validation process anything
+  but `"total"` warns and pools.
+- [`get_nth_validated_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
+  counts the delay **from the event**, so it and
+  [`get_nth_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+  describe the same period. `get_nth_confirmed()` measured from the
+  report, which is `.validation_delay` – a different quantity. Reading
+  the old and new numbers as the same thing is the one migration hazard.
+- A pending case has no validation date, so it never appears on the
+  validation axis; `type = "pending"` is refused there and belongs on
+  the reporting axis.
+- An empty selection – nothing validated yet, no case with that outcome,
+  no arrival within the delay – is an **error naming the reason**,
+  rather than a failure inside
+  [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+  about an empty data frame.
+
+### The reported-cases getters respect a grouping; `to_count()` says it does not (#61)
+
+[`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md),
+[`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+and
+[`get_nth_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+(and the three new validated ones) now **keep the caller’s grouping and
+answer by it**: the grouping columns join the event date and the strata
+as keys, and come back on the result.
+
+``` r
+
+tn |> dplyr::group_by(hospital) |> get_latest_reported_cases()
+```
+
+This is the only way to ask for a count by a **covariate** – a column
+that matters without being something you nowcast by. These verbs can do
+it because they *select* a point in the process rather than reshaping
+the object.
+
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
+cannot, and now **warns** rather than dropping the grouping in silence:
+after aggregating, one row is an (event, report) cell rather than one of
+the rows that were grouped, so the grouping describes nothing that is
+left. Declare the column with
+[`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+or
+[`add_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+to keep it out of the sum.
+
+### `is_tbl_now()` is a class check again, not a validation run (#62)
+
+[`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
+used to call
+[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
+inside a [`tryCatch()`](https://rdrr.io/r/base/conditions.html) that
+caught errors but not warnings, so the object’s findings escaped from
+wherever the predicate was called – which is every `.assert_tbl_now()`
+in the package. A verb that fixed a problem warned about it twice, after
+the fix.
+
+It is now a structural check: the class, the attributes a `tbl_now`
+cannot do without, and the columns those attributes name. Cheap, and
+silent.
+
+- `tbl_now_can_reconstruct()` suppresses warnings while asking its
+  hypothetical.
+- An object can be a `tbl_now` and still have data
+  [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
+  warns about. That is the point: the class is a container, and a
+  container is not a claim that what is in it is clean.
+
+### Fractional delays are refused where they are created, and reported where they are found (#63)
+
+A calendar has no half-days, so a fractional delay had to become
+something. It became [`round()`](https://rdrr.io/r/base/Round.html) –
+round-half-to-*even*, so `2.5` went down and `3.5` went up, silently –
+while the numeric axis refused the same value outright.
+
+- `censor_reporting_delays(to_delay =)`,
+  `censor_validation_delays(to_delay =)` and `tbl_now(delay =)` now
+  **abort** on a delay that is not a whole number of the axis’s units,
+  on every axis. Round it yourself if that is what you mean.
+- [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
+  **warns** when an object’s `.delay` is fractional; it was a
+  [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)-only
+  note. The remaining way in is two date columns on different weekday
+  grids, which is exactly what
+  [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
+  fixes – so this stays a warning rather than an error, and the object
+  you need to hand to
+  [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
+  can still be built.
+
+## tbl.now 0.30.0
+
+### New: coarsen the time grid in one call (#56)
+
+[`aggregate_time_units()`](https://rodrigozepeda.github.io/tbl.now/reference/aggregate_time_units.md)
+moves a `tbl_now` onto a bigger time unit – daily to weekly, weekly to
+monthly, monthly to yearly – and updates the object so that `.delay`,
+the converters and the models all count in the new unit:
+
+``` r
+
+hai <- hai_bucaramanga |>
+  tbl_now(event_date = specimen_date, report_date = report_date,
+          strata = sex, data_type = "linelist", units = "days")
+
+hai |> aggregate_time_units(to = "weeks")
+```
+
+- Counts are **added up**, not merely relabelled. `count-cumulative`
+  totals are de-accumulated first, aggregated as increments and
+  accumulated again on the new grid, because a cumulative total is not
+  additive.
+- `axes =` picks which axes move (`"all"`, `"event"`, `"report"`,
+  `"validation"`), and `label =` picks whether a period is named by its
+  first or its last day. Use `label = "end"` when you coarsen only a
+  later axis, or a report lands before its own event.
+- Weeks go through the same epi/ISO machinery as
+  [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md),
+  so `type` and `align_on_day` mean what they mean there.
+- It only ever coarsens: asking a weekly object for `"days"` is an
+  error, not a guess. So is aggregating a `numeric` axis, which has no
+  calendar.
+- Weeks do **not** nest inside months. Aggregating to weeks and then to
+  months is not the same as going straight to months; aggregate once, to
+  the unit you want.
+
+### New: censor by condition, and replace the date (#57)
+
+[`censor_reports()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+and
+[`censor_reporting_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+take a
+[`filter()`](https://dplyr.tidyverse.org/reference/filter.html)-style
+condition and record the matching rows as *bounds* rather than
+measurements – optionally replacing the date at the same time. This is
+the fix for the two dates that are not really dates: the missing one,
+and the sentinel far in the future.
+
+``` r
+
+hai |> censor_reports(is.na(report_date), to_report = Sys.Date())
+hai |> censor_reports(report_date == as.Date("2222-02-22"), to_report = Sys.Date())
+tn  |> censor_reporting_delays(.delay > 60, to_delay = 60)
+```
+
+#### The censoring family is now six verbs, two axes by three ways to select
+
+|  | by date | by delay | threshold |
+|----|----|----|----|
+| **reporting** (`is_censored_report`) | [`censor_reports()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md) | [`censor_reporting_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md) | [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md) |
+| **validation** (`is_censored_validation`) | [`censor_validations()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md) | [`censor_validation_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md) | [`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md) |
+
+- `censor_delays_above()` is renamed
+  **[`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)**
+  and `censor_delays()` (added earlier in this release, never shipped)
+  is renamed
+  **[`censor_reporting_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)**,
+  so every name says which axis it moves. Their behaviour is unchanged,
+  and the `_above()` help now says plainly that it considers as censored
+  **every** delay longer than `max_delay`.
+- [`censor_validations()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  and
+  [`censor_validation_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  are new: the validation-axis twins of
+  [`censor_reports()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  and
+  [`censor_reporting_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md).
+- All six are documented together on
+  [`?censoring`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md).
+
+**`"pending"` cases are skipped when a validation date would be
+written**, with a warning saying how many. A pending case is reported
+and still waiting, so it has no resolution date; writing one would
+assert a resolution that never happened and make the case look resolved
+to everything counting arrivals on that axis. Set `validation_type` to
+`"confirmed"` or `"retracted"` first if the case really was resolved.
+Flagging without a replacement is unaffected – no date is written, so
+nothing is contradicted.
+
+- `NA` is not a match: a condition that cannot be evaluated on a row is
+  not a condition that row met.
+- Existing censoring flags are merged, never cleared, and the flag
+  column is created as `.is_censored_report` when the object has none.
+- Replacing a date moves `now` **forward** when the replacement lands
+  after it, never backwards, and drops any `.report_*` temporal-effect
+  column that the move has made stale.
+
+### New: one `units` argument instead of three (#58)
+
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+gains `units`, the shared default for `event_units`, `report_units` and
+`validation_units`:
+
+``` r
+
+tbl_now(hai_bucaramanga, event_date = specimen_date, report_date = report_date,
+        strata = sex, data_type = "linelist", units = "days")
+```
+
+Anything given explicitly still wins, so
+`units = "days", report_units = "weeks"` reads a daily event date
+against a weekly report date, and an explicit `event_units = "auto"`
+still means *infer*.
+
+### Fixes
+
+- [`group_by()`](https://dplyr.tidyverse.org/reference/group_by.html)
+  (with no grouping variables),
+  [`summarise()`](https://dplyr.tidyverse.org/reference/summarise.html)
+  and [`reframe()`](https://dplyr.tidyverse.org/reference/reframe.html)
+  copied the **event** units onto the report axis when rebuilding, so a
+  mixed-unit object silently became a uniform one. They now carry
+  `report_units` across.
+- `infer_units()` on a column with a single distinct date warned about
+  [`min()`](https://rdrr.io/r/base/Extremes.html) returning `Inf` before
+  aborting with an unrelated message. It now says which column it is,
+  and points at `units`.
+- Censoring a grouped `tbl_now` aborted inside
+  [`add_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  /
+  [`add_is_censored_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md),
+  which refuse a `grouped_tbl_now`. All four censoring verbs –
+  [`censor_reports()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md),
+  [`censor_reporting_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md),
+  [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  and
+  [`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  – now ungroup, work, and put the grouping back.
+- The two censoring axes share one implementation of “merge this flag in
+  without un-censoring anything”, rather than a copy each.
+- **Demotion is now one operation.** Dropping a protected column returns
+  a plain tibble, and that used to be
+  [`as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
+  – which leaves unknown attributes alone on a tibble but rebuilds a
+  `grouped_df` and drops them. So a demoted object kept the class’s
+  attributes, or lost them, according to whether the caller had grouped
+  it. It now strips them explicitly, either way.
+- [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
+  failed on a grouped `tbl_now` with `Column "now" not found in data`:
+  it read
+  [`get_now()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  and nine other attributes off its own input *after* demoting it, and
+  worked only by the asymmetry above. It now reads them first, and
+  returns the grouping.
+- [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+  aborted on a grouped `tbl_now`
+  (`'length = 2' in coercion to 'logical(1)'`): every bound it computes
+  is a
+  [`filter()`](https://dplyr.tidyverse.org/reference/filter.html)/[`distinct()`](https://dplyr.tidyverse.org/reference/distinct.html)/[`pull()`](https://dplyr.tidyverse.org/reference/pull.html)
+  that a grouping turns into one value per group, so the date grid was
+  built from a vector. The grid is a property of the object, not of how
+  the caller grouped it.
+- [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+  aborted on a grouped `tbl_now`; it was the only converter that did.
+- `DEVELOPMENT_SKILL.md` gains *Every new function gets a grouped test*
+  (§8) and a line in the definition of done, because the six grouping
+  fixes above are all the same bug; `devel/audit_grouped_verbs.R` sweeps
+  every exported function for it. Three verbs drop the grouping
+  **deliberately** and are left for
+  [\#61](https://github.com/RodrigoZepeda/tbl.now/issues/61) to decide:
+  [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md),
+  [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+  and
+  [`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md).
+
 ## tbl.now 0.29.0
 
 ### Breaking: `is_censored` is now `is_censored_report` (#54)
@@ -13,7 +310,7 @@ old spelling is removed outright, not deprecated:
 | `get_is_censored()` | [`get_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 | `add_is_censored()`, `change_is_censored()`, `remove_is_censored()` | [`add_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md), [`change_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md), [`remove_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md) |
 | `is_censored` attribute | `is_censored_report` attribute |
-| `.is_censored` (the column [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md) creates) | `.is_censored_report` |
+| `.is_censored` (the column [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md) creates) | `.is_censored_report` |
 
 ### New: `is_censored_validation`, the validation-axis censoring flag (#53)
 
@@ -44,10 +341,9 @@ delete their validation date. That was wrong: a case confirmed after 200
 days is still a confirmed case, and the object should say so. It now
 sets `is_censored_validation` and leaves the date and the outcome alone,
 exactly as
-[`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
-does on the report axis.
-[`get_latest_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
-therefore still counts those cases.
+[`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+does on the report axis. `get_latest_confirmed()` therefore still counts
+those cases.
 
 ### New: `validation_levels`, for data not recorded in English (#54)
 
@@ -123,7 +419,7 @@ deprecated – it had not shipped.
 | `add_confirmation()`, `change_confirmation()`, `remove_confirmation()` | [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md), [`change_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md), [`remove_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md) |
 | `get_confirmation_date()`, `get_confirmation_type()`, `get_confirmation_units()`, `has_confirmation()` | [`get_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`get_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`get_validation_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`has_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 | `confirmation_counts`, `confirmation_delay` | `validation_counts`, `validation_delay` |
-| `censor_confirmation_delays_above()`, `diagnose_confirmation_delay()` | [`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md), [`diagnose_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md) |
+| `censor_confirmation_delays_above()`, `diagnose_confirmation_delay()` | [`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md), [`diagnose_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md) |
 | `plot_confirmation_delay()`, `plot_confirmation_status()`, `prop_confirmation_type()` | [`plot_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md), [`plot_validation_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_validation_status.md), [`prop_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md) |
 | `confirmation_date`, `confirmation_type`, `confirmation_units` arguments | `validation_date`, `validation_type`, `validation_units` |
 | `.confirmation_num`, `.confirmation_delay` columns | `.validation_num`, `.validation_delay` |
@@ -381,14 +677,14 @@ exports already took `x` first; these were the exceptions.
   [`diagnose_batch_shape()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batch_shape.md),
   [`simulate_batch()`](https://rodrigozepeda.github.io/tbl.now/reference/simulate_batch.md),
   [`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md),
-  [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+  [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
   and `censor_confirmation_delays_above()`. Positional calls are
   unaffected. Two internal helpers also named `data` in their error
   messages, so `diagnose_batches(x = <not a tbl_now>)` used to complain
   about an argument that did not exist.
 
 - **`quiet` becomes `verbose`** in
-  [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+  [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
   and `censor_confirmation_delays_above()`, with the sense inverted and
   defaulting to `TRUE`, matching the twenty other functions that control
   messaging this way. Write `verbose = FALSE` where you wrote
@@ -553,7 +849,7 @@ audience of public-health practitioners first and statisticians second.
   `plot_reporting_process` onto `plot_epidemic_process`; `names_tbl_now`
   and `money_tbl_now` onto `assign_tbl`; `as_scoringutils` onto
   `score_nowcast`; `censor_confirmation_delays_above` onto
-  `censor_delays_above`; `is_tbl_now` onto `validate_tbl_now`;
+  `censor_reporting_delays_above`; `is_tbl_now` onto `validate_tbl_now`;
   `week_2_date` onto `align_weeks`; `compute_temporal_effects` onto
   `add_temporal_effects`.
 
@@ -1107,10 +1403,8 @@ after all). The assumed timeline is
 
 #### Counting when cases can be undone
 
-[`get_latest_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md),
-[`get_net_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
-(confirmed minus retracted), `get_nth_confirmed(x, delay)` and
-[`get_initial_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+`get_latest_confirmed()`, `get_net_confirmed()` (confirmed minus
+retracted), `get_nth_confirmed(x, delay)` and `get_initial_confirmed()`
 – the confirmation mirrors of the report-axis getters.
 `censor_confirmation_delays_above()` returns implausibly long
 confirmations to `"pending"`, which is what they really were.
@@ -3111,15 +3405,15 @@ mathematics in a **“The mathematics”** section of its help page.
 - Removed explicit zeroes from the converters (`tbl_now_from_*`) as they
   are not necessary in `tbl_now`.
 - Added
-  [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+  [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
   to flag reports with an implausibly long delay as censored (their
   delay becomes an upper bound).
 - Improved documentation and README
 - Documented all internal functions with roxygen (`@keywords internal` +
   `@noRd`) and ensured every exported function has a `@return`.
 - Homogenized `lifecycle` badges.
-- Brought the `censor_delays_above` function from `diseasenowcasting` to
-  `tbl_now`.
+- Brought the `censor_reporting_delays_above` function from
+  `diseasenowcasting` to `tbl_now`.
 - [`tbl_now_from_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
   now accepts not only the raw long input but also a preprocessed
   `enw_preprocess_data` object or a fitted `epinowcast` object (grouping

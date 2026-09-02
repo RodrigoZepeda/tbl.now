@@ -125,7 +125,7 @@ recover.
 to declare the date columns;
 [add_validation_date()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 to attach the third one to an object that has none;
-[validation_counts](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+[validated_cases](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
 to count the outcomes;
 [summary()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.md)
 and
@@ -211,7 +211,7 @@ head(get_latest_reported_cases(tn3))
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
 #>   onset_dt     pos_spec_dt   .event_num .report_num sex            n .delay
-#>   <date>       <date>             <dbl>       <dbl> <chr>      <int>  <dbl>
+#>   <date>       <date>             <dbl>       <dbl> <chr>      <dbl>  <dbl>
 #>   [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
 #> 1 2020-01-01   2020-09-04             0         247 Female         8    247
 #> 2 2020-01-01   2020-08-05             0         217 Male           4    217
@@ -223,14 +223,24 @@ head(get_latest_reported_cases(tn3))
 #> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
 #> # Strata: "sex"
 #> # ────────────────────────────────────────────────────────────────────────────────
-head(get_latest_confirmed(tn3))
-#> # A tibble: 6 × 3
-#>   onset_dt   sex        n
-#>   <date>     <chr>  <dbl>
-#> 1 2020-01-01 Female     6
-#> 2 2020-01-01 Male       3
-#> 3 2020-01-03 Female     1
-#> 4 2020-01-03 Male       1
-#> 5 2020-01-04 Female     0
-#> 6 2020-01-04 Male       1
+head(get_latest_validated_cases(tn3, type = "confirmed"))
+#> # A tibble:  6 × 11
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `days` | Report: `days`
+#>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt     sex     
+#>   <date>       <date>             <dbl>       <dbl> <date>            <chr>   
+#>   [event_date] [report_date]      [...]       [...] [validation_date] [strata]
+#> 1 2020-01-01   2020-09-04             0         247 2020-09-07        Female  
+#> 2 2020-01-01   2020-07-08             0         189 2020-08-17        Male    
+#> 3 2020-01-03   2020-04-24             2         114 2020-05-03        Female  
+#> 4 2020-01-03   2020-03-31             2          90 2020-04-05        Male    
+#> 5 2020-01-04   2020-07-06             3         187 2020-09-12        Male    
+#> 6 2020-01-04   2020-09-14             3         257 2020-09-24        Unknown 
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
+#> # Validation date: "cdc_report_dt" ("days") | resolved: 6/6
+#> # Strata: "sex"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 5 more variables: current_status <chr>, n <dbl>, .delay <dbl>,
+#> #   .validation_num <dbl>, .validation_delay <dbl>
 ```

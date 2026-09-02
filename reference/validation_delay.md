@@ -59,9 +59,9 @@ timeline forbids.
 
 [add_validation_date()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 to attach a validation process;
-[censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+[censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
 for resolutions that never arrive;
-[validation_counts](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
+[validated_cases](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
 for counting the outcomes;
 [`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
 for the same question about the *reporting* delay over time. The

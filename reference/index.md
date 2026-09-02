@@ -59,8 +59,7 @@ Read what the object was told about itself, and change it.
 - [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
   [`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
   [`get_nth_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
-  **\[stable\]** : Reported cases at a chosen point in the reporting
-  process
+  **\[stable\]** : Cases at a chosen point in the reporting process
 
 - [`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`update_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
@@ -99,15 +98,27 @@ Read what the object was told about itself, and change it.
 
 Put the data on the grid a model needs.
 
+- [`aggregate_time_units()`](https://rodrigozepeda.github.io/tbl.now/reference/aggregate_time_units.md)
+  **\[experimental\]** :
+
+  Coarsen a `tbl_now` onto a bigger time unit
+
 - [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
   [`week_2_date()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
   **\[experimental\]** : Put weekly data on a common weekday
+
 - [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
   **\[experimental\]** : Fill in the days when nothing was reported
-- [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
-  [`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
-  **\[experimental\]** : Treat implausibly long delays as censored
-  rather than exact
+
+- [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  [`censor_reports()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  [`censor_reporting_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  [`censor_validations()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  [`censor_validation_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  [`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  **\[experimental\]** : Record a report or a delay as a bound rather
+  than a fact
+
 - [`is_weekday()`](https://rodrigozepeda.github.io/tbl.now/reference/is_weekday.md)
   **\[stable\]** : Is a date a weekday or a weekend?
 
@@ -128,12 +139,11 @@ Calendar structure, recorded lazily and materialised on demand.
 
 The optional third date, and the outcomes it carries.
 
-- [`get_latest_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
-  [`get_net_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
-  [`get_nth_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
-  [`get_initial_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
-  **\[experimental\]** : Confirmed, retracted and net counts per event
-  date
+- [`get_latest_validated_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
+  [`get_initial_validated_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
+  [`get_nth_validated_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
+  **\[experimental\]** : Cases at a chosen point in the validation
+  process
 - [`diagnose_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
   [`plot_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
   **\[experimental\]** : Compare validation delays between confirmed and

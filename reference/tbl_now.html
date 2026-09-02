@@ -31,7 +31,7 @@ dates without being told again."><meta property="og:image" content="https://rodr
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,12 +102,13 @@ dates without being told again.</p>
 <span>  is_censored_report <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  validation_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  validation_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  validation_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
+<span>  validation_units <span class="op">=</span> <span class="va">units</span>,</span>
 <span>  validation_levels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  is_censored_validation <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  now <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  event_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
-<span>  report_units <span class="op">=</span> <span class="st">"auto"</span>,</span>
+<span>  event_units <span class="op">=</span> <span class="va">units</span>,</span>
+<span>  report_units <span class="op">=</span> <span class="va">units</span>,</span>
+<span>  units <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  data_type <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  t_effects <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -146,7 +147,10 @@ or <code>NULL</code> (default). Name of a numeric column containing the delay (i
 <code>event_units</code>) between <code>event_date</code> and <code>report_date</code>. When provided with
 only one of <code>event_date</code> or <code>report_date</code>, the missing date is reconstructed
 from the known date and the delay. Requires units to be known (either
-specified via <code>event_units</code> or inferrable from the provided date column).</p></dd>
+specified via <code>event_units</code> or inferrable from the provided date column).
+Every value must be a <strong>whole number</strong> of those units: a fractional delay is
+an error, not a rounding, because a calendar has no half-days and bending the
+value silently moves the reconstructed date.</p></dd>
 
 
 <dt id="arg-strata">strata<a class="anchor" aria-label="anchor" href="#arg-strata"></a></dt>
@@ -226,7 +230,7 @@ attribute, readable with <code><a href="nowcast_data_getters.html">get_validatio
 The validation-axis counterpart of <code>is_censored_report</code>: the name of a
 logical column marking rows whose <strong>validation delay</strong> is a bound rather
 than a measurement. Requires a <code>validation_date</code>. See
-<a href="censor_delays_above.html">censor_validation_delays_above()</a>.</p></dd>
+<a href="censoring.html">censor_validation_delays_above()</a>.</p></dd>
 
 
 <dt id="arg-now">now<a class="anchor" aria-label="anchor" href="#arg-now"></a></dt>
@@ -237,12 +241,21 @@ nowcast. If no <code>now</code> is given then the function automatically uses th
 
 <dt id="arg-event-units">event_units<a class="anchor" aria-label="anchor" href="#arg-event-units"></a></dt>
 <dd><p>(optional) Character. Either "auto" (default), "days",
-"weeks", "months", "years" or "numeric".</p></dd>
+"weeks", "months", "years" or "numeric". Defaults to <code>units</code>.</p></dd>
 
 
 <dt id="arg-report-units">report_units<a class="anchor" aria-label="anchor" href="#arg-report-units"></a></dt>
 <dd><p>(optional) Character. Either "auto" (default), "days",
-"weeks", "months", "years" or "numeric".</p></dd>
+"weeks", "months", "years" or "numeric". Defaults to <code>units</code>.</p></dd>
+
+
+<dt id="arg-units">units<a class="anchor" aria-label="anchor" href="#arg-units"></a></dt>
+<dd><p>(optional) Character. Either <code>"auto"</code> (default), <code>"days"</code>,
+<code>"weeks"</code>, <code>"months"</code>, <code>"years"</code> or <code>"numeric"</code>. The <strong>default</strong> for
+<code>event_units</code>, <code>report_units</code> and <code>validation_units</code>: say it once instead of
+three times. Any of the three that you give explicitly wins over <code>units</code>, so
+<code>units = "days", report_units = "weeks"</code> reads a daily event date against a
+weekly report date.</p></dd>
 
 
 <dt id="arg-data-type">data_type<a class="anchor" aria-label="anchor" href="#arg-data-type"></a></dt>

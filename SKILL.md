@@ -75,6 +75,10 @@ Useful arguments:
 
 - `now =` — the “as-of” date for the nowcast. Defaults to
   `max(report_date)`.
+- `units =` — the shared default for `event_units`, `report_units` and
+  `validation_units`. Say `units = "days"` once instead of three times;
+  anything you give explicitly still wins
+  (`units = "days", report_units = "weeks"`).
 - `event_units` / `report_units` —
   `"days" | "weeks" | "months" | "years" | "numeric"`; `"auto"` infers
   from spacing. `report_units` must be **coarser than or equal to**
@@ -216,6 +220,62 @@ All three return a `count-cumulative`-style `tbl_now` collapsed to one
 row per `event_date` (× strata). The gap between initial and latest is
 exactly what a nowcast predicts.
 
+**A grouping is answered by, not dropped.** Unlike
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md),
+these getters keep the caller’s grouping: the grouping columns join the
+event date and the strata as keys and come back on the result. That is
+the only way to ask for the latest count by a **covariate** — a column
+that matters without being something you nowcast by.
+
+``` r
+
+tn |> dplyr::group_by(hospital) |> get_latest_reported_cases()   # keyed AND grouped by hospital
+```
+
+**`type =` filters on the validation outcome** (see the validation
+family below). `type = "total"` (the default) counts every case;
+`"confirmed"`, `"retracted"`, `"pending"` and `"unknown"` filter to one
+outcome; `"net"` is confirmed − retracted; `"by_type"` returns one row
+per outcome. On an object with no validation process anything but
+`"total"` warns and pools.
+
+------------------------------------------------------------------------
+
+## Skill: the same three questions on the validation axis
+
+``` r
+
+get_initial_validated_cases(tn)              # as of the FIRST result to come back
+get_latest_validated_cases(tn)               # everything settled so far
+get_nth_validated_cases(tn, delay = 7)       # settled within 7 periods OF THE EVENT
+get_latest_validated_cases(tn, type = "confirmed")   # only the positives
+get_latest_validated_cases(tn, type = "net")         # confirmed minus retracted
+get_latest_validated_cases(tn, type = "by_type")     # every outcome, side by side
+```
+
+Exactly the reporting-axis family, one axis over: same
+`count-cumulative` return, same `type =`, same respect for a grouping.
+The differences worth knowing:
+
+- **A pending case never appears.** It has no validation date, so it has
+  not arrived on this axis. `type = "pending"` is refused here and
+  belongs on the reporting axis:
+  `get_latest_reported_cases(tn, type = "pending")`.
+- **`delay` is measured from the EVENT**, not from the report, so
+  `get_nth_reported_cases(tn, 7)` and `get_nth_validated_cases(tn, 7)`
+  describe the same seven days. `.validation_delay` (report →
+  resolution) is a different quantity.
+- **An empty selection is an error, not a zero-row object.** Nothing
+  validated yet, or no case with that outcome, aborts with the reason
+  named.
+- The result carries all three dates. `validation_type` on it is the
+  outcome when the call filtered to one, and `NA` for `"total"` and
+  `"net"`, which pool outcomes and so have none.
+
+These replace `get_latest_confirmed()`, `get_net_confirmed()`,
+`get_initial_confirmed()` and `get_nth_confirmed()`, **removed** in
+0.31.0.
+
 ------------------------------------------------------------------------
 
 ## Skill: add / change / remove strata and covariates
@@ -279,6 +339,46 @@ indicator is set. The censoring column itself must be logical or
 [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
 rejects it.
 
+**Setting the flag from a rule, and fixing the date at the same time:**
+
+``` r
+
+# Reporting axis (event -> report), sets `is_censored_report`
+censor_reports(tn, is.na(report_date))                  # missing report -> `now` + flag
+censor_reports(tn, report_date == as.Date("2222-02-22"),
+               to_report = Sys.Date())                  # a "never" sentinel -> a date
+censor_reporting_delays(tn, .delay > 60)                # any condition -> flag
+censor_reporting_delays(tn, .delay > 60, to_delay = 60) # ... and cap the report date
+censor_reporting_delays_above(tn, max_delay = 60)       # EVERY delay > 60 -> flag
+
+# Validation axis (report -> resolution), sets `is_censored_validation`
+censor_validations(tn, is.na(result))                   # missing result -> `now` + flag
+censor_validation_delays(tn, .validation_delay > 30, to_delay = 30)
+censor_validation_delays_above(tn, max_delay = 30)      # EVERY turnaround > 30 -> flag
+```
+
+Six verbs: two axes x {by date, by delay, threshold}. The `*_above()`
+pair is the threshold shorthand – **every** delay strictly greater than
+`max_delay` is considered censored, every other row is left alone.
+
+`condition` is a
+[`filter()`](https://dplyr.tidyverse.org/reference/filter.html)-style
+expression evaluated in the data (`.delay` and `.validation_delay` are
+visible); `NA` is **not** a match. Existing flags are merged, never
+cleared, and the flag column is created as `.is_censored_report` /
+`.is_censored_validation` when there is none. Replacing a date rebuilds
+the object, moves `now` forward if the replacement lands after it, and
+drops any `.report_*` temporal-effect column that has just gone stale.
+
+**Pending cases are skipped by the validation verbs.** `"pending"` means
+reported and still waiting, so the case has no validation date; writing
+one would assert a resolution that never happened.
+[`censor_validations()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+and
+[`censor_validation_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+leave those rows alone and say how many they skipped. Flagging without a
+replacement is unaffected – no date is written.
+
 **The converters drop it, and say so.** A flag that varies *within* an
 `(event_date, report_date)` cell (a per-case “upper bound only” mark,
 unlike one derived from the delay) puts two rows in a cell a reporting
@@ -313,7 +413,7 @@ tn <- remove_is_censored_validation(tn)
 get_is_censored_validation(tn)                    # column name, or NULL
 
 # Or let the threshold set it. The case, its date and its outcome are KEPT;
-# only the delay becomes a bound, so get_latest_confirmed() still counts it.
+# only the delay becomes a bound, so get_latest_validated_cases() still counts it.
 tn <- censor_validation_delays_above(tn, max_delay = 60)
 ```
 
@@ -1412,6 +1512,7 @@ exactly like one fitted by hand.
 
 complete_zeroes(tn)                  # fill missing event/report/strata cells with 0
 update(tn, new_data = new_rows)      # bind newer data, preserving attributes
+aggregate_time_units(tn, to = "weeks")  # daily -> weekly (or months / years)
 align_weeks(tn, date_col)            # snap dates to a consistent epiweek day -> integer .delay
 week_2_date(df, week_col, year_col)  # epiweek + year -> Date
 is_weekday(date, weekend_days = c("Sat","Sun"))
@@ -1421,6 +1522,17 @@ change_now(tn, as.Date("2023-06-01"))   # move the as-of date. Moving it BACKWAR
 tbl_now_attributes(tn)               # list of just the tbl_now-specific attributes
 ```
 
+- **`aggregate_time_units` / sparse daily data:** moves every date onto
+  a coarser grid (`to = "weeks" | "months" | "years"`), sums the counts,
+  and updates `event_units` / `report_units` / `validation_units` so
+  everything downstream counts in the new unit. Cumulative counts are
+  de-accumulated first, because they are not additive. `axes =` picks
+  which axes move (`"all"`, `"event"`, `"report"`, `"validation"`);
+  `label =` picks whether a period is named by its first or last day —
+  use `label = "end"` when you coarsen only a later axis, or reports
+  land before their own events. It only ever coarsens: asking a weekly
+  object for `"days"` is an error. Aggregate **once**, to the unit you
+  want — weeks do not nest inside months.
 - **`align_weeks` / weekly data:** weekly dates reported on inconsistent
   weekdays give fractional `.delay`. Use `align_weeks = TRUE` in
   [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
@@ -1481,8 +1593,11 @@ get_validation_levels(x) / has_validation(x)
 get_data_type(x)                          # "linelist"|"count-incidence"|"count-cumulative"
 get_temporal_effects(x)                   # list of lazy specs
 get_temporal_effect_cols(x)               # computed column names
-get_initial_reported_cases(x) / get_latest_reported_cases(x)
-get_nth_reported_cases(x, delay)          # cumulative count within a given delay
+get_initial_reported_cases(x, type) / get_latest_reported_cases(x, type)
+get_nth_reported_cases(x, delay, type)    # cumulative count within a given delay
+get_initial_validated_cases(x, type) / get_latest_validated_cases(x, type)
+get_nth_validated_cases(x, delay, type)   # the same, on the validation axis
+# type: "total" | "confirmed" | "retracted" | "pending" | "unknown" | "net" | "by_type"
 ```
 
 ## Reference: nowcasting & ensembles (all experimental)

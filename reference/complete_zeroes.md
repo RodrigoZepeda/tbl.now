@@ -62,7 +62,7 @@ Filling beyond that would invent observations from the future.
 
 [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
 for the data shapes this operates on;
-[`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+[`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
 for the opposite problem, delays that are too long;
 [`diagnose_missing()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md)
 and

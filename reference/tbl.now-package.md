@@ -47,9 +47,10 @@ fitting, scoring – follows from that declaration.
 4.  **Reshape.**
     [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md),
     [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md),
+    [`aggregate_time_units()`](https://rodrigozepeda.github.io/tbl.now/reference/aggregate_time_units.md),
     [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
     and
-    [`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+    [censor_reports()](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
     put the data on the grid a model needs.
 
 5.  **Fit.**

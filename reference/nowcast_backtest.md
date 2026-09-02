@@ -160,7 +160,7 @@ bt <- nowcast_backtest(dengue,
 head(bt$scores)
 #> # A tibble: 6 × 8
 #>   .method       .now       onset_week .observed   wis ae_median coverage_50
-#>   <chr>         <date>     <date>         <int> <dbl>     <dbl> <lgl>      
+#>   <chr>         <date>     <date>         <dbl> <dbl>     <dbl> <lgl>      
 #> 1 carry forward 2010-10-04 2010-06-07       157  3.84         0 TRUE       
 #> 2 carry forward 2010-10-04 2010-06-14       210  5.13         0 TRUE       
 #> 3 carry forward 2010-10-04 2010-06-21       193  4.68         0 TRUE       
@@ -186,7 +186,7 @@ if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 #> ℹ All 24 reference times will be used.
 #> # A tibble: 24 × 8
 #>    .method         .now       onset_week .observed   wis ae_median coverage_50
-#>    <chr>           <date>     <date>         <int> <dbl>     <dbl> <lgl>      
+#>    <chr>           <date>     <date>         <dbl> <dbl>     <dbl> <lgl>      
 #>  1 baselinenowcast 2010-11-15 2010-06-07       157     0         0 TRUE       
 #>  2 baselinenowcast 2010-11-15 2010-06-14       210     0         0 TRUE       
 #>  3 baselinenowcast 2010-11-15 2010-06-21       193     0         0 TRUE       

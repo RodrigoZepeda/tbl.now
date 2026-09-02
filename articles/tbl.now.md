@@ -538,6 +538,91 @@ The function ensures that:
 - Attributes are preserved so the resulting object remains a valid
   `tbl_now`.
 
+### Changing the time unit
+
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
+changes *what a row is*; it does not change *how long a period is*.
+Daily surveillance data is often too sparse to nowcast – most (event
+date, report date) cells hold a zero or a one – and the usual fix is to
+work in weeks.
+[aggregate_time_units()](https://rodrigozepeda.github.io/tbl.now/reference/aggregate_time_units.html)
+moves every date onto the coarser grid, adds the counts up, and records
+the new units on the object, so `.delay`, the converters and the models
+all count in weeks from then on:
+
+``` r
+
+daily <- data.frame(
+  onset    = ymd("2024/01/01") + c(0, 1, 3, 8, 9, 15),
+  reported = ymd("2024/01/01") + c(2, 2, 5, 9, 12, 16),
+  sex      = c("F", "M", "F", "M", "F", "M")
+) |>
+  tbl_now(
+    event_date = onset, report_date = reported, strata = sex,
+    data_type = "linelist", units = "days", verbose = FALSE
+  )
+
+weekly <- daily |> aggregate_time_units(to = "weeks", verbose = FALSE)
+
+get_event_units(weekly)
+#> [1] "weeks"
+weekly$.delay
+#> [1] 0 0 0 0 0 0
+```
+
+`to` may be `"weeks"`, `"months"` or `"years"`, and it only ever
+coarsens: asking a weekly object for `"days"` is an error rather than a
+guess. Cumulative counts are de-accumulated before they are pooled and
+accumulated again afterwards, because a cumulative total is not
+additive. Note also that weeks do **not** nest inside months, so
+aggregate once, straight to the unit you want.
+
+Note the `units = "days"` above: it is a single default for
+`event_units`, `report_units` and `validation_units`, and any of the
+three you give explicitly still wins over it.
+
+### Censoring the dates that are not really dates
+
+Surveillance data arrives with missing report dates, and with sentinels
+such as `2222-02-22` standing in for “never reported”. Deleting those
+rows throws away real cases; believing them makes the nowcast think
+reporting is far slower than it is. The
+[censoring](https://rodrigozepeda.github.io/tbl.now/reference/censoring.html)
+functions do neither – they keep the case and record its delay as a
+*bound*:
+
+``` r
+
+messy <- data.frame(
+  onset    = ymd("2020/01/01") + 0:3,
+  reported = ymd(c("2020/01/03", NA, "2222/02/22", "2020/01/06"))
+) |>
+  tbl_now(
+    event_date = onset, report_date = reported, data_type = "linelist",
+    units = "days", now = ymd("2020/01/10"), verbose = FALSE
+  ) |>
+  suppressWarnings()
+
+fixed <- messy |>
+  censor_reports(
+    is.na(reported) | reported > ymd("2100/01/01"),
+    to_report = ymd("2020/01/10"), verbose = FALSE
+  ) |>
+  suppressWarnings()
+
+fixed$reported
+#> [1] "2020-01-03" "2020-01-10" "2020-01-10" "2020-01-06"
+fixed$.is_censored_report
+#> [1] FALSE  TRUE  TRUE FALSE
+```
+
+[`censor_reporting_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+expresses the same idea as a delay rather than a date
+(`censor_reporting_delays(x, .delay > 60, to_delay = 60)` caps the
+outliers), and
+[`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+is the threshold shorthand for it.
+
 ### Temporal effects
 
 Often, temporal covariates improve nowcasting performance by helping to
@@ -952,37 +1037,81 @@ one answer, and the right one depends on the question:
 
 ``` r
 
-head(get_latest_confirmed(covid_now), 3) # cases the laboratory confirmed
-#> # A tibble: 3 × 3
-#>   onset_dt   sex         n
-#>   <date>     <chr>   <dbl>
-#> 1 2020-09-01 Female   1753
-#> 2 2020-09-01 Male     1507
-#> 3 2020-09-01 Missing     1
-head(get_net_confirmed(covid_now), 3) # confirmed minus retracted
-#> # A tibble: 3 × 3
-#>   onset_dt   sex         n
-#>   <date>     <chr>   <dbl>
-#> 1 2020-09-01 Female   1753
-#> 2 2020-09-01 Male     1507
-#> 3 2020-09-01 Missing     1
+# cases the laboratory confirmed
+head(get_latest_validated_cases(covid_now, type = "confirmed"), 3)
+#> # A tibble:  3 × 11
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `days` | Report: `days`
+#>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt     sex     
+#>   <date>       <date>             <dbl>       <dbl> <date>            <chr>   
+#>   [event_date] [report_date]      [...]       [...] [validation_date] [strata]
+#> 1 2020-09-01   2020-09-03             0           2 2020-12-30        Female  
+#> 2 2020-09-01   2020-09-02             0           1 2020-12-31        Male    
+#> 3 2020-09-01   2020-09-01             0           0 2020-09-03        Missing 
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
+#> # Validation date: "cdc_report_dt" ("days") | resolved: 3/3
+#> # Strata: "sex"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 5 more variables: current_status <chr>, n <dbl>, .delay <dbl>,
+#> #   .validation_num <dbl>, .validation_delay <dbl>
+
+# confirmed minus retracted
+head(get_latest_validated_cases(covid_now, type = "net"), 3)
+#> # A tibble:  3 × 11
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `days` | Report: `days`
+#>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt     sex     
+#>   <date>       <date>             <dbl>       <dbl> <date>            <chr>   
+#>   [event_date] [report_date]      [...]       [...] [validation_date] [strata]
+#> 1 2020-09-01   2020-09-03             0           2 2020-12-30        Female  
+#> 2 2020-09-01   2020-09-02             0           1 2020-12-31        Male    
+#> 3 2020-09-01   2020-09-01             0           0 2020-09-03        Missing 
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
+#> # Validation date: "cdc_report_dt" ("days") | resolved: 0/3
+#> # Strata: "sex"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 5 more variables: current_status <chr>, n <dbl>, .delay <dbl>,
+#> #   .validation_num <dbl>, .validation_delay <dbl>
+
+# every outcome side by side
+head(get_latest_validated_cases(covid_now, type = "by_type"), 3)
+#> # A tibble:  3 × 11
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `days` | Report: `days`
+#>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt     sex     
+#>   <date>       <date>             <dbl>       <dbl> <date>            <chr>   
+#>   [event_date] [report_date]      [...]       [...] [validation_date] [strata]
+#> 1 2020-09-01   2020-09-03             0           2 2020-12-30        Female  
+#> 2 2020-09-01   2020-09-01             0           0 2020-10-07        Female  
+#> 3 2020-09-01   2020-09-02             0           1 2020-12-31        Male    
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
+#> # Validation date: "cdc_report_dt" ("days") | resolved: 2/3
+#> # Strata: "sex"
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 5 more variables: current_status <chr>, n <dbl>, .delay <dbl>,
+#> #   .validation_num <dbl>, .validation_delay <dbl>
 ```
 
-`get_nth_confirmed(x, delay)` counts only the cases resolved *within* a
-given number of periods – what you would have known that soon after the
-report – and
-[`get_initial_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
-is the same-period case. These mirror
+`get_nth_validated_cases(x, delay)` counts only the cases settled
+*within* a given number of periods **of the event**, and
+[`get_initial_validated_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
+counts what the first result to come back had settled. They mirror
 [`get_nth_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
 and
 [`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
-on the report axis.
+on the report axis, return the same `count-cumulative` shape, and take
+the same `type =` argument – which the reporting-axis getters accept
+too, so `get_latest_reported_cases(x, type = "pending")` is how you
+count the backlog the laboratory still owes you.
 
 #### Validation delays you do not believe
 
 If your data records absurdly long validation delays – a result “issued”
 two years later is usually a data-entry artefact, not a laboratory –
-[`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+[`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
 marks them with the **`is_censored_validation`** flag. It is the
 validation-axis twin of `is_censored_report`, and it works the same way:
 the case and its date are kept, and the *delay* is recorded as a bound
@@ -1000,8 +1129,8 @@ sum(capped$n[capped[[get_is_censored_validation(capped)]]])
 ```
 
 Nothing is deleted and no outcome is rewritten, so
-[`get_latest_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md)
-still counts those cases. Set the flag by hand with
+`get_latest_validated_cases(type = "confirmed")` still counts those
+cases. Set the flag by hand with
 [`add_is_censored_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 when your data already carries one.
 
@@ -1019,7 +1148,7 @@ behind.
 plot_validation_status(covid_now)
 ```
 
-![](tbl.now_files/figure-html/unnamed-chunk-28-1.png)
+![](tbl.now_files/figure-html/unnamed-chunk-30-1.png)
 
 #### The validation axis
 
@@ -1412,7 +1541,7 @@ We explore each of the panels below
 ### The delay distribution
 
 ![Empirical delay
-distribution](tbl.now_files/figure-html/unnamed-chunk-43-1.png)
+distribution](tbl.now_files/figure-html/unnamed-chunk-45-1.png)
 
 Empirical delay distribution
 
@@ -1422,7 +1551,7 @@ histogram of the reporting delay.
 ### The observed epidemic process
 
 ![Observed epidemic
-process](tbl.now_files/figure-html/unnamed-chunk-44-1.png)
+process](tbl.now_files/figure-html/unnamed-chunk-46-1.png)
 
 Observed epidemic process
 
@@ -1432,7 +1561,7 @@ per `event_date`.
 ### The calendar effects
 
 ![Day of the week and week of the year
-effects](tbl.now_files/figure-html/unnamed-chunk-45-1.png)
+effects](tbl.now_files/figure-html/unnamed-chunk-47-1.png)
 
 Day of the week and week of the year effects
 
@@ -1451,7 +1580,7 @@ effects](#holiday-effects)
 ### The cycles
 
 ![Periodogram showing the Fourier season's dominant
-peak](tbl.now_files/figure-html/unnamed-chunk-46-1.png)
+peak](tbl.now_files/figure-html/unnamed-chunk-48-1.png)
 
 Periodogram showing the Fourier season’s dominant peak
 
@@ -1480,7 +1609,7 @@ pass `strata = "gender"` to group on a subset.
 autoplot(dengue_now, strata = "gender", by_strata = TRUE)
 ```
 
-![](tbl.now_files/figure-html/unnamed-chunk-47-1.png)
+![](tbl.now_files/figure-html/unnamed-chunk-49-1.png)
 
 #### One panel at a time: the `plot_*()` functions
 
@@ -2054,7 +2183,7 @@ the counts to zero if they have not been observed.
 ### Censoring extreme delays
 
 The function
-[`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+[`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
 marks all delays above a threshold value (`max_delay`) as censored. This
 is useful to indicate extreme delays in some nowcast models:
 
@@ -2070,7 +2199,7 @@ tn <- tbl_now(df,
 )
 
 # the 300-day report becomes censored (an upper bound on its delay)
-censor_delays_above(tn, max_delay = 60)
+censor_reporting_delays_above(tn, max_delay = 60)
 #> ℹ Marked 1 report with delay > 60 days as censored.
 #> • This delay is now an upper bound (is_censored_report).
 #> # A tibble:  4 × 6

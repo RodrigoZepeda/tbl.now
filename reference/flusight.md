@@ -118,6 +118,9 @@ flu <- tbl_now(texas,
   event_date = target_end_date, report_date = as_of,
   case_count = observation, verbose = FALSE
 )
+#> Warning: 755 rows have a fractional `.delay`.
+#> ℹ A fractional delay is what a converter chokes on: the two date columns are on
+#>   different grids. `align_weeks()` is the fix for weekly data.
 flu
 #> # A tibble:  8,539 × 7
 #> # Data type: "count-incidence"

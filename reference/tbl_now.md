@@ -32,12 +32,13 @@ tbl_now(
   is_censored_report = NULL,
   validation_date = NULL,
   validation_type = NULL,
-  validation_units = "auto",
+  validation_units = units,
   validation_levels = NULL,
   is_censored_validation = NULL,
   now = NULL,
-  event_units = "auto",
-  report_units = "auto",
+  event_units = units,
+  report_units = units,
+  units = "auto",
   data_type = "auto",
   t_effects = character(0),
   verbose = TRUE,
@@ -77,7 +78,10 @@ tbl_now(
   with only one of `event_date` or `report_date`, the missing date is
   reconstructed from the known date and the delay. Requires units to be
   known (either specified via `event_units` or inferrable from the
-  provided date column).
+  provided date column). Every value must be a **whole number** of those
+  units: a fractional delay is an error, not a rounding, because a
+  calendar has no half-days and bending the value silently moves the
+  reconstructed date.
 
 - strata:
 
@@ -166,7 +170,7 @@ tbl_now(
   `is_censored_report`: the name of a logical column marking rows whose
   **validation delay** is a bound rather than a measurement. Requires a
   `validation_date`. See
-  [censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md).
+  [censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md).
 
 - now:
 
@@ -177,12 +181,21 @@ tbl_now(
 - event_units:
 
   (optional) Character. Either "auto" (default), "days", "weeks",
-  "months", "years" or "numeric".
+  "months", "years" or "numeric". Defaults to `units`.
 
 - report_units:
 
   (optional) Character. Either "auto" (default), "days", "weeks",
-  "months", "years" or "numeric".
+  "months", "years" or "numeric". Defaults to `units`.
+
+- units:
+
+  (optional) Character. Either `"auto"` (default), `"days"`, `"weeks"`,
+  `"months"`, `"years"` or `"numeric"`. The **default** for
+  `event_units`, `report_units` and `validation_units`: say it once
+  instead of three times. Any of the three that you give explicitly wins
+  over `units`, so `units = "days", report_units = "weeks"` reads a
+  daily event date against a weekly report date.
 
 - data_type:
 

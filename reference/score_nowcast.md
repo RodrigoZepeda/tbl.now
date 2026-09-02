@@ -169,7 +169,7 @@ if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 #> ℹ All 18 reference times will be used.
 #> # A tibble: 18 × 7
 #>    .method        onset_week .observed     wis ae_median coverage_50 coverage_90
-#>    <chr>          <date>         <int>   <dbl>     <dbl> <lgl>       <lgl>      
+#>    <chr>          <date>         <dbl>   <dbl>     <dbl> <lgl>       <lgl>      
 #>  1 baselinenowca… 2010-06-07       157   0           0   TRUE        TRUE       
 #>  2 baselinenowca… 2010-06-14       210   0           0   TRUE        TRUE       
 #>  3 baselinenowca… 2010-06-21       193   0           0   TRUE        TRUE       

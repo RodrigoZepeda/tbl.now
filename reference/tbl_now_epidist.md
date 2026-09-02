@@ -192,7 +192,7 @@ Check the epidist issue tracker for the current status.
 [validation_delay](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md),
 since epidist is about delay distributions and a `tbl_now` may carry two
 of them;
-[`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+[`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
 for the long delays that would otherwise dominate a fitted distribution;
 [tidy()](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
 for the fitted result.

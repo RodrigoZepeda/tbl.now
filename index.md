@@ -126,10 +126,10 @@ and checkout our articles starting with the
 - Introduction vignette:
   <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
   the full anatomy of a `tbl_now`, data types, and temporal effects.
-- End-to-end tutorial on real, messy surveillance data \<U+2014\>
-  cleaning, diagnostics and nowcasting:
+- End-to-end tutorial on real, messy surveillance data — cleaning,
+  diagnostics and nowcasting:
   <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
-- Tutorial on diagnosing your dataset \<U+2014\> what is in it, what is
+- Tutorial on diagnosing your dataset — what is in it, what is
   structurally wrong with it, and detecting batches and other
   reporting-delay artifacts:
   <https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html>

@@ -531,7 +531,7 @@ interval coverage, against the data the model never saw:
 score_nowcast(nowcast, truth = dengue) |> tail(5)
 #> # A tibble: 5 × 7
 #>   .method     onset_week .observed   wis ae_median coverage_50 coverage_90
-#>   <chr>       <date>         <int> <dbl>     <dbl> <lgl>       <lgl>      
+#>   <chr>       <date>         <dbl> <dbl>     <dbl> <lgl>       <lgl>      
 #> 1 delay_ratio 2010-09-06       298  1.26      0    TRUE        TRUE       
 #> 2 delay_ratio 2010-09-13       275  3.20      4.49 TRUE        TRUE       
 #> 3 delay_ratio 2010-09-20       250 14.1      32.4  FALSE       TRUE       

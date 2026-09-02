@@ -240,7 +240,7 @@ result with `method = "block-bootstrap"` on a restricted window.
 for an abrupt shift rather than a gradual trend;
 [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)
 to see the series being tested;
-[`censor_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md)
+[`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
 once you decide some delays are not to be believed;
 [diagnose_signposts()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
 which tells you when this test is worth running.

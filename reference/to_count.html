@@ -33,7 +33,7 @@ added up, the individual rows are gone."><meta property="og:image" content="http
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -133,6 +133,20 @@ column you care about should be declared as a strata or covariate first (see
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
     <p><code>linelist</code> data cannot be reconstructed from <code>count-*</code> data. Asking for
 it throws an error, because aggregated data cannot be un-counted.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="grouping-is-dropped-and-said-so">Grouping is dropped, and said so<a class="anchor" aria-label="anchor" href="#grouping-is-dropped-and-said-so"></a></h2>
+
+
+<p><code>to_count()</code> <strong>ungroups</strong>, and warns when it does. It is the one verb in the
+package that does not put the caller's grouping back, and the reason is that
+it changes what a row <em>is</em>: after aggregating, one row is an (event date,
+report date) cell rather than one of the rows that were grouped, so the
+grouping no longer describes anything in the object.</p>
+<p>A grouping is also not how you keep a column out of the sum. Declare it –
+<code><a href="add.html">add_strata()</a></code> or <code><a href="add.html">add_covariates()</a></code> – and it becomes part of the cell key.
+The reported-cases getters do respect a grouping, because they select rather
+than reshape; see <code><a href="get_latest_first.html">get_latest_reported_cases()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="statistical-details">Statistical details<a class="anchor" aria-label="anchor" href="#statistical-details"></a></h2>

@@ -21,7 +21,7 @@ a day whose confirmed count means very little."><meta property="og:image" conten
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,7 +109,7 @@ a day whose confirmed count means very little.</p>
 the same right-truncation a nowcast exists to correct, one axis over. What is
 <em>not</em> normal is a pending band that stays wide far from the <code>now</code>: those cases
 were reported and then never resolved, and they will never be. Consider
-<code><a href="censor_delays_above.html">censor_validation_delays_above()</a></code>.</p>
+<code><a href="censoring.html">censor_validation_delays_above()</a></code>.</p>
 <p>A <code>retracted</code> share that changes over time is worth investigating: it usually
 means the testing criteria or the case definition changed, not that the
 disease did.</p>
@@ -125,7 +125,7 @@ reporting process), and <code>pending</code> in grey (not yet known either way).
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="validation_delay.html">diagnose_validation_delay()</a></code>, <code><a href="validation_counts.html">get_latest_confirmed()</a></code>.</p></div>
+    <div class="dont-index"><p><code><a href="validation_delay.html">diagnose_validation_delay()</a></code>, <a href="validated_cases.html">validated_cases</a>.</p></div>
     </div>
 
     <div class="section level2">

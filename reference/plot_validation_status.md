@@ -43,7 +43,7 @@ it is the same right-truncation a nowcast exists to correct, one axis
 over. What is *not* normal is a pending band that stays wide far from
 the `now`: those cases were reported and then never resolved, and they
 will never be. Consider
-[`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censor_delays_above.md).
+[`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md).
 
 A `retracted` share that changes over time is worth investigating: it
 usually means the testing criteria or the case definition changed, not
@@ -58,7 +58,7 @@ reporting process), and `pending` in grey (not yet known either way).
 ## See also
 
 [`diagnose_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md),
-[`get_latest_confirmed()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_counts.md).
+[validated_cases](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md).
 
 ## Examples
 

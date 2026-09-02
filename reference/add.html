@@ -41,7 +41,7 @@ treats as playing that role."><meta property="og:image" content="https://rodrigo
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -241,7 +241,7 @@ or a character vector with the names of the columns containing the temporal effe
 The validation-axis counterpart of <code>is_censored_report</code>: the name of a
 logical column marking rows whose <strong>validation delay</strong> is a bound rather
 than a measurement. Requires a <code>validation_date</code>. See
-<a href="censor_delays_above.html">censor_validation_delays_above()</a>.</p></dd>
+<a href="censoring.html">censor_validation_delays_above()</a>.</p></dd>
 
 
 <dt id="arg-validation-date">validation_date<a class="anchor" aria-label="anchor" href="#arg-validation-date"></a></dt>
@@ -350,7 +350,7 @@ named dictionary translating the labels in your data into the four values
 recoding happens once rather than in every script. And
 <code>add_is_censored_validation()</code> names a logical column marking rows whose
 <em>validation delay</em> is a bound rather than a measurement, the validation-axis
-twin of <code>add_is_censored_report()</code>; <a href="censor_delays_above.html">censor_validation_delays_above()</a>
+twin of <code>add_is_censored_report()</code>; <a href="censoring.html">censor_validation_delays_above()</a>
 sets it for you.</p>
 <p><code>change_now()</code> is validation-aware in both directions. Moving <code>now</code> forward
 does nothing to the data; moving it <strong>backwards</strong>, which is how a backtest
@@ -415,6 +415,9 @@ the <a href="nowcast_data_getters.html">getters</a> for reading them back;
 <span class="r-in"><span><span class="co"># tells the object to use the corrected column instead.</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">corrected_onset</span> <span class="op">&lt;-</span> <span class="va">ndata</span><span class="op">$</span><span class="va">onset_week</span> <span class="op">-</span> <span class="fu">lubridate</span><span class="fu">::</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/period.html" class="external-link">days</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">change_event_date</span><span class="op">(</span><span class="va">corrected_onset</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_event_date</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "corrected_onset"</span>
 <span class="r-in"><span></span></span>
@@ -423,27 +426,45 @@ the <a href="nowcast_data_getters.html">getters</a> for reading them back;
 <span class="r-in"><span><span class="co">## TRUE means the report date is only an upper bound (e.g. a backlog dump).</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">is_censored_report</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">add_is_censored_report</span><span class="op">(</span><span class="va">is_censored_report</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_is_censored_report</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "is_censored_report"</span>
 <span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu">remove_is_censored_report</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## ---- `now` -----------------------------------------------------------</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Set it by hand ...</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="fu">change_now</span><span class="op">(</span><span class="va">ndata</span>, now <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2011-01-01"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "2011-01-01"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># ... or snap it back to the latest date actually observed.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="fu">update_now</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "2010-12-20"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## ---- Count data: which column holds the counts ------------------------</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">counts</span> <span class="op">&lt;-</span> <span class="fu"><a href="to_count.html">to_count</a></span><span class="op">(</span><span class="va">ndata</span>, to <span class="op">=</span> <span class="st">"count-incidence"</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-in"><span><span class="va">counts</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>inflated <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">1.15</span> <span class="op">*</span> <span class="va">n</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">change_case_count</span><span class="op">(</span><span class="va">inflated</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="nowcast_data_getters.html">get_case_count</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "inflated"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## ---- The validation process, the optional third date -----------------</span></span></span>
@@ -480,7 +501,7 @@ the <a href="nowcast_data_getters.html">getters</a> for reading them back;
 <span class="r-out co"><span class="r-pr">#&gt;</span>               "confirmed"                 "pending" </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## A validation delay you refuse to believe is a bound, not a measurement.</span></span></span>
-<span class="r-in"><span><span class="va">covid</span> <span class="op">&lt;-</span> <span class="fu"><a href="censor_delays_above.html">censor_validation_delays_above</a></span><span class="op">(</span><span class="va">covid</span>, <span class="fl">45</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">covid</span> <span class="op">&lt;-</span> <span class="fu"><a href="censoring.html">censor_validation_delays_above</a></span><span class="op">(</span><span class="va">covid</span>, <span class="fl">45</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_is_censored_validation</a></span><span class="op">(</span><span class="va">covid</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] ".is_censored_validation"</span>
 <span class="r-in"><span></span></span>

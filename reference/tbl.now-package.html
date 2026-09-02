@@ -9,7 +9,7 @@ Provides a 'tbl_now' class for temporal data for performing nowcasts. The 'tbl_n
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.29.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -81,8 +81,9 @@ result is still a <code>tibble</code>, so <code>dplyr</code> keeps working.</p><
 statistical tests worth running – <code><a href="diagnose_drift.html">diagnose_drift()</a></code> for delays that are
 getting longer, <code><a href="diagnose_batches.html">diagnose_batches()</a></code> for backlog releases,
 <code><a href="diagnostic_plot.html">diagnostic_plot()</a></code> for the reporting process as a picture.</p></li>
-<li><p><strong>Reshape.</strong> <code><a href="to_count.html">to_count()</a></code>, <code><a href="complete_zeroes.html">complete_zeroes()</a></code>, <code><a href="align_weeks.html">align_weeks()</a></code> and
-<code><a href="censor_delays_above.html">censor_delays_above()</a></code> put the data on the grid a model needs.</p></li>
+<li><p><strong>Reshape.</strong> <code><a href="to_count.html">to_count()</a></code>, <code><a href="complete_zeroes.html">complete_zeroes()</a></code>, <code><a href="aggregate_time_units.html">aggregate_time_units()</a></code>,
+<code><a href="align_weeks.html">align_weeks()</a></code> and <a href="censoring.html">censor_reports()</a> put the data on the grid
+a model needs.</p></li>
 <li><p><strong>Fit.</strong> <code><a href="run_nowcast.html">run_nowcast()</a></code> takes the data and an <code><a href="engine.html">engine()</a></code> – one interface
 over <span class="pkg">epinowcast</span>, <span class="pkg">baselinenowcast</span>, <span class="pkg">NobBS</span>,
 <span class="pkg">EpiNow2</span>, <span class="pkg">surveillance</span> and <span class="pkg">diseasenowcasting</span>. Write your
