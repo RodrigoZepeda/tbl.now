@@ -83,7 +83,9 @@ plot_reporting_hexamap <- function(x, max_delay = NULL, complete = FALSE,
 
   xin <- x
   if (isTRUE(complete)) {
-    if (identical(get_data_type(x), "linelist")) xin <- to_count(x, to = "count-incidence")
+    if (identical(get_data_type(x), "linelist")) {
+      xin <- to_count(ungroup(x), to = "count-incidence")
+    }
     inc0   <- .batch_report_increments(xin, axis = axis)
     now0   <- get_now(x) %||% max(inc0$.report_date, na.rm = TRUE)
     min_ev <- min(inc0$.event_date, na.rm = TRUE)

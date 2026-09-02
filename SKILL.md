@@ -190,6 +190,55 @@ All three return a `count-cumulative`-style `tbl_now` collapsed to one row per
 `event_date` (× strata). The gap between initial and latest is exactly what a
 nowcast predicts.
 
+**A grouping is answered by, not dropped.** Unlike `to_count()`, these getters
+keep the caller's grouping: the grouping columns join the event date and the
+strata as keys and come back on the result. That is the only way to ask for the
+latest count by a **covariate** — a column that matters without being something
+you nowcast by.
+
+```r
+tn |> dplyr::group_by(hospital) |> get_latest_reported_cases()   # keyed AND grouped by hospital
+```
+
+**`type =` filters on the validation outcome** (see the validation family
+below). `type = "total"` (the default) counts every case; `"confirmed"`,
+`"retracted"`, `"pending"` and `"unknown"` filter to one outcome; `"net"` is
+confirmed − retracted; `"by_type"` returns one row per outcome. On an object
+with no validation process anything but `"total"` warns and pools.
+
+---
+
+## Skill: the same three questions on the validation axis
+
+```r
+get_initial_validated_cases(tn)              # as of the FIRST result to come back
+get_latest_validated_cases(tn)               # everything settled so far
+get_nth_validated_cases(tn, delay = 7)       # settled within 7 periods OF THE EVENT
+get_latest_validated_cases(tn, type = "confirmed")   # only the positives
+get_latest_validated_cases(tn, type = "net")         # confirmed minus retracted
+get_latest_validated_cases(tn, type = "by_type")     # every outcome, side by side
+```
+
+Exactly the reporting-axis family, one axis over: same `count-cumulative`
+return, same `type =`, same respect for a grouping. The differences worth
+knowing:
+
+- **A pending case never appears.** It has no validation date, so it has not
+  arrived on this axis. `type = "pending"` is refused here and belongs on the
+  reporting axis: `get_latest_reported_cases(tn, type = "pending")`.
+- **`delay` is measured from the EVENT**, not from the report, so
+  `get_nth_reported_cases(tn, 7)` and `get_nth_validated_cases(tn, 7)` describe
+  the same seven days. `.validation_delay` (report → resolution) is a different
+  quantity.
+- **An empty selection is an error, not a zero-row object.** Nothing validated
+  yet, or no case with that outcome, aborts with the reason named.
+- The result carries all three dates. `validation_type` on it is the outcome
+  when the call filtered to one, and `NA` for `"total"` and `"net"`, which pool
+  outcomes and so have none.
+
+These replace `get_latest_confirmed()`, `get_net_confirmed()`,
+`get_initial_confirmed()` and `get_nth_confirmed()`, **removed** in 0.31.0.
+
 ---
 
 ## Skill: add / change / remove strata and covariates
@@ -311,7 +360,7 @@ tn <- remove_is_censored_validation(tn)
 get_is_censored_validation(tn)                    # column name, or NULL
 
 # Or let the threshold set it. The case, its date and its outcome are KEPT;
-# only the delay becomes a bound, so get_latest_confirmed() still counts it.
+# only the delay becomes a bound, so get_latest_validated_cases() still counts it.
 tn <- censor_validation_delays_above(tn, max_delay = 60)
 ```
 
@@ -1267,8 +1316,11 @@ get_validation_levels(x) / has_validation(x)
 get_data_type(x)                          # "linelist"|"count-incidence"|"count-cumulative"
 get_temporal_effects(x)                   # list of lazy specs
 get_temporal_effect_cols(x)               # computed column names
-get_initial_reported_cases(x) / get_latest_reported_cases(x)
-get_nth_reported_cases(x, delay)          # cumulative count within a given delay
+get_initial_reported_cases(x, type) / get_latest_reported_cases(x, type)
+get_nth_reported_cases(x, delay, type)    # cumulative count within a given delay
+get_initial_validated_cases(x, type) / get_latest_validated_cases(x, type)
+get_nth_validated_cases(x, delay, type)   # the same, on the validation axis
+# type: "total" | "confirmed" | "retracted" | "pending" | "unknown" | "net" | "by_type"
 ```
 
 ## Reference: nowcasting & ensembles (all experimental)

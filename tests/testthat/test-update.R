@@ -175,8 +175,8 @@ test_that("update.tbl_now preserves attributes from object", {
     report_date = "report_week",
     strata = "gender",
     covariates = "temperature",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -197,8 +197,8 @@ test_that("update.tbl_now updates now to latest date", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -221,8 +221,8 @@ test_that("update.tbl_now handles overlapping data", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -246,8 +246,8 @@ test_that("update.tbl_now strata='left' keeps object strata", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     verbose = FALSE
   )
@@ -265,8 +265,8 @@ test_that("update.tbl_now strata='right' uses new_data strata", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -277,8 +277,8 @@ test_that("update.tbl_now strata='right' uses new_data strata", {
     event_date = "onset_week",
     report_date = "report_week",
     strata = "gender",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -295,8 +295,8 @@ test_that("update.tbl_now strata='both' combines strata", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     verbose = FALSE
   )
@@ -309,8 +309,8 @@ test_that("update.tbl_now strata='both' combines strata", {
     test_data$update_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "age_group",
     verbose = FALSE
   )
@@ -320,8 +320,8 @@ test_that("update.tbl_now strata='both' combines strata", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     verbose = FALSE
   )
@@ -339,8 +339,8 @@ test_that("update.tbl_now strata='left' fails when strata not in new_data", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     verbose = FALSE
   )
@@ -362,8 +362,8 @@ test_that("update.tbl_now strata='right' fails when strata not in object", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     verbose = FALSE
   )
@@ -375,8 +375,8 @@ test_that("update.tbl_now strata='right' fails when strata not in object", {
     test_data$update_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "age_group",
     verbose = FALSE
   )
@@ -395,8 +395,8 @@ test_that("update.tbl_now fails with invalid strata option", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -418,8 +418,8 @@ test_that("update.tbl_now covariates='left' keeps object covariates", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = "temperature",
     verbose = FALSE
   )
@@ -437,8 +437,8 @@ test_that("update.tbl_now covariates='right' uses new_data covariates", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = "temperature",
     verbose = FALSE
   )
@@ -451,8 +451,8 @@ test_that("update.tbl_now covariates='right' uses new_data covariates", {
     test_data$update_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = "humidity",
     verbose = FALSE
   )
@@ -462,8 +462,8 @@ test_that("update.tbl_now covariates='right' uses new_data covariates", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = "temperature",
     verbose = FALSE
   )
@@ -485,8 +485,8 @@ test_that("update.tbl_now covariates='both' combines covariates", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = "temperature",
     verbose = FALSE
   )
@@ -495,8 +495,8 @@ test_that("update.tbl_now covariates='both' combines covariates", {
     test_data$update_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = "humidity",
     verbose = FALSE
   )
@@ -514,8 +514,8 @@ test_that("update.tbl_now fails with invalid covariates option", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -538,8 +538,8 @@ test_that("update.tbl_now works with count data", {
     event_date = "onset_week",
     report_date = "report_week",
     case_count = "n",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     data_type = "count-incidence",
     verbose = FALSE
@@ -560,8 +560,8 @@ test_that("update.tbl_now removes duplicates for count data by default", {
     test_data$count_initial,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     case_count = "n",
     strata = "gender",
     data_type = "count-incidence",
@@ -585,8 +585,8 @@ test_that("update.tbl_now remove_duplicates=FALSE keeps duplicates", {
     test_data$count_initial,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     case_count = "n",
     strata = "gender",
     data_type = "count-incidence",
@@ -612,8 +612,8 @@ test_that("update.tbl_now doesn't remove duplicates for linelist data", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     data_type = "linelist",
     verbose = FALSE
   )
@@ -638,8 +638,8 @@ test_that("update.tbl_now works when new_data is tbl_now", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     verbose = FALSE
   )
@@ -648,8 +648,8 @@ test_that("update.tbl_now works when new_data is tbl_now", {
     test_data$update_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     verbose = FALSE
   )
@@ -667,14 +667,14 @@ setup_te_pair <- function() {
   test_data <- setup_test_data()
   left <- tbl_now(test_data$initial_data,
     event_date = "onset_week",
-    report_date = "report_week", report_units = "weeks",
-    event_units = "weeks", verbose = FALSE
+    report_date = "report_week", report_units = "days",
+    event_units = "days", verbose = FALSE
   ) |>
     add_temporal_effects(temporal_effects(week_of_year = TRUE))
   right <- tbl_now(test_data$update_data,
     event_date = "onset_week",
-    report_date = "report_week", report_units = "weeks",
-    event_units = "weeks", verbose = FALSE
+    report_date = "report_week", report_units = "days",
+    event_units = "days", verbose = FALSE
   ) |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE))
   list(left = left, right = right)
@@ -761,8 +761,8 @@ test_that("update preserves data integrity", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     verbose = FALSE
   )
@@ -788,8 +788,8 @@ test_that("update maintains tbl_now validation", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -813,8 +813,8 @@ test_that("update works in iterative workflow", {
     batch1,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     verbose = FALSE
   )
@@ -844,8 +844,8 @@ test_that("update handles single row updates", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -864,8 +864,8 @@ test_that("update handles very large updates", {
   initial_tbl <- tbl_now(
     test_data$initial_data[1:2, ],
     event_date = "onset_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     report_date = "report_week",
     verbose = FALSE
   )
@@ -887,8 +887,8 @@ test_that("update with custom now parameter", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -907,8 +907,8 @@ test_that("update handles missing columns gracefully", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     covariates = "temperature",
     verbose = FALSE
@@ -931,8 +931,8 @@ test_that("update preserves all protected columns", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -952,8 +952,8 @@ test_that("update recalculates delays correctly", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -975,8 +975,8 @@ test_that("update.tbl_now validates matching attributes when new_data is tbl_now
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -987,8 +987,8 @@ test_that("update.tbl_now validates matching attributes when new_data is tbl_now
     test_data$update_data,
     event_date = "event_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -1010,8 +1010,8 @@ test_that("update_check_tbl_now_internal validates event_date match", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -1021,8 +1021,8 @@ test_that("update_check_tbl_now_internal validates event_date match", {
     test_data$update_data,
     event_date = "event_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -1040,8 +1040,8 @@ test_that("update_check_tbl_now_internal validates report_date match", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -1051,8 +1051,8 @@ test_that("update_check_tbl_now_internal validates report_date match", {
     test_data$update_data,
     event_date = "onset_week",
     report_date = "reporting_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -1070,8 +1070,8 @@ test_that("update_check_tbl_now_internal validates data_type match", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     data_type = "linelist",
     verbose = FALSE
   )
@@ -1080,8 +1080,8 @@ test_that("update_check_tbl_now_internal validates data_type match", {
     test_data$count_update,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     case_count = "n",
     data_type = "count-incidence",
     verbose = FALSE
@@ -1102,8 +1102,8 @@ test_that("update_check_tbl_now_internal validates units match", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    event_units = "weeks",
-    report_units = "weeks",
+    event_units = "days",
+    report_units = "days",
     verbose = FALSE
   )
 
@@ -1124,8 +1124,8 @@ test_that("update_check_data_frame_internal validates event_date exists", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -1146,8 +1146,8 @@ test_that("update_check_data_frame_internal validates report_date exists", {
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -1168,8 +1168,8 @@ test_that("update_check_data_frame_internal validates case_count exists for coun
     test_data$count_initial,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     case_count = "n",
     data_type = "count-incidence",
     verbose = FALSE
@@ -1194,8 +1194,8 @@ test_that("update_check_data_frame_internal validates is_censored_report exists"
     test_data$initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     is_censored_report = "is_censored_report",
     verbose = FALSE
   )
@@ -1217,8 +1217,8 @@ test_that("update keeps everything similar when nothing new is observed", {
 
   initial_tbl <- tbl_now(
     denguedat[1:100, ],
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     event_date = "onset_week",
     report_date = "report_week",
     strata = "gender",
@@ -1244,8 +1244,8 @@ test_that("partitioning data and updating gives same result", {
     denguedat[1:100, ],
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     verbose = FALSE
   ) |>
@@ -1272,8 +1272,8 @@ test_that("update with empty tbl_now works", {
     denguedat[1:100, ],
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     verbose = FALSE
   ) |>
@@ -1305,8 +1305,8 @@ test_that("update can use right strata", {
   initial_tbl <- tbl_now(initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     case_count = "n",
     verbose = FALSE
@@ -1319,8 +1319,8 @@ test_that("update can use right strata", {
   new_tbl <- tbl_now(update_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "age_group",
     case_count = "n",
     verbose = FALSE
@@ -1338,8 +1338,8 @@ test_that("update fails when right strata not in object", {
   initial_tbl <- tbl_now(test_data$count_initial,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     case_count = "n",
     verbose = FALSE
@@ -1352,8 +1352,8 @@ test_that("update fails when right strata not in object", {
   new_tbl <- tbl_now(update_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "region",
     case_count = "n",
     verbose = FALSE
@@ -1377,8 +1377,8 @@ test_that("update can use both strata", {
   initial_tbl <- tbl_now(initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     case_count = "n",
     verbose = FALSE
@@ -1392,8 +1392,8 @@ test_that("update can use both strata", {
     event_date = "onset_week",
     report_date = "report_week",
     strata = c("gender", "age_group"),
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     case_count = "n",
     verbose = FALSE
   )
@@ -1417,8 +1417,8 @@ test_that("update fails when both strata has column not in new_data", {
     report_date = "report_week",
     strata = c("gender", "age_group"),
     case_count = "n",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -1426,8 +1426,8 @@ test_that("update fails when both strata has column not in new_data", {
   new_tbl <- tbl_now(test_data$count_update,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = "gender",
     case_count = "n",
     verbose = FALSE
@@ -1448,8 +1448,8 @@ test_that("update fails when both strata has column not in object", {
     event_date = "onset_week",
     report_date = "report_week",
     strata = "gender",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     case_count = "n",
     verbose = FALSE
   )
@@ -1461,8 +1461,8 @@ test_that("update fails when both strata has column not in object", {
   new_tbl <- tbl_now(update_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     strata = c("gender", "age_group"),
     case_count = "n",
     verbose = FALSE
@@ -1488,8 +1488,8 @@ test_that("update can use right covariates", {
     event_date = "onset_week",
     report_date = "report_week",
     covariates = "temperature",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     case_count = "n",
     verbose = FALSE
   )
@@ -1502,8 +1502,8 @@ test_that("update can use right covariates", {
   new_tbl <- tbl_now(update_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = "humidity",
     case_count = "n",
     verbose = FALSE
@@ -1521,8 +1521,8 @@ test_that("update fails when right covariate not in object", {
   initial_tbl <- tbl_now(test_data$count_initial,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     case_count = "n",
     verbose = FALSE
   )
@@ -1534,8 +1534,8 @@ test_that("update fails when right covariate not in object", {
   new_tbl <- tbl_now(update_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = "temperature",
     case_count = "n",
     verbose = FALSE
@@ -1560,8 +1560,8 @@ test_that("update can use both covariates", {
   initial_tbl <- tbl_now(initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = "temperature",
     case_count = "n",
     verbose = FALSE
@@ -1575,8 +1575,8 @@ test_that("update can use both covariates", {
   new_tbl <- tbl_now(update_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = c("temperature", "humidity"),
     case_count = "n",
     verbose = FALSE
@@ -1600,8 +1600,8 @@ test_that("update fails when both covariates has column not in new_data", {
   initial_tbl <- tbl_now(initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = c("temperature", "humidity"),
     case_count = "n",
     verbose = FALSE
@@ -1614,8 +1614,8 @@ test_that("update fails when both covariates has column not in new_data", {
   new_tbl <- tbl_now(update_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = "temperature",
     case_count = "n",
     verbose = FALSE
@@ -1638,8 +1638,8 @@ test_that("update fails when both covariates has column not in object", {
   initial_tbl <- tbl_now(initial_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = "temperature",
     case_count = "n",
     verbose = FALSE
@@ -1653,8 +1653,8 @@ test_that("update fails when both covariates has column not in object", {
   new_tbl <- tbl_now(update_data,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     covariates = c("temperature", "humidity"),
     case_count = "n",
     verbose = FALSE
@@ -1674,8 +1674,8 @@ test_that("update_check_tbl_now_internal fails with different event_date", {
   initial_tbl <- tbl_now(test_data$count_initial,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     case_count = "n",
     verbose = FALSE
   )
@@ -1687,8 +1687,8 @@ test_that("update_check_tbl_now_internal fails with different event_date", {
   new_tbl <- tbl_now(update_data,
     event_date = "event_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     case_count = "n",
     verbose = FALSE
   )
@@ -1706,8 +1706,8 @@ test_that("update_check_tbl_now_internal fails with different data_type", {
   initial_tbl <- tbl_now(test_data$count_initial,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     case_count = "n",
     data_type = "count-incidence",
     verbose = FALSE
@@ -1716,8 +1716,8 @@ test_that("update_check_tbl_now_internal fails with different data_type", {
   new_tbl <- tbl_now(test_data$count_update,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     case_count = "n",
     data_type = "count-cumulative",
     verbose = FALSE
@@ -1782,8 +1782,8 @@ test_that("update_check_tbl_now_internal fails with different report_units", {
     event_date = "onset_week",
     report_date = "report_week",
     case_count = "n",
-    event_units = "weeks",
-    report_units = "weeks",
+    event_units = "days",
+    report_units = "days",
     verbose = FALSE
   )
 
@@ -1797,14 +1797,14 @@ test_that("update_check_tbl_now_internal fails with different report_units", {
     event_date = "onset_week",
     report_date = "report_week",
     case_count = "n",
-    event_units = "weeks",
+    event_units = "days",
     report_units = "months",
     verbose = FALSE
   )
 
   expect_error(
     update(initial_tbl, new_data = new_tbl),
-    "report_units.*weeks.*report_units.*months"
+    "report_units.*days.*report_units.*months"
   )
 })
 
@@ -1816,8 +1816,8 @@ test_that("update_check_tbl_now_internal fails with different case_count", {
     event_date = "onset_week",
     report_date = "report_week",
     case_count = "n",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -1829,8 +1829,8 @@ test_that("update_check_tbl_now_internal fails with different case_count", {
     event_date = "onset_week",
     report_date = "report_week",
     case_count = "cases",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -1852,8 +1852,8 @@ test_that("update_check_tbl_now_internal fails with different is_censored_report
     report_date = "report_week",
     case_count = "n",
     is_censored_report = "censored1",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -1865,8 +1865,8 @@ test_that("update_check_tbl_now_internal fails with different is_censored_report
     report_date = "report_week",
     case_count = "n",
     is_censored_report = "censored2",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     verbose = FALSE
   )
 
@@ -1884,8 +1884,8 @@ test_that("update_check_data_frame_internal fails with non-data.frame", {
   initial_tbl <- tbl_now(test_data$count_initial,
     event_date = "onset_week",
     report_date = "report_week",
-    report_units = "weeks",
-    event_units = "weeks",
+    report_units = "days",
+    event_units = "days",
     case_count = "n",
     verbose = FALSE
   )

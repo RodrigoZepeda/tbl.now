@@ -331,8 +331,8 @@ test_that("validation_levels translates the labels and keeps the dictionary", {
   expect_identical(get_validation_levels(tn), dictionary)
 
   # And the rest of the machinery now works on it.
-  expect_equal(sum(get_latest_confirmed(tn)[["n"]]), 3)
-  expect_equal(sum(get_net_confirmed(tn)[["n"]]), 2)
+  expect_equal(sum(get_latest_validated_cases(tn, "confirmed")[["n"]]), 3)
+  expect_equal(sum(get_latest_validated_cases(tn, "net")[["n"]]), 2)
 })
 
 test_that("the dictionary survives dplyr, and recoding does not run twice", {
@@ -461,7 +461,7 @@ test_that("covid_us carries a real validation process (#52)", {
   expect_true(all(tn$.validation_delay >= 0))
   # Every confirmed case is counted, and there are fewer of them than reports.
   expect_lt(
-    sum(get_latest_confirmed(tn)[["n"]]),
+    sum(get_latest_validated_cases(tn, "confirmed")[["n"]]),
     sum(get_latest_reported_cases(tn)[["n"]])
   )
 })

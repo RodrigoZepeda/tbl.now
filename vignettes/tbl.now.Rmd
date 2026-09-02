@@ -741,15 +741,24 @@ Once cases can be retracted, "how many cases were there?" has more than one
 answer, and the right one depends on the question:
 
 ```{r}
-head(get_latest_confirmed(covid_now), 3) # cases the laboratory confirmed
-head(get_net_confirmed(covid_now), 3) # confirmed minus retracted
+# cases the laboratory confirmed
+head(get_latest_validated_cases(covid_now, type = "confirmed"), 3)
+
+# confirmed minus retracted
+head(get_latest_validated_cases(covid_now, type = "net"), 3)
+
+# every outcome side by side
+head(get_latest_validated_cases(covid_now, type = "by_type"), 3)
 ```
 
-`get_nth_confirmed(x, delay)` counts only the cases resolved *within* a given
-number of periods -- what you would have known that soon after the report --
-and `get_initial_confirmed()` is the same-period case. These mirror
+`get_nth_validated_cases(x, delay)` counts only the cases settled *within* a
+given number of periods **of the event**, and `get_initial_validated_cases()`
+counts what the first result to come back had settled. They mirror
 `get_nth_reported_cases()` and `get_initial_reported_cases()` on the report
-axis.
+axis, return the same `count-cumulative` shape, and take the same `type =`
+argument -- which the reporting-axis getters accept too, so
+`get_latest_reported_cases(x, type = "pending")` is how you count the backlog
+the laboratory still owes you.
 
 #### Validation delays you do not believe
 
@@ -768,8 +777,8 @@ get_is_censored_validation(capped)
 sum(capped$n[capped[[get_is_censored_validation(capped)]]])
 ```
 
-Nothing is deleted and no outcome is rewritten, so `get_latest_confirmed()`
-still counts those cases. Set the flag by hand with
+Nothing is deleted and no outcome is rewritten, so
+`get_latest_validated_cases(type = "confirmed")` still counts those cases. Set the flag by hand with
 `add_is_censored_validation()` when your data already carries one.
 
 #### How much of the epidemic has been resolved?

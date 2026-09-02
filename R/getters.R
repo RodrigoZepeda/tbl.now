@@ -79,8 +79,9 @@
 #' [tbl_now_attributes()] to get all of them at once;
 #' [add()], [change()][add] and [remove()][add] to set them, including
 #' [add_validation_date()][add];
-#' [get_latest_confirmed()][validation_counts] and
-#' [get_net_confirmed()][validation_counts] to count the outcomes;
+#' [get_latest_validated_cases()][validated_cases] and
+#' [get_latest_validated_cases(type = "net")][validated_cases] to count the
+#' outcomes;
 #' [validation_delay] for how long resolution takes;
 #' [get_latest_reported_cases()][get_latest_first] and friends for reading the
 #' counts rather than the metadata.

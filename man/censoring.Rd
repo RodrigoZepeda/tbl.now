@@ -50,8 +50,9 @@ report date becomes \code{event_date + to_delay}; for
 validation date becomes \code{report_date + to_delay}, because that is what
 \code{.validation_delay} measures. A single
 number or one per row. \code{NULL} (the default) leaves the dates alone and only
-sets the flag. On a calendar axis it is rounded to a whole number of units:
-there is no such date as half a day later.}
+sets the flag. It must be a \strong{whole number} of those units, on every axis:
+there is no such date as half a day later, and a calendar axis used to bend
+\code{2.5} to \code{2} and \code{3.5} to \code{4} without saying so.}
 
 \item{to_validation}{The replacement validation date for the matching rows: a
 single value, or one per row of \code{x}. Must match the class of the validation
@@ -118,7 +119,7 @@ The threshold functions keep the case \strong{and its date}. Nothing is deleted
 and no outcome is rewritten: the flag says the delay is a bound rather than a
 measurement, and it is up to the model to use that. A case that was confirmed
 after 200 days is still a confirmed case, and
-\link[=validation_counts]{get_latest_confirmed()} still counts it.
+\link[=validated_cases]{get_latest_validated_cases()} still counts it.
 
 \code{condition} is evaluated inside the data, like a \code{\link[dplyr:filter]{dplyr::filter()}} expression,
 so it can name any column -- including the generated \code{.delay}. Rows where it

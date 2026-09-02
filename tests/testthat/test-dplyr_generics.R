@@ -240,6 +240,13 @@ setup_test_data <- function() {
     strata = "gender",
     covariates = "temperature",
     is_censored_report = "is_censored_report",
+    # Both columns are weekly but sit on different weekdays, so inferred
+    # "weeks" units make every `.delay` 3/7 of a week -- which
+    # `validate_tbl_now()` now warns about, on every verb in this file. The
+    # subject here is the dplyr generics, so declare the axis in days and let
+    # the delays be whole; `test-tbl_now_align_week.R` is where the misaligned
+    # case belongs.
+    units = "days",
     verbose = FALSE
   )
 
@@ -956,9 +963,11 @@ test_that("validate works with numeric", {
   skip_on_cran()
   test_data <- setup_test_data()
 
+  # The same units the fixture declares, so the numeric columns land on the
+  # scale `.event_num` / `.report_num` were computed on.
   result <- test_data$ndata |>
-    dplyr::mutate(report_week = as.numeric(difftime(report_week, min(onset_week), units = "weeks"))) |>
-    dplyr::mutate(onset_week = as.numeric(difftime(onset_week, min(onset_week), units = "weeks")))
+    dplyr::mutate(report_week = as.numeric(difftime(report_week, min(onset_week), units = "days"))) |>
+    dplyr::mutate(onset_week = as.numeric(difftime(onset_week, min(onset_week), units = "days")))
 
 
   expect_equal(get_event_date(result), get_event_date(test_data$ndata))

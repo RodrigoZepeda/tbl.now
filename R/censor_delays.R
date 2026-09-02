@@ -48,7 +48,7 @@
 #' and no outcome is rewritten: the flag says the delay is a bound rather than a
 #' measurement, and it is up to the model to use that. A case that was confirmed
 #' after 200 days is still a confirmed case, and
-#' [get_latest_confirmed()][validation_counts] still counts it.
+#' [get_latest_validated_cases()][validated_cases] still counts it.
 #'
 #' `condition` is evaluated inside the data, like a [dplyr::filter()] expression,
 #' so it can name any column -- including the generated `.delay`. Rows where it
@@ -107,8 +107,9 @@
 #'   validation date becomes `report_date + to_delay`, because that is what
 #'   `.validation_delay` measures. A single
 #'   number or one per row. `NULL` (the default) leaves the dates alone and only
-#'   sets the flag. On a calendar axis it is rounded to a whole number of units:
-#'   there is no such date as half a day later.
+#'   sets the flag. It must be a **whole number** of those units, on every axis:
+#'   there is no such date as half a day later, and a calendar axis used to bend
+#'   `2.5` to `2` and `3.5` to `4` without saying so.
 #'
 #' @param max_delay Numeric. Every delay **strictly greater** than this is
 #'   considered censored; the rest are left alone. In the object's event units
@@ -293,6 +294,9 @@ censor_reporting_delays <- function(x, condition, to_delay = NULL, verbose = TRU
         "{.arg to_delay} must be length 1 or {nrow(x)} (one per row), not {length(to_delay)}."
       )
     }
+    # Checked here, on what the user actually wrote, rather than on the vector
+    # it is recycled into: "2.5 is not a whole number" beats "12 rows are".
+    .assert_whole_delay(to_delay, get_event_units(x), "to_delay")
     # The delay is measured from the event, so that is what the replacement
     # report date is built from -- in the EVENT units, as `.delay` is.
     rebuilt <- .reconstruct_date_from_delay(
@@ -301,7 +305,8 @@ censor_reporting_delays <- function(x, condition, to_delay = NULL, verbose = TRU
         .delay_value = rep(to_delay, length.out = nrow(x))
       ),
       known_col = ".event", delay_col = ".delay_value",
-      units = get_event_units(x), new_col_name = ".report", direction = "add"
+      units = get_event_units(x), new_col_name = ".report", direction = "add",
+      arg = "to_delay"
     )
     replacement <- rebuilt[[".report"]]
   }
@@ -386,6 +391,9 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
         "{.arg to_delay} must be length 1 or {nrow(x)} (one per row), not {length(to_delay)}."
       )
     }
+    .assert_whole_delay(
+      to_delay, get_validation_units(x) %||% get_report_units(x), "to_delay"
+    )
     # `.validation_delay` is the laboratory's turnaround, measured from the
     # REPORT, in validation units -- not from the event, as `.delay` is.
     rebuilt <- .reconstruct_date_from_delay(
@@ -395,7 +403,8 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
       ),
       known_col = ".report", delay_col = ".delay_value",
       units = get_validation_units(x) %||% get_report_units(x),
-      new_col_name = ".validation", direction = "add"
+      new_col_name = ".validation", direction = "add",
+      arg = "to_delay"
     )
     replacement <- rebuilt[[".validation"]]
   }
@@ -629,7 +638,7 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
 
 #' Set the censoring column on a bare data frame
 #'
-#' Split out from [.censor_mark()] so that a function replacing dates *and*
+#' Split out from `.censor_mark()` so that a function replacing dates *and*
 #' flagging rows rebuilds the object once instead of twice -- two rebuilds mean
 #' two runs of `validate_tbl_now()`, so the user is warned twice about the very
 #' data problem they are in the middle of fixing.

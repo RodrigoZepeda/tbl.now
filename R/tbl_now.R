@@ -46,6 +46,9 @@
 #' only one of `event_date` or `report_date`, the missing date is reconstructed
 #' from the known date and the delay. Requires units to be known (either
 #' specified via `event_units` or inferrable from the provided date column).
+#' Every value must be a **whole number** of those units: a fractional delay is
+#' an error, not a rounding, because a calendar has no half-days and bending the
+#' value silently moves the reconstructed date.
 #'
 #' @param case_count (optional) [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) or `NULL`
 #' Name of the column with the case counts if `data_type` is "count-incidence"
@@ -742,18 +745,24 @@ tbl_now <- function(data,
 #' @param new_col_name Name of the date column to create.
 #' @param direction `"add"` (reconstruct the report date) or `"subtract"`
 #'   (reconstruct the event date).
+#' @param arg The user-facing argument the delay came from, named in the error
+#'   raised for a fractional delay. Defaults to `delay_col`, which is right when
+#'   the caller really is a user-supplied column.
 #'
 #' @return `data` with the reconstructed date column `new_col_name` added.
 #'
 #' @keywords internal
 #' @noRd
-.reconstruct_date_from_delay <- function(data, known_col, delay_col, units, new_col_name, direction) {
+.reconstruct_date_from_delay <- function(data, known_col, delay_col, units,
+                                        new_col_name, direction, arg = delay_col) {
   known_vals <- data[[known_col]]
   delay_vals <- data[[delay_col]]
 
   if (!is.numeric(delay_vals)) {
     cli::cli_abort("Delay column {.val {delay_col}} must be numeric.")
   }
+
+  .assert_whole_delay(delay_vals, units, arg)
 
   int_delay <- as.integer(round(delay_vals))
 
@@ -773,6 +782,54 @@ tbl_now <- function(data,
 
   data[[new_col_name]] <- new_vals
   return(data)
+}
+
+#' Refuse a delay that is not a whole number of the axis's units
+#'
+#' A calendar has no half-days, so a fractional delay has to become SOMETHING.
+#' It used to become `round()`, silently -- and `round()` is round-half-to-even,
+#' so `2.5` went down and `3.5` went up with no message either way. Meanwhile
+#' the numeric axis, which must be integer, refused the same value outright. So
+#' one argument with one value was rejected with a clear error on one axis and
+#' quietly altered on the other.
+#'
+#' Refusing on every axis is the consistent answer: whole periods are what the
+#' class counts in, and a fraction of one is a question the object cannot
+#' answer. The user can round it themselves, and then the rounding is theirs.
+#'
+#' @param values A numeric vector of delays.
+#' @param units The axis's units.
+#' @param arg The user-facing argument the values came from, for the message.
+#'
+#' @return `NULL`, invisibly. Called for the error.
+#'
+#' @keywords internal
+#' @noRd
+.assert_whole_delay <- function(values, units, arg) {
+  if (!is.numeric(values) || length(values) == 0) {
+    return(invisible(NULL))
+  }
+  fractional <- which(
+    !is.na(values) & abs(values - round(values)) > sqrt(.Machine$double.eps)
+  )
+  if (length(fractional) == 0) {
+    return(invisible(NULL))
+  }
+
+  offending <- unique(values[fractional])
+  period <- switch(units,
+    days = "a day", weeks = "a week", months = "a month", years = "a year",
+    "a step"
+  )
+  cli::cli_abort(c(
+    "{.arg {arg}} must be a whole number of {.val {units}}.",
+    "x" = "{cli::qty(length(offending))}{?This/These} value{?s}
+           {?is/are} not: {.val {utils::head(offending, 5L)}}.",
+    "i" = "There is no such thing as half {period} later, and rounding for you
+           would move the date without saying so.",
+    "i" = "Round it yourself if that is what you mean, or declare the object on
+           a finer unit ({.code units = \"days\"}) where the delay is whole."
+  ))
 }
 
 #' Warn when a name passed through `...` looks like a misspelled argument

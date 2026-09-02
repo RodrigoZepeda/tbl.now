@@ -1094,7 +1094,7 @@
 
   before <- nrow(x)
   pooled <- suppressWarnings(suppressMessages(
-    to_count(x, to = get_data_type(x))
+    to_count(ungroup(x), to = get_data_type(x))
   ))
 
   if (isTRUE(verbose)) {
@@ -2294,7 +2294,7 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
       "epinowcast expects cumulative counts; {.arg x} has data_type \\
        {.val {get_data_type(x)}}. Converting with {.fn to_count}."
     )
-    x <- to_count(x, to = "count-cumulative")
+    x <- to_count(ungroup(x), to = "count-cumulative")
   }
 
   event_col   <- get_event_date(x)
@@ -2442,7 +2442,7 @@ tbl_now_to_baselinenowcast <- function(x, ...,
              redistributed into earlier delays with \\
              {.fn baselinenowcast::preprocess_negative_values}."
     ))
-    x <- to_count(x, to = "count-incidence")
+    x <- to_count(ungroup(x), to = "count-incidence")
   } else if (data_type != "count-incidence") {
     cli::cli_warn(
       "baselinenowcast expects incremental counts; converting {.arg x} to \\
@@ -2968,7 +2968,9 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
   }
 
   keep_strata <- identical(target, "regional_epinow")
-  series <- as_series(suppressMessages(get_latest_reported_cases(x)), keep_strata)
+  series <- as_series(
+    suppressMessages(get_latest_reported_cases(ungroup(x))), keep_strata
+  )
 
   by <- NULL
   if (keep_strata) {
@@ -3041,7 +3043,9 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
       suppressWarnings(suppressMessages(complete_zeroes(snapshot, until = as_of))),
       error = function(e) snapshot
     )
-    series <- as_series(suppressMessages(get_latest_reported_cases(snapshot)), FALSE)
+    series <- as_series(
+      suppressMessages(get_latest_reported_cases(ungroup(snapshot))), FALSE
+    )
     series$confirm[series$confirm < 0] <- 0
     if (should_accumulate) series <- .epinow2_grid(series, event_units)
     series

@@ -144,6 +144,27 @@ be spliced into a grouping unconditionally.
    Neither ever deletes a case or rewrites an outcome -- that is what makes it
    *censoring* rather than deletion.
 
+### `is_tbl_now()` is not `validate_tbl_now()`
+
+Two questions, two functions, and they were conflated until #62:
+
+* **`is_tbl_now()`** -- *is this the class?* A class check, the attributes in
+  `.TBL_NOW_REQUIRED_ATTRIBUTES`, and the columns those attributes name. Cheap,
+  silent, no findings. It is what `.assert_tbl_now()` calls, which is to say
+  nearly every exported function calls it.
+* **`validate_tbl_now()`** -- *is the data in it sane?* The findings engine,
+  re-emitted as conditions. Called by `tbl_now()` when the object is built.
+
+`is_tbl_now()` used to run the second, inside a `tryCatch()` that caught errors
+but not warnings -- so the object's findings escaped from wherever the predicate
+happened to be called, and a verb that fixed a problem warned about it twice,
+after the fix. Do not put data checks back into the predicate, and do not make
+the predicate the place a user learns their data is bad.
+
+The corollary is one to state plainly in documentation: an object can be a
+`tbl_now` and still have data `validate_tbl_now()` warns about. The class is a
+container; it is not a claim about what is in it.
+
 ### Protected columns
 
 `get_protected_cols()` = the user-given ones (event/report dates, censoring
@@ -584,6 +605,27 @@ caller's business, and almost nothing in this package should compute a different
 answer because of it. Where a function legitimately *should* respect groups, say
 so in a test asserting the difference, rather than leaving it ambiguous.
 
+Two verbs legitimately do (#61), and the line between them is *select versus
+reshape*:
+
+* the **reported- and validated-cases getters** SELECT a point in the process,
+  so one row in is still one cell out. A grouping is one more key, it is
+  answered by, and it comes back. That is the only way to ask for a count by a
+  **covariate** -- a column that matters without being something you nowcast by
+  -- so dropping it silently was losing a real question.
+* **`to_count()`** RESHAPES. After aggregating, one row is an (event, report)
+  cell rather than one of the rows that were grouped, so the grouping describes
+  nothing that is left. It drops the grouping and **warns** that it did. It is
+  the only verb in the package that does not put a grouping back.
+
+If you write a verb that aggregates, follow `to_count()`: drop and say so. If it
+selects or annotates, follow the getters: `.tbl_now_regroup()`.
+
+One consequence to watch: `to_count()` recurses into itself for the linelist and
+de-accumulation paths, on an object it grouped by the cell key a few lines
+earlier. Ungroup before each recursive call, or the verb warns about a grouping
+it set itself.
+
 The fix is nearly always the same too -- take the grouping off, do the work, put
 it back:
 
@@ -735,7 +777,13 @@ problem.
   same `TMPDIR` CI uses (`TMPDIR=/tmp Rscript -e '...'`) before concluding a
   path bug is fixed -- or unfixed.
 * **Weekly data with fractional `.delay`** means the two date columns are on
-  different weekday grids. Use `align_weeks()`; do not round.
+  different weekday grids. Use `align_weeks()`; do not round. The package no
+  longer rounds either: `.reconstruct_date_from_delay()` refuses a fractional
+  delay through `.assert_whole_delay()`, on the calendar axes as well as the
+  numeric one. It used to `round()` -- which is round-half-to-**even**, so `2.5`
+  went down and `3.5` went up, silently, while the numeric axis refused the same
+  value with a clear error. One argument, one value, two opposite fates is the
+  part that was wrong, whichever rounding rule you prefer.
 * **A package that declares its own `tidy()` generic silently breaks every other
   package's methods.** The broom convention is to re-export `generics::tidy`, so
   all methods land on one generic; declaring a fresh `UseMethod("tidy")` makes
@@ -882,10 +930,23 @@ Two constraints on the engine itself:
 * **Keep the pre-flight stage.** Missing attributes short-circuit before the
   findings stage, because every later check assumes the attributes exist. Do not
   flatten the two passes into one.
-* **Never promote a `note` to a `warning`.** `validate_tbl_now()` runs on every
-  `dplyr` verb. A new warning there turns a quiet construction into a noisy one
-  for data that has always been accepted, for every existing user at once.
-  `note` exists precisely so `diagnose()` can say more than `validate` does.
+* **Never promote a `note` to a `warning`.** `validate_tbl_now()` runs wherever
+  the class is checked. A new warning there turns a quiet construction into a
+  noisy one for data that has always been accepted, for every existing user at
+  once. `note` exists precisely so `diagnose()` can say more than `validate`
+  does.
+
+  It has been done **once**, deliberately, and the bar it had to clear is worth
+  recording. The fractional-`.delay` finding became a `warning` in 0.31.0 (#63)
+  because a fractional delay is not a matter of taste: every converter either
+  aborts on it or silently reads `2.5` weeks as something else. The package now
+  refuses to *create* one, so the warning only fires on the one remaining way
+  in -- two date columns on different weekday grids -- which `align_weeks()`
+  exists to fix. It stayed a warning rather than an error precisely so that the
+  object you must hand to `align_weeks()` can still be built:
+  `tbl_now()` validates BEFORE its `align_weeks = TRUE` branch, so an error
+  there would have made the fix unreachable. If you want to promote a finding,
+  you need an argument of that shape -- not "it seems important".
 
 ### The schema is the contract
 

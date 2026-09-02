@@ -346,7 +346,7 @@ check_bool <- function(x, name) {
 
 #' Check a time-unit argument, naming the argument that was wrong
 #'
-#' [check_units()] validates the units of a *column*; this validates the units a
+#' `check_units()` validates the units of a *column*; this validates the units a
 #' *user typed*, which is a different error message. Used for `tbl_now()`'s
 #' `units` and for [aggregate_time_units()]'s `to`.
 #'

@@ -49,7 +49,10 @@ or \code{NULL} (default). Name of a numeric column containing the delay (in
 \code{event_units}) between \code{event_date} and \code{report_date}. When provided with
 only one of \code{event_date} or \code{report_date}, the missing date is reconstructed
 from the known date and the delay. Requires units to be known (either
-specified via \code{event_units} or inferrable from the provided date column).}
+specified via \code{event_units} or inferrable from the provided date column).
+Every value must be a \strong{whole number} of those units: a fractional delay is
+an error, not a rounding, because a calendar has no half-days and bending the
+value silently moves the reconstructed date.}
 
 \item{strata}{(optional) \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 or \code{NULL} (default). Name of different variables (column names) in strata.

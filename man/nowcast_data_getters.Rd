@@ -217,8 +217,9 @@ head(hai[[get_validation_date(hai)]])
 \code{\link[=tbl_now_attributes]{tbl_now_attributes()}} to get all of them at once;
 \code{\link[=add]{add()}}, \link[=add]{change()} and \link[=add]{remove()} to set them, including
 \link[=add]{add_validation_date()};
-\link[=validation_counts]{get_latest_confirmed()} and
-\link[=validation_counts]{get_net_confirmed()} to count the outcomes;
+\link[=validated_cases]{get_latest_validated_cases()} and
+\link[=validated_cases]{get_latest_validated_cases(type = "net")} to count the
+outcomes;
 \link{validation_delay} for how long resolution takes;
 \link[=get_latest_first]{get_latest_reported_cases()} and friends for reading the
 counts rather than the metadata.

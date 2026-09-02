@@ -301,7 +301,7 @@
 #'
 #' @seealso
 #' [tbl_now()] to declare the date columns; [add_validation_date()][add] to
-#' attach the third one to an object that has none; [validation_counts] to count
+#' attach the third one to an object that has none; [validated_cases] to count
 #' the outcomes; [summary()][tbl_now_summary] and [diagnose()] to inspect the
 #' result; the package's other datasets -- [denguedat], [mpoxdat], [flusight],
 #' [covid_colombia] and [hai_bucaramanga].
@@ -342,7 +342,7 @@
 #'
 #' # "How many cases were there" now has more than one answer.
 #' head(get_latest_reported_cases(tn3))
-#' head(get_latest_confirmed(tn3))
+#' head(get_latest_validated_cases(tn3, type = "confirmed"))
 #' @md
 "covid_us"
 

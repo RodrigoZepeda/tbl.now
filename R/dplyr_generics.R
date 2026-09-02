@@ -9,13 +9,16 @@
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
-#' Two ways of asking the same question -- *is this object a well-formed
-#' [tbl_now()]?*
+#' Two different questions about an object, and one function for each.
 #'
-#' * `is_tbl_now()` answers quietly with `TRUE` or `FALSE`. Use it in an `if`.
-#' * `validate_tbl_now()` answers loudly: it stops with an error explaining what
-#'   is wrong, and warns about the merely suspicious. Use it when you want the
-#'   pipeline to halt rather than carry on with a broken object.
+#' * `is_tbl_now()` asks **"is this the class?"**. It answers quietly with
+#'   `TRUE` or `FALSE`, and it is cheap: a class check, the attributes a
+#'   `tbl_now` cannot do without, and the columns those attributes name. Use it
+#'   in an `if`.
+#' * `validate_tbl_now()` asks **"is the data in it sane?"**. It answers
+#'   loudly: it stops with an error explaining what is wrong, and warns about the
+#'   merely suspicious. Use it when you want the pipeline to halt rather than
+#'   carry on with a broken object.
 #'
 #' Neither checks whether the data are *good* -- only whether the object is put
 #' together correctly. For the quality of the data itself, use [diagnose()].
@@ -39,6 +42,15 @@
 #' additionally reports the `note`-level observations that would make every
 #' `dplyr` verb noisy if they were emitted here.
 #'
+#' `is_tbl_now()` deliberately runs **none** of that. It used to, and the cost
+#' was paid twice over: the findings engine ran on every `.assert_tbl_now()`,
+#' and the warnings it raised escaped -- so an object the user had already
+#' chosen to keep re-reported its problems from wherever the predicate happened
+#' to be called. An object can therefore be a `tbl_now` (`is_tbl_now()` is
+#' `TRUE`) and still have data `validate_tbl_now()` warns about. That is the
+#' point: the class is a container, and a container is not a claim that what is
+#' in it is clean.
+#'
 #' @seealso
 #' [diagnose()] for the same findings returned as a tibble, plus the softer
 #' notes; [tbl_now()] to build a valid object; [tbl_now_attributes()] to see what
@@ -57,6 +69,13 @@
 #' is_tbl_now(ndata)
 #' validate_tbl_now(ndata)
 #'
+#' # `is_tbl_now()` is a question about the CLASS, so it stays quiet about the
+#' # data. This object's report dates include an `NA`, which validate_tbl_now()
+#' # warns about -- and which does not stop it being a `tbl_now`.
+#' messy <- ndata
+#' messy$report_week[1] <- NA
+#' is_tbl_now(messy)
+#'
 #' # A plain data.frame is not a tbl_now ...
 #' is_tbl_now(data.frame(x = 1:3))
 #'
@@ -69,11 +88,11 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
   # One implementation, two presentations: `diagnose()` returns the findings as
   # data, this returns them as the conditions the class has always emitted.
   #
-  # `deep = FALSE` is what keeps that affordable. This function runs inside
-  # `tbl_now_can_reconstruct()`, i.e. on every `dplyr` verb, so the engine is
-  # told to skip any work that costs a pass over the data and only ever yields
-  # a note. `floor = "note"` then reports the errors, the warnings, and the one
-  # note this function has always shown as an alert.
+  # `deep = FALSE` is what keeps that affordable. `tbl_now()` runs this on every
+  # construction, and the getters rebuild constantly, so the engine is told to
+  # skip any work that costs a pass over the data and only ever yields a note.
+  # `floor = "note"` then reports the errors, the warnings, and the one note
+  # this function has always shown as an alert.
   findings <- .tbl_now_findings(
     x,
     checks = .diagnose_validation_checks(),
@@ -91,11 +110,11 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
   return(invisible(TRUE))
 }
 
-#' Decides whether `tbl_now` object can be reconstructed from input
+#' Reconstructs a `tbl_now` object from data
 #'
-#' @description Uses `tbl_now_reconstruct_internal()` to determine whether the
-#' data input can be reconstructed in a valid `tbl_now` object. If it can
-#' not, it is returned as a `data.frame`.
+#' @description Copies the attributes of `template` onto `data`, pruning the
+#' ones whose columns are gone and demoting the object when a protected column
+#' was dropped.
 #'
 #' @inheritParams tbl_now
 #'
@@ -106,39 +125,6 @@ tbl_now_reconstruct <- function(data, template) {
   tbl_now_reconstruct_internal(data, template)
 }
 
-#' Checks whether the `tbl_now` object is valid
-#'
-#' @description This is a wrapper for [`validate_tbl_now`] in a [`tryCatch()`]
-#' in order to not error if the input object is invalid and returns `TRUE` or
-#' `FALSE` on if the object is valid. If the object is valid it can be
-#' "reconstructed" and not downgraded to a `data.frame`.
-#'
-#' @inheritParams tbl_now
-#'
-#' @return A boolean logical (`TRUE` or `FALSE`)
-#' @keywords internal
-#' @noRd
-tbl_now_can_reconstruct <- function(data) {
-  # check whether input is valid, ignoring its class
-  valid <- tryCatch(
-    {
-      validate_tbl_now(data)
-    },
-    error = function(cnd) FALSE
-  )
-
-  # return boolean
-  !isFALSE(valid)
-}
-
-#' Reconstruct a tbl_now
-#'
-#' @inheritParams tbl_now
-#'
-#' @return A `tbl_now` object or a `data.frame`
-#'
-#' @keywords internal
-#' @noRd
 #' Turn a `tbl_now` back into a plain tibble, the same way every time
 #'
 #' Demotion used to be `as_tibble()`, which is not the same operation on a
@@ -258,10 +244,43 @@ tbl_now_reconstruct_internal <- function(data, template) {
   return(data)
 }
 
+#' The attributes every `tbl_now` must carry, whatever else it has
+#'
+#' A `tbl_now` cannot describe a nowcast without these. The rest of
+#' `.TBL_NOW_ATTRIBUTES` is optional: an object with no strata, no covariates
+#' and no validation process is perfectly well formed.
+#'
+#' @keywords internal
+#' @noRd
+.TBL_NOW_REQUIRED_ATTRIBUTES <- c(
+  "event_date", "report_date", "data_type", "now", "event_units", "report_units"
+)
+
 #' @rdname validate_tbl_now
 #' @export
 is_tbl_now <- function(x) {
-  inherits(x, "tbl_now") && tbl_now_can_reconstruct(x)
+  # A structural check, deliberately NOT `validate_tbl_now()`. The two answer
+  # different questions -- "is this the class" versus "is the data in it sane"
+  # -- and running the second here made the predicate expensive AND noisy: its
+  # warnings escaped the caller's `tryCatch()` and re-reported, on every
+  # `.assert_tbl_now()`, problems the user had already been told about once.
+  if (!inherits(x, "tbl_now") || !is.data.frame(x)) {
+    return(FALSE)
+  }
+
+  for (name in .TBL_NOW_REQUIRED_ATTRIBUTES) {
+    value <- attr(x, name, exact = TRUE)
+    if (is.null(value) || length(value) != 1L) {
+      return(FALSE)
+    }
+  }
+
+  # An attribute naming a column that is not there is not a difference of
+  # opinion about the data -- the object cannot answer for itself at all.
+  declared <- c(
+    get_protected_cols(x), get_strata(x), get_covariates(x)
+  )
+  all(declared %in% names(x))
 }
 
 #' Base R operations on a `tbl_now`

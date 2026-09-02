@@ -203,7 +203,7 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_epidemic_process <- function(object) {
-  latest <- get_latest_reported_cases(object)
+  latest <- get_latest_reported_cases(ungroup(object))
   case_count_column <- get_case_count(latest)
   event_date_column <- get_event_date(object)
   latest |>
@@ -1251,7 +1251,7 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_epidemic_process_by <- function(object, strata_cols) {
-  latest <- get_latest_reported_cases(object)
+  latest <- get_latest_reported_cases(ungroup(object))
   case_count_column <- get_case_count(latest)
   event_date_column <- get_event_date(object)
   latest |>

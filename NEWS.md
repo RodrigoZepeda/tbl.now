@@ -1,3 +1,93 @@
+# tbl.now 0.31.0
+
+## Breaking: the `*_confirmed()` counters are gone, replaced by a validated-cases family (#64)
+
+`get_latest_confirmed()`, `get_net_confirmed()`, `get_initial_confirmed()` and
+`get_nth_confirmed()` are **removed**. They answered a version of the question
+`get_latest_reported_cases()` already answered, in a different return shape (a
+plain tibble), with a delay measured from a different anchor -- so the two
+families could not be read against each other.
+
+In their place, the reporting getters have an exact twin on the validation axis:
+
+```r
+get_initial_validated_cases(x)                     # as of the FIRST result back
+get_latest_validated_cases(x)                      # everything settled so far
+get_nth_validated_cases(x, delay = 7)              # settled within 7 periods
+get_latest_validated_cases(x, type = "confirmed")  # was get_latest_confirmed()
+get_latest_validated_cases(x, type = "net")        # was get_net_confirmed()
+get_latest_validated_cases(x, type = "by_type")    # every outcome, side by side
+```
+
+* They return the **same `count-cumulative` `tbl_now`** the reporting getters
+  return, carrying all three dates and the generated numeric columns, rather
+  than a bare tibble.
+* `type =` is new on **both** families, so the reporting axis can be filtered
+  the same way: `"total"` (default), `"confirmed"`, `"retracted"`, `"pending"`,
+  `"unknown"`, `"net"`, or `"by_type"` for one row per outcome. On an object
+  with no validation process anything but `"total"` warns and pools.
+* `get_nth_validated_cases()` counts the delay **from the event**, so it and
+  `get_nth_reported_cases()` describe the same period. `get_nth_confirmed()`
+  measured from the report, which is `.validation_delay` -- a different
+  quantity. Reading the old and new numbers as the same thing is the one
+  migration hazard.
+* A pending case has no validation date, so it never appears on the validation
+  axis; `type = "pending"` is refused there and belongs on the reporting axis.
+* An empty selection -- nothing validated yet, no case with that outcome, no
+  arrival within the delay -- is an **error naming the reason**, rather than a
+  failure inside `tbl_now()` about an empty data frame.
+
+## The reported-cases getters respect a grouping; `to_count()` says it does not (#61)
+
+`get_latest_reported_cases()`, `get_initial_reported_cases()` and
+`get_nth_reported_cases()` (and the three new validated ones) now **keep the
+caller's grouping and answer by it**: the grouping columns join the event date
+and the strata as keys, and come back on the result.
+
+```r
+tn |> dplyr::group_by(hospital) |> get_latest_reported_cases()
+```
+
+This is the only way to ask for a count by a **covariate** -- a column that
+matters without being something you nowcast by. These verbs can do it because
+they *select* a point in the process rather than reshaping the object.
+
+`to_count()` cannot, and now **warns** rather than dropping the grouping in
+silence: after aggregating, one row is an (event, report) cell rather than one
+of the rows that were grouped, so the grouping describes nothing that is left.
+Declare the column with `add_strata()` or `add_covariates()` to keep it out of
+the sum.
+
+## `is_tbl_now()` is a class check again, not a validation run (#62)
+
+`is_tbl_now()` used to call `validate_tbl_now()` inside a `tryCatch()` that
+caught errors but not warnings, so the object's findings escaped from wherever
+the predicate was called -- which is every `.assert_tbl_now()` in the package.
+A verb that fixed a problem warned about it twice, after the fix.
+
+It is now a structural check: the class, the attributes a `tbl_now` cannot do
+without, and the columns those attributes name. Cheap, and silent.
+
+* `tbl_now_can_reconstruct()` suppresses warnings while asking its hypothetical.
+* An object can be a `tbl_now` and still have data `validate_tbl_now()` warns
+  about. That is the point: the class is a container, and a container is not a
+  claim that what is in it is clean.
+
+## Fractional delays are refused where they are created, and reported where they are found (#63)
+
+A calendar has no half-days, so a fractional delay had to become something. It
+became `round()` -- round-half-to-*even*, so `2.5` went down and `3.5` went up,
+silently -- while the numeric axis refused the same value outright.
+
+* `censor_reporting_delays(to_delay =)`, `censor_validation_delays(to_delay =)`
+  and `tbl_now(delay =)` now **abort** on a delay that is not a whole number of
+  the axis's units, on every axis. Round it yourself if that is what you mean.
+* `validate_tbl_now()` **warns** when an object's `.delay` is fractional; it was
+  a `diagnose()`-only note. The remaining way in is two date columns on
+  different weekday grids, which is exactly what `align_weeks()` fixes -- so
+  this stays a warning rather than an error, and the object you need to hand to
+  `align_weeks()` can still be built.
+
 # tbl.now 0.30.0
 
 ## New: coarsen the time grid in one call (#56)

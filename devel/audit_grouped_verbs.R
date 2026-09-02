@@ -18,11 +18,15 @@
 #   ABORTS            - errors when grouped, works ungrouped. Always a bug.
 #   DIFFERENT ANSWER  - returns different data. Almost always a bug.
 #   GROUPS LOST       - returns a `tbl_now` with no grouping. A bug UNLESS the
-#                       verb aggregates and drops it deliberately; see issue #61
-#                       for `to_count()` and the reported-cases getters.
+#                       verb aggregates and drops it deliberately.
 #
-# Known-benign entries as of 2026-09-01: `as_tibble` (a grouped object carries
-# an extra `groups` attribute, which is the point) and the three verbs in #61.
+# Known-benign entries as of 2026-09-02: `as_tibble` (a grouped object carries
+# an extra `groups` attribute, which is the point) and `to_count()`, which
+# aggregates -- after that, one row is an (event, report) cell rather than one
+# of the rows that were grouped, so the grouping describes nothing that is
+# left. It warns instead of dropping the grouping in silence (#61). The three
+# reported-cases getters used to be listed here too; they now KEEP the
+# grouping and answer by it, because they select rather than reshape.
 #
 # The fix is nearly always: capture `dplyr::group_vars(x)`, `ungroup()`, do the
 # work, and finish with `.tbl_now_regroup(x, group_columns)`.
