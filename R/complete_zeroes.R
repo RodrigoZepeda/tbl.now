@@ -79,6 +79,14 @@
 #'
 #' @export
 complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
+  # Grouping has to come off FIRST. Every bound below is a `filter()`/`distinct()`
+  # /`pull()` that a grouping silently turns into one value PER GROUP -- so
+  # `min_event` came back length 2 and the date grid was built from a vector.
+  # The grid is a property of the object, not of how the caller happened to
+  # group it, so it goes back on at the end.
+  group_columns <- dplyr::group_vars(x)
+  if (length(group_columns) > 0) x <- ungroup(x)
+
   if (is.null(max_delay)) {
     max_delay <- suppressWarnings(
       x |>
@@ -264,5 +272,5 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
   x <- x |>
     dplyr::filter(!!as.symbol(get_report_date(x)) <= !!report_bound)
 
-  return(x)
+  return(.tbl_now_regroup(x, group_columns))
 }

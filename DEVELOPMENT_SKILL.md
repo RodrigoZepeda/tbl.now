@@ -535,7 +535,7 @@ written and tested on an ungrouped object can abort, silently drop the grouping,
 or quietly compute a different answer the first time a user pipes it after
 `group_by()`.
 
-This has now happened three times in the same shape, and each time the function
+This has now happened six times in the same shape, and each time the function
 was fully tested -- ungrouped:
 
 * `censor_delays_above()` aborted inside `add_is_censored_report()`, which
@@ -544,6 +544,14 @@ was fully tested -- ungrouped:
   and shipped in a release whose whole subject was that axis.
 * `aggregate_time_units()` would have returned an ungrouped object, because
   `to_count()` and every `tbl_now()` rebuild ungroup on the way through.
+* `align_weeks()` read ten attributes off its own input *after* demoting it,
+  which only worked because `as_tibble()` happens to leave attributes on an
+  ungrouped tibble and not on a grouped one.
+* `complete_zeroes()` computed every bound of its date grid with
+  `filter()`/`distinct()`/`pull()`, which a grouping turns into one value **per
+  group** -- so the grid was built from a length-2 vector.
+* `tbl_now_to_epidist()` aborted inside an internal `mutate()`, with an error
+  naming the mutate's own argument rather than the grouping.
 
 So: **when you write a function that takes a `tbl_now`, write a grouped test for
 it in the same commit.** Three assertions, and they are nearly always the same
@@ -588,6 +596,10 @@ x <- ungroup(x)
 
 `.tbl_now_regroup()` (in `R/utils.R`) is that last step; it intersects with the
 columns that still exist, so a verb that drops a grouping column does not error.
+
+`devel/audit_grouped_verbs.R` sweeps every exported function for this and
+reports `ABORTS` / `GROUPS LOST` / `DIFFERENT ANSWER`. Run it after adding a
+verb; it is what found the last two of the five.
 
 The same argument applies to the other shapes a `tbl_now` comes in, and a new
 function should say in its tests which of them it was actually tried against:
@@ -794,7 +806,7 @@ Before calling a change finished:
 - [ ] `NOT_CRAN=true` test suite passes; new behaviour has new tests.
 - [ ] **Any new function taking a `tbl_now` has a grouped test** -- it did not
       abort, the groups came back, and the answer matches the ungrouped one.
-      See §8; this bug has shipped three times.
+      See §8 and `devel/audit_grouped_verbs.R`; this bug has shipped six times.
 - [ ] Any new attribute has an exported, documented, tested getter.
 - [ ] A new converter has: `to`, `from` (where meaningful), an `as_tbl_now()`
       method, the target package's own coercion generic (or an entry in the

@@ -86,6 +86,29 @@ reads a daily event date against a weekly report date, and an explicit
   work, and put the grouping back.
 * The two censoring axes share one implementation of "merge this flag in without
   un-censoring anything", rather than a copy each.
+* **Demotion is now one operation.** Dropping a protected column returns a plain
+  tibble, and that used to be `as_tibble()` -- which leaves unknown attributes
+  alone on a tibble but rebuilds a `grouped_df` and drops them. So a demoted
+  object kept the class's attributes, or lost them, according to whether the
+  caller had grouped it. It now strips them explicitly, either way.
+* `align_weeks()` failed on a grouped `tbl_now` with ``Column "now" not found in
+  data``: it read `get_now()` and nine other attributes off its own input *after*
+  demoting it, and worked only by the asymmetry above. It now reads them first,
+  and returns the grouping.
+* `complete_zeroes()` aborted on a grouped `tbl_now`
+  (`'length = 2' in coercion to 'logical(1)'`): every bound it computes is a
+  `filter()`/`distinct()`/`pull()` that a grouping turns into one value per
+  group, so the date grid was built from a vector. The grid is a property of the
+  object, not of how the caller grouped it.
+* `tbl_now_to_epidist()` aborted on a grouped `tbl_now`; it was the only
+  converter that did.
+* `DEVELOPMENT_SKILL.md` gains *Every new function gets a grouped test* (§8) and
+  a line in the definition of done, because the six grouping fixes above are all
+  the same bug; `devel/audit_grouped_verbs.R` sweeps every exported function for
+  it. Three verbs drop the grouping **deliberately** and are left for
+  [#61](https://github.com/RodrigoZepeda/tbl.now/issues/61) to decide:
+  `to_count()`, `get_latest_reported_cases()` and
+  `get_initial_reported_cases()`.
 
 # tbl.now 0.29.0
 

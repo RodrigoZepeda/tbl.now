@@ -545,3 +545,48 @@ test_that("weekly flusight object aligns correctly", {
   expect_s3_class(flutbl_aligned, "tbl_now")
   expect_false(has_decimals_after)
 })
+
+test_that("align_weeks works on a grouped tbl_now", {
+  data(denguedat, envir = environment())
+  x <- tbl_now(denguedat[1:500, ],
+    event_date = onset_week, report_date = report_week, strata = gender,
+    verbose = FALSE
+  )
+  ungrouped <- align_weeks(x)
+
+  out <- align_weeks(x |> dplyr::group_by(!!as.symbol("gender")))
+
+  expect_true(is_tbl_now(out))
+  expect_equal(dplyr::group_vars(out), "gender")
+  expect_equal(
+    dplyr::as_tibble(ungroup(out)),
+    dplyr::as_tibble(ungroup(ungrouped))
+  )
+  # The attributes it has to read across its own destructive `select()`.
+  expect_equal(get_now(out), get_now(ungrouped))
+  expect_equal(get_strata(out), "gender")
+  expect_equal(get_event_units(out), "weeks")
+})
+
+test_that("align_weeks keeps a grouped validation process intact", {
+  cases <- data.frame(
+    onset = as.Date("2024-01-07") + 7 * rep(0:4, each = 2),
+    visit = as.Date("2024-01-10") + 7 * rep(0:4, each = 2),
+    result = as.Date("2024-01-16") + 7 * rep(0:4, each = 2),
+    outcome = rep(c("confirmed", "retracted"), 5),
+    sex = rep(c("F", "M"), 5)
+  )
+  x <- tbl_now(cases,
+    event_date = onset, report_date = visit,
+    validation_date = result, validation_type = outcome, strata = sex,
+    data_type = "linelist", units = "weeks", verbose = FALSE
+  )
+
+  out <- align_weeks(x |> dplyr::group_by(!!as.symbol("sex")))
+
+  expect_true(has_validation(out))
+  expect_equal(get_validation_date(out), "result")
+  expect_equal(get_validation_type(out), "outcome")
+  expect_equal(dplyr::group_vars(out), "sex")
+  expect_true(all(out$.delay == round(out$.delay)))
+})

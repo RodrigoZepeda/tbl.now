@@ -139,6 +139,56 @@ tbl_now_can_reconstruct <- function(data) {
 #'
 #' @keywords internal
 #' @noRd
+#' Turn a `tbl_now` back into a plain tibble, the same way every time
+#'
+#' Demotion used to be `as_tibble()`, which is not the same operation on a
+#' `tbl_now` as on a `grouped_tbl_now`: for a plain tibble it leaves unknown
+#' attributes alone, and for a grouped one it rebuilds the object and drops
+#' them. So a demoted object kept its `now`, `event_date` and the rest -- or
+#' lost them -- purely according to whether the caller had grouped it.
+#'
+#' `align_weeks()` was reading `get_now()` off a demoted object and worked only
+#' by that accident; grouped, it failed with "Column `now` not found in data".
+#' The getters do not check the class, so nothing said the object was no longer
+#' a `tbl_now`.
+#'
+#' A demoted object is a plain tibble, so the class's own attributes go. The
+#' `...` metadata a user attached to `tbl_now()` stays: it does not name a
+#' column, and dropping it would lose something the caller put there on purpose.
+#'
+#' @param data The reshaped data, mid-demotion.
+#'
+#' @return A tibble carrying none of the class's attributes.
+#'
+#' @keywords internal
+#' @noRd
+.demote_to_tibble <- function(data) {
+  out <- dplyr::as_tibble(data)
+  for (name in .TBL_NOW_ATTRIBUTES) {
+    attr(out, name) <- NULL
+  }
+  out
+}
+
+#' The attributes the `tbl_now` class owns
+#'
+#' Every one of these has a getter, and `tbl_now()` sets them. Anything else on
+#' the object came from the user's `...` and is theirs.
+#'
+#' If you add an attribute to the class, add it here -- otherwise a demoted
+#' object keeps it, and a stale column name outlives the column.
+#'
+#' @keywords internal
+#' @noRd
+.TBL_NOW_ATTRIBUTES <- c(
+  "event_date", "report_date", "case_count", "strata", "covariates",
+  "now", "event_units", "report_units", "data_type",
+  "is_censored_report", "is_censored_validation",
+  "validation_date", "validation_type", "validation_units",
+  "validation_levels",
+  "temporal_effects", "computed_temporal_effect_cols"
+)
+
 tbl_now_reconstruct_internal <- function(data, template) {
   # Copy over *all* attributes except the data.frame essentials
   attrs <- attributes(template)
@@ -152,7 +202,7 @@ tbl_now_reconstruct_internal <- function(data, template) {
   missing_protected <- setdiff(protected_cols, names(data))
   if (length(missing_protected) > 0) {
     cli::cli_warn("Dropped protected column(?s): {.val {missing_protected}}. Returning a `tibble`")
-    return(dplyr::as_tibble(data))
+    return(.demote_to_tibble(data))
   }
 
   # Reattach attributes

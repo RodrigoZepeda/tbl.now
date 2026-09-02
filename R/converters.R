@@ -3321,6 +3321,12 @@ tbl_now_to_epidist <- function(x, ...,
   #.warn_lossy_conversion("epidist", quiet)
   format <- match.arg(format)
 
+  # A converter returns a foreign object, so the caller's grouping has nowhere
+  # to go -- but left on, it makes the `keep` mutate below run once per group
+  # and abort. Every other converter already tolerates a grouped input; this one
+  # did not, and the error named `keep` rather than the grouping.
+  x <- ungroup(x)
+
   # Materialise the lazy temporal-effect columns so they are carried as extra
   # covariate columns on the epidist data.
   materialised   <- .materialize_temporal_effects(x)
