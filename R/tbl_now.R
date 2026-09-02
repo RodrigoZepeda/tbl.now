@@ -79,11 +79,18 @@
 #' @param t_effects (optional) Either `NULL` (default), a [temporal_effects()] object
 #' or a character vector with the names of the columns containing the temporal effects.
 #'
+#' @param units (optional) Character. Either `"auto"` (default), `"days"`,
+#' `"weeks"`, `"months"`, `"years"` or `"numeric"`. The **default** for
+#' `event_units`, `report_units` and `validation_units`: say it once instead of
+#' three times. Any of the three that you give explicitly wins over `units`, so
+#' `units = "days", report_units = "weeks"` reads a daily event date against a
+#' weekly report date.
+#'
 #' @param event_units (optional) Character. Either "auto" (default), "days",
-#' "weeks", "months", "years" or "numeric".
+#' "weeks", "months", "years" or "numeric". Defaults to `units`.
 #'
 #' @param report_units (optional) Character. Either "auto" (default), "days",
-#' "weeks", "months", "years" or "numeric".
+#' "weeks", "months", "years" or "numeric". Defaults to `units`.
 #'
 #' @param data_type (optional) Character. Either "auto", "linelist" or
 #' "count-incidence" or "count-cumulative". See section below for
@@ -282,10 +289,11 @@ tbl_now <- function(data,
                     is_censored = NULL,
                     validation_date = NULL,
                     validation_type = NULL,
-                    validation_units = "auto",
+                    validation_units = units,
                     now = NULL,
-                    event_units = "auto",
-                    report_units = "auto",
+                    event_units = units,
+                    report_units = units,
+                    units = "auto",
                     data_type = "auto",
                     t_effects = character(0),
                     verbose = TRUE,
@@ -302,6 +310,11 @@ tbl_now <- function(data,
     cli::cli_warn("{.arg data} is grouped by {colnames(dplyr::group_keys(data))}. Ungrouping.")
     data <- data |> dplyr::ungroup()
   }
+
+  # `units` is only a default for the three axis units, but a typo in it would
+  # otherwise surface three times over, as a complaint about `event_units`.
+  # Name the argument the user actually wrote.
+  check_time_units(units, "units")
 
 
   # Capture quosures first so we can detect NULL vs supplied and avoid the

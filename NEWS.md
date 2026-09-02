@@ -1,3 +1,85 @@
+# tbl.now 0.29.0
+
+## New: coarsen the time grid in one call (#56)
+
+`aggregate_time_units()` moves a `tbl_now` onto a bigger time unit -- daily to
+weekly, weekly to monthly, monthly to yearly -- and updates the object so that
+`.delay`, the converters and the models all count in the new unit:
+
+```r
+hai <- hai_bucaramanga |>
+  tbl_now(event_date = specimen_date, report_date = report_date,
+          strata = sex, data_type = "linelist", units = "days")
+
+hai |> aggregate_time_units(to = "weeks")
+```
+
+* Counts are **added up**, not merely relabelled. `count-cumulative` totals are
+  de-accumulated first, aggregated as increments and accumulated again on the
+  new grid, because a cumulative total is not additive.
+* `axes =` picks which axes move (`"all"`, `"event"`, `"report"`,
+  `"validation"`), and `label =` picks whether a period is named by its first or
+  its last day. Use `label = "end"` when you coarsen only a later axis, or a
+  report lands before its own event.
+* Weeks go through the same epi/ISO machinery as `align_weeks()`, so `type` and
+  `align_on_day` mean what they mean there.
+* It only ever coarsens: asking a weekly object for `"days"` is an error, not a
+  guess. So is aggregating a `numeric` axis, which has no calendar.
+* Weeks do **not** nest inside months. Aggregating to weeks and then to months
+  is not the same as going straight to months; aggregate once, to the unit you
+  want.
+
+## New: censor by condition, and replace the date (#57)
+
+`censor_reports()` and `censor_delays()` take a `filter()`-style condition and
+record the matching rows as *bounds* rather than measurements -- optionally
+replacing the date at the same time. This is the fix for the two dates that are
+not really dates: the missing one, and the sentinel far in the future.
+
+```r
+hai |> censor_reports(is.na(report_date), to_report = Sys.Date())
+hai |> censor_reports(report_date == as.Date("2222-02-22"), to_report = Sys.Date())
+tn  |> censor_delays(.delay > 60, to_delay = 60)
+```
+
+`censor_delays_above()` is now the threshold special case of `censor_delays()`
+and shares its implementation; its behaviour is unchanged. All four censoring
+functions -- these two plus `censor_delays_above()` and
+`censor_validation_delays_above()` -- are documented together on `?censoring`.
+
+* `NA` is not a match: a condition that cannot be evaluated on a row is not a
+  condition that row met.
+* Existing censoring flags are merged, never cleared, and the flag column is
+  created as `.is_censored` when the object has none.
+* Replacing a date moves `now` **forward** when the replacement lands after it,
+  never backwards, and drops any `.report_*` temporal-effect column that the
+  move has made stale.
+
+## New: one `units` argument instead of three (#58)
+
+`tbl_now()` gains `units`, the shared default for `event_units`, `report_units`
+and `validation_units`:
+
+```r
+tbl_now(hai_bucaramanga, event_date = specimen_date, report_date = report_date,
+        strata = sex, data_type = "linelist", units = "days")
+```
+
+Anything given explicitly still wins, so `units = "days", report_units = "weeks"`
+reads a daily event date against a weekly report date, and an explicit
+`event_units = "auto"` still means *infer*.
+
+## Fixes
+
+* `group_by()` (with no grouping variables), `summarise()` and `reframe()` copied
+  the **event** units onto the report axis when rebuilding, so a mixed-unit
+  object silently became a uniform one. They now carry `report_units` across.
+* `infer_units()` on a column with a single distinct date warned about `min()`
+  returning `Inf` before aborting with an unrelated message. It now says which
+  column it is, and points at `units`.
+* Censoring a grouped `tbl_now` aborted inside `add_is_censored()`, which refuses
+  a `grouped_tbl_now`. The censoring verbs now ungroup, work, and regroup.
+
 # tbl.now 0.28.0
 
 ## Breaking: the confirmation process is now the validation process

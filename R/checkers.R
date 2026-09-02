@@ -343,3 +343,28 @@ check_bool <- function(x, name) {
   }
   return(invisible(TRUE))
 }
+
+#' Check a time-unit argument, naming the argument that was wrong
+#'
+#' [check_units()] validates the units of a *column*; this validates the units a
+#' *user typed*, which is a different error message. Used for `tbl_now()`'s
+#' `units` and for [aggregate_time_units()]'s `to`.
+#'
+#' @param value The value supplied.
+#' @param arg The name of the argument it came from, for the message.
+#' @param allowed The units accepted. Defaults to every unit plus `"auto"`.
+#'
+#' @return (invisible) `TRUE` if valid; aborts otherwise.
+#'
+#' @keywords internal
+#' @noRd
+check_time_units <- function(value, arg,
+                             allowed = c("auto", "days", "weeks", "months", "years", "numeric")) {
+  if (!is.character(value) || length(value) != 1L || is.na(value)) {
+    cli::cli_abort("{.arg {arg}} must be a single string, one of {.val {allowed}}.")
+  }
+  if (!(value %in% allowed)) {
+    cli::cli_abort("Invalid {.code {arg} = {.val {value}}}. Use one of {.val {allowed}}.")
+  }
+  invisible(TRUE)
+}

@@ -15,10 +15,11 @@ tbl_now(
   is_censored = NULL,
   validation_date = NULL,
   validation_type = NULL,
-  validation_units = "auto",
+  validation_units = units,
   now = NULL,
-  event_units = "auto",
-  report_units = "auto",
+  event_units = units,
+  report_units = units,
+  units = "auto",
   data_type = "auto",
   t_effects = character(0),
   verbose = TRUE,
@@ -99,10 +100,17 @@ nowcast. If no \code{now} is given then the function automatically uses the last
 \code{event_date}.}
 
 \item{event_units}{(optional) Character. Either "auto" (default), "days",
-"weeks", "months", "years" or "numeric".}
+"weeks", "months", "years" or "numeric". Defaults to \code{units}.}
 
 \item{report_units}{(optional) Character. Either "auto" (default), "days",
-"weeks", "months", "years" or "numeric".}
+"weeks", "months", "years" or "numeric". Defaults to \code{units}.}
+
+\item{units}{(optional) Character. Either \code{"auto"} (default), \code{"days"},
+\code{"weeks"}, \code{"months"}, \code{"years"} or \code{"numeric"}. The \strong{default} for
+\code{event_units}, \code{report_units} and \code{validation_units}: say it once instead of
+three times. Any of the three that you give explicitly wins over \code{units}, so
+\verb{units = "days", report_units = "weeks"} reads a daily event date against a
+weekly report date.}
 
 \item{data_type}{(optional) Character. Either "auto", "linelist" or
 "count-incidence" or "count-cumulative". See section below for

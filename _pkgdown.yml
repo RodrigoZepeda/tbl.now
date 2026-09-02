@@ -82,9 +82,10 @@ reference:
 - title: Reshaping
   desc: Put the data on the grid a model needs.
   contents:
+  - aggregate_time_units
   - align_weeks
   - complete_zeroes
-  - censor_delays_above
+  - censoring
   - is_weekday
 
 - title: Temporal effects

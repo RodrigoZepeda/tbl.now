@@ -532,7 +532,7 @@ get_net_confirmed <- function(x) {
 #'
 #' @seealso
 #' [add_validation_date()][add] to attach a validation process;
-#' [censor_validation_delays_above()][censor_delays_above] for resolutions that
+#' [censor_validation_delays_above()][censoring] for resolutions that
 #' never arrive; [validation_counts] for counting the outcomes;
 #' [diagnose_drift()] for the same question about the *reporting* delay over time.
 #' The [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
@@ -742,7 +742,7 @@ get_initial_confirmed <- function(x) {
   .count_by_outcome(x, "get_initial_confirmed", net = FALSE, within_delay = 0)
 }
 
-#' @rdname censor_delays_above
+#' @rdname censoring
 #' @export
 censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
   .assert_tbl_now(x, "censor_validation_delays_above")

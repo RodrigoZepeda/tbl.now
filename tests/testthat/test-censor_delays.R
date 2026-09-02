@@ -71,3 +71,12 @@ test_that("censor_delays_above validates its arguments", {
   expect_error(censor_delays_above(make_delay_data(), max_delay = -1), "max_delay")
   expect_error(censor_delays_above(make_delay_data(), max_delay = c(1, 2)), "max_delay")
 })
+
+test_that("censor_delays_above works on a grouped tbl_now and keeps the groups", {
+  grouped <- make_delay_data() |> dplyr::group_by(onset)
+  out <- censor_delays_above(grouped, max_delay = 60, verbose = FALSE)
+
+  expect_equal(out[[".is_censored"]], c(FALSE, FALSE, FALSE, TRUE))
+  expect_equal(dplyr::group_vars(out), "onset")
+  expect_true(is_tbl_now(out))
+})

@@ -224,3 +224,90 @@ tbl_now_attributes <- function(x) {
 .near <- function(x, y, tolerance = 1e-8) {
   abs(x - y) < tolerance
 }
+
+#' Rebuild a `tbl_now` from modified data, carrying every attribute over
+#'
+#' The verbs that reshape a `tbl_now` all have to hand its attributes back to
+#' [tbl_now()] one by one, and every such list is a place an attribute can be
+#' dropped in silence -- which is how strata, and later the validation process,
+#' each went missing from a rebuild. This is that list, in one place.
+#'
+#' The generated columns (`.event_num`, `.report_num`, `.delay`,
+#' `.validation_num`, `.validation_delay`) are removed first, because
+#' [tbl_now()] recomputes them and refuses to overwrite one that is already
+#' there.
+#'
+#' `...` overrides any argument of [tbl_now()]; an override of `NULL` is
+#' honoured (it drops the attribute) rather than being read as "not supplied".
+#'
+#' Note `.set_validation()` in `R/validation.R` does NOT go through this: it
+#' receives its column names as tidyselect quosures (`{{ }}`), which cannot
+#' survive a `do.call()` on a list.
+#'
+#' @param x The `tbl_now` whose attributes are being carried over.
+#' @param data The rebuilt data frame (may be `x` itself).
+#' @param ... Arguments of [tbl_now()] to override.
+#'
+#' @return A `tbl_now`.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_rebuild <- function(x, data, ...) {
+  generated <- c(
+    ".event_num", ".report_num", ".delay",
+    ".validation_num", ".validation_delay"
+  )
+  bare <- .strip_tbl_now(data)
+  bare <- bare[, setdiff(colnames(bare), generated), drop = FALSE]
+
+  args <- list(
+    bare,
+    event_date = get_event_date(x),
+    report_date = get_report_date(x),
+    case_count = get_case_count(x),
+    strata = get_strata(x),
+    covariates = get_covariates(x),
+    is_censored = get_is_censored(x),
+    data_type = get_data_type(x),
+    now = get_now(x),
+    event_units = get_event_units(x),
+    report_units = get_report_units(x),
+    t_effects = intersect(get_temporal_effect_cols(x), colnames(bare)),
+    verbose = FALSE,
+    warn_non_uniqueness = FALSE
+  )
+  args <- c(args, .validation_rebuild_args(x, bare))
+
+  overrides <- list(...)
+  # Single-bracket assignment so an override of NULL sets the element to NULL
+  # instead of deleting it -- `args$strata <- NULL` would silently mean
+  # "keep whatever was there".
+  for (nm in names(overrides)) args[nm] <- overrides[nm]
+
+  out <- do.call(tbl_now, args)
+
+  # The lazy spec survives a reshape even when the materialised columns do not.
+  attr(out, "temporal_effects") <- get_temporal_effects(x)
+  out
+}
+
+#' Put a caller's grouping back after a verb that had to ungroup
+#'
+#' Several `tbl.now` verbs rebuild the object (`tbl_now()` refuses a grouped
+#' data frame, and `add_is_censored()` refuses a `grouped_tbl_now`), so they
+#' ungroup first. Losing the grouping is a change the caller did not ask for.
+#'
+#' @param x A `tbl_now`.
+#' @param group_columns Character vector from [dplyr::group_vars()].
+#'
+#' @return `x`, grouped again by whichever of those columns still exist.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_regroup <- function(x, group_columns) {
+  group_columns <- intersect(group_columns, colnames(x))
+  if (length(group_columns) == 0) {
+    return(x)
+  }
+  dplyr::group_by(x, dplyr::across(dplyr::all_of(group_columns)))
+}

@@ -69,6 +69,7 @@ tn <- tbl_now(
 Useful arguments:
 
 - `now =` — the "as-of" date for the nowcast. Defaults to `max(report_date)`.
+- `units =` — the shared default for `event_units`, `report_units` and `validation_units`. Say `units = "days"` once instead of three times; anything you give explicitly still wins (`units = "days", report_units = "weeks"`).
 - `event_units` / `report_units` — `"days" | "weeks" | "months" | "years" | "numeric"`; `"auto"` infers from spacing. `report_units` must be **coarser than or equal to** `event_units`.
 - `align_weeks = TRUE` — for weekly data, snaps dates so `.delay` is integer (see below).
 - You may pass **`.delay` + one date** instead of both dates; the missing date is reconstructed.
@@ -244,6 +245,24 @@ get_is_censored(tn)   # column name, or NULL if not censored
 To tell whether a dataset is censored: `is.null(get_is_censored(tn))` →
 `TRUE` means *no* censoring indicator is set. The censoring column itself must be
 logical or `validate_tbl_now()` rejects it.
+
+**Setting the flag from a rule, and fixing the date at the same time:**
+
+```r
+censor_delays_above(tn, max_delay = 60)          # delay > 60 units -> flag
+censor_delays(tn, .delay > 60)                   # any condition -> flag
+censor_delays(tn, .delay > 60, to_delay = 60)    # ... and cap the report date
+censor_reports(tn, is.na(report_date))           # missing report -> `now` + flag
+censor_reports(tn, report_date == as.Date("2222-02-22"),
+               to_report = Sys.Date())           # a "never" sentinel -> a date
+censor_validation_delays_above(tn, 30)           # unresolved lab result -> "pending"
+```
+
+`condition` is a `filter()`-style expression evaluated in the data (`.delay` is
+visible); `NA` is **not** a match. Existing flags are merged, never cleared, and
+the flag column is created as `.is_censored` when there is none. Replacing a
+date rebuilds the object, moves `now` forward if the replacement lands after it,
+and drops any `.report_*` temporal-effect column that has just gone stale.
 
 **The converters drop it, and say so.** A flag that varies *within* an
 `(event_date, report_date)` cell (a per-case "upper bound only" mark, unlike one
@@ -1106,6 +1125,7 @@ one fitted by hand.
 ```r
 complete_zeroes(tn)                  # fill missing event/report/strata cells with 0
 update(tn, new_data = new_rows)      # bind newer data, preserving attributes
+aggregate_time_units(tn, to = "weeks")  # daily -> weekly (or months / years)
 align_weeks(tn, date_col)            # snap dates to a consistent epiweek day -> integer .delay
 week_2_date(df, week_col, year_col)  # epiweek + year -> Date
 is_weekday(date, weekend_days = c("Sat","Sun"))
@@ -1113,6 +1133,16 @@ change_now(tn, as.Date("2023-06-01"))   # move the as-of date (re-censors later 
 tbl_now_attributes(tn)               # list of just the tbl_now-specific attributes
 ```
 
+- **`aggregate_time_units` / sparse daily data:** moves every date onto a
+  coarser grid (`to = "weeks" | "months" | "years"`), sums the counts, and
+  updates `event_units` / `report_units` / `validation_units` so everything
+  downstream counts in the new unit. Cumulative counts are de-accumulated first,
+  because they are not additive. `axes =` picks which axes move (`"all"`,
+  `"event"`, `"report"`, `"validation"`); `label =` picks whether a period is
+  named by its first or last day — use `label = "end"` when you coarsen only a
+  later axis, or reports land before their own events. It only ever coarsens:
+  asking a weekly object for `"days"` is an error. Aggregate **once**, to the
+  unit you want — weeks do not nest inside months.
 - **`align_weeks` / weekly data:** weekly dates reported on inconsistent weekdays
   give fractional `.delay`. Use `align_weeks = TRUE` in `tbl_now()` or
   `align_weeks()` afterward to force integer delays.
