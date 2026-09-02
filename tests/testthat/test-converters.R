@@ -1938,3 +1938,26 @@ test_that("tbl_now_to_nobbs() honours custom column names", {
   ))
   expect_true(all(c("onset", "rep") %in% names(out)))
 })
+
+test_that("tbl_now_to_epidist accepts a grouped tbl_now", {
+  skip_if_not_installed("epidist")
+  df <- data.frame(
+    onset = as.Date("2024-01-07") + 7 * rep(0:9, each = 2),
+    reported = as.Date("2024-01-14") + 7 * rep(0:9, each = 2),
+    sex = rep(c("F", "M"), 10),
+    n = rep(c(3L, 5L), 10)
+  )
+  x <- tbl_now(df,
+    event_date = onset, report_date = reported, case_count = n, strata = sex,
+    data_type = "count-incidence", units = "weeks", verbose = FALSE
+  )
+  quiet <- function(e) suppressWarnings(suppressMessages(force(e)))
+
+  # A converter returns a foreign object, so there is no grouping to give back;
+  # the requirement is only that it does not abort, and gives the same answer.
+  # Grouped, the internal `keep` mutate ran once per group and failed.
+  expect_equal(
+    quiet(tbl_now_to_epidist(x |> dplyr::group_by(!!as.symbol("sex")))),
+    quiet(tbl_now_to_epidist(x))
+  )
+})

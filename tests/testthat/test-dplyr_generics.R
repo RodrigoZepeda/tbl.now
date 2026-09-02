@@ -240,6 +240,13 @@ setup_test_data <- function() {
     strata = "gender",
     covariates = "temperature",
     is_censored_report = "is_censored_report",
+    # Both columns are weekly but sit on different weekdays, so inferred
+    # "weeks" units make every `.delay` 3/7 of a week -- which
+    # `validate_tbl_now()` now warns about, on every verb in this file. The
+    # subject here is the dplyr generics, so declare the axis in days and let
+    # the delays be whole; `test-tbl_now_align_week.R` is where the misaligned
+    # case belongs.
+    units = "days",
     verbose = FALSE
   )
 
@@ -956,9 +963,11 @@ test_that("validate works with numeric", {
   skip_on_cran()
   test_data <- setup_test_data()
 
+  # The same units the fixture declares, so the numeric columns land on the
+  # scale `.event_num` / `.report_num` were computed on.
   result <- test_data$ndata |>
-    dplyr::mutate(report_week = as.numeric(difftime(report_week, min(onset_week), units = "weeks"))) |>
-    dplyr::mutate(onset_week = as.numeric(difftime(onset_week, min(onset_week), units = "weeks")))
+    dplyr::mutate(report_week = as.numeric(difftime(report_week, min(onset_week), units = "days"))) |>
+    dplyr::mutate(onset_week = as.numeric(difftime(onset_week, min(onset_week), units = "days")))
 
 
   expect_equal(get_event_date(result), get_event_date(test_data$ndata))
@@ -1113,4 +1122,91 @@ test_that("operations on grouped_tbl_now maintain structure", {
   expect_s3_class(test_data$ndata |>
     group_by(gender) |>
     dplyr::filter(value > 15), "grouped_tbl_now")
+})
+
+# ---- Demotion is one operation, not two -------------------------------------
+#
+# Dropping a protected column demotes the object to a plain tibble. That used to
+# be `as_tibble()`, which leaves unknown attributes alone on a tibble and drops
+# them when it has to rebuild a grouped_df -- so a demoted object kept the
+# class's attributes, or lost them, according to whether the caller had grouped
+# it. `align_weeks()` read `get_now()` off a demoted object and worked only by
+# that accident.
+
+demotion_fixture <- function() {
+  df <- data.frame(
+    onset = as.Date("2024-01-01") + 0:9,
+    reported = as.Date("2024-01-02") + 0:9,
+    sex = rep(c("F", "M"), 5)
+  )
+  tbl_now(df,
+    event_date = onset, report_date = reported, strata = sex,
+    data_type = "linelist", units = "days", verbose = FALSE
+  )
+}
+
+test_that("demotion drops the class's attributes", {
+  x <- demotion_fixture()
+  demoted <- suppressWarnings(x |> dplyr::select(-!!as.symbol("onset")))
+
+  expect_false(is_tbl_now(demoted))
+  expect_s3_class(demoted, "tbl_df")
+  # A plain tibble does not know where its event date is, because it has none.
+  for (name in c(
+    "event_date", "report_date", "now", "event_units", "report_units",
+    "data_type", "strata"
+  )) {
+    expect_null(attr(demoted, name, exact = TRUE), info = name)
+  }
+})
+
+test_that("demotion drops the same attributes whether or not the object is grouped", {
+  x <- demotion_fixture()
+
+  ungrouped <- suppressWarnings(x |> dplyr::select(-!!as.symbol("onset")))
+  grouped <- suppressWarnings(
+    x |> dplyr::group_by(!!as.symbol("sex")) |> dplyr::select(-!!as.symbol("onset"))
+  )
+
+  expect_equal(
+    names(attributes(ungrouped)),
+    setdiff(names(attributes(grouped)), "groups")
+  )
+  expect_null(attr(grouped, "now", exact = TRUE))
+  expect_null(attr(ungrouped, "now", exact = TRUE))
+})
+
+test_that("demotion keeps the metadata the user attached through `...`", {
+  df <- data.frame(
+    onset = as.Date("2024-01-01") + 0:9,
+    reported = as.Date("2024-01-02") + 0:9
+  )
+  x <- tbl_now(df,
+    event_date = onset, report_date = reported,
+    data_type = "linelist", units = "days", verbose = FALSE,
+    data_source = "Ministry of Health"
+  )
+  demoted <- suppressWarnings(x |> dplyr::select(-!!as.symbol("onset")))
+
+  # It names no column, and the user put it there on purpose.
+  expect_identical(attr(demoted, "data_source"), "Ministry of Health")
+  expect_null(attr(demoted, "event_date", exact = TRUE))
+})
+
+add_validation_date_fixture <- function(x) {
+  x[["resolved"]] <- x[[get_report_date(x)]] + 2
+  x[["outcome"]] <- rep("confirmed", nrow(x))
+  add_validation_date(x, "resolved", "outcome")
+}
+
+test_that("every attribute tbl_now() sets is listed as one the class owns", {
+  # `.demote_to_tibble()` works off a hard-coded list; an attribute added to the
+  # class but not to that list would outlive the demotion, and its column name
+  # would outlive the column.
+  x <- demotion_fixture() |>
+    add_validation_date_fixture()
+
+  owned <- tbl.now:::.TBL_NOW_ATTRIBUTES
+  actual <- setdiff(names(tbl_now_attributes(x)), "class")
+  expect_setequal(intersect(actual, owned), actual)
 })

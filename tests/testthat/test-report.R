@@ -139,7 +139,7 @@ test_that("get_initial_reported_cases fails on non-tbl_now object", {
 
   expect_error(
     get_initial_reported_cases(regular_df),
-    "not a.*tbl_now"
+    "must be a .*tbl_now"
   )
 })
 
@@ -373,7 +373,7 @@ test_that("get_latest_reported_cases fails on non-tbl_now object", {
 
   expect_error(
     get_latest_reported_cases(regular_df),
-    "not a.*tbl_now"
+    "must be a .*tbl_now"
   )
 })
 
@@ -847,13 +847,15 @@ test_that("report functions handle empty tbl_now", {
     dplyr::filter(onset_week < as.Date("1989-01-01"))
 
 
+  # The engine now says which question came back empty, instead of letting
+  # `tbl_now()` complain about a zero-row data frame at the very end.
   expect_error(
     get_initial_reported_cases(ndata),
-    "empty"
+    "selected no cases"
   )
 
   expect_error(
     get_latest_reported_cases(ndata),
-    "empty"
+    "no rows to count"
   )
 })

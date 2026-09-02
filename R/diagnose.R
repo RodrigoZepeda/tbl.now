@@ -13,9 +13,11 @@
 #                 `.diagnose_validation_alerts()`), `diagnose()` reports
 #                 everything.
 #   * `deep`   -- whether to do work that costs a pass over the data and only
-#                 ever yields a note. `validate_tbl_now()` is called from
-#                 `tbl_now_can_reconstruct()`, i.e. on EVERY dplyr verb, so it
-#                 must not grow an extra scan of the data per column.
+#                 ever yields a note. `validate_tbl_now()` runs on EVERY
+#                 `tbl_now()` construction, and the cases getters rebuild
+#                 constantly, so it must not grow an extra scan of the data per
+#                 column. The `"units"` block honours this: its two grid checks
+#                 are `deep`, and only the fractional-`.delay` row is not.
 
 # The generic -----------------------------------------------------------------
 
@@ -328,15 +330,19 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
 #' The checks `validate_tbl_now()` presents as conditions
 #'
 #' The rest of the engine is `diagnose()`-only. This subset is also what keeps
-#' `validate_tbl_now()` cheap: it runs on every `dplyr` verb, so it must not
-#' grow a check that costs a pass over the data.
+#' `validate_tbl_now()` cheap: it runs wherever the class is checked, so it must
+#' not grow a check that costs a pass over the data.
+#'
+#' `"units"` is here for its fractional-`.delay` finding alone, which is one
+#' vectorised comparison. Its two grid checks are `deep`, so they stay in
+#' [diagnose()] and this list does not pay for them.
 #'
 #' @return A character vector of check slugs.
 #'
 #' @keywords internal
 #' @noRd
 .diagnose_validation_checks <- function() {
-  c("declarations", "ordering", "missing", "duplicates", "now")
+  c("declarations", "ordering", "missing", "duplicates", "units", "now")
 }
 
 #' The `"note"` findings `validate_tbl_now()` emits, and how
@@ -1481,6 +1487,14 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
 
   rows <- list()
 
+  # `validate_tbl_now()` asks for this block with `deep = FALSE`, wanting only
+  # part 3 -- the fractional delay, which is one vectorised comparison. Parts 1
+  # and 2 each walk the date columns, and neither has ever been anything but a
+  # note, so they stay where the user asked a question: `diagnose()`.
+  if (!context$deep) {
+    return(.diagnose_block(list(.diagnose_units_delay_row(x))))
+  }
+
   # -- 1. the declarations against each other ---------------------------------
   # `time_cols_to_numeric()` enforces the first two rules at construction, so
   # this row is mostly reachable through `change_event_date()` and friends. The
@@ -1587,14 +1601,39 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   }
 
   # -- 3. the delay those units produce ---------------------------------------
+  rows[[length(rows) + 1L]] <- .diagnose_units_delay_row(x)
+
+  .diagnose_block(rows)
+}
+
+#' The fractional-`.delay` finding
+#'
+#' Split out because it is the one part of the units block cheap enough for
+#' `validate_tbl_now()` to run, and the only one it emits.
+#'
+#' It is a **warning**, not a note. A fractional delay is not a matter of taste:
+#' the converters count in whole periods, and every one of them either aborts on
+#' it or quietly reads `2.5` weeks as something else. The package refuses to
+#' create one (`.reconstruct_date_from_delay()`), so this catches the other way
+#' in -- two date columns on different weekday grids -- which `align_weeks()`
+#' exists to fix. It stays a warning rather than an error precisely so that the
+#' object you need to hand to `align_weeks()` can still be built.
+#'
+#' @param x A `tbl_now` object.
+#'
+#' @return A findings row.
+#'
+#' @keywords internal
+#' @noRd
+.diagnose_units_delay_row <- function(x) {
   delay <- x[[".delay"]]
   fractional <- if (is.null(delay)) {
     integer(0)
   } else {
     which(!is.na(delay) & abs(delay - round(delay)) > sqrt(.Machine$double.eps))
   }
-  rows[[length(rows) + 1L]] <- .diagnose_count_row(
-    "units", "delay", length(fractional), nrow(x), "note",
+  .diagnose_count_row(
+    "units", "delay", length(fractional), nrow(x), "warning",
     .diagnose_text(
       "{length(fractional)} row{?s} {?has/have} a fractional {.code .delay}."
     ),
@@ -1605,8 +1644,6 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     ),
     rows = fractional
   )
-
-  .diagnose_block(rows)
 }
 
 #' Dates that do not sit on the grid their units claim

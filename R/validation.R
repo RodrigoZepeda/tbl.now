@@ -527,152 +527,6 @@ remove_validation_date <- function(x) {
   )
 }
 
-# Counting outcomes -----
-
-#' Confirmed, retracted and net counts per event date
-#'
-#' @description `r lifecycle::badge("experimental")`
-#'
-#' Once a `tbl_now` carries a validation process, "how many cases were there"
-#' has three different answers, and which one you want depends on the question:
-#'
-#' * **`get_latest_reported_cases()`** (the existing function) counts everything
-#'   that was ever *reported*, whatever the laboratory later said. It is what a
-#'   nowcast of the reporting process predicts.
-#' * **`get_latest_confirmed()`** counts only the cases that came back
-#'   **confirmed**. Pending and retracted cases are not counted.
-#' * **`get_net_confirmed()`** counts **confirmed minus retracted**: the running
-#'   total as a surveillance system would publish it, which can go **down** when
-#'   a case is withdrawn.
-#'
-#' That last one is the quantity a `count-cumulative` stream actually reports,
-#' and the one \pkg{diseasenowcasting}'s signed-increment (Skellam / SkNB)
-#' likelihood is built for -- see
-#' [diseasenowcasting::confirmation_process()].
-#'
-#' @param x A `tbl_now` with a validation process (see [add_validation_date()]).
-#'
-#' @param delay For `get_nth_confirmed()`, a single non-negative number (or
-#'   `Inf`): the longest validation delay to count, in validation units.
-#'
-#' @return A `tibble` with the event-date column, the strata columns and a count
-#'   column named after the object's own `case_count` (or `n` for a line list).
-#'
-#' `get_initial_confirmed()` and `get_nth_confirmed()` answer the same three
-#' questions at an earlier point in the process: what was confirmed by the first
-#' result to arrive, and what was confirmed within a given delay.
-#'
-#' @section Which date the count is indexed by:
-#'
-#' By the **event date**, as every other `get_*_cases()` function is. A case
-#' confirmed three weeks after onset still belongs to the week it began. If you
-#' want counts by validation date instead, group on
-#' `get_validation_date(x)` yourself -- that is a different question (how busy
-#' was the laboratory) and this package does not silently answer it.
-#'
-#' @seealso
-#' [get_latest_reported_cases()][get_latest_first] for the same counts on the
-#' reporting process; [add_validation_date()][add] to attach a
-#' validation; [validation_delay] for how long resolution takes;
-#' [plot_validation_status()] to see confirmed, retracted and pending over time.
-#'
-#' @examples
-#' cases <- data.frame(
-#'   onset = as.Date("2021-01-04") + c(0, 0, 1, 1, 2),
-#'   visit = as.Date("2021-01-05") + c(0, 0, 1, 1, 2),
-#'   result = as.Date("2021-01-06") + c(0, 0, 1, 1, 2),
-#'   outcome = c("confirmed", "retracted", "confirmed", "confirmed", "retracted")
-#' )
-#' flu <- tbl_now(cases,
-#'   event_date = onset, report_date = visit,
-#'   validation_date = result, validation_type = outcome,
-#'   data_type = "linelist", verbose = FALSE
-#' )
-#'
-#' # Three answers to "how many cases were there?".
-#' get_latest_reported_cases(flu) # everything reported
-#' get_latest_confirmed(flu) # only the positives
-#' get_net_confirmed(flu) # positives minus withdrawals
-#'
-#' # And the same question asked at an earlier point in the process: what was
-#' # confirmed by the first result to come back, and within one day of report.
-#' get_initial_confirmed(flu)
-#' get_nth_confirmed(flu, delay = 1)
-#'
-#' @name validation_counts
-NULL
-
-#' @rdname validation_counts
-#' @export
-get_latest_confirmed <- function(x) {
-  .count_by_outcome(x, "get_latest_confirmed", net = FALSE)
-}
-
-#' @rdname validation_counts
-#' @export
-get_net_confirmed <- function(x) {
-  .count_by_outcome(x, "get_net_confirmed", net = TRUE)
-}
-
-#' Count cases per event date, weighting outcomes
-#'
-#' @param x A `tbl_now`.
-#' @param fn Calling function name, for messages.
-#' @param net When `TRUE`, retracted cases count `-1`; otherwise they count `0`.
-#'
-#' @return A tibble.
-#'
-#' @keywords internal
-#' @noRd
-.count_by_outcome <- function(x, fn, net, within_delay = NULL) {
-  .assert_tbl_now(x, fn)
-  if (!has_validation(x)) {
-    cli::cli_abort(c(
-      "{.fn {fn}} needs a validation process, and {.arg x} has none.",
-      "i" = "Attach one with {.fn add_validation_date}.",
-      "i" = "For counts of everything reported, use
-             {.fn get_latest_reported_cases}."
-    ))
-  }
-
-  event_col <- get_event_date(x)
-  strata <- get_strata(x) %||% character(0)
-  type_col <- get_validation_type(x)
-  count_in <- get_case_count(x)
-  count_out <- count_in %||% "n"
-
-  observations <- dplyr::as_tibble(.declass_tbl_now(dplyr::ungroup(x)))
-  outcome <- as.character(observations[[type_col]])
-
-  # confirmed counts +1; retracted counts -1 for a NET total and 0 otherwise;
-  # pending and NA never count, because neither is a confirmed case.
-  weight <- dplyr::case_when(
-    outcome == "confirmed" ~ 1,
-    outcome == "retracted" ~ if (isTRUE(net)) -1 else 0,
-    .default = 0
-  )
-
-  # "Resolved within `within_delay`" -- anything slower has not been resolved
-  # AS OF that delay, so it does not count yet.
-  if (!is.null(within_delay)) {
-    resolved_in_time <- is.finite(observations[[".validation_delay"]]) &
-      observations[[".validation_delay"]] <= within_delay
-    weight[!resolved_in_time] <- 0
-  }
-
-  size <- if (is.null(count_in)) 1 else observations[[count_in]]
-  observations[[".weighted"]] <- weight * size
-
-  out <- observations |>
-    dplyr::summarise(
-      !!count_out := sum(.data$.weighted, na.rm = TRUE),
-      .by = dplyr::all_of(c(event_col, strata))
-    ) |>
-    dplyr::arrange(dplyr::across(dplyr::all_of(c(event_col, strata))))
-
-  out
-}
-
 # Does the validation delay depend on the outcome? -----
 
 #' Compare validation delays between confirmed and retracted cases
@@ -717,8 +571,8 @@ get_net_confirmed <- function(x) {
 #'
 #' @seealso
 #' [add_validation_date()][add] to attach a validation process;
-#' [censor_validation_delays_above()][censor_delays_above] for resolutions that
-#' never arrive; [validation_counts] for counting the outcomes;
+#' [censor_validation_delays_above()][censoring] for resolutions that
+#' never arrive; [validated_cases] for counting the outcomes;
 #' [diagnose_drift()] for the same question about the *reporting* delay over time.
 #' The [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' puts this alongside the other checks.
@@ -914,28 +768,7 @@ plot_validation_delay <- function(x, by = NULL) {
   )
 }
 
-#' @rdname validation_counts
-#'
-#' @param delay Longest validation delay to count, in the object's
-#'   validation units. `get_nth_confirmed(x, delay = 7)` answers "how many
-#'   cases per event date had been resolved within a week of being reported".
-#' @export
-get_nth_confirmed <- function(x, delay) {
-  .assert_tbl_now(x, "get_nth_confirmed")
-  if (!is.numeric(delay) || length(delay) != 1L || is.na(delay)) {
-    cli::cli_abort("{.arg delay} must be a single number.")
-  }
-  .count_by_outcome(x, "get_nth_confirmed", net = FALSE, within_delay = delay)
-}
-
-#' @rdname validation_counts
-#' @export
-get_initial_confirmed <- function(x) {
-  # Delay 0: resolved in the same period it was reported -- the rapid-test case.
-  .count_by_outcome(x, "get_initial_confirmed", net = FALSE, within_delay = 0)
-}
-
-#' @rdname censor_delays_above
+#' @rdname censoring
 #' @export
 censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
   .assert_tbl_now(x, "censor_validation_delays_above")
@@ -952,18 +785,15 @@ censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
   delays <- x[[".validation_delay"]]
   too_long <- is.finite(delays) & delays > max_delay
 
-  # Merge with any flags already set: a delay you have already decided not to
-  # take at face value does not become exact because a later, looser threshold
-  # was applied.
-  censored_col_name <- get_is_censored_validation(x)
-  if (!is.null(censored_col_name) && censored_col_name %in% names(x)) {
-    already_censored <- as.logical(x[[censored_col_name]])
-    already_censored[is.na(already_censored)] <- FALSE
-    x[[censored_col_name]] <- already_censored | too_long
-  } else {
-    x[[".is_censored_validation"]] <- too_long
-    x <- add_is_censored_validation(x, ".is_censored_validation")
-  }
+  # `add_is_censored_validation()` refuses a `grouped_tbl_now`, so the grouping
+  # comes off for the write and goes back on afterwards. `.censor_mark()` does
+  # the merge itself -- a delay you have already decided not to take at face
+  # value does not become exact because a later, looser threshold was applied.
+  group_columns <- dplyr::group_vars(x)
+  x <- .tbl_now_regroup(
+    .censor_mark(ungroup(x), too_long, axis = "validation"),
+    group_columns
+  )
 
   if (isTRUE(verbose)) {
     cli::cli_inform(c(
@@ -1015,7 +845,7 @@ censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
 #' epidemic process), `retracted` in the accent red (it was removed by the
 #' reporting process), and `pending` in grey (not yet known either way).
 #'
-#' @seealso [diagnose_validation_delay()], [get_latest_confirmed()].
+#' @seealso [diagnose_validation_delay()], [validated_cases].
 #'
 #' @examples
 #' cases <- data.frame(

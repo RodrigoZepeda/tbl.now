@@ -128,11 +128,11 @@ get_validation_levels(tn3)
 
 # "How many cases were there" now has more than one answer.
 head(get_latest_reported_cases(tn3))
-head(get_latest_confirmed(tn3))
+head(get_latest_validated_cases(tn3, type = "confirmed"))
 }
 \seealso{
 \code{\link[=tbl_now]{tbl_now()}} to declare the date columns; \link[=add]{add_validation_date()} to
-attach the third one to an object that has none; \link{validation_counts} to count
+attach the third one to an object that has none; \link{validated_cases} to count
 the outcomes; \link[=tbl_now_summary]{summary()} and \code{\link[=diagnose]{diagnose()}} to inspect the
 result; the package's other datasets -- \link{denguedat}, \link{mpoxdat}, \link{flusight},
 \link{covid_colombia} and \link{hai_bucaramanga}.

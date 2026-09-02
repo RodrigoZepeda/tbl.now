@@ -38,85 +38,324 @@ Specifically a `tbl_now` is a data structure that keeps track of the following a
 
 
 <table>
+
 <thead>
+
 <tr>
-<th align="center">&nbsp;</th>
-<th align="left">Argument</th>
-<th align="left">What it records</th>
+
+<th align="center">
+
+ 
+</th>
+
+<th align="left">
+
+Argument
+</th>
+
+<th align="left">
+
+What it records
+</th>
+
 </tr>
+
 </thead>
+
 <tbody>
+
 <tr>
-<td align="center"><img src="man/figures/event_date.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="event_date"></td>
-<td align="left"><code>event_date</code></td>
-<td align="left">The column storing <strong>event dates</strong>; i.e. when the epidemiological phenomenon of interest happened (symptom onset, hospitalisation, death, &hellip;). <strong>Required.</strong></td>
+
+<td align="center">
+
+<img src="man/figures/event_date.svg" height="70" style="height:70px;width:auto;" alt="event_date">
+</td>
+
+<td align="left">
+
+<code>event_date</code>
+</td>
+
+<td align="left">
+
+The column storing <strong>event dates</strong>; i.e. when the
+epidemiological phenomenon of interest happened (symptom onset,
+hospitalisation, death, …). <strong>Required.</strong>
+</td>
+
 </tr>
+
 <tr>
-<td align="center"><img src="man/figures/report_date.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="report_date"></td>
-<td align="left"><code>report_date</code></td>
-<td align="left">The column storing <strong>report dates</strong>; i.e. when that event became known to the surveillance system. <strong>Required</strong>, unless it is reconstructed from <code>delay</code>.</td>
+
+<td align="center">
+
+<img src="man/figures/report_date.svg" height="70" style="height:70px;width:auto;" alt="report_date">
+</td>
+
+<td align="left">
+
+<code>report_date</code>
+</td>
+
+<td align="left">
+
+The column storing <strong>report dates</strong>; i.e. when that event
+became known to the surveillance system. <strong>Required</strong>,
+unless it is reconstructed from <code>delay</code>.
+</td>
+
 </tr>
+
 <tr>
-<td align="center"><img src="man/figures/validation_date.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation"></td>
-<td align="left"><code>validation_date</code></td>
-<td align="left">An optional third date indicating when the report was resolved (see <code>validation_type</code>). <em>Optional</em>.</td>
+
+<td align="center">
+
+<img src="man/figures/validation_date.svg" height="70" style="height:70px;width:auto;" alt="validation">
+</td>
+
+<td align="left">
+
+<code>validation_date</code>
+</td>
+
+<td align="left">
+
+An optional third date indicating when the report was resolved (see
+<code>validation_type</code>). <em>Optional</em>.
+</td>
+
 </tr>
+
 <tr>
-<td align="center"><img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation"></td>
-<td align="left"><code>validation_type</code></td>
-<td align="left">What the validation date resolved to. Only <code>confirmed</code>, <code>retracted</code>, <code>pending</code> or <code>NA</code> are ever stored; use <code>validation_levels</code> for data recorded in other words. <em>Optional</em>.</td>
+
+<td align="center">
+
+<img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;" alt="validation">
+</td>
+
+<td align="left">
+
+<code>validation_type</code>
+</td>
+
+<td align="left">
+
+What the validation date resolved to. Only <code>confirmed</code>,
+<code>retracted</code>, <code>pending</code> or <code>NA</code> are ever
+stored; use <code>validation_levels</code> for data recorded in other
+words. <em>Optional</em>.
+</td>
+
 </tr>
+
 <tr>
-<td align="center"><img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation_levels"></td>
-<td align="left"><code>validation_levels</code></td>
-<td align="left">A named dictionary translating the labels in <code>validation_type</code> into those four, e.g. <code>c(confirmado = "confirmed")</code>. <em>Optional</em>.</td>
+
+<td align="center">
+
+<img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;" alt="validation_levels">
+</td>
+
+<td align="left">
+
+<code>validation_levels</code>
+</td>
+
+<td align="left">
+
+A named dictionary translating the labels in
+<code>validation_type</code> into those four, e.g. <code>c(confirmado =
+“confirmed”)</code>. <em>Optional</em>.
+</td>
+
 </tr>
+
 <tr>
-<td align="center"><img src="man/figures/now.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="now"></td>
-<td align="left"><code>now</code></td>
-<td align="left">The date the nowcast is anchored to &mdash; &ldquo;today&rdquo; from the model's point of view. <em>Optional</em>; defaults to the latest date.</td>
+
+<td align="center">
+
+<img src="man/figures/now.svg" height="70" style="height:70px;width:auto;" alt="now">
+</td>
+
+<td align="left">
+
+<code>now</code>
+</td>
+
+<td align="left">
+
+The date the nowcast is anchored to — “today” from the model’s point of
+view. <em>Optional</em>; defaults to the latest date.
+</td>
+
 </tr>
+
 <tr>
-<td align="center"><img src="man/figures/strata.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="strata"></td>
-<td align="left"><code>strata</code></td>
-<td align="left">Columns you want a separate nowcast for (e.g. gender, region). <em>Optional</em>.</td>
+
+<td align="center">
+
+<img src="man/figures/strata.svg" height="70" style="height:70px;width:auto;" alt="strata">
+</td>
+
+<td align="left">
+
+<code>strata</code>
+</td>
+
+<td align="left">
+
+Columns you want a separate nowcast for (e.g. gender, region).
+<em>Optional</em>.
+</td>
+
 </tr>
+
 <tr>
-<td align="center"><img src="man/figures/covariates.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="covariates"></td>
-<td align="left"><code>covariates</code></td>
-<td align="left">Columns that inform the nowcast but that you do <em>not</em> want it broken down by (e.g. temperature or precipitation). <em>Optional</em>.</td>
+
+<td align="center">
+
+<img src="man/figures/covariates.svg" height="70" style="height:70px;width:auto;" alt="covariates">
+</td>
+
+<td align="left">
+
+<code>covariates</code>
+</td>
+
+<td align="left">
+
+Columns that inform the nowcast but that you do <em>not</em> want it
+broken down by (e.g. temperature or precipitation). <em>Optional</em>.
+</td>
+
 </tr>
+
 <tr>
-<td align="center"><img src="man/figures/case_count.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="case_count"></td>
-<td align="left"><code>case_count</code></td>
-<td align="left">The column holding the counts when the data is given as aggregated (rather than line-list). <em>Optional</em>.</td>
+
+<td align="center">
+
+<img src="man/figures/case_count.svg" height="70" style="height:70px;width:auto;" alt="case_count">
+</td>
+
+<td align="left">
+
+<code>case_count</code>
+</td>
+
+<td align="left">
+
+The column holding the counts when the data is given as aggregated
+(rather than line-list). <em>Optional</em>.
+</td>
+
 </tr>
+
 <tr>
-<td align="center"><img src="man/figures/datatype.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="data_type"></td>
-<td align="left"><code>data_type</code></td>
-<td align="left">Whether the data represents a <code>linelist</code> (each row is a case), <code>count-incidence</code>(each row is a collection of cases per event-report date) or <code>count-cumulative</code>(each row is the cummulative number cases for that event accumulating in the report axis). <em>Optional</em>; inferred by default.</td>
+
+<td align="center">
+
+<img src="man/figures/datatype.svg" height="70" style="height:70px;width:auto;" alt="data_type">
+</td>
+
+<td align="left">
+
+<code>data_type</code>
+</td>
+
+<td align="left">
+
+Whether the data represents a <code>linelist</code> (each row is a
+case), <code>count-incidence</code>(each row is a collection of cases
+per event-report date) or <code>count-cumulative</code>(each row is the
+cummulative number cases for that event accumulating in the report
+axis). <em>Optional</em>; inferred by default.
+</td>
+
 </tr>
+
 <tr>
-<td align="center"><img src="man/figures/units.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="units"></td>
-<td align="left"><code>event_units</code>, <code>report_units</code>, <code>validation_units</code></td>
-<td align="left">The time grid each date lives on: <code>days</code>, <code>weeks</code>, <code>months</code>, <code>years</code> or <code>numeric</code>. <em>Optional</em>; inferred (<code>"auto"</code>) by default.</td>
+
+<td align="center">
+
+<img src="man/figures/units.svg" height="70" style="height:70px;width:auto;" alt="units">
+</td>
+
+<td align="left">
+
+<code>event_units</code>, <code>report_units</code>,
+<code>validation_units</code>
+</td>
+
+<td align="left">
+
+The time grid each date lives on: <code>days</code>, <code>weeks</code>,
+<code>months</code>, <code>years</code> or <code>numeric</code>.
+<em>Optional</em>; inferred (<code>“auto”</code>) by default.
+</td>
+
 </tr>
+
 <tr>
-<td align="center"><img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored_report"></td>
-<td align="left"><code>is_censored_report</code></td>
-<td align="left">Flags report dates that are only an upper bound, e.g. a batch or back-fill dump. <em>Optional</em>.</td>
+
+<td align="center">
+
+<img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;" alt="is_censored_report">
+</td>
+
+<td align="left">
+
+<code>is_censored_report</code>
+</td>
+
+<td align="left">
+
+Flags report dates that are only an upper bound, e.g. a batch or
+back-fill dump. <em>Optional</em>.
+</td>
+
 </tr>
+
 <tr>
-<td align="center"><img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored_validation"></td>
-<td align="left"><code>is_censored_validation</code></td>
-<td align="left">The same on the validation axis: flags rows whose <em>validation</em> delay is a bound rather than a measurement. <em>Optional</em>.</td>
+
+<td align="center">
+
+<img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;" alt="is_censored_validation">
+</td>
+
+<td align="left">
+
+<code>is_censored_validation</code>
+</td>
+
+<td align="left">
+
+The same on the validation axis: flags rows whose <em>validation</em>
+delay is a bound rather than a measurement. <em>Optional</em>.
+</td>
+
 </tr>
+
 <tr>
-<td align="center"><img src="man/figures/temporal_effects.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="temporal_effects"></td>
-<td align="left"><code>t_effects</code></td>
-<td align="left">Columns holding temporal effects (day of week, holidays, &hellip;) that some models can use. <em>Optional</em>.</td>
+
+<td align="center">
+
+<img src="man/figures/temporal_effects.svg" height="70" style="height:70px;width:auto;" alt="temporal_effects">
+</td>
+
+<td align="left">
+
+<code>t_effects</code>
+</td>
+
+<td align="left">
+
+Columns holding temporal effects (day of week, holidays, …) that some
+models can use. <em>Optional</em>.
+</td>
+
 </tr>
+
 </tbody>
+
 </table>
 
 You can specify an object as a `tbl.now` with the `tbl_now` command:

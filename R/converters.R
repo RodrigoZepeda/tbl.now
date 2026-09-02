@@ -1094,7 +1094,7 @@
 
   before <- nrow(x)
   pooled <- suppressWarnings(suppressMessages(
-    to_count(x, to = get_data_type(x))
+    to_count(ungroup(x), to = get_data_type(x))
   ))
 
   if (isTRUE(verbose)) {
@@ -1930,7 +1930,7 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' @seealso
 #' [add] and [validation_delay], since \pkg{epidist} is about
 #' delay distributions and a `tbl_now` may carry two of them;
-#' [censor_delays_above()] for the long delays that would otherwise dominate a
+#' [censor_reporting_delays_above()] for the long delays that would otherwise dominate a
 #' fitted distribution;
 #' [tidy()][tidy.epidist_fit] for the fitted result.
 #' [as_tbl_now()] for the generic that dispatches to the `*_from_*()` side;
@@ -2294,7 +2294,7 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
       "epinowcast expects cumulative counts; {.arg x} has data_type \\
        {.val {get_data_type(x)}}. Converting with {.fn to_count}."
     )
-    x <- to_count(x, to = "count-cumulative")
+    x <- to_count(ungroup(x), to = "count-cumulative")
   }
 
   event_col   <- get_event_date(x)
@@ -2442,7 +2442,7 @@ tbl_now_to_baselinenowcast <- function(x, ...,
              redistributed into earlier delays with \\
              {.fn baselinenowcast::preprocess_negative_values}."
     ))
-    x <- to_count(x, to = "count-incidence")
+    x <- to_count(ungroup(x), to = "count-incidence")
   } else if (data_type != "count-incidence") {
     cli::cli_warn(
       "baselinenowcast expects incremental counts; converting {.arg x} to \\
@@ -2968,7 +2968,9 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
   }
 
   keep_strata <- identical(target, "regional_epinow")
-  series <- as_series(suppressMessages(get_latest_reported_cases(x)), keep_strata)
+  series <- as_series(
+    suppressMessages(get_latest_reported_cases(ungroup(x))), keep_strata
+  )
 
   by <- NULL
   if (keep_strata) {
@@ -3041,7 +3043,9 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
       suppressWarnings(suppressMessages(complete_zeroes(snapshot, until = as_of))),
       error = function(e) snapshot
     )
-    series <- as_series(suppressMessages(get_latest_reported_cases(snapshot)), FALSE)
+    series <- as_series(
+      suppressMessages(get_latest_reported_cases(ungroup(snapshot))), FALSE
+    )
     series$confirm[series$confirm < 0] <- 0
     if (should_accumulate) series <- .epinow2_grid(series, event_units)
     series
@@ -3320,6 +3324,12 @@ tbl_now_to_epidist <- function(x, ...,
   .need_pkg("epidist")
   #.warn_lossy_conversion("epidist", quiet)
   format <- match.arg(format)
+
+  # A converter returns a foreign object, so the caller's grouping has nowhere
+  # to go -- but left on, it makes the `keep` mutate below run once per group
+  # and abort. Every other converter already tolerates a grouped input; this one
+  # did not, and the error named `keep` rather than the grouping.
+  x <- ungroup(x)
 
   # Materialise the lazy temporal-effect columns so they are carried as extra
   # covariate columns on the epidist data.

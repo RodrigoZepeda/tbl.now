@@ -20,8 +20,9 @@
 #'    statistical tests worth running -- [diagnose_drift()] for delays that are
 #'    getting longer, [diagnose_batches()] for backlog releases,
 #'    [diagnostic_plot()] for the reporting process as a picture.
-#' 4. **Reshape.** [to_count()], [complete_zeroes()], [align_weeks()] and
-#'    [censor_delays_above()] put the data on the grid a model needs.
+#' 4. **Reshape.** [to_count()], [complete_zeroes()], [aggregate_time_units()],
+#'    [align_weeks()] and [censor_reports()][censoring] put the data on the grid
+#'    a model needs.
 #' 5. **Fit.** [run_nowcast()] takes the data and an [engine()] -- one interface
 #'    over \pkg{epinowcast}, \pkg{baselinenowcast}, \pkg{NobBS},
 #'    \pkg{EpiNow2}, \pkg{surveillance} and \pkg{diseasenowcasting}. Write your

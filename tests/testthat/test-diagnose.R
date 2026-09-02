@@ -321,8 +321,11 @@ test_that("weekly dates on two weekday grids are found, with the fix named", {
   # The event column is on its own regular grid; only the pair disagrees.
   expect_equal(as.character(finding(result, "units", "event_grid")$status), "ok")
 
+  # A `warning` since 0.31.0 (#63), not a note: the converters cannot read a
+  # fractional delay, and the package no longer creates one, so the only way in
+  # is this -- two date columns on different weekday grids.
   fractional <- finding(result, "units", "delay")
-  expect_equal(as.character(fractional$status), "note")
+  expect_equal(as.character(fractional$status), "warning")
   expect_equal(fractional$n_affected, 3)
 })
 

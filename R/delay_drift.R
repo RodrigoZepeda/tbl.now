@@ -610,7 +610,7 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
 #' @seealso
 #' [diagnose_changepoint()] for an abrupt shift rather than a gradual trend;
 #' [plot_delay_drift()] to see the series being tested;
-#' [censor_delays_above()] once you decide some delays are not to be believed;
+#' [censor_reporting_delays_above()] once you decide some delays are not to be believed;
 #' [diagnose_signposts()][nowcast_diagnose_components], which tells you when this
 #' test is worth running.
 #'

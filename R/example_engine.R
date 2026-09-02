@@ -83,7 +83,7 @@ example_engine <- function(..., spread = 0.2, min_date = NULL,
 nowcast_fit.example <- function(engine, x, ..., spread = 0.2,
                                 quantile_levels = nowcast_quantile_levels(),
                                 verbose = TRUE) {
-  list(counts = get_latest_reported_cases(x), spread = spread)
+  list(counts = get_latest_reported_cases(ungroup(x)), spread = spread)
 }
 
 #' @rdname example_engine

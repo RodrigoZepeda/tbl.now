@@ -286,8 +286,8 @@ test_that("the three counts answer three different questions", {
   flu <- flu_fixture(n_days = 3L)
 
   reported <- get_latest_reported_cases(flu)
-  confirmed <- get_latest_confirmed(flu)
-  net <- get_net_confirmed(flu)
+  confirmed <- get_latest_validated_cases(flu, "confirmed")
+  net <- get_latest_validated_cases(flu, "net")
 
   # Per day the fixture has 2 confirmed, 1 retracted, 1 pending.
   expect_equal(unique(reported[["n"]]), 4)
@@ -307,8 +307,12 @@ test_that("the three counts answer three different questions", {
     validation_date = "cf", validation_type = "ty",
     data_type = "linelist", verbose = FALSE, warn_non_uniqueness = FALSE
   )
-  expect_equal(get_net_confirmed(x)[["n"]], c(-1, -1))
-  expect_equal(get_latest_confirmed(x)[["n"]], c(0, 0))
+  expect_equal(get_latest_validated_cases(x, "net")[["n"]], c(-1, -1))
+  # Nothing was confirmed at all, so there is no row to return -- the
+  # reporting-axis getters drop an event date with nothing in it the same way.
+  expect_error(
+    get_latest_validated_cases(x, "confirmed"), "selected no cases"
+  )
 })
 
 test_that("the counting getters refuse an object with no validation", {
@@ -316,8 +320,16 @@ test_that("the counting getters refuse an object with no validation", {
     data.frame(e = as.Date("2021-01-04") + 0:2, r = as.Date("2021-01-05") + 0:2),
     event_date = "e", report_date = "r", data_type = "linelist", verbose = FALSE
   )
-  expect_error(get_latest_confirmed(plain), "needs a validation process")
-  expect_error(get_net_confirmed(plain), "needs a validation process")
+  expect_error(get_latest_validated_cases(plain), "needs a validation process")
+  expect_error(get_nth_validated_cases(plain, 1), "needs a validation process")
+
+  # The reporting-axis getters still work; they just cannot filter on an
+  # outcome that is not there, and say so rather than pretending.
+  expect_warning(
+    pooled <- get_latest_reported_cases(plain, "confirmed"),
+    "no validation process"
+  )
+  expect_equal(pooled[["n"]], get_latest_reported_cases(plain)[["n"]])
 })
 
 # Does the delay depend on the outcome? ---------------------------------------
@@ -546,11 +558,13 @@ test_that("the reporting-process plots accept the validation axis", {
 
 # The smaller analogues -------------------------------------------------------
 
-test_that("get_initial_confirmed() and get_nth_confirmed() count by delay", {
+test_that("get_nth_validated_cases() counts by the delay from the EVENT", {
   cases <- data.frame(
     onset = as.Date("2021-01-04") + 0:4,
     visit = as.Date("2021-01-05") + 0:4,
-    # Validation delays of 0, 2, 1, 90 and 2 periods.
+    # Report is one day after onset throughout, and the laboratory takes a
+    # further 0, 2, 1, 90 and 2 days -- so the delays from the EVENT, which is
+    # what this getter counts in, are 1, 3, 2, 91 and 3.
     result = as.Date("2021-01-05") + 0:4 + c(0, 2, 1, 90, 2),
     outcome = rep("confirmed", 5)
   )
@@ -560,13 +574,21 @@ test_that("get_initial_confirmed() and get_nth_confirmed() count by delay", {
     data_type = "linelist", verbose = FALSE
   )
 
-  expect_equal(get_latest_confirmed(flu)[["n"]], rep(1, 5))
-  # Same-period resolution only: the first case.
-  expect_equal(get_initial_confirmed(flu)[["n"]], c(1, 0, 0, 0, 0))
-  # Within two periods: everything except the 90-day straggler.
-  expect_equal(get_nth_confirmed(flu, 2)[["n"]], c(1, 1, 1, 0, 1))
+  expect_equal(get_latest_validated_cases(flu, "confirmed")[["n"]], rep(1, 5))
 
-  expect_error(get_nth_confirmed(flu, "two"), "single number")
+  # Within one day of onset: only the case the laboratory turned round the day
+  # it was reported. The other event dates have nothing to report, so they are
+  # absent rather than zero -- as on the reporting axis.
+  within_one <- get_nth_validated_cases(flu, 1)
+  expect_equal(within_one[["n"]], 1)
+  expect_equal(within_one[["onset"]], as.Date("2021-01-04"))
+
+  # Within three days: everything except the 91-day straggler.
+  within_three <- get_nth_validated_cases(flu, 3)
+  expect_equal(within_three[["n"]], rep(1, 4))
+  expect_equal(within_three[["onset"]], as.Date("2021-01-04") + c(0, 1, 2, 4))
+
+  expect_error(get_nth_validated_cases(flu, "two"), "non-negative number")
 })
 
 test_that("censor_validation_delays_above() flags stragglers, keeping them", {
@@ -594,7 +616,7 @@ test_that("censor_validation_delays_above() flags stragglers, keeping them", {
   expect_equal(sum(censored[["outcome"]] == "confirmed"), 5L)
   expect_false(is.na(censored[["result"]][4]))
   expect_equal(censored[[".validation_delay"]][4], 90)
-  expect_equal(sum(get_latest_confirmed(censored)[["n"]]), 5)
+  expect_equal(sum(get_latest_validated_cases(censored, "confirmed")[["n"]]), 5)
 })
 
 test_that("censor_validation_delays_above() merges with existing flags", {

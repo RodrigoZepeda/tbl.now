@@ -203,7 +203,7 @@ tbl_now_to_epidist(nowagg)
 \seealso{
 \link{add} and \link{validation_delay}, since \pkg{epidist} is about
 delay distributions and a \code{tbl_now} may carry two of them;
-\code{\link[=censor_delays_above]{censor_delays_above()}} for the long delays that would otherwise dominate a
+\code{\link[=censor_reporting_delays_above]{censor_reporting_delays_above()}} for the long delays that would otherwise dominate a
 fitted distribution;
 \link[=tidy.epidist_fit]{tidy()} for the fitted result.
 \code{\link[=as_tbl_now]{as_tbl_now()}} for the generic that dispatches to the \verb{*_from_*()} side;

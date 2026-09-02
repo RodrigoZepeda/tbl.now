@@ -25,6 +25,18 @@
 #' column you care about should be declared as a strata or covariate first (see
 #' [add_strata()]) or it will be summed away.
 #'
+#' @section Grouping is dropped, and said so:
+#' `to_count()` **ungroups**, and warns when it does. It is the one verb in the
+#' package that does not put the caller's grouping back, and the reason is that
+#' it changes what a row *is*: after aggregating, one row is an (event date,
+#' report date) cell rather than one of the rows that were grouped, so the
+#' grouping no longer describes anything in the object.
+#'
+#' A grouping is also not how you keep a column out of the sum. Declare it --
+#' [add_strata()] or [add_covariates()] -- and it becomes part of the cell key.
+#' The reported-cases getters do respect a grouping, because they select rather
+#' than reshape; see [get_latest_reported_cases()].
+#'
 #' @section Statistical details:
 #' Converting `count-cumulative` to `count-incidence` **de-accumulates** the
 #' series: within each event date (and grouping), ordered by report date, the
@@ -85,7 +97,22 @@ to_count <- function(x, to = NULL, ...) {
 #' @export
 #' @rdname to_count
 to_count.tbl_now <- function(x, to = NULL, ...) {
-  # Ungroup just in case
+  # Unlike the other verbs, this one does NOT put the grouping back: aggregating
+  # rewrites what a row is, and a grouping is a statement about rows that no
+  # longer exist. Returning it silently was the complaint in #61, so say it --
+  # and say it only when there is something to say.
+  group_columns <- dplyr::group_vars(x)
+  if (length(group_columns) > 0) {
+    cli::cli_warn(c(
+      "{.fn to_count} aggregates, so it dropped the grouping by
+       {.val {group_columns}}.",
+      "i" = "One row is now an (event, report) cell, not one of the rows you
+             grouped, so the grouping no longer describes the object.",
+      "i" = "{cli::qty(group_columns)}Declare the column{?s} with
+             {.fn add_strata} or {.fn add_covariates} to keep {?it/them} out of
+             the aggregation, or regroup afterwards."
+    ))
+  }
   x <- x |> ungroup()
 
   # Fill the nulls
@@ -130,12 +157,16 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
       summarise(!!as.symbol(case_count) := dplyr::n(), .groups = "drop")
   } else if (get_data_type(x) == "linelist" & to == "count-cumulative") {
     # Go linelist -> count incidence -> count cumulative
+    # `x` is grouped by the cell key above; the recursive calls do their own
+    # grouping and would otherwise warn about one this function set itself.
     x <- x |>
+      ungroup() |>
       to_count(to = "count-incidence") |>
       to_count(to = "count-cumulative")
   } else if (get_data_type(x) == "count-incidence" & to == "count-cumulative") {
     # Summarise
     x <- x |>
+      ungroup() |>
       to_count(to = "count-incidence") |> # Just to make sure 1 obs per
       dplyr::group_by(dplyr::across(dplyr::all_of(c(get_event_date(x), get_is_censored_report(x), .validation_group_cols(x), get_strata(x), get_temporal_effect_cols(x), get_covariates(x))))) |>
       dplyr::arrange(dplyr::across(dplyr::all_of(get_report_date(x))), .by_group = TRUE) |>
@@ -152,6 +183,7 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
     # Because cumulative totals can be revised *downward*, an increment can be
     # negative; callers that need non-negative increments must handle that.
     x <- x |>
+      ungroup() |>
       to_count(to = "count-cumulative") |> # collapse any duplicate cells first
       dplyr::group_by(dplyr::across(dplyr::all_of(c(get_event_date(x), get_is_censored_report(x), .validation_group_cols(x), get_strata(x), get_temporal_effect_cols(x), get_covariates(x))))) |>
       dplyr::arrange(dplyr::across(dplyr::all_of(get_report_date(x))), .by_group = TRUE) |>

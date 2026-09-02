@@ -58,7 +58,7 @@ What it records
 
 <td align="center">
 
-<img src="man/figures/event_date.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="event_date">
+<img src="man/figures/event_date.svg" height="70" style="height:70px;width:auto;" alt="event_date">
 </td>
 
 <td align="left">
@@ -79,7 +79,7 @@ hospitalisation, death, …). <strong>Required.</strong>
 
 <td align="center">
 
-<img src="man/figures/report_date.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="report_date">
+<img src="man/figures/report_date.svg" height="70" style="height:70px;width:auto;" alt="report_date">
 </td>
 
 <td align="left">
@@ -100,7 +100,7 @@ unless it is reconstructed from <code>delay</code>.
 
 <td align="center">
 
-<img src="man/figures/validation_date.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation">
+<img src="man/figures/validation_date.svg" height="70" style="height:70px;width:auto;" alt="validation">
 </td>
 
 <td align="left">
@@ -120,7 +120,7 @@ An optional third date indicating when the report was resolved (see
 
 <td align="center">
 
-<img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation">
+<img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;" alt="validation">
 </td>
 
 <td align="left">
@@ -142,7 +142,7 @@ words. <em>Optional</em>.
 
 <td align="center">
 
-<img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="validation_levels">
+<img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;" alt="validation_levels">
 </td>
 
 <td align="left">
@@ -163,7 +163,7 @@ A named dictionary translating the labels in
 
 <td align="center">
 
-<img src="man/figures/now.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="now">
+<img src="man/figures/now.svg" height="70" style="height:70px;width:auto;" alt="now">
 </td>
 
 <td align="left">
@@ -183,7 +183,7 @@ view. <em>Optional</em>; defaults to the latest date.
 
 <td align="center">
 
-<img src="man/figures/strata.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="strata">
+<img src="man/figures/strata.svg" height="70" style="height:70px;width:auto;" alt="strata">
 </td>
 
 <td align="left">
@@ -203,7 +203,7 @@ Columns you want a separate nowcast for (e.g. gender, region).
 
 <td align="center">
 
-<img src="man/figures/covariates.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="covariates">
+<img src="man/figures/covariates.svg" height="70" style="height:70px;width:auto;" alt="covariates">
 </td>
 
 <td align="left">
@@ -223,7 +223,7 @@ broken down by (e.g. temperature or precipitation). <em>Optional</em>.
 
 <td align="center">
 
-<img src="man/figures/case_count.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="case_count">
+<img src="man/figures/case_count.svg" height="70" style="height:70px;width:auto;" alt="case_count">
 </td>
 
 <td align="left">
@@ -243,7 +243,7 @@ The column holding the counts when the data is given as aggregated
 
 <td align="center">
 
-<img src="man/figures/datatype.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="data_type">
+<img src="man/figures/datatype.svg" height="70" style="height:70px;width:auto;" alt="data_type">
 </td>
 
 <td align="left">
@@ -266,7 +266,7 @@ axis). <em>Optional</em>; inferred by default.
 
 <td align="center">
 
-<img src="man/figures/units.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="units">
+<img src="man/figures/units.svg" height="70" style="height:70px;width:auto;" alt="units">
 </td>
 
 <td align="left">
@@ -288,7 +288,7 @@ The time grid each date lives on: <code>days</code>, <code>weeks</code>,
 
 <td align="center">
 
-<img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored_report">
+<img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;" alt="is_censored_report">
 </td>
 
 <td align="left">
@@ -308,7 +308,7 @@ back-fill dump. <em>Optional</em>.
 
 <td align="center">
 
-<img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="is_censored_validation">
+<img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;" alt="is_censored_validation">
 </td>
 
 <td align="left">
@@ -328,7 +328,7 @@ delay is a bound rather than a measurement. <em>Optional</em>.
 
 <td align="center">
 
-<img src="man/figures/temporal_effects.svg" height="70" style="height:70px;width:auto;max-width:70px;" alt="temporal_effects">
+<img src="man/figures/temporal_effects.svg" height="70" style="height:70px;width:auto;" alt="temporal_effects">
 </td>
 
 <td align="left">
@@ -437,10 +437,10 @@ and checkout our articles starting with the
 - Introduction vignette:
   <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
   the full anatomy of a `tbl_now`, data types, and temporal effects.
-- End-to-end tutorial on real, messy surveillance data \<U+2014\>
-  cleaning, diagnostics and nowcasting:
+- End-to-end tutorial on real, messy surveillance data — cleaning,
+  diagnostics and nowcasting:
   <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
-- Tutorial on diagnosing your dataset \<U+2014\> what is in it, what is
+- Tutorial on diagnosing your dataset — what is in it, what is
   structurally wrong with it, and detecting batches and other
   reporting-delay artifacts:
   <https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html>

@@ -18,6 +18,11 @@ setup_test_data <- function() {
     report_date = "report_week",
     strata = "gender",
     covariates = "temperature",
+    # Both columns are weekly but sit on different weekdays, so inferred
+    # "weeks" units make every `.delay` 3/7 of a week -- which
+    # `validate_tbl_now()` now warns about, and which every changer in this
+    # file would then re-report. The subject here is the attribute setters.
+    units = "days",
     verbose = FALSE
   )
 
@@ -680,7 +685,8 @@ test_that("changer functions work with count data", {
     report_date = "report_week",
     case_count = n,
     strata = "gender",
-    data_type = "count-incidence"
+    data_type = "count-incidence",
+    units = "days"
   )
 
   result <- add_strata(ndata, gender)
@@ -730,6 +736,9 @@ setup_additional_test_data <- function() {
     strata = "gender",
     covariates = "temperature",
     is_censored_report = "is_censored_report",
+    # See `setup_test_data()` above: weekly columns on different weekdays give
+    # a fractional `.delay`, which is now a warning on every rebuild.
+    units = "days",
     verbose = FALSE
   )
 

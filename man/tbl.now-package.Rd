@@ -33,8 +33,9 @@ result is still a \code{tibble}, so \code{dplyr} keeps working.
 statistical tests worth running -- \code{\link[=diagnose_drift]{diagnose_drift()}} for delays that are
 getting longer, \code{\link[=diagnose_batches]{diagnose_batches()}} for backlog releases,
 \code{\link[=diagnostic_plot]{diagnostic_plot()}} for the reporting process as a picture.
-\item \strong{Reshape.} \code{\link[=to_count]{to_count()}}, \code{\link[=complete_zeroes]{complete_zeroes()}}, \code{\link[=align_weeks]{align_weeks()}} and
-\code{\link[=censor_delays_above]{censor_delays_above()}} put the data on the grid a model needs.
+\item \strong{Reshape.} \code{\link[=to_count]{to_count()}}, \code{\link[=complete_zeroes]{complete_zeroes()}}, \code{\link[=aggregate_time_units]{aggregate_time_units()}},
+\code{\link[=align_weeks]{align_weeks()}} and \link[=censoring]{censor_reports()} put the data on the grid
+a model needs.
 \item \strong{Fit.} \code{\link[=run_nowcast]{run_nowcast()}} takes the data and an \code{\link[=engine]{engine()}} -- one interface
 over \pkg{epinowcast}, \pkg{baselinenowcast}, \pkg{NobBS},
 \pkg{EpiNow2}, \pkg{surveillance} and \pkg{diseasenowcasting}. Write your

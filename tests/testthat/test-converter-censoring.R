@@ -156,7 +156,7 @@ test_that("delay-derived censoring still reaches a triangle", {
     event_date = "onset_week", report_date = "report_week",
     data_type = "linelist", verbose = FALSE
   )
-  censored <- suppressMessages(censor_delays_above(ll, max_delay = 6))
+  censored <- suppressMessages(censor_reporting_delays_above(ll, max_delay = 6))
 
   triangle <- suppressWarnings(suppressMessages(
     tbl_now_to_baselinenowcast(censored, verbose = FALSE)
