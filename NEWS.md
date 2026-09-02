@@ -79,9 +79,13 @@ reads a daily event date against a weekly report date, and an explicit
 * `infer_units()` on a column with a single distinct date warned about `min()`
   returning `Inf` before aborting with an unrelated message. It now says which
   column it is, and points at `units`.
-* Censoring a grouped `tbl_now` aborted inside `add_is_censored_report()`, which
-  refuses a `grouped_tbl_now`. The censoring verbs now ungroup, work, and
-  regroup.
+* Censoring a grouped `tbl_now` aborted inside `add_is_censored_report()` /
+  `add_is_censored_validation()`, which refuse a `grouped_tbl_now`. All four
+  censoring verbs -- `censor_reports()`, `censor_delays()`,
+  `censor_delays_above()` and `censor_validation_delays_above()` -- now ungroup,
+  work, and put the grouping back.
+* The two censoring axes share one implementation of "merge this flag in without
+  un-censoring anything", rather than a copy each.
 
 # tbl.now 0.29.0
 

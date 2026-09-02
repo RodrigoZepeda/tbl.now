@@ -465,3 +465,64 @@ test_that("covid_us carries a real validation process (#52)", {
     sum(get_latest_reported_cases(tn)[["n"]])
   )
 })
+
+# ---- Grouped objects --------------------------------------------------------
+#
+# `add_is_censored_validation()` refuses a `grouped_tbl_now`, so a verb that
+# writes the flag has to ungroup and regroup around the write. Nothing about a
+# grouping should change which rows are censored.
+
+test_that("censor_validation_delays_above works on a grouped tbl_now", {
+  flu <- validated_linelist()
+  grouped <- flu |> dplyr::group_by(!!as.symbol("sex"))
+
+  ungrouped_result <- suppressMessages(censor_validation_delays_above(flu, 30))
+  grouped_result <- suppressMessages(censor_validation_delays_above(grouped, 30))
+
+  expect_true(is_tbl_now(grouped_result))
+  expect_equal(dplyr::group_vars(grouped_result), "sex")
+  expect_equal(
+    grouped_result[[get_is_censored_validation(grouped_result)]],
+    ungrouped_result[[get_is_censored_validation(ungrouped_result)]]
+  )
+  # Grouping by something else must not change the answer either.
+  by_outcome <- suppressMessages(
+    censor_validation_delays_above(
+      flu |> dplyr::group_by(!!as.symbol("outcome")), 30
+    )
+  )
+  expect_equal(
+    by_outcome[[get_is_censored_validation(by_outcome)]],
+    ungrouped_result[[get_is_censored_validation(ungrouped_result)]]
+  )
+})
+
+test_that("both censoring axes can be set on one grouped object", {
+  grouped <- validated_linelist() |> dplyr::group_by(!!as.symbol("sex"))
+
+  both <- suppressMessages(
+    censor_delays_above(censor_validation_delays_above(grouped, 30), 0)
+  )
+
+  expect_equal(dplyr::group_vars(both), "sex")
+  expect_equal(get_is_censored_report(both), ".is_censored_report")
+  expect_equal(get_is_censored_validation(both), ".is_censored_validation")
+  # The two axes are independent: neither write clears the other.
+  expect_true(any(both[[".is_censored_report"]]))
+  expect_true(any(both[[".is_censored_validation"]]))
+})
+
+test_that("an existing validation flag is merged, never cleared, when grouped", {
+  flu <- suppressMessages(censor_validation_delays_above(validated_linelist(), 30))
+  strict <- flu[[".is_censored_validation"]]
+  expect_true(any(strict))
+
+  # A later, looser threshold flags nothing new and must un-censor nothing.
+  loose <- suppressMessages(
+    censor_validation_delays_above(
+      flu |> dplyr::group_by(!!as.symbol("sex")), 1000
+    )
+  )
+  expect_equal(loose[[".is_censored_validation"]], strict)
+  expect_equal(dplyr::group_vars(loose), "sex")
+})

@@ -527,6 +527,74 @@ Two things to know before touching that code again:
 * **`paste()` on a `.diagnose_text()` forces it**, which is the cost the whole
   design avoids. Use `.diagnose_join()`.
 
+### Every new function gets a grouped test
+
+A `tbl_now` can be grouped, and a `grouped_tbl_now` is a **different class**.
+Most of the package never notices, which is exactly the problem: a function
+written and tested on an ungrouped object can abort, silently drop the grouping,
+or quietly compute a different answer the first time a user pipes it after
+`group_by()`.
+
+This has now happened three times in the same shape, and each time the function
+was fully tested -- ungrouped:
+
+* `censor_delays_above()` aborted inside `add_is_censored_report()`, which
+  refuses a `grouped_tbl_now` outright.
+* `censor_validation_delays_above()` had the identical bug on the other axis,
+  and shipped in a release whose whole subject was that axis.
+* `aggregate_time_units()` would have returned an ungrouped object, because
+  `to_count()` and every `tbl_now()` rebuild ungroup on the way through.
+
+So: **when you write a function that takes a `tbl_now`, write a grouped test for
+it in the same commit.** Three assertions, and they are nearly always the same
+three:
+
+```r
+test_that("<fn> works on a grouped tbl_now", {
+  x <- <fixture>()
+
+  out <- <fn>(x |> dplyr::group_by(sex))
+
+  expect_true(is_tbl_now(out))                  # 1. it did not abort
+  expect_equal(dplyr::group_vars(out), "sex")   # 2. groups came back
+  expect_equal(                                 # 3. same answer as ungrouped
+    dplyr::as_tibble(ungroup(out)),
+    dplyr::as_tibble(ungroup(<fn>(x)))
+  )
+})
+```
+
+**The `ungroup()` in assertion 3 is load-bearing.** `as_tibble()` on a `tbl_now`
+keeps the class's attributes, and a grouped object carries an extra `groups`
+attribute among them, so comparing the two directly fails on every function --
+including the correct ones. Strip the grouping from both sides and you are
+comparing the data, which is what the assertion is about.
+
+The third is the one that finds real bugs, and it is worth grouping by a column
+the function does **not** care about as well as one it does: grouping is the
+caller's business, and almost nothing in this package should compute a different
+answer because of it. Where a function legitimately *should* respect groups, say
+so in a test asserting the difference, rather than leaving it ambiguous.
+
+The fix is nearly always the same too -- take the grouping off, do the work, put
+it back:
+
+```r
+group_columns <- dplyr::group_vars(x)
+x <- ungroup(x)
+# ... rebuild, aggregate, set a flag ...
+.tbl_now_regroup(x, group_columns)
+```
+
+`.tbl_now_regroup()` (in `R/utils.R`) is that last step; it intersects with the
+columns that still exist, so a verb that drops a grouping column does not error.
+
+The same argument applies to the other shapes a `tbl_now` comes in, and a new
+function should say in its tests which of them it was actually tried against:
+the three `data_type`s, an object with and without a validation process, and one
+with `NULL` strata. Grouping is singled out here only because it is invisible in
+the object's printout and so is the one people forget.
+
 ### Engine tests: assert the CALL, not the fit
 
 `test-engines-matrix.R` used to fit a real model in every cell of a 24-shape
@@ -724,6 +792,9 @@ Before calling a change finished:
 
 - [ ] `devtools::document()` run; `NAMESPACE` and `man/` regenerated, not hand-edited.
 - [ ] `NOT_CRAN=true` test suite passes; new behaviour has new tests.
+- [ ] **Any new function taking a `tbl_now` has a grouped test** -- it did not
+      abort, the groups came back, and the answer matches the ungrouped one.
+      See §8; this bug has shipped three times.
 - [ ] Any new attribute has an exported, documented, tested getter.
 - [ ] A new converter has: `to`, `from` (where meaningful), an `as_tbl_now()`
       method, the target package's own coercion generic (or an entry in the

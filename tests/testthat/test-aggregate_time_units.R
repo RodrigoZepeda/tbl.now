@@ -273,16 +273,22 @@ test_that("aggregating the validation axis alone leaves the other two alone", {
 
 test_that("a grouped tbl_now comes back grouped, with the same numbers", {
   x <- make_daily_linelist()
-  grouped <- x |> group_by(sex)
+  ungrouped <- aggregate_time_units(x, to = "weeks", verbose = FALSE)
 
-  out <- aggregate_time_units(grouped, to = "weeks", verbose = FALSE)
+  out <- aggregate_time_units(x |> group_by(sex), to = "weeks", verbose = FALSE)
 
-  expect_equal(dplyr::group_vars(out), "sex")
   expect_true(is_tbl_now(out))
-  expect_equal(
-    out[[get_event_date(out)]],
-    aggregate_time_units(x, to = "weeks", verbose = FALSE)[[get_event_date(x)]]
+  expect_equal(dplyr::group_vars(out), "sex")
+  # `as_tibble()` keeps the class attributes, and a grouped object carries an
+  # extra `groups` among them -- ungroup both sides to compare the data.
+  expect_equal(as_tibble(ungroup(out)), as_tibble(ungroup(ungrouped)))
+
+  # Grouping by a column the function does not care about changes nothing.
+  by_other <- aggregate_time_units(
+    x |> group_by(!!as.symbol(get_report_date(x))),
+    to = "weeks", verbose = FALSE
   )
+  expect_equal(as_tibble(ungroup(by_other)), as_tibble(ungroup(ungrouped)))
 })
 
 test_that("grouping does not change what a count aggregation computes", {

@@ -315,26 +315,56 @@ censor_delays <- function(x, condition, to_delay = NULL, verbose = TRUE) {
   matched
 }
 
-#' Merge a censoring flag into a `tbl_now`
+#' The getter, adder and default column for one censoring axis
 #'
-#' Never un-censors: a row that was already flagged stays flagged. Creates
-#' `.is_censored_report` when the object has no flag column yet.
+#' The two axes are the same idea twice over, so the code that sets a flag takes
+#' the axis as an argument rather than existing twice. Attribute names stay
+#' behind the getters, as everywhere else in the package.
 #'
-#' @param x A `tbl_now`.
-#' @param rows A logical vector of length `nrow(x)`.
+#' @param axis `"report"` or `"validation"`.
 #'
-#' @return `x`, with its censoring column set.
+#' @return A list with `get`, `add` and `column`.
 #'
 #' @keywords internal
 #' @noRd
-.censor_mark <- function(x, rows) {
-  marked <- .censor_mark_data(.strip_tbl_now(x), x, rows)
-  if (identical(marked$column, get_is_censored_report(x))) {
-    x[[marked$column]] <- marked$data[[marked$column]]
+.censor_axis <- function(axis = c("report", "validation")) {
+  axis <- match.arg(axis)
+  if (axis == "report") {
+    list(
+      get = get_is_censored_report,
+      add = add_is_censored_report,
+      column = ".is_censored_report"
+    )
+  } else {
+    list(
+      get = get_is_censored_validation,
+      add = add_is_censored_validation,
+      column = ".is_censored_validation"
+    )
+  }
+}
+
+#' Merge a censoring flag into a `tbl_now`
+#'
+#' Never un-censors: a row that was already flagged stays flagged. Creates the
+#' axis's default column when the object has no flag column yet.
+#'
+#' @param x A `tbl_now`.
+#' @param rows A logical vector of length `nrow(x)`.
+#' @param axis `"report"` (default) or `"validation"`.
+#'
+#' @return `x`, with that axis's censoring column set.
+#'
+#' @keywords internal
+#' @noRd
+.censor_mark <- function(x, rows, axis = "report") {
+  spec <- .censor_axis(axis)
+  marked <- .censor_mark_data(.strip_tbl_now(x), x, rows, axis = axis)
+  x[[marked$column]] <- marked$data[[marked$column]]
+  if (identical(marked$column, spec$get(x))) {
     return(x)
   }
-  x[[marked$column]] <- marked$data[[marked$column]]
-  add_is_censored_report(x, ".is_censored_report")
+  spec$add(x, marked$column)
 }
 
 #' Set the censoring column on a bare data frame
@@ -347,16 +377,18 @@ censor_delays <- function(x, condition, to_delay = NULL, verbose = TRUE) {
 #' @param data A bare data frame taken from `x`.
 #' @param x The `tbl_now` it came from (for the flag column's name).
 #' @param rows A logical vector of length `nrow(data)`.
+#' @param axis `"report"` (default) or `"validation"`.
 #'
 #' @return A list with `data` (the frame, flag column written) and `column`
 #'   (its name).
 #'
 #' @keywords internal
 #' @noRd
-.censor_mark_data <- function(data, x, rows) {
-  column <- get_is_censored_report(x)
+.censor_mark_data <- function(data, x, rows, axis = "report") {
+  spec <- .censor_axis(axis)
+  column <- spec$get(x)
   if (is.null(column) || !column %in% names(data)) {
-    column <- ".is_censored_report"
+    column <- spec$column
     data[[column]] <- rows
     return(list(data = data, column = column))
   }

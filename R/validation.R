@@ -952,18 +952,15 @@ censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
   delays <- x[[".validation_delay"]]
   too_long <- is.finite(delays) & delays > max_delay
 
-  # Merge with any flags already set: a delay you have already decided not to
-  # take at face value does not become exact because a later, looser threshold
-  # was applied.
-  censored_col_name <- get_is_censored_validation(x)
-  if (!is.null(censored_col_name) && censored_col_name %in% names(x)) {
-    already_censored <- as.logical(x[[censored_col_name]])
-    already_censored[is.na(already_censored)] <- FALSE
-    x[[censored_col_name]] <- already_censored | too_long
-  } else {
-    x[[".is_censored_validation"]] <- too_long
-    x <- add_is_censored_validation(x, ".is_censored_validation")
-  }
+  # `add_is_censored_validation()` refuses a `grouped_tbl_now`, so the grouping
+  # comes off for the write and goes back on afterwards. `.censor_mark()` does
+  # the merge itself -- a delay you have already decided not to take at face
+  # value does not become exact because a later, looser threshold was applied.
+  group_columns <- dplyr::group_vars(x)
+  x <- .tbl_now_regroup(
+    .censor_mark(ungroup(x), too_long, axis = "validation"),
+    group_columns
+  )
 
   if (isTRUE(verbose)) {
     cli::cli_inform(c(

@@ -219,10 +219,28 @@ test_that("a grouped tbl_now gets the same answer as an ungrouped one", {
   grouped <- x |> group_by(!!as.symbol(get_event_date(x)))
 
   flagged <- censor_delays(grouped, .delay > 60, verbose = FALSE)
+  expect_true(is_tbl_now(flagged))
+  expect_equal(dplyr::group_vars(flagged), get_event_date(x))
   expect_equal(flagged[[".is_censored_report"]], c(FALSE, FALSE, FALSE, TRUE))
+  expect_equal(
+    as_tibble(ungroup(flagged)),
+    as_tibble(ungroup(censor_delays(x, .delay > 60, verbose = FALSE)))
+  )
 
   capped <- censor_delays(grouped, .delay > 60, to_delay = 60, verbose = FALSE)
   expect_equal(capped$.delay, c(1, 5, 1, 60))
+  expect_equal(
+    as_tibble(ungroup(capped)),
+    as_tibble(ungroup(
+      censor_delays(x, .delay > 60, to_delay = 60, verbose = FALSE)
+    ))
+  )
+
+  reported <- censor_reports(grouped, .delay > 60, verbose = FALSE)
+  expect_equal(
+    as_tibble(ungroup(reported)),
+    as_tibble(ungroup(censor_reports(x, .delay > 60, verbose = FALSE)))
+  )
 })
 
 test_that("a condition may name a grouping column", {
