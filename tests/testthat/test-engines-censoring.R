@@ -1,6 +1,6 @@
 # A censoring flag must be handled visibly, never quietly.
 #
-# `is_censored` says a report date is only an UPPER BOUND: the case is known to
+# `is_censored_report` says a report date is only an UPPER BOUND: the case is known to
 # have been reported at or before it. Three things can happen to that
 # information, and again only one is unacceptable:
 #
@@ -72,7 +72,7 @@ for (entry in CENSORING_SPEC) {
       skip_if_not_installed(this$package)
 
       x <- censoring_fixture()
-      expect_equal(get_is_censored(x), "is_censored")
+      expect_equal(get_is_censored_report(x), "is_censored_report")
       # The flag must genuinely split cells, or this test proves nothing.
       cells <- dplyr::n_distinct(x[[get_event_date(x)]], x[[get_report_date(x)]])
       expect_gt(nrow(x), cells)
@@ -131,7 +131,7 @@ test_that("collapsing a line list drops the column without losing rows", {
     tbl_now_to_surveillance(x, verbose = FALSE)
   ))
   expect_equal(nrow(linelist), rows)
-  expect_false("is_censored" %in% colnames(linelist))
+  expect_false("is_censored_report" %in% colnames(linelist))
 })
 
 test_that("epidist keeps the flag, because it is the one model that can use it", {
@@ -153,7 +153,7 @@ test_that("epidist keeps the flag, because it is the one model that can use it",
 
 test_that("no censoring declared means no censoring warning anywhere", {
   x <- engine_fixture(units = "days", censored = FALSE, n_periods = 20L)
-  expect_null(get_is_censored(x))
+  expect_null(get_is_censored_report(x))
 
   for (entry in CENSORING_SPEC) {
     if (!requireNamespace(entry$package, quietly = TRUE)) next

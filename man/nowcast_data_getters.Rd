@@ -14,11 +14,13 @@
 \alias{get_data_type}
 \alias{get_temporal_effects}
 \alias{get_temporal_effect_cols}
-\alias{get_is_censored}
+\alias{get_is_censored_report}
 \alias{get_case_count}
 \alias{get_validation_date}
 \alias{get_validation_type}
 \alias{get_validation_units}
+\alias{get_is_censored_validation}
+\alias{get_validation_levels}
 \alias{has_validation}
 \title{Read what a \code{tbl_now} was told about itself}
 \usage{
@@ -46,7 +48,7 @@ get_temporal_effects(x)
 
 get_temporal_effect_cols(x)
 
-get_is_censored(x)
+get_is_censored_report(x)
 
 get_case_count(x)
 
@@ -55,6 +57,10 @@ get_validation_date(x)
 get_validation_type(x)
 
 get_validation_units(x)
+
+get_is_censored_validation(x)
+
+get_validation_levels(x)
 
 has_validation(x)
 }
@@ -73,8 +79,11 @@ of the column holding the number of cases.}
 or \code{NULL} when there are none.}
 \item{\code{get_num_strata()}, \code{get_num_covariates()}}{Integer count, \code{0} when
 there are none.}
-\item{\code{get_is_censored()}}{Character, or \code{NULL}. The name of the column
+\item{\code{get_is_censored_report()}}{Character, or \code{NULL}. The name of the column
 flagging reports whose date is only an upper bound.}
+\item{\code{get_is_censored_validation()}}{Character, or \code{NULL}. The same on the
+validation axis: the column flagging rows whose \emph{validation} delay is a
+bound rather than a measurement.}
 \item{\code{get_now()}}{The \code{Date} (or number) the nowcast is anchored on.}
 \item{\code{get_event_units()}, \code{get_report_units()}}{One of \code{"days"},
 \code{"weeks"}, \code{"months"}, \code{"years"} or \code{"numeric"} -- the grid each date
@@ -91,6 +100,9 @@ columns actually materialised in the data by
 of the column holding how it resolved.}
 \item{\code{get_validation_units()}}{The grid the validation date lives on,
 or \code{NULL} when the object carries no validation process.}
+\item{\code{get_validation_levels()}}{The named dictionary translating the
+labels in the data into the canonical outcomes, or \code{NULL} when the
+column was already canonical.}
 \item{\code{has_validation()}}{\code{TRUE} when the object carries a validation
 date. Every code path must work when it is \code{FALSE}, because most objects
 have no third date.}
@@ -159,7 +171,8 @@ get_covariates(ndata)
 get_num_covariates(ndata)
 
 # Likewise for a censoring indicator that was never supplied.
-get_is_censored(ndata)
+get_is_censored_report(ndata)
+get_is_censored_validation(ndata)
 
 # The as-of moment, and the calendar grid the dates live on.
 get_now(ndata)

@@ -51,14 +51,14 @@
 #' Name of the column with the case counts if `data_type` is "count-incidence"
 #' or "count-cumulative".
 #'
-#' @param is_censored (optional)
+#' @param is_censored_report (optional)
 #' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) or `NULL` (default).
 #' The name of a column containing either `TRUE` or `FALSE` indicating whether
 #' the `report_date` is correctly specified or corresponds to a `batch` and thus
 #' is censored. In other words, if the `report_date` is accurately measured
-#' set `is_censored = FALSE` but if the `report_date` corresponds to an error
+#' set `is_censored_report = FALSE` but if the `report_date` corresponds to an error
 #' and is only an upper bound of the real report date
-#' set `is_censored = TRUE`.
+#' set `is_censored_report = TRUE`.
 #'
 #' @param strata (optional) [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 #' or `NULL` (default). Name of different variables (column names) in strata.
@@ -117,6 +117,22 @@
 #' `"days"`, `"weeks"`, `"months"`, `"years"` or `"numeric"` -- the grid the
 #' validation date lives on, resolved the same way as `report_units`.
 #'
+#' @param validation_levels (optional) `NULL` (default) or a **named** character
+#' vector translating the labels in `validation_type` into the canonical
+#' outcomes, for data that was not recorded in English:
+#' `c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")`.
+#' The names are the labels in your data, the values are the canonical ones. The
+#' column is rewritten to the canonical values and the dictionary is kept as an
+#' attribute, readable with `get_validation_levels()`. Only
+#' `"confirmed"`, `"retracted"`, `"pending"` and `NA` are ever stored.
+#'
+#' @param is_censored_validation (optional)
+#' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) or `NULL` (default).
+#' The validation-axis counterpart of `is_censored_report`: the name of a
+#' logical column marking rows whose **validation delay** is a bound rather
+#' than a measurement. Requires a `validation_date`. See
+#' [censor_validation_delays_above()][censor_delays_above].
+#'
 #' @param verbose (optional) Logical. Whether to throw a message. Default = `TRUE`.
 #'
 #' @param force (optional) Logical. Whether to force computation overwriting pre-existing variables.
@@ -152,7 +168,7 @@
 #'   \item{case_count}{Column containing the number of observations for that moment if `data_type` is `count-incidence` or `count-cumulative`.}
 #'   \item{temporal_effects}{Names of the columns refering to the temporal effects.}
 #'   \item{now}{Date of the `now` for a nowcast.}
-#'   \item{is_censored}{Column indicating whether the measurement is noisy (only upper bound) or not.}
+#'   \item{is_censored_report}{Column indicating whether the measurement is noisy (only upper bound) or not.}
 #'   \item{event_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `event_date`}
 #'   \item{report_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `report_date`}
 #'   \item{data_type}{Either `linelist`, `count-incidence` or `count-cumulative` depending on whether it is linelist data
@@ -160,6 +176,8 @@
 #'   \item{validation_date}{Name of the column with the (optional) third date: when the report was resolved.}
 #'   \item{validation_type}{Name of the column saying what that resolution was (`"confirmed"`, `"retracted"`, `"pending"`).}
 #'   \item{validation_units}{Units of `validation_date`, resolved like `report_units`.}
+#'   \item{validation_levels}{The (optional) dictionary translating the labels in `validation_type` into the canonical outcomes.}
+#'   \item{is_censored_validation}{Column indicating whether the *validation* delay is only a bound (the validation-axis counterpart of `is_censored_report`).}
 #'   \item{computed_temporal_effect_cols}{Names of the temporal-effect columns that have actually been materialised in the data by [compute_temporal_effects()].}
 #' }
 #'
@@ -286,10 +304,12 @@ tbl_now <- function(data,
                     strata = NULL,
                     covariates = NULL,
                     case_count = NULL,
-                    is_censored = NULL,
+                    is_censored_report = NULL,
                     validation_date = NULL,
                     validation_type = NULL,
                     validation_units = units,
+                    validation_levels = NULL,
+                    is_censored_validation = NULL,
                     now = NULL,
                     event_units = units,
                     report_units = units,
@@ -325,9 +345,10 @@ tbl_now <- function(data,
   strata_quo <- rlang::enquo(strata)
   covariates_quo <- rlang::enquo(covariates)
   case_count_quo <- rlang::enquo(case_count)
-  is_censored_quo <- rlang::enquo(is_censored)
+  is_censored_report_quo <- rlang::enquo(is_censored_report)
   validation_date_quo <- rlang::enquo(validation_date)
   validation_type_quo <- rlang::enquo(validation_type)
+  is_censored_validation_quo <- rlang::enquo(is_censored_validation)
 
   # Get event date column
   if (!rlang::quo_is_null(event_date_quo)) {
@@ -418,8 +439,8 @@ tbl_now <- function(data,
   case_count <- colnames(data)[case_count_select]
   if (length(case_count) == 0) case_count <- NULL
 
-  is_censored_select <- .tbl_now_eval_select(is_censored_quo, data)
-  is_censored <- colnames(data)[is_censored_select]
+  is_censored_report_select <- .tbl_now_eval_select(is_censored_report_quo, data)
+  is_censored_report <- colnames(data)[is_censored_report_select]
 
   validation_date_select <- .tbl_now_eval_select(validation_date_quo, data)
   validation_date <- colnames(data)[validation_date_select]
@@ -429,6 +450,11 @@ tbl_now <- function(data,
   validation_type <- colnames(data)[validation_type_select]
   if (length(validation_type) == 0) validation_type <- NULL
 
+  is_censored_validation_select <-
+    .tbl_now_eval_select(is_censored_validation_quo, data)
+  is_censored_validation <- colnames(data)[is_censored_validation_select]
+  if (length(is_censored_validation) == 0) is_censored_validation <- NULL
+
   if (is.null(validation_date) && !is.null(validation_type)) {
     cli::cli_abort(c(
       "{.arg validation_type} was given without a {.arg validation_date}.",
@@ -436,13 +462,31 @@ tbl_now <- function(data,
     ))
   }
 
+  if (is.null(validation_date) && !is.null(is_censored_validation)) {
+    cli::cli_abort(c(
+      "{.arg is_censored_validation} was given without a
+       {.arg validation_date}.",
+      "i" = "There is no validation delay to censor. Supply both, or neither."
+    ))
+  }
+
+  validation_levels <- .check_validation_levels(validation_levels)
+  if (is.null(validation_date) && !is.null(validation_levels)) {
+    cli::cli_abort(c(
+      "{.arg validation_levels} was given without a {.arg validation_date}.",
+      "i" = "The dictionary translates {.arg validation_type}, which needs a
+             date to sit on."
+    ))
+  }
+
   # Fill in / validate the outcome column, and check the timeline.
   resolved_validation <- .resolve_validation_type(
-    data, validation_date, validation_type, verbose = verbose
+    data, validation_date, validation_type, validation_levels,
+    verbose = verbose
   )
   data <- resolved_validation$data
   validation_type <- resolved_validation$validation_type
-  if (length(is_censored) == 0) is_censored <- NULL
+  if (length(is_censored_report) == 0) is_censored_report <- NULL
 
   strata_select <- .tbl_now_eval_select(strata_quo, data)
   strata <- colnames(data)[strata_select]
@@ -525,7 +569,7 @@ tbl_now <- function(data,
     data_type = data_type,
     event_date = event_date, report_date = report_date,
     strata = strata,
-    is_censored = is_censored,
+    is_censored_report = is_censored_report,
     case_count = case_count, verbose = verbose
   )
 
@@ -551,10 +595,12 @@ tbl_now <- function(data,
   attr(data, "event_units") <- event_units
   attr(data, "report_units") <- report_units
   attr(data, "data_type") <- data_type
-  attr(data, "is_censored") <- is_censored
+  attr(data, "is_censored_report") <- is_censored_report
   attr(data, "validation_date") <- validation_date
   attr(data, "validation_type") <- validation_type
   attr(data, "validation_units") <- validation_units
+  attr(data, "validation_levels") <- validation_levels
+  attr(data, "is_censored_validation") <- is_censored_validation
 
   # Add all other attributes from ...
   for (attr_name in names(other_attrs)) {

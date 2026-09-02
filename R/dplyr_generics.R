@@ -363,7 +363,7 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
         report_date = get_report_date(.data),
         strata = get_strata(.data),
         covariates = get_covariates(.data),
-        is_censored = get_is_censored(.data),
+        is_censored_report = get_is_censored_report(.data),
         now = get_now(.data),
         event_units = get_event_units(.data),
         report_units = get_report_units(.data),
@@ -497,7 +497,7 @@ ungroup.grouped_tbl_now <- function(x, ...) {
         report_date = get_report_date(old_x),
         strata = get_strata(old_x),
         covariates = get_covariates(old_x),
-        is_censored = get_is_censored(old_x),
+        is_censored_report = get_is_censored_report(old_x),
         now = get_now(old_x),
         event_units = get_event_units(old_x),
         report_units = get_report_units(old_x),
@@ -543,7 +543,7 @@ summarise.tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
           report_date = get_report_date(.data),
           strata = get_strata(.data),
           covariates = get_covariates(.data),
-          is_censored = get_is_censored(.data),
+          is_censored_report = get_is_censored_report(.data),
           now = get_now(.data),
           event_units = get_event_units(.data),
           report_units = get_report_units(.data),
@@ -617,23 +617,28 @@ reframe.tbl_now <- function(.data, ..., .by = NULL) {
 
   result <- tryCatch(
     {
-      tmp <- tbl_now(
-        data = reframed_tbl,
-        event_date = get_event_date(.data),
-        report_date = get_report_date(.data),
-        strata = get_strata(.data),
-        covariates = get_covariates(.data),
-        is_censored = get_is_censored(.data),
-        now = get_now(.data),
-        event_units = get_event_units(.data),
-        report_units = get_report_units(.data),
-        data_type = get_data_type(.data),
-        case_count = get_case_count(.data),
-        verbose = FALSE,
-        force = TRUE,
-        warn_non_uniqueness = FALSE,
-        align_weeks = FALSE
-      )
+      tmp <- do.call(tbl_now, c(
+        list(
+          data = reframed_tbl,
+          event_date = get_event_date(.data),
+          report_date = get_report_date(.data),
+          strata = get_strata(.data),
+          covariates = get_covariates(.data),
+          is_censored_report = get_is_censored_report(.data),
+          now = get_now(.data),
+          event_units = get_event_units(.data),
+          report_units = get_report_units(.data),
+          data_type = get_data_type(.data),
+          case_count = get_case_count(.data),
+          verbose = FALSE,
+          force = TRUE,
+          warn_non_uniqueness = FALSE,
+          align_weeks = FALSE
+        ),
+        # Every fixed attribute list is a place the validation process can be
+        # dropped in silence.
+        .validation_rebuild_args(.data, reframed_tbl)
+      ))
       attr(tmp, "temporal_effects") <- get_temporal_effects(.data)
       attr(tmp, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(tmp))
       tmp

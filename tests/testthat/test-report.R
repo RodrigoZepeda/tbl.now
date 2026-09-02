@@ -79,7 +79,7 @@ setup_test_data <- function() {
       )
     ),
 
-    # Count data with is_censored
+    # Count data with is_censored_report
     count_with_censored = data.frame(
       event_date = as.Date(c(
         rep("2020-07-08", 6)
@@ -88,7 +88,7 @@ setup_test_data <- function() {
         "2020-07-11", "2020-07-12", "2020-07-13",
         "2020-07-11", "2020-07-12", "2020-07-13"
       )),
-      is_censored = c(
+      is_censored_report = c(
         FALSE, FALSE, FALSE,
         TRUE, TRUE, TRUE
       ),
@@ -244,14 +244,14 @@ test_that("get_initial_reported_cases preserves covariates", {
   expect_true("temperature" %in% names(result))
 })
 
-test_that("get_initial_reported_cases preserves is_censored", {
+test_that("get_initial_reported_cases preserves is_censored_report", {
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
     test_data$count_with_censored,
     event_date = "event_date",
     report_date = "report_date",
-    is_censored = "is_censored",
+    is_censored_report = "is_censored_report",
     report_units = "days",
     event_units = "days",
     case_count = n,
@@ -263,15 +263,15 @@ test_that("get_initial_reported_cases preserves is_censored", {
 
   # Should have separate rows for censored and non-censored
   expect_equal(nrow(result), 2)
-  expect_true("is_censored" %in% names(result))
+  expect_true("is_censored_report" %in% names(result))
 
   # Check non-censored initial report
-  non_censored <- result |> dplyr::filter(!is_censored)
+  non_censored <- result |> dplyr::filter(!is_censored_report)
   expect_equal(non_censored$n, 10)
   expect_equal(non_censored$report_date, as.Date("2020-07-11"))
 
   # Check censored initial report
-  censored <- result |> dplyr::filter(is_censored)
+  censored <- result |> dplyr::filter(is_censored_report)
   expect_equal(censored$n, 8)
   expect_equal(censored$report_date, as.Date("2020-07-11"))
 })
@@ -334,7 +334,7 @@ test_that("get_initial_reported_cases is sorted correctly", {
 
   result <- get_initial_reported_cases(ndata)
 
-  # Should be sorted by event_date, strata, is_censored, covariates
+  # Should be sorted by event_date, strata, is_censored_report, covariates
   # Check that event_dates are in order
   expect_true(all(diff(as.numeric(result$event_date)) >= 0))
 })
@@ -478,14 +478,14 @@ test_that("get_latest_reported_cases preserves covariates", {
   expect_true("temperature" %in% names(result))
 })
 
-test_that("get_latest_reported_cases preserves is_censored", {
+test_that("get_latest_reported_cases preserves is_censored_report", {
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
     test_data$count_with_censored,
     event_date = "event_date",
     report_date = "report_date",
-    is_censored = "is_censored",
+    is_censored_report = "is_censored_report",
     case_count = n,
     report_units = "days",
     event_units = "days",
@@ -497,15 +497,15 @@ test_that("get_latest_reported_cases preserves is_censored", {
 
   # Should have separate rows for censored and non-censored
   expect_equal(nrow(result), 2)
-  expect_true("is_censored" %in% names(result))
+  expect_true("is_censored_report" %in% names(result))
 
   # Check non-censored latest report
-  non_censored <- result |> dplyr::filter(!is_censored)
+  non_censored <- result |> dplyr::filter(!is_censored_report)
   expect_equal(non_censored$n, 15)
   expect_equal(non_censored$report_date, as.Date("2020-07-13"))
 
   # Check censored latest report
-  censored <- result |> dplyr::filter(is_censored)
+  censored <- result |> dplyr::filter(is_censored_report)
   expect_equal(censored$n, 12)
   expect_equal(censored$report_date, as.Date("2020-07-13"))
 })
@@ -568,7 +568,7 @@ test_that("get_latest_reported_cases is sorted correctly", {
 
   result <- get_latest_reported_cases(ndata)
 
-  # Should be sorted by event_date, strata, is_censored, covariates
+  # Should be sorted by event_date, strata, is_censored_report, covariates
   # Check that event_dates are in order
   expect_true(all(diff(as.numeric(result$event_date)) >= 0))
 })

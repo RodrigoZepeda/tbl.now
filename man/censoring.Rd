@@ -43,12 +43,11 @@ there is no such date as half a day later.}
 }
 \value{
 \code{censor_reports()}, \code{censor_delays()} and \code{censor_delays_above()} return the
-\code{tbl_now} with its \code{is_censored} column updated, creating it when absent, and
-with the report dates replaced where one was asked for.
+\code{tbl_now} with its \code{is_censored_report} column updated, creating it when
+absent, and with the report dates replaced where one was asked for.
 
-\code{censor_validation_delays_above()} returns the \code{tbl_now} with the offending
-rows' \code{validation_type} set to \code{"pending"} and their validation date set to
-\code{NA} -- a resolution you refuse to believe is not a resolution.
+\code{censor_validation_delays_above()} returns the \code{tbl_now} with its
+\code{is_censored_validation} column updated, creating it when absent.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -63,40 +62,49 @@ These functions \strong{censor} instead: the object keeps the case, but records 
 delay as \emph{"at least this long"} rather than \emph{"exactly this long"}.
 \itemize{
 \item \code{censor_reports()} -- rows matching a condition get a \strong{replacement report
-date} (the missing ones become today's date, say) and the censoring flag.
+date} (the missing ones become today's date, say) and the
+\code{is_censored_report} flag.
 \item \code{censor_delays()} -- the same, expressed as a \strong{delay} instead of a date;
 with no replacement it only sets the flag.
 \item \code{censor_delays_above()} -- the common case of \code{censor_delays()}: everything
 slower than a threshold.
 \item \code{censor_validation_delays_above()} -- the same threshold rule for the
-\strong{validation} delay. A case still waiting on a laboratory result months
-later is, in practice, never going to be resolved, so it goes back to
-\code{"pending"}.
+\strong{validation} delay -- a case whose laboratory result took months to come
+back -- by setting the \code{is_censored_validation} flag.
 }
 }
 \details{
 The reporting delay is read from the generated \code{.delay} column (report date
-minus event date, in the object's event units). Existing censoring flags are
-merged rather than overwritten, so a report that was already censored stays
-censored, and the flag column is created (as \code{.is_censored}) when the object
-has none.
+minus event date, in the object's event units); the validation delay from
+\code{.validation_delay} (validation date minus report date, in validation
+units). Existing censoring flags are merged rather than overwritten, so a
+delay that was already censored stays censored, and the flag column is
+created (as \code{.is_censored_report} / \code{.is_censored_validation}) when the
+object has none.
+
+The threshold functions keep the case \strong{and its date}. Nothing is deleted
+and no outcome is rewritten: the flag says the delay is a bound rather than a
+measurement, and it is up to the model to use that. A case that was confirmed
+after 200 days is still a confirmed case, and
+\link[=validation_counts]{get_latest_confirmed()} still counts it.
 
 \code{condition} is evaluated inside the data, like a \code{\link[dplyr:filter]{dplyr::filter()}} expression,
 so it can name any column -- including the generated \code{.delay}. Rows where it
 comes out \code{NA} are \strong{not} censored: a condition that cannot be evaluated is
 not a condition that was met.
 
-Replacing a date changes \code{.delay}, \code{.report_num} and possibly \code{now}, so
-\code{censor_reports()} and \code{censor_delays(to_delay = )} rebuild the object.
-Nothing stops a replacement from landing before the event date; that is a
-negative delay, and \code{\link[=validate_tbl_now]{validate_tbl_now()}} says so. \code{now} moves \emph{forward} when
-a replacement lands after it, and never backwards: \code{now} is where you are
-standing, not the last date in the data.
+\code{censor_reports()} and \code{censor_delays(to_delay = )} are the two that \emph{do}
+move a date, so they rebuild the object: \code{.delay} and \code{.report_num} are
+recomputed, and \code{now} moves \emph{forward} when a replacement lands after it,
+never backwards -- \code{now} is where you are standing, not the last date in the
+data. Nothing stops a replacement from landing before the event date; that is
+a negative delay, and \code{\link[=validate_tbl_now]{validate_tbl_now()}} says so.
 
 Any temporal-effect column that was materialised \strong{on the report date}
-(\verb{.report_*}, from \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}) is dropped, because it
-describes a date that has just moved; run \code{compute_temporal_effects()} again
-to rebuild it. The \verb{.event_*} ones are kept -- the event dates did not move.
+(\verb{.report_*}, from \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}) is dropped by those two,
+because it describes a date that has just moved; run
+\code{compute_temporal_effects()} again to rebuild it. The \verb{.event_*} ones are
+kept -- the event dates did not move.
 }
 \examples{
 # Four cases, one of which took 300 days to be reported.
@@ -112,7 +120,7 @@ tn$.delay
 
 # Anything slower than 60 days is recorded as a lower bound, not a fact.
 censored <- censor_delays_above(tn, max_delay = 60)
-censored[[get_is_censored(censored)]]
+censored[[get_is_censored_report(censored)]]
 
 # The same rule written by hand, and capped at 60 days as well, so the
 # 300-day outlier stops dominating the delay distribution.
@@ -139,7 +147,7 @@ fixed <- suppressWarnings(censor_reports(messy_now,
   verbose = FALSE
 ))
 fixed[[get_report_date(fixed)]]
-fixed[[get_is_censored(fixed)]]
+fixed[[get_is_censored_report(fixed)]]
 
 ## ---- The validation counterpart ----------------------------------------
 
@@ -155,13 +163,16 @@ flu <- tbl_now(cases,
   data_type = "linelist", verbose = FALSE
 )
 
-# The 90-day result goes back to "pending"; the other four stay confirmed.
-table(censor_validation_delays_above(flu, 30, verbose = FALSE)[["outcome"]])
+# That one is flagged; all five stay confirmed, and the date is kept.
+flagged <- censor_validation_delays_above(flu, 30, verbose = FALSE)
+flagged[[get_is_censored_validation(flagged)]]
+table(flagged[["outcome"]])
 
 }
 \seealso{
-\link[=add]{add_is_censored()} and \link[=add]{change_is_censored()} to set the flag by
-hand; \code{\link[=diagnose_validation_delay]{diagnose_validation_delay()}} and \code{\link[=plot_delay_distribution]{plot_delay_distribution()}} to find
+\link[=add]{add_is_censored_report()} and \link[=add]{change_is_censored_report()} to set the flag by
+hand, and \link[=add]{add_is_censored_validation()} for the validation axis;
+\code{\link[=diagnose_validation_delay]{diagnose_validation_delay()}} and \code{\link[=plot_delay_distribution]{plot_delay_distribution()}} to find
 the threshold worth using; \code{\link[=diagnose_truncation]{diagnose_truncation()}} for the delays that are
 missing rather than long; \code{\link[=complete_zeroes]{complete_zeroes()}} for the opposite problem.
 }

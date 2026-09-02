@@ -34,8 +34,11 @@
 #'     or `NULL` when there are none.}
 #'   \item{`get_num_strata()`, `get_num_covariates()`}{Integer count, `0` when
 #'     there are none.}
-#'   \item{`get_is_censored()`}{Character, or `NULL`. The name of the column
+#'   \item{`get_is_censored_report()`}{Character, or `NULL`. The name of the column
 #'     flagging reports whose date is only an upper bound.}
+#'   \item{`get_is_censored_validation()`}{Character, or `NULL`. The same on the
+#'     validation axis: the column flagging rows whose *validation* delay is a
+#'     bound rather than a measurement.}
 #'   \item{`get_now()`}{The `Date` (or number) the nowcast is anchored on.}
 #'   \item{`get_event_units()`, `get_report_units()`}{One of `"days"`,
 #'     `"weeks"`, `"months"`, `"years"` or `"numeric"` -- the grid each date
@@ -52,6 +55,9 @@
 #'     of the column holding how it resolved.}
 #'   \item{`get_validation_units()`}{The grid the validation date lives on,
 #'     or `NULL` when the object carries no validation process.}
+#'   \item{`get_validation_levels()`}{The named dictionary translating the
+#'     labels in the data into the canonical outcomes, or `NULL` when the
+#'     column was already canonical.}
 #'   \item{`has_validation()`}{`TRUE` when the object carries a validation
 #'     date. Every code path must work when it is `FALSE`, because most objects
 #'     have no third date.}
@@ -107,7 +113,8 @@
 #' get_num_covariates(ndata)
 #'
 #' # Likewise for a censoring indicator that was never supplied.
-#' get_is_censored(ndata)
+#' get_is_censored_report(ndata)
+#' get_is_censored_validation(ndata)
 #'
 #' # The as-of moment, and the calendar grid the dates live on.
 #' get_now(ndata)
@@ -225,8 +232,8 @@ get_temporal_effect_cols <- function(x) {
 
 #' @rdname nowcast_data_getters
 #' @export
-get_is_censored <- function(x) {
-  attr(x, "is_censored", exact = TRUE)
+get_is_censored_report <- function(x) {
+  attr(x, "is_censored_report", exact = TRUE)
 }
 
 #' @rdname nowcast_data_getters
@@ -292,7 +299,8 @@ get_protected_given_cols <- function(x) {
   # Return the protected columns from x
   protected_cols <- c(
     "event_date" = get_event_date(x), "report_date" = get_report_date(x),
-    "is_censored" = get_is_censored(x),
+    "is_censored_report" = get_is_censored_report(x),
+    "is_censored_validation" = get_is_censored_validation(x),
     "validation_date" = get_validation_date(x),
     "validation_type" = get_validation_type(x)
   )

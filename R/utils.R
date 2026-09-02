@@ -267,7 +267,7 @@ tbl_now_attributes <- function(x) {
     case_count = get_case_count(x),
     strata = get_strata(x),
     covariates = get_covariates(x),
-    is_censored = get_is_censored(x),
+    is_censored_report = get_is_censored_report(x),
     data_type = get_data_type(x),
     now = get_now(x),
     event_units = get_event_units(x),
@@ -294,7 +294,7 @@ tbl_now_attributes <- function(x) {
 #' Put a caller's grouping back after a verb that had to ungroup
 #'
 #' Several `tbl.now` verbs rebuild the object (`tbl_now()` refuses a grouped
-#' data frame, and `add_is_censored()` refuses a `grouped_tbl_now`), so they
+#' data frame, and `add_is_censored_report()` refuses a `grouped_tbl_now`), so they
 #' ungroup first. Losing the grouping is a change the caller did not ask for.
 #'
 #' @param x A `tbl_now`.

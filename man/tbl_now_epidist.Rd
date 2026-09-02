@@ -85,7 +85,7 @@ strictly positive width.
 \code{data_type = "linelist"}. The \code{event_units}/\code{report_units} are inferred
 from the primary censoring-window width (a 7-day window -> \code{"weeks"}), and a
 left-censored secondary window \verb{[origin, report]} is decoded back to
-\code{is_censored = TRUE} with the report taken from \code{secondary_upper}.
+\code{is_censored_report = TRUE} with the report taken from \code{secondary_upper}.
 \item \code{"interval"}: instead attach the upper bounds \code{primary_upper}
 (\code{pdate_upr}) and \code{secondary_upper} (\code{sdate_upr}) as \code{covariates}
 (a warning is emitted).
@@ -99,7 +99,7 @@ it builds an \code{epidist_aggregate_data} when \code{x} holds counts and an
 \code{w} matches the \code{tbl_now} unit (\code{"days"} -> 1 day, \code{"weeks"} -> 7 days, ...,
 or \code{censoring_window} if supplied);
 \item the secondary event spans \verb{[report_date, report_date + w]} normally, but
-for rows flagged by \code{is_censored} it is left-censored to
+for rows flagged by \code{is_censored_report} it is left-censored to
 \verb{[event_date, report_date]} (the report is known only to have happened at
 or before its report date, and cannot precede the event, i.e.
 epidist time 0) — encoding the \code{tbl_now} convention that a censored report

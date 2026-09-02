@@ -1,4 +1,4 @@
-# tbl.now 0.29.0
+# tbl.now 0.30.0
 
 ## New: coarsen the time grid in one call (#56)
 
@@ -45,12 +45,14 @@ tn  |> censor_delays(.delay > 60, to_delay = 60)
 `censor_delays_above()` is now the threshold special case of `censor_delays()`
 and shares its implementation; its behaviour is unchanged. All four censoring
 functions -- these two plus `censor_delays_above()` and
-`censor_validation_delays_above()` -- are documented together on `?censoring`.
+`censor_validation_delays_above()` -- are documented together on `?censoring`,
+and the two reporting-axis ones set the `is_censored_report` flag renamed in
+0.29.0.
 
 * `NA` is not a match: a condition that cannot be evaluated on a row is not a
   condition that row met.
 * Existing censoring flags are merged, never cleared, and the flag column is
-  created as `.is_censored` when the object has none.
+  created as `.is_censored_report` when the object has none.
 * Replacing a date moves `now` **forward** when the replacement lands after it,
   never backwards, and drops any `.report_*` temporal-effect column that the
   move has made stale.
@@ -77,8 +79,101 @@ reads a daily event date against a weekly report date, and an explicit
 * `infer_units()` on a column with a single distinct date warned about `min()`
   returning `Inf` before aborting with an unrelated message. It now says which
   column it is, and points at `units`.
-* Censoring a grouped `tbl_now` aborted inside `add_is_censored()`, which refuses
-  a `grouped_tbl_now`. The censoring verbs now ungroup, work, and regroup.
+* Censoring a grouped `tbl_now` aborted inside `add_is_censored_report()`, which
+  refuses a `grouped_tbl_now`. The censoring verbs now ungroup, work, and
+  regroup.
+
+# tbl.now 0.29.0
+
+## Breaking: `is_censored` is now `is_censored_report` (#54)
+
+There are two censoring axes now, so the unqualified name had to go. The old
+spelling is removed outright, not deprecated:
+
+| was | is |
+|---|---|
+| `tbl_now(is_censored = )` | `tbl_now(is_censored_report = )` |
+| `get_is_censored()` | `get_is_censored_report()` |
+| `add_is_censored()`, `change_is_censored()`, `remove_is_censored()` | `add_is_censored_report()`, `change_is_censored_report()`, `remove_is_censored_report()` |
+| `is_censored` attribute | `is_censored_report` attribute |
+| `.is_censored` (the column `censor_delays_above()` creates) | `.is_censored_report` |
+
+## New: `is_censored_validation`, the validation-axis censoring flag (#53)
+
+The twin of `is_censored_report`, for models that use censored validation
+delays. It marks rows whose time from report to resolution is a **bound** rather
+than a measurement.
+
+* `tbl_now(is_censored_validation = )`, `get_is_censored_validation()`,
+  `add_is_censored_validation()`, `change_is_censored_validation()`,
+  `remove_is_censored_validation()`. It requires a `validation_date`: there is
+  no validation delay to bound without one.
+* The column is protected, is carried through every `dplyr` verb and through
+  `to_count()`, `update()` and `align_weeks()`, and joins the grouping keys --
+  a censored resolution and an exact one on the same `(event, report, outcome)`
+  triple stay two rows rather than being summed into one.
+
+### Breaking: `censor_validation_delays_above()` flags instead of erasing
+
+It used to set the offending rows' `validation_type` to `"pending"` and delete
+their validation date. That was wrong: a case confirmed after 200 days is still
+a confirmed case, and the object should say so. It now sets
+`is_censored_validation` and leaves the date and the outcome alone, exactly as
+`censor_delays_above()` does on the report axis. `get_latest_confirmed()`
+therefore still counts those cases.
+
+## New: `validation_levels`, for data not recorded in English (#54)
+
+`validation_type` may hold only `"confirmed"`, `"retracted"`, `"pending"` or
+`NA` -- that was already enforced, and the error now names the way out.
+`tbl_now(validation_levels = )` is that way out: a named dictionary whose names
+are the labels in your data and whose values are the canonical four.
+
+```r
+tbl_now(casos,
+  validation_type   = desenlace,
+  validation_levels = c(
+    confirmado = "confirmed", retractado = "retracted", pendiente = "pending"
+  ),
+  ...
+)
+```
+
+The column is rewritten to the canonical values; the dictionary is kept on the
+object and read back with `get_validation_levels()`. A dictionary that would
+recode a canonical value into a different one is refused, because it would flip
+the column on every rebuild.
+
+## Fixed: `change_now()` re-censors instead of erroring (#51)
+
+Moving `now` **backwards** is what `change_now()` is for -- it is how a backtest
+walks through time. On an object carrying a validation process it aborted for
+every `now` earlier than the last validation, which is nearly every historical
+as-of date.
+
+It now masks validations dated after the new `now`: the validation date becomes
+`NA` and the outcome returns to `"pending"`, because a resolution that has not
+happened yet is not a resolution. `change_now()` and `update_now()` gain
+`verbose` to silence the report of how many rows were masked.
+
+## `covid_us` carries a validation process (#52)
+
+No shipped dataset had one, so every example fabricated an outcome by row
+position. `covid_us` is rebuilt from the same CDC source with the two date
+columns that were being left on the floor, and it now runs onset -> positive
+specimen -> registration at CDC:
+
+| was | is |
+|---|---|
+| `cdc_case_earliest_dt`, `cdc_report_dt`, `n` (2020-2021) | `onset_dt`, `pos_spec_dt`, `cdc_report_dt`, `current_status`, `sex`, `n` (2020) |
+
+`cdc_case_earliest_dt` is CDC-derived and equals `onset_dt` for 99.997% of the
+rows kept, so it is gone as redundant; `sex` is a stratum, and `current_status`
+is the validation outcome -- in CDC's own words, so that mapping it is a worked
+example of `validation_levels`. The relationship between outcome and validation
+delay is real rather than fabricated: probable cases are registered a median of
+2 days after the specimen, laboratory-confirmed ones 4 days. CDC does not
+withdraw cases, so `"retracted"` does not occur.
 
 # tbl.now 0.28.0
 

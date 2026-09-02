@@ -567,7 +567,7 @@ test_that("tbl_now_to_epidist uses a 7-day window for weekly units", {
   expect_equal(get_event_units(back), "weeks")
 })
 
-test_that("epidist is_censored becomes an [event, report] window and round-trips", {
+test_that("epidist is_censored_report becomes an [event, report] window and round-trips", {
   skip_on_cran()
   skip_if_not_installed("epidist")
   ct <- tbl_now(
@@ -576,7 +576,7 @@ test_that("epidist is_censored becomes an [event, report] window and round-trips
       rp   = as.Date(c("2020-03-05", "2020-03-04", "2020-03-10", "2020-03-09")),
       cens = c(FALSE, FALSE, TRUE, TRUE)
     ),
-    event_date = ev, report_date = rp, is_censored = cens,
+    event_date = ev, report_date = rp, is_censored_report = cens,
     data_type = "linelist", event_units = "days", report_units = "days",
     verbose = FALSE
   )
@@ -591,8 +591,8 @@ test_that("epidist is_censored becomes an [event, report] window and round-trips
   expect_equal(out$stime_lwr[c(3, 4)], out$ptime_lwr[c(3, 4)])
 
   back <- suppressMessages(tbl_now_from_epidist(out, verbose = FALSE))
-  expect_equal(get_is_censored(back), "is_censored")
-  expect_equal(back[["is_censored"]], c(FALSE, FALSE, TRUE, TRUE))
+  expect_equal(get_is_censored_report(back), "is_censored_report")
+  expect_equal(back[["is_censored_report"]], c(FALSE, FALSE, TRUE, TRUE))
   # the true report dates are recovered for the censored rows.
   expect_equal(back[[get_report_date(back)]], ct[["rp"]])
 })
@@ -1262,7 +1262,7 @@ test_that("epinowcast preprocessed round-trip preserves rows (up to max_delay)",
 # })
 
 # ============================================================
-# Covariate / is_censored preservation in tabular outputs
+# Covariate / is_censored_report preservation in tabular outputs
 # ============================================================
 
 make_rich_now <- function() {
@@ -1275,7 +1275,7 @@ make_rich_now <- function() {
     n    = c(3, 2, 4, 1, 5, 2)
   )
   tbl_now(d, event_date = ev, report_date = rp, case_count = n, strata = grp,
-          covariates = temp, is_censored = flag, data_type = "count-incidence",
+          covariates = temp, is_censored_report = flag, data_type = "count-incidence",
           event_units = "weeks", report_units = "weeks", verbose = FALSE)
 }
 
@@ -1335,7 +1335,7 @@ test_that("tbl_now_to_data_table keeps every column", {
   expect_true(all(c("temp", "flag") %in% names(dt)))
 })
 
-test_that("tbl_now_to_epidist linelist carries covariates and is_censored", {
+test_that("tbl_now_to_epidist linelist carries covariates and is_censored_report", {
   skip_on_cran()
   skip_if_not_installed("epidist")
   ll <- tbl_now(
@@ -1399,7 +1399,7 @@ test_that("as_epidist_linelist_data.tbl_now dispatches to tbl_now_to_epidist", {
 # along onto a converted-out object.
 tbl_now_meta_attrs <- c(
   "event_date", "report_date", "case_count", "strata", "covariates", "now",
-  "event_units", "report_units", "data_type", "is_censored",
+  "event_units", "report_units", "data_type", "is_censored_report",
   "temporal_effects", "computed_temporal_effect_cols"
 )
 

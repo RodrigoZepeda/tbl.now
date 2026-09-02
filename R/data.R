@@ -208,35 +208,83 @@
 #' @md
 "mpoxdat"
 
-#' covid_us: CDC COVID-19 Case Surveillance Public Use Data (2020-2021)
+#' covid_us: CDC COVID-19 Case Surveillance Public Use Data (2020)
 #'
 #' A compact aggregation of the U.S. CDC's individual-level COVID-19 case
-#' surveillance database, prepared to illustrate **batch reporting**. Each row is
-#' a unique (event date, report date) pair with the number of cases `n`.
+#' surveillance database. It is the package's worked example for two different
+#' things: **batch reporting**, and the **validation process** -- the optional
+#' third date a surveillance record can carry.
 #'
-#' In the nowcasting context the **event date** is `cdc_case_earliest_dt` (the
-#' earlier of the clinical/specimen date and the date the case was received by
-#' CDC) and the **report date** is `cdc_report_dt` (the date the case was first
-#' reported to CDC). The delay between them is enormous and heavily right-skewed:
-#' cases were reported to CDC not smoothly but in large backlog dumps -- a textbook
-#' batch-reporting pattern that [diagnose_batches()] and [transport_discriminant()]
-#' recover.
+#' Each row is a unique (onset date, specimen date, CDC report date, status,
+#' sex) combination with the number of cases `n`.
 #'
-#' Cases are kept when both their event date and their report date fall between
-#' 2020-01-01 and 2021-12-31 -- a self-consistent "as of the end of 2021" snapshot,
-#' so the epidemic and its reporting are seen over the same two years. The handful
-#' of rows whose report date precedes their event date (data-entry errors) were
-#' dropped. See `data-raw/covid_us.R` for the exact duckdb aggregation of the
-#' 14 GB source file.
+#' @details
+#' # The three dates
 #'
-#' @format A data frame with three variables:
+#' The source file carries four date columns. `cdc_case_earliest_dt` is derived
+#' by CDC as the earliest of the others, and equals `onset_dt` for 99.997% of
+#' the rows kept here, so it is dropped as redundant. The three that remain are
+#' the only chain that runs forward in time, and they map onto the three roles a
+#' [tbl_now()] knows about:
+#'
 #' \describe{
-#'   \item{cdc_case_earliest_dt}{`Date`. The event date -- the earlier of the
-#'     clinical date and the date received by CDC.}
-#'   \item{cdc_report_dt}{`Date`. The report date -- when the case was first
-#'     reported to CDC.}
-#'   \item{n}{`integer`. Number of cases with this (event date, report date)
-#'     pair.}
+#'   \item{`onset_dt`}{the **event** -- symptoms begin.}
+#'   \item{`pos_spec_dt`}{the **report** -- the first positive specimen is
+#'     collected, which is when the surveillance system first sees the case.}
+#'   \item{`cdc_report_dt`}{the **validation** -- the case is registered at CDC
+#'     with a status.}
+#' }
+#'
+#' # `current_status` and `validation_levels`
+#'
+#' `current_status` is kept in CDC's own words rather than recoded, because
+#' translating it is exactly what `tbl_now(validation_levels = )` is for:
+#'
+#' ```r
+#' validation_levels = c(
+#'   "Laboratory-confirmed case" = "confirmed",
+#'   "Probable Case"             = "pending"
+#' )
+#' ```
+#'
+#' A *probable* case is one that met the clinical and epidemiological criteria
+#' without meeting the laboratory-confirmed definition. Every row here has a
+#' positive specimen, so "probable" means the specimen was collected and the
+#' case was never laboratory-settled -- `"pending"` in this package's
+#' vocabulary. Note what is **not** there: CDC does not withdraw cases, so
+#' `"retracted"` does not occur in this dataset. It is a two-outcome validation
+#' process, and code that needs a retraction has to look elsewhere.
+#'
+#' The relationship between the outcome and the validation delay is real rather
+#' than fabricated: probable cases are registered a median of 2 days after the
+#' specimen, laboratory-confirmed ones 4 days.
+#'
+#' # What was kept
+#'
+#' Cases where all three dates are present, correctly ordered
+#' (`onset_dt <= pos_spec_dt <= cdc_report_dt`) and falling entirely within
+#' 2020 -- a self-consistent "as of the end of 2020" snapshot. Rows out of order
+#' are data-entry errors; rows missing a date cannot be placed on the chain at
+#' all. See `data-raw/covid_us.R` for the exact duckdb aggregation of the 14 GB
+#' source file.
+#'
+#' The reporting delay is enormous and heavily right-skewed: cases reached CDC
+#' not smoothly but in large backlog dumps -- a textbook batch-reporting pattern
+#' that [diagnose_batches()] and [transport_discriminant()] recover.
+#'
+#' @format A data frame with 192,953 rows and six variables:
+#' \describe{
+#'   \item{onset_dt}{`Date`. The event date -- symptom onset.}
+#'   \item{pos_spec_dt}{`Date`. The report date -- collection of the first
+#'     positive specimen.}
+#'   \item{cdc_report_dt}{`Date`. The validation date -- when the case was
+#'     registered at CDC.}
+#'   \item{current_status}{`character`. CDC's classification, either
+#'     `"Laboratory-confirmed case"` or `"Probable Case"`. Map it with
+#'     `validation_levels` (see above).}
+#'   \item{sex}{`character`. `"Female"`, `"Male"`, `"Other"`, `"Unknown"` or
+#'     `"Missing"`.}
+#'   \item{n}{`integer`. Number of cases sharing that combination.}
 #' }
 #'
 #' @source Centers for Disease Control and Prevention (CDC), COVID-19 Response.
@@ -252,22 +300,49 @@
 #' @keywords datasets
 #'
 #' @seealso
-#' [tbl_now()] to declare the date columns; [summary()][tbl_now_summary] and
-#' [diagnose()] to inspect the result; the package's other datasets --
-#' [denguedat], [mpoxdat], [flusight], [covid_colombia], [covid_us] and
-#' [hai_bucaramanga].
+#' [tbl_now()] to declare the date columns; [add_validation_date()][add] to
+#' attach the third one to an object that has none; [validation_counts] to count
+#' the outcomes; [summary()][tbl_now_summary] and [diagnose()] to inspect the
+#' result; the package's other datasets -- [denguedat], [mpoxdat], [flusight],
+#' [covid_colombia] and [hai_bucaramanga].
 #'
 #' @examples
 #' data(covid_us)
+#'
+#' # The two-date object: onset -> positive specimen.
 #' tn <- tbl_now(
 #'   covid_us,
-#'   event_date  = cdc_case_earliest_dt,
-#'   report_date = cdc_report_dt,
+#'   event_date  = onset_dt,
+#'   report_date = pos_spec_dt,
 #'   case_count  = n,
+#'   strata      = sex,
 #'   data_type   = "count-incidence",
 #'   verbose     = FALSE
 #' )
 #' tn
+#'
+#' # The third date, with CDC's labels translated to this package's vocabulary.
+#' tn3 <- tbl_now(
+#'   covid_us,
+#'   event_date       = onset_dt,
+#'   report_date      = pos_spec_dt,
+#'   validation_date  = cdc_report_dt,
+#'   validation_type  = current_status,
+#'   validation_levels = c(
+#'     "Laboratory-confirmed case" = "confirmed",
+#'     "Probable Case"             = "pending"
+#'   ),
+#'   case_count = n,
+#'   strata     = sex,
+#'   data_type  = "count-incidence",
+#'   verbose    = FALSE
+#' )
+#' has_validation(tn3)
+#' get_validation_levels(tn3)
+#'
+#' # "How many cases were there" now has more than one answer.
+#' head(get_latest_reported_cases(tn3))
+#' head(get_latest_confirmed(tn3))
 #' @md
 "covid_us"
 

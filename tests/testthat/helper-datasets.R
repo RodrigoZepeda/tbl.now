@@ -39,10 +39,18 @@ dataset_tbl_now <- function(name) {
     },
     covid_us = {
       data(covid_us, envir = environment())
+      # `sex` MUST be declared: undeclared, the (event, report) pair is not
+      # unique and every target that needs one slot per cell rejects it.
       covid_us |>
-        dplyr::filter(cdc_case_earliest_dt >= as.Date("2021-06-01")) |>
-        tbl_now(event_date = cdc_case_earliest_dt, report_date = cdc_report_dt,
-                case_count = n, data_type = "count-incidence", verbose = FALSE)
+        dplyr::filter(onset_dt >= as.Date("2020-10-01")) |>
+        dplyr::filter(sex %in% c("Male","Female","Unknown")) |>
+        dplyr::summarise(
+          n = sum(.data$n),
+          .by = c("onset_dt", "pos_spec_dt", "sex")
+        ) |>
+        tbl_now(event_date = onset_dt, report_date = pos_spec_dt,
+                case_count = n, strata = sex, data_type = "count-incidence",
+                verbose = FALSE)
     },
     mpoxdat = {
       data(mpoxdat, envir = environment())

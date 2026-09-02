@@ -14,7 +14,7 @@
 #'
 #' @param object A `tbl_now` object
 #' @param ... Additional arguments to pass to `tbl_now`
-#' @param new_data Another `tbl_now` with the same `strata`, `covariates`, `is_censored`,
+#' @param new_data Another `tbl_now` with the same `strata`, `covariates`, `is_censored_report`,
 #' and `temporal_effects` or a `data.frame` with additional (newer) data
 #' not present in `x`
 #'
@@ -85,9 +85,9 @@ update.tbl_now <- function(object, ..., new_data,
     update_check_data_frame_internal(object, new_data)
   }
 
-  # Resolve the is_censored column name for the result before binding
-  cens_obj <- get_is_censored(object)
-  cens_new <- if (is_tbl_now(new_data)) get_is_censored(new_data) else NULL
+  # Resolve the is_censored_report column name for the result before binding
+  cens_obj <- get_is_censored_report(object)
+  cens_new <- if (is_tbl_now(new_data)) get_is_censored_report(new_data) else NULL
 
   # Bind rows
   updated_data <- object |>
@@ -123,7 +123,7 @@ update.tbl_now <- function(object, ..., new_data,
   # Determine which censored column name to register on the result.
   # Priority: object's column first (it was explicitly registered); fall back
   # to new_data's column when object had none.
-  result_is_censored <- if (!is.null(cens_obj)) cens_obj else cens_new
+  result_is_censored_report <- if (!is.null(cens_obj)) cens_obj else cens_new
 
   if (grepl("count", get_data_type(object)) && remove_duplicates) {
     suppressWarnings(
@@ -301,10 +301,17 @@ update.tbl_now <- function(object, ..., new_data,
     report_date = get_report_date(object),
     strata = get_strata(updated_data),
     covariates = get_covariates(updated_data),
-    is_censored = result_is_censored,
+    is_censored_report = result_is_censored_report,
     validation_date = validation_date,
     validation_type = validation_type,
     validation_units = get_validation_units(object) %||% "auto",
+    validation_levels = get_validation_levels(object),
+    is_censored_validation = if (is.null(validation_date)) {
+      NULL
+    } else {
+      cens <- get_is_censored_validation(object)
+      if (!is.null(cens) && cens %in% colnames(updated_data)) cens else NULL
+    },
     event_units = get_event_units(object),
     report_units = get_report_units(object),
     data_type = get_data_type(object),
@@ -399,12 +406,12 @@ update_check_tbl_now_internal <- function(object, new_data) {
   # • Only object has one                 → OK (new rows must carry the column;
   #                                              update_check_data_frame_internal handles that)
   # • Both have one with DIFFERENT names  → error
-  if (!is.null(get_is_censored(object)) && !is.null(get_is_censored(new_data)) &&
-    !identical(get_is_censored(object), get_is_censored(new_data))) {
+  if (!is.null(get_is_censored_report(object)) && !is.null(get_is_censored_report(new_data)) &&
+    !identical(get_is_censored_report(object), get_is_censored_report(new_data))) {
     cli::cli_abort(
       paste0(
-        "`object` has is_censored = {.val {get_is_censored(object)}} while ",
-        "`new_data` has is_censored = {.val {get_is_censored(new_data)}}. ",
+        "`object` has is_censored_report = {.val {get_is_censored_report(object)}} while ",
+        "`new_data` has is_censored_report = {.val {get_is_censored_report(new_data)}}. ",
         "They must be the same column name in order to `update`."
       )
     )
@@ -474,10 +481,10 @@ update_check_data_frame_internal <- function(object, new_data) {
   }
 
   # Check that both objects have the same event and report columns
-  if (!is.null(get_is_censored(object)) && !(get_is_censored(object) %in% colnames(new_data))) {
+  if (!is.null(get_is_censored_report(object)) && !(get_is_censored_report(object) %in% colnames(new_data))) {
     cli::cli_abort(
       paste0(
-        "`object` has is_censored = {.val {get_is_censored(object)}} but ",
+        "`object` has is_censored_report = {.val {get_is_censored_report(object)}} but ",
         "that column was not found in `new_data`."
       )
     )

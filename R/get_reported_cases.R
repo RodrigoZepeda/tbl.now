@@ -98,7 +98,7 @@ NULL
   report_col <- get_report_date(x)
   strata     <- get_strata(x)
   covariates <- get_covariates(x)
-  censored   <- get_is_censored(x)
+  censored   <- get_is_censored_report(x)
   effects    <- get_temporal_effect_cols(x)
   data_type  <- get_data_type(x)
   count_in   <- get_case_count(x)
@@ -159,7 +159,7 @@ NULL
   out <- tbl_now(
     as.data.frame(result),
     event_date = event_col, report_date = report_col,
-    strata = strata, covariates = covariates, is_censored = censored,
+    strata = strata, covariates = covariates, is_censored_report = censored,
     now = get_now(x), event_units = get_event_units(x),
     report_units = get_report_units(x), data_type = "count-cumulative",
     case_count = count_out, verbose = FALSE, force = TRUE,

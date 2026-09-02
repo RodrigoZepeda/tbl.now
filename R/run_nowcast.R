@@ -353,7 +353,7 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #' * every other backend ignores them: the columns ride along so you can split
 #'   on them, and nothing else happens.
 #'
-#' **Censored delays.** A per-case censoring flag (see [add_is_censored()]) puts
+#' **Censored delays.** A per-case censoring flag (see [add_is_censored_report()]) puts
 #' a censored and an uncensored row in the same `(event date, report date)` cell,
 #' and a reporting triangle has one slot per cell. Every backend that goes
 #' through a converter therefore **collapses the flag with a warning** — counts

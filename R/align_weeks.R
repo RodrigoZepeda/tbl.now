@@ -237,7 +237,9 @@ align_weeks.tbl_now <- function(.data, align_on_day = 7, type = "epi", ...) {
       } else {
         NULL
       },
-      validation_units = get_validation_units(.data) %||% "auto"
+      validation_units = get_validation_units(.data) %||% "auto",
+      validation_levels = get_validation_levels(.data),
+      is_censored_validation = get_is_censored_validation(.data)
     )
   }
 
@@ -250,7 +252,7 @@ align_weeks.tbl_now <- function(.data, align_on_day = 7, type = "epi", ...) {
       strata = get_strata(.data),
       covariates = get_covariates(.data),
       case_count = get_case_count(.data),
-      is_censored = get_is_censored(.data),
+      is_censored_report = get_is_censored_report(.data),
       event_units = get_event_units(.data),
       report_units = get_report_units(.data),
       now = new_now

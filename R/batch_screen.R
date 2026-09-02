@@ -153,7 +153,7 @@
 #' coordinates behind the test, without the hypothesis test on top;
 #' [simulate_batch()] to plant a known batch and check the screen finds it;
 #' [plot_reporting_process()] and [plot_reporting_triangle()] to see it;
-#' [add_is_censored()][add] to record a batch once you believe it. The
+#' [add_is_censored_report()][add] to record a batch once you believe it. The
 #' [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' works through a real example.
 #'

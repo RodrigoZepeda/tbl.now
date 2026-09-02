@@ -1,14 +1,14 @@
 library(dplyr, quietly = TRUE, warn.conflicts = FALSE)
 
-make_delay_data <- function(is_censored = FALSE) {
+make_delay_data <- function(is_censored_report = FALSE) {
   df <- data.frame(
     onset    = as.Date("2020-01-01") + c(0, 0, 1, 2),
     reported = as.Date("2020-01-01") + c(1, 5, 2, 300) # last row: 298-day delay
   )
-  if (is_censored) {
+  if (is_censored_report) {
     df$flag <- c(TRUE, FALSE, FALSE, FALSE)
     tbl_now(df,
-      event_date = onset, report_date = reported, is_censored = flag,
+      event_date = onset, report_date = reported, is_censored_report = flag,
       data_type = "linelist", verbose = FALSE
     )
   } else {
@@ -23,16 +23,16 @@ test_that("censor_delays_above flags long delays and creates the column", {
   out <- censor_delays_above(make_delay_data(), max_delay = 60, verbose = FALSE)
 
   expect_true(is_tbl_now(out))
-  expect_equal(get_is_censored(out), ".is_censored")
+  expect_equal(get_is_censored_report(out), ".is_censored_report")
   # only the 298-day delay exceeds 60
-  expect_equal(out[[".is_censored"]], c(FALSE, FALSE, FALSE, TRUE))
+  expect_equal(out[[".is_censored_report"]], c(FALSE, FALSE, FALSE, TRUE))
 })
 
 test_that("censor_delays_above merges with existing censoring (never un-censors)", {
-  out <- censor_delays_above(make_delay_data(is_censored = TRUE),
+  out <- censor_delays_above(make_delay_data(is_censored_report = TRUE),
     max_delay = 60, verbose = FALSE
   )
-  expect_equal(get_is_censored(out), "flag")
+  expect_equal(get_is_censored_report(out), "flag")
   # row 1 was already censored; row 4 newly censored; both stay TRUE
   expect_equal(out[["flag"]], c(TRUE, FALSE, FALSE, TRUE))
 })
@@ -47,7 +47,7 @@ test_that("censor_delays_above emits an informative message unless verbose = FAL
 
 test_that("censor_delays_above flags nothing when max_delay is large", {
   out <- censor_delays_above(make_delay_data(), max_delay = 1000, verbose = FALSE)
-  expect_false(any(out[[".is_censored"]]))
+  expect_false(any(out[[".is_censored_report"]]))
 })
 
 test_that("censor_delays_above works on count data via the .delay column", {
@@ -63,7 +63,7 @@ test_that("censor_delays_above works on count data via the .delay column", {
   )
   out <- censor_delays_above(tn, max_delay = 4, verbose = FALSE) # > 4 weeks
   expect_true(is_tbl_now(out))
-  expect_equal(sum(out[[get_is_censored(out)]]), 1L)
+  expect_equal(sum(out[[get_is_censored_report(out)]]), 1L)
 })
 
 test_that("censor_delays_above validates its arguments", {
@@ -76,7 +76,7 @@ test_that("censor_delays_above works on a grouped tbl_now and keeps the groups",
   grouped <- make_delay_data() |> dplyr::group_by(onset)
   out <- censor_delays_above(grouped, max_delay = 60, verbose = FALSE)
 
-  expect_equal(out[[".is_censored"]], c(FALSE, FALSE, FALSE, TRUE))
+  expect_equal(out[[".is_censored_report"]], c(FALSE, FALSE, FALSE, TRUE))
   expect_equal(dplyr::group_vars(out), "onset")
   expect_true(is_tbl_now(out))
 })

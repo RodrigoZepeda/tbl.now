@@ -168,7 +168,7 @@ test_that(".format_temporal_effects_spec returns NULL for an empty spec list", {
 test_that("footer shows the left-censored indicator when set", {
   x <- tbl_now(
     daily_te |> mutate(flag = c(FALSE, TRUE, FALSE, FALSE)),
-    event_date = event, report_date = report, is_censored = flag,
+    event_date = event, report_date = report, is_censored_report = flag,
     event_units = "days", report_units = "days", verbose = FALSE
   )
   out <- capture.output(print(x))

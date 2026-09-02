@@ -17,7 +17,7 @@ make_messy <- function(flag = FALSE) {
   if (flag) df$was_censored <- c(TRUE, FALSE, FALSE, FALSE)
   suppressWarnings(tbl_now(df,
     event_date = onset, report_date = reported, strata = sex,
-    is_censored = if (flag) "was_censored" else NULL,
+    is_censored_report = if (flag) "was_censored" else NULL,
     data_type = "linelist", units = "days", verbose = FALSE,
     now = as.Date("2020-01-10")
   ))
@@ -95,7 +95,7 @@ test_that("censor_reports replaces the matching dates with `now` by default", {
     out[[get_report_date(out)]],
     as.Date(c("2020-01-03", "2020-01-10", "2020-01-10", "2020-01-06"))
   )
-  expect_equal(out[[get_is_censored(out)]], c(FALSE, TRUE, TRUE, FALSE))
+  expect_equal(out[[get_is_censored_report(out)]], c(FALSE, TRUE, TRUE, FALSE))
   # onset 1..4 Jan against reports 3, 10, 10, 6 Jan.
   expect_equal(out$.delay, c(2, 8, 7, 2))
   expect_equal(get_now(out), as.Date("2020-01-10"))
@@ -132,7 +132,7 @@ test_that("censor_reports with to_report = NULL only sets the flag", {
   x <- make_messy()
   out <- suppressWarnings(censor_reports(x, is.na(reported), to_report = NULL, verbose = FALSE))
 
-  expect_equal(out[[get_is_censored(out)]], c(FALSE, TRUE, FALSE, FALSE))
+  expect_equal(out[[get_is_censored_report(out)]], c(FALSE, TRUE, FALSE, FALSE))
   expect_true(is.na(out[[get_report_date(out)]][2]))
 })
 
@@ -141,7 +141,7 @@ test_that("censor_delays caps the delay by moving the report date", {
   out <- censor_delays(x, .delay > 60, to_delay = 60, verbose = FALSE)
 
   expect_equal(out$.delay, c(1, 5, 1, 60))
-  expect_equal(out[[get_is_censored(out)]], c(FALSE, FALSE, FALSE, TRUE))
+  expect_equal(out[[get_is_censored_report(out)]], c(FALSE, FALSE, FALSE, TRUE))
   # Row 4's onset is 2020-01-03, so 60 days later is 2020-03-03.
   expect_equal(out[[get_report_date(out)]][4], as.Date("2020-03-03"))
   # `now` never moves backwards just because a delay was capped.
@@ -153,7 +153,7 @@ test_that("censor_delays without a replacement only sets the flag", {
   out <- censor_delays(x, .delay > 60, verbose = FALSE)
 
   expect_equal(out$.delay, x$.delay)
-  expect_equal(out[[get_is_censored(out)]], c(FALSE, FALSE, FALSE, TRUE))
+  expect_equal(out[[get_is_censored_report(out)]], c(FALSE, FALSE, FALSE, TRUE))
 })
 
 test_that("censor_delays agrees with censor_delays_above on the same rule", {
@@ -162,8 +162,8 @@ test_that("censor_delays agrees with censor_delays_above on the same rule", {
   special <- censor_delays_above(x, max_delay = 60, verbose = FALSE)
 
   expect_equal(
-    general[[get_is_censored(general)]],
-    special[[get_is_censored(special)]]
+    general[[get_is_censored_report(general)]],
+    special[[get_is_censored_report(special)]]
   )
 })
 
@@ -172,7 +172,7 @@ test_that("an NA condition is not a match", {
   # `reported > date` is NA for the row with no report date.
   out <- suppressWarnings(censor_reports(x, reported > as.Date("2100-01-01"), verbose = FALSE))
 
-  expect_equal(out[[get_is_censored(out)]], c(FALSE, FALSE, TRUE, FALSE))
+  expect_equal(out[[get_is_censored_report(out)]], c(FALSE, FALSE, TRUE, FALSE))
   expect_true(is.na(out[[get_report_date(out)]][2]))
 })
 
@@ -181,35 +181,35 @@ test_that("a condition matching nothing leaves the data alone", {
   out <- censor_delays(x, .delay > 1e6, verbose = FALSE)
 
   expect_equal(out$.delay, x$.delay)
-  expect_false(any(out[[get_is_censored(out)]]))
+  expect_false(any(out[[get_is_censored_report(out)]]))
 })
 
 test_that("a length-1 condition is recycled over every row", {
   x <- make_delays()
-  expect_true(all(censor_delays(x, TRUE, verbose = FALSE)[[".is_censored"]]))
-  expect_false(any(censor_delays(x, FALSE, verbose = FALSE)[[".is_censored"]]))
+  expect_true(all(censor_delays(x, TRUE, verbose = FALSE)[[".is_censored_report"]]))
+  expect_false(any(censor_delays(x, FALSE, verbose = FALSE)[[".is_censored_report"]]))
 })
 
 # ---- The existing flag ------------------------------------------------------
 
 test_that("an existing censoring column is merged, never cleared", {
   x <- make_messy(flag = TRUE)
-  expect_equal(get_is_censored(x), "was_censored")
+  expect_equal(get_is_censored_report(x), "was_censored")
 
   out <- suppressWarnings(censor_reports(x, is.na(reported), verbose = FALSE))
 
-  expect_equal(get_is_censored(out), "was_censored")
+  expect_equal(get_is_censored_report(out), "was_censored")
   # Row 1 was already censored and stays so; row 2 is newly censored.
   expect_equal(out[["was_censored"]], c(TRUE, TRUE, FALSE, FALSE))
-  expect_false(".is_censored" %in% colnames(out))
+  expect_false(".is_censored_report" %in% colnames(out))
 })
 
 test_that("the flag column is created when the object has none", {
   x <- make_delays()
-  expect_null(get_is_censored(x))
+  expect_null(get_is_censored_report(x))
 
   out <- censor_delays(x, .delay > 60, verbose = FALSE)
-  expect_equal(get_is_censored(out), ".is_censored")
+  expect_equal(get_is_censored_report(out), ".is_censored_report")
 })
 
 # ---- Grouped objects --------------------------------------------------------
@@ -219,7 +219,7 @@ test_that("a grouped tbl_now gets the same answer as an ungrouped one", {
   grouped <- x |> group_by(!!as.symbol(get_event_date(x)))
 
   flagged <- censor_delays(grouped, .delay > 60, verbose = FALSE)
-  expect_equal(flagged[[".is_censored"]], c(FALSE, FALSE, FALSE, TRUE))
+  expect_equal(flagged[[".is_censored_report"]], c(FALSE, FALSE, FALSE, TRUE))
 
   capped <- censor_delays(grouped, .delay > 60, to_delay = 60, verbose = FALSE)
   expect_equal(capped$.delay, c(1, 5, 1, 60))
@@ -230,7 +230,7 @@ test_that("a condition may name a grouping column", {
   out <- suppressWarnings(
     censor_reports(x |> group_by(sex), sex == "M" & is.na(reported), verbose = FALSE)
   )
-  expect_equal(out[[get_is_censored(out)]], c(FALSE, TRUE, FALSE, FALSE))
+  expect_equal(out[[get_is_censored_report(out)]], c(FALSE, TRUE, FALSE, FALSE))
 })
 
 # ---- Count data and the validation process ----------------------------------
@@ -248,7 +248,7 @@ test_that("count data is censored cell by cell, and the totals are untouched", {
   out <- censor_delays(x, .delay > 30, to_delay = 30, verbose = FALSE)
 
   expect_equal(sum(out$n), sum(df$n))
-  expect_equal(out[[get_is_censored(out)]], c(FALSE, TRUE, FALSE))
+  expect_equal(out[[get_is_censored_report(out)]], c(FALSE, TRUE, FALSE))
   expect_equal(get_data_type(out), "count-incidence")
 })
 
@@ -302,8 +302,8 @@ test_that("censoring twice is the same as censoring once", {
 
   expect_equal(once$.delay, twice$.delay)
   expect_equal(
-    once[[get_is_censored(once)]],
-    twice[[get_is_censored(twice)]]
+    once[[get_is_censored_report(once)]],
+    twice[[get_is_censored_report(twice)]]
   )
   expect_equal(get_now(once), get_now(twice))
 })
@@ -314,14 +314,14 @@ test_that("a later, looser censoring never clears an earlier, stricter one", {
   loose <- censor_delays(strict, .delay > 1000, verbose = FALSE)
 
   # Rows 2 and 4 were flagged by the strict rule and stay flagged.
-  expect_equal(loose[[".is_censored"]], c(FALSE, TRUE, FALSE, TRUE))
+  expect_equal(loose[[".is_censored_report"]], c(FALSE, TRUE, FALSE, TRUE))
 })
 
 test_that("the condition sees variables from the calling environment", {
   x <- make_delays()
   threshold <- 60
   out <- censor_delays(x, .delay > threshold, verbose = FALSE)
-  expect_equal(out[[".is_censored"]], c(FALSE, FALSE, FALSE, TRUE))
+  expect_equal(out[[".is_censored_report"]], c(FALSE, FALSE, FALSE, TRUE))
 })
 
 test_that("a replacement before the event date is allowed, and warned about", {
@@ -347,7 +347,7 @@ test_that("censoring works on a numeric axis, and refuses a fractional replaceme
 
   out <- censor_reports(x, event > 8, to_report = 20, verbose = FALSE)
   expect_equal(out[["report"]], c(3:10, 20, 20))
-  expect_equal(out[[get_is_censored(out)]], c(rep(FALSE, 8), TRUE, TRUE))
+  expect_equal(out[[get_is_censored_report(out)]], c(rep(FALSE, 8), TRUE, TRUE))
 
   expect_error(
     censor_reports(x, event > 8, to_report = 20.5, verbose = FALSE),
@@ -392,7 +392,7 @@ test_that("censor_reports keeps a count-cumulative object cumulative", {
 
   expect_equal(get_data_type(out), "count-cumulative")
   expect_equal(out$n, df$n)
-  expect_equal(out[[get_is_censored(out)]], c(FALSE, FALSE, TRUE, FALSE, FALSE, TRUE))
+  expect_equal(out[[get_is_censored_report(out)]], c(FALSE, FALSE, TRUE, FALSE, FALSE, TRUE))
 })
 
 test_that("covariates and the temporal-effects spec survive a censoring rebuild", {
@@ -480,7 +480,7 @@ test_that("the issue's own use case works on the shipped messy dataset", {
   ))
 
   expect_equal(sum(is.na(out[[get_report_date(out)]])), 0)
-  expect_equal(sum(out[[get_is_censored(out)]]), missing_reports)
+  expect_equal(sum(out[[get_is_censored_report(out)]]), missing_reports)
   expect_equal(nrow(out), nrow(x))
   expect_equal(get_strata(out), "sex")
 })
@@ -496,6 +496,38 @@ test_that("censoring reports then aggregating keeps every case", {
   expect_equal(nrow(weekly), nrow(x))
   expect_equal(get_event_units(weekly), "weeks")
   # The censoring flag is a declared column, so it comes along.
-  expect_equal(get_is_censored(weekly), ".is_censored")
-  expect_equal(sum(weekly[[".is_censored"]]), 2)
+  expect_equal(get_is_censored_report(weekly), ".is_censored_report")
+  expect_equal(sum(weekly[[".is_censored_report"]]), 2)
+})
+
+# ---- The attributes 0.29.0 added --------------------------------------------
+
+test_that("validation_levels and is_censored_validation survive a censoring rebuild", {
+  cases <- data.frame(
+    onset = as.Date("2021-01-04") + 0:4,
+    visit = as.Date("2021-01-05") + 0:4,
+    result = as.Date("2021-01-12") + 0:4,
+    outcome = c(rep("confirmado", 4), "pendiente")
+  )
+  levels_map <- c(
+    confirmado = "confirmed", retractado = "retracted", pendiente = "pending"
+  )
+  flu <- tbl_now(cases,
+    event_date = onset, report_date = visit,
+    validation_date = result, validation_type = outcome,
+    validation_levels = levels_map,
+    data_type = "linelist", units = "days", verbose = FALSE
+  )
+  flagged <- censor_validation_delays_above(flu, 3, verbose = FALSE)
+
+  out <- censor_delays(flagged, .delay > 0, to_delay = 0, verbose = FALSE)
+
+  expect_equal(get_validation_levels(out), levels_map)
+  expect_equal(get_is_censored_validation(out), ".is_censored_validation")
+  expect_equal(
+    out[[".is_censored_validation"]],
+    flagged[[".is_censored_validation"]]
+  )
+  # The two censoring axes are independent: this touched only the report one.
+  expect_equal(get_is_censored_report(out), ".is_censored_report")
 })

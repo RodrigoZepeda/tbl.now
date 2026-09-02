@@ -908,7 +908,8 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   report_units <- get_report_units(x)
   event_units <- get_event_units(x)
   data_type <- get_data_type(x)
-  is_censored <- get_is_censored(x)
+  is_censored_report <- get_is_censored_report(x)
+  is_censored_validation <- get_is_censored_validation(x)
   case_count <- get_case_count(x)
 
   rows <- list()
@@ -962,11 +963,30 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       "Attribute {.val data_type} must be one of: {.val {valid_types}}"
     ))
   }
-  if (!is.null(is_censored) &&
-    (length(is_censored) != 1 || !is.character(is_censored))) {
-    error("is_censored", .diagnose_text(
-      "Attribute {.val is_censored} must be {.val NULL} or a character vector
+  if (!is.null(is_censored_report) &&
+    (length(is_censored_report) != 1 || !is.character(is_censored_report))) {
+    error("is_censored_report", .diagnose_text(
+      "Attribute {.val is_censored_report} must be {.val NULL} or a character vector
        of length 1"
+    ))
+  }
+  if (!is.null(is_censored_validation) &&
+    (length(is_censored_validation) != 1 ||
+      !is.character(is_censored_validation))) {
+    error("is_censored_validation", .diagnose_text(
+      "Attribute {.val is_censored_validation} must be {.val NULL} or a
+       character vector of length 1"
+    ))
+  }
+  # A validation delay only exists once there is a validation date to measure
+  # it from; a flag without one names a bound on nothing.
+  if (!is.null(is_censored_validation) && !has_validation(x)) {
+    error("is_censored_validation", .diagnose_text(
+      "Attribute {.val is_censored_validation} is set but the object carries no
+       {.field validation_date}"
+    ), hint = .diagnose_text(
+      "Attach one with {.fn add_validation_date}, or drop the flag with
+       {.fn remove_is_censored_validation}."
     ))
   }
 
@@ -984,9 +1004,16 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       "Column {.val {report_date}} (report_date) not found in data"
     ))
   }
-  if (named_column(is_censored) && !is_censored %in% colnames(x)) {
-    error(is_censored, .diagnose_text(
-      "Column {.val {is_censored}} (is_censored) not found in data"
+  if (named_column(is_censored_report) && !is_censored_report %in% colnames(x)) {
+    error(is_censored_report, .diagnose_text(
+      "Column {.val {is_censored_report}} (is_censored_report) not found in data"
+    ))
+  }
+  if (named_column(is_censored_validation) &&
+    !is_censored_validation %in% colnames(x)) {
+    error(is_censored_validation, .diagnose_text(
+      "Column {.val {is_censored_validation}} (is_censored_validation) not
+       found in data"
     ))
   }
   for (column in strata) {
@@ -1030,14 +1057,27 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       "Event date {.val {event_date}} cannot be a covariate"
     ))
   }
-  if (!is.null(is_censored) && any(is_censored %in% covariates)) {
-    error("is_censored", .diagnose_text(
-      "Censored indicator {.val {is_censored}} cannot be also a covariate"
+  if (!is.null(is_censored_report) && any(is_censored_report %in% covariates)) {
+    error("is_censored_report", .diagnose_text(
+      "Censored indicator {.val {is_censored_report}} cannot be also a covariate"
     ))
   }
-  if (!is.null(is_censored) && any(is_censored %in% strata)) {
-    error("is_censored", .diagnose_text(
-      "Censored indicator {.val {is_censored}} cannot be also strata"
+  if (!is.null(is_censored_report) && any(is_censored_report %in% strata)) {
+    error("is_censored_report", .diagnose_text(
+      "Censored indicator {.val {is_censored_report}} cannot be also strata"
+    ))
+  }
+  if (!is.null(is_censored_validation) &&
+    any(is_censored_validation %in% covariates)) {
+    error("is_censored_validation", .diagnose_text(
+      "Censored indicator {.val {is_censored_validation}} cannot be also a
+       covariate"
+    ))
+  }
+  if (!is.null(is_censored_validation) &&
+    any(is_censored_validation %in% strata)) {
+    error("is_censored_validation", .diagnose_text(
+      "Censored indicator {.val {is_censored_validation}} cannot be also strata"
     ))
   }
 
@@ -1051,10 +1091,17 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       ))
     }
   }
-  if (named_column(is_censored) && is_censored %in% colnames(x) &&
-    !is.logical(x[[is_censored]])) {
-    error(is_censored, .diagnose_text(
-      "Column {.val {is_censored}} must be logical (TRUE/FALSE)"
+  if (named_column(is_censored_report) && is_censored_report %in% colnames(x) &&
+    !is.logical(x[[is_censored_report]])) {
+    error(is_censored_report, .diagnose_text(
+      "Column {.val {is_censored_report}} must be logical (TRUE/FALSE)"
+    ))
+  }
+  if (named_column(is_censored_validation) &&
+    is_censored_validation %in% colnames(x) &&
+    !is.logical(x[[is_censored_validation]])) {
+    error(is_censored_validation, .diagnose_text(
+      "Column {.val {is_censored_validation}} must be logical (TRUE/FALSE)"
     ))
   }
 
@@ -1262,7 +1309,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
 
   # -- everything else, per stratum -------------------------------------------
   case_count <- get_case_count(x)
-  censoring <- get_is_censored(x)
+  censoring <- get_is_censored_report(x)
   validation <- if (has_validation(x)) get_validation_date(x) else NULL
   validation_type <- if (has_validation(x)) {
     get_validation_type(x)
@@ -1365,7 +1412,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   # call `distinct()` would have deleted the retraction.
   key_cols <- unique(c(
     get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x),
-    get_is_censored(x), get_temporal_effect_cols(x),
+    get_is_censored_report(x), get_temporal_effect_cols(x),
     .validation_group_cols(x)
   ))
   key_cols <- intersect(key_cols, colnames(x))

@@ -233,10 +233,21 @@ computed separately (e.g., age group, sex).
 + **covariates** (optional): predictor variables that may improve the 
 nowcast (e.g., weather covariates).
 
-+ **is_censored** (optional): identifies cases where the report
++ **is_censored_report** (optional): identifies cases where the report
 date represents not the exact date it was reported but an upper limit
 to that exact date (i.e. left-censored). As an example, one can consider 
 a system error and reports from a lab are not registered until a week after. 
+
++ **is_censored_validation** (optional): the same flag on the validation
+axis. It marks rows whose *validation* delay -- the time from report to
+resolution -- is a bound rather than a measurement. See the
+[validation process](#the-validation-process) section.
+
++ **validation_levels** (optional): a named dictionary translating the labels
+in `validation_type` into the four values that column may hold. Surveillance
+data is not always recorded in English, and this is how
+`c(confirmado = "confirmed")` becomes `"confirmed"` once rather than in every
+script that touches the data.
 
 + **case_count** (optional): the column storing case counts when the dataset 
 is aggregated.
@@ -413,7 +424,7 @@ tbl_example |>
 
 The function ensures that:
 
-+ Rows are grouped by `event_date`, `report_date`, and any `strata`, and `is_censored`.
++ Rows are grouped by `event_date`, `report_date`, and any `strata`, and `is_censored_report`.
 
 + The `case_count` column is summed within each group.
 
@@ -485,7 +496,7 @@ fixed <- messy |>
   suppressWarnings()
 
 fixed$reported
-fixed$.is_censored
+fixed$.is_censored_report
 ```
 
 `censor_delays()` expresses the same idea as a delay rather than a date
@@ -628,52 +639,63 @@ is
 $$\text{event date} \le \text{report date} \le \text{validation date} \le \text{now}$$
 
 `validation_type` takes the values `"confirmed"`, `"retracted"`, `"pending"`
-or `NA`. **Pending** is the important one: it means the case has been reported
-and is still waiting for a result, so it has *no* validation date. That is a
-different thing from a case whose result you simply never recorded, which is
-`NA`.
+or `NA`, **and nothing else**. **Pending** is the important one: it means the
+case has been reported and is still waiting for a result, so it has *no*
+validation date. That is a different thing from a case whose result you simply
+never recorded, which is `NA`.
 
-We will use `hai_bucaramanga`, an open extract of healthcare-associated
-infections from Bucaramanga, Colombia, which records all three dates: when the
-specimen was taken, when the laboratory received it, and when the laboratory
-issued the result.
+We will use `covid_us`, the CDC's COVID-19 case surveillance data for 2020,
+which records all three dates: when symptoms began, when the first positive
+specimen was collected, and when the case was registered at CDC with a status.
 
 ```{r, message=FALSE}
-data("hai_bucaramanga")
+data("covid_us")
 
-hai <- hai_bucaramanga |>
-  distinct() |>
-  filter(
-    !is.na(specimen_date), !is.na(received_date),
-    received_date >= specimen_date
-  ) |>
-  mutate(
-    # A result was issued: that is the validation. Everything else is still
-    # waiting, and a case that is waiting has no validation date.
-    result_date = if_else(
-      !is.na(report_date) & report_date >= received_date,
-      report_date, as.Date(NA)
-    ),
-    result = if_else(is.na(result_date), "pending", "confirmed")
-  )
-
-table(hai$result)
+head(covid_us, 3)
+table(covid_us$current_status)
 ```
 
-The three dates map onto the three roles directly:
+#### `validation_levels`: getting other people's words into those four
+
+CDC does not say `"confirmed"`; it says `"Laboratory-confirmed case"`. Recoding
+that by hand before every call is the kind of step that gets forgotten in one
+script out of five, so the object does it once. `validation_levels` is a
+**named** vector whose names are the labels in your data and whose values are
+the canonical outcomes:
 
 ```{r}
-hai_now <- hai |>
+covid_now <- covid_us |>
+  filter(onset_dt >= as.Date("2020-09-01")) |>
   tbl_now(
-    event_date        = specimen_date, # the specimen was taken
-    report_date       = received_date, # the laboratory received it
-    validation_date = result_date, # the laboratory issued a result
-    validation_type = result,
-    data_type         = "linelist",
-    verbose           = FALSE
+    event_date        = onset_dt,      # symptoms began
+    report_date       = pos_spec_dt,   # the first positive specimen
+    validation_date   = cdc_report_dt, # the case was registered at CDC
+    validation_type   = current_status,
+    validation_levels = c(
+      "Laboratory-confirmed case" = "confirmed",
+      "Probable Case"             = "pending"
+    ),
+    case_count = n,
+    strata     = sex,
+    data_type  = "count-incidence",
+    verbose    = FALSE
   )
 
-hai_now
+table(covid_now$current_status)
+get_validation_levels(covid_now)
+```
+
+The column now holds the canonical values, and the dictionary is kept on the
+object so you can still see what the data said. The same works for data recorded
+in another language: `c(confirmado = "confirmed", retractado = "retracted",
+pendiente = "pending")`. Anything the dictionary does not name, and that is not
+already one of the four, is an error rather than a silently accepted category.
+
+A note on this particular dataset: CDC never withdraws a case, so `"retracted"`
+does not occur in `covid_us`. It is a two-outcome validation process.
+
+```{r}
+covid_now
 ```
 
 The footer now carries a validation line -- the column, its units, and how
@@ -684,11 +706,11 @@ the time from report to result, which is a different quantity from the reporting
 delay.
 
 ```{r}
-# Reporting delay: specimen to laboratory.
-median(hai_now$.delay, na.rm = TRUE)
+# Reporting delay: onset to positive specimen.
+median(covid_now$.delay, na.rm = TRUE)
 
-# Turnaround: laboratory to result.
-median(hai_now$.validation_delay, na.rm = TRUE)
+# Turnaround: specimen to registration at CDC.
+median(covid_now$.validation_delay, na.rm = TRUE)
 ```
 
 Validation also moves `now`. A result issued on a date means you were, by
@@ -696,9 +718,21 @@ definition, still observing the system on that date, so `now` is never earlier
 than the last validation -- even when reporting stopped before it.
 
 ```{r}
-get_now(hai_now)
-get_validation_units(hai_now)
-has_validation(hai_now)
+get_now(covid_now)
+get_validation_units(covid_now)
+has_validation(covid_now)
+```
+
+It also moves *backwards* correctly. `change_now()` is how you ask what the data
+looked like at an earlier moment -- the loop a backtest walks -- and a validation
+dated after that moment has simply not happened yet, so it reverts to
+`"pending"` with its date masked rather than making the object invalid:
+
+```{r}
+as_of_october <- change_now(covid_now, as.Date("2020-10-15"), verbose = FALSE)
+
+get_now(as_of_october)
+sum(as_of_october$n[as_of_october$current_status == "pending"])
 ```
 
 #### Counting cases when some of them can be undone
@@ -707,8 +741,8 @@ Once cases can be retracted, "how many cases were there?" has more than one
 answer, and the right one depends on the question:
 
 ```{r}
-head(get_latest_confirmed(hai_now), 3) # cases the laboratory confirmed
-head(get_net_confirmed(hai_now), 3) # confirmed minus retracted
+head(get_latest_confirmed(covid_now), 3) # cases the laboratory confirmed
+head(get_net_confirmed(covid_now), 3) # confirmed minus retracted
 ```
 
 `get_nth_confirmed(x, delay)` counts only the cases resolved *within* a given
@@ -717,10 +751,26 @@ and `get_initial_confirmed()` is the same-period case. These mirror
 `get_nth_reported_cases()` and `get_initial_reported_cases()` on the report
 axis.
 
+#### Validation delays you do not believe
+
 If your data records absurdly long validation delays -- a result "issued" two
 years later is usually a data-entry artefact, not a laboratory --
-`censor_validation_delays_above()` returns those cases to `"pending"`, which
-is what they really were.
+`censor_validation_delays_above()` marks them with the
+**`is_censored_validation`** flag. It is the validation-axis twin of
+`is_censored_report`, and it works the same way: the case and its date are kept,
+and the *delay* is recorded as a bound rather than a measurement, for models
+that can use censored observations.
+
+```{r}
+capped <- censor_validation_delays_above(covid_now, max_delay = 60, verbose = FALSE)
+
+get_is_censored_validation(capped)
+sum(capped$n[capped[[get_is_censored_validation(capped)]]])
+```
+
+Nothing is deleted and no outcome is rewritten, so `get_latest_confirmed()`
+still counts those cases. Set the flag by hand with
+`add_is_censored_validation()` when your data already carries one.
 
 #### How much of the epidemic has been resolved?
 
@@ -731,7 +781,7 @@ a pending share that grows in the *middle* of the series is a laboratory falling
 behind.
 
 ```{r, fig.width=7, fig.height=4}
-plot_validation_status(hai_now)
+plot_validation_status(covid_now)
 ```
 
 #### The validation axis
@@ -743,14 +793,14 @@ take an `axis` argument instead of being duplicated:
 
 ```{r, eval=FALSE}
 # The same picture, drawn for the laboratory instead of the surveillance desk.
-plot_reporting_triangle(hai_now, axis = "validation")
-plot_delay_profiles(hai_now, axis = "validation")
-plot_delay_drift(hai_now, axis = "validation")
-diagnostic_plot(hai_now, axis = "validation")
+plot_reporting_triangle(covid_now, axis = "validation")
+plot_delay_profiles(covid_now, axis = "validation")
+plot_delay_drift(covid_now, axis = "validation")
+diagnostic_plot(covid_now, axis = "validation")
 
 # A laboratory clearing a backlog is a batch, exactly as a surveillance system
 # clearing its inbox is.
-diagnose_batches(hai_now, axis = "validation")
+diagnose_batches(covid_now, axis = "validation")
 ```
 
 Two notes on what `axis = "validation"` means. Delays are still measured
@@ -763,8 +813,8 @@ Finally, when a system produces both validations and retractions you can ask
 whether they take equally long -- a laboratory that rules cases out faster than
 it confirms them will bias any nowcast that treats the two alike.
 `diagnose_validation_delay()` tests exactly that (a Wilcoxon rank-sum test on the
-two delay distributions) and `plot_validation_delay()` draws it. The
-Bucaramanga extract records no retractions, so there is nothing to compare here.
+two delay distributions) and `plot_validation_delay()` draws it. `covid_us`
+records no retractions, so there is nothing to compare here.
 
 ### Getting, removing and changing attributes
 

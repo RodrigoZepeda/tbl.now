@@ -15,7 +15,7 @@
 #' @param data_type `"linelist"`, `"count-incidence"` or `"count-cumulative"`.
 #' @param n_strata 0, 1 or 2 stratifying columns (`sex`, then `region`).
 #' @param n_covariates 0 or 2 covariate columns.
-#' @param censored Add an `is_censored` flag that varies WITHIN a cell (the
+#' @param censored Add an `is_censored_report` flag that varies WITHIN a cell (the
 #'   per-case kind that actually breaks a reporting triangle), not the
 #'   delay-derived kind that is constant within one.
 #' @param n_periods How many event periods.
@@ -87,8 +87,8 @@ engine_fixture <- function(units = "days",
     # splits the cell. The delay-derived kind is constant within a cell and
     # would prove nothing.
     grid <- dplyr::bind_rows(
-      dplyr::mutate(grid, is_censored = FALSE),
-      dplyr::mutate(grid, is_censored = TRUE, n = 1L)
+      dplyr::mutate(grid, is_censored_report = FALSE),
+      dplyr::mutate(grid, is_censored_report = TRUE, n = 1L)
     )
   }
 
@@ -109,7 +109,7 @@ engine_fixture <- function(units = "days",
     dplyr::select(
       event_time = "event_time", report_time = "report_time",
       dplyr::all_of(c(strata_cols, covariate_cols)),
-      dplyr::any_of("is_censored"), "n"
+      dplyr::any_of("is_censored_report"), "n"
     )
 
   if (identical(data_type, "linelist")) {
@@ -120,7 +120,7 @@ engine_fixture <- function(units = "days",
     data <- data |>
       dplyr::arrange(.data$report_time) |>
       dplyr::group_by(dplyr::across(dplyr::all_of(
-        c("event_time", strata_cols, if (censored) "is_censored")
+        c("event_time", strata_cols, if (censored) "is_censored_report")
       ))) |>
       dplyr::mutate(n = cumsum(.data$n)) |>
       dplyr::ungroup()
@@ -134,7 +134,7 @@ engine_fixture <- function(units = "days",
     case_count = if (identical(data_type, "linelist")) NULL else "n",
     strata = if (n_strata > 0) strata_cols else NULL,
     covariates = if (n_covariates > 0) covariate_cols else NULL,
-    is_censored = if (censored) "is_censored" else NULL,
+    is_censored_report = if (censored) "is_censored_report" else NULL,
     data_type = data_type,
     event_units = units,
     report_units = units,

@@ -597,7 +597,7 @@
 #' The primary event spans `[event_date, event_date + w]`, where `w` matches the
 #' object's time unit. The secondary spans `[report_date, report_date + w]`
 #' normally, and the left-censored `[event_date, report_date]` for a row flagged
-#' by `is_censored` -- the `tbl_now` convention that a censored report is known
+#' by `is_censored_report` -- the `tbl_now` convention that a censored report is known
 #' only to have happened at or before its report date. The lower bound is that
 #' row's OWN event: a delay cannot be negative, and bounding by the earliest
 #' event in the data (as this did before 0.20.0) starts the window before the
@@ -615,7 +615,7 @@
 .delay_censoring_windows <- function(x, censoring_window = NULL) {
   event_col    <- get_event_date(x)
   report_col   <- get_report_date(x)
-  censored_col <- get_is_censored(x)
+  censored_col <- get_is_censored_report(x)
   obs          <- dplyr::as_tibble(x)
 
   win <- if (is.null(censoring_window)) {
@@ -1138,9 +1138,23 @@
 #'
 #' @noRd
 .tbl_now_collapse_censoring <- function(x, fn) {
-  censored_col <- get_is_censored(x)
-  if (length(censored_col) == 0L || !all(censored_col %in% names(x))) {
+  # Both axes are collapsed together: a validation-delay flag splits a cell in
+  # exactly the same way a report-delay one does.
+  censored_col <- intersect(
+    c(get_is_censored_report(x), get_is_censored_validation(x)), names(x)
+  )
+  if (length(censored_col) == 0L) {
     return(x)
+  }
+  # The attributes go together, before either column does. Going through
+  # `remove_is_censored_report()` would validate after clearing only the first
+  # of the two, and the object is invalid in between: the second attribute
+  # still names a column that has already been summed away.
+  drop_flags <- function(obj) {
+    attr(obj, "is_censored_report") <- NULL
+    attr(obj, "is_censored_validation") <- NULL
+    validate_tbl_now(obj)
+    obj
   }
 
   # A line list is one row per case, so the flag never makes a cell non-unique
@@ -1148,11 +1162,10 @@
   if (get_data_type(x) == "linelist") {
     cli::cli_warn(
       "{.fn {fn}} cannot represent censored delays; dropping the \\
-       {.field {censored_col}} column. Cases are unaffected."
+       {.field {censored_col}} column{?s}. Cases are unaffected."
     )
-    x <- remove_is_censored(x)
-    x[[censored_col]] <- NULL
-    return(x)
+    x[censored_col] <- NULL
+    return(drop_flags(x))
   }
 
   # Counts: collapse the censoring dimension by summing within the cell. Every
@@ -1162,7 +1175,7 @@
   n_before   <- nrow(x)
 
   collapsed <- .strip_tbl_now(x)
-  collapsed[[censored_col]] <- NULL
+  collapsed[censored_col] <- NULL
   collapsed <- collapsed |>
     dplyr::summarise(
       dplyr::across(dplyr::all_of(count_col), \(v) sum(v, na.rm = TRUE)),
@@ -1184,7 +1197,7 @@
   rebuilt$row.names <- attr(collapsed, "row.names", exact = TRUE)
   attributes(collapsed) <- rebuilt
 
-  remove_is_censored(collapsed)
+  drop_flags(collapsed)
 }
 #' Expand a reporting-triangle matrix into a long incremental data frame
 #'
@@ -1785,7 +1798,7 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'   `data_type = "linelist"`. The `event_units`/`report_units` are inferred
 #'   from the primary censoring-window width (a 7-day window -> `"weeks"`), and a
 #'   left-censored secondary window `[origin, report]` is decoded back to
-#'   `is_censored = TRUE` with the report taken from `secondary_upper`.
+#'   `is_censored_report = TRUE` with the report taken from `secondary_upper`.
 #' * `"interval"`: instead attach the upper bounds `primary_upper`
 #'   (`pdate_upr`) and `secondary_upper` (`sdate_upr`) as `covariates`
 #'   (a warning is emitted).
@@ -1798,7 +1811,7 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'   `w` matches the `tbl_now` unit (`"days"` -> 1 day, `"weeks"` -> 7 days, ...,
 #'   or `censoring_window` if supplied);
 #' * the secondary event spans `[report_date, report_date + w]` normally, but
-#'   for rows flagged by `is_censored` it is left-censored to
+#'   for rows flagged by `is_censored_report` it is left-censored to
 #'   `[event_date, report_date]` (the report is known only to have happened at
 #'   or before its report date, and cannot precede the event, i.e.
 #'   epidist time 0) — encoding the `tbl_now` convention that a censored report
@@ -1984,8 +1997,8 @@ tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
   # Decode left-censoring: a secondary window of the form [origin, report]
   # (lower bound at epidist time 0, i.e. the earliest event date) means the
   # report was only known up to its upper bound. Recover the report date and set
-  # `is_censored` for those rows.
-  is_censored_col <- NULL
+  # `is_censored_report` for those rows.
+  is_censored_report_col <- NULL
   if (secondary_upper %in% colnames(observations) &&
       primary_upper %in% colnames(observations)) {
     window <- as.numeric(observations[[primary_upper]] - observations[[primary]])
@@ -2001,15 +2014,15 @@ tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
     censored[is.na(censored)] <- FALSE
     if (any(censored)) {
       observations[[secondary]][censored] <- observations[[secondary_upper]][censored]
-      observations[["is_censored"]] <- censored
-      is_censored_col <- "is_censored"
+      observations[["is_censored_report"]] <- censored
+      is_censored_report_col <- "is_censored_report"
     }
   }
 
   result <- .build_tbl_now(
     observations, dots = dots,
     event_date = primary, report_date = secondary,
-    case_count = count_col, is_censored = is_censored_col,
+    case_count = count_col, is_censored_report = is_censored_report_col,
     data_type = data_type
   )
   .report_from(
@@ -2017,7 +2030,7 @@ tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
     extra = paste0(
       "format: ", if (is_aggregate) "aggregate" else "linelist",
       " (lower bounds -> event/report dates", if (is_aggregate) ", n -> case_count",
-      if (!is.null(is_censored_col)) ", left-censored windows -> is_censored", ")"
+      if (!is.null(is_censored_report_col)) ", left-censored windows -> is_censored_report", ")"
     )
   )
   result
@@ -2290,7 +2303,7 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
   strata_cols <- get_strata(x)
 
   # epinowcast's schema is reference_date / report_date / confirm (+ grouping);
-  # is_censored has no place in it. The temporal effects are deliberately *not*
+  # is_censored_report has no place in it. The temporal effects are deliberately *not*
   # carried here: they are added after the dates are completed, so they also
   # cover the rows completion adds (see `.epinowcast_temporal_effects()`).
   observations <- x |>
@@ -3285,7 +3298,7 @@ tbl_now_to_data_table <- function(x, ..., verbose = TRUE) {
     cli::cli_alert_info(
       "tbl_now attributes are dropped; every column is kept (including the \\
        generated .delay / .event_num / .report_num, the covariates, the \\
-       temporal-effect columns and is_censored)."
+       temporal-effect columns and is_censored_report)."
     )
   }
 
@@ -3315,7 +3328,7 @@ tbl_now_to_epidist <- function(x, ...,
   temporal_cols  <- materialised$cols
 
   covariate_cols <- get_covariates(x)
-  censored_col   <- get_is_censored(x)
+  censored_col   <- get_is_censored_report(x)
   strata_cols    <- get_strata(x)
 
   # --- Legacy "interval" branch: upper bounds taken from covariate columns. ---
@@ -3438,7 +3451,7 @@ tbl_now_to_epidist <- function(x, ...,
     cli::cli_ul()
     cli::cli_li("pdate_lwr <- {.val {event_col}}, sdate_lwr <- {.val {report_col}}")
     cli::cli_li("censoring window: {.val {win}} day{?s} (from {.val {units}})")
-    cli::cli_li("left-censored rows ({.field is_censored}): {.val {sum(censored)}}")
+    cli::cli_li("left-censored rows ({.field is_censored_report}): {.val {sum(censored)}}")
     if (format == "aggregate") cli::cli_li("n <- {.val {count_col}}")
     if (length(carry_cols) > 0) {
       cli::cli_li("kept columns (strata/covariates): {.val {carry_cols}}")

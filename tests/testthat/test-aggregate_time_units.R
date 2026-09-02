@@ -328,14 +328,14 @@ test_that("covariates, censoring and a user-set `now` survive the aggregation", 
   )
   x <- tbl_now(df,
     event_date = onset, report_date = reported,
-    covariates = rain, is_censored = flag,
+    covariates = rain, is_censored_report = flag,
     data_type = "linelist", units = "days",
     now = as.Date("2024-02-01"), verbose = FALSE
   )
   out <- aggregate_time_units(x, to = "weeks", verbose = FALSE)
 
   expect_equal(get_covariates(out), "rain")
-  expect_equal(get_is_censored(out), "flag")
+  expect_equal(get_is_censored_report(out), "flag")
   expect_equal(out[["flag"]], df$flag)
   # `now` moves onto the new grid: 2024-02-01 falls in the week of 2024-01-28.
   expect_equal(get_now(out), as.Date("2024-01-28"))
@@ -625,7 +625,7 @@ test_that("aggregation composes with censoring in either order", {
   expect_equal(sum(censored_first$n), sum(x$n))
   expect_equal(sum(aggregated_first$n), sum(x$n))
   # Censoring first keeps the flag as a declared column, so its cells stay apart.
-  expect_equal(get_is_censored(censored_first), ".is_censored")
+  expect_equal(get_is_censored_report(censored_first), ".is_censored_report")
 })
 
 # ---- Third pass: the cells that must stay apart ----------------------------
@@ -639,14 +639,14 @@ test_that("a censoring flag keeps cells apart instead of being pooled away", {
   )
   x <- tbl_now(df,
     event_date = event, report_date = report, case_count = n,
-    is_censored = flag, data_type = "count-incidence", units = "days",
+    is_censored_report = flag, data_type = "count-incidence", units = "days",
     verbose = FALSE
   )
   out <- aggregate_time_units(x, to = "weeks", verbose = FALSE)
 
   # One week, but two cells: the flag distinguishes them.
   expect_equal(nrow(out), 2)
-  expect_equal(get_is_censored(out), "flag")
+  expect_equal(get_is_censored_report(out), "flag")
   expect_setequal(out$n, c(2, 7))
   expect_equal(sum(out$n), sum(df$n))
 })
@@ -696,4 +696,37 @@ test_that("a stratified cumulative series accumulates within each stratum", {
   expect_equal(unname(totals[["2023-12-31 M"]]), 5)
   expect_equal(unname(totals[["2024-01-07 F"]]), 6)
   expect_equal(unname(totals[["2024-01-07 M"]]), 8)
+})
+
+# ---- The attributes 0.29.0 added --------------------------------------------
+
+test_that("validation_levels and is_censored_validation survive aggregation", {
+  cases <- data.frame(
+    onset = as.Date("2021-01-04") + 0:9,
+    visit = as.Date("2021-01-05") + 0:9,
+    result = as.Date("2021-01-06") + 0:9,
+    outcome = c(rep("confirmado", 8), "retractado", "pendiente")
+  )
+  levels_map <- c(
+    confirmado = "confirmed", retractado = "retracted", pendiente = "pending"
+  )
+  flu <- tbl_now(cases,
+    event_date = onset, report_date = visit,
+    validation_date = result, validation_type = outcome,
+    validation_levels = levels_map,
+    data_type = "linelist", units = "days", verbose = FALSE
+  )
+  flagged <- censor_validation_delays_above(flu, 0, verbose = FALSE)
+  expect_equal(get_is_censored_validation(flagged), ".is_censored_validation")
+
+  out <- aggregate_time_units(flagged, to = "weeks", verbose = FALSE)
+
+  # Every rebuild is a place an attribute can be dropped in silence.
+  expect_equal(get_validation_levels(out), levels_map)
+  expect_equal(get_is_censored_validation(out), ".is_censored_validation")
+  expect_equal(
+    out[[".is_censored_validation"]],
+    flagged[[".is_censored_validation"]]
+  )
+  expect_equal(get_validation_units(out), "weeks")
 })
