@@ -301,6 +301,9 @@ stopifnot(
 delay <- as.numeric(hai_bucaramanga$report_date - hai_bucaramanga$specimen_date)
 stopifnot(sum(!is.na(delay)) == 826L, sum(delay < 0, na.rm = TRUE) == 88L)
 
+hai_bucaramanga <- hai_bucaramanga |>
+  dplyr::filter(lubridate::year(report_date) < 2025)
+
 message(
   "hai_bucaramanga: ", nrow(hai_bucaramanga), " rows x ",
   ncol(hai_bucaramanga), " cols | ",
