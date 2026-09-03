@@ -42,9 +42,9 @@ different questions that want different tools:
    model.
 3. **What needs a statistical test?** -- has the reporting delay drifted, did
    reports arrive in batches, is a spike real cases or released backlog.
-   `diagnose()` deliberately refuses these and hands you a signpost instead,
-   because answering them means choosing a method, a window and a multiplicity
-   correction.
+   `diagnose()` deliberately refuses these -- answering them means choosing a
+   method, a window and a multiplicity correction -- and leaves them to
+   `diagnose_drift()` and `diagnose_batches()`.
 
 This article walks the three in order. The first two return a **tibble**, not
 printed text, which is the design decision everything else follows from: an
@@ -194,7 +194,7 @@ diagnose(dengue_now) |>
 ```
 
 `status` is an **ordered factor** — `error` > `warning` > `note` > `ok` >
-`not_run` > `skipped` — so the table sorts itself and filtering to what needs
+`skipped` — so the table sorts itself and filtering to what needs
 acting on is a comparison rather than a set membership test:
 
 ```{r diagnose-actionable}
@@ -212,7 +212,7 @@ finding <- diagnose(dengue_now) |> filter(check == "declarations", status <= "no
 finding$hint
 ```
 
-## The six statuses, and why `skipped` is not `ok`
+## The five statuses, and why `skipped` is not `ok`
 
 The distinction that matters most is between a check that **ran and found
 nothing** and one that **could not run**:
@@ -237,12 +237,8 @@ a key the object does not have (a record id, say), so that check stays yours.
 
 `diagnose()` runs no statistical tests at all. It is fast, and its answer never
 depends on a random seed or an optional package. The questions that *do* need a
-test come back as `not_run` signposts naming the call that answers each one:
-
-```{r diagnose-signposts}
-diagnose_signposts(dengue_now) |>
-  select(scope, status, message)
-```
+test are simply not in it: they have their own functions, and you call one when
+you want its answer.
 
 Those calls — `diagnose_drift()`, `diagnose_changepoint()`,
 `diagnose_batches()`, `diagnose_batch_shape()` — are Part 3 of this article.
@@ -316,8 +312,8 @@ construction into a noisy one for data that has always been accepted.
 # Part 3 — What needs a statistical test: reporting artefacts
 
 Everything above is structural: it can be decided by looking at the object, it
-gives the same answer every time, and it costs nothing. The `not_run` signposts
-at the end of Part 2 are where that stops. Whether the reporting delay has
+gives the same answer every time, and it costs nothing. The questions Part 2
+would not touch are where that stops. Whether the reporting delay has
 drifted, and whether a spike is released backlog or genuine new cases, are
 statements about a **distribution** — and answering them means picking a method,
 a window and a multiplicity correction, which is not a decision a health check

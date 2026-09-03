@@ -611,8 +611,8 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
 #' [diagnose_changepoint()] for an abrupt shift rather than a gradual trend;
 #' [plot_delay_drift()] to see the series being tested;
 #' [censor_reporting_delays_above()] once you decide some delays are not to be believed;
-#' [diagnose_signposts()][nowcast_diagnose_components], which tells you when this
-#' test is worth running.
+#' [diagnose()] for the structural checks, which this test deliberately sits
+#' outside of.
 #'
 #' @examplesIf requireNamespace("modifiedmk", quietly = TRUE)
 #' data(denguedat)

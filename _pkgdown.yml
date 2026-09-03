@@ -112,7 +112,7 @@ reference:
 - title: Diagnosing
   desc: >
     What is wrong with the data. `diagnose()` is structural and deterministic;
-    the statistical tests it signposts are listed after it.
+    the statistical tests are listed after it.
   contents:
   - diagnose
   - nowcast_diagnose_components

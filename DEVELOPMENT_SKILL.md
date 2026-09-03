@@ -995,9 +995,14 @@ statements about a distribution, and answering them means choosing a method, a
 window and a multiplicity correction — decisions a health check has no business
 making silently.
 
-They come back as `not_run` **signposts** carrying the call that answers them
-(`diagnose_drift()`, `diagnose_batches()`). If you add a statistical diagnostic,
-add a signpost row for it; do not wire it into `diagnose()`.
+So they are not in the report at all. `diagnose()` used to emit `not_run`
+**signposts** carrying the call that answers each one; those were removed in
+0.32.0, because a health check that lists what it did not do adds a block of
+rows the reader must skip on every single run to say something a `@seealso`
+already says once. A statistical diagnostic is its own exported function
+(`diagnose_drift()`, `diagnose_batches()`), documented under `@seealso` on
+`diagnose()`; do not wire it into `diagnose()`, and do not add a row announcing
+that you did not.
 
 ### Grids run to `now`, globally
 

@@ -1192,7 +1192,7 @@ table and the figures always agree.
 ### What is wrong with it?
 
 `diagnose()` returns findings **sorted worst first**. `status` is an ordered
-factor — `error` > `warning` > `note` > `ok` > `not_run` > `skipped` — so
+factor — `error` > `warning` > `note` > `ok` > `skipped` — so
 filtering to what needs acting on is a comparison:
 
 ```{r vig-diagnose}
@@ -1208,13 +1208,8 @@ to be trusted.
 
 `diagnose()` is deliberately **structural**. It never runs a statistical test, so
 it is fast and its answer never depends on a random seed. The questions that *do*
-need a test come back as `not_run` signposts naming the call that answers each
-one — the two sections that follow:
-
-```{r vig-diagnose-signposts}
-diagnose_signposts(dengue_now) |>
-  select(scope, status, message)
-```
+need a test are left out of it entirely and answered by `diagnose_drift()` and
+`diagnose_batches()` — the two sections that follow.
 
 `skipped` is a distinct status from `ok`, and the difference matters: `ok` means
 the check ran and found nothing, whereas `skipped` means it could not run at all
@@ -1224,8 +1219,8 @@ be performed is never silently reported as a pass.
 Like `summary()`, every block is callable on its own —
 `diagnose_declarations()`, `diagnose_ordering()`, `diagnose_missing()`,
 `diagnose_duplicates()`, `diagnose_units()`, `diagnose_negatives()`,
-`diagnose_now()`, `diagnose_truncation()`, `diagnose_strata()` and
-`diagnose_signposts()`. See `?nowcast_diagnose_components`.
+`diagnose_now()`, `diagnose_truncation()` and `diagnose_strata()`. See
+`?nowcast_diagnose_components`.
 
 The same findings reach you a second way:
 [validate_tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.html)

@@ -734,7 +734,6 @@ itself and why `status <= "note"` reads as "anything worth acting on":
 | `warning` | `validate_tbl_now()` warns about it |
 | `note` | a `diagnose()`-only observation. **Never promoted to a warning**: `validate_tbl_now()` runs on every dplyr verb, and a new warning there would make construction noisy for data that has always been accepted |
 | `ok` | the check ran and found nothing |
-| `not_run` | a signpost: the question needs a statistical test, and `message` is the call that answers it |
 | `skipped` | could not be assessed (no validation process, wrong data type, package not installed) |
 
 `check` is one of:
@@ -750,7 +749,6 @@ itself and why `status <= "note"` reads as "anything worth acting on":
 | `now` | anything dated after `now`, and the gap from the last observation to `now` |
 | `truncation` | how many recent event dates are still immature, and how much of their eventual total has not arrived |
 | `strata` | the smallest and the sparsest stratum (named, **not** thresholded), and the validations still pending |
-| `signposts` | the four questions `diagnose()` refuses to answer |
 
 Each block is also its own exported function, same schema, so they stack with
 `dplyr::bind_rows()` — and `diagnose(x)` *is* that bind:
@@ -759,15 +757,15 @@ Each block is also its own exported function, same schema, so they stack with
 diagnose_declarations(tn); diagnose_ordering(tn); diagnose_missing(tn)
 diagnose_duplicates(tn);   diagnose_units(tn);    diagnose_negatives(tn)
 diagnose_now(tn);          diagnose_truncation(tn)
-diagnose_strata(tn);       diagnose_signposts(tn)
+diagnose_strata(tn)
 ```
 
 Three things to know:
 
 - **It never runs a test.** Drift and batching are statements about a
   *distribution*; answering them means choosing a method, a window and a
-  multiplicity correction. `diagnose()` emits `not_run` rows carrying the call
-  instead: `diagnose_drift(x, axis =)` and `diagnose_batches(x, axis =)`.
+  multiplicity correction. Those questions are not in `diagnose()` at all --
+  call `diagnose_drift(x, axis =)` and `diagnose_batches(x, axis =)` yourself.
 - **Outage detection is deliberately absent.** A `tbl_now` does not carry the
   zeroes, so a quiet Sunday and a three-week outage are structurally identical.
   The descriptive answer is `zero_run_summary()`; the inferential one is
@@ -1349,7 +1347,7 @@ engine("nobbs")                                 # -> the dispatch object
 summary(x, by_strata =)                   # the whole summary, as a tibble
 diagnose(x, checks =, by_strata =)        # the structural health check
 diagnose_declarations/ordering/missing/duplicates/units/negatives(x)
-diagnose_now/truncation/strata/signposts(x)
+diagnose_now/truncation/strata(x)
 cases_per_date(x, axis =) / delay_summary(x, delay =) / zero_run_summary(x, axis =)
 prop_censored(x) / prop_strata(x) / prop_validation_type(x) / prop_covariate_levels(x)
 case_autocorrelation(x, lags =) / date_ranges(x) / triangle_occupancy(x)

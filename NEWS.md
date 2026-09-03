@@ -1,3 +1,51 @@
+# tbl.now 0.32.0
+
+## Breaking: `diagnose()` no longer signposts the statistical tests
+
+`diagnose_signposts()` is **removed**, along with the `"signposts"` check, and
+the `not_run` status is gone from the findings schema -- `status` is now
+`error` > `warning` > `note` > `ok` > `skipped`.
+
+`diagnose()` still runs no statistical test, and for the same reason: drift and
+batching are statements about a distribution, and answering them means choosing
+a method, a window and a multiplicity correction. What changed is that it no
+longer spends four rows of every report saying so. Call the tests yourself when
+you want them:
+
+```r
+diagnose_drift(x, axis = "report")
+diagnose_batches(x, axis = "report")
+```
+
+They are listed under `@seealso` on `diagnose()`, which is where a pointer
+belongs.
+
+## `diagnose()` findings
+
+* **Right-truncation no longer reports an estimated 0%.** An event date can sit
+  past the 95th percentile of the delay with its eventual total already in --
+  the percentile is a bound on the delay, not a promise that something is
+  outstanding. That case is now an `ok` finding ("none of their eventual total
+  is still to arrive") instead of a note asking the reader to act on a 0%.
+* **A truncation estimate with no mature history is `skipped`, not a note.**
+  Without mature event dates there is no arrival curve to read the recent ones
+  against, and the old code reported the resulting `0%` as if it were an
+  estimate.
+* **The sparsity finding now carries its denominator and a baseline.** It read
+  "87% of the event dates on the grid carry no cases at all", which is both
+  self-contradictory (a date on the grid is not an event date until it has a
+  case) and unreadable without knowing how sparse the object is as a whole. It
+  now reads "2489 of the 2861 dates on the event grid carry no cases at all
+  (87%, against 73.2% pooled over every stratum)", and the hint says that when
+  every stratum is mostly zeros the grid is finer than the data and
+  `aggregate_time_units()` is the fix.
+
+## Documentation
+
+* The `covid_colombia` example no longer wraps itself in
+  `requireNamespace("tbl.now")` -- a package's own example can assume the
+  package.
+
 # tbl.now 0.31.0
 
 ## Breaking: the `*_confirmed()` counters are gone, replaced by a validated-cases family (#64)

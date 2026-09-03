@@ -11,7 +11,6 @@
 \alias{diagnose_now}
 \alias{diagnose_truncation}
 \alias{diagnose_strata}
-\alias{diagnose_signposts}
 \title{Individual blocks of a \code{tbl_now} diagnosis}
 \usage{
 diagnose_declarations(x, by_strata = NULL, strata = NULL)
@@ -36,8 +35,6 @@ diagnose_now(x, by_strata = NULL, strata = NULL)
 diagnose_truncation(x, by_strata = NULL, strata = NULL)
 
 diagnose_strata(x, by_strata = NULL, strata = NULL)
-
-diagnose_signposts(x, by_strata = NULL, strata = NULL)
 }
 \arguments{
 \item{x}{A \code{tbl_now} object.}
@@ -82,8 +79,6 @@ downward revision leaves behind when cumulative data is de-accumulated.
 and how much of their eventual total is probably still missing.
 \item \code{diagnose_strata()} -- the smallest and the sparsest stratum, and the
 validations still pending.
-\item \code{diagnose_signposts()} -- the questions \code{\link[=diagnose]{diagnose()}} deliberately does not
-answer, and the call that answers each one.
 }
 }
 \examples{
@@ -107,9 +102,8 @@ diagnose_duplicates(ndata)
 diagnose_negatives(ndata)
 diagnose_truncation(ndata)
 
-# Are the strata usable, and which statistical tests does the data call for?
+# Are the strata usable?
 diagnose_strata(ndata)
-diagnose_signposts(ndata)
 
 ## Each returns the same schema, so they stack the way diagnose() stacks them.
 dplyr::bind_rows(
@@ -123,8 +117,8 @@ dplyr::bind_rows(
 \code{\link[=validate_tbl_now]{validate_tbl_now()}} for the same findings raised as errors and warnings;
 \link{nowcast_summary_components} for what \emph{is} in the data rather than what is
 wrong with it; \code{\link[=diagnose_drift]{diagnose_drift()}}, \code{\link[=diagnose_changepoint]{diagnose_changepoint()}} and
-\code{\link[=diagnose_batches]{diagnose_batches()}} for the statistical tests \code{diagnose_signposts()} points
-you at. The
+\code{\link[=diagnose_batches]{diagnose_batches()}} for the statistical tests \code{diagnose()} deliberately does
+not run. The
 \href{https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html}{\emph{Diagnosing a tbl_now} article}
 explains how to read each finding.
 }
