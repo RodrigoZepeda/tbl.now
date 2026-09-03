@@ -28,13 +28,16 @@ warning it raises when the object is malformed.
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Two ways of asking the same question -- \emph{is this object a well-formed
-\code{\link[=tbl_now]{tbl_now()}}?}
+Two different questions about an object, and one function for each.
 \itemize{
-\item \code{is_tbl_now()} answers quietly with \code{TRUE} or \code{FALSE}. Use it in an \code{if}.
-\item \code{validate_tbl_now()} answers loudly: it stops with an error explaining what
-is wrong, and warns about the merely suspicious. Use it when you want the
-pipeline to halt rather than carry on with a broken object.
+\item \code{is_tbl_now()} asks \strong{"is this the class?"}. It answers quietly with
+\code{TRUE} or \code{FALSE}, and it is cheap: a class check, the attributes a
+\code{tbl_now} cannot do without, and the columns those attributes name. Use it
+in an \code{if}.
+\item \code{validate_tbl_now()} asks \strong{"is the data in it sane?"}. It answers
+loudly: it stops with an error explaining what is wrong, and warns about the
+merely suspicious. Use it when you want the pipeline to halt rather than
+carry on with a broken object.
 }
 
 Neither checks whether the data are \emph{good} -- only whether the object is put
@@ -46,6 +49,15 @@ is the \emph{condition} presentation of it: it aborts on the \code{error} findin
 warns about the \code{warning} ones. \code{\link[=diagnose]{diagnose()}} is the \emph{data} presentation, and
 additionally reports the \code{note}-level observations that would make every
 \code{dplyr} verb noisy if they were emitted here.
+
+\code{is_tbl_now()} deliberately runs \strong{none} of that. It used to, and the cost
+was paid twice over: the findings engine ran on every \code{.assert_tbl_now()},
+and the warnings it raised escaped -- so an object the user had already
+chosen to keep re-reported its problems from wherever the predicate happened
+to be called. An object can therefore be a \code{tbl_now} (\code{is_tbl_now()} is
+\code{TRUE}) and still have data \code{validate_tbl_now()} warns about. That is the
+point: the class is a container, and a container is not a claim that what is
+in it is clean.
 }
 \examples{
 data(denguedat)
@@ -57,6 +69,13 @@ ndata <- tbl_now(denguedat,
 # A well-formed object passes both checks.
 is_tbl_now(ndata)
 validate_tbl_now(ndata)
+
+# `is_tbl_now()` is a question about the CLASS, so it stays quiet about the
+# data. This object's report dates include an `NA`, which validate_tbl_now()
+# warns about -- and which does not stop it being a `tbl_now`.
+messy <- ndata
+messy$report_week[1] <- NA
+is_tbl_now(messy)
 
 # A plain data.frame is not a tbl_now ...
 is_tbl_now(data.frame(x = 1:3))

@@ -431,6 +431,78 @@ The function ensures that:
 + Attributes are preserved so the resulting object remains a valid `tbl_now`.
 
 
+### Changing the time unit
+
+`to_count()` changes *what a row is*; it does not change *how long a period is*.
+Daily surveillance data is often too sparse to nowcast -- most (event date,
+report date) cells hold a zero or a one -- and the usual fix is to work in weeks.
+[aggregate_time_units()](https://rodrigozepeda.github.io/tbl.now/reference/aggregate_time_units.html)
+moves every date onto the coarser grid, adds the counts up, and records the new
+units on the object, so `.delay`, the converters and the models all count in
+weeks from then on:
+
+```{r}
+daily <- data.frame(
+  onset    = ymd("2024/01/01") + c(0, 1, 3, 8, 9, 15),
+  reported = ymd("2024/01/01") + c(2, 2, 5, 9, 12, 16),
+  sex      = c("F", "M", "F", "M", "F", "M")
+) |>
+  tbl_now(
+    event_date = onset, report_date = reported, strata = sex,
+    data_type = "linelist", units = "days", verbose = FALSE
+  )
+
+weekly <- daily |> aggregate_time_units(to = "weeks", verbose = FALSE)
+
+get_event_units(weekly)
+weekly$.delay
+```
+
+`to` may be `"weeks"`, `"months"` or `"years"`, and it only ever coarsens: asking
+a weekly object for `"days"` is an error rather than a guess. Cumulative counts
+are de-accumulated before they are pooled and accumulated again afterwards,
+because a cumulative total is not additive. Note also that weeks do **not** nest
+inside months, so aggregate once, straight to the unit you want.
+
+Note the `units = "days"` above: it is a single default for `event_units`,
+`report_units` and `validation_units`, and any of the three you give explicitly
+still wins over it.
+
+### Censoring the dates that are not really dates
+
+Surveillance data arrives with missing report dates, and with sentinels such as
+`2222-02-22` standing in for "never reported". Deleting those rows throws away
+real cases; believing them makes the nowcast think reporting is far slower than
+it is. The
+[censoring](https://rodrigozepeda.github.io/tbl.now/reference/censoring.html)
+functions do neither -- they keep the case and record its delay as a *bound*:
+
+```{r}
+messy <- data.frame(
+  onset    = ymd("2020/01/01") + 0:3,
+  reported = ymd(c("2020/01/03", NA, "2222/02/22", "2020/01/06"))
+) |>
+  tbl_now(
+    event_date = onset, report_date = reported, data_type = "linelist",
+    units = "days", now = ymd("2020/01/10"), verbose = FALSE
+  ) |>
+  suppressWarnings()
+
+fixed <- messy |>
+  censor_reports(
+    is.na(reported) | reported > ymd("2100/01/01"),
+    to_report = ymd("2020/01/10"), verbose = FALSE
+  ) |>
+  suppressWarnings()
+
+fixed$reported
+fixed$.is_censored_report
+```
+
+`censor_reporting_delays()` expresses the same idea as a delay rather than a date
+(`censor_reporting_delays(x, .delay > 60, to_delay = 60)` caps the outliers), and
+`censor_reporting_delays_above()` is the threshold shorthand for it.
+
 ### Temporal effects
 
 Often, temporal covariates improve nowcasting performance by helping to adjust systematic changes within the calendar cycle (e.g., day-of-week effects, seasonal effects, or other reporting artefacts). The [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html) function creates a *specification* (recipe) of the features to compute:
@@ -669,15 +741,24 @@ Once cases can be retracted, "how many cases were there?" has more than one
 answer, and the right one depends on the question:
 
 ```{r}
-head(get_latest_confirmed(covid_now), 3) # cases the laboratory confirmed
-head(get_net_confirmed(covid_now), 3) # confirmed minus retracted
+# cases the laboratory confirmed
+head(get_latest_validated_cases(covid_now, type = "confirmed"), 3)
+
+# confirmed minus retracted
+head(get_latest_validated_cases(covid_now, type = "net"), 3)
+
+# every outcome side by side
+head(get_latest_validated_cases(covid_now, type = "by_type"), 3)
 ```
 
-`get_nth_confirmed(x, delay)` counts only the cases resolved *within* a given
-number of periods -- what you would have known that soon after the report --
-and `get_initial_confirmed()` is the same-period case. These mirror
+`get_nth_validated_cases(x, delay)` counts only the cases settled *within* a
+given number of periods **of the event**, and `get_initial_validated_cases()`
+counts what the first result to come back had settled. They mirror
 `get_nth_reported_cases()` and `get_initial_reported_cases()` on the report
-axis.
+axis, return the same `count-cumulative` shape, and take the same `type =`
+argument -- which the reporting-axis getters accept too, so
+`get_latest_reported_cases(x, type = "pending")` is how you count the backlog
+the laboratory still owes you.
 
 #### Validation delays you do not believe
 
@@ -696,8 +777,8 @@ get_is_censored_validation(capped)
 sum(capped$n[capped[[get_is_censored_validation(capped)]]])
 ```
 
-Nothing is deleted and no outcome is rewritten, so `get_latest_confirmed()`
-still counts those cases. Set the flag by hand with
+Nothing is deleted and no outcome is rewritten, so
+`get_latest_validated_cases(type = "confirmed")` still counts those cases. Set the flag by hand with
 `add_is_censored_validation()` when your data already carries one.
 
 #### How much of the epidemic has been resolved?
@@ -1304,7 +1385,7 @@ Which looks at all the possible report dates and event dates and sets the counts
 
 ### Censoring extreme delays
 
-The function `censor_delays_above()` marks all delays above a threshold value (`max_delay`) as censored. This is useful to indicate extreme delays in some nowcast models:
+The function `censor_reporting_delays_above()` marks all delays above a threshold value (`max_delay`) as censored. This is useful to indicate extreme delays in some nowcast models:
 
 ```{r}
 df <- data.frame(
@@ -1317,7 +1398,7 @@ tn <- tbl_now(df,
 )
 
 # the 300-day report becomes censored (an upper bound on its delay)
-censor_delays_above(tn, max_delay = 60)
+censor_reporting_delays_above(tn, max_delay = 60)
 ```
 
 ### Converting to data formats from other packages

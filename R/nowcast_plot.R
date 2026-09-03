@@ -17,8 +17,10 @@
 #' @noRd
 .nowcast_reported_counts <- function(x, event_col, strata) {
   strata <- intersect(strata %||% character(0), colnames(x))
-  reported <- suppressWarnings(suppressMessages(get_latest_reported_cases(x)))
-  # `.reported_cases_at()` names the count after the object's `case_count`, or
+  reported <- suppressWarnings(suppressMessages(
+    get_latest_reported_cases(ungroup(x))
+  ))
+  # `.cases_at()` names the count after the object's `case_count`, or
   # `n` when the source was a line list.
   count_col <- get_case_count(reported) %||% "n"
 

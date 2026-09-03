@@ -77,7 +77,7 @@
 #'
 #' @seealso
 #' [diagnose_batches()] and [diagnose_batch_shape()], the tests this exists to
-#' validate; [censor_delays_above()] for recording a real batch rather than
+#' validate; [censor_reporting_delays_above()] for recording a real batch rather than
 #' planting one. The
 #' [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' uses this to calibrate the screen.

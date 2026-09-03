@@ -473,7 +473,12 @@ test_that("to_count ungroups data before processing", {
   # Manually group the data
   grouped_ndata <- ndata |> dplyr::group_by(onset_week)
 
-  result <- to_count(grouped_ndata, to = "count-incidence")
+  # Ungrouping is deliberate -- aggregating changes what a row is -- and since
+  # #61 it says so rather than doing it in silence.
+  expect_warning(
+    result <- to_count(grouped_ndata, to = "count-incidence"),
+    "dropped the grouping"
+  )
 
   # Result should be ungrouped
   expect_false(dplyr::is_grouped_df(result))

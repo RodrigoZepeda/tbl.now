@@ -85,7 +85,7 @@ ndata |>
 }
 \seealso{
 \code{\link[=to_count]{to_count()}} for the data shapes this operates on;
-\code{\link[=censor_delays_above]{censor_delays_above()}} for the opposite problem, delays that are too long;
+\code{\link[=censor_reporting_delays_above]{censor_reporting_delays_above()}} for the opposite problem, delays that are too long;
 \code{\link[=diagnose_missing]{diagnose_missing()}} and \code{\link[=diagnose_truncation]{diagnose_truncation()}} to find the gaps first;
 \code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}} to see the rectangle being filled.
 }

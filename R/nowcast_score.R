@@ -93,8 +93,8 @@
   event_col <- get_event_date(x)
   strata <- intersect(strata %||% character(0), colnames(x))
 
-  observed <- get_latest_reported_cases(x)
-  # `.reported_cases_at()` names the count after the object's `case_count`, or
+  observed <- get_latest_reported_cases(ungroup(x))
+  # `.cases_at()` names the count after the object's `case_count`, or
   # `n` when the source was a line list (which it has just aggregated).
   count_col <- get_case_count(observed) %||% "n"
 

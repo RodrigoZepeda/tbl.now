@@ -321,3 +321,50 @@ test_that("complete_zeroes() rejects a line list with actionable advice", {
   expect_error(complete_zeroes(ll), "count-incidence")
   expect_error(complete_zeroes(ll), "to_count")
 })
+
+test_that("complete_zeroes works on a grouped tbl_now", {
+  df <- data.frame(
+    onset = as.Date("2024-01-07") + 7 * rep(0:9, each = 2),
+    reported = as.Date("2024-01-14") + 7 * rep(0:9, each = 2),
+    sex = rep(c("F", "M"), 10),
+    n = rep(c(3L, 5L), 10)
+  )
+  x <- tbl_now(df,
+    event_date = onset, report_date = reported, case_count = n, strata = sex,
+    data_type = "count-incidence", units = "weeks", verbose = FALSE
+  )
+  ungrouped <- suppressMessages(complete_zeroes(x))
+
+  out <- suppressMessages(complete_zeroes(x |> dplyr::group_by(!!as.symbol("sex"))))
+
+  expect_true(is_tbl_now(out))
+  expect_equal(dplyr::group_vars(out), "sex")
+  # The grid is a property of the object, not of how the caller grouped it.
+  # Grouped, every bound was computed once PER GROUP and the date sequence was
+  # handed a length-2 `from`.
+  expect_equal(
+    dplyr::as_tibble(ungroup(out)),
+    dplyr::as_tibble(ungroup(ungrouped))
+  )
+  expect_equal(nrow(out), nrow(ungrouped))
+})
+
+test_that("complete_zeroes gives the same grid when grouped by a non-stratum", {
+  df <- data.frame(
+    onset = as.Date("2024-01-07") + 7 * rep(0:5, each = 2),
+    reported = as.Date("2024-01-14") + 7 * rep(0:5, each = 2),
+    sex = rep(c("F", "M"), 6),
+    n = rep(c(2L, 4L), 6)
+  )
+  x <- tbl_now(df,
+    event_date = onset, report_date = reported, case_count = n, strata = sex,
+    data_type = "count-incidence", units = "weeks", verbose = FALSE
+  )
+  by_report <- suppressMessages(
+    complete_zeroes(x |> dplyr::group_by(!!as.symbol("reported")))
+  )
+  expect_equal(
+    dplyr::as_tibble(ungroup(by_report)),
+    dplyr::as_tibble(ungroup(suppressMessages(complete_zeroes(x))))
+  )
+})

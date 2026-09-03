@@ -1,12 +1,19 @@
 # Test file for as_tbl_now.R functions
 
+# The report dates sit on the SAME weekday as the onset dates (Wednesdays,
+# three weeks later). They used to be three days after, which makes the
+# inferred weekly `.delay` 3/7 of a week -- a real defect, which
+# `validate_tbl_now()` now warns about, and which has nothing to do with what
+# this file tests. The `date3`/`date4` fixtures below are deliberately off-grid
+# and keep warning, because swapping a date column is what those tests are for.
+
 # Setup test data ----
 setup_test_data <- function() {
   list(
     # Simple data.frame
     simple_df = data.frame(
       onset_week = as.Date(c("2020-07-08", "2020-07-15", "2020-07-22")),
-      report_week = as.Date(c("2020-07-11", "2020-07-18", "2020-07-25")),
+      report_week = as.Date(c("2020-07-29", "2020-08-05", "2020-08-12")),
       gender = c("Male", "Female", "Male"),
       value = 1:3
     ),
@@ -14,7 +21,7 @@ setup_test_data <- function() {
     # Tibble
     simple_tbl = dplyr::tibble(
       onset_week = as.Date(c("2020-07-08", "2020-07-15", "2020-07-22")),
-      report_week = as.Date(c("2020-07-11", "2020-07-18", "2020-07-25")),
+      report_week = as.Date(c("2020-07-29", "2020-08-05", "2020-08-12")),
       gender = c("Male", "Female", "Male"),
       value = 1:3
     ),
@@ -22,21 +29,21 @@ setup_test_data <- function() {
     # Data with multiple potential date columns
     multi_dates = data.frame(
       event_date = as.Date(c("2020-07-08", "2020-07-15")),
-      report_date = as.Date(c("2020-07-11", "2020-07-18")),
+      report_date = as.Date(c("2020-07-29", "2020-08-05")),
       other_date = as.Date(c("2020-07-10", "2020-07-17"))
     ),
 
     # Count data
     count_df = data.frame(
       onset_week = as.Date(c("2020-07-08", "2020-07-15")),
-      report_week = as.Date(c("2020-07-11", "2020-07-18")),
+      report_week = as.Date(c("2020-07-29", "2020-08-05")),
       n = c(10L, 15L)
     ),
 
     # Data with covariates
     with_covariates = data.frame(
       onset_week = as.Date(c("2020-07-08", "2020-07-15")),
-      report_week = as.Date(c("2020-07-11", "2020-07-18")),
+      report_week = as.Date(c("2020-07-29", "2020-08-05")),
       temperature = c(25.5, 26.0),
       humidity = c(0.6, 0.65)
     )
@@ -134,12 +141,12 @@ test_that("as_tbl_now.data.frame passes extra arguments to tbl_now", {
     event_date = "onset_week",
     report_date = "report_week",
     covariates = "temperature",
-    now = as.Date("2020-08-01"),
+    now = as.Date("2020-08-19"),
     verbose = FALSE
   )
 
   expect_equal(get_covariates(result), "temperature")
-  expect_equal(get_now(result), as.Date("2020-08-01"))
+  expect_equal(get_now(result), as.Date("2020-08-19"))
 })
 
 test_that("as_tbl_now.data.frame works with quoted column names", {
@@ -291,7 +298,7 @@ test_that("as_tbl_now.tbl_now changes both dates", {
   # Create data with multiple date columns
   df <- data.frame(
     date1 = as.Date(c("2020-07-08", "2020-07-15")),
-    date2 = as.Date(c("2020-07-11", "2020-07-18")),
+    date2 = as.Date(c("2020-07-29", "2020-08-05")),
     date3 = as.Date(c("2020-07-09", "2020-07-16")),
     date4 = as.Date(c("2020-07-12", "2020-07-19"))
   )
@@ -548,7 +555,7 @@ test_that("as_tbl_now can be chained multiple times", {
   df <- data.frame(
     date1 = as.Date(c("2020-07-08", "2020-07-15")),
     date2 = as.Date(c("2020-07-09", "2020-07-16")),
-    date3 = as.Date(c("2020-07-11", "2020-07-18")),
+    date3 = as.Date(c("2020-07-29", "2020-08-05")),
     date4 = as.Date(c("2020-07-12", "2020-07-19"))
   )
 
@@ -661,7 +668,7 @@ test_that("converting existing tbl_now works", {
 test_that("as_tbl_now handles single row data.frame", {
   single_row <- data.frame(
     onset_week = as.Date("2020-07-08"),
-    report_week = as.Date("2020-07-11")
+    report_week = as.Date("2020-07-29")
   )
 
   result <- as_tbl_now(
@@ -715,7 +722,7 @@ test_that("as_tbl_now preserves column types", {
 test_that("as_tbl_now handles NA values", {
   df_with_na <- data.frame(
     onset_week = as.Date(c("2020-07-08", "2020-07-15", NA)),
-    report_week = as.Date(c("2020-07-11", "2020-07-18", "2020-07-20")),
+    report_week = as.Date(c("2020-07-29", "2020-08-05", "2020-08-07")),
     gender = c("Male", "Female", NA)
   )
 

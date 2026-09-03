@@ -69,5 +69,5 @@ plot_validation_status(flu)
 
 }
 \seealso{
-\code{\link[=diagnose_validation_delay]{diagnose_validation_delay()}}, \code{\link[=get_latest_confirmed]{get_latest_confirmed()}}.
+\code{\link[=diagnose_validation_delay]{diagnose_validation_delay()}}, \link{validated_cases}.
 }

@@ -121,6 +121,17 @@ infer_units_one_column <- function(data, date_column, date_units) {
 
     # Check if they are date or numeric
     if (lubridate::is.Date(date_vals)) {
+      # One distinct date has no spacing to read. Without this the `diff()` is
+      # empty, `min()` warns and returns `Inf`, and the abort below arrives
+      # behind a warning about `min` that says nothing about the data.
+      if (length(date_vals) < 2) {
+        cli::cli_abort(c(
+          "Cannot infer time units: {.val {date_column}} has a single distinct date.",
+          "i" = "Declare them with {.arg units} (or {.arg event_units} /
+                 {.arg report_units}): one of {.val {setdiff(valid_units, 'numeric')}}."
+        ))
+      }
+
       date_diffs <- date_vals |>
         diff()
 

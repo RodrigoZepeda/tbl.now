@@ -77,8 +77,8 @@ plot_validation_delay(flu)
 }
 \seealso{
 \link[=add]{add_validation_date()} to attach a validation process;
-\link[=censor_delays_above]{censor_validation_delays_above()} for resolutions that
-never arrive; \link{validation_counts} for counting the outcomes;
+\link[=censoring]{censor_validation_delays_above()} for resolutions that
+never arrive; \link{validated_cases} for counting the outcomes;
 \code{\link[=diagnose_drift]{diagnose_drift()}} for the same question about the \emph{reporting} delay over time.
 The \href{https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html}{\emph{Diagnosing a tbl_now} article}
 puts this alongside the other checks.

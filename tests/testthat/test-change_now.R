@@ -84,8 +84,8 @@ test_that("the re-censored object is valid, and the counts follow", {
   expect_equal(as.character(validation_row$status), "ok")
 
   # As of 10 January only two of the five confirmations had come back.
-  expect_equal(sum(get_latest_confirmed(flu)[["n"]]), 5)
-  expect_equal(sum(suppressWarnings(get_latest_confirmed(earlier))[["n"]]), 2)
+  expect_equal(sum(get_latest_validated_cases(flu, "confirmed")[["n"]]), 5)
+  expect_equal(sum(suppressWarnings(get_latest_validated_cases(earlier, "confirmed"))[["n"]]), 2)
 })
 
 test_that("a whole backtest walk never errors (#51 regression guard)", {

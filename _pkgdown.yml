@@ -82,9 +82,10 @@ reference:
 - title: Reshaping
   desc: Put the data on the grid a model needs.
   contents:
+  - aggregate_time_units
   - align_weeks
   - complete_zeroes
-  - censor_delays_above
+  - censoring
   - is_weekday
 
 - title: Temporal effects
@@ -96,7 +97,7 @@ reference:
 - title: The validation process
   desc: The optional third date, and the outcomes it carries.
   contents:
-  - validation_counts
+  - validated_cases
   - validation_delay
 
 - title: Summarising
