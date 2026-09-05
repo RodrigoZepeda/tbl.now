@@ -424,7 +424,7 @@ hai_fit <- hai_bucaramanga |>
 Due to the sparcity, the nowcast predicts almost no cases at any time
 with just maybe a second case at the now for males:
 
-```{r, message=FALSE, warning=FALSE, fig.width=9, fig.height=4.5, fig.alt="A sparse nowcast"}
+```{r, message=FALSE, eval=has("diseasenowcasting"), warning=FALSE, fig.width=9, fig.height=4.5, fig.alt="A sparse nowcast"}
 autoplot(hai_fit) 
 ```
 
