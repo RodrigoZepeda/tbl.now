@@ -416,7 +416,7 @@ cases_per_date(hai_bucaramanga)
 Even with all this sparcity here we can nowcast using the
 diseasenowcasting package:
 
-```{r}
+```{r, eval = has("diseasenowcasting")}
 hai_fit <- hai_bucaramanga |> 
   run_nowcast(engine = engine_diseasenowcasting(temporal_effects = "none"))
 ```
@@ -607,7 +607,7 @@ The `run_nowcast()` function takes the `tbl_now` and an
 **engine**. An engine contains a modelling package's nowcasting
 function plus every argument that it needs:
 
-```{r nowcast-weekly}
+```{r nowcast-weekly, eval= has("diseasenowcasting")}
 hai_fit_weekly <- hai_bucaramanga |>
   run_nowcast(engine = engine_diseasenowcasting())
 ```
@@ -615,7 +615,7 @@ hai_fit_weekly <- hai_bucaramanga |>
 The `autoplot()` shows the nowcast with  gray columns representing what
 had been reported by `now`, and the green fan the nowcast's prediction intervals.
 
-```{r nowcast-weekly-plot, message=FALSE, warning=FALSE, fig.width=9, fig.height=4.5, fig.alt="Weekly nowcast for each sex: grey columns of reported cases with a green fan of predicted cases over the final weeks."}
+```{r nowcast-weekly-plot,eval= has("diseasenowcasting"), message=FALSE, warning=FALSE, fig.width=9, fig.height=4.5, fig.alt="Weekly nowcast for each sex: grey columns of reported cases with a green fan of predicted cases over the final weeks."}
 autoplot(hai_fit_weekly)
 ```
 
@@ -625,7 +625,7 @@ Calling `tidy()` gives the nowcast as a table:
 tidy(hai_fit_weekly)
 ```
 
-```{r nowcast-weekly-tidy, echo = FALSE}
+```{r nowcast-weekly-tidy, echo = FALSE, eval= has("diseasenowcasting")}
 tidy(hai_fit_weekly) |> arrange(event_date) |> tail()
 ```
 
@@ -644,7 +644,7 @@ we will fit a second model:  `baselinenowcast`.
 
 One can fit it with the same call just a different engine
 
-```{r bln-error, error = TRUE, warning=FALSE, eval=TRUE, message=FALSE}
+```{r bln-error, error = TRUE, warning=FALSE, eval=has("baselinenowcast"), message=FALSE}
 hai_fit_baseline <- hai_bucaramanga |>
   run_nowcast(engine = engine_baselinenowcast())
 ```
@@ -653,7 +653,7 @@ Any backtest uses the  **same engines** refitting
 every engine once per past date. Here we show the backtest with just 3 past dates.
 On a real scenario we recommend using as many as possible to draw any conclusions:
 
-```{r backtest, warning=FALSE, message=FALSE}
+```{r backtest, warning=FALSE, message=FALSE, eval=has("baselinenowcast") & has("diseasenowcasting")}
 hai_backtest <- hai_bucaramanga |> 
   nowcast_backtest(
     engine_diseasenowcasting(),
@@ -680,7 +680,7 @@ Date-level indicators for the `wis`, `ae_median` and coverage can be obtained wi
 tidy(hai_backtest)
 ```
 
-```{r, eval=FALSE}
+```{r, eval=has("baselinenowcast") & has("diseasenowcasting")}
 tidy(hai_backtest) |> arrange(event_date) |> tail()
 ```
 
@@ -695,7 +695,7 @@ of the models.
 To create an ensemble model one needs to pass the model
 specifications (with a name) as well as the backtest:
 
-```{r ensemble-weighted, warning=FALSE, message=FALSE}
+```{r ensemble-weighted, warning=FALSE, message=FALSE, eval=has("baselinenowcast") & has("diseasenowcasting")}
 hai_ensemble <- nowcast_ensemble(
   hai_fit_weekly,
   hai_fit_baseline,
@@ -706,7 +706,7 @@ hai_ensemble <- nowcast_ensemble(
 
 The same `tidy()` and `autoplot()` functions can be used here:
 
-```{r}
+```{r, eval=has("baselinenowcast") & has("diseasenowcasting")}
 autoplot(hai_ensemble)
 ```
 
