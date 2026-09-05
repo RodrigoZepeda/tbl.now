@@ -1,5 +1,32 @@
 # tbl.now 0.33.0
 
+## `aggregate_time_units()` now coarsens the temporal-effect specification (#65)
+
+Aggregating dropped the materialised temporal-effect *columns* but kept the
+lazy `temporal_effects()` spec untouched, so the next
+`compute_temporal_effects()` rebuilt a day-of-week column on dates that are all
+the same weekday. The spec now moves onto the new grid with the dates:
+
+* `day_of_week`, `weekend`, `day_of_month`, `holiday_lags` and `weekend_lags`
+  are properties of a day, so they survive only `to = "days"`.
+* `week_of_year` survives `"weeks"`, `month_of_year` survives `"months"`.
+* `seasons` are **rescaled** rather than dropped -- a Fourier period is a
+  length, so a 365-day season becomes a 52.14-week one, and
+  `seasons = 52, season_length = 7` becomes `seasons = 52` in weeks. A period
+  that comes out at two units or shorter is dropped: it is at or below the new
+  grid's Nyquist limit.
+* `holidays` are **kept**. On a grid coarser than days the holiday column stops
+  being a 0/1 indicator and becomes the **share of the period's days that the
+  calendar marks** (1/7 for a week containing Christmas Day). On daily data it
+  is the same integer indicator as before.
+
+A specification left with nothing in it is removed. `verbose = TRUE` reports
+what was dropped and what was rescaled.
+
+`add_temporal_effects()` (the `data.frame` method) gained a `units` argument for
+this; `compute_temporal_effects()` reads it off the object.
+
+
 ## Breaking: the palette is named by ROLE, not by hue
 
 Every colour in the package now comes from the exported `tbl_now_palette()`,

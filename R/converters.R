@@ -2247,7 +2247,8 @@ tbl_now_from_tsibble <- function(data, report_date, event_date = NULL,
       numeric_col  = if (from_event_date) ".event_num" else ".report_num",
       name_prefix  = if (from_event_date) ".event" else ".report",
       overwrite    = TRUE,
-      weekend_days = spec$weekend_days
+      weekend_days = spec$weekend_days,
+      units        = if (from_event_date) get_event_units(x) else get_report_units(x)
     )
   }
 

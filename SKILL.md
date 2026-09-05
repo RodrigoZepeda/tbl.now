@@ -460,6 +460,18 @@ tn <- remove_temporal_effects(tn)                                          # cle
 > `add_temporal_effects()` is a no-op. `replace_temporal_effects()` removes the
 > computed columns — call `compute_temporal_effects()` again afterward.
 
+- **The spec knows about the grid.** `aggregate_time_units()` coarsens it along
+  with the dates: `day_of_week` / `weekend` / `day_of_month` / `holiday_lags` /
+  `weekend_lags` survive only `to = "days"`, `week_of_year` only down to
+  `"weeks"`, `month_of_year` only down to `"months"`. `seasons` are **rescaled**
+  (a 365-day period becomes 52.14 weeks) and dropped once the new period is two
+  units or shorter. A spec left with nothing is removed.
+- **`holidays` survive any grid.** On days the holiday column is the usual `0/1`
+  indicator; on a coarser grid it is the **share of the period's days that are
+  holidays** (`1/7` for a week containing Christmas Day, `1/31` for December).
+  `compute_temporal_effects()` reads the units off the object, so this is
+  automatic — nothing extra to call.
+
 ---
 
 ## Skill: calendar effects for ANY country (custom almanac holidays)
@@ -1334,7 +1346,9 @@ tbl_now_attributes(tn)               # list of just the tbl_now-specific attribu
   named by its first or last day — use `label = "end"` when you coarsen only a
   later axis, or reports land before their own events. It only ever coarsens:
   asking a weekly object for `"days"` is an error. Aggregate **once**, to the
-  unit you want — weeks do not nest inside months.
+  unit you want — weeks do not nest inside months. Materialised temporal-effect
+  columns are dropped and the lazy spec is coarsened with the dates — see the
+  temporal-effects skill above for what survives which grid.
 - **`align_weeks` / weekly data:** weekly dates reported on inconsistent weekdays
   give fractional `.delay`. Use `align_weeks = TRUE` in `tbl_now()` or
   `align_weeks()` afterward to force integer delays.

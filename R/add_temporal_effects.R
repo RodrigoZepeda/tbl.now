@@ -39,6 +39,12 @@
 #'
 #' @param name_prefix Character. Prefix for the names of the created columns.
 #'
+#' @param units Character. The time units `date_col` is measured in: `"days"`
+#' (the default), `"weeks"`, `"months"` or `"years"`. It only affects the
+#' **holiday** column, which on a grid coarser than days becomes the *share* of
+#' the period's days that are holidays rather than a 0/1 indicator. For a
+#' `tbl_now`, [compute_temporal_effects()] reads this off the object.
+#'
 #' @param overwrite Logical. When `TRUE`, columns that already exist are
 #' overwritten. When `FALSE` (the default) an existing column of the same name is
 #' an error, so an accidental second computation cannot silently replace your data.
@@ -248,7 +254,8 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
                                             date_col = NULL,
                                             numeric_col = NULL,
                                             name_prefix = paste0(".", date_col),
-                                            weekend_days = c("Sat", "Sun")) {
+                                            weekend_days = c("Sat", "Sun"),
+                                            units = "days") {
   # Do nothing if no effect
   if (is.null(t_effects)) {
     return(x)
@@ -426,10 +433,14 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
           )
         }
 
+        # On a daily grid this is the 0/1 indicator it has always been; on a
+        # coarser one it is the share of the period's days that are holidays,
+        # which is the same number when the period is one day long.
         x <- x |>
           dplyr::mutate(!!as.symbol(paste0(name_prefix, "_holiday")) :=
-            as.integer(
-              almanac::alma_in(!!as.symbol(date_col), t_effects@holidays)
+            .holiday_share(
+              !!as.symbol(date_col), t_effects@holidays,
+              units = !!units
             ))
       }
     }
@@ -524,6 +535,64 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
     x[[paste0(base_name, "_", k)]] <- as.integer(!is.na(since) & since == k)
   }
   x
+}
+
+#' Holiday indicator, or the share of a period's days that are holidays
+#'
+#' A holiday is a property of a **day**, so on a grid coarser than days there is
+#' no single answer to "is this a holiday": a week is a week whether it contains
+#' Christmas or not. The honest generalisation of the indicator is the fraction
+#' of the period's days that the calendar marks, which is exactly the 0/1
+#' indicator again when the period is one day long.
+#'
+#' The period a date names is taken to **start** at it for weeks -- the
+#' convention [align_weeks()] and [aggregate_time_units()] produce -- and to be
+#' the calendar month / year *containing* it otherwise, which is the same period
+#' for either end of the label.
+#'
+#' @param dates A `<Date>` vector (or anything else, which is passed straight to
+#'   the indicator path).
+#' @param holidays `NULL`, an [almanac::rcalendar()], or a list of them.
+#' @param units `"days"`, `"weeks"`, `"months"`, `"years"` or `"numeric"`.
+#'
+#' @return An integer 0/1 vector for daily (or numeric) axes, and a double in
+#'   `[0, 1]` otherwise. `NA` where `dates` is `NA`.
+#'
+#' @keywords internal
+#' @noRd
+.holiday_share <- function(dates, holidays, units = "days") {
+  daily <- !lubridate::is.Date(dates) || units %in% c("days", "numeric")
+  if (daily) {
+    return(as.integer(.alma_in_any(dates, holidays)))
+  }
+
+  distinct_dates <- unique(dates[!is.na(dates)])
+  if (length(distinct_dates) == 0) {
+    return(rep(NA_real_, length(dates)))
+  }
+
+  starts <- switch(units,
+    weeks = distinct_dates,
+    months = lubridate::floor_date(distinct_dates, "month"),
+    years = lubridate::floor_date(distinct_dates, "year"),
+    cli::cli_abort("{.arg units} {.val {units}} has no calendar period.")
+  )
+  ends <- switch(units,
+    weeks = distinct_dates + 6,
+    months = lubridate::ceiling_date(distinct_dates, "month") - 1,
+    years = lubridate::ceiling_date(distinct_dates, "year") - 1
+  )
+
+  # One `alma_in()` call over the whole span, then a cumulative sum, so the cost
+  # does not scale with the number of periods -- a decade of daily holidays is
+  # cheaper to build once than a year at a time, ten times.
+  grid <- seq(min(starts), max(ends), by = "day")
+  marked <- cumsum(c(0, as.integer(.alma_in_any(grid, holidays))))
+  first <- as.integer(starts - min(grid)) + 1L
+  last <- as.integer(ends - min(grid)) + 1L
+  share <- (marked[last + 1L] - marked[first]) / (last - first + 1L)
+
+  share[match(dates, distinct_dates)]
 }
 
 #' @export

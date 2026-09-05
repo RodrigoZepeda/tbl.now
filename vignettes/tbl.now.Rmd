@@ -566,6 +566,19 @@ get_temporal_effects(df_computed) # The spec (list of configs)
 get_temporal_effect_cols(df_computed) # The computed column names
 ```
 
+> **Holidays on a grid coarser than days.** `denguedat` is weekly, and a week is
+> not a holiday -- it *contains* holidays. On daily data `.event_holiday` is the
+> usual `0`/`1` indicator; on weekly, monthly or yearly data it is the **share of
+> the period's days** the calendar marks, so a week containing Christmas Day
+> scores `1/7`. The units are read off the object, so there is nothing extra to
+> call.
+
+Because the effects are computed from the object's own grid, they also travel
+with it: [aggregate_time_units()](https://rodrigozepeda.github.io/tbl.now/reference/aggregate_time_units.html)
+drops from the specification the effects the coarser grid cannot express (a
+day-of-week term on weekly dates), rescales the Fourier `seasons` onto the new
+unit, and keeps the holiday calendar.
+
 #### Around-holiday and around-weekend effects
 
 Reporting often *rebounds* on the first working day(s) after a holiday or a
