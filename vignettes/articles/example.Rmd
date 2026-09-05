@@ -664,7 +664,7 @@ hai_backtest <- hai_bucaramanga |>
 ```
 Printing the object shows the results from the backtest which includes the individual results for the weighted interval score (`wis`), the median absolute error (`ae_median`), and the coverage of the 50 and 90% intervals (`coverage_*`):
 
-```{r}
+```{r, eval=has("baselinenowcast") & has("diseasenowcasting")}
 hai_backtest
 ```
 
