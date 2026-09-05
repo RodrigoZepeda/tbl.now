@@ -501,7 +501,19 @@ test_that("the sparsity finding carries its denominator and the pooled share", {
   # and the pooled series on three.
   expect_equal(row$n_total, 5)
   expect_equal(row$n_affected, 3)
-  expect_match(row$message, "3 of the 5 dates on the event grid")
+
+  # The numerator has to arrive WITH its denominator -- "60% of the event dates
+  # are empty" is unreadable on its own -- and the denominator has to say what
+  # it is counting and over what span, or the reader cannot tell a sparse
+  # stratum from a grid that is finer than the data. Matched on those pieces
+  # rather than on one exact sentence, so rewording the finding does not fail
+  # the test that guards its content.
+  expect_match(row$message, "3 of the 5")
+  expect_match(row$message, "between the minimum event", fixed = TRUE)
+  expect_match(row$message, "2024-01-01", fixed = TRUE)
+  expect_match(row$message, "2024-01-05", fixed = TRUE)
+  expect_match(row$message, "carry no cases at all", fixed = TRUE)
+  expect_match(row$message, "60%", fixed = TRUE)
   expect_match(row$message, "40% pooled", fixed = TRUE)
   expect_match(row$message, "pooled over every stratum")
   expect_match(row$hint, "aggregate_time_units", fixed = TRUE)

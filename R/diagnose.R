@@ -2160,8 +2160,8 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
           "strata", "sparsity", "note",
           .diagnose_text(
             "The sparsest stratum is {.val {sparsest$stratum}}: {empty} of the
-             {sparsest$n} {.val {get_event_units(x)}} between the minimum event
-             ({.val {min(x[[get_event_date(x)]])}}) and the now ({.val {get_now(x)}}) carry no cases at all
+             {sparsest$n} {get_event_units(x)} between the minimum event
+             ({.val {min(x[[get_event_date(x)]])}}) and the now ({get_now(x)}) carry no cases at all
              ({round(100 * sparsest$prop_zero, 1)}%{baseline})."
           ),
           stratum = sparsest$stratum,

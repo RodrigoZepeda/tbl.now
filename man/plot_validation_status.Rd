@@ -4,7 +4,12 @@
 \alias{plot_validation_status}
 \title{How much of each day has been resolved}
 \usage{
-plot_validation_status(x, by = NULL, proportion = TRUE)
+plot_validation_status(
+  x,
+  by = NULL,
+  proportion = TRUE,
+  palette = .tbl_now_palette()
+)
 }
 \arguments{
 \item{x}{A \code{tbl_now} with a validation process.}
@@ -13,6 +18,9 @@ plot_validation_status(x, by = NULL, proportion = TRUE)
 
 \item{proportion}{When \code{TRUE} (default) the bands are shares summing to 1;
 \code{FALSE} shows the counts instead, which keeps the epidemic curve visible.}
+
+\item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}). The plot is
+drawn entirely with stacked areas, so it takes no \code{size} or \code{linewidth}.}
 }
 \value{
 A \code{ggplot}.
@@ -46,9 +54,10 @@ disease did.
 \section{Colours}{
 
 
-\code{confirmed} is drawn in the palette's green (it is a real case -- the
-epidemic process), \code{retracted} in the accent red (it was removed by the
-reporting process), and \code{pending} in grey (not yet known either way).
+\code{confirmed} is drawn with the palette's \code{epidemic} role (it is a real case --
+the epidemic process), \code{retracted} with \code{reporting} (it was removed by the
+reporting process), and \code{pending} with the neutral \code{pending} role (not yet
+known either way). Override any of them through \code{palette}.
 }
 
 \examples{

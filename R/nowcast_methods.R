@@ -190,35 +190,47 @@ nowcast_fit.baselinenowcast <- function(engine, x, ..., draws = 1000,
   }
 
   # A reporting-triangle *matrix* has no strata dimension, so a stratified
-  # nowcast is one triangle (and one fit) per stratum.
-  delays_unit <- .baselinenowcast_delays_unit(x, delays_unit)
-  long <- .quietly_if(
+  # nowcast is one triangle (and one fit) per stratum. That is exactly what
+  # `format = "triangle_list"` returns, so ask for it rather than splitting the
+  # long format by hand: the long format is a tidy data frame with no grid, so
+  # the converter deliberately never completes it, and a line list has no row
+  # for an event period in which nothing was reported. Building the triangles
+  # from it silently shortened the reference axis -- the same object fitted 54
+  # reference times as a line list and 81 after `to_count() |>
+  # complete_zeroes()` (#67). The list format also restores the not-yet-observed
+  # cells to `NA` and absorbs negative increments, neither of which the
+  # hand-rolled split did.
+  triangles <- .quietly_if(
     tbl_now_to_baselinenowcast(
       x,
-      format = "long", max_delay = max_delay, verbose = verbose
+      format = "triangle_list", delays_unit = delays_unit,
+      max_delay = max_delay, verbose = verbose
     ),
     verbose
   )
 
-  key <- do.call(paste, c(long[strata_cols], list(sep = "\r")))
-  lookup <- dplyr::distinct(dplyr::tibble(.key = key, !!!long[strata_cols]))
+  # The strata VALUES travel with the list, one row per element, so the label is
+  # never parsed back into columns -- a stratum containing the separator would
+  # not round-trip.
+  lookup <- dplyr::as_tibble(attr(triangles, "strata_values")) |>
+    dplyr::mutate(.key = names(triangles), .before = 1)
+
+  # The list's own names paste with " | "; every message in the package names a
+  # stratum with `.tbl_now_strata_label()`, so build the label from the values.
+  labels <- .tbl_now_strata_label(
+    as.data.frame(attr(triangles, "strata_values")), strata_cols
+  )
 
   fits <- .quietly_if(
-    lapply(split(long, key), function(stratum) {
-      triangle <- baselinenowcast::as_reporting_triangle(
-        as.data.frame(stratum[, c("reference_date", "report_date", "count")]),
-        delays_unit = delays_unit
-      )
-      .baselinenowcast_check_shape(
-        triangle,
-        stratum = .tbl_now_strata_label(stratum[1, , drop = FALSE], strata_cols)
-      )
+    lapply(seq_along(triangles), function(i) {
+      .baselinenowcast_check_shape(triangles[[i]], stratum = labels[i])
       baselinenowcast::baselinenowcast(
-        triangle, output_type = "samples", draws = draws, ...
+        triangles[[i]], output_type = "samples", draws = draws, ...
       )
     }),
     verbose
   )
+  names(fits) <- names(triangles)
 
   structure(fits, strata_lookup = lookup, class = "baselinenowcast_strata")
 }

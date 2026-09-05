@@ -1073,10 +1073,13 @@ Each calendar/holiday twin takes a `type` argument choosing the process: `type =
 | `plot_week_of_year_effects(x, type = )` | `calendar_week` / `delay_week` |
 | `plot_month_of_year_effects(x, type = )` | `calendar_month` / `delay_month` |
 | `plot_holiday_effects(x, type = )` | `calendar_holiday` / `delay_holiday` |
+| `plot_weekend_effects(x, type = )` | `calendar_holiday` / `delay_holiday`, attaching `temporal_effects(weekend = TRUE)` first |
 | `plot_holiday_lag_effects(x, type = )` | `calendar_holiday_lag` / `delay_holiday_lag` |
 | `plot_cycles(x, type = )` | `seasonality` / `delay_seasonality` |
 | `plot_delay_distribution(x)` | `delay_distribution` |
 | `plot_observed_cases(x)` | `epidemic` |
+
+`plot_weekend_effects()` and `plot_holiday_effects()` draw the same panel; the first one attaches the weekend effect for you when the object does not already carry one (daily data only), the second describes whatever specification is already there. Both, and `plot_holiday_lag_effects()`, are always *normalized* and take no `measure` argument: their categories are not equal-sized parts of a week, so a percentage share — "29% of the cases at the weekend" — would restate the calendar rather than the data. The day-of-week, week-of-year and month-of-year twins keep both measures.
 
 ```{r plot-single, eval=FALSE}
 # The same figure, two ways:
@@ -1129,6 +1132,8 @@ autoplot(holiday_now, panels = c("calendar_holiday", "calendar_holiday_lag",
 ```
 
 
+These four panels are always drawn *normalized* against the mean, whatever `measure` you pass `autoplot()`: a day type is not an equal-sized slice of a week, so a percentage share would mostly restate the calendar. The day-type pair is titled **"Weekend and/or holiday effects"** because that is what its categories are.
+
 The **holiday effect** panel splits the days by *type*. The categories you get follow the `temporal_effects()`: a calendar plus `weekend = TRUE` gives `Weekday` / `Weekend` / `Holiday`; a calendar alone gives `Non-holiday` / `Holiday`; a weekend effect alone gives `Weekday` / `Weekend`. A holiday that falls on a weekend counts as a **holiday**.
 
 The **holiday lag effect** panel splits them by *position relative to the nearest holiday*, showing exactly the days that `holiday_lags` flags — `"1 after"`, `"2 after"`, and so on, with `"Other"` (every other day) as the reference to read them against. Negative depths add `"1 before"`, `"2 before"`, … to the left of the holiday, so the axis reads left-to-right as time does. Counting is in **working days**, so weekends and other holidays are skipped exactly as they are for the `..._holiday_lag_k` columns.
@@ -1152,15 +1157,19 @@ summary(dengue_now) |>
   count(component)
 ```
 
-The `completeness` block is often the most useful of them: it says how much of
-each event date's eventual total had arrived by delay `d`, which is what decides
-how far back a nowcast is even meaningful.
+`n` and `total` answer different questions, and each block prints a line saying
+which: `total` always counts **cases**, while `n` counts the block's own unit —
+dates on the grid for `cases`, runs for `zero_run`, and (event, report) cells
+for `delay` and `composition`.
+
+How much of each event date's eventual total had arrived by delay `d` — which is
+what decides how far back a nowcast is even meaningful — is
+`reporting_completeness()`. It is **not** part of `summary()`: it was written by
+an AI and has not been reviewed by a human, so it warns every time it is called.
 
 ```{r vig-summary-completeness}
-summary(dengue_now) |>
-  filter(component == "completeness") |>
-  select(quantity, n, mean, q50, prop) |>
-  head(4)
+reporting_completeness(dengue_now, delays = 0:3) |>
+  select(quantity, n, mean, q50, prop)
 ```
 
 Half of a week's cases are in by the end of the following week, and 94% by three
@@ -1177,9 +1186,10 @@ delay_summary(dengue_now) |>
 
 The others are `cases_per_date()`, `zero_run_summary()`, `prop_censored()`,
 `prop_validation_type()`, `prop_strata()`, `prop_covariate_levels()`,
-`case_autocorrelation()`, `date_ranges()`, `triangle_occupancy()`,
-`reporting_completeness()` and `cumulative_growth()`. See
-`?nowcast_summary_components`.
+`date_ranges()`, `triangle_occupancy()` and `cumulative_growth()`. Two more --
+`case_autocorrelation()` and `reporting_completeness()` -- share the schema but
+are **not** part of `summary()`: they were written by an AI, have not been
+reviewed by a human, and warn on every call. See `?nowcast_summary_components`.
 
 ::: {.alert .alert-info}
 Quantiles in `summary()` are **inverse-ECDF** (type 1): `q50` is the smallest

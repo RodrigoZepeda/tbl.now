@@ -12,6 +12,9 @@ diagnostic_plot(
   ...,
   plotly = FALSE,
   axis = c("report", "validation"),
+  size = 1,
+  linewidth = 1,
+  grid_linewidth = 0.3,
   palette = .tbl_now_palette()
 )
 }
@@ -41,7 +44,17 @@ time the laboratory adds. (This is not the same quantity as the
 measured from the report.) Needs a validation process (see
 \code{\link[=add_validation_date]{add_validation_date()}}); cases still \code{"pending"} are left out.}
 
-\item{palette}{A named colour palette. Defaults to the package palette.}
+\item{size}{Multiplier on point and label sizes, forwarded to every panel
+that draws them (\code{"triangle"}, \code{"transport"}). Default \code{1}.}
+
+\item{linewidth}{Multiplier on data line widths, forwarded to every panel that
+draws them (\code{"profiles"}, \code{"delay_drift"}). Default \code{1}.}
+
+\item{grid_linewidth}{Line width of the reference grids the package draws
+itself -- not \pkg{ggplot2}'s panel grid. Forwarded to \code{"triangle"},
+\code{"transport"} and \code{"delay_drift"}. Default \code{0.3}.}
+
+\item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}).}
 }
 \value{
 A \pkg{patchwork} object, or a single plot when one panel is selected

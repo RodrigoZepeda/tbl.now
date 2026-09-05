@@ -1,3 +1,338 @@
+# tbl.now 0.33.0
+
+## Breaking: the palette is named by ROLE, not by hue
+
+Every colour in the package now comes from the exported `tbl_now_palette()`,
+and every element of it is named for the **role** it plays rather than for the
+colour it happens to be. The old names encoded the hue (`primary_green`,
+`accent_red`, `near_black`), which made the palette impossible to re-theme:
+somebody handing in a blue-and-orange palette had to call their orange
+`primary_green` for the plots to find it.
+
+| was | is |
+|---|---|
+| `accent_red` | `reporting` |
+| `light_red` | `reporting_light` |
+| `primary_green` | `epidemic` |
+| `light_green` | `epidemic_light` |
+| `medium_green` | `epidemic_mid` |
+| `dark_green` | `epidemic_dark` |
+| `near_black` | `ink` |
+| `muted_green` | `ink_muted` |
+
+The red/green *grammar* is unchanged -- red is still the reporting process and
+green still the epidemic one. What changed is that the names now say that
+instead of naming the pigment.
+
+There is no deprecation shim. A `palette` argument carrying the old names is
+rejected with an error listing the roles it is missing.
+
+The palette also grew the colours that used to be written into the plotting
+code as literals (`"grey60"`, `"white"`, `"#C4D5DE"`): `ink_inverse`,
+`surface`, `surface_muted`, `surface_dark`, `grid_major`, `grid_minor`,
+`guide`, `guide_strong`, `annotation`, `neutral`, `zero`, `pending` and
+`observed`. A re-theme now reaches every mark on the page, and no plotting
+function contains a hex code.
+
+`tbl_now_palette()` fills every role from its own defaults, so a partial
+override is still a complete palette:
+
+```r
+plot_reporting_triangle(x, palette = tbl_now_palette(reporting = "#5B4B8A"))
+```
+
+## New: `plot_weekend_effects()`, and the day-type panels are normalized only
+
+`plot_weekend_effects()` is `plot_holiday_effects()` for the common case of
+wanting to see the weekend without first writing the specification down. It
+attaches `temporal_effects(weekend = TRUE)` when the object does not already
+ask for a weekend effect -- on a copy, so your object is unchanged -- and then
+draws the same day-type panel. A holiday calendar that is already attached
+still contributes its `Holiday` box, and a `weekend_days` argument sets the
+weekend definition when this is the call that has to attach it. It needs daily
+data, and says so rather than drawing a single box:
+
+```r
+plot_weekend_effects(daily_now)                  # the weekend, in one call
+plot_weekend_effects(daily_now, type = "report") # ... and in the delay
+plot_weekend_effects(weekly_now)
+#> Error: A weekend effect needs daily data.
+#> x `event_units` is "weeks".
+```
+
+**Breaking:** the four holiday panels -- `"calendar_holiday"`,
+`"calendar_holiday_lag"` and their `delay_*` twins -- are now always drawn
+`measure = "normalized"`, and `measure` is gone from the signatures of
+`plot_holiday_effects()` and `plot_holiday_lag_effects()` (it stays on
+`plot_day_of_week_effects()`, `plot_week_of_year_effects()` and
+`plot_month_of_year_effects()`). `autoplot()` keeps the argument and simply
+ignores it for those four panels.
+
+A percentage share only means something when the groups are comparable slices
+of the block it is taken over. A weekend is two days in seven, so "29% of the
+cases at the weekend" is exactly average and reads as low; the same goes for
+"1 working day after a holiday", which is however many days the calendar
+happens to put there. Normalizing against the mean asks the question the panel
+is for -- is this day type *unusual*? -- and 1 is the answer for "no".
+
+The day-type panels are also retitled **"Weekend and/or holiday effects"**
+(and "Weekend and/or holiday delay effects" for the reporting twin), because
+that is what their categories are: the panel has never been only about
+holidays. The holiday-lag panels keep their own titles.
+
+## Every plot takes `size` and `linewidth`
+
+Point, label and line sizes were hard-coded, so a figure drawn large had marks
+too small to see. Outside `plot_reporting_hexamap()` they are **multipliers**
+defaulting to `1`, which leaves every existing figure unchanged and, unlike an
+absolute size, preserves a panel's own hierarchy: `plot_transport_discriminant(x,
+size = 2)` doubles both the unflagged points (`1.1`) and the confirmed batches
+(`2.6`) rather than flattening them to one value.
+
+Where a function draws a reference grid of its own -- not \pkg{ggplot2}'s panel
+grid, which these plots switch off -- that grid has its own absolute argument:
+
+* `plot_reporting_hexamap()`: `size`, `shape`, `text_size`,
+  `grid_linewidth_major`, `grid_linewidth_minor`, `axis_linewidth`,
+  `legend_width`, `legend_height`
+* `plot_reporting_triangle()`: `size`, `grid_linewidth`
+* `plot_transport_discriminant()`: `size`, `grid_linewidth`
+* `plot_delay_drift()`: `linewidth`, `grid_linewidth`
+* `plot_delay_profiles()`: `linewidth`
+* `plot_validation_delay()`: `linewidth`
+* `autoplot()` and the `plot_*_effects()` panels: `size`, `linewidth`
+* `diagnostic_plot()`: `size`, `linewidth`, `grid_linewidth`, forwarded to
+  whichever panels draw them
+* `autoplot()` on a `tbl_nowcast`: `linewidth`
+
+`plot_reporting_process()`, `plot_epidemic_process()`, `plot_scalogram()` and
+`plot_validation_status()` draw only bars, tiles or areas, so they take
+neither, and say so in their documentation rather than offering an argument
+that would do nothing.
+
+`plot_validation_delay()` and `plot_validation_status()` also gained the
+`palette` argument they had been missing -- they used to call the default
+palette internally -- and now use the shared package theme instead of a bare
+`ggplot2::theme_minimal()`.
+
+## Breaking: the hexamap draws points, not hexagons
+
+`plot_reporting_hexamap()` marks each `(event, delay)` cell with a point at the
+centre of the hexagon it used to fill. A hexagon is drawn in data units: it
+tiles at any zoom, and that is exactly why it cannot be made bigger -- there is
+no room. A point is drawn in millimetres, so `size` is a free knob, which is
+what the plot needed. The projection, the triangular grid and the axes are
+unchanged; `shape = 15` gives squares, which tile the lattice closely.
+
+Because a point is sized in millimetres and the lattice in data units, no
+default `size` can suit every combination of cell count and figure size. That
+is the argument's reason for existing: raise it until the marks nearly touch at
+the size you are actually drawing.
+
+Code reading the built plot changes with it -- the marks are one row per cell
+in a `geom_point` layer rather than six polygon vertices per hexagon.
+
+## A batch screen you have subset stops claiming to be one
+
+`diagnose_batches()` and `transport_discriminant()` return tibbles with a
+`print()` method that summarises the screen. Taking a few columns out of one --
+the obvious way to look at a result --
+
+```r
+flagged <- screened[screened$batch, ]
+flagged[order(flagged$p_transport_bh), c("report_date", "reported", "baseline")]
+```
+
+kept the class, so auto-print went looking for the `batch` column it needed and
+aborted *inside the print method*, which is the hardest place to read an error:
+
+```
+Error: Can't subset rows with `!is.na(x$batch) & x$batch`.
+x Logical subscript must be size 1 or 4, not 0.
+```
+
+Both classes now demote to a plain tibble when a subset drops a column their
+summary reads, taking the screen's own attributes (`lookback`, `alpha`, ...)
+with them -- the same rule as a `tbl_now` losing a protected column, silently
+rather than with a warning, since what is lost here is a print format and not
+the ability to nowcast. `[`, `dplyr::select()` and `dplyr::mutate()` all follow
+it; row subsetting, `head()` and `dplyr::filter()` keep every column and so
+keep the screen. As a backstop, both `print()` methods now fall back to printing
+the table when a column has gone missing some other way (`x$batch <- NULL`),
+rather than erroring.
+
+## `diagnose_batches()` and `transport_discriminant()` print properly again
+
+Both classes have a `print()` method, and neither was reached. They were
+registered with a plain `@export`, which puts the method in the package's own
+methods table; the namespace defines an S7 `print` generic that shadows
+`base::print` once `tbl.now` is attached, so auto-printing either object fell
+through to the default and showed a bare tibble instead of the batch screen or
+the discriminant summary. Both are now registered with
+`@exportS3Method base::print`, as every other `print()` method in the package
+already was, and there is a regression test asserting auto-print dispatch for
+each.
+
+## Plot backgrounds match the site in dark mode
+
+On the pkgdown site every figure was a black rectangle on a charcoal page. The
+cause was not in the R code: pkgdown ships one PNG for both themes and relies
+on a bslib CSS filter, `invert(100%) hue-rotate(180deg)`, which takes a
+ggplot2 background from white to `#000000` while the body is `#212529`.
+
+`pkgdown/extra.css` now overrides that filter with
+`brightness(0.871) invert(100%) hue-rotate(180deg)` plus
+`mix-blend-mode: lighten`. The `brightness()` before the invert maps white to
+`#212121` while still taking black to white, so no contrast is lost; the blend
+closes the remaining few units to the page's slightly blue `#212529` and, since
+nothing in the filtered image is darker than `#212121`, touches nothing else.
+The page background is unchanged, and light mode is untouched.
+
+## Breaking: `diagnose_batch_shape()` is now `diagnose_batches2()`
+
+The shape test is the second half of one question -- `diagnose_batches()` asks
+*how many* records arrived on a date, `diagnose_batches2()` asks *which event
+dates they came from* -- and the old name read as an unrelated function. It is
+a straight rename with no deprecation shim: the function is experimental and
+warns on every call.
+
+## Breaking: `summary()` no longer reports autocorrelation or completeness
+
+`case_autocorrelation()` and `reporting_completeness()` were written by an AI
+and have not been reviewed by a human. They were part of `summary()`, so every
+reader of a summary got two numbers nobody had checked, with nothing in the
+output saying so.
+
+Both are still exported, and both now **warn on every call** -- deliberately
+not throttled, unlike the experimental diagnostics, because the caveat belongs
+to the number rather than to the session that produced it. `summary()` loses
+its `lags`, `completeness_delays` and `mature_only` arguments, which only ever
+fed those two blocks; the `autocorrelation` and `completeness` components are
+gone from its output.
+
+```r
+summary(x)                        # no longer contains those two components
+case_autocorrelation(x, lags = 1) # still there, and says what it is
+reporting_completeness(x)
+```
+
+## The batch family ignores censored arrival dates
+
+The batch *tests* -- `diagnose_batches()`, `diagnose_batches2()` and
+`transport_discriminant()` -- now drop the rows flagged censored on the axis
+they are scanning: `is_censored_report` for `axis = "report"`,
+`is_censored_validation` for `axis = "validation"`.
+
+Only those three. The flag is a statement about the arrival axis and about
+nothing else, so a row censored on the report axis is still a case that
+happened on its event date: every plot, including `plot_epidemic_process()`
+and the `diagnostic_plot()` panels other than `transport`, keeps every row.
+
+A censored date is a **bound**, not the date the record arrived. Censoring is
+usually applied *because* something was already known about those dates, and
+the censored rows all carry the same bound, so leaving them in piles them onto
+one date and the detector rediscovers, as a finding, the artefact it was told
+about. Pass `drop_censored = FALSE` to scan them anyway.
+
+## `diagnose_batches2()` no longer errors on a date with no arrivals
+
+A line list cannot represent a zero, so a report date on which nothing arrived
+has no rows at all. That is the observation "no arrivals", not a missing date,
+and the test now reports `n_at = 0` for it instead of aborting. A date off the
+object's report grid -- where there is nothing to compare against -- is still
+an error, and the message now says the grid's step.
+
+## `plot_transport_discriminant()` is usable as a plotly widget
+
+* The axis labels were `expression()`s. `ggplotly()` cannot render plotmath and
+  drops them silently, so the interactive plot had unnamed axes. They are now
+  plain text ("Creation z", "Transport z").
+* Hovering a point shows the dates behind it: the report (or validation) date
+  the point *is*, the mean event date of the records that arrived then, the
+  mean delay that implies, and the arrivals against their baseline. The two
+  z-scores are what the point is already positioned by, so they are no longer
+  all the tooltip says.
+
+## `summary()` says what `n` and `total` count
+
+One shared schema means the two count columns mean different things in
+different blocks, and printing them side by side left the reader guessing. Each
+block now prints a one-line gloss: `total` is always **cases**, and `n` is the
+block's own unit -- dates on the grid for `cases`, runs for `zero_run`,
+(event, report) cells for `delay` and `composition`.
+
+## `complete_zeroes()` works when a date is missing (#66)
+
+A single `NA` report date made every bound of the grid `NA`: `max_delay` came
+out `NA` and `seq(0, NA)` aborted with `'to' must be a finite number`, which
+says nothing about the missing date that caused it. The only workaround was to
+`censor_reports()` first, which is a real answer but not the only one a user
+might want.
+
+Every bound is now computed ignoring the missing dates. A row whose event or
+report date is `NA` has no cell on the rectangle, so it takes no part in the
+grid -- but it is still a case, and it is carried through unchanged rather than
+deleted by the closing `report_date <= bound` filter (`NA <= bound` is `NA`,
+which `dplyr::filter()` drops). Only an object in which *every* row is missing
+one of the two dates is refused, with a message saying so.
+
+Two things fixed alongside it:
+
+* `.event_num` was read off the completing join, so any row with no counterpart
+  on the grid -- a negative delay, a missing report date -- had its event
+  number blanked even though its event date was perfectly well known. It is now
+  numbered from the event date itself.
+* `max_delay = NULL` on data whose delays are all negative built a *decreasing*
+  `seq(0, max_delay)`. The floor is now 0.
+
+## Breaking (behaviour): a stratified `baselinenowcast` fit completes its grid (#67)
+
+`run_nowcast(x, engine_baselinenowcast())` returned a different nowcast for a
+line list than for the same object passed through
+`to_count() |> complete_zeroes()` -- with the same seed. The stratified path
+built its triangles from `tbl_now_to_baselinenowcast(format = "long")`, which
+is a tidy data frame with no grid and so is deliberately never completed. A
+line list has no row at all for an event period in which nothing was reported,
+so the reference axis silently stopped short: 54 reference times where the
+completed counts gave 81.
+
+`nowcast_fit.baselinenowcast()` now asks for `format = "triangle_list"`, which
+is the format that exists for exactly this -- one triangle per stratum. It
+completes the grid, restores the not-yet-observed cells to `NA`, and absorbs
+negative increments, none of which the hand-rolled split did. Stratified fits
+on line-list input will change, and they now agree with the count path.
+
+Because the triangle really does drop declared covariates, a stratified fit on
+an object carrying them now warns that it did; the long format used to carry
+them into a frame the fit then ignored.
+
+## `tbl_now_to_EpiNow2()` completes a line list's grid (#67, audit)
+
+Found by auditing every converter for the defect behind #67. A line list has no
+row for an event period in which nothing was reported, and
+`.epinow2_series_data()` built its `date`/`confirm` series from the rows it was
+handed: on daily data the series stopped at the last period carrying a report
+rather than at the object's [`get_now()`], which is the period the nowcast is
+about. `estimate_truncation()` was worse -- `.epinow2_snapshots()` completes
+each snapshot with `complete_zeroes()`, which *refuses* a line list, and the
+surrounding `tryCatch()` swallowed the refusal and kept the short snapshot,
+though `?estimate_truncation` asks for "a complete vector of dates".
+
+`tbl_now_to_EpiNow2()` gains a `complete` argument with the same contract as
+`tbl_now_to_baselinenowcast()`'s: `"auto"` (the default) completes **line-list**
+input only, because count data can say "observed zero" itself and filling those
+cells would claim reporting was complete when it was not. `TRUE` / `FALSE`
+force either behaviour. All three series targets (`estimate_infections`,
+`regional_epinow`, `estimate_truncation`) now reach the `now`.
+
+The rest of the audit came back clean, and is now pinned by tests:
+`epinowcast` completes through `enw_complete_dates()`, `NobBS` and
+`surveillance` are handed the `now` by their fit methods (`NobBS(now =)`,
+`get_surveillance_range()`), and `epidist` fits a delay distribution with no
+event grid at all. `tests/testthat/test-engines-linelist-equivalence.R` asserts
+that **every** engine returns the same nowcast, under the same seed, from a
+line list and from the equivalent `to_count() |> complete_zeroes()` object.
+
 # tbl.now 0.32.0
 
 ## Breaking: `diagnose()` no longer signposts the statistical tests

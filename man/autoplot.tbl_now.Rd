@@ -13,6 +13,8 @@
   measure = c("percent", "normalized"),
   level = 0.95,
   plotly = FALSE,
+  size = 1,
+  linewidth = 1,
   palette = .tbl_now_palette(),
   delay_distribution_xlim = NULL,
   event_date_xlim = NULL,
@@ -46,8 +48,8 @@ holiday dots are omitted from the epidemic panel.}
 some of them. Ignored when \code{by_strata = FALSE}.}
 
 \item{measure}{How to express the calendar-effect boxplots (the day-of-week,
-week-of-year, month-of-year, holiday and holiday-lag panels; every other
-panel ignores it).
+week-of-year and month-of-year panels; every other panel ignores it, and the
+two \strong{holiday} pairs are always \code{"normalized"} — see below).
 \itemize{
 \item \code{"normalized"}  — the value divided by its overall mean, so \code{1}
 (the dashed line) marks an average level. Case-count panels normalize the
@@ -61,7 +63,14 @@ epidemiological weeks and months within each \strong{year}. The reporting-delay
 panels then switch from the event date to the \strong{report date}, so they
 answer "what share of the reports \emph{arrive} on a weekend?". Needs \code{Date}
 event/report columns.
-}}
+}
+
+The four holiday panels (\code{"calendar_holiday"}, \code{"calendar_holiday_lag"} and
+their delay twins) ignore \code{measure} and are always drawn \code{"normalized"}.
+Their categories are not equal-sized parts of a calendar block — the weekend
+is two days in seven — so a share would mostly report how the calendar is
+built rather than how the data behave: "29\% of cases at the weekend" is
+average, not low.}
 
 \item{level}{Completeness level used for the incompleteness line in the
 \code{"epidemic"} panel (and to trim the delay panels). The line is drawn at
@@ -72,8 +81,17 @@ yet to arrive.}
 \item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget (the panels
 stacked) instead of a static \pkg{patchwork}. Default \code{FALSE}.}
 
-\item{palette}{A named character vector of colours. Defaults to the package
-palette.}
+\item{size}{Multiplier on every point, outlier and annotation-label size the
+panels draw. Default \code{1}. It multiplies rather than replaces, so a panel
+that deliberately draws one mark larger than another keeps that difference
+at any setting.}
+
+\item{linewidth}{Multiplier on every line, boxplot outline and reference-line
+width the panels draw. Default \code{1}.}
+
+\item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}). Every colour
+is named for the role it plays, so overriding one role re-themes every
+panel that uses it.}
 
 \item{delay_distribution_xlim, event_date_xlim, calendar_effect_xlim, seasonality_xlim}{Optional length-2 vectors giving the x-axis limits for the corresponding
 panel (delay-distribution histogram, epidemic process, calendar-effect
@@ -109,7 +127,8 @@ dashed vertical line marking where the data become incomplete (less than
 \item \code{"calendar_weekday"}, \code{"calendar_week"}, \code{"calendar_month"} — boxplots of
 the \emph{normalized} case effect (each event date's cases divided by the overall
 mean, so 1 is average) by day of week, epidemiological week, or month.
-\item \code{"calendar_holiday"} — the same normalized boxplots by \strong{day type}. The
+\item \code{"calendar_holiday"} — the same normalized boxplots by \strong{day type}, titled
+"Weekend and/or holiday effects" because that is what the day types are. The
 categories follow the attached \code{\link[=temporal_effects]{temporal_effects()}} spec: a holiday calendar
 and a \code{weekend} effect together give \code{Weekday} / \code{Weekend} / \code{Holiday}, a
 calendar alone gives \code{Non-holiday} / \code{Holiday}, and a \code{weekend} effect alone

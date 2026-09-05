@@ -117,9 +117,12 @@ delay_summary(dengue_now) |>
   select(quantity, stratum, n, total, mean, sd, q50, q90, max)
 ```
 
-**`completeness`** — the share of each event date's eventual total that had
-arrived by delay `d`. This is usually the most decision-relevant block in the
-table, because it says how far back a nowcast has anything left to estimate:
+**`reporting_completeness()`** — the share of each event date's eventual total
+that had arrived by delay `d`. It says how far back a nowcast has anything left
+to estimate, and it is the one number here that most often changes a decision.
+It is **not** part of `summary()`, and it warns on every call: it was written by
+an AI and has not yet been checked by a human, so read it as a starting point
+rather than as a verified statistic.
 
 ```{r summary-completeness}
 reporting_completeness(dengue_now, delays = 0:4) |>
@@ -161,8 +164,10 @@ prop_strata(dengue_now) |>
 
 The full set is `cases_per_date()`, `delay_summary()`, `zero_run_summary()`,
 `prop_censored()`, `prop_validation_type()`, `prop_strata()`,
-`prop_covariate_levels()`, `case_autocorrelation()`, `date_ranges()`,
-`triangle_occupancy()`, `reporting_completeness()` and `cumulative_growth()`.
+`prop_covariate_levels()`, `date_ranges()`, `triangle_occupancy()` and
+`cumulative_growth()`, plus the two unreviewed ones -- `case_autocorrelation()`
+and `reporting_completeness()` -- which share the schema but are not part of
+`summary()`.
 
 <div class="alert alert-info">
 **Quantiles are inverse-ECDF (type 1).** `q50` is the smallest value whose
@@ -241,7 +246,7 @@ test are simply not in it: they have their own functions, and you call one when
 you want its answer.
 
 Those calls — `diagnose_drift()`, `diagnose_changepoint()`,
-`diagnose_batches()`, `diagnose_batch_shape()` — are Part 3 of this article.
+`diagnose_batches()`, `diagnose_batches2()` — are Part 3 of this article.
 They return their own shapes rather than the findings schema, because a
 hypothesis test has a p-value and an effect size that a findings row has nowhere
 to put.
@@ -581,13 +586,23 @@ plot_reporting_triangle(tn) + (plot_reporting_process(tn))
 Event date, report date and reporting delay can be seen as an **age-period-cohort** triple
 (`report = event + delay`, exactly `period = cohort + age`), so the reporting
 triangle can be drawn as a hexamap in the style of [Jalal and Burke (2020)](https://doi.org/10.1097/EDE.0000000000001236): each
-`(event, delay)` cell is a hexagon, coloured by its report count, with event date,
+`(event, delay)` cell is a point on a hexagonal lattice, coloured by its report
+count, with event date,
 report date and delay running along the three 60-degree axes. Because a batch is a
 happens in the **report date**, it shows up as a  **vertical stripe**; the fast
 reporting bulk sits along the short-delay bottom edge.
 
 ```{r hex-sim, eval = TRUE, fig.width = 8, fig.height = 8}
 plot_reporting_hexamap(ideal)
+```
+
+The marks are sized in millimetres while the lattice is sized in data units, so
+no default can suit every combination of cell count and figure size. `size`
+is the knob: raise it until the points nearly touch at the size you are actually
+drawing, and `shape = 15` swaps the circles for squares, which tile more closely.
+
+```{r hex-sim-big, eval = TRUE, fig.width = 8, fig.height = 8}
+plot_reporting_hexamap(ideal, size = 3, shape = 15)
 ```
 
 On covid the vertical stripes are the 2020 backlog releases. The

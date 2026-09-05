@@ -4,9 +4,12 @@ output: rmarkdown::html_vignette
 bibliography: ../references.bib
 link-citations: true
 vignette: >
+  %\VignetteEncoding{UTF-8}
   %\VignetteIndexEntry{The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia}
   %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r, include = FALSE}
@@ -25,19 +28,21 @@ has <- function(pkg) requireNamespace(pkg, quietly = TRUE)
 run_stan <- FALSE
 ```
 
-This article is an end-to-end walk-through of the `tbl.now` workflow on a real,
-**deliberately unpolished** dataset. We will:
+This article is an end-to-end walk-through of the `tbl.now` workflow on
+a real, **deliberately unpolished** dataset. We will:
 
-1. **Build** a `tbl_now` from a messy surveillance extract and show
-   how to `diagnose()` possible data errors.
-2. **Clean** what it reported: duplicate records, missing dates, etc. 
-3. **Look** at the data with `autoplot()`, and the  `summary()` functions.
-4. **Describe** the behaviour of the reporting delay. 
-5. **Attach temporal effects** to a model using the data.
-6. **Nowcast** with two different engines using everything we found.
+1.  **Build** a `tbl_now` from a messy surveillance extract and show how
+    to `diagnose()` possible data errors.
+2.  **Clean** what it reported: duplicate records, missing dates, etc.
+3.  **Look** at the data with `autoplot()`, and the `summary()`
+    functions.
+4.  **Describe** the behaviour of the reporting delay.
+5.  **Attach temporal effects** to a model using the data.
+6.  **Nowcast** with two different engines using everything we found.
 
-We'll start the process by nowcasting with two dates (event and report dates)
-and then we'll focus on nowcasting with three dates (event, report, and validation dates). 
+We'll start the process by nowcasting with two dates (event and report
+dates) and then we'll focus on nowcasting with three dates (event,
+report, and validation dates).
 
 Let's start by calling the libraries:
 
@@ -50,11 +55,12 @@ library(tbl.now)
 
 ## The data
 
-`hai_bucaramanga` is a raw line list of **healthcare-associated infections** (IAAS,
-*Infecciones Asociadas a la Atención en Salud*) notified in the county of
-Bucaramanga, Sandander, Colombia, as published by the county. Each row is
-one infection: a specimen taken from a hospitalised patient, the laboratory
-result, and the microorganism isolated.
+`hai_bucaramanga` is a raw line list of **healthcare-associated
+infections** (IAAS, *Infecciones Asociadas a la Atención en Salud*)
+notified in the county of Bucaramanga, Sandander, Colombia, as published
+by the county. Each row is one infection: a specimen taken from a
+hospitalised patient, the laboratory result, and the microorganism
+isolated.
 
 ```{r load-data}
 data(hai_bucaramanga)
@@ -66,40 +72,43 @@ hai_bucaramanga
 
 For our example, six columns matter:
 
-* `id`            — a unique patient identifier. 
-* `specimen_date` — the **event date**, when the sample was taken.
-* `report_date`   — the **report date**, when the laboratory issued the result.
-* `received_date` — the **validation date**, when the report was received by INS.
-* `microorganism` - the species of the organism isolated in the culture. 
-* `sex`           - the sex of the individual. 
+-   `id` — a unique patient identifier.
+-   `specimen_date` — the **event date**, when the sample was taken.
+-   `report_date` — the **report date**, when the laboratory issued the
+    result.
+-   `received_date` — the **validation date**, when the report was
+    received by INS.
+-   `microorganism` - the species of the organism isolated in the
+    culture.
+-   `sex` - the sex of the individual.
 
-For the tutorial, we will do perform a nowcast assuming we are standing on July 18th 2022. For
-that purpose we filter our data to what it would have looked like:
-
+For the tutorial, we will do perform a nowcast assuming we are standing
+on July 18th 2022. For that purpose we filter our data to what it would
+have looked like:
 
 ```{r}
 hai_bucaramanga <- hai_bucaramanga |>
-  filter((is.na(specimen_date) | specimen_date <= ymd("2022/07/18") & specimen_date >= ymd("2020/01/01")), 
+  filter((is.na(specimen_date) | specimen_date <= ymd("2022/07/18")), 
          (is.na(report_date)   | report_date   <= ymd("2022/07/18")),
          (is.na(received_date) | received_date <= ymd("2022/07/18")))
 ```
 
 ::: {.alert .alert-warning}
-For this tutorial  we are keeping those events that have missing dates. That 
-is what the `is.na()` section on the left side of the filter is doing as 
-we keep either cases by October 18th 2022 or missing. 
+For this tutorial we are keeping those events that have missing dates.
+That is what the `is.na()` section on the left side of the filter is
+doing as we keep either cases by July 18th 2022 or missing.
 :::
 
 ## 1. Initial data cleaning
 
 In this tutorial we show how to discover several anomalies in the data
 as well as several modeling indicators. We suggest, however, that before
-transforming the dataset into a `tbl_now` you use traditional data 
-analysis tools to clean the data first. Here we'll just select
-the columns that matter to us and move onto the `tbl_now` capabilities. However
-if you already have a pipeline for cleaning and preparing your data
-this is where you would do it as we'll see the `tbl_now` diagnostics
-don't cover everything. 
+transforming the dataset into a `tbl_now` you use traditional data
+analysis tools to clean the data first. Here we'll just select the
+columns that matter to us and move onto the `tbl_now` capabilities.
+However if you already have a pipeline for cleaning and preparing your
+data this is where you would do it as we'll see the `tbl_now`
+diagnostics don't cover everything.
 
 ```{r}
 #We keep only the columns of interest
@@ -107,6 +116,7 @@ hai_bucaramanga <- hai_bucaramanga |>
   select(id, specimen_date, report_date, received_date, microorganism, sex)
 ```
 
+````{=html}
 <!--
 ## 0. Initial data transformation
 
@@ -138,14 +148,14 @@ hai_bucaramanga <- hai_bucaramanga |>
   ))
 ```
 -->
+````
 
 ## 2. Building the `tbl_now`
 
-We'll create the `tbl_now()` object. For the beginning of the example, 
-we will declare two dates (`specimen_date` for the event and `report_date`) for
-the report. We'll further specify that the  data is in line-list format 
-(_i.e._ each row is a case), and stratify by `sex`. 
-
+We'll create the `tbl_now()` object. For the beginning of the example,
+we will declare two dates (`specimen_date` for the event and
+`report_date`) for the report. We'll further specify that the data is in
+line-list format (*i.e.* each row is a case), and stratify by `sex`.
 
 ```{r build-tbl-now-raw}
 hai_bucaramanga <- hai_bucaramanga |>
@@ -163,31 +173,31 @@ The `tbl.now()` automatically fires several warnings. Let's take a look!
 
 ## 3. What is wrong?
 
-These same warnings can also be accessed with the `diagnose()` function which returns
-the warnings as well as additional notes:
+These same warnings can also be accessed with the `diagnose()` function
+which returns the warnings as well as additional notes:
 
 ```{r diagnose-raw}
 diagnose(hai_bucaramanga) 
 ```
 
-Let's see what they identify. 
+Let's see what they identify.
 
 ### The warnings
 
+In general the warnings will look for missing data within the dates and
+the strata or for violations of the nowcasting hypotheses (for example
+reports that "see the future" and identify an event before it happens!).
+In our case, specifically we identify missing dates in both the report
+and the event as well as some reports that have incorrect dates.
 
-In general the warnings will look for missing data within the dates
-and the strata or for violations of the nowcasting hypotheses (for example
-reports that "see the future" and identify an event before it happens!). In
-our case, specifically we identify missing dates in both the
-report and the event as well as some reports that have incorrect dates.
+There is no solution that works in all cases for these problems and
+oftentimes the ideal solution is to identify the reason for the
+misingness. Here we posit some approaches for the warnings:
 
-There is no solution that works in all cases for these problems and oftentimes
-the ideal solution is to identify the reason for the misingness. Here we posit 
-some approaches for the warnings:
-
-1. **For simultaneosuly missing event and report dates** there is nothing one can do.
-In those cases we don't know when something happened (to add to the epidemic process)
-or when it was reported (to add to the delay process). Hence we remove those rows.
+1.  **For simultaneosuly missing event and report dates** there is
+    nothing one can do. In those cases we don't know when something
+    happened (to add to the epidemic process) or when it was reported
+    (to add to the delay process). Hence we remove those rows.
 
 ```{r}
 #Remove those that have both dates missing
@@ -195,36 +205,37 @@ hai_bucaramanga <- hai_bucaramanga |>
   filter(!(is.na(report_date) & is.na(specimen_date)))
 ```
 
-2. **For the rows with missing reports, we can censor them above**. This will tell the models in [diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/) that the
-measurement is not exact; instead, that we know the report arrived before
-a certain date though we don't know that _exact_ date in particular. We
-can do this because if we are seeing the reports **today** then we know that at most
-they took until **today** to arrive. 
+2.  **For the rows with missing reports, we can censor them above**.
+    This will tell the models in
+    [diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/)
+    that the measurement is not exact; instead, that we know the report
+    arrived before a certain date though we don't know that *exact* date
+    in particular. We can do this because if we are seeing the reports
+    **today** then we know that at most they took until **today** to
+    arrive. This censoring will add a column `.is_censored_report` which
+    will indicate that that report is censored.
 
-This censoring will add a column `.is_censored_report` which will indicate 
-that that report is censored. 
-
-When calling the function we specify that the ones we are censoring are the missing 
-values and that the date they should input is "2022/10/18" which corresponds
-to the date of the nowcast in this example. 
+When calling the function we specify that the ones we are censoring are
+the missing values and that the date they should input is "2022/10/18"
+which corresponds to the date of the nowcast in this example.
 
 ```{r, warning=FALSE, message=FALSE}
 hai_bucaramanga <- hai_bucaramanga |> 
   censor_reports(is.na(report_date), to_report = as.Date("2022/07/18"))
 ```
 
-2. **For the delays before the reports we visualize the data**. Doing a quick analysis
-we see that its a date formatting issue. You can see in the first entries that
-the specimen date is in format `year-day-month` (read with `lubridate::ydm()`) 
-while the `report_date` and `received_date` is in format `year-month-day`
-(read with `lubridate::ymd()`) . 
+3.  **For the delays before the reports we visualize the data**. Doing a
+    quick analysis we see that its a date formatting issue. You can see
+    in the first entries that the specimen date is in format
+    `year-day-month` (read with `lubridate::ydm()`) while the
+    `report_date` and `received_date` is in format `year-month-day`
+    (read with `lubridate::ymd()`) .
 
 ```{r, eval=TRUE}
 hai_bucaramanga |> filter(report_date < specimen_date) 
 ```
 
-
-We can correct the date format to fix this issue: 
+We can correct the date format to fix this issue:
 
 ```{r, warning=FALSE}
 hai_bucaramanga <- hai_bucaramanga |> 
@@ -233,9 +244,10 @@ hai_bucaramanga <- hai_bucaramanga |>
                                  ymd(as.character(specimen_date))))
 ```
 
-
-3. Currently there is **nothing we can do for the cases were the event date is unknown**. Hence we just document them
-and we'll remove from the dataset given that they represent such a small percent (`r 100*(hai_bucaramanga |> filter(is.na(specimen_date)) |> nrow())/nrow(hai_bucaramanga)`%). 
+3.  Currently there is **nothing we can do for the cases were the event
+    date is unknown**. Hence we just document them and we'll remove from
+    the dataset given that they represent such a small percent
+    (`r 100*(hai_bucaramanga |> filter(is.na(specimen_date)) |> nrow())/nrow(hai_bucaramanga)`%).
 
 ```{r, warning=FALSE}
 hai_bucaramanga <- hai_bucaramanga |> filter(!is.na(specimen_date))
@@ -249,43 +261,46 @@ diagnose(hai_bucaramanga)
 
 ### The notes
 
-The notes convey additinal information that, at a glance, can tell you whether something
-needs to be corrected in your data. 
+The notes convey additinal information that, at a glance, can tell you
+whether something needs to be corrected in your data.
 
-It helps you know that you have columns that are not strata or covariates (in case you forgot to declare them!):
+It helps you know that you have columns that are not strata or
+covariates (in case you forgot to declare them!):
 
-```
+```         
 declarations/undeclared: 3 columns "id", "received_date", and "microorganism" are not declared as strata or covariates.
 ```
 
-It quantifies how much time has happened between the last observation and the now for each strata:
+It quantifies how much time has happened between the last observation
+and the now for each strata:
 
-```
-now/now_gap_event [Female]: The last event date is 50 days before now ("2022-10-18").
-now/now_gap_event [Male]: The last event date is 35 days before now ("2022-10-18").
-```
-
-It also tells you how what is the smallest stratum (in case you have strata with so few
-observations you need to collapse them into another one):
-
-```
-strata/size [Female]: The smallest stratum is "Female" with 420 cases, 42.9% of the total.
+```         
+now/now_gap_event [Female]: The last event date is 32 days before now ("2022-07-18").
 ```
 
-And how sparse your data is: 
+It also tells you how what is the smallest stratum (in case you have
+strata with so few observations you need to collapse them into another
+one):
 
+```         
+strata/size [Female]: The smallest stratum is "Female" with 195 cases, 37.7% of the total.
 ```
-strata/sparsity [Female]: The sparsest stratum is "Female": 86% of the event dates on the grid carry no cases at all.
+
+And how sparse your data is:
+
+```         
+strata/sparsity [Female]: The sparsest stratum is "Female": 777 of the 929 "days" between the minimum event (2020-01-02) and the now (2022-07-18) carry no cases at all (83.6%, against 64.5% pooled over every stratum).
 ```
 
-This is particularly useful for triangle-based methods that require to fill with zeroes the whole reporting triangle. 
-
+This is particularly useful for triangle-based methods that require to
+fill with zeroes the whole reporting triangle.
 
 ## 4. More cleaning
 
-Besides the `diagnose()` one always has to do some additional cleaning of datasets.
-One particular issue is for repeated rows; that is when an individual is
-registered twice in the dataset for the same disease at the same exact times.
+Besides the `diagnose()` one always has to do some additional cleaning
+of datasets. One particular issue is for repeated rows; that is when an
+individual is registered twice in the dataset for the same disease at
+the same exact times.
 
 Here we can see that the same individuals `id` are sometimes repeated
 for the same event reporting the same microorganism:
@@ -297,15 +312,43 @@ hai_bucaramanga |>
   as_tibble()
 ```
 
-We can use `dplyr::distinct()` to remove them without losing information:
+We can use `dplyr::distinct()` to remove them without losing
+information:
 
 ```{r clean-distinct}
+hai_bucaramanga <- hai_bucaramanga |> distinct()
+```
+
+## 5. Temporal effects
+
+Temporal covariates can be added to a `tbl_now` so that we can describe
+their effect or use them for nowcasting. They can be specified via the
+`temporal_effects()` function. It can add holidays, weekends, day of the week 
+effects and more. For the purpose of this tutorial we will add the weekends
+and check whether there is a weekend effect or not:
+
+```{r}
+temporal_effects(weekend = TRUE)
+```
+
+You can add the effects to the `tbl_now()` with the `add_temporal_effects()` function:
+
+```{r}
 hai_bucaramanga <- hai_bucaramanga |> 
-  distinct()
+  add_temporal_effects(t_effects = temporal_effects(weekend = TRUE))
+
+hai_bucaramanga
+```
+
+The temporal effect gets added lazily. You can use
+`compute_temporal_effects()` to show it as a column in case you require it. 
+
+```{r}
+hai_bucaramanga
 ```
 
 
-## 5. Looking at the data
+## 6. Looking at the data
 
 `autoplot()` draws a diagnostic grid with the panels in green describing
 the **epidemic** process and the red ones, the **reporting** process.
@@ -314,21 +357,21 @@ the **epidemic** process and the red ones, the **reporting** process.
 autoplot(hai_bucaramanga)
 ```
 
-Four things stand out, and each of them changes a modelling decision later.
+Four things stand out, and each of them changes a modelling decision
+later.
 
-**The epidemic curve is extremely sparse.** There are only a handful of cases a year
-with most of the times 0 or 1 cases being reported. 
+**The epidemic curve is extremely sparse.** There are only a handful of
+cases a year with most of the times 0 or 1 cases being reported.
 
 ```{r delay-dist, fig.width=9, fig.height=4.5, fig.alt="Epidemic process."}
 plot_epidemic_process(hai_bucaramanga)
 ```
 
 > **Note** This is the same sparcity the `note` in the `diagnostic()`
-function gave us. 
+> function gave us.
 
-
-**The delay distribution has some extreme delays.** This is the most consequential
-feature of the dataset, so it is worth its own plot:
+**The delay distribution has some extreme delays.** This is the most
+consequential feature of the dataset, so it is worth its own plot:
 
 ```{r delay-dist2, fig.width=9, fig.height=4.5, fig.alt="Histogram of the reporting delay."}
 plot_delay_distribution(hai_bucaramanga)
@@ -336,96 +379,125 @@ plot_delay_distribution(hai_bucaramanga)
 
 A lot of results are reported way after 500 days!
 
-**There doesn't seem to be a day-of-the-week effect** In both reports and events
-there is no aparent day of the week effect.
+**There doesn't seem to be a day-of-the-week effect** In both reports
+and events there is no aparent day of the week effect.
 
-**One week had a lot of reports** Epiweek 29 is an anomaly in the amount of reports
-it seems to have. This would warrant further investigation.
+```{r delay-dist3, fig.width=9, fig.height=4.5, fig.alt="Effects in the week"}
+plot_day_of_week_effects(hai_bucaramanga)
+```
 
-### The same picture, as numbers
+**One week had a lot of reports** Epiweek 29 is an anomaly in the amount
+of reports it seems to have. This would warrant further investigation.
 
-`autoplot()` is for looking; `summary()` is for reading those values. You can either call `summary()` all at once:
+```{r delay-dist4, fig.width=9, fig.height=4.5, fig.alt="Effects on the report"}
+plot_week_of_year_effects(hai_bucaramanga, type = "report")
+```
+
+**There doesn't seem to be a weekend effect either** In both reports
+and events there is no aparent effect of a weekend.
+
+```{r delay-dist5, fig.width=9, fig.height=4.5, fig.alt="Effects in the week"}
+plot_weekend_effects(hai_bucaramanga)
+```
+
+## 7. Summarising the data
+
+The `summary()` of a `tbl_now` quantifies what we see in the plots. You
+can either call `summary()` all at once:
 
 ```{r summary-delay, eval = FALSE}
 summary(hai_bucaramanga) 
 ```
 
-or as we do here call each of the summaries we are going to discuss. We can start with the delays
-where we can see that up until the 3rd quartile delays are less than 100 days but then they explode by the 90th quantile:
+or as we do here call each of the summaries we are going to discuss (see
+`?nowcast_summary_components` for the whole list).
+
+We can start with the delays where we can see that up until the 3rd
+quartile delays are less than 100 days but then they explode by the 90th
+quantile:
 
 ```{r}
 delay_summary(hai_bucaramanga)
 ```
-We can see the same idea in the completeness summary which quantifies thr proportion of cases that had arrived.
 
-The `zero_run_summary()` quantifies the sparcity by counting how many days with continuous zeroes happened for either
-the event or the report dates. That is, it measures the distribution of days of continuous zeroes. You can see that usually there are on average `r `zero_run_summary(hai_bucaramanga)$mean[1]` continuous zeroes before a case. However there have been runs of `r zero_run_summary(hai_bucaramanga)$max[1]` continuous days with no cases (continuous zeroes) until one case:
+The `zero_run_summary()` quantifies the sparcity by counting how many
+days with continuous zeroes happened for either the event or the report
+dates. That is, it measures the distribution of days of continuous
+zeroes. You can see that usually there are on average
+`r zero_run_summary(hai_bucaramanga)$mean[1]` continuous zeroes before a
+case. However there have been runs of
+`r zero_run_summary(hai_bucaramanga)$max[1]` continuous days with no
+cases (continuous zeroes) until one case:
 
 ```{r}
 zero_run_summary(hai_bucaramanga)
 ```
 
-The composition block shows that there are way less females than males. Which, again was already observed in the notes as the smaller stratum:
+The composition block shows that there are way less females than males.
+Which, again was already observed in the notes as the smaller stratum:
 
 ```{r summary-strata}
 prop_strata(hai_bucaramanga)
 ```
 
-Finally the cases per date shows how many cases on average occur per date-axis. That is on average how many
-cases there are per event date or per report date. In this case we can see that at least half of the dates have zero cases:
+Finally the cases per date shows how many cases on average occur per
+date-axis. That is on average how many cases there are per event date or
+per report date. In this case we can see that at least half of the dates
+have zero cases:
 
 ```{r}
 cases_per_date(hai_bucaramanga)
 ```
 
-Given the sparcity here we can still nowcast using the diseasenowcasting package:
+## Intermezzo: The first nowcast
+
+Even with all this sparcity here we can nowcast using the
+diseasenowcasting package:
 
 ```{r}
 hai_fit <- hai_bucaramanga |> 
   run_nowcast(engine = engine_diseasenowcasting(temporal_effects = "none"))
-``` 
-
-Given the overall sparcity we have observed the nowcast will predict almost no cases at any
-time with just maybe a second case at the now for males:
-
-```{r, eval=FALSE}
-autoplot(hai_fit)
 ```
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=9, fig.height=4.5, fig.alt="A sparse nowcast"}
-autoplot(hai_fit) +
-  ggplot2::scale_y_continuous(breaks = seq(0, 3, by = 0.5))
-```
- 
-## 6. Changing to weekly data
+Due to the sparcity, the nowcast predicts almost no cases at any time
+with just maybe a second case at the now for males:
 
-Though nowcasting is possible with sparse data, oftentimes people prefer to rescale data to a coarser time frame. Here
-we'll rescale the dataset to a weekly reporting time frame with `aggregate_time_units()`:
+```{r, message=FALSE, warning=FALSE, fig.width=9, fig.height=4.5, fig.alt="A sparse nowcast"}
+autoplot(hai_fit) 
+```
+
+## 8. Changing to weekly data
+
+Though nowcasting is possible with sparse data, oftentimes people prefer
+to rescale data to a coarser time frame. Here we'll rescale the dataset
+to a weekly reporting time frame with `aggregate_time_units()`:
 
 ```{r}
 hai_bucaramanga <- hai_bucaramanga |> 
   aggregate_time_units(to = "weeks")
 ```
 
-This aggregation of the epidemic process allows the nowcasting models to infer more from
-it as you can see a more clear epidemic shape in the autoplot:
+This aggregation of the epidemic process allows the nowcasting models to
+infer more from it as you can see a more clear epidemic shape in the
+autoplot:
 
 ```{r, fig.width=11, fig.height=13, message=FALSE, warning=FALSE, fig.alt="The now auto plot with weekly data"}
 autoplot(hai_bucaramanga)
 ```
 
-One should run again the `summary()` in the aggregated to draw conclusions from this data.
-For us, however it will suffice to see that the sparcity has reduced to usually just 1 week
-with zero cases before seeing a week with cases:
+One should run again the `summary()` in the aggregated to draw
+conclusions from this data. For us, however it will suffice to see that
+the sparcity has reduced to usually just 1 week with zero cases before
+seeing a week with cases so we can move on with the tutorial:
 
 ```{r}
 zero_run_summary(hai_bucaramanga)
 ```
 
-## 7. Is the reporting delay stable?
+## 9. Is the reporting delay stable?
 
-A nowcast might assume that  the delay distribution is the same throughout. 
-Here we check those assumptions: 
+A nowcast might assume that the delay distribution is the same
+throughout. Here we check those assumptions:
 
 First, we just look at the delay aggregated through time
 
@@ -433,65 +505,96 @@ First, we just look at the delay aggregated through time
 plot_delay_drift(hai_bucaramanga)
 ```
 
-The median moves from an extremely wide distribution in 2020 to a shorter delay
-after 2021. We can confirm that split of two delay behaviours with the following tests: 
+The median moves from an extremely wide distribution in 2020 to a
+shorter delay after 2021. We can confirm that split of two delay
+behaviours with the following tests:
 
 ### Testing for the delay's drift
 
-The `diagnose_drift()` function runs an autocorrelation-robust Mann-Kendall test for a
-*monotonic* trend in the delay:
+The `diagnose_drift()` function runs an autocorrelation-robust
+Mann-Kendall test for a *monotonic* trend in the delay:
 
 ```{r drift-test, warning=FALSE}
 diagnose_drift(hai_bucaramanga)
 ```
 
-Here the median shows a reduction (`sens_slope` of `r diagnose_drift(hai_bucaramanga)$sens_slope[1]`) which is consistent with the plot. The `-1` can be interpreted as the decrease in the median per unit of time. In this case, the median delay reduced 1 week per week.   
+Here the median shows a reduction (`sens_slope` of
+`r diagnose_drift(hai_bucaramanga)$sens_slope[1]`) which is consistent
+with the plot. The `-1` can be interpreted as the decrease in the median
+per unit of time. In this case, the median delay reduced 1 week per
+week.
 
 ### Is there an abrupt shift?
 
-A trend test cannot see a steep change like a jump. The `diagnose_changepoint()` 
-function uses Pettitt's test to look for exactly that. 
+A trend test cannot see a steep change like a jump. The
+`diagnose_changepoint()` function uses Pettitt's test to look for
+exactly that.
 
 ```{r changepoint-test, warning=FALSE}
 diagnose_changepoint(hai_bucaramanga)
 ```
 
 Here neither the median nor the spread have a changepoint. The change
-was a drift in the trend as we saw in the plot and not an abrupt shift. You can see the 
-section on [delay changes](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html#part-3-what-needs-a-statistical-test-reporting-artefacts) of the [Diagnosing a tbl_now](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html) article for more information. 
+was a drift in the trend as we saw in the plot and not an abrupt shift.
+You can see the section on [delay
+changes](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html#part-3-what-needs-a-statistical-test-reporting-artefacts)
+of the [Diagnosing a
+tbl_now](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
+article for more information.
 
-## 8. Are there any reporting batches?
+## 10. Are there any reporting batches?
 
-A reporting batch consists on several reports that were all held for any reason by the reporter (e.g. a laboratory)
-and then reported all together as a group so that there is a giant signal in the reporting process. To see them we can start by plotting against the reporting axis:
+A reporting batch consists on several reports that were all held for any
+reason by the reporter (e.g. a laboratory) and then reported all
+together as a group so that there is a giant signal in the reporting
+process. To see them we can start by plotting against the reporting
+axis:
 
 ```{r,  fig.width=9, fig.height=4.8}
 plot_reporting_process(hai_bucaramanga)
 ```
 
-We can see that there were several reports that dropped near the end of 2022. The reporting hexamap allows us to visualize the date of the report at the same time as the day of the event and the corresponding delay
+We can see that there were several reports that dropped near the end of
+2022. The reporting hexamap allows us to visualize the date of the
+report at the same time as the day of the event and the corresponding
+delay
 
 ```{r,  fig.width=9, fig.height=4.8}
 plot_reporting_hexamap(hai_bucaramanga)
 ```
 
-Here lies a figure with 3 axis. We can see for example following the axis of event date `19/Apr/20` all the way to the
-intersection with the report date of `19/Jun/22` that there are many cases with event dates in 2020 that have delays of 100-128 weeks and lie in between December 2019 and April 2020. These reports will certainly influence our estimation of the delay distribution. 
 
 ::: {.alert .alert-info}
-You can also use 
+The batch at `2022-07-17` was actually introduced by us by censoring all
+the cases at that date in section 3.
+:::
+
+Here lies a figure with 3 axis. We can see for example our censoring at `2022-07-17` 
+as the collection of points in the same axis. Values shared by the same
+report axis with a high delay(i.e. far from the event-date axis might correspond
+to reporting batches)
+
+::: {.alert .alert-info}
+You can also use
 
 ```{r, eval = FALSE}
 plot_reporting_triangle(hai_bucaramanga)
 ```
 
-to visualize the batches; however for this specific case they are easier to visualize in the hexamap. 
+to visualize the batches; however for this specific case they are easier
+to visualize in the hexamap.
 :::
 
-Either way we can see that `2022-07-17` is a candidate for possible batches. In this package, the 
-`diagnose_batches()` function helps identify potential dates with batches. We recommend using it with or without the strata depending on whether the context warrants the possibility that batching could differ by strata (e.g. if strata correspond to healthcare facilities maybe yes; if they correspond to gender of the patient maybe no). 
+Either way we can see that `2022-07-17` is a candidate for possible
+batches. In this package, the `diagnose_batches()` function helps
+identify potential dates with batches. We recommend using it with or
+without the strata depending on whether the context warrants the
+possibility that batching could differ by strata (e.g. if strata
+correspond to healthcare facilities maybe yes; if they correspond to
+gender of the patient maybe no).
 
-Here we run it without the strata which we remove first. We'll keep only those observations that have been identified as potential batches: 
+Here we run it without the strata which we remove first. We'll keep only
+those observations that have been identified as potential batches:
 
 ```{r}
 hai_bucaramanga |> 
@@ -500,266 +603,300 @@ hai_bucaramanga |>
   filter(batch)
 ```
 
-This identifies some dates that might be batches due to their high reported numbers. 
-A second batch method is the `diagnose_batch_shape()` function. This one takes a specific date and checks whether 
-the reports that arrived on a date came from systematically older dates. We can combine the findings from the previous run to test some of them and add evidence to which are batches:
+This identifies some dates that might be batches due to their high
+reported numbers. A second batch method is the `diagnose_batches2()`
+function. This one takes a specific date and checks whether the reports
+that arrived on a date came from systematically older dates. We can
+combine the findings from the previous run to test some of them and add
+evidence to which are batches:
 
 ```{r}
 hai_bucaramanga |> 
   remove_all_strata() |> 
-  diagnose_batch_shape(at = ymd("2021-11-28"))
+  diagnose_batches2(at = ymd("2021-11-28"))
 ```
-Where we further identify the date of `2021-11-28` as a potential batch with its `p_value < 0.003`. 
 
+Where we further identify the date of `2021-11-28` as a potential batch
+with its `p_value < 0.003`.
+
+
+## 11. Nowcasting
+
+Everything from sections 1 to 10 was about deciding *what* to fit.
+Three of those findings change the call we are about to make:
+
+-   The object is **weekly** now (section 8), so `now` is the week of
+    `r format(get_now(hai_bucaramanga))` and every delay corresponds
+    to weeks. 
+-   The reporting delay **drifts down** across the series. So 
+    we'll utilize the data starting on 2021 where the delay
+    has settled. 
+    
+```{r}
+hai_bucaramanga <- hai_bucaramanga |> 
+  filter(year(specimen_date) > 2020)
+```
+
+The `run_nowcast()` function takes the `tbl_now` and an
+**engine**. An engine is one modelling package plus every argument that
+package needs:
+
+```{r nowcast-weekly}
+hai_fit_weekly <- hai_bucaramanga |>
+  run_nowcast(engine = engine_diseasenowcasting())
+```
+
+The `autoplot()` shows the nowcast with  gray columns representing what
+had been reported by `now`, and the green fan the nowcast's prediction intervals.
+
+```{r nowcast-weekly-plot, message=FALSE, warning=FALSE, fig.width=9, fig.height=4.5, fig.alt="Weekly nowcast for each sex: grey columns of reported cases with a green fan of predicted cases over the final weeks."}
+autoplot(hai_fit_weekly)
+```
+
+Calling `tidy()` gives the nowcast as a table:
+
+```{r, eval=FALSE}
+tidy(hai_fit_weekly)
+```
+
+```{r nowcast-weekly-tidy, echo = FALSE}
+tidy(hai_fit_weekly) |> arrange(event_date) |> tail()
+```
+
+## 12. Evaluate your nowcast
+
+One way to evaluate the nowcast is to go back in time and 
+see, what would the nowcast have produced with the information
+available at a past date and contrast it with the information
+known by now. You can use `nowcast_backtest()` for that purpose:
+for every past date it truncates the data to the reports that were 
+available *then*, refits the nowcast,  and scores the result against what
+was eventually registered.
+
+To best evaluate the nowcast we need something to compare against. Hence
+we fit a second model:  `baselinenowcast`. 
+
+One can fit it with the same call just a different engine
+
+```{r bln-error, error = TRUE, warning=FALSE, eval=FALSE}
+hai_fit_baseline <- hai_bucaramanga |>
+  to_count(to = "count-incidence") |> 
+  complete_zeroes() |> 
+  run_nowcast(engine = engine_baselinenowcast())
+```
+
+
+Now the backtest. It takes the **same engines** you fitted with, so
+there is no second place to keep the arguments in step, and it refits
+every engine once per date — with three dates and two engines that is
+six fits:
+
+```{r backtest, warning=FALSE, message=FALSE}
+hai_backtest <- nowcast_backtest(
+  hai_counts,
+  engine_diseasenowcasting(temporal_effects = "none"),
+  engine_baselinenowcast(max_delay = 20),
+  now_dates = get_now(hai_counts) - 7 * c(12, 8, 4),
+  seed      = 20260904
+)
+
+tidy(hai_backtest)
+```
 
 ::: {.alert .alert-info}
-The  batch at `2022-07-17` was actually introduced by us by censoring all the cases at that date in section 3. 
+Pass `seed` to the backtest rather than calling `set.seed()` before it.
+`nowcast_backtest()` seeds immediately before each fit, from the engine's
+label and the date it is fitting, so a fit depends only on *which* fit it
+is. One `set.seed()` at the top only pins anything if every method draws
+the same random numbers in the same order — which stops being true the
+moment you drop an engine or add a date.
 :::
 
+`tidy()` returns one row per (method, retrospective `now`, target), which
+goes straight into `dplyr`:
 
-<!--
-## 7. Temporal effects
-
-`temporal_effects()` attaches calendar covariates a model can use. The
-temptation is to add everything available; the discipline is to add only what
-the data supports.
-
-**Day-of-week effects are not justified here.** They are the usual first choice
-for surveillance data — laboratories are quieter at weekends — but this dataset
-does not behave that way:
-
-```{r dow-check}
-hai |>
-  count(weekday = wday(specimen_date, label = TRUE, week_start = 1)) |>
-  mutate(percent = round(100 * n / sum(n), 1))
+```{r backtest-scores}
+tidy(hai_backtest) |>
+  group_by(method) |>
+  summarise(
+    wis         = mean(wis),
+    ae_median   = mean(ae_median),
+    coverage_50 = mean(coverage_50),
+    coverage_90 = mean(coverage_90)
+  )
 ```
 
-Specimens are spread almost evenly across all seven days, weekends included. And
-in any case we aggregated to weeks, so a day-of-week term has nothing to attach
-to. Adding one would be modelling noise.
+`wis` is the weighted interval score (lower is better; it rewards a
+sharp interval only if the interval is also right), `ae_median` is the
+absolute error of the median, and the two coverage columns are the share
+of targets that fell inside the 50% and 90% intervals.
 
-**An annual cycle is justified**, on the reporting side, by the periodogram in
-section 5 and by the bimodal delay. Since the data are weekly, that is a Fourier
-season of period 52:
+Two things to read here. `diseasenowcasting` scores better on both
+accuracy measures, which is what you would hope for from a model that
+has an epidemic process in it when the delay is drifting. And **both**
+methods cover far more than the nominal 50%: on counts this small a
+discrete interval jumps from covering too little to covering everything,
+so over-coverage here is a property of the data, not a fault of either
+model.
 
-```{r temporal-effects}
-hai_effects <- temporal_effects(
-  week_of_year = TRUE,   # position within the year
-  seasons      = 52      # an annual Fourier cycle on weekly data
+That table is also flattering to both of them, because it scores *every*
+event date — and most of those weeks were settled long before the
+retrospective `now`, so they are free points that any method gets right.
+The sharper question is how the methods do on the weeks that were still
+open:
+
+```{r backtest-open}
+tidy(hai_backtest) |>
+  filter(event_date > now - 7 * 8) |>
+  group_by(method) |>
+  summarise(
+    n           = n(),
+    wis         = mean(wis),
+    coverage_50 = mean(coverage_50),
+    coverage_90 = mean(coverage_90)
+  )
+```
+
+The gap widens, and it is stable across all three retrospective dates
+rather than resting on one lucky week:
+
+```{r backtest-plot, fig.width=9, fig.height=4, fig.alt="Grouped bar chart of the mean weighted interval score for each method at each of the three retrospective now dates."}
+tidy(hai_backtest) |>
+  filter(event_date > now - 7 * 8) |>
+  group_by(method, now) |>
+  summarise(wis = mean(wis), .groups = "drop") |>
+  ggplot(aes(x = factor(now), y = wis, fill = method)) +
+  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
+  labs(x = "Retrospective `now`", y = "Mean WIS (last 8 weeks)", fill = NULL) +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+::: {.alert .alert-warning}
+Three retrospective dates is few. It is enough to see that neither model
+is broken and to notice a consistent ordering, but it is not enough to
+claim one package beats the other on this kind of data. A backtest costs
+`length(engines) x length(now_dates)` model fits, so lengthening
+`now_dates` is the first thing to do when the conclusion matters.
+:::
+
+## 13. Ensemble nowcast
+
+The backtest above ranked the two models, but it did not say to *drop*
+either of them: they were built on different assumptions, and averaging
+models that disagree usually beats picking the winner in advance —
+especially when you must commit before you know which weeks are hard.
+
+Because every `run_nowcast()` result has the same shape, combining them
+is one call. We use three members: the two fits from section 12, and a
+third that is the **same package with a different epidemic process**.
+An ensemble is not only a hedge across packages — two structurally
+different models from one package disagree in their own way, and that
+disagreement is worth combining too:
+
+```{r ar1-fit, warning=FALSE, message=FALSE}
+hai_fit_ar1 <- hai_counts |>
+  run_nowcast(engine = engine_diseasenowcasting(
+    temporal_effects = "none",
+    model = diseasenowcasting::model(
+      epidemic = diseasenowcasting::ar1_epidemic()
+    ),
+    seed  = 20260904,
+    label = "dnc_ar1"
+  ))
+
+members <- list(
+  diseasenowcasting = hai_fit_dnc,
+  dnc_ar1           = hai_fit_ar1,
+  baselinenowcast   = hai_fit_bln
 )
 
-hai_effects
+hai_ensemble <- nowcast_ensemble(members)
+hai_ensemble
 ```
 
-Attach them to the report date, because the annual rhythm we saw is a property
-of *reporting*, not of infection:
+Both `diseasenowcasting` members report the same `method`, so it is the
+**names** that tell them apart: the names of the `members` list here,
+and an engine's `label` in a backtest. We give the AR(1) engine the same
+`label` its list entry has so that the two line up when we come to
+weights below.
 
-```{r attach-effects}
-hai_seasonal <- hai_now |>
-  add_temporal_effects(hai_effects, date_type = "report_date")
+By default every member counts the same, and the members are combined
+**quantile by quantile**: the ensemble's 90th percentile is the average
+of the members' 90th percentiles. That always works, and it tends to
+come out *narrower* than the members. Pooling the draws instead treats
+the ensemble as a mixture, which is usually wider and better calibrated
+— it needs every member to have kept draws, and errors rather than
+silently dropping one that has not:
 
-hai_seasonal
+```{r ensemble-pool, warning=FALSE, message=FALSE}
+nowcast_ensemble(members, type = "linear_pool")
 ```
 
-Effects are attached **lazily** — the object records the specification but does
-not materialise the columns until a model asks for them (or you call
-`compute_temporal_effects()`):
+The result is an ordinary `tbl_nowcast`, so it plots and tidies like any
+single fit:
 
-```{r compute-effects}
-hai_seasonal |>
-  compute_temporal_effects() |>
-  select(event_week, report_week, starts_with(".report_")) |>
-  head(4)
+```{r ensemble-plot, message=FALSE, warning=FALSE, fig.width=9, fig.height=4.5, fig.alt="The ensemble nowcast: grey reported columns with a green fan over the final weeks, for each sex."}
+autoplot(hai_ensemble)
 ```
 
-## 8. Nowcasting with `diseasenowcasting`
+### Weighting the members
 
-Now we let the diagnostics decide the model. Three findings carry over:
+Equal weights are a defensible default, but the backtest already knows
+which member did better. `nowcast_weights()` turns it into weights, and
+`nowcast_ensemble()` takes them directly.
 
-* **The delay distribution changed in March 2020.** Fitting across that boundary
-  would average two reporting regimes. We restrict to the post-change-point
-  period.
-* **The delay reaches 98% by about 20 weeks.** That sets the maximum delay: long
-  enough to capture the second reporting stream, short enough not to carry a
-  mostly-empty tail.
-* **No monotonic drift within that period**, so a single delay distribution for
-  the restricted window is defensible.
+One catch: the weights are matched to the members **by name**, and a
+member whose name the backtest has never seen falls back to its *method*
+— so `dnc_ar1` would silently inherit the plain `diseasenowcasting`
+weight. If you want the two epidemic processes weighted separately, the
+labelled engine has to be in the backtest as well:
 
-```{r informed-window}
-changepoint_date <- as.Date("2020-03-09")
-
-hai_model <- hai_weekly |>
-  filter(event_week >= changepoint_date) |>
-  tbl_now(
-    event_date  = event_week,
-    report_date = report_week,
-    strata      = sex,
-    data_type   = "linelist",
-    verbose     = FALSE
-  ) |>
-  censor_reporting_delays_above(max_delay = 20)
-
-hai_model
-```
-
-`censor_reporting_delays_above()` is doing real work: it caps the delay dimension at 20
-weeks so the model is not asked to estimate probabilities for delays that occur
-a handful of times in the whole series.
-
-`diseasenowcasting` consumes a `tbl_now` **directly** — no converter, no
-restating of which column is which:
-
-```{r dnc-fit, eval=has("diseasenowcasting"), message=FALSE, warning=FALSE}
-# `diseasenowcasting::` rather than `library()` -- it is not on CRAN, and
-# attaching it would leave `R CMD check` with an undeclared dependency.
-hai_fit <- diseasenowcasting::nowcast(hai_model, type = "one_stage", n_draws = 2000)
-
-hai_fit
-```
-
-The posterior draws of the eventual counts come from `predict()`:
-
-```{r dnc-predict, eval=has("diseasenowcasting"), message=FALSE, warning=FALSE}
-hai_prediction <- predict(hai_fit)
-
-draws       <- S7::prop(hai_prediction, "draws")        # draws x event weeks
-event_weeks <- S7::prop(hai_prediction, "event_dates")
-observed    <- S7::prop(hai_prediction, "observed_series")
-
-nowcast_summary <- tibble::tibble(
-  event_week = event_weeks,
-  observed   = observed,
-  median     = apply(draws, 2, median),
-  lower      = apply(draws, 2, quantile, 0.025),
-  upper      = apply(draws, 2, quantile, 0.975)
+```{r ensemble-backtest, warning=FALSE, message=FALSE}
+hai_backtest_all <- nowcast_backtest(
+  hai_counts,
+  engine_diseasenowcasting(temporal_effects = "none"),
+  engine_diseasenowcasting(
+    temporal_effects = "none",
+    model = diseasenowcasting::model(
+      epidemic = diseasenowcasting::ar1_epidemic()
+    ),
+    label = "dnc_ar1"
+  ),
+  engine_baselinenowcast(max_delay = 20),
+  now_dates = get_now(hai_counts) - 7 * c(12, 8, 4),
+  seed      = 20260904
 )
 
-tail(nowcast_summary, 8)
+nowcast_weights(hai_backtest_all, type = "inverse_score")
 ```
 
-```{r dnc-plot, eval=has("diseasenowcasting"), fig.width=9, fig.height=4.8, message=FALSE, warning=FALSE, fig.alt="Nowcast of weekly hospital-acquired infections. Grey bars show cases reported so far, a red line and ribbon show the nowcast median and 95 percent interval, which rises above the bars over the most recent weeks."}
-recent <- nowcast_summary |> filter(event_week >= max(event_week) - 7 * 30)
+`"inverse_score"` makes each weight proportional to `1 / mean WIS`. It is
+the safe rule: monotone in performance, and it never collapses onto a
+single model. The alternative, `type = "optim"`, searches for the weights
+that would have *minimised* the ensemble's WIS over the backtest window;
+it is better in principle but it overfits happily on three retrospective
+dates, and here it puts the entire weight on a single member.
 
-ggplot(recent, aes(x = event_week)) +
-  geom_col(aes(y = observed, fill = "Reported so far"), width = 5.5) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "#e78b7f", alpha = 0.35) +
-  geom_line(aes(y = median, colour = "Nowcast"), linewidth = 0.9) +
-  scale_fill_manual(name = NULL, values = c("Reported so far" = "#dfe5e0")) +
-  scale_colour_manual(name = NULL, values = c("Nowcast" = "#B85348")) +
-  labs(
-    x = "Event week (specimen taken)", y = "Infections",
-    title = "Nowcast of hospital-acquired infections",
-    subtitle = paste0("Now = ", format(get_now(hai_model)),
-                      "; the gap at the right edge is what has not been reported yet")
-  ) +
-  theme_minimal(base_size = 11) +
-  theme(legend.position = "top", panel.grid.minor = element_blank(),
-        plot.title = element_text(face = "bold", colour = "#334335"))
+Either rule plugs straight into the ensemble:
+
+```{r ensemble-weighted, warning=FALSE, message=FALSE}
+nowcast_ensemble(
+  members,
+  weights  = "inverse_score",
+  backtest = hai_backtest_all
+)
 ```
 
-The bars are what had been reported by the `now`; the ribbon is the model's
-estimate of where those weeks will end up.
-
-Look closely at what the nowcast actually does here, because it is not the
-textbook picture. The **median barely moves**: it exceeds the observed count in
-only one of the 152 modelled weeks. What changes dramatically is the
-**uncertainty** — the mean width of the 95% interval is about 0.1 cases over the
-settled part of the series and about 2 cases over the final ten weeks, a
-twenty-fold widening.
-
-That is the correct behaviour for data this sparse, and it is worth
-understanding rather than treating as a disappointment. We know from the delay
-distribution that roughly a quarter of results arrive more than a week late, so
-a week sitting five weeks from `now` really is missing about a quarter of its
-eventual cases. But a quarter of *two cases* is half a case, and the median of a
-posterior over counts is an integer. The correction is real; it is simply
-smaller than the resolution of the answer. With one to three infections a week,
-a nowcast's honest output is a statement about what it does not know, not a
-large upward revision.
-
-This is also why the point of the earlier diagnostics was never to produce a
-better point estimate. It was to make sure the interval is trustworthy — that it
-comes from one reporting regime rather than two averaged together.
-
-### Carrying the strata and effects through
-
-The enriched object needs no extra arguments: `diseasenowcasting` reads the
-`sex` stratum and the seasonal columns off the object itself.
-
-```{r dnc-seasonal, eval=run_stan && has("diseasenowcasting"), message=FALSE}
-hai_model_seasonal <- hai_model |>
-  add_temporal_effects(hai_effects, date_type = "report_date")
-
-diseasenowcasting::nowcast(hai_model_seasonal, type = "one_stage", n_draws = 2000)
-```
-
-
-## Summary
-
-The workflow, start to finish:
-
-```{r recap, eval=FALSE}
-# 1. Choose a resolution the data (and your engine) can support.
-hai_weekly_raw <- hai_bucaramanga |>
-  mutate(event_week  = floor_date(specimen_date, "week", week_start = 1),
-         report_week = floor_date(report_date,   "week", week_start = 1))
-
-# 2. Describe it once -- before cleaning, so the object can tell you what is wrong.
-hai_raw_now <- tbl_now(hai_weekly_raw, event_date = event_week,
-                       report_date = report_week, strata = sex,
-                       data_type = "linelist")
-
-# 3. Ask what is wrong with it, instead of guessing.
-diagnose(hai_raw_now) |> filter(status <= "note")
-
-# 4. Fix what it reported, and confirm the fix.
-hai <- hai_bucaramanga |>
-  distinct() |>                                          # duplicates: diagnose() skips
-  filter(!is.na(specimen_date), !is.na(report_date)) |>  #   these two it found
-  filter(report_date >= specimen_date)                   #   and this one
-
-hai_weekly <- hai |>
-  mutate(event_week  = floor_date(specimen_date, "week", week_start = 1),
-         report_week = floor_date(report_date,   "week", week_start = 1))
-
-hai_now <- tbl_now(hai_weekly, event_date = event_week, report_date = report_week,
-                   strata = sex, data_type = "linelist")
-
-diagnose(hai_now) |> filter(status <= "note")
-
-# 5. Look at it, and read the numbers off it.
-autoplot(hai_now)
-summary(hai_now)
-
-# 6. Run the statistical tests diagnose() deliberately leaves to you.
-diagnose_drift(hai_now)
-diagnose_changepoint(hai_now)
-
-# 7. Let those findings set the model window and the maximum delay.
-hai_model <- hai_now |> censor_reporting_delays_above(max_delay = 20)
-
-# 8. Hand it to whichever engine you like.
-diseasenowcasting::nowcast(hai_model)         # diseasenowcasting
-tbl_now_to_baselinenowcast(hai_model)         # baselinenowcast
-tbl_now_to_epinowcast(hai_model)              # epinowcast
-tbl_now_to_surveillance(hai_model)            # surveillance
-as.data.frame(hai_model)                      # NobBS
-```
-
-Two closing points worth carrying to your own data.
-
-**The diagnostics were not decoration.** The change-point test found a real
-break in March 2020 and that set the model window; the delay quantiles set
-`max_delay`; the day-of-week check *stopped* us adding a term the data did not
-support. Had we skipped straight to `nowcast()`, all three would have been
-guesses.
-
-**Half of this dataset never reached the model.** Duplicate records, missing
-dates and impossible delays removed 750 of 1,423 rows. A nowcast built on the
-remainder is only as good as the assumption that what was dropped resembles what
-was kept — which for the missing dates, concentrated in the early years, is
-worth stating out loud rather than burying.
--->
+The two `diseasenowcasting` variants turn out to be nearly
+indistinguishable on this data — an AR(1) epidemic and the default
+process agree when there is this little signal to disagree about — so
+the learned weights sit close to equal, and the weighted ensemble lands
+almost exactly where the unweighted one did. That is a perfectly good
+outcome to report: on a few hundred infections spread thinly over two
+and a half years, the honest answer is a handful of cases with a wide
+interval, and three models agreeing on it is more reassuring than any
+one of them being confident.
 
 ```{r learning-more, echo=FALSE, results="asis"}
 # The fragment is looked up by ABSOLUTE path via system.file(), never by a

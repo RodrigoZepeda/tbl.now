@@ -607,7 +607,9 @@ autoplot(
   event_date_xlim = as.Date(c("2020-01-01","2020-12-31")),
   calendar_effect_xlim = NULL,
   seasonality_xlim = c(0, 60),
-  palette = .tbl_now_palette()          # override colours
+  size = 1,               # multiplier on point / outlier / label sizes
+  linewidth = 1,          # multiplier on line and box-outline widths
+  palette = tbl_now_palette()           # override colours (see below)
 )
 
 autoplot(tn, panels = "delay_week")     # just one panel -> a ggplot you can + to
@@ -618,6 +620,69 @@ autoplot(tn, by_strata = TRUE)          # one fan of panels per stratum
 the typical choice ("dates still missing ≥5% of their eventual counts are
 incomplete"). `autoplot()` works on **all three data types**, including
 `count-cumulative` (it de-accumulates internally).
+
+---
+
+## Skill: re-colour and re-size the plots
+
+### Colours: `tbl_now_palette()`
+
+Every plot takes `palette =`, and every colour in it is named for the **role**
+it plays, not for the hue it happens to be. Override the roles you care about;
+the rest keep the package defaults, so a partial palette is always complete.
+
+```r
+tbl_now_palette()                                   # see every role
+plot_reporting_triangle(tn, palette = tbl_now_palette(reporting = "#5B4B8A"))
+autoplot(tn, palette = tbl_now_palette(epidemic = "#2F6DB4",
+                                       epidemic_light = "#A9C8EA"))
+```
+
+The two families carry the package's grammar and are worth knowing:
+
+| role | what it colours |
+|---|---|
+| `reporting`, `reporting_light` | the **reporting** process — report dates, delays, *when we found out* |
+| `epidemic`, `epidemic_light`, `epidemic_mid`, `epidemic_dark` | the **epidemic** process — event dates, case counts, *what happened* |
+| `ink`, `ink_muted`, `ink_inverse` | text |
+| `surface`, `surface_muted`, `surface_dark` | label fills and ramp ends |
+| `grid_major`, `grid_minor`, `guide`, `guide_strong`, `annotation`, `neutral` | the grids and reference lines the package draws itself |
+| `zero`, `pending`, `observed` | the three data states that are not a process |
+
+A palette handed in as a bare vector must carry **every** role; a missing one is
+an error listing what is absent, rather than a silent fall back to a colour you
+did not choose.
+
+### Sizes: `size` and `linewidth`
+
+`size` and `linewidth` are **multipliers**, default `1`, so they scale a panel's
+marks without flattening its hierarchy — `size = 2` doubles both the small and
+the large points rather than making them equal.
+
+```r
+plot_transport_discriminant(tn, size = 2)          # bigger points AND labels
+plot_delay_profiles(tn, linewidth = 3)             # heavier per-date curves
+autoplot(tn, size = 1.5, linewidth = 1.5)          # the whole gallery
+diagnostic_plot(tn, size = 2, grid_linewidth = 0.6)
+```
+
+A grid the package draws itself — not `ggplot2`'s panel grid, which these plots
+switch off — has its own **absolute** argument: `grid_linewidth`, or
+`grid_linewidth_major` / `grid_linewidth_minor` where there are two families.
+
+`plot_reporting_hexamap()` is the exception: its `size` is an absolute point
+size in millimetres, because the marks are millimetres and the lattice is data
+units, so no default suits every cell count and figure size. Raise it until the
+points nearly touch at the size you are drawing.
+
+```r
+plot_reporting_hexamap(tn, size = 4, shape = 15)   # squares that nearly tile
+plot_reporting_hexamap(tn, text_size = 3, grid_linewidth_major = 0.6,
+                       legend_width = 4)
+```
+
+`plot_reporting_process()`, `plot_epidemic_process()`, `plot_scalogram()` and
+`plot_validation_status()` draw only bars, tiles or areas, so they take neither.
 
 ---
 
@@ -651,8 +716,6 @@ rest `NA`. `stratum` is `"all"` for the pooled rows.
 | `delay` | `event_to_report`, `event_to_validation`, `report_to_validation`, split by outcome when there is more than one |
 | `zero_run` | lengths of the runs of consecutive zero dates, per axis |
 | `composition` | shares: `censored`, `validation_type = ...`, `strata = ...`, `covariate: <col> = <level>` (in `prop`) |
-| `autocorrelation` | lag-*k* correlation of each case series (in `value`) |
-| `completeness` | share of each event date's eventual total arrived by delay *d* — across event dates in `mean`/`sd`/the quantiles, pooled in `prop`; not in `value` |
 | `coverage` | `total_cases`, the date ranges, `now`, `max_delay`, the triangle cell counts and occupancy, `now_gap_*` |
 | `growth` | ratio of each event date's running total from one delay to the next (`count-cumulative` only) |
 
@@ -665,11 +728,20 @@ delay_summary(tn, delay = "event_to_report")
 zero_run_summary(tn, axis = "event")
 prop_censored(tn); prop_strata(tn)
 prop_validation_type(tn); prop_covariate_levels(tn)
-case_autocorrelation(tn, lags = 1)
 date_ranges(tn); triangle_occupancy(tn)
-reporting_completeness(tn, delays = 0:7)
 cumulative_growth(tn, k = 7)
+
+# NOT part of summary() (v0.33.0): written by an AI, unreviewed, and they warn
+# on EVERY call. Components `autocorrelation` and `completeness`.
+case_autocorrelation(tn, lags = 1)
+reporting_completeness(tn, delays = 0:7)
 ```
+
+`n` and `total` are **different questions** and the print method now says which
+per block: `n` counts the block's own kind of thing (dates on the grid for
+`cases`, runs for `zero_run`, **(event, report) cells** for `delay` and
+`composition`) and `total` always counts **cases**. `prop` is computed from
+`total`.
 
 Three things to know before reading the numbers:
 
@@ -833,9 +905,10 @@ scr[scr$batch, ]            # the flagged report dates
 #   (always repeated_median). transport_discriminant() KEEPS its classification.
 
 # 2) Shape test: did ONE report date draw from unusually OLD event dates?
-#    (complements the volume screen; `at` must be an observed report date)
-diagnose_batch_shape(tn, at = as.Date("2010-05-24"),
-                 permute = "items")   # use "blocks" if counts are overdispersed
+#    (complements the volume screen; `at` must be on the report grid, but need
+#     not carry rows -- an empty date reports zero arrivals)
+diagnose_batches2(tn, at = as.Date("2010-05-24"),
+                  permute = "items")  # use "blocks" if counts are overdispersed
 
 # 3) Validate a detector: plant a known batch and check it is recovered
 planted <- simulate_batch(tn, closed_dates = as.Date(c("2010-05-10","2010-05-17")))
@@ -857,11 +930,11 @@ diagnose_batches(planted)
   -> `period=52` (reads `get_temporal_effects(x)` list; each spec is `list(t_effects=<S7>,
   date_type,...)`, access via `spec$t_effects@day_of_week`). User `period` wins (informs on
   disagreement). Daily data + no temporal effect + no period -> `cli_inform` suggests period=7.**
-- **`diagnose_batch_shape()`** — a one-sided rank-sum on the delays at `at` vs
+- **`diagnose_batches2()`** — a one-sided rank-sum on the delays at `at` vs
   neighbouring report dates; **exactly distribution-free** when incidence is
   locally log-linear and counts are Poisson. `permute = "blocks"` for overdispersed
   (NB) counts; `guard` omits dates adjacent to `at` (a batch's own deficit sits
-  there).
+  there). Renamed from `diagnose_batch_shape()` in v0.33.0.
 - **`simulate_batch()`** — closes reporting on `closed_dates` and re-stamps those
   reports to the next open date; returns a `tbl_now`. For testing/teaching.
 - **`diagnostic_plot(x, panels=, by=)`** — a gallery to *see* the reporting process.
@@ -953,7 +1026,7 @@ diagnose_batches(planted)
     "Finding batch reporting…" article + `data-raw/covid_us.R` (duckdb over the 14GB source).
 
 > The older `detect_report_batches()` / `plot_report_batches()` are **removed** —
-> use `diagnose_batches()` + `diagnose_batch_shape()`.
+> use `diagnose_batches()` + `diagnose_batches2()`.
 
 ---
 
@@ -1350,13 +1423,13 @@ diagnose_declarations/ordering/missing/duplicates/units/negatives(x)
 diagnose_now/truncation/strata(x)
 cases_per_date(x, axis =) / delay_summary(x, delay =) / zero_run_summary(x, axis =)
 prop_censored(x) / prop_strata(x) / prop_validation_type(x) / prop_covariate_levels(x)
-case_autocorrelation(x, lags =) / date_ranges(x) / triangle_occupancy(x)
-reporting_completeness(x, delays =) / cumulative_growth(x, k =)
+date_ranges(x) / triangle_occupancy(x) / cumulative_growth(x, k =)
+case_autocorrelation(x, lags =) / reporting_completeness(x, delays =)  # unreviewed, warn, NOT in summary()
 autoplot(x, panels =, by_strata =)        # multi-panel diagnostic (patchwork)
 autoplot(nc, levels =, show_reported =)   # nowcast fan: reported counts as grey
                                           #   COLUMNS one period wide, fan over them
 plot_delay_drift(x) / diagnose_drift(x) / diagnose_changepoint(x)
-diagnose_batches(x) / diagnose_batch_shape(x, at =) / simulate_batch(x, closed_dates =)
+diagnose_batches(x) / diagnose_batches2(x, at =) / simulate_batch(x, closed_dates =)
 transport_discriminant(x)                 # deficit W vs discriminant Delta, per report date
 diagnostic_plot(x, panels =, by =)        # reporting-process gallery (reporting/triangle/profiles/delay_drift/transport)
 ```
@@ -1388,12 +1461,15 @@ data(hai_bucaramanga)  # healthcare-associated infections; deliberately messy
 - `rowwise()` is **unsupported**.
 - For weekly data with fractional `.delay`, use `align_weeks`.
 - Count data types **require** a `case_count` column.
-- `diagnose_batch_shape(at =)` needs `at` to be an **observed report date**; the volume
-  screen `diagnose_batches()` scans them all.
+- `diagnose_batches2(at =)` needs `at` to be on the **report grid**; a date that
+  carries no rows is reported as **zero arrivals**, not an error (v0.33.0). The
+  volume screen `diagnose_batches()` scans them all.
+- The whole batch family **ignores censored arrival dates** (`drop_censored = TRUE`,
+  v0.33.0): a censored date is a bound, not an arrival.
 - `diagnose_drift()` needs the `modifiedmk` package (a Suggests); the batch and
   drift diagnostics all print an experimental warning.
 - `detect_report_batches()` / `plot_report_batches()` were **removed** —
-  use `diagnose_batches()` + `diagnose_batch_shape()`.
+  use `diagnose_batches()` + `diagnose_batches2()`.
 - **A zero period is invisible in a line list.** An event date with no reports has
   no rows, so engines that build their time grid from the rows they are handed
   stop short of the `now`. `complete_zeroes()` fixes this for *count*-shaped

@@ -368,3 +368,112 @@ test_that("complete_zeroes gives the same grid when grouped by a non-stratum", {
     dplyr::as_tibble(ungroup(suppressMessages(complete_zeroes(x))))
   )
 })
+
+# ---- missing dates (#66) ----
+
+make_na_report <- function() {
+  tibble(
+    event = as.Date(c(
+      "2020-01-01", "2020-01-01", "2020-01-02", "2020-01-04", "2020-01-04"
+    )),
+    report = as.Date(c(
+      "2020-01-01", "2020-01-02", NA, "2020-01-04", "2020-01-05"
+    )),
+    n = c(3L, 2L, 4L, 1L, 5L)
+  ) |>
+    tbl_now(
+      event_date = event, report_date = report, case_count = n,
+      data_type = "count-incidence", verbose = FALSE
+    )
+}
+
+test_that("complete_zeroes works when a report date is missing (#66)", {
+  x <- suppressWarnings(make_na_report())
+
+  out <- suppressWarnings(complete_zeroes(x))
+
+  expect_true(is_tbl_now(out))
+  # The grid is built from the dates that exist, so it reaches the `now`.
+  expect_equal(max(pull(out, "event"), na.rm = TRUE), get_now(x))
+  # The NA-report row is a case, not a cell: carried through, never deleted.
+  expect_equal(sum(is.na(pull(out, "report"))), 1L)
+  expect_equal(sum(pull(out, "n"), na.rm = TRUE), sum(pull(x, "n")))
+})
+
+test_that("complete_zeroes works when an event date is missing (#66)", {
+  df <- tibble(
+    event = as.Date(c("2020-01-01", "2020-01-01", NA, "2020-01-04")),
+    report = as.Date(c("2020-01-01", "2020-01-02", "2020-01-03", "2020-01-04")),
+    n = c(3L, 2L, 4L, 1L)
+  )
+  x <- suppressWarnings(tbl_now(df,
+    event_date = event, report_date = report, case_count = n,
+    data_type = "count-incidence", verbose = FALSE
+  ))
+
+  out <- suppressWarnings(complete_zeroes(x))
+
+  expect_true(is_tbl_now(out))
+  expect_equal(sum(is.na(pull(out, "event"))), 1L)
+  expect_equal(sum(pull(out, "n"), na.rm = TRUE), sum(pull(x, "n")))
+})
+
+test_that("complete_zeroes keeps .event_num for rows that are off the grid", {
+  # A negative delay has no cell either, so the join that used to supply
+  # `.event_num` matched nothing and blanked a perfectly known event number.
+  df <- tibble(
+    event = as.Date(c("2020-01-02", "2020-01-03", "2020-01-04")),
+    report = as.Date(c("2020-01-01", "2020-01-04", "2020-01-05")),
+    n = c(2L, 4L, 1L)
+  )
+  x <- suppressWarnings(tbl_now(df,
+    event_date = event, report_date = report, case_count = n,
+    data_type = "count-incidence", verbose = FALSE
+  ))
+
+  out <- suppressWarnings(complete_zeroes(x))
+
+  expect_false(any(is.na(pull(out, ".event_num"))))
+  expect_equal(sum(pull(out, "n"), na.rm = TRUE), sum(pull(x, "n")))
+})
+
+test_that("complete_zeroes refuses an object with no usable date pair", {
+  df <- tibble(
+    event = as.Date(c("2020-01-01", "2020-01-02")),
+    report = as.Date(c(NA, NA)),
+    n = c(3L, 2L)
+  )
+  x <- suppressWarnings(tbl_now(df,
+    event_date = event, report_date = report, case_count = n,
+    data_type = "count-incidence", units = "days", now = as.Date("2020-01-05"),
+    verbose = FALSE
+  ))
+
+  expect_error(complete_zeroes(x), "no usable")
+})
+
+test_that("complete_zeroes works on a grouped tbl_now with missing dates (#66)", {
+  df <- tibble(
+    event = as.Date(rep(c("2020-01-01", "2020-01-02", "2020-01-04"), each = 2)),
+    report = as.Date(c(
+      "2020-01-01", NA, "2020-01-03", "2020-01-02", "2020-01-04", "2020-01-05"
+    )),
+    sex = rep(c("F", "M"), 3),
+    n = c(3L, 2L, 4L, 1L, 5L, 2L)
+  )
+  x <- suppressWarnings(tbl_now(df,
+    event_date = event, report_date = report, case_count = n, strata = sex,
+    data_type = "count-incidence", verbose = FALSE
+  ))
+
+  out <- suppressWarnings(complete_zeroes(suppressWarnings(
+    group_by(x, !!as.symbol("sex"))
+  )))
+
+  expect_true(is_tbl_now(out))
+  expect_equal(group_vars(out), "sex")
+  expect_equal(
+    suppressWarnings(as_tibble(ungroup(out))),
+    suppressWarnings(as_tibble(ungroup(complete_zeroes(x))))
+  )
+})

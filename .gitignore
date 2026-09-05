@@ -13,6 +13,7 @@ src/functions.cpp
 src/functions.cpp
 presentations/
 diseasenowcasting.Rproj
+devel/
 devel/test_backtest-Rami.R
 # Large raw source for covid_us (14 GB); not shipped, rebuilt via data-raw/covid_us.R
 devel/*.csv
@@ -27,3 +28,4 @@ inst/doc
 tests/testthat/_problems/
 tests/testthat/testthat-problems.rds
 vignettes/articles/*_cache/
+figure/

@@ -13,6 +13,7 @@ tbl_now_to_EpiNow2(
     "estimate_dist"),
   snapshots = NULL,
   accumulate = "auto",
+  complete = "auto",
   verbose = TRUE,
   quiet = FALSE
 )
@@ -36,6 +37,17 @@ weekly series on \pkg{EpiNow2}'s daily grid with an \code{accumulate} column;
 \code{FALSE} passes the rows through unchanged, which is almost always wrong (see
 \emph{Non-daily data}). Ignored for \code{"estimate_dist"}, which works in censoring
 windows rather than on a grid.}
+
+\item{complete}{For the series targets: fill event periods that have no
+reports at all with zeroes, out to the object's \code{\link[=get_now]{get_now()}}, via
+\code{\link[=complete_zeroes]{complete_zeroes()}}. \code{"auto"} (the default) does this for \strong{line-list}
+input only. A line list has no row for a period in which nothing was
+reported, so a series built from one stops at the last period that \emph{has} a
+report -- short of the \code{now}, which is the period the nowcast is about.
+Count data is left exactly as supplied, because it can say "observed zero"
+itself. \code{TRUE} / \code{FALSE} force either behaviour; \code{TRUE} on
+\code{count-cumulative} input de-accumulates it first. Ignored for
+\code{"estimate_dist"}, which works in censoring windows rather than on a grid.}
 
 \item{verbose}{Logical. Print the choices that were made.}
 

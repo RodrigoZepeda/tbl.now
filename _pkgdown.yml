@@ -120,13 +120,14 @@ reference:
   - diagnose_drift
   - diagnose_changepoint
   - diagnose_batches
-  - diagnose_batch_shape
+  - diagnose_batches2
   - transport_discriminant
   - simulate_batch
 
 - title: Plots
   desc: One grid, or any panel of it on its own.
   contents:
+  - tbl_now_palette
   - autoplot.tbl_now
   - diagnostic_plot
   - calendar_effect_plots

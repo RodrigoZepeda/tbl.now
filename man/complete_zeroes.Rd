@@ -45,6 +45,17 @@ every stratum, leaving only the not-yet-reported cells absent.
 Zeros are only filled where a report \emph{could} have arrived: cells with a report
 date on or before the event date's \code{now}, and within \code{max_delay}. Filling
 beyond that would invent observations from the future.
+\subsection{Rows with a missing date}{
+
+A row whose event or report date is \code{NA} has no cell on the rectangle, so it
+takes no part in the grid: the bounds (\code{max_delay}, the first and last event
+date, the last report date) are all computed ignoring it. It is still a case,
+though, so it is \strong{carried through unchanged} rather than dropped -- use
+\code{\link[=censor_reports]{censor_reports()}} to give it a bound, or \code{dplyr::filter()} to remove it, if
+you would rather it were on the grid or gone. Only an object in which \emph{every}
+row is missing one of the two dates is refused, because then there is no grid
+to complete at all.
+}
 }
 \examples{
 ndata <- dplyr::tibble(

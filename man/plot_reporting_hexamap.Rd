@@ -14,6 +14,14 @@ plot_reporting_hexamap(
   max_cells = 12000L,
   trans = "sqrt",
   axis = c("report", "validation"),
+  size = 1.5,
+  shape = 16,
+  text_size = 2.3,
+  grid_linewidth_major = 0.3,
+  grid_linewidth_minor = 0.15,
+  axis_linewidth = 0.4,
+  legend_width = 7,
+  legend_height = 0.4,
   palette = .tbl_now_palette()
 )
 }
@@ -23,8 +31,8 @@ plot_reporting_hexamap(
 \item{max_delay}{Largest delay (in report units) to draw. \code{NULL} (default) shows
 the observed range, auto-capped to respect \code{max_cells}.}
 
-\item{complete}{If \code{TRUE}, fill the whole observable triangle with zeros so the
-grey background shows every observable cell. Default \code{FALSE} (observed cells
+\item{complete}{If \code{TRUE}, fill the whole observable triangle with zeros so a
+point is drawn for every observable cell. Default \code{FALSE} (observed cells
 only). Coerces linelist input to counts via \code{\link[=to_count]{to_count()}}.}
 
 \item{iso, iso_minor}{Major and minor grid spacings (in report units). \code{NULL}
@@ -33,7 +41,7 @@ picks sensible defaults from the data.}
 \item{format}{Date format for the event/report tick labels (see \code{\link[=strftime]{strftime()}}).
 Default \code{"\%d/\%b/\%y"}.}
 
-\item{max_cells}{Safety cap on the number of hexagons. Default \code{12000}.}
+\item{max_cells}{Safety cap on the number of points. Default \code{12000}.}
 
 \item{trans}{Fill transform for the count scale. Default \code{"sqrt"}.}
 
@@ -43,7 +51,31 @@ laboratory's version of the question -- when results arrived, rather than
 when reports did. Needs a validation process (see \code{\link[=add_validation_date]{add_validation_date()}});
 cases still \code{"pending"} have no validation date and are left out.}
 
-\item{palette}{A named colour palette. Defaults to the package palette.}
+\item{size}{Size of the plotted points, in millimetres, as \pkg{ggplot2}
+measures it. Default \code{1.5}. See \strong{Details} for why there is no
+data-dependent default.}
+
+\item{shape}{Point shape, passed to \code{\link[ggplot2:geom_point]{ggplot2::geom_point()}}. Default \code{16} (a
+solid circle); \code{15} gives squares, which tile the lattice more closely. The
+count is mapped to \code{colour}, so use a solid shape (\code{0}-\code{20}) -- the
+fillable shapes \code{21}-\code{25} would draw the count on the border only.}
+
+\item{text_size}{Size of the event-, report- and delay-axis tick labels.
+Default \code{2.3}. The axis \emph{titles} scale with it.}
+
+\item{grid_linewidth_major, grid_linewidth_minor}{Line widths of the major and
+minor triangular grids this function draws (\code{iso} and \code{iso_minor} spacing).
+These are the package's own grids, not \pkg{ggplot2}'s -- the panel grid is
+switched off here. Defaults \code{0.3} and \code{0.15}.}
+
+\item{axis_linewidth}{Line width of the delay-axis spine and its ticks.
+Default \code{0.4}.}
+
+\item{legend_width, legend_height}{Size of the count colourbar, as
+\link[grid]{unit} objects or as numbers in centimetres. Defaults \code{7} and
+\code{0.4} cm.}
+
+\item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}).}
 }
 \value{
 A \pkg{ggplot2} object.
@@ -54,7 +86,8 @@ A \pkg{ggplot2} object.
 Draws the reporting triangle as a hexagonal age-period-cohort map, using the
 projection of Jalal and Burke (2020). Event date, report date and reporting
 delay are the cohort, period and age of the map (\code{report = event + delay}), and
-each \verb{(event, delay)} cell is one hexagon coloured by its report count. Because
+each \verb{(event, delay)} cell is one point on the hexagonal lattice, coloured by
+its report count. Because
 a batch is a single \strong{report date}, it appears as a clean \strong{vertical stripe};
 the fast-reporting bulk sits along the short-delay bottom edge.
 }
@@ -62,13 +95,18 @@ the fast-reporting bulk sits along the short-delay bottom edge.
 The three axes are read off three families of iso-lines: \strong{report date}
 (period) runs vertically, \strong{delay} (age) up the right-hand spine, and \strong{event
 date} (cohort) up the left. A major/minor triangular grid is drawn so any
-hexagon can be traced back to its event date, report date and delay.
+point can be traced back to its event date, report date and delay.
 
-The number of hexagons is \verb{#\\\{observed (event, delay) cells\\\}}, which grows with
+The number of points is \verb{#\\\{observed (event, delay) cells\\\}}, which grows with
 the delay range. To stay responsive the delay axis is capped so at most
-\code{max_cells} hexagons are drawn (raise \code{max_cells}, or set \code{max_delay}, to change
+\code{max_cells} points are drawn (raise \code{max_cells}, or set \code{max_delay}, to change
 this). \code{complete = TRUE} first fills the whole observable triangle with explicit
-zeros (via \code{\link[=complete_zeroes]{complete_zeroes()}}) so the empty cells are shown in grey.
+zeros (via \code{\link[=complete_zeroes]{complete_zeroes()}}) so the empty cells are shown too.
+
+A point is sized in millimetres and the lattice is sized in data units, so no
+default \code{size} can be right for every combination of cell count and figure
+size -- which is exactly why \code{size} exists. Raise it until the points nearly
+touch for the figure you are actually drawing.
 }
 \examples{
 data(denguedat)

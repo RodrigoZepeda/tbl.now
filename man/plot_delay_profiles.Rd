@@ -10,6 +10,7 @@ plot_delay_profiles(
   max_delay = NULL,
   plotly = FALSE,
   axis = c("report", "validation"),
+  linewidth = 1,
   palette = .tbl_now_palette()
 )
 }
@@ -32,7 +33,12 @@ time the laboratory adds. (This is not the same quantity as the
 measured from the report.) Needs a validation process (see
 \code{\link[=add_validation_date]{add_validation_date()}}); cases still \code{"pending"} are left out.}
 
-\item{palette}{A named colour palette. Defaults to the package palette.}
+\item{linewidth}{Multiplier on the width of the per-date curves. Default \code{1}
+(drawn at \code{0.4}). The curves are deliberately faint and overplotted -- it is
+their envelope that carries the message -- so raising this on a long series
+fills the panel in.}
+
+\item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}).}
 }
 \value{
 A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
@@ -52,6 +58,6 @@ plot_delay_profiles(dn)
 \seealso{
 \code{\link[=plot_delay_distribution]{plot_delay_distribution()}} for the pooled delay distribution rather than one
 curve per date; \code{\link[=plot_delay_drift]{plot_delay_drift()}} for whether those curves move over time;
-\code{\link[=diagnose_batch_shape]{diagnose_batch_shape()}} for the test behind the eyeball;
+\code{\link[=diagnose_batches2]{diagnose_batches2()}} for the test behind the eyeball;
 \code{\link[=diagnostic_plot]{diagnostic_plot()}} for the whole gallery.
 }

@@ -1519,8 +1519,13 @@ tbl_now_from_epinowcast <- function(data, ...,
 #'   `to_count() |> complete_zeroes()` first. Count data is left exactly as
 #'   supplied, because it *can* distinguish an observed zero from a cell that
 #'   could not be observed yet (`NA`) and filling those would claim reporting was
-#'   complete when it was not. `TRUE` / `FALSE` force either behaviour. Ignored
-#'   for `format = "long"`.
+#'   complete when it was not. `TRUE` / `FALSE` force either behaviour.
+#'
+#'   **Ignored for `format = "long"`**, which is a tidy data frame with no grid
+#'   to complete. If you build a triangle from the long output yourself, a line
+#'   list will be missing every event period in which nothing was reported --
+#'   call `to_count() |> complete_zeroes()` first, or ask for
+#'   `format = "triangle_list"`, which does it for you.
 #' @param negatives How to handle the negative increments that appear when
 #'   `count-cumulative` data is de-accumulated (a downward revision).
 #'   `"redistribute"` (default) absorbs each negative into earlier delays with
@@ -2717,6 +2722,16 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #'   `FALSE` passes the rows through unchanged, which is almost always wrong (see
 #'   *Non-daily data*). Ignored for `"estimate_dist"`, which works in censoring
 #'   windows rather than on a grid.
+#' @param complete For the series targets: fill event periods that have no
+#'   reports at all with zeroes, out to the object's [get_now()], via
+#'   [complete_zeroes()]. `"auto"` (the default) does this for **line-list**
+#'   input only. A line list has no row for a period in which nothing was
+#'   reported, so a series built from one stops at the last period that *has* a
+#'   report -- short of the `now`, which is the period the nowcast is about.
+#'   Count data is left exactly as supplied, because it can say "observed zero"
+#'   itself. `TRUE` / `FALSE` force either behaviour; `TRUE` on
+#'   `count-cumulative` input de-accumulates it first. Ignored for
+#'   `"estimate_dist"`, which works in censoring windows rather than on a grid.
 #' @param report_dates For `from`: a `Date` vector, one per snapshot, saying when
 #'   each was taken. Read from the object's attribute when it has one.
 #' @param verbose Logical. Print the choices that were made.
@@ -2781,6 +2796,7 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
                "estimate_truncation", "estimate_dist"),
     snapshots = NULL,
     accumulate = "auto",
+    complete = "auto",
     verbose = TRUE, quiet = FALSE) {
   .assert_tbl_now(x, "tbl_now_to_EpiNow2")
   target <- match.arg(target)
@@ -2809,7 +2825,7 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 
   .epinow2_series_data(
     x, target = target, snapshots = snapshots, accumulate = accumulate,
-    verbose = verbose
+    complete = complete, verbose = verbose
   )
 }
 
@@ -2913,13 +2929,15 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 #' @param target One of the three date-keyed targets.
 #' @param snapshots Snapshot count for `estimate_truncation`.
 #' @param accumulate `"auto"`, `TRUE` or `FALSE`.
+#' @param complete `"auto"`, `TRUE` or `FALSE`; fill the empty event periods.
 #' @param verbose Logical.
 #'
 #' @return A `data.frame`, or a `tbl_now_epinow2_snapshots` list.
 #'
 #' @keywords internal
 #' @noRd
-.epinow2_series_data <- function(x, target, snapshots, accumulate, verbose) {
+.epinow2_series_data <- function(x, target, snapshots, accumulate, complete,
+                                 verbose) {
   event_col   <- get_event_date(x)
   strata_cols <- get_strata(x)
   event_units <- get_event_units(x)
@@ -2939,6 +2957,37 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
       "i" = "For a fit per stratum use {.code target = \"regional_epinow\"}, \\
              which carries them as a {.field region} column."
     ))
+  }
+
+  # A line list cannot record a period in which nothing was reported: the rows
+  # are simply absent. Every series below is built from the rows it is handed,
+  # so without this it stops at the last period that HAS a report -- short of
+  # the `now`, which is the period the nowcast is about. Count data can say
+  # "observed zero" itself, so `"auto"` leaves it exactly as supplied.
+  #
+  # This also repairs `estimate_truncation`: `.epinow2_snapshots()` completes
+  # each snapshot with `complete_zeroes()`, which REFUSES a line list, and its
+  # `tryCatch()` swallowed that refusal and returned the short snapshot.
+  should_complete <- switch(as.character(complete),
+    "auto"  = identical(get_data_type(x), "linelist"),
+    "TRUE"  = TRUE,
+    "FALSE" = FALSE,
+    identical(get_data_type(x), "linelist")
+  )
+  if (should_complete) {
+    x <- tryCatch(
+      suppressWarnings(suppressMessages(
+        complete_zeroes(to_count(ungroup(x), to = "count-incidence"))
+      )),
+      error = function(e) {
+        cli::cli_warn(c(
+          "Could not complete missing event periods with zeroes.",
+          "i" = conditionMessage(e),
+          "i" = "The series may stop before the {.field now}."
+        ))
+        x
+      }
+    )
   }
 
   # `get_latest_reported_cases()` / `get_nth_reported_cases()` know about all

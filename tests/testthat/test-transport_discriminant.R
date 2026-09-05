@@ -34,6 +34,19 @@ test_that("transport_discriminant() returns the documented columns and class", {
   expect_type(td$batch, "logical")
 })
 
+test_that("a transport discriminant auto-prints through its own formatter", {
+  # See the twin test in test-batch_screen.R: `capture.output(x)` auto-prints,
+  # and the method has to be registered on `base::print` to be found at all.
+  td  <- suppressWarnings(transport_discriminant(make_td_tbl()$tbl))
+  out <- capture.output(td)
+
+  # Only the formatter emits this header; the default tibble print does not.
+  expect_true(any(grepl("look-back", out, fixed = TRUE)))
+  # It is the FIRST thing printed -- this method calls `NextMethod()`, so the
+  # tibble underneath is expected to follow and cannot be asserted against.
+  expect_match(out[1], "look-back")
+})
+
 test_that("a planted transport batch scores high on transport, not creation", {
   fixture <- make_td_tbl()
   td      <- suppressWarnings(transport_discriminant(fixture$tbl))
@@ -75,4 +88,22 @@ test_that("print returns the object invisibly", {
   td <- suppressWarnings(transport_discriminant(make_td_tbl()$tbl))
   expect_output(print(td), "A tibble")
   expect_invisible(print(td))
+})
+
+test_that("a discriminant subset past its own columns prints as a tibble", {
+  td <- suppressWarnings(transport_discriminant(make_td_tbl()$tbl))
+
+  # The twin of the `diagnose_batches` case: without the demotion the header
+  # counted "0 batches and 0 surges" off columns that were no longer there.
+  columns <- td[, c("report_date", "reported")]
+  expect_false(inherits(columns, "transport_discriminant"))
+  expect_null(attr(columns, "lookback"))
+  expect_false(any(grepl("look-back", capture.output(columns), fixed = TRUE)))
+
+  expect_false(inherits(dplyr::select(td, "report_date"), "transport_discriminant"))
+
+  # Keeping what the formatter reads keeps the class
+  kept <- td[, c("report_date", "classification", "batch")]
+  expect_s3_class(kept, "transport_discriminant")
+  expect_match(capture.output(kept)[1], "look-back")
 })

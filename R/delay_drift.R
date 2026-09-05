@@ -236,7 +236,7 @@
 #'   `0.95`; see [autoplot()]).
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget instead of a
 #'   static plot. Default `FALSE`.
-#' @param palette A named colour palette (defaults to the package palette).
+#' @param palette A named colour palette (see [tbl_now_palette()]).
 #' @param ... Unused.
 #'
 #' @param axis Which time axis the delay is measured to: `"report"` (default)
@@ -247,6 +247,12 @@
 #'   measured from the report.) Needs a validation process (see
 #'   [add_validation_date()]); cases still `"pending"` are left out.
 #' @return A \pkg{ggplot2} object.
+#' @param linewidth Multiplier on the width of the mean and median delay lines.
+#'   Default `1` (drawn at `0.6` and `0.8`, so the median stays the heavier of
+#'   the two at any setting).
+#' @param grid_linewidth Line width of the dashed maturity line and of the
+#'   `changepoint` marker -- the reference lines the package draws itself, not
+#'   \pkg{ggplot2}'s panel grid. Default `0.5`.
 #'
 #' @seealso
 #' [diagnose_drift()] for the formal trend test behind this picture, and
@@ -267,8 +273,12 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
                              by_strata = FALSE, strata = NULL, changepoint = FALSE,
                              level = 0.95, plotly = FALSE,
                              axis = c("report", "validation"),
+                             linewidth = 1, grid_linewidth = 0.5,
                              palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
+  .tbl_now_check_palette(palette, "plot_delay_drift")
+  .tbl_now_check_size(linewidth, "linewidth")
+  .tbl_now_check_size(grid_linewidth, "grid_linewidth")
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_delay_drift}.")
   }
@@ -366,11 +376,12 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
       ggplot2::annotate(
         "rect",
         xmin = maturity_threshold, xmax = max(rolled$time), ymin = -Inf, ymax = Inf,
-        fill = palette[["muted_green"]], alpha = 0.2
+        fill = palette[["ink_muted"]], alpha = 0.2
       ) +
       ggplot2::geom_vline(
         xintercept = maturity_threshold,
-        colour = palette[["muted_green"]], linetype = "dashed", linewidth = 0.5
+        colour = palette[["ink_muted"]], linetype = "dashed",
+        linewidth = grid_linewidth
       )
   }
 
@@ -385,20 +396,20 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
     ) +
     ggplot2::geom_line(
       ggplot2::aes(y = .data$mean, colour = lab_mean, linetype = lab_mean),
-      linewidth = 0.6
+      linewidth = 0.6 * linewidth
     ) +
     ggplot2::geom_line(
       ggplot2::aes(y = .data$q50, colour = lab_med, linetype = lab_med),
-      linewidth = 0.8
+      linewidth = 0.8 * linewidth
     ) +
     ggplot2::scale_fill_manual(
       name = NULL, breaks = c(lab_iqr, lab_idr),
-      values = stats::setNames(c(palette[["accent_red"]], palette[["light_red"]]),
+      values = stats::setNames(c(palette[["reporting"]], palette[["reporting_light"]]),
                                c(lab_iqr, lab_idr))
     ) +
     ggplot2::scale_colour_manual(
       name = NULL, breaks = c(lab_med, lab_mean),
-      values = stats::setNames(c(palette[["accent_red"]], palette[["near_black"]]),
+      values = stats::setNames(c(palette[["reporting"]], palette[["ink"]]),
                                c(lab_med, lab_mean))
     ) +
     ggplot2::scale_linetype_manual(
@@ -419,7 +430,8 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
       ggplot2::geom_vline(
         data = changepoint_lines,
         ggplot2::aes(xintercept = .data$xintercept),
-        colour = palette[["accent_red"]], linetype = "dotdash", linewidth = 0.7
+        colour = palette[["reporting"]], linetype = "dotdash",
+        linewidth = 1.4 * grid_linewidth
       )
   }
 
