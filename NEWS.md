@@ -1,3 +1,44 @@
+# tbl.now 0.33.1
+
+## `tidy()` on a backtest now returns the predictions, not only the truth (#70)
+
+`tidy()` on a `nowcast_backtest` reported what was `observed` and how each
+method scored against it, but not what the method had actually said -- so the
+one table you would plot a backtest from was missing half the comparison, and
+recovering it meant reshaping the object's long `$predictions` by hand.
+
+It now carries `estimate`, `conf.low`, `conf.high` and `level`, named as
+[tidy()] names them everywhere else: `estimate` is the `0.5` quantile and
+`level` the width of the widest symmetric pair of quantile levels actually
+present. `nowcast_backtest()` refuses engines whose `quantile_levels` disagree,
+so `level` is one number for the whole table. Where the levels cannot support a
+bound the column is `NA` rather than a guess, exactly as on a `tbl_nowcast`.
+
+The full column order is now `method`, `now`, `event_date`, `stratum`,
+`observed`, `estimate`, `conf.low`, `conf.high`, `level`, `wis`, `ae_median`,
+`coverage_50`, `coverage_90`. Nothing was removed or renamed and no rows were
+added -- `(method, now, stratum, event_date)` is still the unique key -- so code
+that selects columns by name is unaffected; code that assumed the frame had
+exactly nine columns is not.
+
+## `diseasenowcasting` is installed from GitHub, and the error now says so (#72)
+
+Asking for `engine_diseasenowcasting()` without the package installed suggested
+`install.packages("diseasenowcasting", repos = c(options('repos'), epinowcast =
+...))`, which cannot work: the package is on GitHub and in no CRAN-style
+repository. The error now gives the instruction that does work:
+
+```r
+install.packages("pak")
+pak::pkg_install("RodrigoZepeda/diseasenowcasting")
+```
+
+The internal helper behind these messages takes a character vector now, one
+bullet per line, and interpolates the instruction rather than pasting it into
+the `cli` template -- an install call carrying a brace (a git ref, say) used to
+be read as a glue expression and abort while formatting the abort.
+
+
 # tbl.now 0.33.0
 
 ## `aggregate_time_units()` now coarsens the temporal-effect specification (#65)

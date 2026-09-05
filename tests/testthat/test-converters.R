@@ -860,6 +860,43 @@ test_that(".need_pkg aborts for a missing package", {
   )
 })
 
+test_that(".need_pkg gives one bullet per line of a multi-call install (#72)", {
+  skip_on_cran()
+  install <- c(
+    'install.packages("pak")',
+    'pak::pkg_install("RodrigoZepeda/diseasenowcasting")'
+  )
+  condition <- tryCatch(
+    tbl.now:::.need_pkg("a_package_that_surely_does_not_exist_xyz", install = install),
+    error = function(e) e
+  )
+  rendered <- cli::ansi_strip(paste(conditionMessage(condition), collapse = "\n"))
+
+  expect_match(rendered, 'install.packages("pak")', fixed = TRUE)
+  expect_match(
+    rendered, 'pak::pkg_install("RodrigoZepeda/diseasenowcasting")',
+    fixed = TRUE
+  )
+  # The r-universe default must not also be offered: the package is not there.
+  expect_false(grepl("r-universe", rendered, fixed = TRUE))
+})
+
+test_that(".need_pkg does not glue-interpolate the install instruction (#72)", {
+  skip_on_cran()
+  # A git ref in braces is data, not a cli expression. Pasting it into the
+  # template made this abort with "object 'main' not found" instead.
+  condition <- tryCatch(
+    tbl.now:::.need_pkg(
+      "a_package_that_surely_does_not_exist_xyz",
+      install = 'remotes::install_github("a/b", ref = "{main}")'
+    ),
+    error = function(e) e
+  )
+  rendered <- cli::ansi_strip(paste(conditionMessage(condition), collapse = "\n"))
+
+  expect_match(rendered, '{main}', fixed = TRUE)
+})
+
 test_that(".reporting_triangle_to_long needs reference dates as row names", {
   skip_on_cran()
   m <- matrix(1:4, nrow = 2)

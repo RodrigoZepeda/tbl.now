@@ -770,7 +770,9 @@ weight an ensemble from a backtest that does not cover every member, give the
 uncovered ones weights yourself; `nowcast_ensemble()` will not invent them.
 :::
 
-`tidy()` on a backtest gives one row per (method, `now` date, target), which goes
+`tidy()` on a backtest gives one row per (method, `now` date, target), carrying
+the retrospective prediction (`estimate`, `conf.low`, `conf.high`) next to what
+was eventually `observed` and the scores that comparison earned. It goes
 straight into `dplyr` or `ggplot2`:
 
 ```{r backtest-summary, echo=FALSE, purl=FALSE}

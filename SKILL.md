@@ -1217,7 +1217,8 @@ bt <- nowcast_backtest(x_full,
                        engine_nobbs(max_D = 10),
                        now_dates = as.Date(c("2010-08-01", "2010-09-01")),
                        seed = 20260824)
-tidy(bt)                                   # one row per (method, now, target)
+tidy(bt)                                   # one row per (method, now, target):
+                                           # prediction + observed + scores
 nowcast_weights(bt, type = "inverse_score")  # w proportional to 1 / mean WIS
 nowcast_ensemble(members, weights = "inverse_score", backtest = bt)
 ```
@@ -1285,8 +1286,12 @@ one fitted by hand.
   `c(0.1, 0.5, 0.9)`, and `NA` (with `NA` bounds) when no symmetric pair exists.
   `engine` is the method, or the ensemble's name.
 - **`tidy()` also works on a `nowcast_backtest`**, giving one row per (method,
-  `now` date, target) with `wis`, `ae_median` and the coverage flags — ready for
-  `dplyr` or `ggplot2`.
+  `now` date, target) with **both halves of the comparison**: the retrospective
+  prediction (`estimate`, `conf.low`, `conf.high`, `level`, named as everywhere
+  else), what was eventually `observed`, and the scores (`wis`, `ae_median`,
+  `coverage_50`, `coverage_90`) — ready for `dplyr` or `ggplot2`. `level` is one
+  number for the whole table, since a backtest refuses engines whose
+  `quantile_levels` disagree.
 - **`library(broom)` overwrites `tbl.now`'s `tidy.list()` method**, which is what
   `NobBS` fits and per-stratum `baselinenowcast` lists dispatch on. Qualify as
   `tbl.now::tidy(...)` when broom is attached.

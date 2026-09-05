@@ -57,6 +57,32 @@ score_tbl_now <- function() {
 }
 
 
+#' `score_tbl_now()` with two strata of deliberately different size
+#'
+#' The prediction columns `tidy.nowcast_backtest()` adds are joined onto the
+#' scores, and a join that keyed on the event date alone would hand both strata
+#' whichever sorted first. That bug is only visible when the strata differ, so
+#' `b` is built at four times `a`.
+score_tbl_now_strata <- function() {
+  dates <- as.Date("2020-01-06") + seq(0, 7 * 29, by = 7)
+  data <- tidyr::expand_grid(
+    event_date = dates, delay = 0:3, stratum = c("a", "b")
+  ) |>
+    dplyr::mutate(
+      report_date = .data$event_date + 7 * .data$delay,
+      n = as.integer(pmax(1, 40 - 8 * .data$delay)) *
+        dplyr::if_else(.data$stratum == "b", 4L, 1L)
+    ) |>
+    dplyr::select("event_date", "report_date", "stratum", "n")
+
+  tbl_now(data,
+    event_date = "event_date", report_date = "report_date",
+    case_count = "n", strata = "stratum", data_type = "count-incidence",
+    verbose = FALSE
+  )
+}
+
+
 #' A `tbl_now` whose eventual counts are exactly `counts`
 #'
 #' `score_nowcast()` and `as_scoringutils()` take the truth as a `tbl_now` and

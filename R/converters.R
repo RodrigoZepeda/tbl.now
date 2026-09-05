@@ -109,7 +109,8 @@
 #'   `install.packages()` call. Defaults to the epinowcast r-universe.
 #' @param install Optional literal install instruction, used verbatim instead of
 #'   building an `install.packages()` call. Use this for back-ends that are not
-#'   served by any CRAN-style repository.
+#'   served by any CRAN-style repository. A character vector becomes one bullet
+#'   per line, for the back-ends whose installation takes more than one call.
 #'
 #' @return `NULL`, invisibly (called for its side effect of aborting when the
 #'   package is missing).
@@ -130,9 +131,18 @@
         names(repo)[1], " = '", unname(repo)[1], "'))"
       )
     }
+    # The instruction is INTERPOLATED by `cli_abort()` rather than pasted into
+    # its template: an install call is data, and one carrying a brace (a git ref,
+    # say) pasted in would be read as a glue expression and fail to format.
+    # Pre-formatting it here does not help -- `cli_abort()` would glue the result
+    # a second time -- so the template names the element and cli reads it from
+    # this frame.
+    hints <- paste0("{.code {install[[", seq_along(install), "]]}}")
+    hints[[1]] <- paste0("Install it with: ", hints[[1]])
+    names(hints) <- rep("i", length(hints))
     cli::cli_abort(c(
       "Package {.pkg {pkg}} is required for this conversion.",
-      "i" = paste0("Install it with: ", install)
+      hints
     ))
   }
 }

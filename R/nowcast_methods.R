@@ -79,7 +79,15 @@
 nowcast_fit.diseasenowcasting <- function(engine, x, ...,
                                           quantile_levels = nowcast_quantile_levels(),
                                           verbose = TRUE) {
-  .need_pkg("diseasenowcasting")
+  # GitHub-only: it is in no CRAN-style repository, so the default
+  # `install.packages(repos = ...)` hint `.need_pkg()` builds cannot install it.
+  .need_pkg(
+    "diseasenowcasting",
+    install = c(
+      'install.packages("pak")',
+      'pak::pkg_install("RodrigoZepeda/diseasenowcasting")'
+    )
+  )
 
   # diseasenowcasting was built around `tbl_now`, so it reads the data type,
   # strata, covariates and temporal effects straight off the object: NO
