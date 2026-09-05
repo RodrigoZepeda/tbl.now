@@ -76,10 +76,6 @@ For our example, six columns matter:
 -   `specimen_date` — the **event date**, when the sample was taken.
 -   `report_date` — the **report date**, when the laboratory issued the
     result.
--   `received_date` — the **validation date**, when the report was
-    received by INS.
--   `microorganism` - the species of the organism isolated in the
-    culture.
 -   `sex` - the sex of the individual.
 
 For the tutorial, we will do perform a nowcast assuming we are standing
@@ -89,8 +85,7 @@ have looked like:
 ```{r}
 hai_bucaramanga <- hai_bucaramanga |>
   filter((is.na(specimen_date) | specimen_date <= ymd("2022/07/18")), 
-         (is.na(report_date)   | report_date   <= ymd("2022/07/18")),
-         (is.na(received_date) | received_date <= ymd("2022/07/18")))
+         (is.na(report_date)   | report_date   <= ymd("2022/07/18")))
 ```
 
 ::: {.alert .alert-warning}
@@ -113,42 +108,10 @@ diagnostics don't cover everything.
 ```{r}
 #We keep only the columns of interest
 hai_bucaramanga <- hai_bucaramanga |> 
-  select(id, specimen_date, report_date, received_date, microorganism, sex)
+  select(id, specimen_date, report_date, sex)
 ```
 
-````{=html}
-<!--
-## 0. Initial data transformation
 
-The column `microorganism` contains all the isolated organism. We will
-consider the following as our microorgainsms of interest and
-recode them as `"confirmed"` (they will be confirmed cases of our disease).
-Those that were classified as something else will be recoded
-as `"retracted"` (they were suspected Klebsiella but not anymore). Finally
-those with `NA` will be recoded as `"pending"` as we still don't know their result.
-
-We note that for our analysis we will only focus on Klebsiella pneumoniae hence
-solely code as **confirmed** the following microorganism entries: `Klebsiella pneumoniae`, 
-`Klebsiella pneumoniae subsp. pneumoniae`, and `Klebsiella pneumoniae (multidrug-resistant)`.
-The entry `Klebsiella pneumoniae/oxytoca` will be coded as **pending**. The remaining
-microorganisms will be considered **retracted**:
-
-```{r}
-#We list those that we will consider "confirmed"
-valid_organisms <- c("Klebsiella pneumoniae",  
-                     "Klebsiella pneumoniae subsp. pneumoniae",  
-                     "Klebsiella pneumoniae (multidrug-resistant)")
-
-hai_bucaramanga <- hai_bucaramanga |> 
-  mutate(validation = case_when(
-    microorganism %in% valid_organisms               ~ "confirmed",
-    is.na(microorganism)                             ~ "pending",
-    microorganism == "Klebsiella pneumoniae/oxytoca" ~ "pending",
-    .default = "retracted"
-  ))
-```
--->
-````
 
 ## 2. Building the `tbl_now`
 
@@ -302,12 +265,11 @@ of datasets. One particular issue is for repeated rows; that is when an
 individual is registered twice in the dataset for the same disease at
 the same exact times.
 
-Here we can see that the same individuals `id` are sometimes repeated
-for the same event reporting the same microorganism:
+Here we can see that the same individuals `id` are sometimes repeated:
 
 ```{r dupes}
 hai_bucaramanga |>
-  count(id, microorganism, report_date, specimen_date) |>
+  count(id, report_date, specimen_date) |>
   filter(n > 1) |> 
   as_tibble()
 ```
@@ -341,10 +303,10 @@ hai_bucaramanga
 ```
 
 The temporal effect gets added lazily. You can use
-`compute_temporal_effects()` to show it as a column in case you require it. 
+`compute_temporal_effects()` to show it as a column in case you require it (see them at the end of the tbl_now). 
 
 ```{r}
-hai_bucaramanga
+hai_bucaramanga |> compute_temporal_effects()
 ```
 
 
@@ -412,9 +374,9 @@ summary(hai_bucaramanga)
 or as we do here call each of the summaries we are going to discuss (see
 `?nowcast_summary_components` for the whole list).
 
-We can start with the delays where we can see that up until the 3rd
-quartile delays are less than 100 days but then they explode by the 90th
-quantile:
+We can start with the delays. Here we can see that up until the 3rd
+quartile (`q75`) delays are less than 100 days but then they explode by the 90th
+quantile (`q90`):
 
 ```{r}
 delay_summary(hai_bucaramanga)
@@ -424,7 +386,7 @@ The `zero_run_summary()` quantifies the sparcity by counting how many
 days with continuous zeroes happened for either the event or the report
 dates. That is, it measures the distribution of days of continuous
 zeroes. You can see that usually there are on average
-`r zero_run_summary(hai_bucaramanga)$mean[1]` continuous zeroes before a
+`r round(zero_run_summary(hai_bucaramanga)$mean[1],2)` continuous zeroes before a
 case. However there have been runs of
 `r zero_run_summary(hai_bucaramanga)$max[1]` continuous days with no
 cases (continuous zeroes) until one case:
@@ -469,8 +431,8 @@ autoplot(hai_fit)
 ## 8. Changing to weekly data
 
 Though nowcasting is possible with sparse data, oftentimes people prefer
-to rescale data to a coarser time frame. Here we'll rescale the dataset
-to a weekly reporting time frame with `aggregate_time_units()`:
+to rescale data to a coarser time frame (and some packages can't handle the sparcity either). 
+Here we'll rescale the dataset to a weekly reporting time frame with `aggregate_time_units()`:
 
 ```{r}
 hai_bucaramanga <- hai_bucaramanga |> 
@@ -478,21 +440,22 @@ hai_bucaramanga <- hai_bucaramanga |>
 ```
 
 This aggregation of the epidemic process allows the nowcasting models to
-infer more from it as you can see a more clear epidemic shape in the
-autoplot:
+infer more from it as you can see a clearer epidemic-process shape:
 
 ```{r, fig.width=11, fig.height=13, message=FALSE, warning=FALSE, fig.alt="The now auto plot with weekly data"}
 autoplot(hai_bucaramanga)
 ```
 
-One should run again the `summary()` in the aggregated to draw
+One should run again the `summary()` and `diagnose()` in the aggregated to draw
 conclusions from this data. For us, however it will suffice to see that
 the sparcity has reduced to usually just 1 week with zero cases before
-seeing a week with cases so we can move on with the tutorial:
+having cases again:
 
 ```{r}
 zero_run_summary(hai_bucaramanga)
 ```
+
+Let's move on with the tutorial. 
 
 ## 9. Is the reporting delay stable?
 
@@ -571,8 +534,11 @@ the cases at that date in section 3.
 
 Here lies a figure with 3 axis. We can see for example our censoring at `2022-07-17` 
 as the collection of points in the same axis. Values shared by the same
-report axis with a high delay(i.e. far from the event-date axis might correspond
-to reporting batches)
+report axis with a high delay might be batches (_i.e._ several reported at once
+with some far from the event-date  axis). You can see for example a point with delay
+around 32 weeks just before a report date of October 31st that corresponds to
+an event somewhere between November 2020 and Match 2021. This has a high delay 
+and several more points were reported at that report date. We'll come back to that. 
 
 ::: {.alert .alert-info}
 You can also use
@@ -585,8 +551,7 @@ to visualize the batches; however for this specific case they are easier
 to visualize in the hexamap.
 :::
 
-Either way we can see that `2022-07-17` is a candidate for possible
-batches. In this package, the `diagnose_batches()` function helps
+In this package, the `diagnose_batches()` function helps
 identify potential dates with batches. We recommend using it with or
 without the strata depending on whether the context warrants the
 possibility that batching could differ by strata (e.g. if strata
@@ -599,8 +564,7 @@ those observations that have been identified as potential batches:
 ```{r}
 hai_bucaramanga |> 
   remove_all_strata() |> 
-  diagnose_batches() |> 
-  filter(batch)
+  diagnose_batches(drop_censored = TRUE) 
 ```
 
 This identifies some dates that might be batches due to their high
@@ -618,6 +582,8 @@ hai_bucaramanga |>
 
 Where we further identify the date of `2021-11-28` as a potential batch
 with its `p_value < 0.003`.
+
+Given that the 
 
 
 ## 11. Nowcasting
@@ -638,8 +604,8 @@ hai_bucaramanga <- hai_bucaramanga |>
 ```
 
 The `run_nowcast()` function takes the `tbl_now` and an
-**engine**. An engine is one modelling package plus every argument that
-package needs:
+**engine**. An engine contains a modelling package's nowcasting
+function plus every argument that it needs:
 
 ```{r nowcast-weekly}
 hai_fit_weekly <- hai_bucaramanga |>
@@ -667,236 +633,102 @@ tidy(hai_fit_weekly) |> arrange(event_date) |> tail()
 
 One way to evaluate the nowcast is to go back in time and 
 see, what would the nowcast have produced with the information
-available at a past date and contrast it with the information
+available at a previous date contrasting it with the information
 known by now. You can use `nowcast_backtest()` for that purpose:
 for every past date it truncates the data to the reports that were 
 available *then*, refits the nowcast,  and scores the result against what
-was eventually registered.
+was eventually observed.
 
 To best evaluate the nowcast we need something to compare against. Hence
-we fit a second model:  `baselinenowcast`. 
+we will fit a second model:  `baselinenowcast`. 
 
 One can fit it with the same call just a different engine
 
-```{r bln-error, error = TRUE, warning=FALSE, eval=FALSE}
+```{r bln-error, error = TRUE, warning=FALSE, eval=TRUE, message=FALSE}
 hai_fit_baseline <- hai_bucaramanga |>
-  to_count(to = "count-incidence") |> 
-  complete_zeroes() |> 
   run_nowcast(engine = engine_baselinenowcast())
 ```
 
-
-Now the backtest. It takes the **same engines** you fitted with, so
-there is no second place to keep the arguments in step, and it refits
-every engine once per date — with three dates and two engines that is
-six fits:
+Any backtest uses the  **same engines** refitting 
+every engine once per past date. Here we show the backtest with just 3 past dates.
+On a real scenario we recommend using as many as possible to draw any conclusions:
 
 ```{r backtest, warning=FALSE, message=FALSE}
-hai_backtest <- nowcast_backtest(
-  hai_counts,
-  engine_diseasenowcasting(temporal_effects = "none"),
-  engine_baselinenowcast(max_delay = 20),
-  now_dates = get_now(hai_counts) - 7 * c(12, 8, 4),
-  seed      = 20260904
-)
+hai_backtest <- hai_bucaramanga |> 
+  nowcast_backtest(
+    engine_diseasenowcasting(),
+    engine_baselinenowcast(),
+    now_dates = c(ymd("2022-04-24"), ymd("2022-05-22"), ymd("2022-06-19")),
+    seed      = 20260904
+  )
+```
+Printing the object shows the results from the backtest which includes the individual results for the weighted interval score (`wis`), the median absolute error (`ae_median`), and the coverage of the 50 and 90% intervals (`coverage_*`):
 
+```{r}
+hai_backtest
+```
+
+In this scenario,  `diseasenowcasting` scores better on both
+accuracy measures and **both** methods cover far more than the nominal 90.
+We caution however that we cannot conclude anything from just 3 data points
+and in a real scenario one should use more. 
+
+Date-level indicators for the `wis`, `ae_median` and coverage can be obtained with tidy:
+
+
+```{r, eval=FALSE}
 tidy(hai_backtest)
 ```
 
-::: {.alert .alert-info}
-Pass `seed` to the backtest rather than calling `set.seed()` before it.
-`nowcast_backtest()` seeds immediately before each fit, from the engine's
-label and the date it is fitting, so a fit depends only on *which* fit it
-is. One `set.seed()` at the top only pins anything if every method draws
-the same random numbers in the same order — which stops being true the
-moment you drop an engine or add a date.
-:::
-
-`tidy()` returns one row per (method, retrospective `now`, target), which
-goes straight into `dplyr`:
-
-```{r backtest-scores}
-tidy(hai_backtest) |>
-  group_by(method) |>
-  summarise(
-    wis         = mean(wis),
-    ae_median   = mean(ae_median),
-    coverage_50 = mean(coverage_50),
-    coverage_90 = mean(coverage_90)
-  )
+```{r, eval=FALSE}
+tidy(hai_backtest) |> arrange(event_date) |> tail()
 ```
 
-`wis` is the weighted interval score (lower is better; it rewards a
-sharp interval only if the interval is also right), `ae_median` is the
-absolute error of the median, and the two coverage columns are the share
-of targets that fell inside the 50% and 90% intervals.
-
-Two things to read here. `diseasenowcasting` scores better on both
-accuracy measures, which is what you would hope for from a model that
-has an epidemic process in it when the delay is drifting. And **both**
-methods cover far more than the nominal 50%: on counts this small a
-discrete interval jumps from covering too little to covering everything,
-so over-coverage here is a property of the data, not a fault of either
-model.
-
-That table is also flattering to both of them, because it scores *every*
-event date — and most of those weeks were settled long before the
-retrospective `now`, so they are free points that any method gets right.
-The sharper question is how the methods do on the weeks that were still
-open:
-
-```{r backtest-open}
-tidy(hai_backtest) |>
-  filter(event_date > now - 7 * 8) |>
-  group_by(method) |>
-  summarise(
-    n           = n(),
-    wis         = mean(wis),
-    coverage_50 = mean(coverage_50),
-    coverage_90 = mean(coverage_90)
-  )
-```
-
-The gap widens, and it is stable across all three retrospective dates
-rather than resting on one lucky week:
-
-```{r backtest-plot, fig.width=9, fig.height=4, fig.alt="Grouped bar chart of the mean weighted interval score for each method at each of the three retrospective now dates."}
-tidy(hai_backtest) |>
-  filter(event_date > now - 7 * 8) |>
-  group_by(method, now) |>
-  summarise(wis = mean(wis), .groups = "drop") |>
-  ggplot(aes(x = factor(now), y = wis, fill = method)) +
-  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
-  labs(x = "Retrospective `now`", y = "Mean WIS (last 8 weeks)", fill = NULL) +
-  theme_bw() +
-  theme(legend.position = "top")
-```
-
-::: {.alert .alert-warning}
-Three retrospective dates is few. It is enough to see that neither model
-is broken and to notice a consistent ordering, but it is not enough to
-claim one package beats the other on this kind of data. A backtest costs
-`length(engines) x length(now_dates)` model fits, so lengthening
-`now_dates` is the first thing to do when the conclusion matters.
-:::
 
 ## 13. Ensemble nowcast
 
-The backtest above ranked the two models, but it did not say to *drop*
-either of them: they were built on different assumptions, and averaging
-models that disagree usually beats picking the winner in advance —
-especially when you must commit before you know which weeks are hard.
+An ensemble is a weighted average between models. It leverages the
+fact that no model is perfect hence combining the predictions of each
+might lead to a more robust nowcast. You can think of an ensemble as an average
+of the models. 
 
-Because every `run_nowcast()` result has the same shape, combining them
-is one call. We use three members: the two fits from section 12, and a
-third that is the **same package with a different epidemic process**.
-An ensemble is not only a hedge across packages — two structurally
-different models from one package disagree in their own way, and that
-disagreement is worth combining too:
+To create an ensemble model one needs to pass the model
+specifications (with a name) as well as the backtest:
 
-```{r ar1-fit, warning=FALSE, message=FALSE}
-hai_fit_ar1 <- hai_counts |>
-  run_nowcast(engine = engine_diseasenowcasting(
-    temporal_effects = "none",
-    model = diseasenowcasting::model(
-      epidemic = diseasenowcasting::ar1_epidemic()
-    ),
-    seed  = 20260904,
-    label = "dnc_ar1"
-  ))
-
-members <- list(
-  diseasenowcasting = hai_fit_dnc,
-  dnc_ar1           = hai_fit_ar1,
-  baselinenowcast   = hai_fit_bln
+```{r ensemble-weighted, warning=FALSE, message=FALSE}
+hai_ensemble <- nowcast_ensemble(
+  hai_fit_weekly,
+  hai_fit_baseline,
+  weights  = "inverse_score",
+  backtest = hai_backtest
 )
-
-hai_ensemble <- nowcast_ensemble(members)
-hai_ensemble
 ```
 
-Both `diseasenowcasting` members report the same `method`, so it is the
-**names** that tell them apart: the names of the `members` list here,
-and an engine's `label` in a backtest. We give the AR(1) engine the same
-`label` its list entry has so that the two line up when we come to
-weights below.
+The same `tidy()` and `autoplot()` functions can be used here:
 
-By default every member counts the same, and the members are combined
-**quantile by quantile**: the ensemble's 90th percentile is the average
-of the members' 90th percentiles. That always works, and it tends to
-come out *narrower* than the members. Pooling the draws instead treats
-the ensemble as a mixture, which is usually wider and better calibrated
-— it needs every member to have kept draws, and errors rather than
-silently dropping one that has not:
-
-```{r ensemble-pool, warning=FALSE, message=FALSE}
-nowcast_ensemble(members, type = "linear_pool")
-```
-
-The result is an ordinary `tbl_nowcast`, so it plots and tidies like any
-single fit:
-
-```{r ensemble-plot, message=FALSE, warning=FALSE, fig.width=9, fig.height=4.5, fig.alt="The ensemble nowcast: grey reported columns with a green fan over the final weeks, for each sex."}
+```{r}
 autoplot(hai_ensemble)
 ```
 
-### Weighting the members
+One can fit ensembles with more than two models and different model specifications. Check out the article on [ensemble nowcasting](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html) for more information. 
 
-Equal weights are a defensible default, but the backtest already knows
-which member did better. `nowcast_weights()` turns it into weights, and
-`nowcast_ensemble()` takes them directly.
+## Summary
 
-One catch: the weights are matched to the members **by name**, and a
-member whose name the backtest has never seen falls back to its *method*
-— so `dnc_ar1` would silently inherit the plain `diseasenowcasting`
-weight. If you want the two epidemic processes weighted separately, the
-labelled engine has to be in the backtest as well:
+In this example we showed:
+1. How to create a `tbl_now()` object.
+2. How to `diagnose()` and summarise with `summary()` as well as visualize with `autoplot()` a `tbl_now()`.
+3. How to add `temporal_effects()` to the object which can be displayed in the plots. 
+4. How to aggregate the time units with `aggregate_time_units()` to pass from days to weeks.  
+5. How to identify drifts and batches with `plot_delay_drift()`, `diagnose_drift()` and `diagnose_changepoint()`. 6. How to identify potential batches with `plot_reporting_hexamap()` in conjunction with `diagnose_batches()` (and `diagnose_batches2()`). 
+7. How to perform a nowcast by setting an `engine()` and running with `run_nowcast()`.
+8. How to clean with `tidy()` and `autoplot()` a nowcast.
+9. How to backtest a nowcast with `nowcast_backtest()` and create an ensemble with `nowcast_ensemble()`.
 
-```{r ensemble-backtest, warning=FALSE, message=FALSE}
-hai_backtest_all <- nowcast_backtest(
-  hai_counts,
-  engine_diseasenowcasting(temporal_effects = "none"),
-  engine_diseasenowcasting(
-    temporal_effects = "none",
-    model = diseasenowcasting::model(
-      epidemic = diseasenowcasting::ar1_epidemic()
-    ),
-    label = "dnc_ar1"
-  ),
-  engine_baselinenowcast(max_delay = 20),
-  now_dates = get_now(hai_counts) - 7 * c(12, 8, 4),
-  seed      = 20260904
-)
+::: {.alert .alert-tip}
+If you have any questions regarding this article or comments please [open an issue](https://github.com/RodrigoZepeda/tbl.now/issues/new)
+:::
 
-nowcast_weights(hai_backtest_all, type = "inverse_score")
-```
 
-`"inverse_score"` makes each weight proportional to `1 / mean WIS`. It is
-the safe rule: monotone in performance, and it never collapses onto a
-single model. The alternative, `type = "optim"`, searches for the weights
-that would have *minimised* the ensemble's WIS over the backtest window;
-it is better in principle but it overfits happily on three retrospective
-dates, and here it puts the entire weight on a single member.
-
-Either rule plugs straight into the ensemble:
-
-```{r ensemble-weighted, warning=FALSE, message=FALSE}
-nowcast_ensemble(
-  members,
-  weights  = "inverse_score",
-  backtest = hai_backtest_all
-)
-```
-
-The two `diseasenowcasting` variants turn out to be nearly
-indistinguishable on this data — an AR(1) epidemic and the default
-process agree when there is this little signal to disagree about — so
-the learned weights sit close to equal, and the weighted ensemble lands
-almost exactly where the unweighted one did. That is a perfectly good
-outcome to report: on a few hundred infections spread thinly over two
-and a half years, the honest answer is a handful of cases with a wide
-interval, and three models agreeing on it is more reassuring than any
-one of them being confident.
 
 ```{r learning-more, echo=FALSE, results="asis"}
 # The fragment is looked up by ABSOLUTE path via system.file(), never by a
