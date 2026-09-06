@@ -72,6 +72,90 @@
   invisible(NULL)
 }
 
+#' Classify temporal effects for EpiNow2's built-in model options
+#'
+#' EpiNow2's series input has no covariate columns, but its observation model has
+#' a native weekly reporting effect. Map only the `tbl_now` specs that match that
+#' option; every other requested effect is unavailable through the built-in
+#' engine and must be reported before the converter drops the columns.
+#'
+#' @param x A `tbl_now`.
+#'
+#' @return A list with logical `report_week_effect` and character
+#'   `unsupported`.
+#'
+#' @keywords internal
+#' @noRd
+.epinow2_temporal_effect_support <- function(x) {
+  specs <- get_temporal_effects(x)
+  if (length(specs) == 0) {
+    return(list(report_week_effect = FALSE, unsupported = character(0)))
+  }
+
+  unsupported <- character(0)
+  report_week_effect <- FALSE
+
+  for (spec in specs) {
+    effects <- spec$t_effects
+    where <- spec$date_type
+    requested <- character(0)
+    if (isTRUE(effects@day_of_week)) requested <- c(requested, "day_of_week")
+    if (isTRUE(effects@weekend)) requested <- c(requested, "weekend")
+    if (isTRUE(effects@day_of_month)) requested <- c(requested, "day_of_month")
+    if (isTRUE(effects@month_of_year)) requested <- c(requested, "month_of_year")
+    if (isTRUE(effects@week_of_year)) requested <- c(requested, "week_of_year")
+    if (length(effects@holidays) > 0) requested <- c(requested, "holidays")
+    if (length(effects@holiday_lags) > 0 && any(effects@holiday_lags > 0)) {
+      requested <- c(requested, "holiday_lags")
+    }
+    if (length(effects@weekend_lags) > 0 && any(effects@weekend_lags > 0)) {
+      requested <- c(requested, "weekend_lags")
+    }
+    if (length(effects@seasons) > 0) requested <- c(requested, "seasons")
+
+    supported <- identical(where, "report_date") && "day_of_week" %in% requested
+    report_week_effect <- report_week_effect || supported
+    missing <- setdiff(requested, if (supported) "day_of_week" else character(0))
+    if (length(missing) > 0) {
+      unsupported <- c(unsupported, paste0(missing, " on ", where))
+    }
+  }
+
+  list(
+    report_week_effect = report_week_effect,
+    unsupported = unique(unsupported)
+  )
+}
+
+#' Add EpiNow2 temporal-effect model options to the backend arguments
+#'
+#' @param args Arguments about to be passed to EpiNow2.
+#' @param x Source `tbl_now`.
+#'
+#' @return Modified `args`.
+#'
+#' @keywords internal
+#' @noRd
+.epinow2_apply_temporal_effects <- function(args, x) {
+  support <- .epinow2_temporal_effect_support(x)
+
+  if (support$report_week_effect && is.null(args$obs)) {
+    args$obs <- EpiNow2::obs_opts(week_effect = TRUE)
+  }
+
+  if (length(support$unsupported) > 0) {
+    cli::cli_warn(c(
+      "{.pkg EpiNow2} cannot add some declared temporal effects through the
+       built-in engine.",
+      "i" = "Unavailable effect{?s}: {.val {support$unsupported}}.",
+      "i" = "Only report-date {.val day_of_week} maps to
+             {.code EpiNow2::obs_opts(week_effect = TRUE)}."
+    ))
+  }
+
+  args
+}
+
 # diseasenowcasting -----
 
 #' @rdname nowcast_fit
@@ -79,7 +163,15 @@
 nowcast_fit.diseasenowcasting <- function(engine, x, ...,
                                           quantile_levels = nowcast_quantile_levels(),
                                           verbose = TRUE) {
-  .need_pkg("diseasenowcasting")
+  # GitHub-only: it is in no CRAN-style repository, so the default
+  # `install.packages(repos = ...)` hint `.need_pkg()` builds cannot install it.
+  .need_pkg(
+    "diseasenowcasting",
+    install = c(
+      'install.packages("pak")',
+      'pak::pkg_install("RodrigoZepeda/diseasenowcasting")'
+    )
+  )
 
   # diseasenowcasting was built around `tbl_now`, so it reads the data type,
   # strata, covariates and temporal effects straight off the object: NO
@@ -190,35 +282,47 @@ nowcast_fit.baselinenowcast <- function(engine, x, ..., draws = 1000,
   }
 
   # A reporting-triangle *matrix* has no strata dimension, so a stratified
-  # nowcast is one triangle (and one fit) per stratum.
-  delays_unit <- .baselinenowcast_delays_unit(x, delays_unit)
-  long <- .quietly_if(
+  # nowcast is one triangle (and one fit) per stratum. That is exactly what
+  # `format = "triangle_list"` returns, so ask for it rather than splitting the
+  # long format by hand: the long format is a tidy data frame with no grid, so
+  # the converter deliberately never completes it, and a line list has no row
+  # for an event period in which nothing was reported. Building the triangles
+  # from it silently shortened the reference axis -- the same object fitted 54
+  # reference times as a line list and 81 after `to_count() |>
+  # complete_zeroes()` (#67). The list format also restores the not-yet-observed
+  # cells to `NA` and absorbs negative increments, neither of which the
+  # hand-rolled split did.
+  triangles <- .quietly_if(
     tbl_now_to_baselinenowcast(
       x,
-      format = "long", max_delay = max_delay, verbose = verbose
+      format = "triangle_list", delays_unit = delays_unit,
+      max_delay = max_delay, verbose = verbose
     ),
     verbose
   )
 
-  key <- do.call(paste, c(long[strata_cols], list(sep = "\r")))
-  lookup <- dplyr::distinct(dplyr::tibble(.key = key, !!!long[strata_cols]))
+  # The strata VALUES travel with the list, one row per element, so the label is
+  # never parsed back into columns -- a stratum containing the separator would
+  # not round-trip.
+  lookup <- dplyr::as_tibble(attr(triangles, "strata_values")) |>
+    dplyr::mutate(.key = names(triangles), .before = 1)
+
+  # The list's own names paste with " | "; every message in the package names a
+  # stratum with `.tbl_now_strata_label()`, so build the label from the values.
+  labels <- .tbl_now_strata_label(
+    as.data.frame(attr(triangles, "strata_values")), strata_cols
+  )
 
   fits <- .quietly_if(
-    lapply(split(long, key), function(stratum) {
-      triangle <- baselinenowcast::as_reporting_triangle(
-        as.data.frame(stratum[, c("reference_date", "report_date", "count")]),
-        delays_unit = delays_unit
-      )
-      .baselinenowcast_check_shape(
-        triangle,
-        stratum = .tbl_now_strata_label(stratum[1, , drop = FALSE], strata_cols)
-      )
+    lapply(seq_along(triangles), function(i) {
+      .baselinenowcast_check_shape(triangles[[i]], stratum = labels[i])
       baselinenowcast::baselinenowcast(
-        triangle, output_type = "samples", draws = draws, ...
+        triangles[[i]], output_type = "samples", draws = draws, ...
       )
     }),
     verbose
   )
+  names(fits) <- names(triangles)
 
   structure(fits, strata_lookup = lookup, class = "baselinenowcast_strata")
 }
@@ -828,6 +932,14 @@ nowcast_fit.EpiNow2 <- function(engine, x, ..., convert_args = list(), # nolint:
                                 verbose = TRUE) {
   .need_pkg("EpiNow2")
   strata_cols <- get_strata(x) %||% character(0)
+  engine_args <- engine$args
+  if ("convert_args" %in% names(engine_args) && identical(convert_args, list())) {
+    convert_args <- engine_args$convert_args
+  }
+  engine_args$convert_args <- NULL
+  args <- .epinow2_apply_temporal_effects(
+    utils::modifyList(engine_args, list(...)), x
+  )
 
   # `estimate_infections()` is the entry point that produces a case nowcast;
   # `regional_epinow()` is the same model run once per region, which is how
@@ -844,9 +956,13 @@ nowcast_fit.EpiNow2 <- function(engine, x, ..., convert_args = list(), # nolint:
   )
 
   if (target == "regional_epinow") {
-    return(.quietly_if(EpiNow2::regional_epinow(series, ...), verbose))
+    return(.quietly_if(
+      do.call(EpiNow2::regional_epinow, c(list(series), args)), verbose
+    ))
   }
-  .quietly_if(EpiNow2::estimate_infections(series, ...), verbose)
+  .quietly_if(
+    do.call(EpiNow2::estimate_infections, c(list(series), args)), verbose
+  )
 }
 
 #' The posterior samples of `reported_cases` from an EpiNow2 fit

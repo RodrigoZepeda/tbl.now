@@ -394,6 +394,76 @@ test_that("EpiNow2 uses estimate_infections(), and regional_epinow() for strata"
   expect_named(stratified, "regional")
 })
 
+test_that("EpiNow2 engine maps supported report temporal effects to obs_opts", {
+  skip_if_not_installed("EpiNow2")
+
+  x <- counts_tbl_now() |>
+    add_temporal_effects(
+      temporal_effects(day_of_week = TRUE), date_type = "report_date"
+    )
+  seen_args <- NULL
+  local_mocked_bindings(
+    estimate_infections = function(data, ...) {
+      seen_args <<- list(...)
+      structure(list(), class = "estimate_infections")
+    },
+    .package = "EpiNow2"
+  )
+
+  suppressWarnings(nowcast_fit(engine_epinow2(), x, verbose = FALSE))
+
+  expect_s3_class(seen_args$obs, "obs_opts")
+  expect_true(seen_args$obs$week_effect)
+})
+
+test_that("EpiNow2 engine does not overwrite an explicit obs option", {
+  skip_if_not_installed("EpiNow2")
+
+  x <- counts_tbl_now() |>
+    add_temporal_effects(
+      temporal_effects(day_of_week = TRUE), date_type = "report_date"
+    )
+  explicit_obs <- EpiNow2::obs_opts(week_effect = FALSE)
+  seen_args <- NULL
+  local_mocked_bindings(
+    estimate_infections = function(data, ...) {
+      seen_args <<- list(...)
+      structure(list(), class = "estimate_infections")
+    },
+    .package = "EpiNow2"
+  )
+
+  suppressWarnings(
+    nowcast_fit(engine_epinow2(obs = explicit_obs), x, verbose = FALSE)
+  )
+
+  expect_identical(seen_args$obs, explicit_obs)
+})
+
+test_that("EpiNow2 engine warns for unavailable temporal effects", {
+  skip_if_not_installed("EpiNow2")
+
+  x <- counts_tbl_now() |>
+    add_temporal_effects(temporal_effects(week_of_year = TRUE))
+  local_mocked_bindings(
+    estimate_infections = function(data, ...) {
+      structure(list(), class = "estimate_infections")
+    },
+    .package = "EpiNow2"
+  )
+
+  warnings <- character()
+  withCallingHandlers(
+    suppressMessages(nowcast_fit(engine_epinow2(), x, verbose = FALSE)),
+    warning = function(cnd) {
+      warnings <<- c(warnings, conditionMessage(cnd))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_true(any(grepl("Unavailable", warnings)))
+  expect_true(any(grepl("temporal effects", warnings)))
+})
+
 test_that("EpiNow2's predictions come from tidy(), keeping its own width", {
   skip_if_not_installed("EpiNow2")
 

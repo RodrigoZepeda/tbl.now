@@ -766,6 +766,168 @@ test_that("all four holiday panels build, alone and by strata", {
 })
 
 
+
+test_that("the holiday panels are always normalized, whatever `measure` says", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("almanac")
+
+  object <- make_holiday_now() |>
+    add_temporal_effects(
+      temporal_effects(weekend = TRUE, holidays = almanac::cal_us_federal(),
+                       holiday_lags = 2)
+    )
+
+  # A day type is not an equal-sized part of a week, so a share of the cases in
+  # each would restate the calendar: these four panels ignore `measure`.
+  for (key in c("calendar_holiday", "calendar_holiday_lag")) {
+    expect_equal(
+      ggplot2::autoplot(object, panels = key, measure = "percent")$labels$y,
+      "Normalized effect (1 = average)",
+      info = key
+    )
+  }
+  for (key in c("delay_holiday", "delay_holiday_lag")) {
+    expect_equal(
+      ggplot2::autoplot(object, panels = key, measure = "percent")$labels$y,
+      "Normalized mean delay (1 = average)",
+      info = key
+    )
+  }
+
+  # The percent path used to be the only reason to compute the per-event-date
+  # mean delay, so a delay panel forced back to normalized has to ask for it.
+  expect_s3_class(
+    ggplot2::autoplot(object, panels = c("delay_holiday", "delay_weekday"),
+                      measure = "percent"),
+    "patchwork"
+  )
+
+  # Every other calendar panel still honours it
+  expect_equal(
+    ggplot2::autoplot(object, panels = "calendar_weekday",
+                      measure = "percent")$labels$y,
+    "Percent of cases (%)"
+  )
+
+  # ... and the standalone twins no longer offer an argument that does nothing
+  expect_false("measure" %in% names(formals(plot_holiday_effects)))
+  expect_false("measure" %in% names(formals(plot_weekend_effects)))
+  expect_false("measure" %in% names(formals(plot_holiday_lag_effects)))
+  expect_true("measure" %in% names(formals(plot_day_of_week_effects)))
+})
+
+test_that("the day-type panels are titled for weekends and holidays alike", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("almanac")
+
+  object <- make_holiday_now() |>
+    add_temporal_effects(temporal_effects(weekend = TRUE,
+                                          holidays = almanac::cal_us_federal()))
+
+  expect_equal(
+    ggplot2::autoplot(object, panels = "calendar_holiday")$labels$title,
+    "Weekend and/or holiday effects"
+  )
+  expect_equal(
+    ggplot2::autoplot(object, panels = "delay_holiday")$labels$title,
+    "Weekend and/or holiday delay effects"
+  )
+
+  # The lag panels keep their own name: they are about distance from a holiday.
+  lagged <- add_temporal_effects(
+    object, temporal_effects(holidays = almanac::cal_us_federal(), holiday_lags = 2)
+  )
+  expect_equal(
+    ggplot2::autoplot(lagged, panels = "calendar_holiday_lag")$labels$title,
+    "Holiday lag effect"
+  )
+  expect_equal(
+    ggplot2::autoplot(lagged, panels = "delay_holiday_lag")$labels$title,
+    "Holiday lag delay effect"
+  )
+})
+
+test_that("plot_weekend_effects attaches a weekend effect when there is none", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+
+  object <- make_holiday_now()
+  expect_null(.tbl_now_holiday_config(object))
+
+  panel <- plot_weekend_effects(object)
+  expect_s3_class(panel, "ggplot")
+  expect_identical(levels(panel$data$calendar_group), c("Weekday", "Weekend"))
+  expect_equal(panel$labels$title, "Weekend and/or holiday effects")
+  expect_equal(
+    plot_weekend_effects(object, type = "report")$labels$title,
+    "Weekend and/or holiday delay effects"
+  )
+
+  # The spec goes on a copy -- the caller's object is unchanged
+  expect_length(get_temporal_effects(object), 0)
+
+  # An object that already asks for the weekend is drawn exactly as its twin,
+  # and the definition it was given is the one that is used.
+  attached <- add_temporal_effects(object, temporal_effects(weekend = TRUE),
+                                   weekend_days = c("Fri", "Sat"))
+  expect_equal(plot_weekend_effects(attached)$labels,
+               plot_holiday_effects(attached)$labels)
+  friday <- as.Date("2020-12-04")
+  is_weekend_box <- function(p, day) {
+    as.character(p$data$calendar_group[p$data$event_date == day][1]) == "Weekend"
+  }
+  expect_true(is_weekend_box(plot_weekend_effects(attached), friday))
+  expect_false(is_weekend_box(plot_weekend_effects(object), friday))
+  # ... and `weekend_days` applies when this function is the one attaching it
+  expect_true(is_weekend_box(
+    plot_weekend_effects(object, weekend_days = c("Fri", "Sat")), friday
+  ))
+})
+
+test_that("plot_weekend_effects keeps a holiday calendar that is already there", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("almanac")
+
+  object <- make_holiday_now() |>
+    add_temporal_effects(temporal_effects(holidays = almanac::cal_us_federal()))
+
+  # The calendar contributes its Holiday box; the weekend effect is added on top
+  expect_identical(
+    levels(plot_weekend_effects(object)$data$calendar_group),
+    c("Weekday", "Weekend", "Holiday")
+  )
+})
+
+test_that("plot_weekend_effects refuses data that is not daily", {
+  skip_on_cran()
+
+  weeks <- seq(as.Date("2021-01-04"), as.Date("2021-06-28"), by = "week")
+  weekly <- tbl_now(
+    data.frame(event_date = weeks, report_date = weeks + 7),
+    event_date, report_date,
+    event_units = "weeks", report_units = "weeks", verbose = FALSE
+  )
+  # A weekend is a property of the day, so a weekly grid has nothing to contrast
+  expect_error(plot_weekend_effects(weekly), "needs daily data")
+  expect_error(plot_weekend_effects(weekly), "weeks")
+})
+
+test_that("plot_weekend_effects works on a grouped tbl_now", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+
+  object <- make_holiday_now()
+
+  # It returns a plot rather than a `tbl_now`, so the third assertion is the one
+  # that matters: a grouping the panel does not care about must not change it.
+  grouped <- plot_weekend_effects(dplyr::group_by(object, .report_num))
+  expect_s3_class(grouped, "ggplot")
+  expect_equal(grouped$data, plot_weekend_effects(object)$data)
+})
+
 # --- process colours, subtitles and the percent measure ---------------------
 
 test_that("every panel names the process it describes in its subtitle", {

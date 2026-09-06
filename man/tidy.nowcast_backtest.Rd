@@ -2,7 +2,7 @@
 % Please edit documentation in R/tidy_nowcast.R
 \name{tidy.nowcast_backtest}
 \alias{tidy.nowcast_backtest}
-\title{Tidy the scores of a \code{nowcast_backtest()}}
+\title{Tidy the predictions and scores of a \code{nowcast_backtest()}}
 \usage{
 \method{tidy}{nowcast_backtest}(x, ...)
 }
@@ -13,17 +13,28 @@
 }
 \value{
 A \link[tibble:tibble]{tibble} with the columns \code{method}, \code{now},
-\code{event_date}, \code{stratum}, \code{observed}, \code{wis}, \code{ae_median}, \code{coverage_50} and
-\code{coverage_90}. \code{stratum} is \code{"all"} for an unstratified backtest and the
-\code{" | "}-pasted strata otherwise, so \verb{(method, now, stratum, event_date)} is
-a unique key.
+\code{event_date}, \code{stratum}, \code{observed}, \code{estimate}, \code{conf.low}, \code{conf.high},
+\code{level}, \code{wis}, \code{ae_median}, \code{coverage_50} and \code{coverage_90}. \code{stratum} is
+\code{"all"} for an unstratified backtest and the \code{" | "}-pasted strata
+otherwise, so \verb{(method, now, stratum, event_date)} is a unique key.
+
+\code{estimate}, \code{conf.low}, \code{conf.high} and \code{level} are the retrospective
+prediction itself, read off the same quantiles the scores were computed
+from and named as \link[=tidy.tbl_nowcast]{tidy()} names them: \code{estimate} is the
+\code{0.5} quantile and \code{level} the width of the \strong{widest symmetric pair
+actually present}. \code{\link[=nowcast_backtest]{nowcast_backtest()}} refuses engines that report
+different quantile levels, so \code{level} is one number for the whole table.
+When no symmetric pair exists all three of \code{conf.low}, \code{conf.high} and
+\code{level} are \code{NA}, and \code{estimate} is \code{NA} when the median was not among the
+levels reported -- a guessed width defeats the point of the column.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-One row per (method, \code{now} date, target) with the scores that target earned,
-with the dot-prefixed internal column names traded for ordinary ones so the
-result goes straight into \pkg{dplyr} or \pkg{ggplot2}.
+One row per (method, \code{now} date, target) carrying both halves of the
+comparison -- what the model said and what happened -- with the dot-prefixed
+internal column names traded for ordinary ones so the result goes straight
+into \pkg{dplyr} or \pkg{ggplot2}.
 }
 \examples{
 data(denguedat)
@@ -42,7 +53,8 @@ bt <- nowcast_backtest(dengue,
   now_dates = as.Date(c("2010-10-04", "2010-11-15")), verbose = FALSE
 )
 
-# One tidy row per method, `now` date, stratum and event date.
+# One tidy row per method, `now` date, stratum and event date, carrying the
+# retrospective prediction next to what was eventually observed.
 head(tidy(bt))
 
 }

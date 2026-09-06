@@ -25,8 +25,7 @@ diagnose(x, ...)
 \item{...}{Unused, for extensibility.}
 
 \item{checks}{Character vector of checks to run, a subset of
-\code{c("declarations", "ordering", "missing", "duplicates", "units", "negatives", "now", "truncation", "strata", "signposts")}. Defaults to all
-of them.}
+\code{c("declarations", "ordering", "missing", "duplicates", "units", "negatives", "now", "truncation", "strata")}. Defaults to all of them.}
 
 \item{by_strata}{Logical. Add one set of rows per stratum, for the checks
 that are naturally per-stratum (missingness, negative increments,
@@ -56,10 +55,9 @@ worst first.
 
 It is \strong{deterministic and runs no statistical test.} Whether the reporting
 delay drifts, and whether reports arrive in batches, are questions about a
-\emph{distribution}, not about the object's structure; \code{diagnose()} emits a
-\code{"not_run"} signpost naming the function to call instead
-(\code{\link[=diagnose_drift]{diagnose_drift()}}, \code{\link[=diagnose_batches]{diagnose_batches()}}) rather than quietly running a test
-whose method, window and multiplicity correction you did not choose.
+\emph{distribution}, not about the object's structure, so \code{diagnose()} leaves them
+to \code{\link[=diagnose_drift]{diagnose_drift()}} and \code{\link[=diagnose_batches]{diagnose_batches()}} rather than quietly running a
+test whose method, window and multiplicity correction you did not choose.
 
 Every block is also available on its own -- see
 \link{nowcast_diagnose_components} -- and \code{diagnose()} is exactly the
@@ -74,13 +72,13 @@ stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}} and filtered with
 \describe{
 \item{\code{check}}{Which block the row belongs to: \code{"declarations"},
 \code{"ordering"}, \code{"missing"}, \code{"duplicates"}, \code{"units"}, \code{"negatives"},
-\code{"now"}, \code{"truncation"}, \code{"strata"} or \code{"signposts"}.}
+\code{"now"}, \code{"truncation"} or \code{"strata"}.}
 \item{\code{scope}}{What the row is about: a column name, a time axis, a pair of
 axes, or \code{"all"}.}
 \item{\code{stratum}}{Which subset of the data the row describes: \code{"all"} for
 the pooled rows, or the stratum label otherwise.}
 \item{\code{status}}{An \strong{ordered factor}, worst first, so the tibble sorts
-itself: \code{error} > \code{warning} > \code{note} > \code{ok} > \code{not_run} > \code{skipped}. See
+itself: \code{error} > \code{warning} > \code{note} > \code{ok} > \code{skipped}. See
 the section below.}
 \item{\code{n_affected}}{How many rows (or cases, or dates) the finding is
 about.}
@@ -107,8 +105,6 @@ deliberately never promoted to a warning: \code{validate_tbl_now()} runs on
 every \code{dplyr} verb, and a new warning there would turn a quiet
 construction into a noisy one for data that has always been accepted.}
 \item{\code{ok}}{The check ran and found nothing.}
-\item{\code{not_run}}{A signpost: this question needs a statistical test, and
-\code{message} names the call that answers it.}
 \item{\code{skipped}}{Could not be assessed -- no validation process, the
 wrong data type, or an optional package that is not installed.}
 }

@@ -43,7 +43,7 @@ Simulates a reporting system that is \strong{closed} on a given set of report da
 and releases its accumulated backlog on the next open date.  Reports keep
 their event dates and merely move \emph{later} on the report axis, so no cases are
 created or destroyed -- the defining property of a batch.  Useful for checking
-that \code{\link[=diagnose_batches]{diagnose_batches()}} and \code{\link[=diagnose_batch_shape]{diagnose_batch_shape()}} recover a batch you planted.
+that \code{\link[=diagnose_batches]{diagnose_batches()}} and \code{\link[=diagnose_batches2]{diagnose_batches2()}} recover a batch you planted.
 }
 \details{
 A batch is a \strong{transport}: it moves an item's report date later while leaving
@@ -102,7 +102,7 @@ found$report_date[found$batch]
 
 }
 \seealso{
-\code{\link[=diagnose_batches]{diagnose_batches()}} and \code{\link[=diagnose_batch_shape]{diagnose_batch_shape()}}, the tests this exists to
+\code{\link[=diagnose_batches]{diagnose_batches()}} and \code{\link[=diagnose_batches2]{diagnose_batches2()}}, the tests this exists to
 validate; \code{\link[=censor_reporting_delays_above]{censor_reporting_delays_above()}} for recording a real batch rather than
 planting one. The
 \href{https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html}{\emph{Diagnosing a tbl_now} article}

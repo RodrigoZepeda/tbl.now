@@ -19,8 +19,12 @@ extension of the [`tibble()`](https://tibble.tidyverse.org/) for
 storing, validating, and manipulating epidemiological nowcasting data.
 It standardizes the representation of event dates, report dates, strata,
 temporal covariates, etc and in a way that is compatible with many
-frameworks including diseasenowcasting, epinowcast, NobBS, surveillance,
-EpiNow2, and more.
+frameworks including
+[diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/),
+[epinowcast](https://package.epinowcast.org/),
+[NobBS](https://cran.r-project.org/web/packages/NobBS/index.html),
+[surveillance](https://cran.r-project.org/web/packages/surveillance/index.html),
+[EpiNow2](https://epiforecasts.io/EpiNow2/), and more.
 
 Specifically a `tbl_now` is a data structure that keeps track of the
 following attributes relevant for a nowcasting excercise so that all
@@ -58,7 +62,7 @@ What it records
 
 <td align="center">
 
-<img src="man/figures/event_date.svg" height="70" style="height:70px;width:auto;" alt="event_date">
+<img src="man/figures/event_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="event_date">
 </td>
 
 <td align="left">
@@ -79,7 +83,7 @@ hospitalisation, death, …). <strong>Required.</strong>
 
 <td align="center">
 
-<img src="man/figures/report_date.svg" height="70" style="height:70px;width:auto;" alt="report_date">
+<img src="man/figures/report_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="report_date">
 </td>
 
 <td align="left">
@@ -100,7 +104,7 @@ unless it is reconstructed from <code>delay</code>.
 
 <td align="center">
 
-<img src="man/figures/validation_date.svg" height="70" style="height:70px;width:auto;" alt="validation">
+<img src="man/figures/validation_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="validation">
 </td>
 
 <td align="left">
@@ -120,7 +124,7 @@ An optional third date indicating when the report was resolved (see
 
 <td align="center">
 
-<img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;" alt="validation">
+<img src="man/figures/validation_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="validation">
 </td>
 
 <td align="left">
@@ -142,7 +146,7 @@ words. <em>Optional</em>.
 
 <td align="center">
 
-<img src="man/figures/validation_type.svg" height="70" style="height:70px;width:auto;" alt="validation_levels">
+<img src="man/figures/validation_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="validation_levels">
 </td>
 
 <td align="left">
@@ -153,7 +157,7 @@ words. <em>Optional</em>.
 <td align="left">
 
 A named dictionary translating the labels in
-<code>validation_type</code> into those four, e.g. <code>c(confirmado =
+<code>validation_type</code> into those four, e.g. <code>c(positive =
 “confirmed”)</code>. <em>Optional</em>.
 </td>
 
@@ -163,7 +167,7 @@ A named dictionary translating the labels in
 
 <td align="center">
 
-<img src="man/figures/now.svg" height="70" style="height:70px;width:auto;" alt="now">
+<img src="man/figures/now.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="now">
 </td>
 
 <td align="left">
@@ -183,7 +187,7 @@ view. <em>Optional</em>; defaults to the latest date.
 
 <td align="center">
 
-<img src="man/figures/strata.svg" height="70" style="height:70px;width:auto;" alt="strata">
+<img src="man/figures/strata.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="strata">
 </td>
 
 <td align="left">
@@ -203,7 +207,7 @@ Columns you want a separate nowcast for (e.g. gender, region).
 
 <td align="center">
 
-<img src="man/figures/covariates.svg" height="70" style="height:70px;width:auto;" alt="covariates">
+<img src="man/figures/covariates.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="covariates">
 </td>
 
 <td align="left">
@@ -223,7 +227,7 @@ broken down by (e.g. temperature or precipitation). <em>Optional</em>.
 
 <td align="center">
 
-<img src="man/figures/case_count.svg" height="70" style="height:70px;width:auto;" alt="case_count">
+<img src="man/figures/case_count.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="case_count">
 </td>
 
 <td align="left">
@@ -243,7 +247,7 @@ The column holding the counts when the data is given as aggregated
 
 <td align="center">
 
-<img src="man/figures/datatype.svg" height="70" style="height:70px;width:auto;" alt="data_type">
+<img src="man/figures/datatype.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="data_type">
 </td>
 
 <td align="left">
@@ -266,7 +270,7 @@ axis). <em>Optional</em>; inferred by default.
 
 <td align="center">
 
-<img src="man/figures/units.svg" height="70" style="height:70px;width:auto;" alt="units">
+<img src="man/figures/units.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="units">
 </td>
 
 <td align="left">
@@ -288,7 +292,7 @@ The time grid each date lives on: <code>days</code>, <code>weeks</code>,
 
 <td align="center">
 
-<img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;" alt="is_censored_report">
+<img src="man/figures/censoring.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="is_censored_report">
 </td>
 
 <td align="left">
@@ -308,7 +312,7 @@ back-fill dump. <em>Optional</em>.
 
 <td align="center">
 
-<img src="man/figures/censoring.svg" height="70" style="height:70px;width:auto;" alt="is_censored_validation">
+<img src="man/figures/censoring.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="is_censored_validation">
 </td>
 
 <td align="left">
@@ -328,7 +332,7 @@ delay is a bound rather than a measurement. <em>Optional</em>.
 
 <td align="center">
 
-<img src="man/figures/temporal_effects.svg" height="70" style="height:70px;width:auto;" alt="temporal_effects">
+<img src="man/figures/temporal_effects.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="temporal_effects">
 </td>
 
 <td align="left">
@@ -357,8 +361,11 @@ data(denguedat)
 
 #Here we use just a few dates for the example
 denguedat <- denguedat |> 
-  filter(onset_week >= as.Date("2005/01/01")) |> 
-  filter(onset_week <= as.Date("2005/10/01")  & report_week <= as.Date("2005/10/01")) |> 
+  filter(onset_week >= as.Date("2005/01/01"),
+         report_week <= as.Date("2005/10/01")) 
+
+#And we specify as a tbl_now:
+denguedat <- denguedat |> 
   tbl_now(
     report_date = report_week,
     event_date = onset_week,
@@ -366,8 +373,9 @@ denguedat <- denguedat |>
   ) 
 ```
 
-Once transformed, it can help you diagnose data problems or modeling
-requirements with your database:
+Once transformed, it can help you diagnose data problems (see [this
+article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html))
+or modeling requirements with your database:
 
 ``` r
 autoplot(denguedat)
@@ -376,8 +384,9 @@ autoplot(denguedat)
 <img src="man/figures/README-unnamed-chunk-3-1.png" alt="" width="100%" class="r-plt" />
 
 And it can be used to run any of multiple nowcast libraries through the
-`engine()` and `run_nowcast` specifications. For example,
-baselinenowcast:
+`engine()` and `run_nowcast` specifications (see [this
+article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html).
+For example, [baselinenowcast](https://baselinenowcast.epinowcast.org/):
 
 ``` r
 dengue_nowcast_1 <- denguedat |> 
@@ -390,7 +399,8 @@ autoplot(dengue_nowcast_1)
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" class="r-plt" />
 
-or diseasenowcasting:
+or
+[diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/):
 
 ``` r
 dengue_nowcast_2 <- denguedat |> 
@@ -404,7 +414,8 @@ autoplot(dengue_nowcast_2)
 <img src="man/figures/README-unnamed-chunk-7-1.png" alt="" width="100%" class="r-plt" />
 
 It can also generate ensemble nowcasts combining multiple engines or
-multiple realizations from the same engine:
+multiple realizations from the same engine as you can see [in this
+article](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html):
 
 ``` r
 dengue_ensemble <- nowcast_ensemble(
@@ -419,8 +430,8 @@ autoplot(dengue_ensemble)
 
 <img src="man/figures/README-unnamed-chunk-9-1.png" alt="" width="100%" class="r-plt" />
 
-If this seems exciting to you, install the development version from
-[GitHub](https://github.com/):
+If this seems as exciting to you as it is to us, install the development
+version from [GitHub](https://github.com/):
 
 ``` r
 # install.packages("pak") # <- uncomment if you do not have `pak`

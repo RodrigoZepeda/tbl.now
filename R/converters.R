@@ -109,7 +109,8 @@
 #'   `install.packages()` call. Defaults to the epinowcast r-universe.
 #' @param install Optional literal install instruction, used verbatim instead of
 #'   building an `install.packages()` call. Use this for back-ends that are not
-#'   served by any CRAN-style repository.
+#'   served by any CRAN-style repository. A character vector becomes one bullet
+#'   per line, for the back-ends whose installation takes more than one call.
 #'
 #' @return `NULL`, invisibly (called for its side effect of aborting when the
 #'   package is missing).
@@ -130,9 +131,18 @@
         names(repo)[1], " = '", unname(repo)[1], "'))"
       )
     }
+    # The instruction is INTERPOLATED by `cli_abort()` rather than pasted into
+    # its template: an install call is data, and one carrying a brace (a git ref,
+    # say) pasted in would be read as a glue expression and fail to format.
+    # Pre-formatting it here does not help -- `cli_abort()` would glue the result
+    # a second time -- so the template names the element and cli reads it from
+    # this frame.
+    hints <- paste0("{.code {install[[", seq_along(install), "]]}}")
+    hints[[1]] <- paste0("Install it with: ", hints[[1]])
+    names(hints) <- rep("i", length(hints))
     cli::cli_abort(c(
       "Package {.pkg {pkg}} is required for this conversion.",
-      "i" = paste0("Install it with: ", install)
+      hints
     ))
   }
 }
@@ -1036,6 +1046,79 @@
   invisible(NULL)
 }
 
+#' Warn that lazy temporal-effect specs cannot be carried as columns
+#'
+#' Some converters build formats that have no covariate columns. Lazy temporal
+#' effects have no materialised column names yet, but the spec is still user
+#' intent and should not disappear without a warning.
+#'
+#' @param x A `tbl_now` object.
+#' @param fn Name of the calling converter.
+#' @param advice Optional extra bullet.
+#'
+#' @return `NULL`, invisibly.
+#'
+#' @keywords internal
+#' @noRd
+.warn_dropped_lazy_temporal_effects <- function(x, fn, advice = NULL) {
+  specs <- get_temporal_effects(x)
+  materialised <- get_temporal_effect_cols(x)
+  if (length(specs) == 0 || length(materialised) > 0) {
+    return(invisible(NULL))
+  }
+
+  cli::cli_warn(c(
+    "{.fn {fn}}: declared temporal effects are not carried into this format.",
+    "i" = "They are stored lazily, so there are no columns to keep or name yet.",
+    if (!is.null(advice)) c("i" = advice),
+    "i" = "The model will not see them from the converted data."
+  ))
+  invisible(NULL)
+}
+
+#' Resolve a converter argument that accepts `TRUE`, `FALSE`, or `"auto"`
+#'
+#' @param value User supplied value.
+#' @param arg Argument name for errors.
+#'
+#' @return `"auto"`, `"TRUE"`, or `"FALSE"`.
+#'
+#' @keywords internal
+#' @noRd
+.converter_bool_auto <- function(value, arg) {
+  if (identical(value, "auto")) {
+    return("auto")
+  }
+  if (is.logical(value) && length(value) == 1L && !is.na(value)) {
+    return(as.character(value))
+  }
+  cli::cli_abort(c(
+    "{.arg {arg}} must be {.code TRUE}, {.code FALSE}, or {.val auto}.",
+    "x" = "Got {.obj_type_friendly {value}}."
+  ))
+}
+
+#' Validate the number of EpiNow2 truncation snapshots
+#'
+#' @param snapshots `NULL`, or a single positive whole number.
+#'
+#' @return `NULL` or an integer.
+#'
+#' @keywords internal
+#' @noRd
+.epinow2_validate_snapshots <- function(snapshots) {
+  if (is.null(snapshots)) {
+    return(NULL)
+  }
+  if (!is.numeric(snapshots) || length(snapshots) != 1L || is.na(snapshots) ||
+        snapshots < 1 || snapshots != round(snapshots)) {
+    cli::cli_abort(
+      "{.arg snapshots} must be {.code NULL} or a single positive whole number."
+    )
+  }
+  as.integer(snapshots)
+}
+
 #' Columns a `tbl_now` carries but was never told about
 #'
 #' Everything that is neither protected (the dates, the count, the censoring
@@ -1519,8 +1602,13 @@ tbl_now_from_epinowcast <- function(data, ...,
 #'   `to_count() |> complete_zeroes()` first. Count data is left exactly as
 #'   supplied, because it *can* distinguish an observed zero from a cell that
 #'   could not be observed yet (`NA`) and filling those would claim reporting was
-#'   complete when it was not. `TRUE` / `FALSE` force either behaviour. Ignored
-#'   for `format = "long"`.
+#'   complete when it was not. `TRUE` / `FALSE` force either behaviour.
+#'
+#'   **Ignored for `format = "long"`**, which is a tidy data frame with no grid
+#'   to complete. If you build a triangle from the long output yourself, a line
+#'   list will be missing every event period in which nothing was reported --
+#'   call `to_count() |> complete_zeroes()` first, or ask for
+#'   `format = "triangle_list"`, which does it for you.
 #' @param negatives How to handle the negative increments that appear when
 #'   `count-cumulative` data is de-accumulated (a downward revision).
 #'   `"redistribute"` (default) absorbs each negative into earlier delays with
@@ -2242,7 +2330,8 @@ tbl_now_from_tsibble <- function(data, report_date, event_date = NULL,
       numeric_col  = if (from_event_date) ".event_num" else ".report_num",
       name_prefix  = if (from_event_date) ".event" else ".report",
       overwrite    = TRUE,
-      weekend_days = spec$weekend_days
+      weekend_days = spec$weekend_days,
+      units        = if (from_event_date) get_event_units(x) else get_report_units(x)
     )
   }
 
@@ -2717,6 +2806,16 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #'   `FALSE` passes the rows through unchanged, which is almost always wrong (see
 #'   *Non-daily data*). Ignored for `"estimate_dist"`, which works in censoring
 #'   windows rather than on a grid.
+#' @param complete For the series targets: fill event periods that have no
+#'   reports at all with zeroes, out to the object's [get_now()], via
+#'   [complete_zeroes()]. `"auto"` (the default) does this for **line-list**
+#'   input only. A line list has no row for a period in which nothing was
+#'   reported, so a series built from one stops at the last period that *has* a
+#'   report -- short of the `now`, which is the period the nowcast is about.
+#'   Count data is left exactly as supplied, because it can say "observed zero"
+#'   itself. `TRUE` / `FALSE` force either behaviour; `TRUE` on
+#'   `count-cumulative` input de-accumulates it first. Ignored for
+#'   `"estimate_dist"`, which works in censoring windows rather than on a grid.
 #' @param report_dates For `from`: a `Date` vector, one per snapshot, saying when
 #'   each was taken. Read from the object's attribute when it has one.
 #' @param verbose Logical. Print the choices that were made.
@@ -2781,6 +2880,7 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
                "estimate_truncation", "estimate_dist"),
     snapshots = NULL,
     accumulate = "auto",
+    complete = "auto",
     verbose = TRUE, quiet = FALSE) {
   .assert_tbl_now(x, "tbl_now_to_EpiNow2")
   target <- match.arg(target)
@@ -2806,10 +2906,15 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
               structure through {.arg gp}, {.arg rt} and {.arg obs}, not through
               columns."
   )
+  .warn_dropped_lazy_temporal_effects(
+    x, "tbl_now_to_EpiNow2",
+    advice = "When called through {.fn engine_epinow2}, supported report-date
+              weekly effects are added through {.fn EpiNow2::obs_opts} instead."
+  )
 
   .epinow2_series_data(
     x, target = target, snapshots = snapshots, accumulate = accumulate,
-    verbose = verbose
+    complete = complete, verbose = verbose
   )
 }
 
@@ -2913,13 +3018,15 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 #' @param target One of the three date-keyed targets.
 #' @param snapshots Snapshot count for `estimate_truncation`.
 #' @param accumulate `"auto"`, `TRUE` or `FALSE`.
+#' @param complete `"auto"`, `TRUE` or `FALSE`; fill the empty event periods.
 #' @param verbose Logical.
 #'
 #' @return A `data.frame`, or a `tbl_now_epinow2_snapshots` list.
 #'
 #' @keywords internal
 #' @noRd
-.epinow2_series_data <- function(x, target, snapshots, accumulate, verbose) {
+.epinow2_series_data <- function(x, target, snapshots, accumulate, complete,
+                                 verbose) {
   event_col   <- get_event_date(x)
   strata_cols <- get_strata(x)
   event_units <- get_event_units(x)
@@ -2927,7 +3034,11 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
   # Resolve the grid BEFORE any work: on units EpiNow2 cannot lay on a daily
   # axis there is nothing to build, and failing early beats failing after an
   # expensive aggregation.
-  should_accumulate <- switch(as.character(accumulate),
+  accumulate <- .converter_bool_auto(accumulate, "accumulate")
+  complete <- .converter_bool_auto(complete, "complete")
+  snapshots <- .epinow2_validate_snapshots(snapshots)
+
+  should_accumulate <- switch(accumulate,
     "auto" = TRUE, "TRUE" = TRUE, "FALSE" = FALSE, TRUE
   )
   if (should_accumulate) .epinow2_step_days(event_units)
@@ -2939,6 +3050,37 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
       "i" = "For a fit per stratum use {.code target = \"regional_epinow\"}, \\
              which carries them as a {.field region} column."
     ))
+  }
+
+  # A line list cannot record a period in which nothing was reported: the rows
+  # are simply absent. Every series below is built from the rows it is handed,
+  # so without this it stops at the last period that HAS a report -- short of
+  # the `now`, which is the period the nowcast is about. Count data can say
+  # "observed zero" itself, so `"auto"` leaves it exactly as supplied.
+  #
+  # This also repairs `estimate_truncation`: `.epinow2_snapshots()` completes
+  # each snapshot with `complete_zeroes()`, which REFUSES a line list, and its
+  # `tryCatch()` swallowed that refusal and returned the short snapshot.
+  should_complete <- switch(complete,
+    "auto"  = identical(get_data_type(x), "linelist"),
+    "TRUE"  = TRUE,
+    "FALSE" = FALSE,
+    identical(get_data_type(x), "linelist")
+  )
+  if (should_complete) {
+    x <- tryCatch(
+      suppressWarnings(suppressMessages(
+        complete_zeroes(to_count(ungroup(x), to = "count-incidence"))
+      )),
+      error = function(e) {
+        cli::cli_warn(c(
+          "Could not complete missing event periods with zeroes.",
+          "i" = conditionMessage(e),
+          "i" = "The series may stop before the {.field now}."
+        ))
+        x
+      }
+    )
   }
 
   # `get_latest_reported_cases()` / `get_nth_reported_cases()` know about all

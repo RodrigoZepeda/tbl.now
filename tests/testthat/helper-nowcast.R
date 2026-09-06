@@ -41,6 +41,33 @@ register_scoretoy <- function() {
   }
 }
 
+# A draw-producing twin of `scoretoy`, used to test sample-format coercions
+# without fitting an external model.
+nowcast_fit.sampletoy <- nowcast_fit.scoretoy
+
+nowcast_tidy.sampletoy <- function(engine, fit, x, ..., quantile_levels) {
+  n_draws <- 40L
+  offsets <- stats::qnorm(seq_len(n_draws) / (n_draws + 1)) * fit$spread
+  draws <- fit$observed |>
+    dplyr::reframe(
+      !!fit$event_col := rep(.data[[fit$event_col]], each = n_draws),
+      .draw = rep(seq_len(n_draws), times = dplyr::n()),
+      .value = rep(.data$.observed + fit$bias, each = n_draws) + offsets
+    )
+  list(predictions = NULL, draws = draws)
+}
+
+register_sampletoy <- function() {
+  for (name in c("sampletoy", "sampletoy2")) {
+    registerS3method("nowcast_fit", name, nowcast_fit.sampletoy,
+      envir = asNamespace("tbl.now")
+    )
+    registerS3method("nowcast_tidy", name, nowcast_tidy.sampletoy,
+      envir = asNamespace("tbl.now")
+    )
+  }
+}
+
 score_tbl_now <- function() {
   dates <- as.Date("2020-01-06") + seq(0, 7 * 29, by = 7)
   data <- tidyr::expand_grid(event_date = dates, delay = 0:3) |>
@@ -53,6 +80,32 @@ score_tbl_now <- function() {
   tbl_now(data,
     event_date = "event_date", report_date = "report_date",
     case_count = "n", data_type = "count-incidence", verbose = FALSE
+  )
+}
+
+
+#' `score_tbl_now()` with two strata of deliberately different size
+#'
+#' The prediction columns `tidy.nowcast_backtest()` adds are joined onto the
+#' scores, and a join that keyed on the event date alone would hand both strata
+#' whichever sorted first. That bug is only visible when the strata differ, so
+#' `b` is built at four times `a`.
+score_tbl_now_strata <- function() {
+  dates <- as.Date("2020-01-06") + seq(0, 7 * 29, by = 7)
+  data <- tidyr::expand_grid(
+    event_date = dates, delay = 0:3, stratum = c("a", "b")
+  ) |>
+    dplyr::mutate(
+      report_date = .data$event_date + 7 * .data$delay,
+      n = as.integer(pmax(1, 40 - 8 * .data$delay)) *
+        dplyr::if_else(.data$stratum == "b", 4L, 1L)
+    ) |>
+    dplyr::select("event_date", "report_date", "stratum", "n")
+
+  tbl_now(data,
+    event_date = "event_date", report_date = "report_date",
+    case_count = "n", strata = "stratum", data_type = "count-incidence",
+    verbose = FALSE
   )
 }
 

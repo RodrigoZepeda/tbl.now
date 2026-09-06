@@ -69,7 +69,7 @@ test_that("diagnose() returns the documented schema, in order", {
   expect_true(is.ordered(result$status))
   expect_identical(
     levels(result$status),
-    c("error", "warning", "note", "ok", "not_run", "skipped")
+    c("error", "warning", "note", "ok", "skipped")
   )
   expect_type(result$rows, "list")
   expect_type(result$message, "character")
@@ -95,8 +95,7 @@ test_that("diagnose() is the bind_rows() of its components", {
     diagnose_negatives(ndata),
     diagnose_now(ndata),
     diagnose_truncation(ndata),
-    diagnose_strata(ndata),
-    diagnose_signposts(ndata)
+    diagnose_strata(ndata)
   )
   components <- dplyr::arrange(
     components, .data$status, .data$check, .data$scope, .data$stratum
@@ -454,6 +453,31 @@ test_that("recent event dates are reported as still filling in", {
   expect_match(row$hint, "right-truncation")
 })
 
+test_that("an immature date younger than every observed delay is not 0% missing", {
+  # 100 cases reported five days late, then three very recent ones reported
+  # same-day. The 95th percentile of the delay is 5, so those three sit past
+  # the cutoff -- but no mature case ever arrived that fast, so the arrival
+  # curve reads exactly zero and nothing can be divided by it. Summing those
+  # away used to report "an estimated 0% has not arrived", the opposite of the
+  # truth: none of it has.
+  old_events <- rep(seq(as.Date("2024-01-01"), by = "day", length.out = 50), each = 2)
+  recent <- as.Date(c("2024-02-22", "2024-02-23", "2024-02-24"))
+  frame <- data.frame(
+    onset  = c(old_events, recent),
+    report = c(old_events + 5, recent)
+  )
+  ndata <- tbl_now(frame,
+    event_date = "onset", report_date = "report", data_type = "linelist",
+    verbose = FALSE
+  )
+
+  row <- finding(diagnose_truncation(ndata), "truncation", "event_date")
+  expect_equal(as.character(row$status), "note")
+  expect_equal(row$n_affected, 3)
+  expect_match(row$message, "none of their eventual total has arrived")
+  expect_false(grepl("0%", row$message, fixed = TRUE))
+})
+
 # Strata -----------------------------------------------------------------------
 
 test_that("the smallest stratum is named rather than thresholded", {
@@ -465,6 +489,34 @@ test_that("the smallest stratum is named rather than thresholded", {
   expect_equal(row$n_total, 10)
   expect_equal(row$prop, 0.4)
   expect_match(row$message, "smallest stratum")
+})
+
+test_that("the sparsity finding carries its denominator and the pooled share", {
+  # The grid runs from the first event to `now`, so a share on its own says
+  # nothing about the stratum until it is read against the object as a whole.
+  row <- finding(diagnose(clean_tbl()), "strata", "sparsity", stratum = "F")
+
+  expect_equal(as.character(row$status), "note")
+  # The grid is 2024-01-01 to 2024-01-05; F has cases on two of those days,
+  # and the pooled series on three.
+  expect_equal(row$n_total, 5)
+  expect_equal(row$n_affected, 3)
+
+  # The numerator has to arrive WITH its denominator -- "60% of the event dates
+  # are empty" is unreadable on its own -- and the denominator has to say what
+  # it is counting and over what span, or the reader cannot tell a sparse
+  # stratum from a grid that is finer than the data. Matched on those pieces
+  # rather than on one exact sentence, so rewording the finding does not fail
+  # the test that guards its content.
+  expect_match(row$message, "3 of the 5")
+  expect_match(row$message, "between the minimum event", fixed = TRUE)
+  expect_match(row$message, "2024-01-01", fixed = TRUE)
+  expect_match(row$message, "2024-01-05", fixed = TRUE)
+  expect_match(row$message, "carry no cases at all", fixed = TRUE)
+  expect_match(row$message, "60%", fixed = TRUE)
+  expect_match(row$message, "40% pooled", fixed = TRUE)
+  expect_match(row$message, "pooled over every stratum")
+  expect_match(row$hint, "aggregate_time_units", fixed = TRUE)
 })
 
 test_that("an unstratified object skips the stratum comparison", {
@@ -496,36 +548,16 @@ test_that("pending validations are counted, not thresholded away", {
   expect_equal(row$n_total, 10)
 })
 
-# Signposts --------------------------------------------------------------------
+# Statistical tests ------------------------------------------------------------
 
-test_that("the statistical questions are signposted, never answered", {
+test_that("the statistical questions are left out entirely", {
   result <- diagnose(clean_tbl())
-  signposts <- result[result$check == "signposts", ]
 
-  expect_equal(nrow(signposts), 4)
-  expect_setequal(
-    signposts$scope,
-    c("report", "validation", "report_batches", "validation_batches")
-  )
-  # Without a validation process the two validation axes cannot be asked.
-  expect_equal(
-    as.character(signposts$status[signposts$scope == "validation"]), "skipped"
-  )
-  expect_equal(
-    as.character(signposts$status[signposts$scope == "report_batches"]), "not_run"
-  )
-  expect_match(
-    signposts$message[signposts$scope == "report_batches"],
-    "diagnose_batches", fixed = TRUE
-  )
-})
-
-test_that("the drift signpost names the package it needs", {
-  skip_if(requireNamespace("modifiedmk", quietly = TRUE))
-
-  row <- finding(diagnose(clean_tbl()), "signposts", "report")
-  expect_equal(as.character(row$status), "skipped")
-  expect_match(row$hint, "modifiedmk")
+  # Drift and batching are questions about a distribution: `diagnose_drift()`
+  # and `diagnose_batches()` answer them, and `diagnose()` does not mention
+  # them at all.
+  expect_false("signposts" %in% result$check)
+  expect_false(any(grepl("diagnose_drift|diagnose_batches", result$message)))
 })
 
 # Declarations -----------------------------------------------------------------

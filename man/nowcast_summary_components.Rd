@@ -109,7 +109,10 @@ inside a script -- call that block directly instead of computing the rest and
 filtering it away.
 
 Every one of these returns the same schema as \code{summary()} itself, so they can
-be stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}}, compared across datasets, or used alone:
+be stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}}, compared across datasets, or used alone.
+Two of them -- \code{case_autocorrelation()} and \code{reporting_completeness()} -- were
+written by an AI and have not been checked by a human, so they are \strong{not}
+part of \code{summary()} and warn on every call:
 \itemize{
 \item \code{cases_per_date()} -- case counts per date on one axis.
 \item \code{delay_summary()} -- the case-weighted delay distribution.
@@ -120,12 +123,14 @@ be stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}}, compared acro
 \item \code{prop_covariate_levels()} -- proportion of cases per level of each
 categorical covariate.
 \item \code{case_autocorrelation()} -- lagged autocorrelation of the case series.
+\strong{Unreviewed:} not part of \code{summary()}, and warns on every call.
 \item \code{date_ranges()} -- totals, date ranges and \code{now}.
 \item \code{triangle_occupancy()} -- how full the reporting triangle is, and how
 stale the object is.
 \item \code{reporting_completeness()} -- share of each event date's eventual total
 that had arrived by delay \code{d}, as a distribution over event dates
 (\code{mean}, \code{sd}, the quantiles) plus the pooled share in \code{prop}.
+\strong{Unreviewed:} not part of \code{summary()}, and warns on every call.
 \item \code{cumulative_growth()} -- ratio of one delay's running total to the
 previous one's.
 }
@@ -144,6 +149,8 @@ cases_per_date(ndata, axis = "event")
 delay_summary(ndata)
 
 # How sparse the series is, and how strongly one week predicts the next.
+# `case_autocorrelation()` warns because it is unreviewed; the warning is
+# deliberately not suppressed here, since it belongs with the number.
 zero_run_summary(ndata, axis = "event")
 case_autocorrelation(ndata, lags = 1)
 
@@ -153,11 +160,11 @@ prop_censored(ndata)
 date_ranges(ndata)
 triangle_occupancy(ndata)
 
-# The two that matter most for nowcasting: what share of a week's eventual
-# total had arrived by delay d, and how fast the total is still growing.
-# Both are distributions over event dates, so they fill `mean`/`q50` -- and
-# completeness also `prop`, the pooled share -- rather than the scalar
-# `value` column.
+# What share of a week's eventual total had arrived by delay d, and how fast
+# the total is still growing. Both are distributions over event dates, so
+# they fill `mean`/`q50` -- and completeness also `prop`, the pooled share --
+# rather than the scalar `value` column. `reporting_completeness()` is
+# unreviewed and warns; see above.
 reporting_completeness(ndata, delays = 0:3) |>
   dplyr::select(quantity, stratum, n, mean, q50, prop)
 cumulative_growth(ndata, k = 3)

@@ -10,6 +10,7 @@ nowcast_backtest(
   now_dates = NULL,
   horizon = 4,
   seed = NULL,
+  keep_draws = FALSE,
   on_error = c("warn", "abort"),
   verbose = TRUE
 )
@@ -43,6 +44,12 @@ if every method consumes the same random numbers in the same order, so
 dropping a method, or refitting one date, silently moves every other fit.
 Seeding per (label, date) makes a fit depend only on which fit it is.}
 
+\item{keep_draws}{Logical. Whether to retain every posterior draw from every
+successful fit. Default \code{FALSE}, because this can make a backtest much
+larger. Set it to \code{TRUE} when the backtest should be passed directly to
+\code{\link[scoringutils:as_forecast_sample]{scoringutils::as_forecast_sample()}}. Engines that return only quantiles
+still cannot be converted to samples.}
+
 \item{on_error}{Either \code{"warn"} (default) to skip a model/date that fails
 with a warning, or \code{"abort"} to stop.}
 
@@ -54,6 +61,8 @@ An object of class \code{nowcast_backtest}: a list with
 \describe{
 \item{scores}{A \code{tibble} of per-date scores with an extra \code{.now} column.}
 \item{predictions}{A \code{tibble} of every retrospective quantile prediction.}
+\item{draws}{When \code{keep_draws = TRUE}, a \code{tibble} of the retained draws;
+otherwise \code{NULL}.}
 \item{truth}{The observed counts used for scoring.}
 \item{methods}{The labels that produced at least one nowcast.}
 \item{now_dates}{The dates that were nowcast.}

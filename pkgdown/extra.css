@@ -486,3 +486,47 @@ figure {
 [data-bs-theme="dark"] pre [style*="#00BBBB" i] {
   color: var(--tn-ansi-cyan) !important;
 }
+
+/* ==========================================================================
+   PLOT BACKGROUNDS IN DARK MODE
+
+   pkgdown does not ship the figures twice, so a plot is one PNG serving both
+   themes; what makes it readable on a dark page is a CSS filter that bslib
+   applies for us:
+
+       [data-bs-theme="dark"] img.r-plt { filter: invert(100%) hue-rotate(180deg) }
+
+   That is why the plots looked wrong here and why nothing in the R code was to
+   blame. A ggplot2 background is WHITE, and `invert(100%)` takes white to
+   #000000 -- pure black -- while the site body is #212529. Every figure was a
+   black rectangle sitting on charcoal.
+
+   The fix is two changes to the same filter:
+
+   1. `brightness(0.871)` BEFORE the invert. Filters compose left to right, so
+      the pair maps a channel c to `1 - 0.871c`: black still comes out white
+      (full contrast is kept, unlike lowering the invert amount, which
+      compresses both ends), and white comes out at 0.129 = #212121 instead of
+      #000000. The constant is 1 - 33/255, i.e. the red channel of #212529.
+
+   2. `mix-blend-mode: lighten` closes the remaining gap. #212121 is a neutral
+      grey and #212529 is faintly blue, so step 1 alone leaves (0, +4, +8) of
+      difference -- a seam at the figure's edge. `lighten` takes the per-channel
+      maximum against whatever is actually behind the image, which lands the
+      background exactly on the page colour and, because step 1 guarantees NO
+      pixel is darker than #212121, touches nothing else. It is also
+      self-correcting: an example figure inside a `pre` blends against the code
+      surface rather than the body, which is the colour behind it there.
+
+   Nothing here changes the page background, and light mode is untouched --
+   bslib applies no filter there, and a white plot on a white page already
+   matches.
+   ========================================================================== */
+
+[data-bs-theme="dark"] img.r-plt,
+[data-bs-theme="dark"] pre .r-plt.img img,
+[data-bs-theme="dark"] .no-invert-dark-mode img.r-plt,
+[data-bs-theme="dark"] .no-invert-dark-mode pre .r-plt.img img {
+  filter: brightness(0.871) invert(100%) hue-rotate(180deg) !important;
+  mix-blend-mode: lighten;
+}

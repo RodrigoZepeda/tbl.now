@@ -6,6 +6,7 @@
 \alias{plot_week_of_year_effects}
 \alias{plot_month_of_year_effects}
 \alias{plot_holiday_effects}
+\alias{plot_weekend_effects}
 \alias{plot_holiday_lag_effects}
 \title{Calendar effects on the case counts or on the reporting delay}
 \usage{
@@ -30,19 +31,16 @@ plot_month_of_year_effects(
   ...
 )
 
-plot_holiday_effects(
+plot_holiday_effects(x, type = c("epidemic", "report"), ...)
+
+plot_weekend_effects(
   x,
   type = c("epidemic", "report"),
-  measure = c("percent", "normalized"),
+  weekend_days = c("Sat", "Sun"),
   ...
 )
 
-plot_holiday_lag_effects(
-  x,
-  type = c("epidemic", "report"),
-  measure = c("percent", "normalized"),
-  ...
-)
+plot_holiday_lag_effects(x, type = c("epidemic", "report"), ...)
 }
 \arguments{
 \item{x}{A \code{\link[=tbl_now]{tbl_now()}} object.}
@@ -50,13 +48,20 @@ plot_holiday_lag_effects(
 \item{type}{\code{"epidemic"} (default) for the case-count effect, or \code{"report"}
 for the reporting-delay one.}
 
-\item{measure}{\code{"normalized"} (default) for the value divided by its overall
-mean (\code{1} = average), or \code{"percent"} for the share of cases in each group —
-"10\% of cases at the weekend versus 90\% on weekdays" — with the IQR around
-it. See \code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}} for the blocks the percentages are taken over.}
+\item{measure}{\code{"percent"} (default) for the share of cases in each group —
+"10\% of cases in week 1 versus 3\% in week 2" — with the IQR around it, or
+\code{"normalized"} for the value divided by its overall mean (\code{1} = average).
+See \code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}} for the blocks the percentages are taken over. The
+day-type and holiday-lag functions do not take it; they are always
+normalized.}
 
 \item{...}{Further arguments passed to \code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}}, e.g. \code{by_strata},
 \code{strata}, \code{plotly} or \code{palette}.}
+
+\item{weekend_days}{Character vector naming the weekend days (default
+\code{c("Sat", "Sun")}), as in \code{\link[=is_weekday]{is_weekday()}}. Used \strong{only} when
+\code{plot_weekend_effects()} has to attach the effect itself; an object that
+already carries a weekend effect keeps the definition it was given.}
 }
 \value{
 A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
@@ -71,9 +76,13 @@ boxplots the corresponding \code{autoplot()} panel does, for one calendar groupi
 \item \code{plot_week_of_year_effects()} — by epidemiological week.
 \item \code{plot_month_of_year_effects()} — by month (monthly data only).
 \item \code{plot_holiday_effects()} — by \strong{day type} (\code{Weekday} / \code{Weekend} /
-\code{Holiday}, following the attached \code{\link[=temporal_effects]{temporal_effects()}} spec). This is also
-the \strong{weekend} effect: attach \code{temporal_effects(weekend = TRUE)} and the
-weekend becomes one of the boxes.
+\code{Holiday}, following the attached \code{\link[=temporal_effects]{temporal_effects()}} spec).
+\item \code{plot_weekend_effects()} — the same panel, on an object that may not carry a
+spec yet: it attaches \code{temporal_effects(weekend = TRUE)} when there is no
+weekend effect already, so the weekend boxes appear without a separate
+\code{\link[=add_temporal_effects]{add_temporal_effects()}} call. The spec goes on a copy — your object is not
+modified — and a calendar already attached still contributes its \code{Holiday}
+box. Daily data only, since a weekend is a property of the day.
 \item \code{plot_holiday_lag_effects()} — by position relative to the nearest holiday
 (\code{"1 before"}, \code{"Holiday"}, \code{"1 after"}, ..., plus \code{"Other"}).
 }
@@ -81,13 +90,20 @@ weekend becomes one of the boxes.
 \code{type} picks which process to describe: \code{"epidemic"} (green — how the \emph{cases}
 vary by calendar group) or \code{"report"} (red — how the \emph{reporting} does).
 
+The three day-type / holiday-lag functions have no \code{measure} argument: they
+are always normalized. Their categories are not equal-sized parts of a
+calendar block — the weekend is two days in seven — so a percentage share
+would mostly restate the calendar rather than the data ("29\% of the cases at
+the weekend" is average, not low). The day-of-week, week-of-year and
+month-of-year functions keep both measures.
+
 Use these when you want one effect, in its own figure, at its own size; use
 \code{\link[=autoplot]{autoplot()}} when you want the diagnostic grid in one call. Everything else is
 the same: \code{autoplot(x, panels = "calendar_weekday")} and
 \code{plot_day_of_week_effects(x)} return the identical plot.
 }
 \examples{
-\dontshow{if (requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("almanac", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+\dontshow{if (requireNamespace("ggplot2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
 # First few years only, to keep the example quick; the full data works the same.
 dengue_now <- tbl_now(denguedat[1:2500, ], onset_week, report_week, verbose = FALSE)
@@ -95,15 +111,16 @@ dengue_now <- tbl_now(denguedat[1:2500, ], onset_week, report_week, verbose = FA
 # How the cases vary by epidemiological week
 plot_week_of_year_effects(dengue_now)
 
-## By day type (weekday / weekend / holiday), once a holiday calendar is attached
-holiday_now <- dengue_now |>
-  add_temporal_effects(temporal_effects(weekend = TRUE, holidays = almanac::cal_us_federal()))
-plot_holiday_effects(holiday_now)
+# The weekend on its own, on daily data, with no spec to attach first
+days <- seq(as.Date("2021-01-01"), as.Date("2021-06-30"), by = "day")
+daily_now <- tbl_now(
+  data.frame(event_date = days, report_date = days + 1),
+  event_date, report_date, verbose = FALSE
+)
+plot_weekend_effects(daily_now)
 
-# By position relative to the nearest holiday
-holiday_lag_now <- dengue_now |>
-  add_temporal_effects(temporal_effects(holidays = almanac::cal_us_federal(), holiday_lags = 2))
-plot_holiday_lag_effects(holiday_lag_now)
+# ... and how the weekend shows up in the reporting delay
+plot_weekend_effects(daily_now, type = "report")
 
 # By month, on monthly-unit data
 monthly_now <- tbl_now(
@@ -119,9 +136,24 @@ plot_month_of_year_effects(monthly_now)
 # ... and how the reporting does, as a share of the year's cases rather than
 # normalized. `type` and `measure` compose.
 plot_week_of_year_effects(dengue_now, type = "report", measure = "percent")
+
+if (requireNamespace("almanac", quietly = TRUE)){
+
+  ## By day type (weekday / weekend / holiday), once a holiday calendar is attached
+  holiday_now <- dengue_now |>
+   add_temporal_effects(temporal_effects(weekend = TRUE, holidays = almanac::cal_us_federal()))
+  plot_holiday_effects(holiday_now)
+
+  # By position relative to the nearest holiday
+  holiday_lag_now <- dengue_now |>
+    add_temporal_effects(temporal_effects(holidays = almanac::cal_us_federal(), holiday_lags = 2))
+  plot_holiday_lag_effects(holiday_lag_now)
+
+}
 \dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}}, \code{\link[=plot_cycles]{plot_cycles()}}, \code{\link[=plot_delay_distribution]{plot_delay_distribution()}},
-\code{\link[=plot_observed_cases]{plot_observed_cases()}}.
+\code{\link[=plot_observed_cases]{plot_observed_cases()}}; \code{\link[=temporal_effects]{temporal_effects()}} and \code{\link[=add_temporal_effects]{add_temporal_effects()}}
+for the specification the day-type and holiday-lag panels describe.
 }

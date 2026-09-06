@@ -1,7 +1,8 @@
 # `diagnose()` is a STRUCTURAL health check: everything it reports can be
 # decided by looking at the object, deterministically, with no model and no
-# hypothesis test. Drift and batches are therefore *signposts* rather than
-# answers -- see `.diagnose_signposts()`.
+# hypothesis test. Drift and batches are questions about a distribution, so they
+# are not here at all: `diagnose_drift()` and `diagnose_batches()` answer them,
+# and the user calls those when they want them.
 #
 # The findings engine is shared with `validate_tbl_now()`: one implementation,
 # two presentations. `validate_tbl_now()` re-emits the findings as the `cli`
@@ -33,10 +34,9 @@
 #'
 #' It is **deterministic and runs no statistical test.** Whether the reporting
 #' delay drifts, and whether reports arrive in batches, are questions about a
-#' *distribution*, not about the object's structure; `diagnose()` emits a
-#' `"not_run"` signpost naming the function to call instead
-#' ([diagnose_drift()], [diagnose_batches()]) rather than quietly running a test
-#' whose method, window and multiplicity correction you did not choose.
+#' *distribution*, not about the object's structure, so `diagnose()` leaves them
+#' to [diagnose_drift()] and [diagnose_batches()] rather than quietly running a
+#' test whose method, window and multiplicity correction you did not choose.
 #'
 #' Every block is also available on its own -- see
 #' [nowcast_diagnose_components] -- and `diagnose()` is exactly the
@@ -46,8 +46,7 @@
 #' @param ... Unused, for extensibility.
 #' @param checks Character vector of checks to run, a subset of
 #'   `c("declarations", "ordering", "missing", "duplicates", "units",
-#'   "negatives", "now", "truncation", "strata", "signposts")`. Defaults to all
-#'   of them.
+#'   "negatives", "now", "truncation", "strata")`. Defaults to all of them.
 #' @param by_strata Logical. Add one set of rows per stratum, for the checks
 #'   that are naturally per-stratum (missingness, negative increments,
 #'   right-truncation, the gap to `now`). Defaults to `TRUE` when the object has
@@ -68,13 +67,13 @@
 #' \describe{
 #'   \item{`check`}{Which block the row belongs to: `"declarations"`,
 #'     `"ordering"`, `"missing"`, `"duplicates"`, `"units"`, `"negatives"`,
-#'     `"now"`, `"truncation"`, `"strata"` or `"signposts"`.}
+#'     `"now"`, `"truncation"` or `"strata"`.}
 #'   \item{`scope`}{What the row is about: a column name, a time axis, a pair of
 #'     axes, or `"all"`.}
 #'   \item{`stratum`}{Which subset of the data the row describes: `"all"` for
 #'     the pooled rows, or the stratum label otherwise.}
 #'   \item{`status`}{An **ordered factor**, worst first, so the tibble sorts
-#'     itself: `error` > `warning` > `note` > `ok` > `not_run` > `skipped`. See
+#'     itself: `error` > `warning` > `note` > `ok` > `skipped`. See
 #'     the section below.}
 #'   \item{`n_affected`}{How many rows (or cases, or dates) the finding is
 #'     about.}
@@ -99,8 +98,6 @@
 #'     every `dplyr` verb, and a new warning there would turn a quiet
 #'     construction into a noisy one for data that has always been accepted.}
 #'   \item{`ok`}{The check ran and found nothing.}
-#'   \item{`not_run`}{A signpost: this question needs a statistical test, and
-#'     `message` names the call that answers it.}
 #'   \item{`skipped`}{Could not be assessed -- no validation process, the
 #'     wrong data type, or an optional package that is not installed.}
 #' }
@@ -189,8 +186,6 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 #'   and how much of their eventual total is probably still missing.
 #' * `diagnose_strata()` -- the smallest and the sparsest stratum, and the
 #'   validations still pending.
-#' * `diagnose_signposts()` -- the questions [diagnose()] deliberately does not
-#'   answer, and the call that answers each one.
 #'
 #' @inheritParams diagnose
 #'
@@ -201,8 +196,8 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 #' [validate_tbl_now()] for the same findings raised as errors and warnings;
 #' [nowcast_summary_components] for what *is* in the data rather than what is
 #' wrong with it; [diagnose_drift()], [diagnose_changepoint()] and
-#' [diagnose_batches()] for the statistical tests `diagnose_signposts()` points
-#' you at. The
+#' [diagnose_batches()] for the statistical tests `diagnose()` deliberately does
+#' not run. The
 #' [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' explains how to read each finding.
 #'
@@ -227,9 +222,8 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 #' diagnose_negatives(ndata)
 #' diagnose_truncation(ndata)
 #'
-#' # Are the strata usable, and which statistical tests does the data call for?
+#' # Are the strata usable?
 #' diagnose_strata(ndata)
-#' diagnose_signposts(ndata)
 #'
 #' ## Each returns the same schema, so they stack the way diagnose() stacks them.
 #' dplyr::bind_rows(
@@ -304,14 +298,6 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   .tbl_now_findings(x, "strata", by_strata, strata, fn = "diagnose_strata")
 }
 
-#' @rdname nowcast_diagnose_components
-#' @export
-diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
-  .tbl_now_findings(x, "signposts", by_strata, strata,
-    fn = "diagnose_signposts"
-  )
-}
-
 # The engine ------------------------------------------------------------------
 
 #' Every check the engine knows how to run, in reporting order
@@ -323,7 +309,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
 .diagnose_checks <- function() {
   c(
     "declarations", "ordering", "missing", "duplicates", "units",
-    "negatives", "now", "truncation", "strata", "signposts"
+    "negatives", "now", "truncation", "strata"
   )
 }
 
@@ -368,7 +354,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
 #' @keywords internal
 #' @noRd
 .diagnose_status_levels <- function() {
-  c("error", "warning", "note", "ok", "not_run", "skipped")
+  c("error", "warning", "note", "ok", "skipped")
 }
 
 #' Is a status severe enough to be reported at this context's floor?
@@ -454,8 +440,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       negatives    = .diagnose_negatives(context),
       now          = .diagnose_now(context),
       truncation   = .diagnose_truncation(context),
-      strata       = .diagnose_strata(context),
-      signposts    = .diagnose_signposts(context)
+      strata       = .diagnose_strata(context)
     )
   })
 
@@ -1284,6 +1269,21 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   x <- context$x
   rows <- list()
 
+  #Check rows with missing both event and report
+  offending <- which(is.na(x[[get_event_date(x)]]) & is.na(x[[get_report_date(x)]]))
+  rows[[length(rows) + 1L]] <- .diagnose_count_row(
+    "simultaneously missing", "event and report dates", length(offending), nrow(x), "warning",
+    .diagnose_text(
+      "{length(offending)} row{?s} {?has/have} NA values in the event and report date
+         columns: {.val {c(get_event_date(x), get_report_date(x))}}."
+    ),
+    clean = .diagnose_text(
+      "No simultaneously missing values in the event and report date columns {.val {c(get_event_date(x), get_report_date(x))}}."
+    ),
+    hint = "",
+    rows = offending
+  )
+
   # The two dates are the only columns `validate_tbl_now()` has ever warned
   # about, and the only ones scanned when notes are not wanted.
   for (axis in c("event", "report")) {
@@ -1962,6 +1962,12 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   event_units <- get_event_units(x)
   mature <- usable & cases$event_date <= cutoff
 
+  truncation_hint <- .diagnose_text(
+    "This is right-truncation, and it is the reason to nowcast rather than
+     a defect. Cut the series at {.val {as.character(cutoff)}} to describe
+     it instead."
+  )
+
   rows <- lapply(context$labels, function(label) {
     selected <- if (identical(label, "all")) {
       usable
@@ -1989,6 +1995,22 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     delays <- cases$event_to_report[reference]
     eventual <- sum(weights)
 
+    # Without a mature history there is no arrival curve to read the immature
+    # dates against. That is a check that could not be run, not one that found
+    # the counts complete.
+    if (!is.finite(eventual) || eventual <= 0) {
+      return(.diagnose_row(
+        "truncation", "event_date", "skipped",
+        .diagnose_text(
+          "No event date is old enough to estimate how much of the recent
+           counts is still to arrive."
+        ),
+        stratum = label,
+        n_affected = length(dates),
+        n_total = length(unique(cases$event_date[selected]))
+      ))
+    }
+
     # Both of these are one pass rather than one pass per date: on a
     # multi-year daily series there are hundreds of immature dates and
     # hundreds of thousands of rows, and the nested form is quadratic.
@@ -1999,23 +2021,56 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     observed[is.na(observed)] <- 0
 
     ages <- floor(.tbl_now_units_between(dates, now_value, event_units))
-    arrived <- if (eventual <= 0) {
-      rep(NA_real_, length(ages))
-    } else {
-      # `findInterval()` on the sorted delays is the count of cases whose delay
-      # is at most `age`, ties included -- the empirical CDF, read at the age
-      # each immature date has reached.
-      ordering <- order(delays)
-      running <- cumsum(weights[ordering])
-      position <- findInterval(ages, delays[ordering])
-      ifelse(position == 0, 0, running[pmax(position, 1L)]) / eventual
+    # `findInterval()` on the sorted delays is the count of cases whose delay
+    # is at most `age`, ties included -- the empirical CDF, read at the age
+    # each immature date has reached.
+    ordering <- order(delays)
+    running <- cumsum(weights[ordering])
+    position <- findInterval(ages, delays[ordering])
+    arrived <- ifelse(position == 0, 0, running[pmax(position, 1L)]) / eventual
+
+    # A date whose age is shorter than every delay ever seen has an arrival
+    # curve of exactly zero, and `observed / 0` is no estimate at all. Those
+    # dates are dropped from the ratio rather than counted as complete -- which
+    # is what summing them with `na.rm = TRUE` used to do, turning "nothing has
+    # arrived" into "0% is missing", the exact opposite reading.
+    estimable <- !is.na(arrived) & arrived > 0
+    if (!any(estimable)) {
+      return(.diagnose_row(
+        "truncation", "event_date", "note",
+        .diagnose_text(
+          "{length(dates)} event date{?s} {?is/are} younger than any delay yet
+           observed, so effectively none of {?its/their} eventual total has
+           arrived."
+        ),
+        stratum = label,
+        n_affected = length(dates),
+        n_total = length(unique(cases$event_date[selected])),
+        hint = truncation_hint
+      ))
     }
 
     still_missing <- sum(
-      ifelse(is.na(arrived) | arrived <= 0, NA_real_, observed / arrived - observed),
-      na.rm = TRUE
+      observed[estimable] / arrived[estimable] - observed[estimable]
     )
-    share <- still_missing / (still_missing + sum(observed))
+    share <- still_missing / (still_missing + sum(observed[estimable]))
+
+    # A date can sit past the cutoff with nothing outstanding: the 95th
+    # percentile is a bound on the delay, not a guarantee that something is
+    # still to come. Reporting "an estimated 0% has not arrived" asks the
+    # reader to act on a truncation that is not there.
+    if (!is.finite(share) || round(100 * share, 1) <= 0) {
+      return(.diagnose_row(
+        "truncation", "event_date", "ok",
+        .diagnose_text(
+          "{length(dates)} event date{?s} {?is/are} younger than the 95th
+           percentile of the delay, but nothing is estimated to be still to
+           arrive for {?it/them}."
+        ),
+        stratum = label, n_affected = 0,
+        n_total = length(unique(cases$event_date[selected]))
+      ))
+    }
 
     .diagnose_row(
       "truncation", "event_date", "note",
@@ -2029,11 +2084,7 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
       stratum = label,
       n_affected = length(dates),
       n_total = length(unique(cases$event_date[selected])),
-      hint = .diagnose_text(
-        "This is right-truncation, and it is the reason to nowcast rather than
-         a defect. Cut the series at {.val {as.character(cutoff)}} to describe
-         it instead."
-      )
+      hint = truncation_hint
     )
   })
 
@@ -2085,24 +2136,42 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
 
       occupancy <- .summary_cases(summary, "event")
       occupancy <- occupancy[
-        occupancy$quantity == "per_event_date" & occupancy$stratum != "all", ,
+        occupancy$quantity == "per_event_date", ,
         drop = FALSE
       ]
+      pooled <- occupancy[occupancy$stratum == "all", , drop = FALSE]
+      occupancy <- occupancy[occupancy$stratum != "all", , drop = FALSE]
       if (nrow(occupancy) > 0 && any(!is.na(occupancy$prop_zero))) {
         sparsest <- occupancy[which.max(occupancy$prop_zero), ]
+        # The grid runs from the first event to `now` in the event units, so a
+        # rare disease on a daily grid is mostly zeros in EVERY stratum. A
+        # share on its own reads as an alarm about the stratum; the pooled
+        # share is what says whether it is one.
+        empty <- round(sparsest$prop_zero * sparsest$n)
+        baseline <- if (nrow(pooled) == 1 && !is.na(pooled$prop_zero)) {
+          paste0(
+            ", against ", round(100 * pooled$prop_zero, 1),
+            "% pooled over every stratum"
+          )
+        } else {
+          ""
+        }
         rows[[length(rows) + 1L]] <- .diagnose_row(
           "strata", "sparsity", "note",
           .diagnose_text(
-            "The sparsest stratum is {.val {sparsest$stratum}}:
-             {round(100 * sparsest$prop_zero, 1)}% of the event dates on the
-             grid carry no cases at all."
+            "The sparsest stratum is {.val {sparsest$stratum}}: {empty} of the
+             {sparsest$n} {get_event_units(x)} between the minimum event
+             ({.val {min(x[[get_event_date(x)]])}}) and the now ({get_now(x)}) carry no cases at all
+             ({round(100 * sparsest$prop_zero, 1)}%{baseline})."
           ),
           stratum = sparsest$stratum,
-          n_affected = sparsest$prop_zero * sparsest$n,
+          n_affected = empty,
           n_total = sparsest$n,
           hint = .diagnose_text(
             "A stratum that is mostly zeros is the one a per-stratum fit will
-             struggle with; pooling it is often better than fitting it."
+             struggle with; pooling it is often better than fitting it. When
+             every stratum is mostly zeros the grid is finer than the data --
+             {.fn aggregate_time_units} coarsens it."
           )
         )
       }
@@ -2181,71 +2250,6 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
   }
 
   .diagnose_block(rows)
-}
-
-#' The questions `diagnose()` deliberately does not answer
-#'
-#' Drift and batching are statements about a distribution, not about the
-#' object's structure. Answering them means choosing a method, a maturity
-#' window and a multiplicity correction, and `diagnose()` has no business
-#' choosing those on the user's behalf -- so it points at the function that
-#' does, instead of quietly running one.
-#'
-#' @param context A diagnose context.
-#'
-#' @return A tibble of findings.
-#'
-#' @keywords internal
-#' @noRd
-.diagnose_signposts <- function(context) {
-  x <- context$x
-  confirmed <- has_validation(x)
-  has_modifiedmk <- requireNamespace("modifiedmk", quietly = TRUE)
-
-  signpost <- function(check, scope, call, why) {
-    if (identical(scope, "validation") && !confirmed) {
-      return(.diagnose_row(
-        check, scope, "skipped",
-        .diagnose_text("The object carries no validation process.")
-      ))
-    }
-    if (identical(check, "signposts") && !has_modifiedmk &&
-      grepl("diagnose_drift", call, fixed = TRUE)) {
-      return(.diagnose_row(
-        check, scope, "skipped",
-        .diagnose_text(
-          "Package {.pkg modifiedmk} is not installed, so the drift test cannot
-           be run."
-        ),
-        hint = .diagnose_text(
-          "Install it with {.code install.packages(\"modifiedmk\")}."
-        )
-      ))
-    }
-    .diagnose_row(check, scope, "not_run", paste0("Run: ", call), hint = why)
-  }
-
-  drift_why <- .diagnose_text(
-    "{.fn diagnose} runs no statistical test: a trend test needs a method, a
-     maturity window and an alpha, and those are the caller's to choose."
-  )
-  batch_why <- .diagnose_text(
-    "{.fn diagnose} runs no statistical test: batch detection needs a
-     look-back, a null model and a multiplicity correction."
-  )
-
-  .diagnose_block(list(
-    signpost("signposts", "report", "diagnose_drift(x, axis = \"report\")", drift_why),
-    signpost(
-      "signposts", "validation",
-      "diagnose_drift(x, axis = \"validation\")", drift_why
-    ),
-    signpost("signposts", "report_batches", "diagnose_batches(x, axis = \"report\")", batch_why),
-    signpost(
-      "signposts", "validation_batches",
-      "diagnose_batches(x, axis = \"validation\")", batch_why
-    )
-  ))
 }
 
 # The `validate_tbl_now()` presentation ---------------------------------------
@@ -2330,7 +2334,6 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
     warning = list(symbol = "!",                colour = cli::col_yellow,  heading = "Warnings"),
     note    = list(symbol = cli::symbol$info,   colour = cli::col_blue,    heading = "Notes"),
     ok      = list(symbol = cli::symbol$tick,   colour = cli::col_green,   heading = "Passed"),
-    not_run = list(symbol = cli::symbol$arrow_right, colour = cli::col_cyan, heading = "Not run"),
     skipped = list(symbol = cli::symbol$line,   colour = cli::col_grey,    heading = "Skipped")
   )
 }
@@ -2340,8 +2343,8 @@ diagnose_signposts <- function(x, by_strata = NULL, strata = NULL) {
 #' @description `r lifecycle::badge("experimental")`
 #'
 #' Prints the findings [diagnose()] returned as a report: the errors, warnings
-#' and notes in full, each with its hint, and the checks that passed, that were
-#' deliberately not run, and that could not be assessed as one line each.
+#' and notes in full, each with its hint, and the checks that passed and that
+#' could not be assessed as one line each.
 #'
 #' The object is an ordinary tibble underneath, so
 #' `print(tibble::as_tibble(x))` gives the table and every `dplyr` verb still
@@ -2406,7 +2409,7 @@ print.tbl_now_diagnosis <- function(x, ..., all = FALSE) {
   # every time; the point of the printed form is the handful of rows that do
   # not. When they are ALL there is, spelling them out is the only way the
   # report says anything at all.
-  actionable <- c("error", "warning", "note", "not_run")
+  actionable <- c("error", "warning", "note")
   spell_everything <- isTRUE(all) || sum(counts[actionable]) == 0
   spelled <- if (spell_everything) names(styles) else actionable
 
@@ -2482,16 +2485,16 @@ print.tbl_now_diagnosis <- function(x, ..., all = FALSE) {
 #' @keywords internal
 #' @noRd
 .diagnose_tally <- function(counts) {
-  # `ok`, `not_run` and `skipped` name what HAPPENED to a check rather than what
-  # was found, so they read the same at any count; the three that name a finding
+  # `ok` and `skipped` name what HAPPENED to a check rather than what was
+  # found, so they read the same at any count; the three that name a finding
   # take a plural.
   singular <- c(
     error = "error", warning = "warning", note = "note",
-    ok = "passed", not_run = "not run", skipped = "skipped"
+    ok = "passed", skipped = "skipped"
   )
   plural <- c(
     error = "errors", warning = "warnings", note = "notes",
-    ok = "passed", not_run = "not run", skipped = "skipped"
+    ok = "passed", skipped = "skipped"
   )
   styles <- .diagnose_status_style()
   present <- counts[counts > 0]

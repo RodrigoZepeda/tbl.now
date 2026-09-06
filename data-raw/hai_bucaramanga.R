@@ -309,4 +309,7 @@ message(
   " days"
 )
 
+hai_bucaramanga <- hai_bucaramanga |>
+  filter(is.na(specimen_date) | specimen_date >= ymd("2020/01/01"))
+
 usethis::use_data(hai_bucaramanga, overwrite = TRUE, compress = "xz")

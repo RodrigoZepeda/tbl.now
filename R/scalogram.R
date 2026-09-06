@@ -53,7 +53,9 @@
 #'   Default `"%d/%b/%y"`.
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget instead of a
 #'   static plot. Default `FALSE`.
-#' @param palette A named colour palette. Defaults to the package palette.
+#' @param palette A named colour palette (see [tbl_now_palette()]). The
+#'   scalogram is drawn entirely with tiles, so it takes no `size` or
+#'   `linewidth`.
 #'
 #' @param axis Which time axis to draw: `"report"` (default) or
 #'   `"validation"`. On the validation axis the picture answers the
@@ -83,6 +85,7 @@ plot_scalogram <- function(x, type = c("reporting", "epidemic"), windowrad = 1,
   type <- match.arg(type)
   axis <- match.arg(axis)
   .diag_check(x)
+  .tbl_now_check_palette(palette, "plot_scalogram")
   if (!requireNamespace("wavScalogram", quietly = TRUE)) {
     cli::cli_abort(c(
       "{.fn plot_scalogram} needs the {.pkg wavScalogram} package.",
@@ -92,7 +95,7 @@ plot_scalogram <- function(x, type = c("reporting", "epidemic"), windowrad = 1,
 
   s          <- .scalo_series(x, type, axis = axis)
   report_unit <- get_report_units(x) %||% "days"
-  fill_col   <- if (type == "reporting") palette[["accent_red"]] else palette[["primary_green"]]
+  fill_col   <- if (type == "reporting") palette[["reporting"]] else palette[["epidemic"]]
   title      <- if (type == "reporting") "Reporting scalogram" else "Epidemic scalogram"
 
   # Analyse on the *integer* time grid (one step = one report unit), i.e. dt = 1.
@@ -141,11 +144,13 @@ plot_scalogram <- function(x, type = c("reporting", "epidemic"), windowrad = 1,
     ggplot2::scale_x_continuous(breaks = xpos, labels = base::format(date_breaks, format),
                                 expand = c(0, 0)) +
     ggplot2::scale_y_continuous(expand = c(0, 0), breaks = log2(brks), labels = round(brks)) +
-    ggplot2::scale_fill_gradient(low = "grey96", high = fill_col, name = "rel.\nenergy") +
+    ggplot2::scale_fill_gradient(low = palette[["surface_muted"]], high = fill_col,
+                                 name = "rel.\nenergy") +
     ggplot2::labs(x = "Date", y = sprintf("Period (%s)", report_unit), title = title) +
     .tbl_now_theme(palette) +
     # Outside the cone of influence there is no reliable estimate: paint it gray10.
-    ggplot2::theme(panel.background = ggplot2::element_rect(fill = "gray10", colour = NA),
+    ggplot2::theme(panel.background = ggplot2::element_rect(fill = palette[["surface_dark"]],
+                                                            colour = NA),
                    panel.grid = ggplot2::element_blank())
   .as_plotly(p, plotly)
 }

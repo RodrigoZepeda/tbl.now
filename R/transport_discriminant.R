@@ -50,6 +50,11 @@
 #'   machinery as [diagnose_batches()]. `period` (e.g. `7`) absorbs a scheduled weekly
 #'   reporting cadence.
 #' @param alpha Level for the `classification` labels. Default `0.05`.
+#' @param drop_censored Logical. Ignore the rows whose date on `axis` is
+#'   flagged censored (`is_censored_report`, or `is_censored_validation` on the
+#'   validation axis). Default `TRUE`: a censored date is a *bound*, not the
+#'   date the record arrived, so those rows would pile up on the censoring date
+#'   and be rediscovered as the very batch the censoring already recorded.
 #'
 #' @param axis Which time axis to scan for arrivals: `"report"` (default) or
 #'   `"validation"`. Needs a validation process (see [add_validation_date()]);
@@ -75,8 +80,10 @@ transport_discriminant <- function(x,
                                     baseline_window = NULL,
                                     period          = NULL,
                                     alpha           = 0.05,
-                                    axis            = c("report", "validation")) {
+                                    axis            = c("report", "validation"),
+                                    drop_censored   = TRUE) {
   axis <- match.arg(axis)
+  check_bool(drop_censored, "drop_censored")
   .batch_experimental_warning("transport_discriminant")
   .batch_check_tbl_now(x)
 
@@ -88,7 +95,8 @@ transport_discriminant <- function(x,
     cli::cli_abort("`alpha` must lie strictly between 0 and 1. Got {alpha}.")
   }
 
-  registration <- .batch_registration(x, lookback, baseline_window, period, axis = axis)
+  registration <- .batch_registration(x, lookback, baseline_window, period,
+                                      axis = axis, drop_censored = drop_censored)
   dispersion   <- .batch_dispersion(registration)
 
   registration <- dplyr::mutate(
@@ -131,8 +139,55 @@ transport_discriminant <- function(x,
   )
 }
 
+#' The columns a transport discriminant needs to describe itself
+#'
+#' Exactly the columns `print.transport_discriminant()` reads.
+#'
+#' @keywords internal
+#' @noRd
+.transport_report_cols <- c("batch", "classification")
+
+#' Subset a transport discriminant
+#'
+#' Demotes to a plain tibble when the subset can no longer describe itself --
+#' see `.batch_report_reconstruct()` in `R/batch_screen.R`.
+#'
+#' @param x A `transport_discriminant` object.
+#' @param ... Passed to the tibble method.
+#'
+#' @return A `transport_discriminant`, or a tibble.
+#'
 #' @export
+#' @noRd
+`[.transport_discriminant` <- function(x, ...) {
+  out <- NextMethod()
+  .batch_report_reconstruct(out, x, .transport_report_cols)
+}
+
+#' @importFrom dplyr dplyr_reconstruct
+#' @exportS3Method dplyr::dplyr_reconstruct
+#' @noRd
+dplyr_reconstruct.transport_discriminant <- function(data, template) {
+  out <- NextMethod()
+  .batch_report_reconstruct(out, template, .transport_report_cols)
+}
+
+#' Print a transport discriminant
+#'
+#' Registered on `base::print`, not with a plain `@export` -- see the note on
+#' `print.diagnose_batches()` and DEVELOPMENT_SKILL.md section 9.
+#'
+#' @param x A `transport_discriminant` object.
+#' @param ... Unused.
+#' @exportS3Method base::print
+#' @noRd
 print.transport_discriminant <- function(x, ...) {
+  # As in `print.diagnose_batches()`: a column can still be stripped without
+  # going through `[`, and the header would then count zero of everything.
+  if (!all(.transport_report_cols %in% names(x))) {
+    class(x) <- setdiff(class(x), "transport_discriminant")
+    return(print(x, ...))
+  }
   n_batch <- sum(x$batch, na.rm = TRUE)
   n_surge <- sum(x$classification == "surge", na.rm = TRUE)
   # `cat_line()` (stdout), not `cli_text()` (a message): print output must

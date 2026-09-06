@@ -8,10 +8,6 @@
 # Every view is facetted by stratum when the tbl_now declares strata.
 # =============================================================================
 
-# Colour for a cell that is observable but reported nothing (vs. blank = not yet
-# reportable). A muted blue, distinct from the grey->red count ramp and from white.
-.DIAG_ZERO_COLOUR <- "#C4D5DE"
-
 # --- shared count scales, so every count legend looks the same ---------------
 
 #' The count colour scale shared by every diagnostic panel
@@ -19,7 +15,7 @@
 #' Defined once so that a count means the same colour in every plot the gallery
 #' draws.
 #'
-#' @param palette A named colour palette (see `.tbl_now_palette()`).
+#' @param palette A named colour palette (see [tbl_now_palette()]).
 #' @param aesthetic Which aesthetic to build the scale for.
 #'
 #' @return A \pkg{ggplot2} scale.
@@ -29,7 +25,7 @@
 .diag_count_scale <- function(palette, aesthetic = c("fill", "colour")) {
   aesthetic <- match.arg(aesthetic)
   fun <- if (aesthetic == "fill") ggplot2::scale_fill_gradient else ggplot2::scale_colour_gradient
-  fun(name = "reports", low = "grey85", high = palette[["accent_red"]],
+  fun(name = "reports", low = palette[["guide"]], high = palette[["reporting"]],
       trans = "sqrt", labels = scales::label_comma())
 }
 
@@ -103,7 +99,8 @@
 #' @param x A [tbl_now()] object.
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget (hover,
 #'   zoom) instead of a static \pkg{ggplot2} plot. Default `FALSE`.
-#' @param palette A named colour palette. Defaults to the package palette.
+#' @param palette A named colour palette (see [tbl_now_palette()]). These two
+#'   panels draw bars and nothing else, so they take no `size` or `linewidth`.
 #' @param axis Which time axis to draw: `"report"` (default) or
 #'   `"validation"`. On the validation axis the picture answers the
 #'   laboratory's version of the question -- when results arrived, rather than
@@ -136,6 +133,7 @@ plot_reporting_process <- function(x, plotly = FALSE, axis = c("report", "valida
                                    palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
   .diag_check(x)
+  .tbl_now_check_palette(palette, "plot_reporting_process")
   inc <- .batch_report_increments(x, axis = axis)
   ctx <- .diag_context(x, inc)
   .as_plotly(.diag_build_process(inc, ctx, palette, axis = "report"), plotly)
@@ -147,6 +145,7 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "validat
                                   palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
   .diag_check(x)
+  .tbl_now_check_palette(palette, "plot_epidemic_process")
   inc <- .batch_report_increments(x, axis = axis)
   ctx <- .diag_context(x, inc)
   .as_plotly(.diag_build_process(inc, ctx, palette, axis = "event"), plotly)
@@ -160,7 +159,7 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "validat
   sub   <- if (axis == "event") "Cases by the date they occurred" else "Reports by the date they arrived"
   xlab  <- if (axis == "event") "Event date" else "Report date"
   ylab  <- if (axis == "event") "Cases" else "Reports"
-  fill  <- if (axis == "event") palette[["primary_green"]] else palette[["accent_red"]]
+  fill  <- if (axis == "event") palette[["epidemic"]] else palette[["reporting"]]
   cap   <- NULL
 
   totals <- increments |>
@@ -218,7 +217,12 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "validat
 #'   (default) disables it. Found cheaply from volume spikes, not [diagnose_batches()].
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget instead of a
 #'   static plot. Default `FALSE`.
-#' @param palette A named colour palette. Defaults to the package palette.
+#' @param size Multiplier on the size of the report-date and batch-stripe
+#'   labels. Default `1`.
+#' @param grid_linewidth Line width of the iso-report diagonals this function
+#'   draws as the third axis -- the package's own grid, not \pkg{ggplot2}'s.
+#'   Default `0.3`; the `mark_batches` stripes are drawn a third heavier.
+#' @param palette A named colour palette (see [tbl_now_palette()]).
 #' @param axis Which time axis to draw: `"report"` (default) or
 #'   `"validation"`. On the validation axis the picture answers the
 #'   laboratory's version of the question -- when results arrived, rather than
@@ -244,13 +248,18 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "validat
 plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
                                     mark_batches = 0L, plotly = FALSE,
                                     axis = c("report", "validation"),
+                                    size = 1, grid_linewidth = 0.3,
                                     palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
   .diag_check(x)
+  .tbl_now_check_palette(palette, "plot_reporting_triangle")
+  .tbl_now_check_size(size, "size")
+  .tbl_now_check_size(grid_linewidth, "grid_linewidth")
   inc <- .batch_report_increments(x, axis = axis)
   ctx <- .diag_context(x, inc, max_delay, axis = axis)
   .as_plotly(.diag_build_triangle(inc, ctx, palette, report_ticks = report_ticks,
-                                  mark_batches = mark_batches), plotly)
+                                  mark_batches = mark_batches, size = size,
+                                  grid_linewidth = grid_linewidth), plotly)
 }
 
 #' Report dates whose volume spikes above a local median: the obvious batch
@@ -286,7 +295,8 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 #' date on the (event, delay) triangle.
 #' @keywords internal
 #' @noRd
-.diag_report_axis <- function(increments, ctx, event_grid, n_ticks) {
+.diag_report_axis <- function(increments, ctx, event_grid, n_ticks, palette,
+                              size = 1, grid_linewidth = 0.3) {
   n_ticks <- as.integer(n_ticks)
   if (is.na(n_ticks) || n_ticks < 1L) return(list())
   unit   <- ctx$unit_days
@@ -308,19 +318,21 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
   list(
     ggplot2::geom_abline(data = iso,
                          ggplot2::aes(slope = .data$slope, intercept = .data$intercept),
-                         colour = "grey45", linetype = "dashed", linewidth = 0.3,
+                         colour = palette[["guide_strong"]], linetype = "dashed",
+                         linewidth = grid_linewidth,
                          inherit.aes = FALSE),
     if (nrow(lab) > 0L) ggplot2::geom_label(
       data = lab, ggplot2::aes(.data$x, .data$y, label = .data$label),
-      inherit.aes = FALSE, size = 2.4, colour = "grey30", fill = "white",
-      label.size = 0, alpha = 0.8, angle = -45)
+      inherit.aes = FALSE, size = 2.4 * size, colour = palette[["annotation"]],
+      fill = palette[["surface"]], label.size = 0, alpha = 0.8, angle = -45)
   )
 }
 
 #' @keywords internal
 #' @noRd
 .diag_build_triangle <- function(increments, ctx, palette, report_ticks = 6L,
-                                 mark_batches = 0L) {
+                                 mark_batches = 0L, size = 1,
+                                 grid_linewidth = 0.3) {
   counts <- increments |>
     dplyr::group_by(.data$.stratum, .data$.event_date, .data$.delay) |>
     dplyr::summarise(n = sum(pmax(.data$.count, 0)), .groups = "drop")
@@ -348,7 +360,9 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 
   # The report-date axis: a family of evenly spaced iso-report diagonals labelled
   # by report date, forming a third axis that runs up-right at 45 degrees.
-  axis_layers <- .diag_report_axis(increments, ctx, event_grid, report_ticks)
+  axis_layers <- .diag_report_axis(increments, ctx, event_grid, report_ticks,
+                                   palette, size = size,
+                                   grid_linewidth = grid_linewidth)
 
   # Optionally highlight the biggest batch stripes in a stronger style (off by
   # default now that the full report-date axis is drawn).
@@ -367,19 +381,20 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
     stripe_layers <- list(
       ggplot2::geom_abline(data = sdf,
                            ggplot2::aes(slope = .data$slope, intercept = .data$intercept),
-                           colour = "grey20", linetype = "dashed", linewidth = 0.4,
+                           colour = palette[["annotation"]], linetype = "dashed",
+                           linewidth = 1.33 * grid_linewidth,
                            inherit.aes = FALSE),
       if (nrow(ldf) > 0L) ggplot2::geom_label(
         data = ldf, ggplot2::aes(.data$x, .data$y, label = .data$label),
-        inherit.aes = FALSE, size = 2.6, colour = "grey20", fill = "white",
-        label.size = 0, alpha = 0.75)
+        inherit.aes = FALSE, size = 2.6 * size, colour = palette[["annotation"]],
+        fill = palette[["surface"]], label.size = 0, alpha = 0.75)
     )
   }
 
   panel <- ggplot2::ggplot() +
     ggplot2::geom_tile(data = zeros,
                        ggplot2::aes(.data$.event_date, .data$.delay),
-                       fill = .DIAG_ZERO_COLOUR) +
+                       fill = palette[["zero"]]) +
     ggplot2::geom_tile(data = positive,
                        ggplot2::aes(.data$.event_date, .data$.delay, fill = .data$n)) +
     axis_layers +
@@ -416,7 +431,11 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 #'   covering 99% of reported mass.
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget instead of a
 #'   static plot. Default `FALSE`.
-#' @param palette A named colour palette. Defaults to the package palette.
+#' @param linewidth Multiplier on the width of the per-date curves. Default `1`
+#'   (drawn at `0.4`). The curves are deliberately faint and overplotted -- it is
+#'   their envelope that carries the message -- so raising this on a long series
+#'   fills the panel in.
+#' @param palette A named colour palette (see [tbl_now_palette()]).
 #' @param axis Which time axis the delay is measured to: `"report"` (default)
 #'   or `"validation"`. Both are measured *from the event*, so the two are
 #'   directly comparable -- run each in turn and the gap between them is the
@@ -428,7 +447,7 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 #' @seealso
 #' [plot_delay_distribution()] for the pooled delay distribution rather than one
 #' curve per date; [plot_delay_drift()] for whether those curves move over time;
-#' [diagnose_batch_shape()] for the test behind the eyeball;
+#' [diagnose_batches2()] for the test behind the eyeball;
 #' [diagnostic_plot()] for the whole gallery.
 #'
 #' @examples
@@ -439,18 +458,21 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 #' @md
 plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
                                 plotly = FALSE, axis = c("report", "validation"),
+                                linewidth = 1,
                                 palette = .tbl_now_palette()) {
   by <- match.arg(by)
   axis <- match.arg(axis)
   .diag_check(x)
+  .tbl_now_check_palette(palette, "plot_delay_profiles")
+  .tbl_now_check_size(linewidth, "linewidth")
   inc <- .batch_report_increments(x, axis = axis)
   ctx <- .diag_context(x, inc, max_delay, axis = axis)
-  .as_plotly(.diag_build_profiles(inc, ctx, by, palette), plotly)
+  .as_plotly(.diag_build_profiles(inc, ctx, by, palette, linewidth = linewidth), plotly)
 }
 
 #' @keywords internal
 #' @noRd
-.diag_build_profiles <- function(increments, ctx, by, palette) {
+.diag_build_profiles <- function(increments, ctx, by, palette, linewidth = 1) {
   key <- if (identical(by, "report")) ".report_date" else ".event_date"
 
   profile <- increments |>
@@ -468,7 +490,8 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
     .data$.delay, .data$prop,
     group = interaction(.data$.stratum, .data[[key]])
   )) +
-    ggplot2::geom_line(colour = palette[["dark_green"]], alpha = 0.15, linewidth = 0.4) +
+    ggplot2::geom_line(colour = palette[["epidemic_dark"]], alpha = 0.15,
+                       linewidth = 0.4 * linewidth) +
     ggplot2::labs(
       x = sprintf("Delay (%s)", ctx$report_unit),
       y = sprintf("Share of the date's %ss", ctx$arrival),
@@ -514,7 +537,14 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
 #'   `alpha`).
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget instead of a
 #'   static plot. Default `FALSE`.
-#' @param palette A named colour palette. Defaults to the package palette.
+#' @param size Multiplier on the size of the points and their date labels.
+#'   Default `1`: unflagged points are drawn at `1.1`, confirmed batches at
+#'   `2.6`. It is a multiplier rather than an absolute size precisely so that
+#'   enlarging the marks keeps the flagged ones bigger than the rest.
+#' @param grid_linewidth Line width of the zero lines and the dashed
+#'   significance thresholds this function draws -- the package's own reference
+#'   grid, not \pkg{ggplot2}'s. Default `0.3`.
+#' @param palette A named colour palette (see [tbl_now_palette()]).
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
 #' @seealso
 #' [transport_discriminant()] for the numbers behind the plane;
@@ -527,18 +557,105 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
 #' plot_transport_discriminant(dn)
 #' @export
 #' @md
-plot_transport_discriminant <- function(x, ..., plotly = FALSE, palette = .tbl_now_palette()) {
+plot_transport_discriminant <- function(x, ..., plotly = FALSE, size = 1,
+                                        grid_linewidth = 0.3,
+                                        palette = .tbl_now_palette()) {
   .diag_check(x)
-  td <- transport_discriminant(x, ...)
-  .as_plotly(.diag_build_transport(td, palette), plotly)
+  .tbl_now_check_palette(palette, "plot_transport_discriminant")
+  .tbl_now_check_size(size, "size")
+  .tbl_now_check_size(grid_linewidth, "grid_linewidth")
+  td   <- transport_discriminant(x, ...)
+  dots <- list(...)
+  # The hover costs a second pass over the data and only a widget can show it,
+  # so a static plot does not pay for it. `tooltip = "text"` then puts the dates
+  # in the tooltip instead of the two z-scores the point is positioned by.
+  if (isTRUE(plotly)) {
+    axis <- match.arg(dots$axis %||% "report", c("report", "validation"))
+    td   <- .diag_transport_hover(td, x, axis, dots$drop_censored %||% TRUE)
+  }
+  .as_plotly(.diag_build_transport(td, palette, hover = isTRUE(plotly),
+                                   size = size, grid_linewidth = grid_linewidth),
+             plotly, tooltip = "text")
+}
+
+#' Attach the hover label for the transport plane.
+#'
+#' A point is one *arrival* date, so the report (or validation) date names it.
+#' The event dates are the other half of the question the plane asks -- a
+#' backlog release reports old events -- so the mean event date behind that
+#' date's arrivals, and the delay it implies, go in the label too.
+#'
+#' @param td A `transport_discriminant` tibble.
+#' @param x The `tbl_now` it came from.
+#' @param axis The axis it was computed on.
+#' @param drop_censored Whether censored rows were dropped, so the label
+#'   describes the same rows the statistics do.
+#'
+#' @returns `td` with a `.hover` column.
+#' @keywords internal
+#' @noRd
+.diag_transport_hover <- function(td, x, axis, drop_censored) {
+  increments <- .batch_report_increments(x, axis = axis,
+                                         drop_censored = drop_censored)
+  # Only arrivals carry an event date to average; a down-revision removes cases
+  # rather than announcing any.
+  arrivals <- dplyr::filter(increments, .data$.count > 0)
+
+  per_date <- arrivals |>
+    dplyr::group_by(.data$.stratum, .data$.report_date) |>
+    dplyr::summarise(
+      # Date arithmetic is not defined for a weighted mean, so average the
+      # numeric representation and put the class back afterwards.
+      .mean_event_num = stats::weighted.mean(as.numeric(.data$.event_date),
+                                             w = .data$.count),
+      .mean_delay = stats::weighted.mean(.data$.delay, w = .data$.count),
+      .groups = "drop"
+    )
+  per_date$.mean_event <- if (inherits(arrivals$.event_date, "Date")) {
+    as.Date(round(per_date$.mean_event_num), origin = "1970-01-01")
+  } else {
+    per_date$.mean_event_num
+  }
+  per_date$.mean_event_num <- NULL
+
+  td <- dplyr::left_join(
+    td, per_date,
+    by = c("stratum" = ".stratum", "report_date" = ".report_date")
+  )
+
+  arrival_label <- if (identical(axis, "validation")) {
+    "Validation date"
+  } else {
+    "Report date"
+  }
+  td$.hover <- paste0(
+    arrival_label, ": ", format(td$report_date),
+    "\nMean event date: ",
+    ifelse(is.na(td$.mean_event), "no arrivals", format(td$.mean_event)),
+    "\nMean delay: ",
+    ifelse(is.na(td$.mean_delay), "-", sprintf("%.1f", td$.mean_delay)),
+    "\nArrived: ", format(round(td$reported, 1), trim = TRUE),
+    " (baseline ", format(round(td$baseline, 1), trim = TRUE), ")",
+    if ("stratum" %in% names(td)) paste0("\nStratum: ", td$stratum) else ""
+  )
+  td
+}
+
+#' `.diag_transport_hover()`, but only when a widget will read the label.
+#' @keywords internal
+#' @noRd
+.diag_transport_hover_if <- function(td, x, axis, drop_censored, wanted) {
+  if (!isTRUE(wanted)) return(td)
+  .diag_transport_hover(td, x, axis, drop_censored)
 }
 
 #' @keywords internal
 #' @noRd
-.diag_build_transport <- function(td, palette) {
+.diag_build_transport <- function(td, palette, hover = FALSE, size = 1,
+                                  grid_linewidth = 0.3) {
   td$.stratum <- td$stratum
   z_star <- stats::qnorm(1 - attr(td, "alpha"))
-  red    <- palette[["accent_red"]]
+  red    <- palette[["reporting"]]
 
   # Colour ONLY the diagnose_batches()-confirmed batches (BH-corrected `batch`), not
   # the raw per-point classification: at level alpha the raw quadrants paint
@@ -563,21 +680,40 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, palette = .tbl_n
   # Headroom above the highest point so its date label is not clipped at the top.
   y_hi <- top + 0.18 * (top - y_lo)
 
+  # `text` is not a ggplot2 aesthetic -- it is what `ggplotly(tooltip = "text")`
+  # reads -- so it is added only when a widget is being built, or ggplot2 warns
+  # about it on every static plot.
+  point_aes <- if (isTRUE(hover) && ".hover" %in% names(td)) {
+    ggplot2::aes(text = .data$.hover)
+  } else {
+    ggplot2::aes()
+  }
+
   panel <- ggplot2::ggplot(td, ggplot2::aes(.data$creation_z, .data$transport_z)) +
-    ggplot2::geom_hline(yintercept = 0, colour = "grey85", linewidth = 0.3) +
-    ggplot2::geom_vline(xintercept = 0, colour = "grey85", linewidth = 0.3) +
-    ggplot2::geom_hline(yintercept = z_star, linetype = "dashed", colour = "grey60", linewidth = 0.35) +
-    ggplot2::geom_vline(xintercept = -z_star, linetype = "dashed", colour = "grey60", linewidth = 0.35) +
-    ggplot2::geom_point(colour = "grey70", alpha = 0.4, size = 1.1, na.rm = TRUE) +
-    ggplot2::geom_point(data = batches, colour = red, alpha = 0.9, size = 2.6) +
+    ggplot2::geom_hline(yintercept = 0, colour = palette[["guide"]],
+                        linewidth = grid_linewidth) +
+    ggplot2::geom_vline(xintercept = 0, colour = palette[["guide"]],
+                        linewidth = grid_linewidth) +
+    ggplot2::geom_hline(yintercept = z_star, linetype = "dashed",
+                        colour = palette[["grid_major"]],
+                        linewidth = 1.17 * grid_linewidth) +
+    ggplot2::geom_vline(xintercept = -z_star, linetype = "dashed",
+                        colour = palette[["grid_major"]],
+                        linewidth = 1.17 * grid_linewidth) +
+    ggplot2::geom_point(point_aes,
+                        colour = palette[["neutral"]], alpha = 0.4, size = 1.1 * size, na.rm = TRUE) +
+    ggplot2::geom_point(data = batches, point_aes,
+                        colour = red, alpha = 0.9, size = 2.6 * size) +
     ggplot2::geom_label(data = batches, ggplot2::aes(label = format(.data$report_date)),
-                        colour = "white", fill = red, label.size = 0, alpha = 0.95,
-                        size = 3.2, fontface = "bold", vjust = -0.6, na.rm = TRUE) +
+                        colour = palette[["ink_inverse"]], fill = red, label.size = 0, alpha = 0.95,
+                        size = 3.2 * size, fontface = "bold", vjust = -0.6, na.rm = TRUE) +
     ggplot2::labs(
-      x = expression(paste("creation  ", italic(z))),
-      y = expression(paste("transport  ", italic(z))),
+      # Plain strings, not `expression()`: plotly cannot render a plotmath
+      # label and silently drops it, leaving the interactive plot with no axis
+      # names at all.
+      x = "Creation z",
+      y = "Transport z",
       title = "Transport discriminant"
-      #subtitle = "Telling a backlog release apart from a real surge",
     ) +
     ggplot2::coord_cartesian(ylim = c(y_lo, y_hi)) +
     .tbl_now_theme(palette)
@@ -610,7 +746,14 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, palette = .tbl_n
 #'   `"transport"` panel.
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget (the panels
 #'   stacked) instead of a static \pkg{patchwork}. Default `FALSE`.
-#' @param palette A named colour palette. Defaults to the package palette.
+#' @param size Multiplier on point and label sizes, forwarded to every panel
+#'   that draws them (`"triangle"`, `"transport"`). Default `1`.
+#' @param linewidth Multiplier on data line widths, forwarded to every panel that
+#'   draws them (`"profiles"`, `"delay_drift"`). Default `1`.
+#' @param grid_linewidth Line width of the reference grids the package draws
+#'   itself -- not \pkg{ggplot2}'s panel grid. Forwarded to `"triangle"`,
+#'   `"transport"` and `"delay_drift"`. Default `0.3`.
+#' @param palette A named colour palette (see [tbl_now_palette()]).
 #'
 #' @param axis Which time axis the delay is measured to: `"report"` (default)
 #'   or `"validation"`. Both are measured *from the event*, so the two are
@@ -645,18 +788,28 @@ diagnostic_plot <- function(x,
                             ...,
                             plotly    = FALSE,
                             axis      = c("report", "validation"),
+                            size      = 1,
+                            linewidth = 1,
+                            grid_linewidth = 0.3,
                             palette   = .tbl_now_palette()) {
   by <- match.arg(by)
   axis <- match.arg(axis)
   .diag_check(x)
+  .tbl_now_check_palette(palette, "diagnostic_plot")
+  .tbl_now_check_size(size, "size")
+  .tbl_now_check_size(linewidth, "linewidth")
+  .tbl_now_check_size(grid_linewidth, "grid_linewidth")
   keys <- .diag_resolve_panels(panels)
   if (length(keys) > 1L && !isTRUE(plotly) && !requireNamespace("patchwork", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg patchwork} is required to combine panels.")
   }
 
+  dots <- list(...)
+  # No `drop_censored` here: censoring is a statement about the arrival axis, so
+  # the panels that draw cases and delays keep every row. Only the `transport`
+  # panel drops them, through `transport_discriminant()` below.
   inc <- .batch_report_increments(x, axis = axis)
   ctx <- .diag_context(x, inc, max_delay, axis = axis)
-  dots <- list(...)
 
   # `...` may carry batch controls (lookback, period, alpha, ...); route to each
   # panel only the arguments it actually accepts.
@@ -665,13 +818,22 @@ diagnostic_plot <- function(x,
   build_one <- function(key) {
     switch(key,
       reporting   = .diag_build_process(inc, ctx, palette, "report"),
-      triangle    = .diag_build_triangle(inc, ctx, palette),
-      profiles    = .diag_build_profiles(inc, ctx, by, palette),
+      triangle    = .diag_build_triangle(inc, ctx, palette, size = size,
+                                         grid_linewidth = grid_linewidth),
+      profiles    = .diag_build_profiles(inc, ctx, by, palette,
+                                         linewidth = linewidth),
       transport   = .diag_build_transport(
-        do.call(transport_discriminant, c(list(x, axis = axis), pass(transport_discriminant))),
-        palette
+        .diag_transport_hover_if(
+          do.call(transport_discriminant,
+                  c(list(x, axis = axis), pass(transport_discriminant))),
+          x, axis, dots$drop_censored %||% TRUE, isTRUE(plotly)
+        ),  # `drop_censored` defaults TRUE inside transport_discriminant()
+        palette, hover = isTRUE(plotly), size = size,
+        grid_linewidth = grid_linewidth
       ),
       delay_drift = plot_delay_drift(x, by_strata = ctx$has_strata, axis = axis,
+                                     linewidth = linewidth,
+                                     grid_linewidth = grid_linewidth,
                                      palette = palette)
     )
   }
