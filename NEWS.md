@@ -1,5 +1,16 @@
 # tbl.now 0.33.1
 
+## Constructors and dplyr rebuilds are stricter
+
+`mutate()` and `$<-` now rebuild generated numeric date columns when event,
+report, or validation dates are edited, including `.validation_num` and
+`.validation_delay` for validation-aware objects.
+
+Demotion after renaming protected generated columns now drops all `tbl_now`
+attributes, and count-data validation now errors when the declared count column
+is not numeric. Empty `tbl_now()` inputs remain unsupported, and one-row inputs
+must declare their units.
+
 ## EpiNow2 converter and engine checks are stricter
 
 `tbl_now_to_EpiNow2()` now validates `accumulate`, `complete`, and `snapshots`

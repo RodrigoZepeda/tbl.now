@@ -383,6 +383,9 @@ NULL
 #' @export
 `$<-.tbl_now` <- function(x, name, value) {
   out <- NextMethod()
+  if (.tbl_now_date_cols_changed(x, out, name)) {
+    return(.tbl_now_rebuild(x, out))
+  }
   tbl_now_reconstruct(out, x)
 }
 
@@ -390,6 +393,10 @@ NULL
 #' @export
 `$<-.grouped_tbl_now` <- function(x, name, value) {
   out <- NextMethod()
+  if (.tbl_now_date_cols_changed(x, out, name)) {
+    rebuilt <- .tbl_now_rebuild(x, out)
+    return(.tbl_now_regroup(rebuilt, dplyr::group_vars(x)))
+  }
   tbl_now_reconstruct(out, x)
 }
 
@@ -404,6 +411,9 @@ dplyr_row_slice.tbl_now <- function(data, i, ...) {
 #' @exportS3Method dplyr::dplyr_col_modify
 dplyr_col_modify.tbl_now <- function(data, cols) {
   out <- NextMethod()
+  if (.tbl_now_date_cols_changed(data, out, names(cols))) {
+    return(.tbl_now_rebuild(data, out))
+  }
   dplyr_reconstruct(out, data)
 }
 
@@ -472,7 +482,40 @@ dplyr_row_slice.grouped_tbl_now <- function(data, i, ...) {
 #' @exportS3Method dplyr::dplyr_col_modify
 dplyr_col_modify.grouped_tbl_now <- function(data, cols) {
   out <- NextMethod()
+  if (.tbl_now_date_cols_changed(data, out, names(cols))) {
+    rebuilt <- .tbl_now_rebuild(data, out)
+    return(.tbl_now_regroup(rebuilt, dplyr::group_vars(data)))
+  }
   dplyr_reconstruct(out, data)
+}
+
+#' Date columns whose values require generated delay columns to be rebuilt
+#'
+#' @param x A `tbl_now`.
+#'
+#' @return A character vector of date-column names.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_protected_date_cols <- function(x) {
+  c(get_event_date(x), get_report_date(x), get_validation_date(x))
+}
+
+#' Whether a protected date column changed values
+#'
+#' @param old,new Data before and after a dplyr column modification.
+#' @param modified Names supplied to `dplyr_col_modify()`.
+#' @return A single logical value.
+#' @keywords internal
+#' @noRd
+.tbl_now_date_cols_changed <- function(old, new, modified) {
+  protected <- intersect(modified, .tbl_now_protected_date_cols(old))
+  protected <- intersect(protected, intersect(colnames(old), colnames(new)))
+  any(vapply(
+    protected,
+    function(col) !identical(old[[col]], new[[col]]),
+    logical(1)
+  ))
 }
 
 #' @importFrom dplyr dplyr_reconstruct
@@ -789,7 +832,7 @@ rename_attributes <- function(.data, loc) {
     cli::cli_alert_warning(
       "Changing the name of protected columns {.val {changed_loc}} will result in a tibble"
     )
-    .data <- dplyr::as_tibble(.data)
+    return(.demote_to_tibble(.data))
   }
 
   # Check the ones that changed and change in attributes (such as report date)

@@ -1103,6 +1103,11 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
         "Dropped case column {case_count %||% 'NULL'} when data_type was
          {data_type}."
       ))
+    } else if (!is.numeric(x |> dplyr::pull(dplyr::all_of(case_count)))) {
+      error("case_count", .diagnose_text(
+        "Case-count column {.val {case_count}} must be numeric when data_type is
+         {.val {data_type}}."
+      ))
     }
   }
 
@@ -2524,4 +2529,3 @@ print.tbl_now_diagnosis <- function(x, ..., all = FALSE) {
   }
   paste0(where, " [", row$stratum, "]:")
 }
-

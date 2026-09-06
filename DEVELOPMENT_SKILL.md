@@ -150,14 +150,14 @@ have no validation, so every code path must work when
     reported and still waiting to have a validation result. Anything that counts arrivals on the validation axis must drop pending rows.
 
 3.  **Two different delays.** `.validation_delay` is the laboratory's
-    turnaround, measured **from the report**. 
+    turnaround, measured **from the report**.
 
 5.  **`now` is validation-aware, in both directions.** `infer_now()`
     takes the max over both. Setting `now` *before* a validation is not
     an error, it should be used for a backtest: `change_now()` calls
     `.mask_validations_after()`, which returns every validation dated
     after the new `now` to `"pending"` and masks its date,
-    `.validation_num`, `.validation_delay` and censoring flag. 
+    `.validation_num`, `.validation_delay` and censoring flag.
 
 6.  **`validation_type` holds four values and no others**, and
     `validation_levels` is the only way in for anything else. The
@@ -213,16 +213,16 @@ unless there is a good reason.
 
 ### Protected columns
 
-`get_protected_cols()`returns the user-given columns (event/report dates,
-censoring indicator, case count) plus the generated ones (`.event_num`,
-`.report_num`, `.delay`). Removing any of them **downgrades the object
-to a plain tibble**, with a warning. This is why `dplyr::summarise()` on
-a `tbl_now` usually returns a tibble: it drops the protected columns.
+`get_protected_cols()` returns user-given columns (event/report/validation
+dates, validation type, censoring flags, case count) plus generated numeric
+columns (`.event_num`, `.report_num`, `.delay`, and, when validation exists,
+`.validation_num`, `.validation_delay`). Removing or
+renaming any generated protected column must demote with `.demote_to_tibble()`,
+so all `tbl_now` attributes are removed and only user metadata survives.
 
-When you need to reshape inside the package, operate on
-`.strip_tbl_now(x)` (a bare data frame) and rebuild the attributes,
-rather than fighting the dplyr methods. See
-`.tbl_now_collapse_censoring()` for the pattern.
+When reshaping inside the package, operate on `.strip_tbl_now(x)` and rebuild
+with `.tbl_now_rebuild()` or `do.call(tbl_now, c(list(...),
+.validation_rebuild_args(x, data)))`.
 
 
 ## 4. Functions
