@@ -32,7 +32,7 @@ Suggests:
     patchwork,
     plotly,
     rmarkdown,
-    scoringutils,
+    scoringutils (>= 2.0.0),
     surveillance,
     testthat (>= 3.0.0),
     tsibble,

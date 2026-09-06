@@ -244,6 +244,141 @@ test_that("as_scoringutils() produces the expected column names", {
   expect_no_error(scoringutils::as_forecast_quantile(as.data.frame(exported)))
 })
 
+test_that("as_scoringutils() ignores grouping on a tbl_now truth", {
+  predictions <- data.frame(
+    event_date = as.Date("2020-01-06"),
+    .quantile_level = c(0.25, 0.5, 0.75), .value = c(8, 10, 13)
+  )
+  nowcast <- tbl_nowcast(
+    predictions = predictions, method = "toy", event_date = "event_date"
+  )
+  truth <- truth_tbl_now(as.Date("2020-01-06"), 11)
+
+  expect_equal(
+    as_scoringutils(nowcast, truth = dplyr::group_by(truth, rp)),
+    as_scoringutils(nowcast, truth = truth)
+  )
+})
+
+test_that("as_scoringutils() converts a backtest with its stored truth", {
+  register_scoretoy()
+  x <- score_tbl_now()
+  dates <- as.Date(c("2020-06-01", "2020-06-08"))
+  backtest <- nowcast_backtest(
+    x,
+    engine("scoretoy", bias = 0),
+    engine("scoretoy2", bias = 10),
+    now_dates = dates, verbose = FALSE
+  )
+
+  exported <- as_scoringutils(backtest)
+
+  expect_true(all(
+    c("observed", "predicted", "quantile_level", "model", "now") %in%
+      colnames(exported)
+  ))
+  expect_setequal(unique(exported$model), backtest$methods)
+  expect_setequal(unique(exported$now), dates)
+  expect_equal(nrow(exported), nrow(backtest$predictions))
+})
+
+test_that("scoringutils directly coerces nowcasts, ensembles and backtests", {
+  skip_if_not_installed("scoringutils")
+  register_scoretoy()
+  truth <- score_tbl_now()
+  first <- run_nowcast(
+    truth, engine("scoretoy", bias = 0), verbose = FALSE
+  )
+  second <- run_nowcast(
+    truth, engine("scoretoy2", bias = 5), verbose = FALSE
+  )
+  ensemble <- nowcast_ensemble(first, second, verbose = FALSE)
+  backtest <- nowcast_backtest(
+    truth, engine("scoretoy"), engine("scoretoy2", bias = 5),
+    now_dates = as.Date("2020-06-01"), verbose = FALSE
+  )
+
+  for (object in list(first, ensemble)) {
+    converted <- scoringutils::as_forecast_quantile(object, truth = truth)
+    expect_s3_class(converted, "forecast_quantile")
+  }
+  converted_backtest <- scoringutils::as_forecast_quantile(backtest)
+  expect_s3_class(converted_backtest, "forecast_quantile")
+  expect_true("now" %in% scoringutils::get_forecast_unit(converted_backtest))
+  expect_no_error(suppressWarnings(
+    scoringutils::add_relative_skill(scoringutils::score(converted_backtest))
+  ))
+})
+
+test_that("scoringutils directly coerces draw-based nowcasts and ensembles", {
+  skip_if_not_installed("scoringutils", minimum_version = "2.0.0")
+  register_sampletoy()
+  truth <- score_tbl_now()
+  first <- run_nowcast(
+    truth, engine("sampletoy", bias = 0), verbose = FALSE
+  )
+  second <- run_nowcast(
+    truth, engine("sampletoy2", bias = 5), verbose = FALSE
+  )
+
+  converted <- scoringutils::as_forecast_sample(first, truth = truth)
+  expect_s3_class(converted, "forecast_sample")
+  expect_true(all(
+    c("model", "event_date") %in% scoringutils::get_forecast_unit(converted)
+  ))
+
+  pooled <- nowcast_ensemble(
+    first, second, type = "linear_pool", n_draws = 80, verbose = FALSE
+  )
+  converted_pool <- scoringutils::as_forecast_sample(pooled, truth = truth)
+  expect_s3_class(converted_pool, "forecast_sample")
+  expect_equal(length(unique(converted_pool$sample_id)), 80)
+
+  quantile_ensemble <- nowcast_ensemble(first, second, verbose = FALSE)
+  expect_error(
+    scoringutils::as_forecast_sample(quantile_ensemble, truth = truth),
+    "does not carry draws"
+  )
+})
+
+test_that("sample coercion of a backtest requires retained draws from every fit", {
+  skip_if_not_installed("scoringutils", minimum_version = "2.0.0")
+  register_scoretoy()
+  register_sampletoy()
+  truth <- score_tbl_now()
+  date <- as.Date("2020-06-01")
+
+  ordinary <- nowcast_backtest(
+    truth, engine("sampletoy"), now_dates = date, verbose = FALSE
+  )
+  expect_null(ordinary$draws)
+  expect_error(
+    scoringutils::as_forecast_sample(ordinary),
+    "keep_draws = TRUE"
+  )
+
+  retained <- nowcast_backtest(
+    truth,
+    engine("sampletoy"), engine("sampletoy2", bias = 5),
+    now_dates = date, keep_draws = TRUE, verbose = FALSE
+  )
+  expect_false(is.null(retained$draws))
+  converted <- scoringutils::as_forecast_sample(retained)
+  expect_s3_class(converted, "forecast_sample")
+  expect_true("now" %in% scoringutils::get_forecast_unit(converted))
+  expect_no_error(scoringutils::score(converted))
+
+  mixed <- nowcast_backtest(
+    truth,
+    engine("sampletoy"), engine("scoretoy"),
+    now_dates = date, keep_draws = TRUE, verbose = FALSE
+  )
+  expect_error(
+    scoringutils::as_forecast_sample(mixed),
+    "no draws for 1 successful fit"
+  )
+})
+
 # Cross-checks against scoringutils -------------------------------------------
 #
 # `.wis()` is hand-rolled so that weighting an ensemble never needs an extra

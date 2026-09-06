@@ -3,14 +3,21 @@
 \name{score_nowcast}
 \alias{score_nowcast}
 \alias{as_scoringutils}
+\alias{as_forecast_quantile.nowcast_backtest}
+\alias{as_forecast_sample.nowcast_backtest}
 \title{Score a nowcast against observed data}
 \usage{
 score_nowcast(x, truth = NULL)
 
 as_scoringutils(x, truth = NULL)
+
+\method{as_forecast_quantile}{nowcast_backtest}(data, ..., truth = NULL)
+
+\method{as_forecast_sample}{nowcast_backtest}(data, ..., truth = NULL)
 }
 \arguments{
-\item{x}{A \link{tbl_nowcast} object.}
+\item{x}{For \code{score_nowcast()}, a \link{tbl_nowcast}. For \code{as_scoringutils()}, a
+\link{tbl_nowcast} (including an ensemble) or a \code{\link[=nowcast_backtest]{nowcast_backtest()}}.}
 
 \item{truth}{The \code{tbl_now} the nowcast is scored against -- normally the
 \emph{full} object, still holding the reports that arrived after the nowcast's
@@ -20,18 +27,41 @@ stratum, with the count column read off the object
 (\code{\link[=get_case_count]{get_case_count()}}). A \strong{line list} is aggregated first, so it needs no
 special handling.
 
-\code{NULL} (default) uses the \code{tbl_now} the nowcast was built from, which is
-only meaningful when that object still holds the later reports.}
+For a single nowcast, \code{NULL} (default) uses the \code{tbl_now} it was built from,
+which is only meaningful when that object still holds the later reports.
+A backtest instead uses the truth table it already stores.}
+
+\item{data}{A \code{\link[=nowcast_backtest]{nowcast_backtest()}}.}
+
+\item{...}{Passed to the corresponding \pkg{scoringutils} coercion generic,
+most commonly \code{forecast_unit}.}
 }
 \value{
 \code{score_nowcast()} returns a \code{tibble} with the event-date column, the strata
 columns, and the columns \code{.observed}, \code{wis}, \code{ae_median}, \code{coverage_50} and
 \code{coverage_90} -- one row per event date and stratum.
 
-\code{as_scoringutils()} returns a long \code{tibble} with the columns \code{observed},
-\code{predicted}, \code{quantile_level} and \code{model}, plus the event date and strata as
-forecast units -- one row per quantile, ready for
+\code{as_scoringutils()} accepts either a single \link{tbl_nowcast} (including one
+returned by \code{\link[=nowcast_ensemble]{nowcast_ensemble()}}) or a \code{\link[=nowcast_backtest]{nowcast_backtest()}}. It returns a
+long \code{tibble} with the columns \code{observed}, \code{predicted}, \code{quantile_level} and
+\code{model}, plus the event date and strata as forecast units. A backtest also
+carries \code{now}, because the same target was predicted retrospectively at more
+than one date. There is one row per quantile, ready for
 \code{scoringutils::as_forecast_quantile()}.
+
+The two \verb{scoringutils::as_forecast_*()} methods return the corresponding
+\code{forecast_quantile} or \code{forecast_sample} object from \pkg{scoringutils}.
+
+When \pkg{scoringutils} is installed, calling its coercion generic directly
+is equivalent: \code{scoringutils::as_forecast_quantile(x, truth = truth)} works
+for a \link{tbl_nowcast}, an ensemble, and a \code{\link[=nowcast_backtest]{nowcast_backtest()}}. A backtest
+already carries the truth it was scored against, so its \code{truth} can normally
+be omitted.
+
+\code{\link[scoringutils:as_forecast_sample]{scoringutils::as_forecast_sample()}} also accepts those objects when they
+carry posterior draws. Draws are retained by a \code{linear_pool} ensemble, but
+not by a quantile ensemble. A backtest retains them only when run with
+\code{keep_draws = TRUE}; every engine in the backtest must return draws.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}

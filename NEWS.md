@@ -1,5 +1,27 @@
 # tbl.now 0.33.1
 
+## Nowcasts and backtests convert directly to scoringutils (#20, #69)
+
+`as_scoringutils()` now accepts a `nowcast_backtest` and reuses the truth
+already stored in it. The result keeps `now` as a forecast unit, so the same
+target predicted at different retrospective dates remains distinct.
+
+`scoringutils::as_forecast_quantile()` now accepts a `tbl_nowcast` directly,
+including the result of `run_nowcast()` and `nowcast_ensemble()`, as well as a
+`nowcast_backtest`. A full `tbl_now` can be supplied as `truth`; a backtest uses
+its stored truth by default.
+
+`scoringutils::as_forecast_sample()` now does the same for a `tbl_nowcast` that
+retains posterior draws and for a draw-based ensemble. Quantile ensembles are
+refused because samples cannot be recovered from reported quantiles. A
+`nowcast_backtest()` can opt into retaining draws with `keep_draws = TRUE`; its
+sample coercion checks that every successful engine/date fit supplied them,
+rather than silently dropping quantile-only members.
+
+Nested ensembles are now covered explicitly: a quantile ensemble can be a
+member of another quantile ensemble, and a linear-pool ensemble can be a member
+of another linear pool when it carries draws.
+
 ## `tidy()` on a backtest now returns the predictions, not only the truth (#70)
 
 `tidy()` on a `nowcast_backtest` reported what was `observed` and how each

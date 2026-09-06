@@ -215,7 +215,8 @@
 #' from it with [get_latest_reported_cases()][get_latest_first], so there is no
 #' column to name.
 #'
-#' @param x A [tbl_nowcast] object.
+#' @param x For `score_nowcast()`, a [tbl_nowcast]. For `as_scoringutils()`, a
+#'   [tbl_nowcast] (including an ensemble) or a [nowcast_backtest()].
 #' @param truth The `tbl_now` the nowcast is scored against -- normally the
 #'   *full* object, still holding the reports that arrived after the nowcast's
 #'   `now`. Its eventual counts per event date are worked out for you: this is
@@ -224,18 +225,36 @@
 #'   ([get_case_count()]). A **line list** is aggregated first, so it needs no
 #'   special handling.
 #'
-#'   `NULL` (default) uses the `tbl_now` the nowcast was built from, which is
-#'   only meaningful when that object still holds the later reports.
+#'   For a single nowcast, `NULL` (default) uses the `tbl_now` it was built from,
+#'   which is only meaningful when that object still holds the later reports.
+#'   A backtest instead uses the truth table it already stores.
 #'
 #' @return
 #' `score_nowcast()` returns a `tibble` with the event-date column, the strata
 #' columns, and the columns `.observed`, `wis`, `ae_median`, `coverage_50` and
 #' `coverage_90` -- one row per event date and stratum.
 #'
-#' `as_scoringutils()` returns a long `tibble` with the columns `observed`,
-#' `predicted`, `quantile_level` and `model`, plus the event date and strata as
-#' forecast units -- one row per quantile, ready for
+#' `as_scoringutils()` accepts either a single [tbl_nowcast] (including one
+#' returned by [nowcast_ensemble()]) or a [nowcast_backtest()]. It returns a
+#' long `tibble` with the columns `observed`, `predicted`, `quantile_level` and
+#' `model`, plus the event date and strata as forecast units. A backtest also
+#' carries `now`, because the same target was predicted retrospectively at more
+#' than one date. There is one row per quantile, ready for
 #' `scoringutils::as_forecast_quantile()`.
+#'
+#' The two `scoringutils::as_forecast_*()` methods return the corresponding
+#' `forecast_quantile` or `forecast_sample` object from \pkg{scoringutils}.
+#'
+#' When \pkg{scoringutils} is installed, calling its coercion generic directly
+#' is equivalent: `scoringutils::as_forecast_quantile(x, truth = truth)` works
+#' for a [tbl_nowcast], an ensemble, and a [nowcast_backtest()]. A backtest
+#' already carries the truth it was scored against, so its `truth` can normally
+#' be omitted.
+#'
+#' [scoringutils::as_forecast_sample()] also accepts those objects when they
+#' carry posterior draws. Draws are retained by a `linear_pool` ensemble, but
+#' not by a quantile ensemble. A backtest retains them only when run with
+#' `keep_draws = TRUE`; every engine in the backtest must return draws.
 #'
 #' @references
 #' Bracher, J., Ray, E. L., Gneiting, T., & Reich, N. G. (2021). Evaluating
@@ -360,6 +379,11 @@ score_nowcast <- function(x, truth = NULL) {
 #'   if every method consumes the same random numbers in the same order, so
 #'   dropping a method, or refitting one date, silently moves every other fit.
 #'   Seeding per (label, date) makes a fit depend only on which fit it is.
+#' @param keep_draws Logical. Whether to retain every posterior draw from every
+#'   successful fit. Default `FALSE`, because this can make a backtest much
+#'   larger. Set it to `TRUE` when the backtest should be passed directly to
+#'   [scoringutils::as_forecast_sample()]. Engines that return only quantiles
+#'   still cannot be converted to samples.
 #' @param on_error Either `"warn"` (default) to skip a model/date that fails
 #'   with a warning, or `"abort"` to stop.
 #' @param verbose Logical. Whether to report progress.
@@ -369,6 +393,8 @@ score_nowcast <- function(x, truth = NULL) {
 #'   \describe{
 #'     \item{scores}{A `tibble` of per-date scores with an extra `.now` column.}
 #'     \item{predictions}{A `tibble` of every retrospective quantile prediction.}
+#'     \item{draws}{When `keep_draws = TRUE`, a `tibble` of the retained draws;
+#'       otherwise `NULL`.}
 #'     \item{truth}{The observed counts used for scoring.}
 #'     \item{methods}{The labels that produced at least one nowcast.}
 #'     \item{now_dates}{The dates that were nowcast.}
@@ -432,7 +458,7 @@ score_nowcast <- function(x, truth = NULL) {
 #'
 #' @export
 nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
-                             seed = NULL,
+                             seed = NULL, keep_draws = FALSE,
                              on_error = c("warn", "abort"), verbose = TRUE) {
   .assert_tbl_now(x, "nowcast_backtest")
   on_error <- match.arg(on_error)
@@ -490,8 +516,16 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
         dplyr::mutate(.method = label)
       predictions <- nowcast@predictions |>
         dplyr::mutate(.method = label, .now = now_date, .before = 1)
+      draws <- if (isTRUE(keep_draws) && !is.null(nowcast@draws)) {
+        nowcast@draws |>
+          dplyr::mutate(.method = label, .now = now_date, .before = 1)
+      } else {
+        NULL
+      }
 
-      results[[length(results) + 1]] <- list(scores = scores, predictions = predictions)
+      results[[length(results) + 1]] <- list(
+        scores = scores, predictions = predictions, draws = draws
+      )
     }
   }
 
@@ -501,6 +535,13 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
 
   scores <- dplyr::bind_rows(lapply(results, `[[`, "scores"))
   predictions <- dplyr::bind_rows(lapply(results, `[[`, "predictions"))
+  draw_tables <- lapply(results, `[[`, "draws")
+  draw_tables <- draw_tables[!vapply(draw_tables, is.null, logical(1))]
+  draws <- if (length(draw_tables) == 0L) {
+    NULL
+  } else {
+    dplyr::bind_rows(draw_tables)
+  }
   # `.now` is carried on the predictions; put it on the scores too.
   scores <- scores |>
     dplyr::mutate(.now = rep(
@@ -512,9 +553,11 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
     list(
       scores = scores,
       predictions = predictions,
+      draws = draws,
       truth = truth,
       methods = unique(scores$.method),
       now_dates = now_dates,
+      keep_draws = isTRUE(keep_draws),
       event_date = get_event_date(x),
       strata = intersect(get_strata(x) %||% character(0), colnames(predictions))
     ),
@@ -820,12 +863,62 @@ nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"
 #' @rdname score_nowcast
 #' @export
 as_scoringutils <- function(x, truth = NULL) {
+  if (inherits(x, "nowcast_backtest")) {
+    key <- c(x$event_date, x$strata %||% character(0))
+    return(.as_scoringutils_frame(
+      x$predictions, .resolve_backtest_truth(x, truth), key
+    ))
+  }
+
   .assert_tbl_nowcast(x)
 
   key <- c(x@event_date, x@strata)
-  truth <- .resolve_truth(truth, x)
+  predictions <- x@predictions |>
+    dplyr::mutate(.method = x@method)
 
-  x@predictions |>
+  .as_scoringutils_frame(predictions, .resolve_truth(truth, x), key)
+}
+
+#' Resolve the truth stored by, or supplied for, a backtest
+#'
+#' @param x A [nowcast_backtest()].
+#' @param truth A `tbl_now` or `NULL`.
+#'
+#' @return A resolved truth table carrying `.observed`.
+#'
+#' @keywords internal
+#' @noRd
+.resolve_backtest_truth <- function(x, truth) {
+  resolved <- if (is.null(truth)) {
+    x$truth
+  } else {
+    .eventual_counts(truth, strata = x$strata %||% character(0))
+  }
+  if (is.null(resolved)) {
+    cli::cli_abort(
+      "{.arg truth} is required: the backtest does not carry its truth table."
+    )
+  }
+  resolved
+}
+
+#' Build the long frame understood by scoringutils
+#'
+#' This is the one implementation behind [as_scoringutils()] for a single
+#' [tbl_nowcast], an ensemble and a [nowcast_backtest()]. Callers only normalise
+#' where their predictions and truth live.
+#'
+#' @param predictions A long quantile table carrying `.method` and optionally
+#'   `.now`.
+#' @param truth A resolved truth table carrying `.observed`.
+#' @param key Event-date and strata columns used to join the two.
+#'
+#' @return A long tibble in scoringutils' quantile-forecast format.
+#'
+#' @keywords internal
+#' @noRd
+.as_scoringutils_frame <- function(predictions, truth, key) {
+  out <- predictions |>
     dplyr::inner_join(
       dplyr::select(truth, dplyr::all_of(c(key, ".observed"))),
       by = key
@@ -833,7 +926,168 @@ as_scoringutils <- function(x, truth = NULL) {
     dplyr::rename(
       predicted = ".value",
       quantile_level = ".quantile_level",
-      observed = ".observed"
+      observed = ".observed",
+      model = ".method"
+    )
+
+  if (".now" %in% colnames(out)) {
+    out <- dplyr::rename(out, now = ".now")
+  }
+  out
+}
+
+#' Coerce tbl.now nowcasts to scoringutils quantile forecasts
+#'
+#' These methods let [scoringutils::as_forecast_quantile()] consume the result
+#' of [run_nowcast()], [nowcast_ensemble()] or [nowcast_backtest()] directly.
+#' They first use [as_scoringutils()] to attach the observed values, then let
+#' \pkg{scoringutils} validate and construct its `forecast_quantile` class.
+#'
+#' @param data A [tbl_nowcast] or [nowcast_backtest()].
+#' @param ... Passed to [scoringutils::as_forecast_quantile()], most commonly
+#'   `forecast_unit`.
+#' @param truth Optional full `tbl_now` used as truth. A backtest reuses its
+#'   stored truth by default.
+#'
+#' @return A `forecast_quantile` object from \pkg{scoringutils}.
+#'
+#' @keywords internal
+#' @noRd
+as_forecast_quantile_tbl_nowcast <- function(data, ..., truth = NULL) {
+  scoringutils::as_forecast_quantile(
+    as.data.frame(as_scoringutils(data, truth = truth)), ...
+  )
+}
+
+#' @rdname score_nowcast
+#' @param data A [nowcast_backtest()].
+#' @param ... Passed to the corresponding \pkg{scoringutils} coercion generic,
+#'   most commonly `forecast_unit`.
+#' @exportS3Method scoringutils::as_forecast_quantile
+as_forecast_quantile.nowcast_backtest <- function(data, ..., truth = NULL) {
+  scoringutils::as_forecast_quantile(
+    as.data.frame(as_scoringutils(data, truth = truth)), ...
+  )
+}
+
+#' Build the long sample frame understood by scoringutils
+#'
+#' @param draws A draw table carrying `.method` and optionally `.now`.
+#' @param truth A resolved truth table carrying `.observed`.
+#' @param key Event-date and strata columns used to join the two.
+#'
+#' @return A long tibble in scoringutils' sample-forecast format.
+#'
+#' @keywords internal
+#' @noRd
+.as_scoringutils_sample_frame <- function(draws, truth, key) {
+  out <- draws |>
+    dplyr::inner_join(
+      dplyr::select(truth, dplyr::all_of(c(key, ".observed"))),
+      by = key
     ) |>
-    dplyr::mutate(model = x@method)
+    dplyr::rename(
+      predicted = ".value",
+      sample_id = ".draw",
+      observed = ".observed",
+      model = ".method"
+    )
+
+  if (".now" %in% colnames(out)) {
+    out <- dplyr::rename(out, now = ".now")
+  }
+  out
+}
+
+#' Coerce a tbl.now nowcast to a scoringutils sample forecast
+#'
+#' Unlike quantile coercion, this is available only when the nowcast carries
+#' posterior draws. A quantile ensemble discards its members' draws; a
+#' `linear_pool` ensemble retains the pooled draws and can be converted.
+#'
+#' @param data A [tbl_nowcast].
+#' @param ... Passed to [scoringutils::as_forecast_sample()], most commonly
+#'   `forecast_unit`.
+#' @param truth Optional full `tbl_now` used as truth.
+#'
+#' @return A `forecast_sample` object from \pkg{scoringutils}.
+#'
+#' @keywords internal
+#' @noRd
+as_forecast_sample_tbl_nowcast <- function(data, ..., truth = NULL) {
+  .assert_tbl_nowcast(data, "data")
+  if (is.null(data@draws)) {
+    cli::cli_abort(c(
+      "The {.cls tbl_nowcast} from {.val {data@method}} does not carry draws.",
+      "i" = "Samples cannot be reconstructed from reported quantiles.",
+      "i" = paste0(
+        "Use {.fn scoringutils::as_forecast_quantile}, or refit with an ",
+        "engine that returns draws."
+      )
+    ))
+  }
+
+  key <- c(data@event_date, data@strata)
+  draws <- data@draws |>
+    dplyr::mutate(.method = data@method)
+  frame <- .as_scoringutils_sample_frame(
+    draws, .resolve_truth(truth, data), key
+  )
+  scoringutils::as_forecast_sample(as.data.frame(frame), ...)
+}
+
+#' Retained draws from every fit represented in a backtest
+#'
+#' @param x A [nowcast_backtest()].
+#'
+#' @return The backtest's draw table, after checking that every successful fit
+#'   represented in its predictions has draws.
+#'
+#' @keywords internal
+#' @noRd
+.backtest_sample_draws <- function(x) {
+  if (is.null(x$draws)) {
+    hint <- if (isTRUE(x$keep_draws)) {
+      "None of its engines returned posterior draws."
+    } else {
+      "Re-run {.fn nowcast_backtest} with {.code keep_draws = TRUE}."
+    }
+    cli::cli_abort(c(
+      "The {.cls nowcast_backtest} does not carry draws.",
+      "i" = hint,
+      "i" = "Samples cannot be reconstructed from reported quantiles."
+    ))
+  }
+
+  fit_key <- c(".method", ".now")
+  prediction_fits <- x$predictions |>
+    dplyr::distinct(dplyr::across(dplyr::all_of(fit_key)))
+  draw_fits <- x$draws |>
+    dplyr::distinct(dplyr::across(dplyr::all_of(fit_key)))
+  missing <- dplyr::anti_join(prediction_fits, draw_fits, by = fit_key)
+  if (nrow(missing) > 0L) {
+    labels <- paste(missing$.method, "at", as.character(missing$.now))
+    cli::cli_abort(c(
+      "The backtest has no draws for {nrow(missing)} successful fit{?s}.",
+      "i" = "Missing: {.val {labels}}.",
+      "i" = paste0(
+        "Remove quantile-only engines or use ",
+        "{.fn scoringutils::as_forecast_quantile}."
+      )
+    ))
+  }
+  x$draws
+}
+
+#' @rdname score_nowcast
+#' @param data A [nowcast_backtest()].
+#' @param ... Passed to the corresponding \pkg{scoringutils} coercion generic,
+#'   most commonly `forecast_unit`.
+#' @exportS3Method scoringutils::as_forecast_sample
+as_forecast_sample.nowcast_backtest <- function(data, ..., truth = NULL) {
+  key <- c(data$event_date, data$strata %||% character(0))
+  frame <- .as_scoringutils_sample_frame(
+    .backtest_sample_draws(data), .resolve_backtest_truth(data, truth), key
+  )
+  scoringutils::as_forecast_sample(as.data.frame(frame), ...)
 }
