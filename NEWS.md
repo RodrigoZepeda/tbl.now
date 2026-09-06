@@ -1,5 +1,22 @@
 # tbl.now 0.33.1
 
+## EpiNow2 converter and engine checks are stricter
+
+`tbl_now_to_EpiNow2()` now validates `accumulate`, `complete`, and `snapshots`
+before building the target object. `accumulate` and `complete` must be `TRUE`,
+`FALSE`, or `"auto"`; `snapshots` must be `NULL` or a single positive whole
+number.
+
+The EpiNow2 converter now warns when lazy temporal-effect specs are dropped by
+the date/confirm series targets. `engine_epinow2()` maps the supported
+report-date `day_of_week` temporal effect to EpiNow2's native observation model
+with `EpiNow2::obs_opts(week_effect = TRUE)` when the caller has not supplied
+`obs`; temporal effects with no EpiNow2 equivalent warn before being dropped.
+
+The ensemble-nowcasting article now tolerates older cached display data that
+lacks `member_predictions`, falling back to the cached baseline member
+predictions so the comparison plot still renders.
+
 ## Nowcasts and backtests convert directly to scoringutils (#20, #69)
 
 `as_scoringutils()` now accepts a `nowcast_backtest` and reuses the truth

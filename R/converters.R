@@ -1046,6 +1046,79 @@
   invisible(NULL)
 }
 
+#' Warn that lazy temporal-effect specs cannot be carried as columns
+#'
+#' Some converters build formats that have no covariate columns. Lazy temporal
+#' effects have no materialised column names yet, but the spec is still user
+#' intent and should not disappear without a warning.
+#'
+#' @param x A `tbl_now` object.
+#' @param fn Name of the calling converter.
+#' @param advice Optional extra bullet.
+#'
+#' @return `NULL`, invisibly.
+#'
+#' @keywords internal
+#' @noRd
+.warn_dropped_lazy_temporal_effects <- function(x, fn, advice = NULL) {
+  specs <- get_temporal_effects(x)
+  materialised <- get_temporal_effect_cols(x)
+  if (length(specs) == 0 || length(materialised) > 0) {
+    return(invisible(NULL))
+  }
+
+  cli::cli_warn(c(
+    "{.fn {fn}}: declared temporal effects are not carried into this format.",
+    "i" = "They are stored lazily, so there are no columns to keep or name yet.",
+    if (!is.null(advice)) c("i" = advice),
+    "i" = "The model will not see them from the converted data."
+  ))
+  invisible(NULL)
+}
+
+#' Resolve a converter argument that accepts `TRUE`, `FALSE`, or `"auto"`
+#'
+#' @param value User supplied value.
+#' @param arg Argument name for errors.
+#'
+#' @return `"auto"`, `"TRUE"`, or `"FALSE"`.
+#'
+#' @keywords internal
+#' @noRd
+.converter_bool_auto <- function(value, arg) {
+  if (identical(value, "auto")) {
+    return("auto")
+  }
+  if (is.logical(value) && length(value) == 1L && !is.na(value)) {
+    return(as.character(value))
+  }
+  cli::cli_abort(c(
+    "{.arg {arg}} must be {.code TRUE}, {.code FALSE}, or {.val auto}.",
+    "x" = "Got {.obj_type_friendly {value}}."
+  ))
+}
+
+#' Validate the number of EpiNow2 truncation snapshots
+#'
+#' @param snapshots `NULL`, or a single positive whole number.
+#'
+#' @return `NULL` or an integer.
+#'
+#' @keywords internal
+#' @noRd
+.epinow2_validate_snapshots <- function(snapshots) {
+  if (is.null(snapshots)) {
+    return(NULL)
+  }
+  if (!is.numeric(snapshots) || length(snapshots) != 1L || is.na(snapshots) ||
+        snapshots < 1 || snapshots != round(snapshots)) {
+    cli::cli_abort(
+      "{.arg snapshots} must be {.code NULL} or a single positive whole number."
+    )
+  }
+  as.integer(snapshots)
+}
+
 #' Columns a `tbl_now` carries but was never told about
 #'
 #' Everything that is neither protected (the dates, the count, the censoring
@@ -2833,6 +2906,11 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
               structure through {.arg gp}, {.arg rt} and {.arg obs}, not through
               columns."
   )
+  .warn_dropped_lazy_temporal_effects(
+    x, "tbl_now_to_EpiNow2",
+    advice = "When called through {.fn engine_epinow2}, supported report-date
+              weekly effects are added through {.fn EpiNow2::obs_opts} instead."
+  )
 
   .epinow2_series_data(
     x, target = target, snapshots = snapshots, accumulate = accumulate,
@@ -2956,7 +3034,11 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
   # Resolve the grid BEFORE any work: on units EpiNow2 cannot lay on a daily
   # axis there is nothing to build, and failing early beats failing after an
   # expensive aggregation.
-  should_accumulate <- switch(as.character(accumulate),
+  accumulate <- .converter_bool_auto(accumulate, "accumulate")
+  complete <- .converter_bool_auto(complete, "complete")
+  snapshots <- .epinow2_validate_snapshots(snapshots)
+
+  should_accumulate <- switch(accumulate,
     "auto" = TRUE, "TRUE" = TRUE, "FALSE" = FALSE, TRUE
   )
   if (should_accumulate) .epinow2_step_days(event_units)
@@ -2979,7 +3061,7 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
   # This also repairs `estimate_truncation`: `.epinow2_snapshots()` completes
   # each snapshot with `complete_zeroes()`, which REFUSES a line list, and its
   # `tryCatch()` swallowed that refusal and returned the short snapshot.
-  should_complete <- switch(as.character(complete),
+  should_complete <- switch(complete,
     "auto"  = identical(get_data_type(x), "linelist"),
     "TRUE"  = TRUE,
     "FALSE" = FALSE,

@@ -72,6 +72,90 @@
   invisible(NULL)
 }
 
+#' Classify temporal effects for EpiNow2's built-in model options
+#'
+#' EpiNow2's series input has no covariate columns, but its observation model has
+#' a native weekly reporting effect. Map only the `tbl_now` specs that match that
+#' option; every other requested effect is unavailable through the built-in
+#' engine and must be reported before the converter drops the columns.
+#'
+#' @param x A `tbl_now`.
+#'
+#' @return A list with logical `report_week_effect` and character
+#'   `unsupported`.
+#'
+#' @keywords internal
+#' @noRd
+.epinow2_temporal_effect_support <- function(x) {
+  specs <- get_temporal_effects(x)
+  if (length(specs) == 0) {
+    return(list(report_week_effect = FALSE, unsupported = character(0)))
+  }
+
+  unsupported <- character(0)
+  report_week_effect <- FALSE
+
+  for (spec in specs) {
+    effects <- spec$t_effects
+    where <- spec$date_type
+    requested <- character(0)
+    if (isTRUE(effects@day_of_week)) requested <- c(requested, "day_of_week")
+    if (isTRUE(effects@weekend)) requested <- c(requested, "weekend")
+    if (isTRUE(effects@day_of_month)) requested <- c(requested, "day_of_month")
+    if (isTRUE(effects@month_of_year)) requested <- c(requested, "month_of_year")
+    if (isTRUE(effects@week_of_year)) requested <- c(requested, "week_of_year")
+    if (length(effects@holidays) > 0) requested <- c(requested, "holidays")
+    if (length(effects@holiday_lags) > 0 && any(effects@holiday_lags > 0)) {
+      requested <- c(requested, "holiday_lags")
+    }
+    if (length(effects@weekend_lags) > 0 && any(effects@weekend_lags > 0)) {
+      requested <- c(requested, "weekend_lags")
+    }
+    if (length(effects@seasons) > 0) requested <- c(requested, "seasons")
+
+    supported <- identical(where, "report_date") && "day_of_week" %in% requested
+    report_week_effect <- report_week_effect || supported
+    missing <- setdiff(requested, if (supported) "day_of_week" else character(0))
+    if (length(missing) > 0) {
+      unsupported <- c(unsupported, paste0(missing, " on ", where))
+    }
+  }
+
+  list(
+    report_week_effect = report_week_effect,
+    unsupported = unique(unsupported)
+  )
+}
+
+#' Add EpiNow2 temporal-effect model options to the backend arguments
+#'
+#' @param args Arguments about to be passed to EpiNow2.
+#' @param x Source `tbl_now`.
+#'
+#' @return Modified `args`.
+#'
+#' @keywords internal
+#' @noRd
+.epinow2_apply_temporal_effects <- function(args, x) {
+  support <- .epinow2_temporal_effect_support(x)
+
+  if (support$report_week_effect && is.null(args$obs)) {
+    args$obs <- EpiNow2::obs_opts(week_effect = TRUE)
+  }
+
+  if (length(support$unsupported) > 0) {
+    cli::cli_warn(c(
+      "{.pkg EpiNow2} cannot add some declared temporal effects through the
+       built-in engine.",
+      "i" = "Unavailable effect{?s}: {.val {support$unsupported}}.",
+      "i" = "Only report-date {.val day_of_week} maps to
+             {.code EpiNow2::obs_opts(week_effect = TRUE)}."
+    ))
+  }
+
+  args
+}
+
 # diseasenowcasting -----
 
 #' @rdname nowcast_fit
@@ -848,6 +932,14 @@ nowcast_fit.EpiNow2 <- function(engine, x, ..., convert_args = list(), # nolint:
                                 verbose = TRUE) {
   .need_pkg("EpiNow2")
   strata_cols <- get_strata(x) %||% character(0)
+  engine_args <- engine$args
+  if ("convert_args" %in% names(engine_args) && identical(convert_args, list())) {
+    convert_args <- engine_args$convert_args
+  }
+  engine_args$convert_args <- NULL
+  args <- .epinow2_apply_temporal_effects(
+    utils::modifyList(engine_args, list(...)), x
+  )
 
   # `estimate_infections()` is the entry point that produces a case nowcast;
   # `regional_epinow()` is the same model run once per region, which is how
@@ -864,9 +956,13 @@ nowcast_fit.EpiNow2 <- function(engine, x, ..., convert_args = list(), # nolint:
   )
 
   if (target == "regional_epinow") {
-    return(.quietly_if(EpiNow2::regional_epinow(series, ...), verbose))
+    return(.quietly_if(
+      do.call(EpiNow2::regional_epinow, c(list(series), args)), verbose
+    ))
   }
-  .quietly_if(EpiNow2::estimate_infections(series, ...), verbose)
+  .quietly_if(
+    do.call(EpiNow2::estimate_infections, c(list(series), args)), verbose
+  )
 }
 
 #' The posterior samples of `reported_cases` from an EpiNow2 fit

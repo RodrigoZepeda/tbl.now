@@ -106,6 +106,13 @@ get_now(snapshot)
 ```{r cache-load, echo=FALSE, message=FALSE, purl=FALSE}
 cached <- readRDS("ensemble-comparison.rds")
 display <- cached$display
+if (is.null(cached$article_weights) && !is.null(cached$weights)) {
+  cached$article_weights <- cached$weights
+}
+if (is.null(display$member_predictions) && !is.null(display$baseline_predictions)) {
+  display$member_predictions <- display$baseline_predictions |>
+    dplyr::mutate(model = "baselinenowcast", .before = 1)
+}
 
 # The article shows code and prints the REAL output of that code, captured by
 # the precompute. `replay()` renders it as if the visible chunk above had run.
