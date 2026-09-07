@@ -597,11 +597,14 @@ test_that("cumulative growth panel works by stratum and full autoplot builds", {
     grp = rep(c("a", "b"), each = 3, times = 2),
     n = c(10, 20, 22, 5, 9, 9, 8, 12, 12, 4, 6, 6)
   )
+
+  suppressWarnings({
   nowobj <- tbl_now(df,
     event_date = event_date, report_date = report_date, case_count = n,
     strata = "grp", data_type = "count-cumulative",
     event_units = "weeks", report_units = "weeks", verbose = FALSE
   )
+  })
   # De-accumulating a cumulative series can produce negative increments at
   # rows where a revision comes in lower; the autoplot flags those as
   # "report before event" but that is the data, not what this test checks.
