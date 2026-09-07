@@ -41,7 +41,7 @@ treats as playing that role."><meta property="og:image" content="https://rodrigo
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -398,6 +398,8 @@ the <a href="nowcast_data_getters.html">getters</a> for reading them back;
 <span class="r-in"><span><span class="co">## ---- Covariates behave the same way ---------------------------------</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Covariates influence the nowcast but are not of interest in themselves.</span></span></span>
+<span class="r-in"><span><span class="co"># They should be values known at the fitted object's `now`; do not let</span></span></span>
+<span class="r-in"><span><span class="co"># future realized covariates leak into a backtest snapshot.</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">temperature</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span>, <span class="fl">25</span>, <span class="fl">4</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">humidity</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Beta.html" class="external-link">rbeta</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span>, <span class="fl">0.6</span>, <span class="fl">0.4</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">add_covariates</span><span class="op">(</span><span class="va">temperature</span>, <span class="va">humidity</span><span class="op">)</span></span></span>

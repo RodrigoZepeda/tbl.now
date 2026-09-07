@@ -17,7 +17,7 @@ needs no reshaping on your side."><meta property="og:image" content="https://rod
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -149,6 +149,14 @@ the levels shared by all members.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <a href="tbl_nowcast.html">tbl_nowcast</a> whose <code>fit</code> property is the list of member nowcasts
 and whose <code>metadata</code> holds the <code>weights</code> and the combination <code>type</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>An ensemble assumes that all members predict the same epidemiological
+quantity. The target dates, strata and quantile levels are checked here, but
+reporting-versus-revision semantics are currently a modelling convention:
+combine members that target the same quantity, and score the result with the
+matching <code>truth_axis</code> and <code>truth_type</code> in <code><a href="score_nowcast.html">score_nowcast()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

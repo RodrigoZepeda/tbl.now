@@ -95,6 +95,15 @@ A
 whose `fit` property is the list of member nowcasts and whose `metadata`
 holds the `weights` and the combination `type`.
 
+## Details
+
+An ensemble assumes that all members predict the same epidemiological
+quantity. The target dates, strata and quantile levels are checked here,
+but reporting-versus-revision semantics are currently a modelling
+convention: combine members that target the same quantity, and score the
+result with the matching `truth_axis` and `truth_type` in
+[`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md).
+
 ## See also
 
 [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)

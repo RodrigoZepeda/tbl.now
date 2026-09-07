@@ -57,8 +57,9 @@ plot_reporting_hexamap(
 
 - iso, iso_minor:
 
-  Major and minor grid spacings (in report units). `NULL` picks sensible
-  defaults from the data.
+  Major and minor grid spacings (in arrival-axis units: report units on
+  the report axis, revision units on the revision axis). `NULL` picks
+  sensible defaults from the data.
 
 - format:
 

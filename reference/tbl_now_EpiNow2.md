@@ -2,7 +2,7 @@
 
 **\[experimental\]**
 
-EpiNow2 takes four different input shapes, one per entry point, so
+EpiNow2 takes several different input shapes, one per entry point, so
 `tbl_now_to_EpiNow2()` is told which one you want with `target` – named
 after the EpiNow2 function the result is passed to, so it can be handed
 over unchanged:
@@ -27,6 +27,12 @@ over unchanged:
   EpiNow2 model that uses the report dimension a `tbl_now` exists to
   carry.
 
+- `"estimate_secondary"`:
+
+  a `data.frame` of `date` / `primary` / `secondary`, where `primary`
+  counts reported arrivals by `report_date` and `secondary` counts
+  resolved revisions by `revision_date`, filtered by `secondary_type`.
+
 - `"estimate_dist"`:
 
   the interval-censored `pdate_lwr` / `pdate_upr` / `sdate_lwr` /
@@ -38,8 +44,9 @@ over unchanged:
 `tbl_now_from_EpiNow2()` inverts the snapshot form: snapshot *k* is the
 series as known at report date *k*, so differencing consecutive
 snapshots recovers `count-incidence` exactly. There is deliberately
-**no** inverse for the other three: a single series has no report
-dimension to recover, and a delay distribution is not case data.
+**no** inverse for the other targets: a single series has no report
+dimension to recover, a secondary stream is already aggregated, and a
+delay distribution is not case data.
 
 ## Usage
 
@@ -48,8 +55,9 @@ tbl_now_to_EpiNow2(
   x,
   ...,
   target = c("estimate_infections", "regional_epinow", "estimate_truncation",
-    "estimate_dist"),
+    "estimate_secondary", "estimate_dist"),
   snapshots = NULL,
+  secondary_type = c("confirmed", "total", "retracted", "unknown"),
   accumulate = "auto",
   complete = "auto",
   verbose = TRUE,
@@ -82,6 +90,15 @@ tbl_now_from_EpiNow2(data, ..., report_dates = NULL, verbose = TRUE)
   [`EpiNow2::example_truncated`](https://epiforecasts.io/EpiNow2/reference/example_truncated.html).
   One snapshot per distinct report date is usually far more than the
   model can fit.
+
+- secondary_type:
+
+  For `"estimate_secondary"`: which revision outcomes to count in the
+  `secondary` stream. One of `"confirmed"` (default), `"total"`,
+  `"retracted"` or `"unknown"`. Pending cases are not on the revision
+  axis, and `"net"` can be negative, which
+  [`EpiNow2::estimate_secondary()`](https://epiforecasts.io/EpiNow2/reference/estimate_secondary.html)
+  cannot represent as a count stream.
 
 - accumulate:
 
@@ -151,16 +168,13 @@ Its own answer is the `accumulate` column (see
 [`EpiNow2::fill_missing()`](https://epiforecasts.io/EpiNow2/reference/fill_missing.html)):
 the series is laid on a daily grid and the filler days are marked to be
 added to the next real observation. `accumulate = "auto"` does this from
-[`get_event_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md).
-Units coarser than a week, and the `"numeric"` grid, are refused
-outright rather than approximated.
+[`get_event_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+for case-count targets, and from the shared `report_units` /
+`revision_units` grid for `estimate_secondary`. Units coarser than a
+week, and the `"numeric"` grid, are refused outright rather than
+approximated.
 
 ## What EpiNow2 will not take
-
-- [`EpiNow2::estimate_secondary()`](https://epiforecasts.io/EpiNow2/reference/estimate_secondary.html)
-  models **two** data streams (cases and deaths, say) against each
-  other. One `tbl_now` is one stream, so there is no honest mapping and
-  no target for it.
 
 - [`EpiNow2::estimate_delay()`](https://epiforecasts.io/EpiNow2/reference/estimate_delay.html)
   takes a bare vector of delays. Its own help now points at

@@ -67,7 +67,7 @@ previous one's.
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -299,7 +299,7 @@ walks through them in order.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># How sparse the series is, and how strongly one week predicts the next.</span></span></span>
-<span class="r-in"><span><span class="co"># `case_autocorrelation()` warns because it is unreviewed; the warning is</span></span></span>
+<span class="r-in"><span><span class="co"># `case_autocorrelation` warns because it is unreviewed; the warning is</span></span></span>
 <span class="r-in"><span><span class="co"># deliberately not suppressed here, since it belongs with the number.</span></span></span>
 <span class="r-in"><span><span class="fu">zero_run_summary</span><span class="op">(</span><span class="va">ndata</span>, axis <span class="op">=</span> <span class="st">"event"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Summary of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────────────────────</span>
@@ -394,7 +394,7 @@ walks through them in order.</p></div>
 <span class="r-in"><span><span class="co"># What share of a week's eventual total had arrived by delay d, and how fast</span></span></span>
 <span class="r-in"><span><span class="co"># the total is still growing. Both are distributions over event dates, so</span></span></span>
 <span class="r-in"><span><span class="co"># they fill `mean`/`q50` -- and completeness also `prop`, the pooled share --</span></span></span>
-<span class="r-in"><span><span class="co"># rather than the scalar `value` column. `reporting_completeness()` is</span></span></span>
+<span class="r-in"><span><span class="co"># rather than the scalar `value` column. `reporting_completeness` is</span></span></span>
 <span class="r-in"><span><span class="co"># unreviewed and warns; see above.</span></span></span>
 <span class="r-in"><span><span class="fu">reporting_completeness</span><span class="op">(</span><span class="va">ndata</span>, delays <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="fl">3</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">quantity</span>, <span class="va">stratum</span>, <span class="va">n</span>, <span class="va">mean</span>, <span class="va">q50</span>, <span class="va">prop</span><span class="op">)</span></span></span>

@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -782,8 +782,11 @@ the threshold shorthand for it.</p>
 </h3>
 <p>Often, temporal covariates improve nowcasting performance by helping
 to adjust systematic changes within the calendar cycle (e.g.,
-day-of-week effects, seasonal effects, or other reporting artefacts).
-The <a href="https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html">temporal_effects()</a>
+day-of-week effects, seasonal effects, or other reporting artefacts). As
+with any other covariate, values used for a nowcast should represent
+information available at that nowcast’s <code>now</code>; future
+realized values belong only in an explicitly forecast covariate
+workflow. The <a href="https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html">temporal_effects()</a>
 function creates a <em>specification</em> (recipe) of the features to
 compute:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
@@ -2270,8 +2273,9 @@ so <code>...</code> is forwarded to <a href="https://rodrigozepeda.github.io/tbl
 that package’s native object.</p></li>
 </ul>
 <p>Each function accepts a <code>verbose</code> argument that reports
-the choices it made (the inferred <code>now</code>, the data type, For
-example here we can convert to <code>tsibble</code>:</p>
+the choices it made, such as the inferred <code>now</code>, data type,
+strata, and conversion format. For example, here we can convert to
+<code>tsibble</code>:</p>
 <div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue_now</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>,</span>
 <span>  event_date <span class="op">=</span> <span class="st">"onset_week"</span>,</span>
@@ -2329,9 +2333,34 @@ example here we can convert to <code>tsibble</code>:</p>
 on using different models</a> to see all conversion formats.</p>
 </div>
 </div>
-<div class="section level2 unnumbered">
-<h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
+<!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit on `learning.more.Rmd`.-->
+</div>
+<div class="section level2">
+<h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
+</h2>
+<ul>
+<li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a>
+for the full anatomy of a <code>tbl_now</code>, data types, and temporal
+effects.</li>
+<li>End-to-end tutorial on real, messy surveillance data — cleaning,
+diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
+</li>
+<li>Tutorial on diagnosing your dataset — what is in it, what is
+structurally wrong with it, and detecting batches and other
+reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>
+</li>
+<li>Using different nowcasting engines for the same dataset: <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>
+</li>
+<li>Ensemble nowcasting across different engines <a href="https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html">https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html</a>
+</li>
+<li>Adding your own nowcasting model <a href="https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html">https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html</a>
+</li>
+<li>Package reference: <a href="https://rodrigozepeda.github.io/tbl.now/reference/">https://rodrigozepeda.github.io/tbl.now/reference/</a>
+</li>
+</ul>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-timetk" class="csl-entry">
 Dancho, Matt, and Davis Vaughan. 2023. <em>Timetk: A Tool Kit for

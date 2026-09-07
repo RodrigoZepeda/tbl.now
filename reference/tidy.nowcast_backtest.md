@@ -77,7 +77,7 @@ bt <- nowcast_backtest(dengue,
 )
 
 # One tidy row per method, `now` date, stratum and event date, carrying the
-# retrospective prediction next to what was eventually observed.
+# retrospective prediction next to the resolved truth used for scoring.
 head(tidy(bt))
 #> # A tibble: 6 × 13
 #>   method      now        event_date stratum observed estimate conf.low conf.high

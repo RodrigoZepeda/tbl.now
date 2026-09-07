@@ -15,7 +15,7 @@ into dplyr or ggplot2."><meta property="og:image" content="https://rodrigozepeda
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -127,7 +127,7 @@ levels reported – a guessed width defeats the point of the column.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># One tidy row per method, `now` date, stratum and event date, carrying the</span></span></span>
-<span class="r-in"><span><span class="co"># retrospective prediction next to what was eventually observed.</span></span></span>
+<span class="r-in"><span><span class="co"># retrospective prediction next to the resolved truth used for scoring.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">bt</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 6 × 13</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   method      now        event_date stratum observed estimate conf.low conf.high</span>

@@ -49,7 +49,7 @@ and
 which report at these levels;
 [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
 and
-[`as_scoringutils()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md),
+[`as_forecast_point()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md),
 which score them.
 
 ## Examples

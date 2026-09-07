@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,60 +49,80 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.33.1" id="tblnow-0331">tbl.now 0.33.1<a class="anchor" aria-label="anchor" href="#tblnow-0331"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.34.0" id="tblnow-0340">tbl.now 0.34.0<a class="anchor" aria-label="anchor" href="#tblnow-0340"></a></h2>
 <div class="section level3">
-<h3 id="autoplot-can-show-revision-date-calendar-effects-0-33-1">Autoplot can show revision-date calendar effects<a class="anchor" aria-label="anchor" href="#autoplot-can-show-revision-date-calendar-effects-0-33-1"></a></h3>
+<h3 id="documentation-clarifies-scoring-covariates-and-article-endings-0-34-0">Documentation clarifies scoring, covariates and article endings<a class="anchor" aria-label="anchor" href="#documentation-clarifies-scoring-covariates-and-article-endings-0-34-0"></a></h3>
+<p>The documentation now states that scoring and backtests use the resolved truth defined by <code>truth_axis</code> and <code>truth_type</code>, rather than an ambiguous “eventual” quantity. It also makes the covariate as-of rule explicit: covariates used in a fit or backtest snapshot should be values available at that snapshot’s <code>now</code>.</p>
+<p>The introductory and custom-model vignettes now end with the shared <code>learning-more</code> fragment, and the ensemble article places its References header before that final fragment.</p>
+</div>
+<div class="section level3">
+<h3 id="as_forecast_point-exposes-scoringutils-point-forecasts-0-34-0">
+<code>as_forecast_point()</code> exposes scoringutils point forecasts<a class="anchor" aria-label="anchor" href="#as_forecast_point-exposes-scoringutils-point-forecasts-0-34-0"></a></h3>
+<p><code><a href="../reference/score_nowcast.html">as_forecast_point()</a></code> now converts a <code>tbl_nowcast</code>, ensemble or <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> to a <code>scoringutils</code> point forecast using the median prediction. The old <code>as_scoringutils()</code> quantile-frame helper is now internal; use <code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">scoringutils::as_forecast_quantile()</a></code> directly for quantile scoring.</p>
+</div>
+<div class="section level3">
+<h3 id="reporting-hexamap-labels-are-more-robust-0-34-0">Reporting hexamap labels are more robust<a class="anchor" aria-label="anchor" href="#reporting-hexamap-labels-are-more-robust-0-34-0"></a></h3>
+<p><code><a href="../reference/plot_reporting_hexamap.html">plot_reporting_hexamap()</a></code> now keeps its custom event, report and delay labels outside the plotted lattice with range-aware spacing, so axis titles are less likely to overlap tick labels or data marks when article or user figure sizes change.</p>
+<p>Revision-axis hexamaps now use <code>revision_units</code> for their arrival grid instead of always using <code>report_units</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="ensemble-validation-is-stricter-0-34-0">Ensemble validation is stricter<a class="anchor" aria-label="anchor" href="#ensemble-validation-is-stricter-0-34-0"></a></h3>
+<p><code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code> now rejects non-finite fixed weights, duplicated or unknown weight names, duplicate prediction/draw keys inside a member, and invalid <code>n_draws</code> values before doing ensemble arithmetic. These inputs previously led to low-level errors, silently ignored weights, or ensemble predictions whose values were <code>NA</code>.</p>
+<p>The ensemble documentation now states that members are assumed to target the same reporting or revision quantity, and that the result should be scored with the matching <code>truth_axis</code> and <code>truth_type</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="autoplot-can-show-revision-date-calendar-effects-0-34-0">Autoplot can show revision-date calendar effects<a class="anchor" aria-label="anchor" href="#autoplot-can-show-revision-date-calendar-effects-0-34-0"></a></h3>
 <p>The calendar-effect helpers now accept <code>type = "revision"</code>, and <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> includes revision calendar and cycle panels whenever a <code>tbl_now</code> has a revision process. Revision panels use the new <code>revision</code> palette role, <code>#C79800</code> by default.</p>
 </div>
 <div class="section level3">
-<h3 id="temporal-effects-can-target-revision-dates-0-33-1">Temporal effects can target revision dates<a class="anchor" aria-label="anchor" href="#temporal-effects-can-target-revision-dates-0-33-1"></a></h3>
+<h3 id="temporal-effects-can-target-revision-dates-0-34-0">Temporal effects can target revision dates<a class="anchor" aria-label="anchor" href="#temporal-effects-can-target-revision-dates-0-34-0"></a></h3>
 <p><code><a href="../reference/add_temporal_effects.html">add_temporal_effects()</a></code> now accepts <code>date_type = "revision_date"</code> for revision-aware <code>tbl_now</code> objects. <code><a href="../reference/add_temporal_effects.html">compute_temporal_effects()</a></code> materialises those specs as <code>.revision_*</code> columns using the revision date and <code>.revision_num</code>. Revision-date changers now preserve lazy temporal-effect specs while invalidating computed columns, and <code><a href="../reference/add.html">remove_revision_date()</a></code> drops revision-date specs while keeping event/report specs.</p>
 </div>
 <div class="section level3">
-<h3 id="temporal-effect-columns-are-inrevised-when-date-columns-change-0-33-1">Temporal-effect columns are inrevised when date columns change<a class="anchor" aria-label="anchor" href="#temporal-effect-columns-are-inrevised-when-date-columns-change-0-33-1"></a></h3>
+<h3 id="temporal-effect-columns-are-inrevised-when-date-columns-change-0-34-0">Temporal-effect columns are inrevised when date columns change<a class="anchor" aria-label="anchor" href="#temporal-effect-columns-are-inrevised-when-date-columns-change-0-34-0"></a></h3>
 <p><code><a href="../reference/add.html">change_event_date()</a></code> and <code><a href="../reference/add.html">change_report_date()</a></code> now drop already materialised temporal-effect columns and clear their tracking attribute. The lazy <code><a href="../reference/temporal_effects.html">temporal_effects()</a></code> specification is preserved, so later calls to <code><a href="../reference/add_temporal_effects.html">compute_temporal_effects()</a></code> or converters that carry temporal effects rebuild fresh columns from the current event/report date declarations.</p>
 </div>
 <div class="section level3">
-<h3 id="complete_zeroes-preserves-missing-counts-and-completes-coarser-grids-0-33-1">
-<code>complete_zeroes()</code> preserves missing counts and completes coarser grids<a class="anchor" aria-label="anchor" href="#complete_zeroes-preserves-missing-counts-and-completes-coarser-grids-0-33-1"></a></h3>
+<h3 id="complete_zeroes-preserves-missing-counts-and-completes-coarser-grids-0-34-0">
+<code>complete_zeroes()</code> preserves missing counts and completes coarser grids<a class="anchor" aria-label="anchor" href="#complete_zeroes-preserves-missing-counts-and-completes-coarser-grids-0-34-0"></a></h3>
 <p><code><a href="../reference/complete_zeroes.html">complete_zeroes()</a></code> now preserves explicit <code>NA</code> counts in the input instead of rewriting them as observed zeroes. Generated incidence cells are still filled with zero, and generated cumulative cells carry forward the previous known cumulative total.</p>
 <p><code><a href="../reference/complete_zeroes.html">complete_zeroes()</a></code> now reconstructs generated report dates through the shared delay helper, so monthly and yearly count grids are completed through <code>now</code> instead of silently returning only the originally observed periods.</p>
 </div>
 <div class="section level3">
-<h3 id="backtesting-and-scoring-are-stricter-about-fairness-0-33-1">Backtesting and scoring are stricter about fairness<a class="anchor" aria-label="anchor" href="#backtesting-and-scoring-are-stricter-about-fairness-0-33-1"></a></h3>
-<p><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code> and <code><a href="../reference/score_nowcast.html">as_scoringutils()</a></code> now warn when predictions contain targets outside the supplied truth grid. Missing observed rows inside the <code>tbl_now</code> truth grid are scored as zero, because <code>tbl_now</code> objects need not store zero-count cells; targets outside that grid are still omitted because there is no observed value to score.</p>
-<p><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code>, <code><a href="../reference/score_nowcast.html">as_scoringutils()</a></code> and <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> gained explicit <code>truth_axis</code> and <code>truth_type</code> arguments. The default remains reported totals (<code>truth_axis = "report"</code>, <code>truth_type = "total"</code>), and revision-aware truth can now be scored with <code>truth_axis = "revision"</code>.</p>
+<h3 id="backtesting-and-scoring-are-stricter-about-fairness-0-34-0">Backtesting and scoring are stricter about fairness<a class="anchor" aria-label="anchor" href="#backtesting-and-scoring-are-stricter-about-fairness-0-34-0"></a></h3>
+<p><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code> and <code>as_scoringutils()</code> now warn when predictions contain targets outside the supplied truth grid. Missing observed rows inside the <code>tbl_now</code> truth grid are scored as zero, because <code>tbl_now</code> objects need not store zero-count cells; targets outside that grid are still omitted because there is no observed value to score.</p>
+<p><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code>, <code>as_scoringutils()</code> and <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> gained explicit <code>truth_axis</code> and <code>truth_type</code> arguments. The default remains reported totals (<code>truth_axis = "report"</code>, <code>truth_type = "total"</code>), and revision-aware truth can now be scored with <code>truth_axis = "revision"</code>.</p>
 <p><code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> now validates explicit <code>now_dates</code>: they must be non-missing Dates within the observed surveillance window and cannot be after the object’s <code>now</code>. A <code>now_date</code> equal to the object’s <code>now</code> is allowed with a warning, because today’s data may still be incomplete.</p>
 <p><code><a href="../reference/nowcast_weights.html">nowcast_weights()</a></code> gained <code>now</code> and <code>include_now</code> arguments. When <code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code> derives performance weights from a backtest, rows at the members’ own <code>now</code> dates are excluded by default so weights are trained on a holdout window unless <code>include_now = TRUE</code> is set explicitly.</p>
 </div>
 <div class="section level3">
-<h3 id="constructors-and-dplyr-rebuilds-are-stricter-0-33-1">Constructors and dplyr rebuilds are stricter<a class="anchor" aria-label="anchor" href="#constructors-and-dplyr-rebuilds-are-stricter-0-33-1"></a></h3>
+<h3 id="constructors-and-dplyr-rebuilds-are-stricter-0-34-0">Constructors and dplyr rebuilds are stricter<a class="anchor" aria-label="anchor" href="#constructors-and-dplyr-rebuilds-are-stricter-0-34-0"></a></h3>
 <p><code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code> and <code>$&lt;-</code> now rebuild generated numeric date columns when event, report, or revision dates are edited, including <code>.revision_num</code> and <code>.revision_delay</code> for revision-aware objects.</p>
 <p>Demotion after renaming protected generated columns now drops all <code>tbl_now</code> attributes, and count-data revision now errors when the declared count column is not numeric. Empty <code><a href="../reference/tbl_now.html">tbl_now()</a></code> inputs remain unsupported, and one-row inputs must declare their units.</p>
 </div>
 <div class="section level3">
-<h3 id="epinow2-converter-and-engine-checks-are-stricter-0-33-1">EpiNow2 converter and engine checks are stricter<a class="anchor" aria-label="anchor" href="#epinow2-converter-and-engine-checks-are-stricter-0-33-1"></a></h3>
+<h3 id="epinow2-converter-and-engine-checks-are-stricter-0-34-0">EpiNow2 converter and engine checks are stricter<a class="anchor" aria-label="anchor" href="#epinow2-converter-and-engine-checks-are-stricter-0-34-0"></a></h3>
 <p><code><a href="../reference/tbl_now_EpiNow2.html">tbl_now_to_EpiNow2()</a></code> now validates <code>accumulate</code>, <code>complete</code>, and <code>snapshots</code> before building the target object. <code>accumulate</code> and <code>complete</code> must be <code>TRUE</code>, <code>FALSE</code>, or <code>"auto"</code>; <code>snapshots</code> must be <code>NULL</code> or a single positive whole number.</p>
 <p>The EpiNow2 converter now warns when lazy temporal-effect specs are dropped by the date/confirm series targets. <code><a href="../reference/nowcast_engines.html">engine_epinow2()</a></code> maps the supported report-date <code>day_of_week</code> temporal effect to EpiNow2’s native observation model with <code>EpiNow2::obs_opts(week_effect = TRUE)</code> when the caller has not supplied <code>obs</code>; temporal effects with no EpiNow2 equivalent warn before being dropped.</p>
 <p>The ensemble-nowcasting article now tolerates older cached display data that lacks <code>member_predictions</code>, falling back to the cached baseline member predictions so the comparison plot still renders.</p>
 </div>
 <div class="section level3">
-<h3 id="nowcasts-and-backtests-convert-directly-to-scoringutils-0-33-1">Nowcasts and backtests convert directly to scoringutils (#20, #69)<a class="anchor" aria-label="anchor" href="#nowcasts-and-backtests-convert-directly-to-scoringutils-0-33-1"></a></h3>
-<p><code><a href="../reference/score_nowcast.html">as_scoringutils()</a></code> now accepts a <code>nowcast_backtest</code> and reuses the truth already stored in it. The result keeps <code>now</code> as a forecast unit, so the same target predicted at different retrospective dates remains distinct.</p>
+<h3 id="nowcasts-and-backtests-convert-directly-to-scoringutils-0-34-0">Nowcasts and backtests convert directly to scoringutils (#20, #69)<a class="anchor" aria-label="anchor" href="#nowcasts-and-backtests-convert-directly-to-scoringutils-0-34-0"></a></h3>
+<p><code>as_scoringutils()</code> now accepts a <code>nowcast_backtest</code> and reuses the truth already stored in it. The result keeps <code>now</code> as a forecast unit, so the same target predicted at different retrospective dates remains distinct.</p>
 <p><code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">scoringutils::as_forecast_quantile()</a></code> now accepts a <code>tbl_nowcast</code> directly, including the result of <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> and <code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code>, as well as a <code>nowcast_backtest</code>. A full <code>tbl_now</code> can be supplied as <code>truth</code>; a backtest uses its stored truth by default.</p>
 <p><code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html" class="external-link">scoringutils::as_forecast_sample()</a></code> now does the same for a <code>tbl_nowcast</code> that retains posterior draws and for a draw-based ensemble. Quantile ensembles are refused because samples cannot be recovered from reported quantiles. A <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> can opt into retaining draws with <code>keep_draws = TRUE</code>; its sample coercion checks that every successful engine/date fit supplied them, rather than silently dropping quantile-only members.</p>
 <p>Nested ensembles are now covered explicitly: a quantile ensemble can be a member of another quantile ensemble, and a linear-pool ensemble can be a member of another linear pool when it carries draws.</p>
 </div>
 <div class="section level3">
-<h3 id="tidy-on-a-backtest-now-returns-the-predictions-not-only-the-truth-0-33-1">
-<code>tidy()</code> on a backtest now returns the predictions, not only the truth (#70)<a class="anchor" aria-label="anchor" href="#tidy-on-a-backtest-now-returns-the-predictions-not-only-the-truth-0-33-1"></a></h3>
+<h3 id="tidy-on-a-backtest-now-returns-the-predictions-not-only-the-truth-0-34-0">
+<code>tidy()</code> on a backtest now returns the predictions, not only the truth (#70)<a class="anchor" aria-label="anchor" href="#tidy-on-a-backtest-now-returns-the-predictions-not-only-the-truth-0-34-0"></a></h3>
 <p><code><a href="../reference/tidy.nowcast.html">tidy()</a></code> on a <code>nowcast_backtest</code> reported what was <code>observed</code> and how each method scored against it, but not what the method had actually said – so the one table you would plot a backtest from was missing half the comparison, and recovering it meant reshaping the object’s long <code>$predictions</code> by hand.</p>
 <p>It now carries <code>estimate</code>, <code>conf.low</code>, <code>conf.high</code> and <code>level</code>, named as [tidy()] names them everywhere else: <code>estimate</code> is the <code>0.5</code> quantile and <code>level</code> the width of the widest symmetric pair of quantile levels actually present. <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> refuses engines whose <code>quantile_levels</code> disagree, so <code>level</code> is one number for the whole table. Where the levels cannot support a bound the column is <code>NA</code> rather than a guess, exactly as on a <code>tbl_nowcast</code>.</p>
 <p>The full column order is now <code>method</code>, <code>now</code>, <code>event_date</code>, <code>stratum</code>, <code>observed</code>, <code>estimate</code>, <code>conf.low</code>, <code>conf.high</code>, <code>level</code>, <code>wis</code>, <code>ae_median</code>, <code>coverage_50</code>, <code>coverage_90</code>. Nothing was removed or renamed and no rows were added – <code>(method, now, stratum, event_date)</code> is still the unique key – so code that selects columns by name is unaffected; code that assumed the frame had exactly nine columns is not.</p>
 </div>
 <div class="section level3">
-<h3 id="diseasenowcasting-is-installed-from-github-and-the-error-now-says-so-0-33-1">
-<code>diseasenowcasting</code> is installed from GitHub, and the error now says so (#72)<a class="anchor" aria-label="anchor" href="#diseasenowcasting-is-installed-from-github-and-the-error-now-says-so-0-33-1"></a></h3>
+<h3 id="diseasenowcasting-is-installed-from-github-and-the-error-now-says-so-0-34-0">
+<code>diseasenowcasting</code> is installed from GitHub, and the error now says so (#72)<a class="anchor" aria-label="anchor" href="#diseasenowcasting-is-installed-from-github-and-the-error-now-says-so-0-34-0"></a></h3>
 <p>Asking for <code><a href="../reference/nowcast_engines.html">engine_diseasenowcasting()</a></code> without the package installed suggested <code>install.packages("diseasenowcasting", repos = c(options('repos'), epinowcast = ...))</code>, which cannot work: the package is on GitHub and in no CRAN-style repository. The error now gives the instruction that does work:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"pak"</span><span class="op">)</span></span>
@@ -653,7 +673,7 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 <p><code>observed_col</code> is <strong>removed</strong>, and a plain data frame is no longer accepted. The <code>tbl_now</code> already knows which column holds the observed counts – it is <code><a href="../reference/nowcast_data_getters.html">get_case_count()</a></code>, or the count <code><a href="../reference/to_count.html">to_count()</a></code> produces from a line list – so naming it was a burden on the caller and the old default (<em>“the last column that is neither the event date nor a stratum”</em>) was a guess that could mis-score silently.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/score_nowcast.html">score_nowcast</a></span><span class="op">(</span><span class="va">nc</span>, truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span>     <span class="co"># the FULL tbl_now, line list or counts</span></span>
-<span><span class="fu"><a href="../reference/score_nowcast.html">as_scoringutils</a></span><span class="op">(</span><span class="va">nc</span>, truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">as_scoringutils</span><span class="op">(</span><span class="va">nc</span>, truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="breaking-argument-names-made-consistent-0-27-0">Breaking: argument names made consistent<a class="anchor" aria-label="anchor" href="#breaking-argument-names-made-consistent-0-27-0"></a></h3>
@@ -984,7 +1004,7 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 <div class="section level3">
 <h3 id="nowcast_truth-removed-0-20-0">
 <code>nowcast_truth()</code> removed<a class="anchor" aria-label="anchor" href="#nowcast_truth-removed-0-20-0"></a></h3>
-<p>Dropped entirely rather than kept internal. It was <code><a href="../reference/get_latest_first.html">get_latest_reported_cases()</a></code> reshaped. <code><a href="../reference/score_nowcast.html">score_nowcast()</a></code> and <code><a href="../reference/score_nowcast.html">as_scoringutils()</a></code> take the <code>tbl_now</code> itself as <code>truth</code>.</p>
+<p>Dropped entirely rather than kept internal. It was <code><a href="../reference/get_latest_first.html">get_latest_reported_cases()</a></code> reshaped. <code><a href="../reference/score_nowcast.html">score_nowcast()</a></code> and <code>as_scoringutils()</code> take the <code>tbl_now</code> itself as <code>truth</code>.</p>
 </div>
 <div class="section level3">
 <h3 id="covidat-removed-0-20-0">
@@ -1043,7 +1063,7 @@ i Declare it with `add_strata()` to nowcast it separately.</code></pre>
 <h3 id="nowcast_truth-is-now-internal-0-19-0">
 <code>nowcast_truth()</code> is now internal<a class="anchor" aria-label="anchor" href="#nowcast_truth-is-now-internal-0-19-0"></a></h3>
 <p>It was <code><a href="../reference/get_latest_first.html">get_latest_reported_cases()</a></code> with the class stripped, undeclared columns summed away and the count renamed <code>.observed</code> – the values were identical. A second public name for that is a second thing to learn for no gain.</p>
-<p><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code> and <code><a href="../reference/score_nowcast.html">as_scoringutils()</a></code> now accept the <strong><code>tbl_now</code> itself</strong> as <code>truth</code> and do the reshaping internally, which is shorter than what it replaces:</p>
+<p><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code> and <code>as_scoringutils()</code> now accept the <strong><code>tbl_now</code> itself</strong> as <code>truth</code> and do the reshaping internally, which is shorter than what it replaces:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/score_nowcast.html">score_nowcast</a></span><span class="op">(</span><span class="va">nowcast</span>, truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span>          <span class="co"># was: truth = nowcast_truth(dengue)</span></span></code></pre></div>
 <p>A data frame of observed counts still works, as does <code>NULL</code>.</p>
@@ -1087,7 +1107,7 @@ i Declare it with `add_strata()` to nowcast it separately.</code></pre>
 <p>It is called <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> and not <code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">nowcast()</a></code> because  exports <code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">nowcast()</a></code>; keeping the names distinct means both can be attached at once.</p>
 </li>
 <li><p><strong><code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code></strong> combines several of them, either by averaging their quantiles level by level (<code>type = "quantile"</code>, vincentization – narrower) or by pooling their draws into a mixture (<code>type = "linear_pool"</code> – wider, and refused outright when a member has no draws, rather than silently dropping it).</p></li>
-<li><p><strong><code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code></strong>, <strong><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code></strong> and <strong><code><a href="../reference/nowcast_weights.html">nowcast_weights()</a></code></strong> score models retrospectively and turn those scores into ensemble weights (<code>"inverse_score"</code>, <code>"optim"</code> or <code>"equal"</code>). <code><a href="../reference/score_nowcast.html">as_scoringutils()</a></code> hands the same object to  for its full score suite.</p></li>
+<li><p><strong><code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code></strong>, <strong><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code></strong> and <strong><code><a href="../reference/nowcast_weights.html">nowcast_weights()</a></code></strong> score models retrospectively and turn those scores into ensemble weights (<code>"inverse_score"</code>, <code>"optim"</code> or <code>"equal"</code>). <code>as_scoringutils()</code> hands the same object to  for its full score suite.</p></li>
 <li><p><strong><code><a href="../reference/nowcast_fit.html">nowcast_fit()</a></code> / <code><a href="../reference/nowcast_tidy.html">nowcast_tidy()</a></code></strong> are the extension point: two S3 methods, in any package, and <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> knows about your model. See <code>vignette("ensemble-nowcasting")</code>.</p></li>
 <li><p><strong><code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code></strong> for a <code>tbl_nowcast</code> draws a fan chart, in the palette’s green – a nowcast estimates the epidemic process, not the reporting one.</p></li>
 </ul></div>

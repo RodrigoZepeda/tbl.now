@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -400,13 +400,41 @@
 </div>
 <div class="section level2">
 <h2 id="id_8-testing">8. Testing<a class="anchor" aria-label="anchor" href="#id_8-testing"></a></h2>
+<div class="section level3">
+<h3 id="the-test-log-stays-quiet">The test log stays quiet<a class="anchor" aria-label="anchor" href="#the-test-log-stays-quiet"></a></h3>
+<p><strong>A test that lets its call print into the log is broken, even when it passes.</strong> A noisy log is a broken log: the failures the reader needs are buried under dozens of <code>i No primary event upper bound provided...</code>, <code>Building reporting triangle...</code>, <code>* This delay is now an upper bound (is_censored_report).</code> lines, and the reader stops reading before they reach the failure.</p>
+<p>The rules, in order of preference:</p>
+<ol style="list-style-type: decimal"><li><p><strong>Use the function’s own <code>verbose = FALSE</code>.</strong> Every user-facing function that emits chatter takes it; <code>censor_reporting_delays_above(x, k)</code> prints “Marked N reports … This delay is now an upper bound.” on every call and <code>censor_reporting_delays_above(x, k, verbose = FALSE)</code> does not. This is the argument’s whole point.</p></li>
+<li><p><strong>Add <code>quiet = TRUE</code> on converters where it exists.</strong> <code>verbose</code> and <code>quiet</code> are <em>different channels</em>: <code>verbose = FALSE</code> silences tbl.now’s own summary, <code>quiet = TRUE</code> silences the target package’s chatter (e.g. epidist’s “No primary event upper bound provided…” bullets). A test that only sets <code>verbose = FALSE</code> on <code><a href="reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> still leaks epidist’s own lines.</p></li>
+<li><p><strong>Wrap with <code>quiet_messages()</code> from <code>helper-nowcast.R</code>.</strong> It is the right hammer for calls that have no verbose knob, or emit through <code><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat()</a></code> (surveillance, JAGS via NobBS). <code><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages()</a></code> alone does NOT catch <code><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat()</a></code>; <code>quiet_messages()</code> wraps both stdout and messages, which is why it exists.</p></li>
+<li>
+<p><strong><code><a href="https://testthat.r-lib.org/reference/expect_error.html" class="external-link">expect_error()</a></code> does NOT suppress the noise the failing call emitted before it errored.</strong> A validator that prints a status message <em>and then</em> aborts still prints. Wrap the call itself in <code><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages()</a></code> (or <code>quiet_messages()</code>) inside the <code><a href="https://testthat.r-lib.org/reference/expect_error.html" class="external-link">expect_error()</a></code>:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">expect_error</span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="reference/diagnose_batches.html">diagnose_batches</a></span><span class="op">(</span><span class="va">x</span>, baseline_window <span class="op">=</span> <span class="fl">8L</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  <span class="st">"must be odd"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</li>
+<li><p><strong>Raw calls to a foreign constructor need their own <code><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages()</a></code>.</strong> <code>epidist::as_epidist_aggregate_data(df, ...)</code> fires the same bullets whether tbl.now called it or a test did. When a test hand-builds epidist data as a fixture, wrap the constructor.</p></li>
+</ol><p>For the package side of the bargain:</p>
+<ul><li><p><strong><code>.quietly_if()</code> in <code>R/nowcast_methods.R</code> suppresses <code><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat()</a></code> and messages, not warnings.</strong> Surveillance reports progress with <code><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat()</a></code> (“Building reporting triangle…”, “No. cases: …”), NobBS’s JAGS backend uses <code><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat()</a></code> for “NOTE: Stopping adaptation…” and several other packages write to stdout. Wrapping only in <code><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages()</a></code> leaves those in the log. The two nested <code><a href="https://rdrr.io/r/utils/capture.output.html" class="external-link">capture.output()</a></code> calls in <code>.quietly_if()</code> are load-bearing; do not drop them.</p></li>
+<li><p><strong><code><a href="reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> respects <code>quiet</code> by wrapping the epidist constructor in <code>.epidist_quietly_if()</code>.</strong> The helper is a two-liner kept next to the converter because it is the only place that needs it; leave it there rather than reaching into <code>nowcast_methods.R</code>.</p></li>
+<li><p><strong><code><a href="https://baselinenowcast.epinowcast.org/reference/preprocess_negative_values.html" class="external-link">baselinenowcast::preprocess_negative_values()</a></code> prints on every call.</strong> <code>.tbl_now_one_triangle()</code> honours <code>quiet</code> around it too. If you add a wrapped call to another external function that emits on every call, add the same guard.</p></li>
+</ul><p>The verification is one grep and one run:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">"Sys.setenv(NOT_CRAN='true'); devtools::load_all('.', quiet = TRUE); </span><span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="st">    testthat::test_file('tests/testthat/test-&lt;file&gt;.R', reporter = 'silent')"</span> <span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span></code></pre></div>
+<p>Zero lines is the expected outcome for every file. A new test that prints anything is a regression, whether or not it also passes.</p>
+</div>
+<div class="section level3">
+<h3 id="running-the-suite">Running the suite<a class="anchor" aria-label="anchor" href="#running-the-suite"></a></h3>
 <ul><li>
 <p>Run with <code>NOT_CRAN=true</code>, or 424 tests silently skip:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>NOT_CRAN<span class="ot">=</span>true Rscript <span class="sc">-</span>e <span class="st">'devtools::load_all("."); testthat::test_local()'</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>NOT_CRAN<span class="ot">=</span>true Rscript <span class="sc">-</span>e <span class="st">'devtools::load_all("."); testthat::test_local()'</span></span></code></pre></div>
 </li>
 <li>
 <p><strong>You cannot measure the CRAN path with <code><a href="https://testthat.r-lib.org/reference/test_package.html" class="external-link">test_local()</a></code>, and the mistake is invisible.</strong> <code><a href="https://testthat.r-lib.org/reference/test_package.html" class="external-link">testthat::test_local()</a></code> calls <code>local_assume_not_on_cran()</code>, which sets <code>NOT_CRAN = "true"</code> whenever the variable is empty; <code>devtools::check()</code> sets it too (<code>formals(devtools::check)$env_vars</code>). So <code>env -u NOT_CRAN Rscript   -e 'testthat::test_local()'</code> runs <strong>every</strong> <code><a href="https://testthat.r-lib.org/reference/skip.html" class="external-link">skip_on_cran()</a></code> test anyway. Use <code><a href="https://testthat.r-lib.org/reference/test_package.html" class="external-link">test_check()</a></code> – what <code>tests/testthat.R</code> runs under <code>R CMD check</code> – and assert you are on the path you think you are:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://testthat.r-lib.org" class="external-link">testthat</a></span><span class="op">)</span>; <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu">testthat</span><span class="fu">:::</span><span class="fu">on_cran</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="st">"tests"</span><span class="op">)</span>; <span class="fu"><a href="https://testthat.r-lib.org/reference/test_package.html" class="external-link">test_check</a></span><span class="op">(</span><span class="st">"tbl.now"</span><span class="op">)</span></span></code></pre></div>
@@ -416,7 +444,8 @@
 <li><p><strong>Test the failure you actually fixed.</strong> A test that exercises the harmless variant of a bug (delay-derived censoring instead of per-case) passes both before and after the fix and proves nothing.</p></li>
 <li><p>Prefer mocking to fitting. A <code><a href="reference/tidy.nowcast.html">tidy()</a></code> method can be tested against <code><a href="https://testthat.r-lib.org/reference/local_mocked_bindings.html" class="external-link">local_mocked_bindings()</a></code> instead of compiling a Stan model; verify against a real fit once, by hand, and keep the suite fast and deterministic.</p></li>
 <li><p>When behaviour changes deliberately, <strong>update the tests that asserted the old behaviour</strong> and say so in <code>NEWS.md</code>. Do not leave a stale assertion for someone else to trip over — that is how <code>test-autoplot.R</code> ended up asserting a default that had been changed weeks earlier.</p></li>
-</ul><div class="section level3">
+</ul></div>
+<div class="section level3">
 <h3 id="why-the-suite-was-slow-and-what-actually-fixed-it">Why the suite was slow, and what actually fixed it<a class="anchor" aria-label="anchor" href="#why-the-suite-was-slow-and-what-actually-fixed-it"></a></h3>
 <p>The suite’s profile is <strong>flat</strong> — no file is more than 8% of the CRAN path — so there was no one test to fix. The cost was spread over roughly 780 <code><a href="reference/tbl_now.html">tbl_now()</a></code> constructions, and it was not in the data handling. It was in <code><a href="reference/validate_tbl_now.html">validate_tbl_now()</a></code>, which runs on every <code>dplyr</code> verb, and inside that in <strong>formatting messages nobody reads</strong>:</p>
 <ul><li>
@@ -447,18 +476,18 @@
 <li>
 <code><a href="reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> aborted inside an internal <code>mutate()</code>, with an error naming the mutate’s own argument rather than the grouping.</li>
 </ul><p>So: <strong>when you write a function that takes a <code>tbl_now</code>, write a grouped test for it in the same commit.</strong> Three assertions, and they are nearly always the same three:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">"&lt;fn&gt; works on a grouped tbl_now"</span>, {</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="er">&lt;</span>fixture<span class="sc">&gt;</span>()</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  out <span class="ot">&lt;-</span> <span class="er">&lt;</span>fn<span class="sc">&gt;</span>(x <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">group_by</span>(sex))</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="fu">expect_true</span>(<span class="fu">is_tbl_now</span>(out))                  <span class="co"># 1. it did not abort</span></span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="fu">expect_equal</span>(dplyr<span class="sc">::</span><span class="fu">group_vars</span>(out), <span class="st">"sex"</span>)   <span class="co"># 2. groups came back</span></span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>  <span class="fu">expect_equal</span>(                                 <span class="co"># 3. same answer as ungrouped</span></span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">as_tibble</span>(<span class="fu">ungroup</span>(out)),</span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">as_tibble</span>(<span class="fu">ungroup</span>(<span class="sc">&lt;</span>fn<span class="sc">&gt;</span>(x)))</span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>  )</span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>})</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">"&lt;fn&gt; works on a grouped tbl_now"</span>, {</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="er">&lt;</span>fixture<span class="sc">&gt;</span>()</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  out <span class="ot">&lt;-</span> <span class="er">&lt;</span>fn<span class="sc">&gt;</span>(x <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">group_by</span>(sex))</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="fu">expect_true</span>(<span class="fu">is_tbl_now</span>(out))                  <span class="co"># 1. it did not abort</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="fu">expect_equal</span>(dplyr<span class="sc">::</span><span class="fu">group_vars</span>(out), <span class="st">"sex"</span>)   <span class="co"># 2. groups came back</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="fu">expect_equal</span>(                                 <span class="co"># 3. same answer as ungrouped</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">as_tibble</span>(<span class="fu">ungroup</span>(out)),</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">as_tibble</span>(<span class="fu">ungroup</span>(<span class="sc">&lt;</span>fn<span class="sc">&gt;</span>(x)))</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>  )</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>})</span></code></pre></div>
 <p><strong>The <code>ungroup()</code> in assertion 3 is load-bearing.</strong> <code><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble()</a></code> on a <code>tbl_now</code> keeps the class’s attributes, and a grouped object carries an extra <code>groups</code> attribute among them, so comparing the two directly fails on every function – including the correct ones. Strip the grouping from both sides and you are comparing the data, which is what the assertion is about.</p>
 <p>The third is the one that finds real bugs, and it is worth grouping by a column the function does <strong>not</strong> care about as well as one it does: grouping is the caller’s business, and almost nothing in this package should compute a different answer because of it. Where a function legitimately <em>should</em> respect groups, say so in a test asserting the difference, rather than leaving it ambiguous.</p>
 <p>Two verbs legitimately do (#61), and the line between them is <em>select versus reshape</em>:</p>
@@ -468,7 +497,7 @@
 </ul><p>If you write a verb that aggregates, follow <code><a href="reference/to_count.html">to_count()</a></code>: drop and say so. If it selects or annotates, follow the getters: <code>.tbl_now_regroup()</code>.</p>
 <p>One consequence to watch: <code><a href="reference/to_count.html">to_count()</a></code> recurses into itself for the linelist and de-accumulation paths, on an object it grouped by the cell key a few lines earlier. Ungroup before each recursive call, or the verb warns about a grouping it set itself.</p>
 <p>The fix is nearly always the same too – take the grouping off, do the work, put it back:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">group_columns</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_data.html" class="external-link">group_vars</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu">ungroup</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span><span class="co"># ... rebuild, aggregate, set a flag ...</span></span>
@@ -562,7 +591,7 @@
 </ul><div class="section level3">
 <h3 id="the-two-checks-and-why-the-suite-does-not-cover-them">The two checks, and why the suite does not cover them<a class="anchor" aria-label="anchor" href="#the-two-checks-and-why-the-suite-does-not-cover-them"></a></h3>
 <p><code>testthat</code> runs your code. <code>R CMD check</code> checks the <em>package</em>: the things that only break for someone installing it fresh.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">check</span><span class="op">(</span><span class="op">)</span>                 <span class="co"># or: R CMD check tbl.now_*.tar.gz</span></span>
 <span><span class="fu">checktor</span><span class="fu">::</span><span class="fu">checkup</span><span class="op">(</span><span class="op">)</span>               <span class="co"># extra CRAN-submission checks</span></span></code></pre></div>
 <p>The one that keeps recurring here is <strong>undeclared packages</strong>:</p>

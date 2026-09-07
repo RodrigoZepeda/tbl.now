@@ -35,7 +35,7 @@ use format = "triangle_list" to get one triangle per stratum instead.'><meta pro
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,7 +115,8 @@ use <code>format = "triangle_list"</code> to get one triangle per stratum instea
 <span>  max_delay <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  complete <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  negatives <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"redistribute"</span>, <span class="st">"error"</span><span class="op">)</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  quiet <span class="op">=</span> <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/Logic.html" class="external-link">isTRUE</a></span><span class="op">(</span><span class="va">verbose</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -202,6 +203,11 @@ call <code>to_count() |&gt; complete_zeroes()</code> first, or ask for
 <code>"redistribute"</code> (default) absorbs each negative into earlier delays with
 <code><a href="https://baselinenowcast.epinowcast.org/reference/preprocess_negative_values.html" class="external-link">baselinenowcast::preprocess_negative_values()</a></code>, which is what that
 function exists for; <code>"error"</code> refuses cumulative input instead.</p></dd>
+
+
+<dt id="arg-quiet">quiet<a class="anchor" aria-label="anchor" href="#arg-quiet"></a></dt>
+<dd><p>Logical. Suppress incidental output from the underlying
+<span class="pkg">baselinenowcast</span> converter. Defaults to <code>TRUE</code> when <code>verbose = FALSE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

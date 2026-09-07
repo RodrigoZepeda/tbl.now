@@ -183,7 +183,6 @@ dengue <- tbl_now(denguedat[1:10000, ],
 triangle <- suppressWarnings(
   tbl_now_to_baselinenowcast(dengue, verbose = FALSE)
 )
-#> ℹ Using max_delay = 15 from data
 fit <- baselinenowcast::baselinenowcast(
   triangle, output_type = "samples", draws = 25
 )

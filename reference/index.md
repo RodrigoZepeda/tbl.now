@@ -372,7 +372,7 @@ One interface over the modelling packages.
   Refit several methods at past `now` dates and score them
 
 - [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-  [`as_scoringutils()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
+  [`as_forecast_point()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
   [`as_forecast_quantile(`*`<nowcast_backtest>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
   [`as_forecast_sample(`*`<nowcast_backtest>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
   **\[experimental\]** : Score a nowcast against observed data

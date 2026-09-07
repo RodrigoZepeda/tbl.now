@@ -62,7 +62,6 @@ dengue <- tbl_now(denguedat[1:3000, ],
 triangles <- suppressWarnings(
   tbl_now_to_baselinenowcast(dengue, format = "triangle_list", verbose = FALSE)
 )
-#> ℹ Using max_delay = 13 from data
 
 # Printing summarises the set rather than dumping every matrix.
 triangles

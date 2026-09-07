@@ -42,7 +42,8 @@ tbl_now_to_baselinenowcast(
   max_delay = NULL,
   complete = "auto",
   negatives = c("redistribute", "error"),
-  verbose = TRUE
+  verbose = TRUE,
+  quiet = !isTRUE(verbose)
 )
 ```
 
@@ -146,6 +147,11 @@ tbl_now_to_baselinenowcast(
   [`baselinenowcast::preprocess_negative_values()`](https://baselinenowcast.epinowcast.org/reference/preprocess_negative_values.html),
   which is what that function exists for; `"error"` refuses cumulative
   input instead.
+
+- quiet:
+
+  Logical. Suppress incidental output from the underlying
+  baselinenowcast converter. Defaults to `TRUE` when `verbose = FALSE`.
 
 ## Value
 

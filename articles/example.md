@@ -47,21 +47,17 @@ data(hai_bucaramanga)
 ``` r
 
 hai_bucaramanga
-#> # A tibble: 989 × 13
-#>       id specimen_date received_date report_date specimen test  microorganism sex    age_group case_type            final_condition icu_type institution
-#>    <int> <date>        <date>        <date>      <fct>    <fct> <chr>         <fct>  <ord>     <fct>                <fct>           <fct>          <int>
-#>  1    32 NA            NA            NA          NA       NA    NA            Male   <1        Clinically-confirmed Alive           Neonatal           1
-#>  2    33 NA            NA            2018-11-04  NA       NA    NA            Female <1        Clinically-confirmed Alive           Neonatal           7
-#>  3    37 NA            NA            NA          NA       NA    NA            Male   <1        Clinically-confirmed Alive           Neonatal           1
-#>  4    46 NA            NA            NA          NA       NA    NA            Female 30-39     Clinically-confirmed Alive           Adult              5
-#>  5    54 NA            NA            NA          NA       NA    NA            Female 20-29     Clinically-confirmed Dead            Adult              5
-#>  6    55 NA            NA            NA          NA       NA    NA            Male   70+       Clinically-confirmed Dead            Adult              2
-#>  7    66 NA            NA            NA          NA       NA    NA            Female <1        Clinically-confirmed Alive           Neonatal           1
-#>  8    76 NA            NA            NA          NA       NA    NA            Male   15-19     Clinically-confirmed Alive           Adult              5
-#>  9    77 NA            NA            NA          NA       NA    NA            Female 70+       Clinically-confirmed Alive           Adult              1
-#> 10    78 NA            NA            NA          NA       NA    NA            Female 30-39     Clinically-confirmed Alive           Adult              1
-#> # ℹ 979 more rows
 ```
+
+    #> # A tibble: 6 × 13
+    #>      id specimen_date received_date report_date specimen    test          microorganism          sex   age_group case_type  final_condition icu_type institution
+    #>   <int> <date>        <date>        <date>      <fct>       <fct>         <chr>                  <fct> <ord>     <fct>      <fct>           <fct>          <int>
+    #> 1  1318 2023-01-19    NA            2023-01-22  Whole blood Blood culture Pseudomonas aeruginosa Male  40-49     Laborator… Alive           Adult              1
+    #> 2  1319 2023-01-24    NA            2023-01-28  Urine       Urine culture Serratia marcescens    Male  60-69     Laborator… Alive           Adult              1
+    #> 3  1320 NA            NA            NA          NA          NA            NA                     Male  70+       Clinicall… Alive           Adult              5
+    #> 4  1321 2023-01-29    NA            2023-01-31  Urine       Urine culture Klebsiella pneumoniae  Male  60-69     Laborator… Alive           Adult              1
+    #> 5  1322 2023-01-19    NA            2023-01-20  Urine       Urine culture Escherichia coli       Male  70+       Laborator… Alive           Adult              6
+    #> # ℹ 1 more row
 
 For our example, six columns matter:
 
@@ -251,25 +247,20 @@ hai_bucaramanga |> filter(report_date < specimen_date)
 #> # A tibble:  48 × 8
 #> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
-#>       id specimen_date report_date   sex      .is_censored_report  .event_num .report_num .delay
-#>    <int> <date>        <date>        <fct>    <lgl>                     <dbl>       <dbl>  <dbl>
-#>    [...] [event_date]  [report_date] [strata] [is_censored_report]      [...]       [...]  [...]
-#>  1   590 2020-11-07    2020-07-21    Female   FALSE                       310         201   -109
-#>  2   613 2020-10-08    2020-08-13    Male     FALSE                       280         224    -56
-#>  3   622 2020-08-28    2020-01-09    Male     FALSE                       239           7   -232
-#>  4   623 2020-08-28    2020-03-09    Female   FALSE                       239          67   -172
-#>  5   626 2020-08-30    2020-02-09    Female   FALSE                       241          38   -203
-#>  6   627 2020-08-30    2020-02-09    Female   FALSE                       241          38   -203
-#>  7   634 2020-09-20    2020-05-09    Male     FALSE                       262         128   -134
-#>  8   635 2020-09-20    2020-05-09    Female   FALSE                       262         128   -134
-#>  9   656 2020-11-09    2020-09-14    Female   FALSE                       312         256    -56
-#> 10   658 2020-10-09    2020-09-14    Female   FALSE                       281         256    -25
+#>      id specimen_date report_date   sex      .is_censored_report  .event_num .report_num .delay
+#>   <int> <date>        <date>        <fct>    <lgl>                     <dbl>       <dbl>  <dbl>
+#>   [...] [event_date]  [report_date] [strata] [is_censored_report]      [...]       [...]  [...]
+#> 1   590 2020-11-07    2020-07-21    Female   FALSE                       310         201   -109
+#> 2   613 2020-10-08    2020-08-13    Male     FALSE                       280         224    -56
+#> 3   622 2020-08-28    2020-01-09    Male     FALSE                       239           7   -232
+#> 4   623 2020-08-28    2020-03-09    Female   FALSE                       239          67   -172
+#> 5   626 2020-08-30    2020-02-09    Female   FALSE                       241          38   -203
 #> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2022-07-18 | Event date: "specimen_date" | Report date: "report_date"
 #> # left-censored indicator: ".is_censored_report"
 #> # Strata: "sex"
 #> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 38 more rows
+#> # ℹ 43 more rows
 ```
 
 We can correct the date format to fix this issue:
@@ -370,26 +361,14 @@ hai_bucaramanga |>
 #> Warning: Dropped protected column(?s): ".is_censored_report", ".event_num", ".report_num", and ".delay". Returning a
 #> `tibble`
 #> # A tibble: 18 × 4
-#>       id report_date specimen_date     n
-#>    <int> <date>      <date>        <int>
-#>  1  1225 2022-05-16  2022-05-13        2
-#>  2  1226 2022-05-18  2022-05-18        2
-#>  3  1227 2022-05-18  2022-05-17        2
-#>  4  1228 2022-05-19  2022-05-17        2
-#>  5  1229 2022-05-20  2022-05-17        2
-#>  6  1232 2022-05-23  2022-05-23        2
-#>  7  1233 2022-05-23  2022-05-23        2
-#>  8  1234 2022-05-06  2022-02-06        2
-#>  9  1237 2022-06-16  2022-06-16        2
-#> 10  1239 2022-07-18  2022-06-13        2
-#> 11  1241 2022-06-22  2022-06-22        2
-#> 12  1243 2022-05-07  2022-03-07        2
-#> 13  1244 2022-04-07  2022-04-07        2
-#> 14  1248 2022-07-18  2022-07-18        2
-#> 15  1254 2022-07-08  2022-04-08        2
-#> 16  1282 2022-05-10  2022-05-10        2
-#> 17  1284 2022-04-10  2022-03-10        2
-#> 18  1292 2022-06-11  2022-04-11        2
+#>      id report_date specimen_date     n
+#>   <int> <date>      <date>        <int>
+#> 1  1225 2022-05-16  2022-05-13        2
+#> 2  1226 2022-05-18  2022-05-18        2
+#> 3  1227 2022-05-18  2022-05-17        2
+#> 4  1228 2022-05-19  2022-05-17        2
+#> 5  1229 2022-05-20  2022-05-17        2
+#> # ℹ 13 more rows
 ```
 
 We can use
@@ -433,26 +412,21 @@ hai_bucaramanga
 #> # A tibble:  499 × 8
 #> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
-#>       id specimen_date report_date   sex      .is_censored_report  .event_num .report_num .delay
-#>    <int> <date>        <date>        <fct>    <lgl>                     <dbl>       <dbl>  <dbl>
-#>    [...] [event_date]  [report_date] [strata] [is_censored_report]      [...]       [...]  [...]
-#>  1   528 2020-10-01    2022-07-18    Male     TRUE                        273         928    655
-#>  2   529 2020-10-01    2022-07-18    Male     TRUE                        273         928    655
-#>  3   530 2020-01-23    2022-07-18    Female   TRUE                         21         928    907
-#>  4   531 2020-07-01    2022-07-18    Male     TRUE                        181         928    747
-#>  5   532 2020-07-01    2022-07-18    Male     TRUE                        181         928    747
-#>  6   533 2020-05-01    2022-07-18    Female   TRUE                        120         928    808
-#>  7   534 2020-01-17    2022-07-18    Male     TRUE                         15         928    913
-#>  8   535 2020-01-16    2022-07-18    Male     TRUE                         14         928    914
-#>  9   536 2020-01-16    2022-07-18    Female   TRUE                         14         928    914
-#> 10   537 2020-01-19    2022-07-18    Male     TRUE                         17         928    911
+#>      id specimen_date report_date   sex      .is_censored_report  .event_num .report_num .delay
+#>   <int> <date>        <date>        <fct>    <lgl>                     <dbl>       <dbl>  <dbl>
+#>   [...] [event_date]  [report_date] [strata] [is_censored_report]      [...]       [...]  [...]
+#> 1   528 2020-10-01    2022-07-18    Male     TRUE                        273         928    655
+#> 2   529 2020-10-01    2022-07-18    Male     TRUE                        273         928    655
+#> 3   530 2020-01-23    2022-07-18    Female   TRUE                         21         928    907
+#> 4   531 2020-07-01    2022-07-18    Male     TRUE                        181         928    747
+#> 5   532 2020-07-01    2022-07-18    Male     TRUE                        181         928    747
 #> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2022-07-18 | Event date: "specimen_date" | Report date: "report_date"
 #> # left-censored indicator: ".is_censored_report"
 #> # Strata: "sex"
 #> # T. effects (lazy): [event_date] weekend
 #> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 489 more rows
+#> # ℹ 494 more rows
 ```
 
 The temporal effect gets added lazily. You can use
@@ -466,19 +440,14 @@ hai_bucaramanga |> compute_temporal_effects()
 #> # A tibble:  499 × 9
 #> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
-#>       id specimen_date report_date   sex      .is_censored_report  .event_num .report_num .delay .event_weekend
-#>    <int> <date>        <date>        <fct>    <lgl>                     <dbl>       <dbl>  <dbl>          <int>
-#>    [...] [event_date]  [report_date] [strata] [is_censored_report]      [...]       [...]  [...]     [t_effect]
-#>  1   528 2020-10-01    2022-07-18    Male     TRUE                        273         928    655              0
-#>  2   529 2020-10-01    2022-07-18    Male     TRUE                        273         928    655              0
-#>  3   530 2020-01-23    2022-07-18    Female   TRUE                         21         928    907              0
-#>  4   531 2020-07-01    2022-07-18    Male     TRUE                        181         928    747              0
-#>  5   532 2020-07-01    2022-07-18    Male     TRUE                        181         928    747              0
-#>  6   533 2020-05-01    2022-07-18    Female   TRUE                        120         928    808              0
-#>  7   534 2020-01-17    2022-07-18    Male     TRUE                         15         928    913              0
-#>  8   535 2020-01-16    2022-07-18    Male     TRUE                         14         928    914              0
-#>  9   536 2020-01-16    2022-07-18    Female   TRUE                         14         928    914              0
-#> 10   537 2020-01-19    2022-07-18    Male     TRUE                         17         928    911              1
+#>      id specimen_date report_date   sex      .is_censored_report  .event_num .report_num .delay .event_weekend
+#>   <int> <date>        <date>        <fct>    <lgl>                     <dbl>       <dbl>  <dbl>          <int>
+#>   [...] [event_date]  [report_date] [strata] [is_censored_report]      [...]       [...]  [...]     [t_effect]
+#> 1   528 2020-10-01    2022-07-18    Male     TRUE                        273         928    655              0
+#> 2   529 2020-10-01    2022-07-18    Male     TRUE                        273         928    655              0
+#> 3   530 2020-01-23    2022-07-18    Female   TRUE                         21         928    907              0
+#> 4   531 2020-07-01    2022-07-18    Male     TRUE                        181         928    747              0
+#> 5   532 2020-07-01    2022-07-18    Male     TRUE                        181         928    747              0
 #> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2022-07-18 | Event date: "specimen_date" | Report date: "report_date"
 #> # left-censored indicator: ".is_censored_report"
@@ -486,7 +455,7 @@ hai_bucaramanga |> compute_temporal_effects()
 #> # T. effects: [event_date] weekend
 #> # T. effect cols: ".event_weekend"
 #> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 489 more rows
+#> # ℹ 494 more rows
 ```
 
 ## 6. Looking at the data
@@ -716,7 +685,7 @@ autoplot(hai_bucaramanga)
 ```
 
 ![The now auto plot with weekly
-data](example_files/figure-html/unnamed-chunk-20-1.png)
+data](example_files/figure-html/unnamed-chunk-21-1.png)
 
 One should run again the
 [`summary()`](https://rdrr.io/r/base/summary.html) and
@@ -822,7 +791,7 @@ axis:
 plot_reporting_process(hai_bucaramanga)
 ```
 
-![](example_files/figure-html/unnamed-chunk-22-1.png)
+![](example_files/figure-html/unnamed-chunk-23-1.png)
 
 We can see that there were several reports that dropped near the end of
 2022. The reporting hexamap allows us to visualize the date of the
@@ -834,7 +803,7 @@ delay
 plot_reporting_hexamap(hai_bucaramanga)
 ```
 
-![](example_files/figure-html/unnamed-chunk-23-1.png)
+![](example_files/figure-html/unnamed-chunk-24-1.png)
 
 The batch at `2022-07-17` was actually introduced by us by censoring all
 the cases at that date in section 3.
@@ -969,7 +938,8 @@ use
 [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
 for that purpose: for every past date it truncates the data to the
 reports that were available *then*, refits the nowcast, and scores the
-result against what was eventually observed.
+result against the resolved truth defined by `truth_axis` and
+`truth_type` (reported totals by default).
 
 To best evaluate the nowcast we need something to compare against. Hence
 we will fit a second model: `baselinenowcast`.

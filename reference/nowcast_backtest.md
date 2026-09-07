@@ -5,8 +5,9 @@
 Walks back through time: for every date in `now_dates`, the `tbl_now` is
 truncated to the reports that were available then, each method is
 refitted on that snapshot, and the resulting nowcast is scored against
-what was eventually observed. This is what turns a set of models into
-ensemble weights (see
+the resolved truth defined by `truth_axis` and `truth_type` (reported
+totals by default). This is what turns a set of models into ensemble
+weights (see
 [`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.md)
 and
 [`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)).
@@ -35,8 +36,11 @@ nowcast_backtest(
 
 - x:
 
-  A `tbl_now` object holding the *full* data (the later reports are what
-  the retrospective nowcasts are scored against).
+  A `tbl_now` object holding the *full* data (the later reports or
+  revisions are what the retrospective nowcasts are scored against).
+  Covariates on each retrospective snapshot should mean values available
+  as of that snapshot's `now`; do not attach future realized covariate
+  values unless they are an explicit forecast input for the engine.
 
 - ...:
 

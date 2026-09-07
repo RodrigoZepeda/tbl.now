@@ -662,10 +662,13 @@ pretending.
 ## 2. Scoring a nowcast
 
 [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-compares the predictive quantiles with what was eventually observed,
-using the weighted interval score (WIS) of Bracher et al.
+compares the predictive quantiles with a resolved truth table, using the
+weighted interval score (WIS) of Bracher et al.
 ([2021](#ref-bracher2021)), plus the absolute error of the median and
-the 50% and 90% interval coverage.
+the 50% and 90% interval coverage. By default that truth is the total
+eventually reported on the report axis; revision-aware series can
+instead be scored with `truth_axis = "revision"` and the matching
+`truth_type`.
 
 Scoring only makes sense against data the model had not seen, which is
 why `snapshot` was truncated at `now` and the truth comes from the full
@@ -702,9 +705,8 @@ baseline |>
   scoringutils::score()
 ```
 
-`as_scoringutils(baseline, truth = dengue)` is the long tibble
-underneath that object when you want to inspect or alter the forecast
-units first.
+For point-score workflows, `as_forecast_point(baseline, truth = dengue)`
+keeps the median prediction and hands that to .
 
 When the nowcast retains posterior draws, it can instead become a sample
 forecast. This follows the same adapter pattern used by :
@@ -912,6 +914,14 @@ and before
 trimmed it that lone extra week landed exactly at the `now` edge, which
 is the part of the picture people read.
 
+That agreement is semantic as well as tabular.
+[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
+checks the date grid, strata and quantile levels it can see, but it
+assumes the members target the same reporting or revision quantity.
+Combine models that answer the same question, then score the result with
+the matching `truth_axis` and `truth_type` in
+[`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md).
+
 **Why `surveillance` is not a member here.** There *is* a principled
 reason, and it is arithmetic. `surveillance` keeps no per-date draws and
 reports a **fixed** `{0.025, 0.5, 0.975}`, so it cannot be asked for any
@@ -945,7 +955,8 @@ or *learn* them from how the members actually performed.
 [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
 walks back through time: at each retrospective date it truncates the
 data to the reports available then, refits every method, and scores the
-result against what was eventually observed.
+result against the resolved truth defined by `truth_axis` and
+`truth_type` (reported totals by default).
 
 It takes the **same engines** you fitted with, so there is no second
 place to keep the arguments in step. An engine’s `label` becomes its
@@ -1095,6 +1106,8 @@ method may assume about the `tbl_now` it is handed, how to reuse the
 converters instead of reshaping by hand, a complete worked back-end that
 needs no modelling package, and what shipping one in a package involves.
 
+## References
+
 ## Learning more
 
 - Introduction vignette:
@@ -1115,8 +1128,6 @@ needs no modelling package, and what shipping one in a package involves.
   <https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html>
 - Package reference:
   <https://rodrigozepeda.github.io/tbl.now/reference/>
-
-## References
 
 Bracher, Johannes, Evan L. Ray, Tilmann Gneiting, and Nicholas G. Reich.
 2021. “Evaluating Epidemic Forecasts in an Interval Format.” *PLoS

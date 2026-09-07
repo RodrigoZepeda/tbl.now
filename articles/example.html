@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -134,21 +134,16 @@ laboratory result, and the microorganism isolated.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">hai_bucaramanga</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 989 × 13</span></span></span>
-<span><span class="co">#&gt;       id specimen_date received_date report_date specimen test  microorganism sex    age_group case_type            final_condition icu_type institution</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>    32 <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>          <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>            Male   &lt;1        Clinically-confirmed Alive           Neonatal           1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span>    33 <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>            2018-11-04  <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>            Female &lt;1        Clinically-confirmed Alive           Neonatal           7</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span>    37 <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>          <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>            Male   &lt;1        Clinically-confirmed Alive           Neonatal           1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span>    46 <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>          <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>            Female 30-39     Clinically-confirmed Alive           Adult              5</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span>    54 <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>          <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>            Female 20-29     Clinically-confirmed Dead            Adult              5</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span>    55 <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>          <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>            Male   70+       Clinically-confirmed Dead            Adult              2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span>    66 <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>          <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>            Female &lt;1        Clinically-confirmed Alive           Neonatal           1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>    76 <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>          <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>            Male   15-19     Clinically-confirmed Alive           Adult              5</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>    77 <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>          <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>            Female 70+       Clinically-confirmed Alive           Adult              1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>    78 <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>          <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>            Female 30-39     Clinically-confirmed Alive           Adult              1</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 979 more rows</span></span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">hai_bucaramanga</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 13</span></span></span>
+<span><span class="co">#&gt;      id specimen_date received_date report_date specimen    test          microorganism          sex   age_group case_type  final_condition icu_type institution</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                  <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  <span style="text-decoration: underline;">1</span>318 2023-01-19    <span style="color: #BB0000;">NA</span>            2023-01-22  Whole blood Blood culture Pseudomonas aeruginosa Male  40-49     Laborator… Alive           Adult              1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>  <span style="text-decoration: underline;">1</span>319 2023-01-24    <span style="color: #BB0000;">NA</span>            2023-01-28  Urine       Urine culture Serratia marcescens    Male  60-69     Laborator… Alive           Adult              1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>  <span style="text-decoration: underline;">1</span>320 <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>          <span style="color: #BB0000;">NA</span>          <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>                     Male  70+       Clinicall… Alive           Adult              5</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>  <span style="text-decoration: underline;">1</span>321 2023-01-29    <span style="color: #BB0000;">NA</span>            2023-01-31  Urine       Urine culture Klebsiella pneumoniae  Male  60-69     Laborator… Alive           Adult              1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>  <span style="text-decoration: underline;">1</span>322 2023-01-19    <span style="color: #BB0000;">NA</span>            2023-01-20  Urine       Urine culture Escherichia coli       Male  70+       Laborator… Alive           Adult              6</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more row</span></span></span></code></pre>
 <p>For our example, six columns matter:</p>
 <ul>
 <li>
@@ -165,7 +160,7 @@ the laboratory issued the result.</li>
 <p>For the tutorial, we will do perform a nowcast assuming we are
 standing on July 18th 2022. For that purpose we filter our data to what
 it would have looked like:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span> <span class="op">|</span> <span class="va">specimen_date</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022/07/18"</span><span class="op">)</span><span class="op">)</span>, </span>
 <span>         <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span>   <span class="op">|</span> <span class="va">report_date</span>   <span class="op">&lt;=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022/07/18"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -188,7 +183,7 @@ select the columns that matter to us and move onto the
 pipeline for cleaning and preparing your data this is where you would do
 it as we’ll see the <code>tbl_now</code> diagnostics don’t cover
 everything.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#We keep only the columns of interest</span></span>
 <span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">id</span>, <span class="va">specimen_date</span>, <span class="va">report_date</span>, <span class="va">sex</span><span class="op">)</span></span></code></pre></div>
@@ -201,7 +196,7 @@ the example, we will declare two dates (<code>specimen_date</code> for
 the event and <code>report_date</code>) for the report. We’ll further
 specify that the data is in line-list format (<em>i.e.</em> each row is
 a case), and stratify by <code>sex</code>.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
 <span>    event_date   <span class="op">=</span> <span class="va">specimen_date</span>,</span>
@@ -236,7 +231,7 @@ on diagnosing a <code>tbl.now()</code></a>.</p>
 <p>These same warnings can also be accessed with the
 <code><a href="../reference/diagnose.html">diagnose()</a></code> function which returns the warnings as well as
 additional notes:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span> </span>
 <span><span class="co">#&gt; ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">4 warnings</span><span style="color: #555555;">, </span><span style="color: #0000BB;">8 notes</span><span style="color: #555555;">, </span><span style="color: #00BB00;">12 passed</span><span style="color: #555555;">, 5 skipped.</span></span></span>
@@ -289,7 +284,7 @@ there is nothing one can do. In those cases we don’t know when something
 happened (to add to the epidemic process) or when it was reported (to
 add to the delay process). Hence we remove those rows.</li>
 </ol>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#Remove those that have both dates missing</span></span>
 <span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span> <span class="op">&amp;</span> <span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -309,7 +304,7 @@ censored.</li>
 are the missing values and that the date they should input is
 “2022/10/18” which corresponds to the date of the nowcast in this
 example.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/censoring.html">censor_reports</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span>, to_report <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2022/07/18"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <ol start="3" style="list-style-type: decimal">
@@ -322,32 +317,27 @@ format <code>year-day-month</code> (read with
 <code>received_date</code> is in format <code>year-month-day</code>
 (read with <code><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">lubridate::ymd()</a></code>) .</li>
 </ol>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">report_date</span> <span class="op">&lt;</span> <span class="va">specimen_date</span><span class="op">)</span> </span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  48 × 8</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
-<span><span class="co">#&gt;       id specimen_date report_date   sex      .is_censored_report  .event_num .report_num .delay</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt;    <span style="color: #949494;">[...]</span> <span style="color: #949494;">[event_date]</span>  <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[is_censored_report]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>   590 2020-11-07    2020-07-21    Female   FALSE                       310         201   -<span style="color: #BB0000;">109</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span>   613 2020-10-08    2020-08-13    Male     FALSE                       280         224    -<span style="color: #BB0000;">56</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span>   622 2020-08-28    2020-01-09    Male     FALSE                       239           7   -<span style="color: #BB0000;">232</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span>   623 2020-08-28    2020-03-09    Female   FALSE                       239          67   -<span style="color: #BB0000;">172</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span>   626 2020-08-30    2020-02-09    Female   FALSE                       241          38   -<span style="color: #BB0000;">203</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span>   627 2020-08-30    2020-02-09    Female   FALSE                       241          38   -<span style="color: #BB0000;">203</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span>   634 2020-09-20    2020-05-09    Male     FALSE                       262         128   -<span style="color: #BB0000;">134</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>   635 2020-09-20    2020-05-09    Female   FALSE                       262         128   -<span style="color: #BB0000;">134</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>   656 2020-11-09    2020-09-14    Female   FALSE                       312         256    -<span style="color: #BB0000;">56</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>   658 2020-10-09    2020-09-14    Female   FALSE                       281         256    -<span style="color: #BB0000;">25</span></span></span>
+<span><span class="co">#&gt;      id specimen_date report_date   sex      .is_censored_report  .event_num .report_num .delay</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #949494;">[...]</span> <span style="color: #949494;">[event_date]</span>  <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[is_censored_report]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>   590 2020-11-07    2020-07-21    Female   FALSE                       310         201   -<span style="color: #BB0000;">109</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>   613 2020-10-08    2020-08-13    Male     FALSE                       280         224    -<span style="color: #BB0000;">56</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>   622 2020-08-28    2020-01-09    Male     FALSE                       239           7   -<span style="color: #BB0000;">232</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>   623 2020-08-28    2020-03-09    Female   FALSE                       239          67   -<span style="color: #BB0000;">172</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>   626 2020-08-30    2020-02-09    Female   FALSE                       241          38   -<span style="color: #BB0000;">203</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2022-07-18</span> | Event date: <span style="color: #0000BB;">"specimen_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
 <span><span class="co">#&gt; # left-censored indicator: <span style="color: #0000BB;">".is_censored_report"</span></span></span>
 <span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"sex"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 38 more rows</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 43 more rows</span></span></span></code></pre></div>
 <p>We can correct the date format to fix this issue:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>specimen_date <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">specimen_date</span> <span class="op">&gt;</span> <span class="va">report_date</span>, </span>
 <span>                                 <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ydm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span><span class="op">)</span>, </span>
@@ -358,11 +348,11 @@ event date is unknown</strong>. Hence we just document them and we’ll
 remove from the dataset given that they represent such a small percent
 (5.6569343%).</li>
 </ol>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Re-running <code><a href="../reference/diagnose.html">diagnose()</a></code> confirms we solved this
 issues:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">7 notes</span><span style="color: #555555;">, </span><span style="color: #00BB00;">20 passed</span><span style="color: #555555;">, 5 skipped.</span></span></span>
@@ -415,7 +405,7 @@ rows; that is when an individual is registered twice in the dataset for
 the same disease at the same exact times.</p>
 <p>Here we can see that the same individuals <code>id</code> are
 sometimes repeated:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">id</span>, <span class="va">report_date</span>, <span class="va">specimen_date</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">n</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
@@ -424,29 +414,17 @@ sometimes repeated:</p>
 <span><span class="co">#&gt; Warning: Dropped protected column(?s): <span style="color: #0000BB;">".is_censored_report"</span>, <span style="color: #0000BB;">".event_num"</span>, <span style="color: #0000BB;">".report_num"</span>, and <span style="color: #0000BB;">".delay"</span>. Returning a</span></span>
 <span><span class="co">#&gt; `tibble`</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 18 × 4</span></span></span>
-<span><span class="co">#&gt;       id report_date specimen_date     n</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>  <span style="text-decoration: underline;">1</span>225 2022-05-16  2022-05-13        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span>  <span style="text-decoration: underline;">1</span>226 2022-05-18  2022-05-18        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span>  <span style="text-decoration: underline;">1</span>227 2022-05-18  2022-05-17        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span>  <span style="text-decoration: underline;">1</span>228 2022-05-19  2022-05-17        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span>  <span style="text-decoration: underline;">1</span>229 2022-05-20  2022-05-17        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span>  <span style="text-decoration: underline;">1</span>232 2022-05-23  2022-05-23        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span>  <span style="text-decoration: underline;">1</span>233 2022-05-23  2022-05-23        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>  <span style="text-decoration: underline;">1</span>234 2022-05-06  2022-02-06        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>  <span style="text-decoration: underline;">1</span>237 2022-06-16  2022-06-16        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>  <span style="text-decoration: underline;">1</span>239 2022-07-18  2022-06-13        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span>  <span style="text-decoration: underline;">1</span>241 2022-06-22  2022-06-22        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span>  <span style="text-decoration: underline;">1</span>243 2022-05-07  2022-03-07        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span>  <span style="text-decoration: underline;">1</span>244 2022-04-07  2022-04-07        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span>  <span style="text-decoration: underline;">1</span>248 2022-07-18  2022-07-18        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span>  <span style="text-decoration: underline;">1</span>254 2022-07-08  2022-04-08        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span>  <span style="text-decoration: underline;">1</span>282 2022-05-10  2022-05-10        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span>  <span style="text-decoration: underline;">1</span>284 2022-04-10  2022-03-10        2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">18</span>  <span style="text-decoration: underline;">1</span>292 2022-06-11  2022-04-11        2</span></span></code></pre></div>
+<span><span class="co">#&gt;      id report_date specimen_date     n</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  <span style="text-decoration: underline;">1</span>225 2022-05-16  2022-05-13        2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>  <span style="text-decoration: underline;">1</span>226 2022-05-18  2022-05-18        2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>  <span style="text-decoration: underline;">1</span>227 2022-05-18  2022-05-17        2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>  <span style="text-decoration: underline;">1</span>228 2022-05-19  2022-05-17        2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>  <span style="text-decoration: underline;">1</span>229 2022-05-20  2022-05-17        2</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 13 more rows</span></span></span></code></pre></div>
 <p>We can use <code><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">dplyr::distinct()</a></code> to remove them without
 losing information:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -458,14 +436,14 @@ specified via the <code><a href="../reference/temporal_effects.html">temporal_ef
 holidays, weekends, day of the week effects and more. For the purpose of
 this tutorial we will add the weekends and check whether there is a
 weekend effect or not:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>weekend <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ── Temporal Effects ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; The following effects are in place:</span></span>
 <span><span class="co">#&gt; • <span style="color: #0000BB;">"weekend"</span></span></span></code></pre></div>
 <p>You can add the effects to the <code><a href="../reference/tbl_now.html">tbl_now()</a></code> with the
 <code><a href="../reference/add_temporal_effects.html">add_temporal_effects()</a></code> function:</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span>t_effects <span class="op">=</span> <span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>weekend <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -473,47 +451,37 @@ weekend effect or not:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  499 × 8</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
-<span><span class="co">#&gt;       id specimen_date report_date   sex      .is_censored_report  .event_num .report_num .delay</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt;    <span style="color: #949494;">[...]</span> <span style="color: #949494;">[event_date]</span>  <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[is_censored_report]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>   528 2020-10-01    2022-07-18    Male     TRUE                        273         928    655</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span>   529 2020-10-01    2022-07-18    Male     TRUE                        273         928    655</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span>   530 2020-01-23    2022-07-18    Female   TRUE                         21         928    907</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span>   531 2020-07-01    2022-07-18    Male     TRUE                        181         928    747</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span>   532 2020-07-01    2022-07-18    Male     TRUE                        181         928    747</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span>   533 2020-05-01    2022-07-18    Female   TRUE                        120         928    808</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span>   534 2020-01-17    2022-07-18    Male     TRUE                         15         928    913</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>   535 2020-01-16    2022-07-18    Male     TRUE                         14         928    914</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>   536 2020-01-16    2022-07-18    Female   TRUE                         14         928    914</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>   537 2020-01-19    2022-07-18    Male     TRUE                         17         928    911</span></span>
+<span><span class="co">#&gt;      id specimen_date report_date   sex      .is_censored_report  .event_num .report_num .delay</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #949494;">[...]</span> <span style="color: #949494;">[event_date]</span>  <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[is_censored_report]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>   528 2020-10-01    2022-07-18    Male     TRUE                        273         928    655</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>   529 2020-10-01    2022-07-18    Male     TRUE                        273         928    655</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>   530 2020-01-23    2022-07-18    Female   TRUE                         21         928    907</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>   531 2020-07-01    2022-07-18    Male     TRUE                        181         928    747</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>   532 2020-07-01    2022-07-18    Male     TRUE                        181         928    747</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2022-07-18</span> | Event date: <span style="color: #0000BB;">"specimen_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
 <span><span class="co">#&gt; # left-censored indicator: <span style="color: #0000BB;">".is_censored_report"</span></span></span>
 <span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"sex"</span></span></span>
 <span><span class="co">#&gt; # T. effects (lazy): [event_date] weekend</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 489 more rows</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 494 more rows</span></span></span></code></pre></div>
 <p>The temporal effect gets added lazily. You can use
 <code><a href="../reference/add_temporal_effects.html">compute_temporal_effects()</a></code> to show it as a column in case
 you require it (see them at the end of the tbl_now).</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/add_temporal_effects.html">compute_temporal_effects</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  499 × 9</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
-<span><span class="co">#&gt;       id specimen_date report_date   sex      .is_censored_report  .event_num .report_num .delay .event_weekend</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt;    <span style="color: #949494;">[...]</span> <span style="color: #949494;">[event_date]</span>  <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[is_censored_report]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span>     <span style="color: #949494;">[t_effect]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>   528 2020-10-01    2022-07-18    Male     TRUE                        273         928    655              0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span>   529 2020-10-01    2022-07-18    Male     TRUE                        273         928    655              0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span>   530 2020-01-23    2022-07-18    Female   TRUE                         21         928    907              0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span>   531 2020-07-01    2022-07-18    Male     TRUE                        181         928    747              0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span>   532 2020-07-01    2022-07-18    Male     TRUE                        181         928    747              0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span>   533 2020-05-01    2022-07-18    Female   TRUE                        120         928    808              0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span>   534 2020-01-17    2022-07-18    Male     TRUE                         15         928    913              0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>   535 2020-01-16    2022-07-18    Male     TRUE                         14         928    914              0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>   536 2020-01-16    2022-07-18    Female   TRUE                         14         928    914              0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>   537 2020-01-19    2022-07-18    Male     TRUE                         17         928    911              1</span></span>
+<span><span class="co">#&gt;      id specimen_date report_date   sex      .is_censored_report  .event_num .report_num .delay .event_weekend</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #949494;">[...]</span> <span style="color: #949494;">[event_date]</span>  <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[is_censored_report]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span>     <span style="color: #949494;">[t_effect]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>   528 2020-10-01    2022-07-18    Male     TRUE                        273         928    655              0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>   529 2020-10-01    2022-07-18    Male     TRUE                        273         928    655              0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>   530 2020-01-23    2022-07-18    Female   TRUE                         21         928    907              0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>   531 2020-07-01    2022-07-18    Male     TRUE                        181         928    747              0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>   532 2020-07-01    2022-07-18    Male     TRUE                        181         928    747              0</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2022-07-18</span> | Event date: <span style="color: #0000BB;">"specimen_date"</span> | Report date: <span style="color: #0000BB;">"report_date"</span></span></span>
 <span><span class="co">#&gt; # left-censored indicator: <span style="color: #0000BB;">".is_censored_report"</span></span></span>
@@ -521,7 +489,7 @@ you require it (see them at the end of the tbl_now).</p>
 <span><span class="co">#&gt; # T. effects: [event_date] weekend</span></span>
 <span><span class="co">#&gt; # T. effect cols: <span style="color: #0000BB;">".event_weekend"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 489 more rows</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 494 more rows</span></span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="looking-at-the-data">6. Looking at the data<a class="anchor" aria-label="anchor" href="#looking-at-the-data"></a>
@@ -529,7 +497,7 @@ you require it (see them at the end of the tbl_now).</p>
 <p><code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> draws a diagnostic grid with the panels in
 green describing the <strong>epidemic</strong> process and the red ones,
 the <strong>reporting</strong> process.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></code></pre></div>
 <p><img src="example_files/figure-html/autoplot-1.png" class="r-plt" alt="A six-panel diagnostic grid: empirical delay distribution, observed epidemic curve, month-of-year effects for cases and for reporting, and periodograms for both processes." width="100%" style="display: block; margin: auto;"></p>
 <p>Four things stand out, and each of them changes a modelling decision
@@ -537,7 +505,7 @@ later.</p>
 <p><strong>The epidemic curve is extremely sparse.</strong> There are
 only a handful of cases a year with most of the times 0 or 1 cases being
 reported.</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_epidemic_process.html">plot_epidemic_process</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></code></pre></div>
 <p><img src="example_files/figure-html/delay-dist-1.png" class="r-plt" alt="Epidemic process." width="100%" style="display: block; margin: auto;"></p>
 <blockquote>
@@ -547,24 +515,24 @@ in the <code>diagnostic()</code> function gave us.</p>
 <p><strong>The delay distribution has some extreme delays.</strong> This
 is the most consequential feature of the dataset, so it is worth its own
 plot:</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_delay_distribution.html">plot_delay_distribution</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></code></pre></div>
 <p><img src="example_files/figure-html/delay-dist2-1.png" class="r-plt" alt="Histogram of the reporting delay." width="100%" style="display: block; margin: auto;"></p>
 <p>A lot of results are reported way after 500 days!</p>
 <p><strong>There doesn’t seem to be a day-of-the-week effect</strong> In
 both reports and events there is no aparent day of the week effect.</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/calendar_effect_plots.html">plot_day_of_week_effects</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></code></pre></div>
 <p><img src="example_files/figure-html/delay-dist3-1.png" class="r-plt" alt="Effects in the week" width="100%" style="display: block; margin: auto;"></p>
 <p><strong>One week had a lot of reports</strong> Epiweek 29 is an
 anomaly in the amount of reports it seems to have. This would warrant
 further investigation.</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/calendar_effect_plots.html">plot_week_of_year_effects</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span>, type <span class="op">=</span> <span class="st">"report"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="example_files/figure-html/delay-dist4-1.png" class="r-plt" alt="Effects on the report" width="100%" style="display: block; margin: auto;"></p>
 <p><strong>There doesn’t seem to be a weekend effect either</strong> In
 both reports and events there is no aparent effect of a weekend.</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/calendar_effect_plots.html">plot_weekend_effects</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></code></pre></div>
 <p><img src="example_files/figure-html/delay-dist5-1.png" class="r-plt" alt="Effects in the week" width="100%" style="display: block; margin: auto;"></p>
 </div>
@@ -574,14 +542,14 @@ both reports and events there is no aparent effect of a weekend.</p>
 <p>The <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> of a <code>tbl_now</code> quantifies what
 we see in the plots. You can either call <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> all at
 once:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span> </span></code></pre></div>
 <p>or as we do here call each of the summaries we are going to discuss
 (see <code><a href="../reference/nowcast_summary_components.html">?nowcast_summary_components</a></code> for the whole list).</p>
 <p>We can start with the delays. Here we can see that up until the 3rd
 quartile (<code>q75</code>) delays are less than 100 days but then they
 explode by the 90th quantile (<code>q90</code>):</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_summary_components.html">delay_summary</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ── Summary of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">3 rows in 1 component; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span></span>
@@ -601,7 +569,7 @@ event or the report dates. That is, it measures the distribution of days
 of continuous zeroes. You can see that usually there are on average 3.06
 continuous zeroes before a case. However there have been runs of 25
 continuous days with no cases (continuous zeroes) until one case:</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_summary_components.html">zero_run_summary</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ── Summary of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">3 rows in 1 component; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span></span>
@@ -618,7 +586,7 @@ continuous days with no cases (continuous zeroes) until one case:</p>
 <p>The composition block shows that there are way less females than
 males. Which, again was already observed in the notes as the smaller
 stratum:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_summary_components.html">prop_strata</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ── Summary of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">2 rows in 1 component.</span></span></span>
@@ -635,7 +603,7 @@ stratum:</p>
 date-axis. That is on average how many cases there are per event date or
 per report date. In this case we can see that at least half of the dates
 have zero cases:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_summary_components.html">cases_per_date</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ── Summary of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">6 rows in 1 component; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span></span>
@@ -658,12 +626,12 @@ have zero cases:</p>
 </h2>
 <p>Even with all this sparcity here we can nowcast using the
 diseasenowcasting package:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_fit</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span>temporal_effects <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Due to the sparcity, the nowcast predicts almost no cases at any time
 with just maybe a second case at the now for males:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">hai_fit</span><span class="op">)</span> </span></code></pre></div>
 </div>
 <div class="section level2">
@@ -673,7 +641,7 @@ with just maybe a second case at the now for males:</p>
 prefer to rescale data to a coarser time frame (and some packages can’t
 handle the sparcity either). Here we’ll rescale the dataset to a weekly
 reporting time frame with <code><a href="../reference/aggregate_time_units.html">aggregate_time_units()</a></code>:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/aggregate_time_units.html">aggregate_time_units</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"weeks"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Dropped the temporal effect <span style="color: #0000BB;">"weekend"</span> from the specification;</span></span>
@@ -683,15 +651,15 @@ reporting time frame with <code><a href="../reference/aggregate_time_units.html"
 <p>This aggregation of the epidemic process allows the nowcasting models
 to infer more from it as you can see a clearer epidemic-process
 shape:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></code></pre></div>
-<p><img src="example_files/figure-html/unnamed-chunk-20-1.png" class="r-plt" alt="The now auto plot with weekly data" width="100%" style="display: block; margin: auto;"></p>
+<p><img src="example_files/figure-html/unnamed-chunk-21-1.png" class="r-plt" alt="The now auto plot with weekly data" width="100%" style="display: block; margin: auto;"></p>
 <p>One should run again the <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and
 <code><a href="../reference/diagnose.html">diagnose()</a></code> in the aggregated to draw conclusions from this
 data. For us, however it will suffice to see that the sparcity has
 reduced to usually just 1 week with zero cases before having cases
 again:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_summary_components.html">zero_run_summary</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ── Summary of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">3 rows in 1 component; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span></span>
@@ -713,7 +681,7 @@ again:</p>
 <p>A nowcast might assume that the delay distribution is the same
 throughout. Here we check those assumptions:</p>
 <p>First, we just look at the delay aggregated through time</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></code></pre></div>
 <p><img src="example_files/figure-html/drift-plot-1.png" class="r-plt" alt="Fan chart of the reporting delay over time." width="100%" style="display: block; margin: auto;"></p>
 <p>The median moves from an extremely wide distribution in 2020 to a
@@ -725,7 +693,7 @@ behaviours with the following tests:</p>
 <p>The <code><a href="../reference/diagnose_drift.html">diagnose_drift()</a></code> function runs an
 autocorrelation-robust Mann-Kendall test for a <em>monotonic</em> trend
 in the delay:</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_drift.html">diagnose_drift</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 9</span></span></span>
 <span><span class="co">#&gt;   strata stat       n     tau sens_slope statistic p_value method    drift</span></span>
@@ -743,7 +711,7 @@ case, the median delay reduced 1 week per week.</p>
 <p>A trend test cannot see a steep change like a jump. The
 <code><a href="../reference/diagnose_changepoint.html">diagnose_changepoint()</a></code> function uses Pettitt’s test to look
 for exactly that.</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_changepoint.html">diagnose_changepoint</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 10</span></span></span>
 <span><span class="co">#&gt;   strata stat       n changepoint statistic p_value before after shift changepoint_detected</span></span>
@@ -765,16 +733,16 @@ any reason by the reporter (e.g. a laboratory) and then reported all
 together as a group so that there is a giant signal in the reporting
 process. To see them we can start by plotting against the reporting
 axis:</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_epidemic_process.html">plot_reporting_process</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></code></pre></div>
-<p><img src="example_files/figure-html/unnamed-chunk-22-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p><img src="example_files/figure-html/unnamed-chunk-23-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
 <p>We can see that there were several reports that dropped near the end
 of 2022. The reporting hexamap allows us to visualize the date of the
 report at the same time as the day of the event and the corresponding
 delay</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_reporting_hexamap.html">plot_reporting_hexamap</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></code></pre></div>
-<p><img src="example_files/figure-html/unnamed-chunk-23-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p><img src="example_files/figure-html/unnamed-chunk-24-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
 <div class="alert alert-info">
 <p>The batch at <code>2022-07-17</code> was actually introduced by us by
 censoring all the cases at that date in section 3.</p>
@@ -790,7 +758,7 @@ delay and several more points were reported at that report date. We’ll
 come back to that.</p>
 <div class="alert alert-info">
 <p>You can also use</p>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_reporting_triangle.html">plot_reporting_triangle</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></code></pre></div>
 <p>to visualize the batches; however for this specific case they are
 easier to visualize in the hexamap.</p>
@@ -804,7 +772,7 @@ gender of the patient maybe no).</p>
 <p>Here we run it without the strata which we remove first. We’ll keep
 only those observations that have been identified as potential
 batches:</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/add.html">remove_all_strata</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/diagnose_batches.html">diagnose_batches</a></span><span class="op">(</span>drop_censored <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> </span>
@@ -824,7 +792,7 @@ date and checks whether the reports that arrived on a date came from
 systematically older dates. We can combine the findings from the
 previous run to test some of them and add evidence to which are
 batches:</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/add.html">remove_all_strata</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/diagnose_batches2.html">diagnose_batches2</a></span><span class="op">(</span>at <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2021-11-28"</span><span class="op">)</span><span class="op">)</span></span>
@@ -853,23 +821,23 @@ to weeks.</li>
 So we’ll utilize the data starting on 2021 where the delay has
 settled.</li>
 </ul>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">2020</span><span class="op">)</span></span></code></pre></div>
 <p>The <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> function takes the
 <code>tbl_now</code> and an <strong>engine</strong>. An engine contains
 a modelling package’s nowcasting function plus every argument that it
 needs:</p>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_fit_weekly</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>The <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> shows the nowcast with gray columns
 representing what had been reported by <code>now</code>, and the green
 fan the nowcast’s prediction intervals.</p>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">hai_fit_weekly</span><span class="op">)</span></span></code></pre></div>
 <p>Calling <code><a href="../reference/tidy.nowcast.html">tidy()</a></code> gives the nowcast as a table:</p>
-<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">hai_fit_weekly</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -880,19 +848,20 @@ would the nowcast have produced with the information available at a
 previous date contrasting it with the information known by now. You can
 use <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> for that purpose: for every past
 date it truncates the data to the reports that were available
-<em>then</em>, refits the nowcast, and scores the result against what
-was eventually observed.</p>
+<em>then</em>, refits the nowcast, and scores the result against the
+resolved truth defined by <code>truth_axis</code> and
+<code>truth_type</code> (reported totals by default).</p>
 <p>To best evaluate the nowcast we need something to compare against.
 Hence we will fit a second model: <code>baselinenowcast</code>.</p>
 <p>One can fit it with the same call just a different engine</p>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_fit_baseline</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Any backtest uses the <strong>same engines</strong> refitting every
 engine once per past date. Here we show the backtest with just 3 past
 dates. On a real scenario we recommend using as many as possible to draw
 any conclusions:</p>
-<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_backtest</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/nowcast_backtest.html">nowcast_backtest</a></span><span class="op">(</span></span>
 <span>    <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -905,7 +874,7 @@ includes the individual results for the weighted interval score
 (<code>wis</code>), the median absolute error (<code>ae_median</code>),
 and the coverage of the 50 and 90% intervals
 (<code>coverage_*</code>):</p>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_backtest</span></span></code></pre></div>
 <p>In this scenario, <code>diseasenowcasting</code> scores better on
 both accuracy measures and <strong>both</strong> methods cover far more
@@ -913,9 +882,9 @@ than the nominal 90. We caution however that we cannot conclude anything
 from just 3 data points and in a real scenario one should use more.</p>
 <p>Date-level indicators for the <code>wis</code>,
 <code>ae_median</code> and coverage can be obtained with tidy:</p>
-<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">hai_backtest</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">hai_backtest</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">hai_backtest</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">event_date</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -927,7 +896,7 @@ might lead to a more robust nowcast. You can think of an ensemble as an
 average of the models.</p>
 <p>To create an ensemble model one needs to pass the model
 specifications (with a name) as well as the backtest:</p>
-<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_ensemble</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span></span>
 <span>  <span class="va">hai_fit_weekly</span>,</span>
 <span>  <span class="va">hai_fit_baseline</span>,</span>
@@ -936,7 +905,7 @@ specifications (with a name) as well as the backtest:</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The same <code><a href="../reference/tidy.nowcast.html">tidy()</a></code> and <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> functions
 can be used here:</p>
-<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">hai_ensemble</span><span class="op">)</span></span></code></pre></div>
 <p>One can fit ensembles with more than two models and different model
 specifications. Check out the article on <a href="https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html">ensemble

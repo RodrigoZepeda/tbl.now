@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,8 +85,8 @@
 </div>
 <!-- badges: start -->
 
-<p><a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a> provides an extension of the <a href="https://tibble.tidyverse.org/" class="external-link"><code>tibble()</code></a> for storing, validating, and manipulating epidemiological nowcasting data. It standardizes the representation of event dates, report dates, strata, temporal covariates, etc and in a way that is compatible with many frameworks including <a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link">diseasenowcasting</a>, <a href="https://package.epinowcast.org/" class="external-link">epinowcast</a>, <a href="https://cran.r-project.org/web/packages/NobBS/index.html" class="external-link">NobBS</a>, <a href="https://cran.r-project.org/web/packages/surveillance/index.html" class="external-link">surveillance</a>, <a href="https://epiforecasts.io/EpiNow2/" class="external-link">EpiNow2</a>, and more.</p>
-<p>Specifically a <code>tbl_now</code> is a data structure that keeps track of the following attributes relevant for a nowcasting excercise so that all <code>dplyr</code> transformations (i.e. the ones from tidyverse) keep track of the relevant nowcasting variables:</p>
+<p><a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a> extends <a href="https://tibble.tidyverse.org/" class="external-link"><code>tibble()</code></a> for storing, validating, and manipulating epidemiological nowcasting data. It standardizes event dates, report dates, strata, temporal covariates, and related metadata in a shape compatible with many frameworks, including <a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link">diseasenowcasting</a>, <a href="https://package.epinowcast.org/" class="external-link">epinowcast</a>, <a href="https://cran.r-project.org/web/packages/NobBS/index.html" class="external-link">NobBS</a>, <a href="https://cran.r-project.org/web/packages/surveillance/index.html" class="external-link">surveillance</a>, <a href="https://epiforecasts.io/EpiNow2/" class="external-link">EpiNow2</a>, and more.</p>
+<p>A <code>tbl_now</code> keeps track of the attributes needed for a nowcasting exercise, so <code>dplyr</code> transformations preserve the relevant nowcasting variables:</p>
 <table class="table">
 <thead><tr>
 <th align="center">

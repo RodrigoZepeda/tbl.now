@@ -96,8 +96,8 @@ is_tbl_now(ndata)
 #> [1] TRUE
 validate_tbl_now(ndata)
 
-# `is_tbl_now()` is a question about the CLASS, so it stays quiet about the
-# data. This object's report dates include an `NA`, which validate_tbl_now()
+# `is_tbl_now` is a question about the CLASS, so it stays quiet about the
+# data. This object's report dates include an `NA`, which validate_tbl_now
 # warns about -- and which does not stop it being a `tbl_now`.
 messy <- ndata
 messy$report_week[1] <- NA
@@ -110,8 +110,8 @@ is_tbl_now(messy)
 is_tbl_now(data.frame(x = 1:3))
 #> [1] FALSE
 
-## ... and asking for revision says so, with a reason. (Wrapped in try()
-# because it is meant to fail here.)
+## ... and asking for revision says so, with a reason. The call below is
+# wrapped in `try` because it is meant to fail here.
 try(validate_tbl_now(data.frame(x = 1:3)))
 #> Error in .tbl_now_emit_findings(findings) : 
 #>   Invalid `tbl_now` object:

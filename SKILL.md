@@ -285,6 +285,11 @@ These replace `get_latest_confirmed()`, `get_net_confirmed()`,
 - **covariates** = predictors that may improve the nowcast
   (e.g. weather), not split-by.
 
+Covariates are an **as-of promise**: a nowcast may only use values
+available at the fitted object’s `now`. In backtests, rebuild or join
+covariates per snapshot, or pass explicit forecast covariates only when
+the engine is meant to use them that way.
+
 All accept tidy-select. **Adders** append, **changers** replace the
 whole set, **removers** drop:
 
@@ -1434,13 +1439,17 @@ nc@fit                      # the backend's OWN object, untouched
 ``` r
 
 score_nowcast(nc, truth = x_full)   # wis, ae_median, coverage_50, coverage_90
-as_scoringutils(nc, truth = x_full) # hand it to scoringutils instead
+as_forecast_point(nc, truth = x_full) # scoringutils point forecast from median
+scoringutils::as_forecast_quantile(nc, truth = x_full) # quantile forecast
 ```
 
 `truth` is the **full `tbl_now`** (the one that still holds the reports
-which arrived after the nowcast’s `now`), or `NULL` to reuse the
-nowcast’s own source data. There is **no `observed_col`** (removed
-0.27.0): the observed counts are read off the object with
+or revisions which arrived after the nowcast’s `now`), or `NULL` to
+reuse the nowcast’s own source data. Observed counts are defined by
+`truth_axis` and `truth_type`: report totals by default, or
+revision-axis quantities such as confirmed/net when requested. There is
+**no `observed_col`** (removed 0.27.0): the observed counts are read off
+the object with
 [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md),
 and a **line list is aggregated first**, so a bare data frame is refused
 rather than guessed at. `nowcast_truth()` was un-exported in 0.19.0: it
@@ -1731,7 +1740,7 @@ tbl_nowcast(predictions =, draws =, ...)        # the constructor (for backends/
 is_tbl_nowcast(x)
 
 nowcast_ensemble(..., type =, weights =, backtest =, n_draws =, name =)
-score_nowcast(nc, truth =) / as_scoringutils(nc, truth =)  # truth = the full tbl_now
+score_nowcast(nc, truth =) / as_forecast_point(nc, truth =) # truth = the full tbl_now
 nowcast_backtest(x, <engines>, now_dates =, seed =) / nowcast_weights(bt, type =)
 
 nowcast_fit(method, x, ...) / nowcast_tidy(method, fit, x, ...)  # extension points

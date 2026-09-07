@@ -3,23 +3,29 @@
 **\[experimental\]**
 
 A nowcast is a claim about numbers that are not in yet. Once the late
-reports arrive you can ask how good the claim was, and these two
-functions are the two ways of asking.
+reports arrive you can ask how good the claim was.
 
 - `score_nowcast()` scores it here: the **weighted interval score**
   (WIS, lower is better), the absolute error of the median, and whether
   the truth fell inside the 50% and 90% intervals – one row per event
   date and stratum.
 
-- `as_scoringutils()` hands the same comparison to scoringutils, in the
-  long format that package expects, so you can use its full battery of
-  scores and its plots.
+- `as_forecast_point()` hands the median prediction and the same truth
+  to scoringutils, so you can use its point-score functions and plots.
 
-In both cases `truth` is a `tbl_now` seen *later*, once the reports the
-nowcast was predicting have actually arrived. The observed counts are
-read from it with
-[get_latest_reported_cases()](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md),
-so there is no column to name.
+- [`scoringutils::as_forecast_quantile()`](https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html)
+  and
+  [`scoringutils::as_forecast_sample()`](https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html)
+  also accept these objects directly when scoringutils is installed.
+
+In each case `truth` is a `tbl_now` seen *later*, after the information
+the nowcast was predicting has arrived. The observed counts are computed
+from `truth_axis` and `truth_type`: by default this is
+[get_latest_reported_cases()](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+with `type = "total"`, while `truth_axis = "revision"` uses
+[`get_latest_revised_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.md).
+There is no observed column to name; the count column is read from the
+`tbl_now`.
 
 ## Usage
 
@@ -31,15 +37,25 @@ score_nowcast(
   truth_type = "total"
 )
 
-as_scoringutils(
+as_forecast_point(
   x,
+  truth = NULL,
+  truth_axis = c("report", "revision"),
+  truth_type = "total",
+  ...
+)
+
+# S3 method for class 'nowcast_backtest'
+as_forecast_quantile(
+  data,
+  ...,
   truth = NULL,
   truth_axis = c("report", "revision"),
   truth_type = "total"
 )
 
 # S3 method for class 'nowcast_backtest'
-as_forecast_quantile(
+as_forecast_point(
   data,
   ...,
   truth = NULL,
@@ -63,7 +79,7 @@ as_forecast_sample(
 
   For `score_nowcast()`, a
   [tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md).
-  For `as_scoringutils()`, a
+  For `as_forecast_point()`, a
   [tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md)
   (including an ensemble) or a
   [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
@@ -71,12 +87,10 @@ as_forecast_sample(
 - truth:
 
   The `tbl_now` the nowcast is scored against – normally the *full*
-  object, still holding the reports that arrived after the nowcast's
-  `now`. Its eventual counts per event date are worked out for you: this
-  is
-  [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md),
-  aggregated over anything that is not a stratum, with the count column
-  read off the object
+  object, still holding the reports or revisions that arrived after the
+  nowcast's `now`. Its observed counts per event date are worked out
+  from `truth_axis` and `truth_type`, aggregated over anything that is
+  not a stratum, with the count column read off the object
   ([`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)).
   A **line list** is aggregated first, so it needs no special handling.
 
@@ -101,15 +115,15 @@ as_forecast_sample(
   `"by_type"` is refused because scoring needs one observed value per
   event-date/stratum target.
 
-- data:
-
-  A
-  [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
-
 - ...:
 
   Passed to the corresponding scoringutils coercion generic, most
   commonly `forecast_unit`.
+
+- data:
+
+  A
+  [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
 
 ## Value
 
@@ -117,25 +131,23 @@ as_forecast_sample(
 strata columns, and the columns `.observed`, `wis`, `ae_median`,
 `coverage_50` and `coverage_90` – one row per event date and stratum.
 
-`as_scoringutils()` accepts either a single
+`as_forecast_point()` accepts either a single
 [tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md)
 (including one returned by
 [`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md))
 or a
 [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
-It returns a long `tibble` with the columns `observed`, `predicted`,
-`quantile_level` and `model`, plus the event date and strata as forecast
-units. A backtest also carries `now`, because the same target was
-predicted retrospectively at more than one date. There is one row per
-quantile, ready for
-[`scoringutils::as_forecast_quantile()`](https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html).
+It returns a `forecast_point` object from scoringutils, using the
+nowcast's median quantile as `predicted` and the resolved truth as
+`observed`.
 
-The two `scoringutils::as_forecast_*()` methods return the corresponding
-`forecast_quantile` or `forecast_sample` object from scoringutils.
+The `scoringutils::as_forecast_*()` methods return the corresponding
+`forecast_quantile`, `forecast_sample` or `forecast_point` object from
+scoringutils.
 
 When scoringutils is installed, calling its coercion generic directly is
-equivalent: `scoringutils::as_forecast_quantile(x, truth = truth)` works
-for a
+equivalent: `scoringutils::as_forecast_quantile(x, truth = truth)` and
+`scoringutils::as_forecast_point(x, truth = truth)` work for a
 [tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md),
 an ensemble, and a
 [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
@@ -217,17 +229,20 @@ score_nowcast(nc, truth = truth)
 #> 3 toy     2024-03-18        14 2.83          4 FALSE       NA         
 #> 4 toy     2024-03-25        13 1.83          3 TRUE        NA         
 
-# The same comparison handed to scoringutils instead, one row per quantile.
-head(as_scoringutils(nc, truth = truth))
-#> # A tibble: 6 × 5
-#>   onset      quantile_level predicted model observed
-#>   <date>              <dbl>     <dbl> <chr>    <dbl>
-#> 1 2024-03-04           0.25         8 toy         10
-#> 2 2024-03-04           0.5         10 toy         10
-#> 3 2024-03-04           0.75        13 toy         10
-#> 4 2024-03-11           0.25         8 toy         13
-#> 5 2024-03-11           0.5         10 toy         13
-#> 6 2024-03-11           0.75        13 toy         13
+# The same comparison handed to scoringutils as a point forecast.
+if (requireNamespace("scoringutils", quietly = TRUE)) {
+  as_forecast_point(nc, truth = truth)
+}
+#> Forecast type: point
+#> Forecast unit:
+#> onset and model
+#> 
+#>         onset predicted  model observed
+#>        <Date>     <num> <char>    <num>
+#> 1: 2024-03-04        10    toy       10
+#> 2: 2024-03-11        10    toy       13
+#> 3: 2024-03-18        10    toy       14
+#> 4: 2024-03-25        10    toy       13
 
 # With a real model, `truth` is the full object and the nowcast is fitted to
 # a snapshot of it taken at an earlier `now`.

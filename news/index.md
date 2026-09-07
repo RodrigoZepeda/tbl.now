@@ -1,6 +1,52 @@
 # Changelog
 
-## tbl.now 0.33.1
+## tbl.now 0.34.0
+
+### Documentation clarifies scoring, covariates and article endings
+
+The documentation now states that scoring and backtests use the resolved
+truth defined by `truth_axis` and `truth_type`, rather than an ambiguous
+“eventual” quantity. It also makes the covariate as-of rule explicit:
+covariates used in a fit or backtest snapshot should be values available
+at that snapshot’s `now`.
+
+The introductory and custom-model vignettes now end with the shared
+`learning-more` fragment, and the ensemble article places its References
+header before that final fragment.
+
+### `as_forecast_point()` exposes scoringutils point forecasts
+
+[`as_forecast_point()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
+now converts a `tbl_nowcast`, ensemble or
+[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
+to a `scoringutils` point forecast using the median prediction. The old
+`as_scoringutils()` quantile-frame helper is now internal; use
+[`scoringutils::as_forecast_quantile()`](https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html)
+directly for quantile scoring.
+
+### Reporting hexamap labels are more robust
+
+[`plot_reporting_hexamap()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.md)
+now keeps its custom event, report and delay labels outside the plotted
+lattice with range-aware spacing, so axis titles are less likely to
+overlap tick labels or data marks when article or user figure sizes
+change.
+
+Revision-axis hexamaps now use `revision_units` for their arrival grid
+instead of always using `report_units`.
+
+### Ensemble validation is stricter
+
+[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
+now rejects non-finite fixed weights, duplicated or unknown weight
+names, duplicate prediction/draw keys inside a member, and invalid
+`n_draws` values before doing ensemble arithmetic. These inputs
+previously led to low-level errors, silently ignored weights, or
+ensemble predictions whose values were `NA`.
+
+The ensemble documentation now states that members are assumed to target
+the same reporting or revision quantity, and that the result should be
+scored with the matching `truth_axis` and `truth_type`.
 
 ### Autoplot can show revision-date calendar effects
 
@@ -51,17 +97,14 @@ silently returning only the originally observed periods.
 ### Backtesting and scoring are stricter about fairness
 
 [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-and
-[`as_scoringutils()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-now warn when predictions contain targets outside the supplied truth
-grid. Missing observed rows inside the `tbl_now` truth grid are scored
-as zero, because `tbl_now` objects need not store zero-count cells;
-targets outside that grid are still omitted because there is no observed
-value to score.
+and `as_scoringutils()` now warn when predictions contain targets
+outside the supplied truth grid. Missing observed rows inside the
+`tbl_now` truth grid are scored as zero, because `tbl_now` objects need
+not store zero-count cells; targets outside that grid are still omitted
+because there is no observed value to score.
 
 [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md),
-[`as_scoringutils()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-and
+`as_scoringutils()` and
 [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
 gained explicit `truth_axis` and `truth_type` arguments. The default
 remains reported totals (`truth_axis = "report"`,
@@ -117,10 +160,10 @@ member predictions so the comparison plot still renders.
 
 ### Nowcasts and backtests convert directly to scoringutils (#20, \#69)
 
-[`as_scoringutils()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-now accepts a `nowcast_backtest` and reuses the truth already stored in
-it. The result keeps `now` as a forecast unit, so the same target
-predicted at different retrospective dates remains distinct.
+`as_scoringutils()` now accepts a `nowcast_backtest` and reuses the
+truth already stored in it. The result keeps `now` as a forecast unit,
+so the same target predicted at different retrospective dates remains
+distinct.
 
 [`scoringutils::as_forecast_quantile()`](https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html)
 now accepts a `tbl_nowcast` directly, including the result of
@@ -2228,9 +2271,7 @@ Dropped entirely rather than kept internal. It was
 [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
 reshaped.
 [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-and
-[`as_scoringutils()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-take the `tbl_now` itself as `truth`.
+and `as_scoringutils()` take the `tbl_now` itself as `truth`.
 
 ### `covidat` removed
 
@@ -2365,10 +2406,8 @@ renamed `.observed` – the values were identical. A second public name
 for that is a second thing to learn for no gain.
 
 [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-and
-[`as_scoringutils()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-now accept the **`tbl_now` itself** as `truth` and do the reshaping
-internally, which is shorter than what it replaces:
+and `as_scoringutils()` now accept the **`tbl_now` itself** as `truth`
+and do the reshaping internally, which is shorter than what it replaces:
 
 ``` r
 
@@ -2475,8 +2514,7 @@ hand. This release adds the layer that removes that bookkeeping.
   **[`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.md)**
   score models retrospectively and turn those scores into ensemble
   weights (`"inverse_score"`, `"optim"` or `"equal"`).
-  [`as_scoringutils()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-  hands the same object to for its full score suite.
+  `as_scoringutils()` hands the same object to for its full score suite.
 
 - **[`nowcast_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_fit.md)
   /

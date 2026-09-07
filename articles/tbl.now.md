@@ -627,7 +627,10 @@ is the threshold shorthand for it.
 
 Often, temporal covariates improve nowcasting performance by helping to
 adjust systematic changes within the calendar cycle (e.g., day-of-week
-effects, seasonal effects, or other reporting artefacts). The
+effects, seasonal effects, or other reporting artefacts). As with any
+other covariate, values used for a nowcast should represent information
+available at that nowcast’s `now`; future realized values belong only in
+an explicitly forecast covariate workflow. The
 [temporal_effects()](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html)
 function creates a *specification* (recipe) of the features to compute:
 
@@ -2275,8 +2278,8 @@ They all follow the same naming convention:
   object.
 
 Each function accepts a `verbose` argument that reports the choices it
-made (the inferred `now`, the data type, For example here we can convert
-to `tsibble`:
+made, such as the inferred `now`, data type, strata, and conversion
+format. For example, here we can convert to `tsibble`:
 
 ``` r
 
@@ -2339,6 +2342,27 @@ models](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
 to see all conversion formats.
 
 ## References
+
+## Learning more
+
+- Introduction vignette:
+  <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
+  the full anatomy of a `tbl_now`, data types, and temporal effects.
+- End-to-end tutorial on real, messy surveillance data — cleaning,
+  diagnostics and nowcasting:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
+- Tutorial on diagnosing your dataset — what is in it, what is
+  structurally wrong with it, and detecting batches and other
+  reporting-delay artifacts:
+  <https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html>
+- Using different nowcasting engines for the same dataset:
+  <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
+- Ensemble nowcasting across different engines
+  <https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html>
+- Adding your own nowcasting model
+  <https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html>
+- Package reference:
+  <https://rodrigozepeda.github.io/tbl.now/reference/>
 
 Dancho, Matt, and Davis Vaughan. 2023. *Timetk: A Tool Kit for Working
 with Time Series*. <https://doi.org/10.32614/CRAN.package.timetk>.

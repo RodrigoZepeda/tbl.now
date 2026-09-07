@@ -69,7 +69,7 @@ believing the turnaround of.
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -315,7 +315,8 @@ missing rather than long; <code><a href="complete_zeroes.html">complete_zeroes()
 <span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Both are "not reported yet", so both become `now` and are flagged censored.</span></span></span>
-<span class="r-in"><span><span class="co"># (Wrapped because the object keeps warning about the dates being fixed.)</span></span></span>
+<span class="r-in"><span><span class="co"># Wrapped in suppressWarnings because the object keeps warning about the</span></span></span>
+<span class="r-in"><span><span class="co"># dates being fixed.</span></span></span>
 <span class="r-in"><span><span class="va">fixed</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="fu">censor_reports</span><span class="op">(</span><span class="va">messy_now</span>,</span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">reported</span><span class="op">)</span> <span class="op">|</span> <span class="va">reported</span> <span class="op">&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2100-01-01"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>

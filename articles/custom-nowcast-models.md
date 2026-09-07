@@ -896,3 +896,24 @@ converter got your data type wrong, that is the same address.
 - [`?tidy.tbl_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.tbl_nowcast.md),
   [`?score_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md),
   [`?nowcast_ensemble`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md).
+
+### Learning more
+
+- Introduction vignette:
+  <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
+  the full anatomy of a `tbl_now`, data types, and temporal effects.
+- End-to-end tutorial on real, messy surveillance data — cleaning,
+  diagnostics and nowcasting:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
+- Tutorial on diagnosing your dataset — what is in it, what is
+  structurally wrong with it, and detecting batches and other
+  reporting-delay artifacts:
+  <https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html>
+- Using different nowcasting engines for the same dataset:
+  <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
+- Ensemble nowcasting across different engines
+  <https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html>
+- Adding your own nowcasting model
+  <https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html>
+- Package reference:
+  <https://rodrigozepeda.github.io/tbl.now/reference/>
