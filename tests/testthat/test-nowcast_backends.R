@@ -396,6 +396,35 @@ test_that("EpiNow2 uses estimate_infections(), and regional_epinow() for strata"
   expect_named(stratified, "regional")
 })
 
+test_that("EpiNow2 engine surfaces censored-report handling", {
+  skip_if_not_installed("EpiNow2")
+
+  x <- engine_fixture(
+    units = "days", data_type = "count-incidence", censored = TRUE,
+    n_periods = 20L
+  )
+  seen <- NULL
+  local_mocked_bindings(
+    estimate_infections = function(data, ...) {
+      seen <<- data
+      structure(list(), class = "estimate_infections")
+    },
+    .package = "EpiNow2"
+  )
+
+  warnings <- character()
+  withCallingHandlers(
+    suppressMessages(nowcast_fit(engine_epinow2(), x, verbose = FALSE)),
+    warning = function(cnd) {
+      warnings <<- c(warnings, conditionMessage(cnd))
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_true(any(grepl("censor", warnings, ignore.case = TRUE)))
+  expect_false("is_censored_report" %in% colnames(seen))
+})
+
 test_that("EpiNow2 engine maps supported report temporal effects to obs_opts", {
   skip_if_not_installed("EpiNow2")
 

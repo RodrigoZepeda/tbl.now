@@ -47,9 +47,6 @@ from the object's time units when the event and report units agree and are
 
 \item{verbose}{Logical. Print the choices that were made.}
 
-\item{quiet}{Logical. Suppress incidental output from the underlying
-\pkg{baselinenowcast} converter. Defaults to \code{TRUE} when \code{verbose = FALSE}.}
-
 \item{x}{A \code{tbl_now} object.}
 
 \item{format}{For \code{to}, one of:
@@ -95,6 +92,9 @@ call \code{to_count() |> complete_zeroes()} first, or ask for
 \code{"redistribute"} (default) absorbs each negative into earlier delays with
 \code{\link[baselinenowcast:preprocess_negative_values]{baselinenowcast::preprocess_negative_values()}}, which is what that
 function exists for; \code{"error"} refuses cumulative input instead.}
+
+\item{quiet}{Logical. Suppress incidental output from the underlying
+\pkg{baselinenowcast} converter. Defaults to \code{TRUE} when \code{verbose = FALSE}.}
 }
 \value{
 A \code{tbl_now} (\code{from}), or a \code{data.frame}, \code{reporting_triangle} or

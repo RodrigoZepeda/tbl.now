@@ -149,7 +149,7 @@ cases_per_date(ndata, axis = "event")
 delay_summary(ndata)
 
 # How sparse the series is, and how strongly one week predicts the next.
-# `case_autocorrelation()` warns because it is unreviewed; the warning is
+# `case_autocorrelation` warns because it is unreviewed; the warning is
 # deliberately not suppressed here, since it belongs with the number.
 zero_run_summary(ndata, axis = "event")
 case_autocorrelation(ndata, lags = 1)
@@ -163,7 +163,7 @@ triangle_occupancy(ndata)
 # What share of a week's eventual total had arrived by delay d, and how fast
 # the total is still growing. Both are distributions over event dates, so
 # they fill `mean`/`q50` -- and completeness also `prop`, the pooled share --
-# rather than the scalar `value` column. `reporting_completeness()` is
+# rather than the scalar `value` column. `reporting_completeness` is
 # unreviewed and warns; see above.
 reporting_completeness(ndata, delays = 0:3) |>
   dplyr::select(quantity, stratum, n, mean, q50, prop)

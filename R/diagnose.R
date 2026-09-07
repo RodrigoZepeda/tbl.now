@@ -903,9 +903,10 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   is_censored_revision <- get_is_censored_revision(x)
   case_count <- get_case_count(x)
 
-  rows <- list()
+  store <- new.env(parent = emptyenv())
+  store$rows <- list()
   error <- function(scope, message, hint = NA_character_) {
-    rows[[length(rows) + 1L]] <<-
+    store$rows[[length(store$rows) + 1L]] <-
       .diagnose_row("declarations", scope, "error", message, hint = hint)
   }
 
@@ -1117,7 +1118,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   if (.diagnose_wants(context, "note")) {
     if (named_column(event_date) && named_column(report_date) &&
       identical(event_date, report_date)) {
-      rows[[length(rows) + 1L]] <- .diagnose_row(
+      store$rows[[length(store$rows) + 1L]] <- .diagnose_row(
         "declarations", "same_columns", "note",
         .diagnose_text(
           "Object has the same event and report dates with value
@@ -1131,7 +1132,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     }
 
     undeclared <- .undeclared_cols(x)
-    rows[[length(rows) + 1L]] <- .diagnose_count_row(
+    store$rows[[length(store$rows) + 1L]] <- .diagnose_count_row(
       "declarations", "undeclared", length(undeclared), ncol(x), "note",
       .diagnose_text(
         "{length(undeclared)} column{?s} {.val {undeclared}} {?is/are} not
@@ -1147,7 +1148,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
 
     pending_effects <- length(get_temporal_effects(x)) > 0 &&
       length(get_temporal_effect_cols(x)) == 0
-    rows[[length(rows) + 1L]] <- .diagnose_row(
+    store$rows[[length(store$rows) + 1L]] <- .diagnose_row(
       "declarations", "temporal_effects",
       if (pending_effects) "note" else "ok",
       if (pending_effects) {
@@ -1174,7 +1175,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     )
   }
 
-  .diagnose_block(rows)
+  .diagnose_block(store$rows)
 }
 
 #' The `event <= report <= revision` timeline
@@ -2302,7 +2303,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     paste(findings$check, findings$scope) %in%
       paste(alerts$check, alerts$scope)
   for (index in which(informing)) {
-    cli::cli_alert_warning(.diagnose_escape(findings$message[index]))
+    cli::cli_inform(c("!" = .diagnose_escape(findings$message[index])))
   }
 
   invisible(NULL)

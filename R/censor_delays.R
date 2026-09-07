@@ -169,7 +169,8 @@
 #' ))
 #'
 #' # Both are "not reported yet", so both become `now` and are flagged censored.
-#' # (Wrapped because the object keeps warning about the dates being fixed.)
+#' # Wrapped in suppressWarnings because the object keeps warning about the
+#' # dates being fixed.
 #' fixed <- suppressWarnings(censor_reports(messy_now,
 #'   is.na(reported) | reported > as.Date("2100-01-01"),
 #'   verbose = FALSE

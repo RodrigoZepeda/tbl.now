@@ -987,6 +987,20 @@ make_incidence_now <- function() {
   )
 }
 
+make_revision_now <- function() {
+  tbl_now(
+    data.frame(
+      onset = as.Date("2020-01-01") + c(0, 1, 2, 3, 4),
+      report = as.Date("2020-01-02") + c(0, 0, 1, 2, 3),
+      result = as.Date("2020-01-04") + c(0, 1, 1, 3, NA),
+      outcome = c("confirmed", "retracted", "confirmed", "confirmed", "pending")
+    ),
+    event_date = "onset", report_date = "report",
+    revision_date = "result", revision_type = "outcome",
+    data_type = "linelist", verbose = FALSE
+  )
+}
+
 test_that("tbl_now_to_epinowcast verbose prints the conversion summary", {
   skip_on_cran()
   skip_if_not_installed("epinowcast")
@@ -1066,6 +1080,59 @@ test_that("tbl_now_to_baselinenowcast can still refuse cumulative input", {
 #     "EpiNow2"
 #   )
 # })
+
+test_that("tbl_now_to_EpiNow2 builds estimate_secondary streams from revisions", {
+  skip_if_not_installed("EpiNow2")
+
+  converted <- tbl_now_to_EpiNow2(
+    make_revision_now(), target = "estimate_secondary",
+    verbose = FALSE, quiet = TRUE
+  )
+
+  expect_s3_class(converted, "data.frame")
+  expect_equal(names(converted), c("date", "primary", "secondary"))
+  expect_equal(
+    converted$date,
+    seq(as.Date("2020-01-02"), as.Date("2020-01-07"), by = "day")
+  )
+  expect_equal(converted$primary, c(2, 1, 1, 1, 0, 0))
+  expect_equal(converted$secondary, c(0, 0, 1, 1, 0, 1))
+})
+
+test_that("tbl_now_to_EpiNow2 estimate_secondary can count other revision types", {
+  skip_if_not_installed("EpiNow2")
+
+  retracted <- tbl_now_to_EpiNow2(
+    make_revision_now(), target = "estimate_secondary",
+    secondary_type = "retracted", verbose = FALSE, quiet = TRUE
+  )
+  total <- tbl_now_to_EpiNow2(
+    make_revision_now(), target = "estimate_secondary",
+    secondary_type = "total", verbose = FALSE, quiet = TRUE
+  )
+
+  expect_equal(sum(retracted$secondary), 1)
+  expect_equal(sum(total$secondary), 4)
+  expect_error(
+    tbl_now_to_EpiNow2(
+      make_revision_now(), target = "estimate_secondary",
+      secondary_type = "net", verbose = FALSE, quiet = TRUE
+    ),
+    "secondary_type"
+  )
+})
+
+test_that("tbl_now_to_EpiNow2 estimate_secondary needs a revision process", {
+  skip_if_not_installed("EpiNow2")
+
+  expect_error(
+    tbl_now_to_EpiNow2(
+      make_incidence_now(), target = "estimate_secondary",
+      verbose = FALSE, quiet = TRUE
+    ),
+    "revision process"
+  )
+})
 
 test_that("tbl_now_to_data_table verbose prints the conversion summary", {
   skip_on_cran()

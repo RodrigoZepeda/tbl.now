@@ -486,7 +486,7 @@ test_that("the batch family ignores censored arrival dates", {
   # so those rows would pile up on the bound and be rediscovered as the very
   # batch the censoring already recorded.
   clean_tbl <- make_flat_linelist(n_origins = 40L)
-  censored  <- censor_reporting_delays_above(clean_tbl, 1)
+  censored  <- censor_reporting_delays_above(clean_tbl, 1, verbose = FALSE)
   flag      <- get_is_censored_report(censored)
   n_censored <- sum(censored[[flag]])
   expect_gt(n_censored, 0)

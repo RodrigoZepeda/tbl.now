@@ -39,6 +39,25 @@ CENSORING_SPEC <- list(
     convert = function(x) tbl_now_to_EpiNow2(x, verbose = FALSE, quiet = TRUE)
   ),
   list(
+    id = "EpiNow2/estimate_truncation", package = "EpiNow2", collapses = TRUE,
+    convert = function(x) {
+      tbl_now_to_EpiNow2(
+        x, target = "estimate_truncation", verbose = FALSE, quiet = TRUE
+      )
+    }
+  ),
+  list(
+    id = "EpiNow2/estimate_secondary", package = "EpiNow2", collapses = TRUE,
+    convert = function(x) {
+      x$revision_date <- x[[get_report_date(x)]] + 1
+      x$outcome <- rep("confirmed", nrow(x))
+      x <- change_revision_date(x, revision_date, outcome)
+      tbl_now_to_EpiNow2(
+        x, target = "estimate_secondary", verbose = FALSE, quiet = TRUE
+      )
+    }
+  ),
+  list(
     id = "tsibble", package = "tsibble", collapses = TRUE,
     convert = function(x) tbl_now_to_tsibble(x, verbose = FALSE)
   ),
@@ -149,6 +168,38 @@ test_that("epidist keeps the flag, because it is the one model that can use it",
   ))
   widths <- converted$sdate_upr - converted$sdate_lwr
   expect_gt(length(unique(widths)), 1L)
+})
+
+test_that("EpiNow2 estimate_dist keeps the flag as interval censoring", {
+  skip_if_not_installed("EpiNow2")
+
+  x <- censoring_fixture()
+  converted <- suppressWarnings(suppressMessages(
+    tbl_now_to_EpiNow2(
+      x, target = "estimate_dist", verbose = FALSE, quiet = TRUE
+    )
+  ))
+
+  censored <- x[[get_is_censored_report(x)]]
+  expect_true(all(
+    c("pdate_lwr", "pdate_upr", "sdate_lwr", "sdate_upr", "obs_date") %in%
+      colnames(converted)
+  ))
+  expect_equal(
+    converted$sdate_lwr[censored],
+    x[[get_event_date(x)]][censored]
+  )
+  expect_true(all(
+    converted$sdate_upr[censored] >= x[[get_report_date(x)]][censored]
+  ))
+  positive_delay <- censored & x[[get_report_date(x)]] > x[[get_event_date(x)]]
+  expect_equal(
+    converted$sdate_upr[positive_delay],
+    x[[get_report_date(x)]][positive_delay]
+  )
+  expect_true(all(
+    converted$sdate_lwr[!censored] >= x[[get_report_date(x)]][!censored]
+  ))
 })
 
 test_that("no censoring declared means no censoring warning anywhere", {
