@@ -24,8 +24,9 @@ carry any report on or before it, so no row would survive for it.}
 }
 \value{
 A \code{tbl_now} object with the same columns as \code{x}, plus the rows that
-were implicitly zero, carrying \code{0} in the \code{case_count} column. The data type
-is preserved.
+were implicitly zero, carrying \code{0} in the \code{case_count} column. Explicit
+missing counts in the input remain \code{NA}; only cells created by
+\code{complete_zeroes()} are filled. The data type is preserved.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}

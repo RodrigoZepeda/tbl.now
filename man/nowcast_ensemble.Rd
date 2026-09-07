@@ -9,6 +9,7 @@ nowcast_ensemble(
   type = c("quantile", "linear_pool"),
   weights = "equal",
   backtest = NULL,
+  include_now = FALSE,
   quantile_levels = NULL,
   n_draws = 4000L,
   name = "ensemble",
@@ -36,6 +37,11 @@ passed to \code{\link[=nowcast_weights]{nowcast_weights()}}.}
 
 \item{backtest}{A \code{\link[=nowcast_backtest]{nowcast_backtest()}} object, required when \code{weights} is
 \code{"inverse_score"} or \code{"optim"}.}
+
+\item{include_now}{Logical. When deriving performance weights from
+\code{backtest}, should rows at the nowcast members' own \code{now} dates be allowed
+into the weight-training window? Default \code{FALSE}; set \code{TRUE} only for an
+in-sample diagnostic.}
 
 \item{quantile_levels}{Quantile levels to report the ensemble at. Defaults to
 the levels shared by all members.}

@@ -68,6 +68,40 @@ register_sampletoy <- function() {
   }
 }
 
+# A spy backend used to assert what `nowcast_backtest()` actually hands to
+# engines. The fit data is captured in an environment so tests can inspect the
+# as-of snapshot without depending on any optional modelling package.
+spytoy_seen <- new.env(parent = emptyenv())
+
+nowcast_fit.spytoy <- function(engine, x, ..., quantile_levels = nowcast_quantile_levels(),
+                               verbose = TRUE) {
+  spytoy_seen$fit_data <- x
+  list(
+    observed = tbl.now:::.eventual_counts(x),
+    event_col = get_event_date(x)
+  )
+}
+
+nowcast_tidy.spytoy <- function(engine, fit, x, ..., quantile_levels) {
+  predictions <- fit$observed |>
+    dplyr::reframe(
+      !!fit$event_col := rep(.data[[fit$event_col]], each = length(quantile_levels)),
+      .quantile_level = rep(quantile_levels, times = dplyr::n()),
+      .value = rep(.data$.observed, each = length(quantile_levels))
+    )
+  list(predictions = predictions, draws = NULL)
+}
+
+register_spytoy <- function() {
+  rm(list = ls(spytoy_seen), envir = spytoy_seen)
+  registerS3method("nowcast_fit", "spytoy", nowcast_fit.spytoy,
+    envir = asNamespace("tbl.now")
+  )
+  registerS3method("nowcast_tidy", "spytoy", nowcast_tidy.spytoy,
+    envir = asNamespace("tbl.now")
+  )
+}
+
 score_tbl_now <- function() {
   dates <- as.Date("2020-01-06") + seq(0, 7 * 29, by = 7)
   data <- tidyr::expand_grid(event_date = dates, delay = 0:3) |>

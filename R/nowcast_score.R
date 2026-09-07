@@ -81,27 +81,111 @@
 #' @param x A `tbl_now` object holding the *full* data, including the reports
 #'   that arrived after the nowcast's `now`.
 #' @param strata Character vector of strata columns to keep.
+#' @param truth_axis Which process defines the observed counts: `"report"` for
+#'   counts eventually reported, or `"validation"` for counts eventually
+#'   resolved on the validation axis.
+#' @param truth_type Which case type to score. See [get_latest_reported_cases()]
+#'   and [get_latest_validated_cases()] for the accepted values.
+#' @param complete_grid Logical. Whether missing event/stratum cells inside
+#'   `x`'s surveillance grid should be filled with zero.
 #'
 #' @return A `tibble` with the event-date column, the strata columns and
 #'   `.observed`.
 #'
 #' @keywords internal
 #' @noRd
-.eventual_counts <- function(x, strata = get_strata(x)) {
+.eventual_counts <- function(x, strata = get_strata(x),
+                             truth_axis = c("report", "validation"),
+                             truth_type = "total", complete_grid = FALSE) {
   .assert_tbl_now(x, "truth")
+  truth_axis <- match.arg(truth_axis)
+  .check_truth_type(truth_type)
 
   event_col <- get_event_date(x)
   strata <- intersect(strata %||% character(0), colnames(x))
 
-  observed <- get_latest_reported_cases(ungroup(x))
+  observed <- if (identical(truth_axis, "report")) {
+    get_latest_reported_cases(ungroup(x), type = truth_type)
+  } else {
+    get_latest_validated_cases(ungroup(x), type = truth_type)
+  }
   # `.cases_at()` names the count after the object's `case_count`, or
   # `n` when the source was a line list (which it has just aggregated).
   count_col <- get_case_count(observed) %||% "n"
 
-  .declass_tbl_now(observed) |>
+  counts <- .declass_tbl_now(observed) |>
     dplyr::as_tibble() |>
     dplyr::group_by(dplyr::across(dplyr::all_of(c(event_col, strata)))) |>
     dplyr::summarise(.observed = sum(.data[[count_col]], na.rm = TRUE), .groups = "drop")
+
+  if (isTRUE(complete_grid)) {
+    counts <- .complete_truth_grid(x, counts, strata)
+  }
+  counts
+}
+
+#' Check scoring truth type
+#'
+#' `by_type` deliberately returns more than one row per event/stratum, while the
+#' scoring table has exactly one observed value per target.
+#'
+#' @param truth_type User-supplied truth type.
+#'
+#' @return `NULL`, invisibly.
+#'
+#' @keywords internal
+#' @noRd
+.check_truth_type <- function(truth_type) {
+  if (!is.character(truth_type) || length(truth_type) != 1L || is.na(truth_type)) {
+    cli::cli_abort("{.arg truth_type} must be a single string.")
+  }
+  rlang::arg_match0(truth_type, .case_types(), arg_nm = "truth_type")
+  if (identical(truth_type, "by_type")) {
+    cli::cli_abort(c(
+      "{.code truth_type = \"by_type\"} cannot be scored as one observed value.",
+      "i" = "Use one of {.val {setdiff(.case_types(), 'by_type')}}."
+    ))
+  }
+  invisible(NULL)
+}
+
+#' Complete missing truth cells that are inside the surveillance grid
+#'
+#' A `tbl_now` does not have to store zero-count rows. If the prediction target
+#' is a date/stratum combination inside the truth object's own grid, an absent
+#' observed row means zero. Targets outside this completed grid remain missing
+#' and are handled by `.warn_missing_truth_targets()`.
+#'
+#' @param x The `tbl_now` used as truth.
+#' @param counts Observed counts by event date and strata.
+#' @param strata Character vector of strata columns to keep.
+#'
+#' @return `counts`, completed over event date and observed stratum
+#'   combinations, with missing `.observed` values set to zero.
+#'
+#' @keywords internal
+#' @noRd
+.complete_truth_grid <- function(x, counts, strata) {
+  event_col <- get_event_date(x)
+  event_values <- dplyr::pull(dplyr::as_tibble(x), dplyr::all_of(event_col))
+  event_dates <- .tbl_now_date_seq(
+    min(event_values, na.rm = TRUE), get_now(x), get_event_units(x)
+  )
+
+  if (length(strata) == 0L) {
+    grid <- tibble::tibble(!!event_col := event_dates)
+  } else {
+    stratum_grid <- x |>
+      dplyr::as_tibble() |>
+      dplyr::distinct(dplyr::across(dplyr::all_of(strata)))
+    grid <- tidyr::expand_grid(
+      tibble::tibble(!!event_col := event_dates), stratum_grid
+    )
+  }
+
+  grid |>
+    dplyr::left_join(counts, by = c(event_col, strata)) |>
+    dplyr::mutate(.observed = dplyr::coalesce(.data$.observed, 0))
 }
 
 #' Resolve the `truth` argument of the scoring functions
@@ -123,7 +207,9 @@
 #'
 #' @keywords internal
 #' @noRd
-.resolve_truth <- function(truth, x) {
+.resolve_truth <- function(truth, x, truth_axis = c("report", "validation"),
+                           truth_type = "total") {
+  truth_axis <- match.arg(truth_axis)
   if (is.null(truth)) {
     if (is.null(x@data)) {
       cli::cli_abort(c(
@@ -131,7 +217,11 @@
         "i" = "Pass the full {.cls tbl_now} the nowcast was made from."
       ))
     }
-    return(.eventual_counts(x@data, strata = x@strata))
+    return(.eventual_counts(
+      x@data, strata = x@strata,
+      truth_axis = truth_axis, truth_type = truth_type,
+      complete_grid = TRUE
+    ))
   }
 
   if (!is_tbl_now(truth)) {
@@ -143,7 +233,11 @@
              is no column to name."
     ))
   }
-  .eventual_counts(truth, strata = x@strata)
+  .eventual_counts(
+    truth, strata = x@strata,
+    truth_axis = truth_axis, truth_type = truth_type,
+    complete_grid = TRUE
+  )
 }
 
 #' Score predictions against a resolved truth table
@@ -171,6 +265,8 @@
     ))
   }
 
+  .warn_missing_truth_targets(x@predictions, truth, key)
+
   x@predictions |>
     dplyr::inner_join(
       dplyr::select(truth, dplyr::all_of(c(key, ".observed"))),
@@ -193,6 +289,61 @@
       .groups = "drop"
     ) |>
     dplyr::mutate(.method = x@method, .before = 1)
+}
+
+#' Warn about prediction targets that have no truth row
+#'
+#' `.eventual_counts()` fills zeros for missing observations inside a
+#' `tbl_now`'s own surveillance grid. Anything still absent at this point is
+#' outside the truth the user supplied and cannot be scored.
+#'
+#' @param predictions Prediction table.
+#' @param truth Resolved truth table.
+#' @param key Event-date and stratum columns.
+#'
+#' @return `NULL`, invisibly.
+#'
+#' @keywords internal
+#' @noRd
+.warn_missing_truth_targets <- function(predictions, truth, key) {
+  missing <- predictions |>
+    dplyr::distinct(dplyr::across(dplyr::all_of(key))) |>
+    dplyr::anti_join(
+      dplyr::distinct(truth, dplyr::across(dplyr::all_of(key))),
+      by = key
+    )
+
+  if (nrow(missing) == 0L) {
+    return(invisible(NULL))
+  }
+
+  sample <- .format_target_sample(missing)
+  cli::cli_warn(c(
+    "{nrow(missing)} prediction target{?s} {?is/are} absent from {.arg truth} \\
+     and cannot be scored.",
+    "i" = "Missing observations inside the {.cls tbl_now} truth grid are scored \\
+           as zero; the dropped targets are outside that grid or have unmatched \\
+           strata.",
+    "i" = "Sample dropped targets: {.val {sample}}."
+  ))
+  invisible(NULL)
+}
+
+#' Format a few target rows for a warning
+#'
+#' @param targets A data frame of target key columns.
+#' @param n Maximum number of rows to format.
+#'
+#' @return A character vector.
+#'
+#' @keywords internal
+#' @noRd
+.format_target_sample <- function(targets, n = 3L) {
+  sample <- utils::head(dplyr::as_tibble(targets), n)
+  vapply(seq_len(nrow(sample)), function(i) {
+    values <- vapply(sample, function(column) as.character(column[[i]]), character(1))
+    paste(paste(names(values), values, sep = " = "), collapse = ", ")
+  }, character(1))
 }
 
 #' Score a nowcast against observed data
@@ -228,6 +379,15 @@
 #'   For a single nowcast, `NULL` (default) uses the `tbl_now` it was built from,
 #'   which is only meaningful when that object still holds the later reports.
 #'   A backtest instead uses the truth table it already stores.
+#' @param truth_axis Which process defines the observed counts. `"report"`
+#'   (default) scores counts eventually reported. `"validation"` scores counts
+#'   eventually resolved on the validation axis and requires a validation-aware
+#'   `truth`.
+#' @param truth_type Which case type to score. Defaults to `"total"`. Validation
+#'   types such as `"confirmed"`, `"retracted"`, `"pending"`, `"unknown"` and
+#'   `"net"` follow the same meanings as [get_latest_reported_cases()] and
+#'   [get_latest_validated_cases()]. `"by_type"` is refused because scoring needs
+#'   one observed value per event-date/stratum target.
 #'
 #' @return
 #' `score_nowcast()` returns a `tibble` with the event-date column, the strata
@@ -321,9 +481,16 @@
 #' }
 #'
 #' @export
-score_nowcast <- function(x, truth = NULL) {
+score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "validation"),
+                          truth_type = "total") {
   .assert_tbl_nowcast(x)
-  .score_against(x, .resolve_truth(truth, x))
+  truth_axis <- match.arg(truth_axis)
+  .score_against(
+    x,
+    .resolve_truth(
+      truth, x, truth_axis = truth_axis, truth_type = truth_type
+    )
+  )
 }
 
 #' Restrict a `tbl_now` to the data available at a past date
@@ -368,9 +535,10 @@ score_nowcast <- function(x, truth = NULL) {
 #'   [nowcast_weights()] can learn a weight for each -- matching how
 #'   [nowcast_ensemble()] takes a named list of members. An engine with no label
 #'   is labelled by its method.
-#' @param now_dates Vector of Dates to nowcast at. Defaults to the four most
-#'   recent event dates that are at least `horizon` units before the object's
-#'   `now`, so that some later reports exist to score against.
+#' @param now_dates Vector of retrospective nowcast origins. Defaults to the
+#'   four most recent report-axis dates that are at least `horizon` units before
+#'   the object's `now`; these dates are used as as-of origins, not as a filter
+#'   on target event dates.
 #' @param horizon Number of time units of hindsight required when `now_dates` is
 #'   chosen automatically. Default `4`.
 #' @param seed Optional integer. When given, the RNG is seeded **immediately
@@ -387,6 +555,7 @@ score_nowcast <- function(x, truth = NULL) {
 #' @param on_error Either `"warn"` (default) to skip a model/date that fails
 #'   with a warning, or `"abort"` to stop.
 #' @param verbose Logical. Whether to report progress.
+#' @inheritParams score_nowcast
 #'
 #' @return An object of class `nowcast_backtest`: a list with
 #'
@@ -459,9 +628,12 @@ score_nowcast <- function(x, truth = NULL) {
 #' @export
 nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
                              seed = NULL, keep_draws = FALSE,
-                             on_error = c("warn", "abort"), verbose = TRUE) {
+                             on_error = c("warn", "abort"), verbose = TRUE,
+                             truth_axis = c("report", "validation"),
+                             truth_type = "total") {
   .assert_tbl_now(x, "nowcast_backtest")
   on_error <- match.arg(on_error)
+  truth_axis <- match.arg(truth_axis)
 
   engines <- .collect_engines(...)
   labels <- names(engines)
@@ -469,14 +641,17 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
   if (is.null(now_dates)) {
     now_dates <- .default_backtest_dates(x, horizon = horizon)
   }
-  now_dates <- sort(unique(now_dates))
   if (length(now_dates) == 0) {
     cli::cli_abort("No usable {.arg now_dates}: the object has too little history to backtest.")
   }
+  now_dates <- .validate_backtest_now_dates(x, now_dates)
 
   # Computed ONCE, not per fit: it is the same table for every (engine, date),
   # and collapsing the full object is not free on a long series.
-  truth <- .eventual_counts(x)
+  truth <- .eventual_counts(
+    x, truth_axis = truth_axis, truth_type = truth_type,
+    complete_grid = TRUE
+  )
 
   results <- list()
   for (now_date in as.list(now_dates)) {
@@ -559,10 +734,106 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
       now_dates = now_dates,
       keep_draws = isTRUE(keep_draws),
       event_date = get_event_date(x),
-      strata = intersect(get_strata(x) %||% character(0), colnames(predictions))
+      strata = intersect(get_strata(x) %||% character(0), colnames(predictions)),
+      truth_axis = truth_axis,
+      truth_type = truth_type
     ),
     class = "nowcast_backtest"
   )
+}
+
+#' Validate retrospective nowcast origins
+#'
+#' The backtest walks through as-of dates on the report axis. They must be
+#' inside the observed surveillance window; `get_now(x)` itself is allowed with
+#' a warning because it is often today and therefore incomplete.
+#'
+#' @param x A `tbl_now`.
+#' @param now_dates User-supplied or default nowcast origins.
+#'
+#' @return A sorted unique Date vector.
+#'
+#' @keywords internal
+#' @noRd
+.validate_backtest_now_dates <- function(x, now_dates) {
+  if (!lubridate::is.Date(now_dates)) {
+    cli::cli_abort("{.arg now_dates} must be a Date vector.")
+  }
+  if (length(now_dates) < 1L || any(is.na(now_dates))) {
+    cli::cli_abort("{.arg now_dates} must contain at least one non-missing Date.")
+  }
+
+  now_dates <- sort(unique(now_dates))
+  earliest <- .backtest_earliest_now_date(x)
+  before_data <- now_dates < earliest
+  if (any(before_data)) {
+    cli::cli_abort(c(
+      "{.arg now_dates} must be on or after {.val {as.character(earliest)}}.",
+      "i" = "That is the latest of the first event, report, and validation dates \\
+             present in {.arg x}."
+    ))
+  }
+
+  object_now <- get_now(x)
+  future <- now_dates > object_now
+  if (any(future)) {
+    cli::cli_abort(c(
+      "{.arg now_dates} must not be after the object's {.field now} \\
+       ({.val {as.character(object_now)}}).",
+      "i" = "Backtests are retrospective; for future origins, fit a normal \\
+             {.fn run_nowcast} instead."
+    ))
+  }
+  if (any(now_dates == object_now)) {
+    cli::cli_warn(c(
+      "{.arg now_dates} includes the object's current {.field now} \\
+       ({.val {as.character(object_now)}}).",
+      "i" = "If this is today, the data may still be incomplete."
+    ))
+  }
+
+  now_dates
+}
+
+#' Earliest valid backtest origin
+#'
+#' A retrospective origin before any declared time axis exists cannot represent
+#' data availability. Validation dates join the lower bound when present.
+#'
+#' @param x A `tbl_now`.
+#'
+#' @return A single Date.
+#'
+#' @keywords internal
+#' @noRd
+.backtest_earliest_now_date <- function(x) {
+  candidates <- c(
+    .min_present_date(x, get_event_date(x)),
+    .min_present_date(x, get_report_date(x)),
+    .min_present_date(x, get_validation_date(x))
+  )
+  max(candidates[!is.na(candidates)])
+}
+
+#' Minimum non-missing date in one column
+#'
+#' @param x A data frame.
+#' @param column Column name, or `NULL`.
+#'
+#' @return A Date or `NA`.
+#'
+#' @keywords internal
+#' @noRd
+.min_present_date <- function(x, column) {
+  if (is.null(column) || !column %in% colnames(x)) {
+    return(as.Date(NA))
+  }
+  values <- dplyr::pull(dplyr::as_tibble(x), dplyr::all_of(column))
+  values <- values[!is.na(values)]
+  if (length(values) == 0L) {
+    return(as.Date(NA))
+  }
+  min(values)
 }
 
 #' Collect and label the engines passed to `nowcast_backtest()`
@@ -714,6 +985,13 @@ print.nowcast_backtest <- function(x, ...) {
 #'   }
 #'
 #' @param ... Unused.
+#' @param now Optional Date vector of nowcast origins to exclude from the
+#'   weight-training window when `include_now = FALSE`. [nowcast_ensemble()]
+#'   passes its members' own `now` values here when deriving performance
+#'   weights.
+#' @param include_now Logical. Should rows at `now` be allowed into the
+#'   weight-training window? Default `FALSE`; set `TRUE` for an in-sample
+#'   diagnostic.
 #'
 #' @return A named numeric vector of weights summing to 1.
 #'
@@ -752,11 +1030,13 @@ print.nowcast_backtest <- function(x, ...) {
 #' ## Hand them to nowcast_ensemble() to pool the nowcasts they came from.
 #'
 #' @export
-nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"), ...) {
+nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"),
+                            now = NULL, include_now = FALSE, ...) {
   if (!inherits(backtest, "nowcast_backtest")) {
     cli::cli_abort("{.arg backtest} must be a {.cls nowcast_backtest} (see {.fn nowcast_backtest}).")
   }
   type <- match.arg(type)
+  backtest <- .weight_training_window(backtest, now, include_now)
 
   methods <- backtest$methods
   if (type == "equal") {
@@ -781,6 +1061,67 @@ nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"
   }
 
   .optimise_nowcast_weights(backtest)
+}
+
+#' Restrict backtest rows used to train performance weights
+#'
+#' By default, an ensemble weighted from a backtest should not learn from the
+#' same origin as the nowcasts it is combining. `nowcast_ensemble()` supplies
+#' its members' `now` values here; direct calls can pass `now` explicitly.
+#'
+#' @param backtest A `nowcast_backtest`.
+#' @param now Origin dates to exclude unless `include_now` is `TRUE`.
+#' @param include_now Logical. Whether rows at `now` can train weights.
+#'
+#' @return A possibly filtered `nowcast_backtest`.
+#'
+#' @keywords internal
+#' @noRd
+.weight_training_window <- function(backtest, now, include_now) {
+  if (!is.logical(include_now) || length(include_now) != 1L || is.na(include_now)) {
+    cli::cli_abort("{.arg include_now} must be `TRUE` or `FALSE`.")
+  }
+  if (isTRUE(include_now) || is.null(now)) {
+    return(backtest)
+  }
+  if (!lubridate::is.Date(now) || any(is.na(now))) {
+    cli::cli_abort("{.arg now} must be a non-missing Date vector.")
+  }
+
+  now <- unique(now)
+  old_n <- nrow(backtest$scores)
+  backtest$scores <- backtest$scores |>
+    dplyr::filter(!.data$.now %in% now)
+  removed <- old_n - nrow(backtest$scores)
+
+  if (removed == 0L) {
+    return(backtest)
+  }
+
+  backtest$predictions <- backtest$predictions |>
+    dplyr::filter(!.data$.now %in% now)
+  if (!is.null(backtest$draws)) {
+    backtest$draws <- backtest$draws |>
+      dplyr::filter(!.data$.now %in% now)
+  }
+
+  cli::cli_warn(c(
+    "Excluded {removed} backtest score row{?s} at the nowcast origin{?s} \\
+     {.val {as.character(now)}} while training ensemble weights.",
+    "i" = "Set {.code include_now = TRUE} to estimate in-sample weights."
+  ))
+
+  if (nrow(backtest$scores) == 0L) {
+    cli::cli_abort(c(
+      "No backtest rows remain to train ensemble weights after excluding \\
+       {.arg now}.",
+      "i" = "Use earlier {.arg now_dates}, or set {.code include_now = TRUE} \\
+             for an in-sample diagnostic."
+    ))
+  }
+
+  backtest$methods <- intersect(backtest$methods, unique(backtest$scores$.method))
+  backtest
 }
 
 #' Weights minimising the training-window WIS of the quantile-averaged ensemble
@@ -862,11 +1203,18 @@ nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"
 
 #' @rdname score_nowcast
 #' @export
-as_scoringutils <- function(x, truth = NULL) {
+as_scoringutils <- function(x, truth = NULL,
+                            truth_axis = c("report", "validation"),
+                            truth_type = "total") {
+  truth_axis <- match.arg(truth_axis)
   if (inherits(x, "nowcast_backtest")) {
     key <- c(x$event_date, x$strata %||% character(0))
     return(.as_scoringutils_frame(
-      x$predictions, .resolve_backtest_truth(x, truth), key
+      x$predictions,
+      .resolve_backtest_truth(
+        x, truth, truth_axis = truth_axis, truth_type = truth_type
+      ),
+      key
     ))
   }
 
@@ -876,7 +1224,11 @@ as_scoringutils <- function(x, truth = NULL) {
   predictions <- x@predictions |>
     dplyr::mutate(.method = x@method)
 
-  .as_scoringutils_frame(predictions, .resolve_truth(truth, x), key)
+  .as_scoringutils_frame(
+    predictions,
+    .resolve_truth(truth, x, truth_axis = truth_axis, truth_type = truth_type),
+    key
+  )
 }
 
 #' Resolve the truth stored by, or supplied for, a backtest
@@ -888,11 +1240,17 @@ as_scoringutils <- function(x, truth = NULL) {
 #'
 #' @keywords internal
 #' @noRd
-.resolve_backtest_truth <- function(x, truth) {
+.resolve_backtest_truth <- function(x, truth, truth_axis = c("report", "validation"),
+                                    truth_type = "total") {
+  truth_axis <- match.arg(truth_axis)
   resolved <- if (is.null(truth)) {
     x$truth
   } else {
-    .eventual_counts(truth, strata = x$strata %||% character(0))
+    .eventual_counts(
+      truth, strata = x$strata %||% character(0),
+      truth_axis = truth_axis, truth_type = truth_type,
+      complete_grid = TRUE
+    )
   }
   if (is.null(resolved)) {
     cli::cli_abort(
@@ -918,6 +1276,8 @@ as_scoringutils <- function(x, truth = NULL) {
 #' @keywords internal
 #' @noRd
 .as_scoringutils_frame <- function(predictions, truth, key) {
+  .warn_missing_truth_targets(predictions, truth, key)
+
   out <- predictions |>
     dplyr::inner_join(
       dplyr::select(truth, dplyr::all_of(c(key, ".observed"))),
@@ -953,9 +1313,14 @@ as_scoringutils <- function(x, truth = NULL) {
 #'
 #' @keywords internal
 #' @noRd
-as_forecast_quantile_tbl_nowcast <- function(data, ..., truth = NULL) {
+as_forecast_quantile_tbl_nowcast <- function(data, ..., truth = NULL,
+                                             truth_axis = c("report", "validation"),
+                                             truth_type = "total") {
   scoringutils::as_forecast_quantile(
-    as.data.frame(as_scoringutils(data, truth = truth)), ...
+    as.data.frame(as_scoringutils(
+      data, truth = truth, truth_axis = truth_axis, truth_type = truth_type
+    )),
+    ...
   )
 }
 
@@ -964,9 +1329,14 @@ as_forecast_quantile_tbl_nowcast <- function(data, ..., truth = NULL) {
 #' @param ... Passed to the corresponding \pkg{scoringutils} coercion generic,
 #'   most commonly `forecast_unit`.
 #' @exportS3Method scoringutils::as_forecast_quantile
-as_forecast_quantile.nowcast_backtest <- function(data, ..., truth = NULL) {
+as_forecast_quantile.nowcast_backtest <- function(data, ..., truth = NULL,
+                                                  truth_axis = c("report", "validation"),
+                                                  truth_type = "total") {
   scoringutils::as_forecast_quantile(
-    as.data.frame(as_scoringutils(data, truth = truth)), ...
+    as.data.frame(as_scoringutils(
+      data, truth = truth, truth_axis = truth_axis, truth_type = truth_type
+    )),
+    ...
   )
 }
 
@@ -981,6 +1351,8 @@ as_forecast_quantile.nowcast_backtest <- function(data, ..., truth = NULL) {
 #' @keywords internal
 #' @noRd
 .as_scoringutils_sample_frame <- function(draws, truth, key) {
+  .warn_missing_truth_targets(draws, truth, key)
+
   out <- draws |>
     dplyr::inner_join(
       dplyr::select(truth, dplyr::all_of(c(key, ".observed"))),
@@ -1014,7 +1386,9 @@ as_forecast_quantile.nowcast_backtest <- function(data, ..., truth = NULL) {
 #'
 #' @keywords internal
 #' @noRd
-as_forecast_sample_tbl_nowcast <- function(data, ..., truth = NULL) {
+as_forecast_sample_tbl_nowcast <- function(data, ..., truth = NULL,
+                                           truth_axis = c("report", "validation"),
+                                           truth_type = "total") {
   .assert_tbl_nowcast(data, "data")
   if (is.null(data@draws)) {
     cli::cli_abort(c(
@@ -1031,7 +1405,11 @@ as_forecast_sample_tbl_nowcast <- function(data, ..., truth = NULL) {
   draws <- data@draws |>
     dplyr::mutate(.method = data@method)
   frame <- .as_scoringutils_sample_frame(
-    draws, .resolve_truth(truth, data), key
+    draws,
+    .resolve_truth(
+      truth, data, truth_axis = truth_axis, truth_type = truth_type
+    ),
+    key
   )
   scoringutils::as_forecast_sample(as.data.frame(frame), ...)
 }
@@ -1084,10 +1462,16 @@ as_forecast_sample_tbl_nowcast <- function(data, ..., truth = NULL) {
 #' @param ... Passed to the corresponding \pkg{scoringutils} coercion generic,
 #'   most commonly `forecast_unit`.
 #' @exportS3Method scoringutils::as_forecast_sample
-as_forecast_sample.nowcast_backtest <- function(data, ..., truth = NULL) {
+as_forecast_sample.nowcast_backtest <- function(data, ..., truth = NULL,
+                                                truth_axis = c("report", "validation"),
+                                                truth_type = "total") {
   key <- c(data$event_date, data$strata %||% character(0))
   frame <- .as_scoringutils_sample_frame(
-    .backtest_sample_draws(data), .resolve_backtest_truth(data, truth), key
+    .backtest_sample_draws(data),
+    .resolve_backtest_truth(
+      data, truth, truth_axis = truth_axis, truth_type = truth_type
+    ),
+    key
   )
   scoringutils::as_forecast_sample(as.data.frame(frame), ...)
 }

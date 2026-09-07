@@ -7,13 +7,35 @@
 \alias{as_forecast_sample.nowcast_backtest}
 \title{Score a nowcast against observed data}
 \usage{
-score_nowcast(x, truth = NULL)
+score_nowcast(
+  x,
+  truth = NULL,
+  truth_axis = c("report", "validation"),
+  truth_type = "total"
+)
 
-as_scoringutils(x, truth = NULL)
+as_scoringutils(
+  x,
+  truth = NULL,
+  truth_axis = c("report", "validation"),
+  truth_type = "total"
+)
 
-\method{as_forecast_quantile}{nowcast_backtest}(data, ..., truth = NULL)
+\method{as_forecast_quantile}{nowcast_backtest}(
+  data,
+  ...,
+  truth = NULL,
+  truth_axis = c("report", "validation"),
+  truth_type = "total"
+)
 
-\method{as_forecast_sample}{nowcast_backtest}(data, ..., truth = NULL)
+\method{as_forecast_sample}{nowcast_backtest}(
+  data,
+  ...,
+  truth = NULL,
+  truth_axis = c("report", "validation"),
+  truth_type = "total"
+)
 }
 \arguments{
 \item{x}{For \code{score_nowcast()}, a \link{tbl_nowcast}. For \code{as_scoringutils()}, a
@@ -30,6 +52,17 @@ special handling.
 For a single nowcast, \code{NULL} (default) uses the \code{tbl_now} it was built from,
 which is only meaningful when that object still holds the later reports.
 A backtest instead uses the truth table it already stores.}
+
+\item{truth_axis}{Which process defines the observed counts. \code{"report"}
+(default) scores counts eventually reported. \code{"validation"} scores counts
+eventually resolved on the validation axis and requires a validation-aware
+\code{truth}.}
+
+\item{truth_type}{Which case type to score. Defaults to \code{"total"}. Validation
+types such as \code{"confirmed"}, \code{"retracted"}, \code{"pending"}, \code{"unknown"} and
+\code{"net"} follow the same meanings as \code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}} and
+\code{\link[=get_latest_validated_cases]{get_latest_validated_cases()}}. \code{"by_type"} is refused because scoring needs
+one observed value per event-date/stratum target.}
 
 \item{data}{A \code{\link[=nowcast_backtest]{nowcast_backtest()}}.}
 

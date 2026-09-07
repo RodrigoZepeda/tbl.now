@@ -12,7 +12,9 @@ nowcast_backtest(
   seed = NULL,
   keep_draws = FALSE,
   on_error = c("warn", "abort"),
-  verbose = TRUE
+  verbose = TRUE,
+  truth_axis = c("report", "validation"),
+  truth_type = "total"
 )
 }
 \arguments{
@@ -30,9 +32,10 @@ plain \code{engine_diseasenowcasting()} are backtested separately, so
 \code{\link[=nowcast_ensemble]{nowcast_ensemble()}} takes a named list of members. An engine with no label
 is labelled by its method.}
 
-\item{now_dates}{Vector of Dates to nowcast at. Defaults to the four most
-recent event dates that are at least \code{horizon} units before the object's
-\code{now}, so that some later reports exist to score against.}
+\item{now_dates}{Vector of retrospective nowcast origins. Defaults to the
+four most recent report-axis dates that are at least \code{horizon} units before
+the object's \code{now}; these dates are used as as-of origins, not as a filter
+on target event dates.}
 
 \item{horizon}{Number of time units of hindsight required when \code{now_dates} is
 chosen automatically. Default \code{4}.}
@@ -54,6 +57,17 @@ still cannot be converted to samples.}
 with a warning, or \code{"abort"} to stop.}
 
 \item{verbose}{Logical. Whether to report progress.}
+
+\item{truth_axis}{Which process defines the observed counts. \code{"report"}
+(default) scores counts eventually reported. \code{"validation"} scores counts
+eventually resolved on the validation axis and requires a validation-aware
+\code{truth}.}
+
+\item{truth_type}{Which case type to score. Defaults to \code{"total"}. Validation
+types such as \code{"confirmed"}, \code{"retracted"}, \code{"pending"}, \code{"unknown"} and
+\code{"net"} follow the same meanings as \code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}} and
+\code{\link[=get_latest_validated_cases]{get_latest_validated_cases()}}. \code{"by_type"} is refused because scoring needs
+one observed value per event-date/stratum target.}
 }
 \value{
 An object of class \code{nowcast_backtest}: a list with

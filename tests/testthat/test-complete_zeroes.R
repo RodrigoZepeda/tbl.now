@@ -148,12 +148,142 @@ test_that("complete_zeroes works with weekly data", {
   expect_true(as.Date("2020-01-19") %in% event_dates)
 })
 
+test_that("complete_zeroes preserves explicit NA counts while filling generated cells", {
+  x <- suppressWarnings(tbl_now(
+    tibble(
+      event = as.Date(c("2024-01-01", "2024-01-03")),
+      report = as.Date(c("2024-01-01", "2024-01-03")),
+      n = c(NA_real_, 2)
+    ),
+    event_date = event, report_date = report, case_count = n,
+    data_type = "count-incidence", units = "days",
+    now = as.Date("2024-01-03"), verbose = FALSE
+  ))
+
+  out <- suppressWarnings(complete_zeroes(x))
+
+  original_cell <- out |>
+    filter(event == as.Date("2024-01-01"), report == as.Date("2024-01-01"))
+  generated_cell <- out |>
+    filter(event == as.Date("2024-01-02"), report == as.Date("2024-01-02"))
+
+  expect_true(is.na(original_cell$n))
+  expect_equal(generated_cell$n, 0)
+  expect_false(any(grepl("^\\.tbl_now_complete_", colnames(out))))
+})
+
+test_that("complete_zeroes fills monthly count-incidence grids through now", {
+  x <- tbl_now(
+    tibble(
+      event = as.Date("2024-01-01"),
+      report = as.Date("2024-01-01"),
+      n = 3
+    ),
+    event_date = event, report_date = report, case_count = n,
+    data_type = "count-incidence", units = "months",
+    now = as.Date("2024-03-01"), verbose = FALSE
+  )
+
+  out <- suppressWarnings(complete_zeroes(x))
+
+  expect_s3_class(out, "tbl_now")
+  expect_equal(
+    sort(unique(out$event)),
+    as.Date(c("2024-01-01", "2024-02-01", "2024-03-01"))
+  )
+  expect_equal(
+    out$n[out$event == as.Date("2024-02-01") & out$report == as.Date("2024-02-01")],
+    0
+  )
+  expect_equal(get_event_units(out), "months")
+  expect_equal(get_report_units(out), "months")
+})
+
+test_that("complete_zeroes fills yearly count-incidence grids through now", {
+  x <- tbl_now(
+    tibble(
+      event = as.Date("2022-01-01"),
+      report = as.Date("2022-01-01"),
+      n = 3
+    ),
+    event_date = event, report_date = report, case_count = n,
+    data_type = "count-incidence", units = "years",
+    now = as.Date("2024-01-01"), verbose = FALSE
+  )
+
+  out <- suppressWarnings(complete_zeroes(x))
+
+  expect_s3_class(out, "tbl_now")
+  expect_equal(
+    sort(unique(out$event)),
+    as.Date(c("2022-01-01", "2023-01-01", "2024-01-01"))
+  )
+  expect_equal(
+    out$n[out$event == as.Date("2023-01-01") & out$report == as.Date("2023-01-01")],
+    0
+  )
+  expect_equal(get_event_units(out), "years")
+  expect_equal(get_report_units(out), "years")
+})
+
 # ---- count-cumulative ----
 
 test_that("complete_zeroes works with count-cumulative data", {
   x <- make_count_cumulative()
   result <- suppressWarnings(complete_zeroes(x))
   expect_s3_class(result, "tbl_now")
+})
+
+test_that("complete_zeroes carries monthly cumulative counts across generated delays", {
+  x <- tbl_now(
+    tibble(
+      event = as.Date(c("2024-01-01", "2024-01-01")),
+      report = as.Date(c("2024-01-01", "2024-03-01")),
+      n = c(2, 5)
+    ),
+    event_date = event, report_date = report, case_count = n,
+    data_type = "count-cumulative", units = "months",
+    now = as.Date("2024-03-01"), verbose = FALSE
+  )
+
+  out <- suppressWarnings(complete_zeroes(x))
+
+  expect_s3_class(out, "tbl_now")
+  expect_equal(get_data_type(out), "count-cumulative")
+  expect_equal(
+    out$n[out$event == as.Date("2024-01-01") & out$report == as.Date("2024-02-01")],
+    2
+  )
+  expect_equal(
+    sort(unique(out$event)),
+    as.Date(c("2024-01-01", "2024-02-01", "2024-03-01"))
+  )
+})
+
+test_that("complete_zeroes carries yearly cumulative counts across generated delays", {
+  x <- tbl_now(
+    tibble(
+      event = as.Date(c("2022-01-01", "2022-01-01")),
+      report = as.Date(c("2022-01-01", "2024-01-01")),
+      n = c(2, 5)
+    ),
+    event_date = event, report_date = report, case_count = n,
+    data_type = "count-cumulative", units = "years",
+    now = as.Date("2024-01-01"), verbose = FALSE
+  )
+
+  out <- suppressWarnings(complete_zeroes(x))
+
+  expect_s3_class(out, "tbl_now")
+  expect_equal(get_data_type(out), "count-cumulative")
+  expect_equal(
+    out$n[out$event == as.Date("2022-01-01") & out$report == as.Date("2023-01-01")],
+    2
+  )
+  expect_equal(
+    sort(unique(out$event)),
+    as.Date(c("2022-01-01", "2023-01-01", "2024-01-01"))
+  )
 })
 
 # ---- error cases ----

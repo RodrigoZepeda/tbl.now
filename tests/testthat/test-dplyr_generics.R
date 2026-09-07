@@ -318,12 +318,13 @@ test_that("validate_tbl_now fails when report or event date is not date", {
 
   for (type in c("report_date", "event_date")) {
     ndata <- test_data$ndata
-    ndata <- ndata |>
-      dplyr::mutate(!!as.symbol(attr(ndata, type)) := as.character(!!as.symbol(attr(ndata, type))))
 
     expect_error(
-      suppressWarnings(validate_tbl_now(ndata)),
-      "must be of class Date"
+      ndata |>
+        dplyr::mutate(
+          !!as.symbol(attr(ndata, type)) := as.character(!!as.symbol(attr(ndata, type)))
+        ),
+      "to transform them to either both be dates or integers"
     )
   }
 })
@@ -962,18 +963,37 @@ test_that("filter preserves attributes", {
 test_that("validate works with numeric", {
   skip_on_cran()
   test_data <- setup_test_data()
+  ndata <- test_data$ndata
+  attr(ndata, "event_units") <- "numeric"
+  attr(ndata, "report_units") <- "numeric"
 
-  # The same units the fixture declares, so the numeric columns land on the
-  # scale `.event_num` / `.report_num` were computed on.
-  result <- test_data$ndata |>
-    dplyr::mutate(report_week = as.numeric(difftime(report_week, min(onset_week), units = "days"))) |>
-    dplyr::mutate(onset_week = as.numeric(difftime(onset_week, min(onset_week), units = "days")))
+  # Numeric units let integer date columns use their own origin for
+  # `.event_num` / `.report_num`.
+  result <- ndata |>
+    dplyr::mutate(
+      report_week = as.integer(difftime(report_week, min(onset_week), units = "days")),
+      onset_week = as.integer(difftime(onset_week, min(onset_week), units = "days"))
+    )
 
 
   expect_equal(get_event_date(result), get_event_date(test_data$ndata))
   expect_equal(get_strata(result), get_strata(test_data$ndata))
   expect_equal(result$onset_week, result$.event_num)
   expect_equal(result$report_week, result$.report_num)
+})
+
+test_that("validate rejects double date columns", {
+  skip_on_cran()
+  test_data <- setup_test_data()
+
+  expect_error(
+    test_data$ndata |>
+      dplyr::mutate(
+        report_week = as.double(difftime(report_week, min(onset_week), units = "days")),
+        onset_week = as.double(difftime(onset_week, min(onset_week), units = "days"))
+      ),
+    "to transform them to either both be dates or integers"
+  )
 })
 
 test_that("test dropping delay column", {

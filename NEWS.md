@@ -1,5 +1,39 @@
 # tbl.now 0.33.1
 
+## `complete_zeroes()` preserves missing counts and completes coarser grids
+
+`complete_zeroes()` now preserves explicit `NA` counts in the input instead of
+rewriting them as observed zeroes. Generated incidence cells are still filled
+with zero, and generated cumulative cells carry forward the previous known
+cumulative total.
+
+`complete_zeroes()` now reconstructs generated report dates through the shared
+delay helper, so monthly and yearly count grids are completed through `now`
+instead of silently returning only the originally observed periods.
+
+## Backtesting and scoring are stricter about fairness
+
+`score_nowcast()` and `as_scoringutils()` now warn when predictions contain
+targets outside the supplied truth grid. Missing observed rows inside the
+`tbl_now` truth grid are scored as zero, because `tbl_now` objects need not
+store zero-count cells; targets outside that grid are still omitted because
+there is no observed value to score.
+
+`score_nowcast()`, `as_scoringutils()` and `nowcast_backtest()` gained explicit
+`truth_axis` and `truth_type` arguments. The default remains reported totals
+(`truth_axis = "report"`, `truth_type = "total"`), and validation-aware truth
+can now be scored with `truth_axis = "validation"`.
+
+`nowcast_backtest()` now validates explicit `now_dates`: they must be
+non-missing Dates within the observed surveillance window and cannot be after
+the object's `now`. A `now_date` equal to the object's `now` is allowed with a
+warning, because today's data may still be incomplete.
+
+`nowcast_weights()` gained `now` and `include_now` arguments. When
+`nowcast_ensemble()` derives performance weights from a backtest, rows at the
+members' own `now` dates are excluded by default so weights are trained on a
+holdout window unless `include_now = TRUE` is set explicitly.
+
 ## Constructors and dplyr rebuilds are stricter
 
 `mutate()` and `$<-` now rebuild generated numeric date columns when event,

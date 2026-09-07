@@ -110,6 +110,125 @@ test_that("the truth's observed column is read off the object, line list include
   )
 })
 
+test_that("missing truth inside the tbl_now grid is scored as zero", {
+  dates <- as.Date("2020-01-06") + 7 * 0:2
+  predictions <- tidyr::expand_grid(
+    event_date = dates, .quantile_level = c(0.25, 0.5, 0.75)
+  ) |>
+    dplyr::mutate(.value = 1)
+  nowcast <- tbl_nowcast(
+    predictions = predictions, method = "toy", event_date = "event_date"
+  )
+  truth <- truth_tbl_now(dates[c(1, 3)], c(4, 9), units = "weeks")
+
+  scores <- score_nowcast(nowcast, truth = truth)
+
+  expect_equal(scores$.observed, c(4, 0, 9))
+  expect_equal(scores$ae_median, c(3, 1, 8))
+})
+
+test_that("targets outside the truth grid warn and are not scored", {
+  dates <- as.Date("2020-01-06") + 7 * 0:3
+  predictions <- tidyr::expand_grid(
+    event_date = dates, .quantile_level = c(0.25, 0.5, 0.75)
+  ) |>
+    dplyr::mutate(.value = 1)
+  nowcast <- tbl_nowcast(
+    predictions = predictions, method = "toy", event_date = "event_date"
+  )
+  truth <- truth_tbl_now(dates[1:2], c(4, 9), units = "weeks")
+
+  expect_warning(
+    scores <- score_nowcast(nowcast, truth = truth),
+    "absent from `truth`"
+  )
+  expect_equal(scores$event_date, dates[1:2])
+
+  expect_warning(
+    exported <- as_scoringutils(nowcast, truth = truth),
+    "absent from `truth`"
+  )
+  expect_setequal(unique(exported$event_date), dates[1:2])
+})
+
+validation_truth_tbl_now <- function() {
+  data <- data.frame(
+    event_date = as.Date(rep("2020-01-01", 4)),
+    report_date = as.Date(c("2020-01-01", "2020-01-02", "2020-01-03", "2020-01-04")),
+    validation_date = as.Date(c("2020-01-05", "2020-01-06", NA, "2020-01-07")),
+    outcome = c("confirmed", "retracted", "pending", NA),
+    n = c(10, 3, 5, 2)
+  )
+  tbl_now(data,
+    event_date = "event_date", report_date = "report_date",
+    validation_date = "validation_date", validation_type = "outcome",
+    case_count = "n", data_type = "count-incidence",
+    event_units = "days", report_units = "days", validation_units = "days",
+    verbose = FALSE
+  )
+}
+
+test_that("truth_axis and truth_type control reported and validated scoring", {
+  truth <- validation_truth_tbl_now()
+  nowcast <- tbl_nowcast(
+    predictions = data.frame(
+      event_date = as.Date("2020-01-01"),
+      .quantile_level = 0.5, .value = 0
+    ),
+    method = "toy", event_date = "event_date"
+  )
+
+  reported <- c(total = 20, confirmed = 10, retracted = 3, pending = 5,
+                unknown = 2, net = 7)
+  for (truth_type in names(reported)) {
+    scores <- score_nowcast(
+      nowcast, truth = truth, truth_axis = "report", truth_type = truth_type
+    )
+    expect_equal(scores$.observed, unname(reported[[truth_type]]),
+      info = paste("report", truth_type)
+    )
+  }
+
+  validated <- c(total = 15, confirmed = 10, retracted = 3, unknown = 2, net = 7)
+  for (truth_type in names(validated)) {
+    scores <- score_nowcast(
+      nowcast, truth = truth, truth_axis = "validation", truth_type = truth_type
+    )
+    expect_equal(scores$.observed, unname(validated[[truth_type]]),
+      info = paste("validation", truth_type)
+    )
+  }
+  expect_error(
+    score_nowcast(nowcast, truth = truth, truth_axis = "validation", truth_type = "pending"),
+    "pending"
+  )
+  expect_error(
+    score_nowcast(nowcast, truth = truth, truth_type = "by_type"),
+    "by_type"
+  )
+})
+
+test_that("validation truth is refused without a validation process", {
+  truth <- truth_tbl_now(as.Date("2020-01-01"), 20)
+  nowcast <- tbl_nowcast(
+    predictions = data.frame(
+      event_date = as.Date("2020-01-01"),
+      .quantile_level = 0.5, .value = 0
+    ),
+    method = "toy", event_date = "event_date"
+  )
+
+  expect_warning(
+    score <- score_nowcast(nowcast, truth = truth, truth_type = "confirmed"),
+    "no validation process"
+  )
+  expect_equal(score$.observed, 20)
+  expect_error(
+    score_nowcast(nowcast, truth = truth, truth_axis = "validation"),
+    "needs a validation process"
+  )
+})
+
 test_that("a snapshot only keeps the reports available at that date", {
   x <- score_tbl_now()
   cutoff <- as.Date("2020-03-02")
@@ -118,6 +237,35 @@ test_that("a snapshot only keeps the reports available at that date", {
   expect_equal(get_now(snapshot), cutoff)
   expect_true(all(snapshot$report_date <= cutoff))
   expect_lt(nrow(snapshot), nrow(x))
+})
+
+test_that("backtest snapshots mask future validations before fitting", {
+  register_spytoy()
+  data <- data.frame(
+    event_date = as.Date(c("2020-01-01", "2020-01-01", "2020-01-08")),
+    report_date = as.Date(c("2020-01-01", "2020-01-05", "2020-01-08")),
+    validation_date = as.Date(c("2020-01-03", "2020-01-20", "2020-01-09")),
+    outcome = c("confirmed", "confirmed", "confirmed"),
+    n = c(1, 10, 2)
+  )
+  x <- tbl_now(data,
+    event_date = "event_date", report_date = "report_date",
+    validation_date = "validation_date", validation_type = "outcome",
+    case_count = "n", data_type = "count-incidence",
+    event_units = "days", report_units = "days", validation_units = "days",
+    verbose = FALSE
+  )
+
+  suppressMessages(nowcast_backtest(
+    x, engine("spytoy"), now_dates = as.Date("2020-01-10"), verbose = FALSE
+  ))
+  fit_data <- spytoy_seen$fit_data
+
+  expect_true(all(fit_data$report_date <= as.Date("2020-01-10")))
+  expect_true(is.na(fit_data$validation_date[[2]]))
+  expect_equal(fit_data$outcome[[2]], "pending")
+  expect_true(is.na(fit_data$.validation_num[[2]]))
+  expect_true(is.na(fit_data$.validation_delay[[2]]))
 })
 
 test_that("nowcast_backtest() scores every method at every date", {
@@ -140,6 +288,33 @@ test_that("nowcast_backtest() validates its inputs", {
   x <- score_tbl_now()
   expect_error(nowcast_backtest(mtcars, engine("scoretoy")), "tbl_now")
   expect_error(nowcast_backtest(x), "at least one engine")
+  expect_error(
+    nowcast_backtest(x, engine("scoretoy"), now_dates = "2020-06-01", verbose = FALSE),
+    "Date vector"
+  )
+  expect_error(
+    nowcast_backtest(x, engine("scoretoy"), now_dates = as.Date(NA), verbose = FALSE),
+    "non-missing Date"
+  )
+  expect_error(
+    nowcast_backtest(
+      x, engine("scoretoy"), now_dates = get_now(x) + 1, verbose = FALSE
+    ),
+    "must not be after"
+  )
+  expect_error(
+    nowcast_backtest(
+      x, engine("scoretoy"),
+      now_dates = min(x$report_date) - 7, verbose = FALSE
+    ),
+    "on or after"
+  )
+  expect_warning(
+    nowcast_backtest(
+      x, engine("scoretoy"), now_dates = get_now(x), verbose = FALSE
+    ),
+    "data may still be incomplete"
+  )
 })
 
 test_that("a failing method is skipped with a warning, or aborts on request", {
@@ -194,6 +369,42 @@ test_that("weights reward the better model", {
   expect_gt(optimised[["scoretoy"]], optimised[["scoretoy2"]])
 })
 
+test_that("nowcast_weights() excludes the current origin by default when supplied", {
+  register_scoretoy()
+  x <- score_tbl_now()
+  dates <- as.Date(c("2020-06-01", "2020-06-08"))
+  backtest <- nowcast_backtest(
+    x,
+    engine("scoretoy", bias = 0),
+    engine("scoretoy2", bias = 25),
+    now_dates = dates, verbose = FALSE
+  )
+
+  expect_warning(
+    weights <- nowcast_weights(backtest, "inverse_score", now = dates[[2]]),
+    "Excluded"
+  )
+  expect_equal(sum(weights), 1)
+
+  expect_warning(
+    optimised <- nowcast_weights(backtest, "optim", now = dates[[2]]),
+    "Excluded"
+  )
+  expect_equal(sum(optimised), 1)
+
+  expect_error(
+    suppressWarnings(nowcast_weights(backtest, "inverse_score", now = dates)),
+    "No backtest rows remain"
+  )
+
+  expect_no_warning(
+    weights_in_sample <- nowcast_weights(
+      backtest, "inverse_score", now = dates, include_now = TRUE
+    )
+  )
+  expect_equal(sum(weights_in_sample), 1)
+})
+
 test_that("nowcast_weights() rejects anything that is not a backtest", {
   expect_error(nowcast_weights(mtcars), "nowcast_backtest")
 })
@@ -221,6 +432,30 @@ test_that("performance weights flow into nowcast_ensemble()", {
 
   expect_equal(sum(weights), 1)
   expect_gt(weights[["scoretoy"]], weights[["scoretoy2"]])
+})
+
+test_that("performance-weighted ensembles hold out member now dates", {
+  register_scoretoy()
+  x <- score_tbl_now()
+  dates <- c(as.Date("2020-06-01"), get_now(x))
+  backtest <- suppressWarnings(nowcast_backtest(
+    x,
+    engine("scoretoy", bias = 0),
+    engine("scoretoy2", bias = 25),
+    now_dates = dates, verbose = FALSE
+  ))
+
+  good <- run_nowcast(x, engine("scoretoy", bias = 0), verbose = FALSE)
+  bad <- run_nowcast(x, engine("scoretoy2", bias = 25), verbose = FALSE)
+
+  expect_warning(
+    ensemble <- nowcast_ensemble(
+      good, bad,
+      weights = "inverse_score", backtest = backtest, verbose = FALSE
+    ),
+    "Excluded"
+  )
+  expect_equal(sum(ensemble@metadata$weights), 1)
 })
 
 test_that("as_scoringutils() produces the expected column names", {
