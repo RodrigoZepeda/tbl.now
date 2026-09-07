@@ -11,7 +11,7 @@ diagnose_batches2(
   guard = 1L,
   permute = c("items", "blocks"),
   n_permutations = 999L,
-  axis = c("report", "validation"),
+  axis = c("report", "revision"),
   drop_censored = TRUE,
   seed = NULL
 )
@@ -37,16 +37,16 @@ overdispersion).}
 \item{n_permutations}{Number of permutations. Default \code{999}.}
 
 \item{axis}{Which time axis to scan for arrivals: \code{"report"} (default) or
-\code{"validation"}. The question is the same either way -- did an unusual
+\code{"revision"}. The question is the same either way -- did an unusual
 number of records land on this date? -- so a laboratory clearing its
 backlog is found exactly as a surveillance system clearing its inbox is.
-\code{"validation"} needs a validation process (see \code{\link[=add_validation_date]{add_validation_date()}})
-and ignores cases that are still \code{"pending"}, which have no validation
+\code{"revision"} needs a revision process (see \code{\link[=add_revision_date]{add_revision_date()}})
+and ignores cases that are still \code{"pending"}, which have no revision
 date to arrive on.}
 
 \item{drop_censored}{Logical. Ignore the rows whose date on \code{axis} is
-flagged censored (\code{is_censored_report}, or \code{is_censored_validation} on the
-validation axis). Default \code{TRUE}: a censored date is a \emph{bound}, not the
+flagged censored (\code{is_censored_report}, or \code{is_censored_revision} on the
+revision axis). Default \code{TRUE}: a censored date is a \emph{bound}, not the
 date the record arrived, so those rows would pile up on the censoring date
 and be rediscovered as the very batch the censoring already recorded.}
 

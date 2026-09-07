@@ -416,7 +416,7 @@ test_that("prop_censored() is absent when the object has no flag", {
   expect_false("censored" %in% summary(fixture_plain())$quantity)
 })
 
-test_that("prop_validation_type() splits the cases between the outcomes", {
+test_that("prop_revision_type() splits the cases between the outcomes", {
   # 2 confirmed, 1 retracted, 3 pending, 4 confirmed -> 6 confirmed, 1
   # retracted, 3 pending out of ten.
   confirmed <- tbl_now(
@@ -426,38 +426,38 @@ test_that("prop_validation_type() splits the cases between the outcomes", {
       outcome = c("confirmed", "retracted", "pending", "confirmed")
     ),
     event_date = "onset", report_date = "report", case_count = "n",
-    validation_date = "checked", validation_type = "outcome",
+    revision_date = "checked", revision_type = "outcome",
     data_type = "count-incidence", now = as.Date("2024-01-05"), verbose = FALSE
   )
-  result <- prop_validation_type(confirmed)
+  result <- prop_revision_type(confirmed)
 
-  expect_equal(pick(result, "composition", "validation_type = confirmed")$prop, 0.6)
-  expect_equal(pick(result, "composition", "validation_type = retracted")$prop, 0.1)
-  expect_equal(pick(result, "composition", "validation_type = pending")$prop, 0.3)
+  expect_equal(pick(result, "composition", "revision_type = confirmed")$prop, 0.6)
+  expect_equal(pick(result, "composition", "revision_type = retracted")$prop, 0.1)
+  expect_equal(pick(result, "composition", "revision_type = pending")$prop, 0.3)
   expect_equal(sum(result$prop), 1)
 
-  # A pending case has no validation date, so it must not be counted as an
-  # arrival on the validation axis. A RETRACTED one does have a date -- the
+  # A pending case has no revision date, so it must not be counted as an
+  # arrival on the revision axis. A RETRACTED one does have a date -- the
   # laboratory answered, it just answered no -- so the axis carries
   # 2 + 1 + 4 = 7 cases, not all ten and not only the six confirmed.
-  axis <- pick(cases_per_date(confirmed, axis = "validation"),
-               "cases", "per_validation_date")
+  axis <- pick(cases_per_date(confirmed, axis = "revision"),
+               "cases", "per_revision_date")
   expect_equal(axis$total, 7)
 
   # With more than one outcome present the axis is also split by outcome.
-  by_type <- cases_per_date(confirmed, axis = "validation")
+  by_type <- cases_per_date(confirmed, axis = "revision")
   expect_equal(
-    pick(by_type, "cases", "per_validation_date [confirmed]")$total, 6
+    pick(by_type, "cases", "per_revision_date [confirmed]")$total, 6
   )
   expect_equal(
-    pick(by_type, "cases", "per_validation_date [retracted]")$total, 1
+    pick(by_type, "cases", "per_revision_date [retracted]")$total, 1
   )
 
   # The laboratory turnaround is measured FROM THE REPORT: confirmed cases wait
   # 01-01 -> 01-02 (1 day, 2 cases) and 01-05 -> 01-05 (0 days, 4 cases).
   turnaround <- pick(
-    delay_summary(confirmed, delay = "report_to_validation"),
-    "delay", "report_to_validation [confirmed]"
+    delay_summary(confirmed, delay = "report_to_revision"),
+    "delay", "report_to_revision [confirmed]"
   )
   expect_equal(turnaround$total, 6)
   expect_equal(turnaround$mean, (2 * 1 + 4 * 0) / 6)
@@ -714,9 +714,9 @@ test_that("covariate shares are also computed within each stratum", {
   )
 })
 
-# The validation axis in a full summary --------------------------------------
+# The revision axis in a full summary --------------------------------------
 
-test_that("summary() carries the validation blocks when there is a third date", {
+test_that("summary() carries the revision blocks when there is a third date", {
   confirmed <- tbl_now(
     cbind(
       fixture_frame(),
@@ -724,29 +724,29 @@ test_that("summary() carries the validation blocks when there is a third date", 
       outcome = c("confirmed", "retracted", "pending", "confirmed")
     ),
     event_date = "onset", report_date = "report", case_count = "n",
-    validation_date = "checked", validation_type = "outcome",
+    revision_date = "checked", revision_type = "outcome",
     data_type = "count-incidence", now = as.Date("2024-01-05"), verbose = FALSE
   )
   result <- summary(confirmed)
 
-  expect_true("per_validation_date" %in% result$quantity)
-  expect_true("validation_date" %in%
+  expect_true("per_revision_date" %in% result$quantity)
+  expect_true("revision_date" %in%
                 result$quantity[result$component == "zero_run"])
-  expect_true("validation_date" %in%
+  expect_true("revision_date" %in%
                 result$quantity[result$component == "coverage"])
 
-  # Both validation delays are present, and they are different quantities:
+  # Both revision delays are present, and they are different quantities:
   # from the event (2 cases wait 1 day, 1 waits 3, 4 wait 0 -> 10/7)
   # versus from the report (2 wait 1, 1 waits 1, 4 wait 0 -> 3/7).
-  from_event <- pick(result, "delay", "event_to_validation")
-  from_report <- pick(result, "delay", "report_to_validation")
+  from_event <- pick(result, "delay", "event_to_revision")
+  from_report <- pick(result, "delay", "report_to_revision")
   expect_equal(from_event$total, 7)
   expect_equal(from_report$total, 7)
   expect_equal(from_event$mean, (2 * 1 + 1 * 3 + 4 * 0) / 7)
   expect_equal(from_report$mean, (2 * 1 + 1 * 1 + 4 * 0) / 7)
 
-  # The validation-date range excludes the pending case, which has no date.
-  range <- pick(result, "coverage", "validation_date")
+  # The revision-date range excludes the pending case, which has no date.
+  range <- pick(result, "coverage", "revision_date")
   expect_equal(range$total, 7)
   expect_equal(range$date_min, as.Date("2024-01-02"))
   expect_equal(range$date_max, as.Date("2024-01-05"))
@@ -787,8 +787,10 @@ test_that("by_strata = TRUE without strata is an error, not a silent pooling", {
 })
 
 test_that("bad lags are rejected", {
-  expect_error(case_autocorrelation(fixture_plain(), lags = 0), "positive whole")
-  expect_error(case_autocorrelation(fixture_plain(), lags = -1), "positive whole")
+  suppressWarnings({
+    expect_error(case_autocorrelation(fixture_plain(), lags = 0), "positive whole")
+    expect_error(case_autocorrelation(fixture_plain(), lags = -1), "positive whole")
+  })
 })
 
 # Printing ---------------------------------------------------------------------

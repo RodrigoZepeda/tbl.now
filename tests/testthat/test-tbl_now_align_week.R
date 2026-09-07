@@ -568,7 +568,7 @@ test_that("align_weeks works on a grouped tbl_now", {
   expect_equal(get_event_units(out), "weeks")
 })
 
-test_that("align_weeks keeps a grouped validation process intact", {
+test_that("align_weeks keeps a grouped revision process intact", {
   cases <- data.frame(
     onset = as.Date("2024-01-07") + 7 * rep(0:4, each = 2),
     visit = as.Date("2024-01-10") + 7 * rep(0:4, each = 2),
@@ -576,17 +576,19 @@ test_that("align_weeks keeps a grouped validation process intact", {
     outcome = rep(c("confirmed", "retracted"), 5),
     sex = rep(c("F", "M"), 5)
   )
-  x <- tbl_now(cases,
+  # Constructor warns about the fractional delay this test then fixes with
+  # `align_weeks()`; the warning is expected structure, not a regression.
+  x <- suppressWarnings(tbl_now(cases,
     event_date = onset, report_date = visit,
-    validation_date = result, validation_type = outcome, strata = sex,
+    revision_date = result, revision_type = outcome, strata = sex,
     data_type = "linelist", units = "weeks", verbose = FALSE
-  )
+  ))
 
   out <- align_weeks(x |> dplyr::group_by(!!as.symbol("sex")))
 
-  expect_true(has_validation(out))
-  expect_equal(get_validation_date(out), "result")
-  expect_equal(get_validation_type(out), "outcome")
+  expect_true(has_revision(out))
+  expect_equal(get_revision_date(out), "result")
+  expect_equal(get_revision_type(out), "outcome")
   expect_equal(dplyr::group_vars(out), "sex")
   expect_true(all(out$.delay == round(out$.delay)))
 })

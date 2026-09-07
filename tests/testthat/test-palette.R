@@ -22,6 +22,7 @@ test_that("the palette is complete, named by role, and hue-free", {
   # The whole point of the rename: no role is named after the colour it happens
   # to hold, so a palette in other hues can still fill every role.
   expect_false(any(grepl("green|red|black|blue|grey|gray", names(pal))))
+  expect_equal(unname(pal[["revision"]]), "#C79800")
 })
 
 test_that("overriding one role leaves the rest at their defaults", {
@@ -96,7 +97,7 @@ test_that("size and linewidth multiply rather than replace", {
   expect_equal(lw(3), 1.2)
 })
 
-test_that("size and linewidth are validated everywhere they are offered", {
+test_that("size and linewidth are revised everywhere they are offered", {
   tn <- make_palette_tbl()
   expect_error(plot_delay_profiles(tn, linewidth = -1), "non-negative")
   expect_error(plot_reporting_triangle(tn, size = "big"), "single")

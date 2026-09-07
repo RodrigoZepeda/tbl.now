@@ -69,7 +69,7 @@ tn <- tbl_now(
 Useful arguments:
 
 - `now =` — the "as-of" date for the nowcast. Defaults to `max(report_date)`.
-- `units =` — the shared default for `event_units`, `report_units` and `validation_units`. Say `units = "days"` once instead of three times; anything you give explicitly still wins (`units = "days", report_units = "weeks"`).
+- `units =` — the shared default for `event_units`, `report_units` and `revision_units`. Say `units = "days"` once instead of three times; anything you give explicitly still wins (`units = "days", report_units = "weeks"`).
 - `event_units` / `report_units` — `"days" | "weeks" | "months" | "years" | "numeric"`; `"auto"` infers from spacing. `report_units` must be **coarser than or equal to** `event_units`.
 - `align_weeks = TRUE` — for weekly data, snaps dates so `.delay` is integer (see below).
 - You may pass **`.delay` + one date** instead of both dates; the missing date is reconstructed.
@@ -200,39 +200,39 @@ you nowcast by.
 tn |> dplyr::group_by(hospital) |> get_latest_reported_cases()   # keyed AND grouped by hospital
 ```
 
-**`type =` filters on the validation outcome** (see the validation family
+**`type =` filters on the revision outcome** (see the revision family
 below). `type = "total"` (the default) counts every case; `"confirmed"`,
 `"retracted"`, `"pending"` and `"unknown"` filter to one outcome; `"net"` is
 confirmed − retracted; `"by_type"` returns one row per outcome. On an object
-with no validation process anything but `"total"` warns and pools.
+with no revision process anything but `"total"` warns and pools.
 
 ---
 
-## Skill: the same three questions on the validation axis
+## Skill: the same three questions on the revision axis
 
 ```r
-get_initial_validated_cases(tn)              # as of the FIRST result to come back
-get_latest_validated_cases(tn)               # everything settled so far
-get_nth_validated_cases(tn, delay = 7)       # settled within 7 periods OF THE EVENT
-get_latest_validated_cases(tn, type = "confirmed")   # only the positives
-get_latest_validated_cases(tn, type = "net")         # confirmed minus retracted
-get_latest_validated_cases(tn, type = "by_type")     # every outcome, side by side
+get_initial_revised_cases(tn)              # as of the FIRST result to come back
+get_latest_revised_cases(tn)               # everything settled so far
+get_nth_revised_cases(tn, delay = 7)       # settled within 7 periods OF THE EVENT
+get_latest_revised_cases(tn, type = "confirmed")   # only the positives
+get_latest_revised_cases(tn, type = "net")         # confirmed minus retracted
+get_latest_revised_cases(tn, type = "by_type")     # every outcome, side by side
 ```
 
 Exactly the reporting-axis family, one axis over: same `count-cumulative`
 return, same `type =`, same respect for a grouping. The differences worth
 knowing:
 
-- **A pending case never appears.** It has no validation date, so it has not
+- **A pending case never appears.** It has no revision date, so it has not
   arrived on this axis. `type = "pending"` is refused here and belongs on the
   reporting axis: `get_latest_reported_cases(tn, type = "pending")`.
 - **`delay` is measured from the EVENT**, not from the report, so
-  `get_nth_reported_cases(tn, 7)` and `get_nth_validated_cases(tn, 7)` describe
-  the same seven days. `.validation_delay` (report → resolution) is a different
+  `get_nth_reported_cases(tn, 7)` and `get_nth_revised_cases(tn, 7)` describe
+  the same seven days. `.revision_delay` (report → resolution) is a different
   quantity.
-- **An empty selection is an error, not a zero-row object.** Nothing validated
+- **An empty selection is an error, not a zero-row object.** Nothing revised
   yet, or no case with that outcome, aborts with the reason named.
-- The result carries all three dates. `validation_type` on it is the outcome
+- The result carries all three dates. `revision_type` on it is the outcome
   when the call filtered to one, and `NA` for `"total"` and `"net"`, which pool
   outcomes and so have none.
 
@@ -306,10 +306,10 @@ censor_reporting_delays(tn, .delay > 60)                # any condition -> flag
 censor_reporting_delays(tn, .delay > 60, to_delay = 60) # ... and cap the report date
 censor_reporting_delays_above(tn, max_delay = 60)       # EVERY delay > 60 -> flag
 
-# Validation axis (report -> resolution), sets `is_censored_validation`
-censor_validations(tn, is.na(result))                   # missing result -> `now` + flag
-censor_validation_delays(tn, .validation_delay > 30, to_delay = 30)
-censor_validation_delays_above(tn, max_delay = 30)      # EVERY turnaround > 30 -> flag
+# Revision axis (report -> resolution), sets `is_censored_revision`
+censor_revisions(tn, is.na(result))                   # missing result -> `now` + flag
+censor_revision_delays(tn, .revision_delay > 30, to_delay = 30)
+censor_revision_delays_above(tn, max_delay = 30)      # EVERY turnaround > 30 -> flag
 ```
 
 Six verbs: two axes x {by date, by delay, threshold}. The `*_above()` pair is the
@@ -317,16 +317,16 @@ threshold shorthand -- **every** delay strictly greater than `max_delay` is
 considered censored, every other row is left alone.
 
 `condition` is a `filter()`-style expression evaluated in the data (`.delay` and
-`.validation_delay` are visible); `NA` is **not** a match. Existing flags are
+`.revision_delay` are visible); `NA` is **not** a match. Existing flags are
 merged, never cleared, and the flag column is created as `.is_censored_report` /
-`.is_censored_validation` when there is none. Replacing a date rebuilds the
+`.is_censored_revision` when there is none. Replacing a date rebuilds the
 object, moves `now` forward if the replacement lands after it, and drops any
 `.report_*` temporal-effect column that has just gone stale.
 
-**Pending cases are skipped by the validation verbs.** `"pending"` means reported
-and still waiting, so the case has no validation date; writing one would assert a
-resolution that never happened. `censor_validations()` and
-`censor_validation_delays()` leave those rows alone and say how many they
+**Pending cases are skipped by the revision verbs.** `"pending"` means reported
+and still waiting, so the case has no revision date; writing one would assert a
+resolution that never happened. `censor_revisions()` and
+`censor_revision_delays()` leave those rows alone and say how many they
 skipped. Flagging without a replacement is unaffected -- no date is written.
 
 **The converters drop it, and say so.** A flag that varies *within* an
@@ -343,25 +343,25 @@ warning either way:
 `tbl_now_to_epidist()` keeps it — a delay-distribution fit is the one consumer
 that can use censoring.
 
-### The validation axis has its own flag
+### The revision axis has its own flag
 
-`is_censored_validation` is the exact twin of `is_censored_report`, one axis
-over: it marks rows whose **validation delay** (report → resolution) is a bound
-rather than a measurement. It requires a `validation_date` — there is no
-validation delay to bound without one.
+`is_censored_revision` is the exact twin of `is_censored_report`, one axis
+over: it marks rows whose **revision delay** (report → resolution) is a bound
+rather than a measurement. It requires a `revision_date` — there is no
+revision delay to bound without one.
 
 ```r
-tn <- tbl_now(df, ..., validation_date = result, validation_type = outcome,
-              is_censored_validation = slow_result)
+tn <- tbl_now(df, ..., revision_date = result, revision_type = outcome,
+              is_censored_revision = slow_result)
 
-tn <- add_is_censored_validation(tn, slow_result)
-tn <- change_is_censored_validation(tn, slower)   # NULL to clear
-tn <- remove_is_censored_validation(tn)
-get_is_censored_validation(tn)                    # column name, or NULL
+tn <- add_is_censored_revision(tn, slow_result)
+tn <- change_is_censored_revision(tn, slower)   # NULL to clear
+tn <- remove_is_censored_revision(tn)
+get_is_censored_revision(tn)                    # column name, or NULL
 
 # Or let the threshold set it. The case, its date and its outcome are KEPT;
-# only the delay becomes a bound, so get_latest_validated_cases() still counts it.
-tn <- censor_validation_delays_above(tn, max_delay = 60)
+# only the delay becomes a bound, so get_latest_revised_cases() still counts it.
+tn <- censor_revision_delays_above(tn, max_delay = 60)
 ```
 
 Both flags join the grouping keys, so a censored resolution and an exact one on
@@ -370,23 +370,23 @@ summed into one. The converters collapse both, by the same table above.
 
 ---
 
-## Skill: `validation_type` and other people's words
+## Skill: `revision_type` and other people's words
 
-`validation_type` may hold **only** `"confirmed"`, `"retracted"`, `"pending"` or
+`revision_type` may hold **only** `"confirmed"`, `"retracted"`, `"pending"` or
 `NA`. Anything else is an error at construction and at every rebuild.
 
-`validation_levels` is how data recorded in other words gets into those four: a
+`revision_levels` is how data recorded in other words gets into those four: a
 **named** vector whose names are the labels in your data and whose values are the
 canonical outcomes.
 
 ```r
 tn <- tbl_now(casos, ...,
-  validation_type   = desenlace,
-  validation_levels = c(confirmado = "confirmed", retractado = "retracted",
+  revision_type   = desenlace,
+  revision_levels = c(confirmado = "confirmed", retractado = "retracted",
                         pendiente = "pending")
 )
 
-get_validation_levels(tn)   # the dictionary, or NULL
+get_revision_levels(tn)   # the dictionary, or NULL
 ```
 
 The column is rewritten to the canonical values and the dictionary is stored on
@@ -419,7 +419,8 @@ spec <- temporal_effects(
   holidays      = NULL          # an almanac::rcalendar(), see next skill
 )
 
-# 2) attach (NO columns created yet). date_type = "event_date" (default) or "report_date"
+# 2) attach (NO columns created yet). date_type = "event_date" (default),
+# "report_date", or "revision_date" when the object has revision
 tn <- add_temporal_effects(tn, spec, date_type = "event_date")
 
 # 3) materialise the columns when ready for modelling
@@ -430,7 +431,8 @@ get_temporal_effect_cols(tn)   # character(0) before compute; column names after
 ```
 
 - `add_temporal_effects()` can be called repeatedly (appends specs); you can mix
-  `date_type = "event_date"` and `"report_date"`.
+  `date_type = "event_date"`, `"report_date"`, and `"revision_date"` when the
+  object has a revision process.
 - **Seasonality / Fourier**: `seasons` are the cycle periods. For *daily* data
   with weekly seasonality use `seasons = 52, season_length = 7` (period = 364
   days); `season_length` defaults to `1` (period = `seasons`).
@@ -587,6 +589,12 @@ patterned?):
    many cases *occur*, but very much changes how long they take to be *reported*.
 9. **Delay periodicity periodogram** (`"delay_seasonality"`) — a cycle in the delay
    (e.g. a weekly reporting rhythm).
+10. **Revision calendar effects** (`"revision_weekday"`, `"revision_week"`,
+   `"revision_month"`, `"revision_holiday"`, `"revision_holiday_lag"`) —
+   revision-date twins for resolved cases. These appear in `autoplot()` when
+   the object has a revision process.
+11. **Revision periodicity periodogram** (`"revision_seasonality"`) — cycles
+   in revision arrivals.
 
 Which panels are available depends on the object. **Calendar/delay** panels follow
 the unit: **daily** → day-of-week *and* week-of-year; **weekly** → week-of-year;
@@ -604,6 +612,7 @@ Key arguments:
 autoplot(
   tn,
   panels = "all",         # "all" (default) | "calendar" | "delay_calendar" |
+                          #   "revision_calendar" |
                           #   a vector of concrete panel keys above.
                           #   A SINGLE key returns a plain ggplot (not a patchwork).
   by_strata = FALSE,      # TRUE => split every panel by stratum (dodged boxes /
@@ -656,6 +665,7 @@ The two families carry the package's grammar and are worth knowing:
 |---|---|
 | `reporting`, `reporting_light` | the **reporting** process — report dates, delays, *when we found out* |
 | `epidemic`, `epidemic_light`, `epidemic_mid`, `epidemic_dark` | the **epidemic** process — event dates, case counts, *what happened* |
+| `revision`, `revision_light` | the **revision** process — revision dates and resolution arrivals |
 | `ink`, `ink_muted`, `ink_inverse` | text |
 | `surface`, `surface_muted`, `surface_dark` | label fills and ramp ends |
 | `grid_major`, `grid_minor`, `guide`, `guide_strong`, `annotation`, `neutral` | the grids and reference lines the package draws itself |
@@ -694,7 +704,7 @@ plot_reporting_hexamap(tn, text_size = 3, grid_linewidth_major = 0.6,
 ```
 
 `plot_reporting_process()`, `plot_epidemic_process()`, `plot_scalogram()` and
-`plot_validation_status()` draw only bars, tiles or areas, so they take neither.
+`plot_revision_status()` draw only bars, tiles or areas, so they take neither.
 
 ---
 
@@ -724,10 +734,10 @@ rest `NA`. `stratum` is `"all"` for the pooled rows.
 
 | component | rows |
 |---|---|
-| `cases` | counts per event / report / validation date, and per validation outcome; plus `censored_per_*_date` when there is a censoring flag |
-| `delay` | `event_to_report`, `event_to_validation`, `report_to_validation`, split by outcome when there is more than one |
+| `cases` | counts per event / report / revision date, and per revision outcome; plus `censored_per_*_date` when there is a censoring flag |
+| `delay` | `event_to_report`, `event_to_revision`, `report_to_revision`, split by outcome when there is more than one |
 | `zero_run` | lengths of the runs of consecutive zero dates, per axis |
-| `composition` | shares: `censored`, `validation_type = ...`, `strata = ...`, `covariate: <col> = <level>` (in `prop`) |
+| `composition` | shares: `censored`, `revision_type = ...`, `strata = ...`, `covariate: <col> = <level>` (in `prop`) |
 | `coverage` | `total_cases`, the date ranges, `now`, `max_delay`, the triangle cell counts and occupancy, `now_gap_*` |
 | `growth` | ratio of each event date's running total from one delay to the next (`count-cumulative` only) |
 
@@ -735,11 +745,11 @@ Each block is also its own exported function, returning the same schema, so they
 stack with `dplyr::bind_rows()`:
 
 ```r
-cases_per_date(tn, axis = "event")       # "event" / "report" / "validation"
+cases_per_date(tn, axis = "event")       # "event" / "report" / "revision"
 delay_summary(tn, delay = "event_to_report")
 zero_run_summary(tn, axis = "event")
 prop_censored(tn); prop_strata(tn)
-prop_validation_type(tn); prop_covariate_levels(tn)
+prop_revision_type(tn); prop_covariate_levels(tn)
 date_ranges(tn); triangle_occupancy(tn)
 cumulative_growth(tn, k = 7)
 
@@ -776,8 +786,8 @@ Three things to know before reading the numbers:
   `to_count(x, to = "count-incidence")` first (remembering that de-accumulating
   can produce negative increments).
 
-`report_to_validation` is the **laboratory's turnaround, measured from the
-report**; `event_to_validation` is measured from the event, so it is directly
+`report_to_revision` is the **laboratory's turnaround, measured from the
+report**; `event_to_revision` is measured from the event, so it is directly
 comparable with `event_to_report`. They are different quantities.
 
 ---
@@ -818,21 +828,21 @@ itself and why `status <= "note"` reads as "anything worth acting on":
 | `warning` | `validate_tbl_now()` warns about it |
 | `note` | a `diagnose()`-only observation. **Never promoted to a warning**: `validate_tbl_now()` runs on every dplyr verb, and a new warning there would make construction noisy for data that has always been accepted |
 | `ok` | the check ran and found nothing |
-| `skipped` | could not be assessed (no validation process, wrong data type, package not installed) |
+| `skipped` | could not be assessed (no revision process, wrong data type, package not installed) |
 
 `check` is one of:
 
 | check | what it looks for |
 |---|---|
 | `declarations` | attribute types, the columns they name, role collisions, **undeclared columns**, temporal effects added but never materialised |
-| `ordering` | `event <= report <= validation`, including the transitive leg a missing `report_date` would otherwise hide |
+| `ordering` | `event <= report <= revision`, including the transitive leg a missing `report_date` would otherwise hide |
 | `missing` | `NA`s per column and per stratum. An `NA` **count** is reported *neutrally* — in a triangle it means *not yet observed*, which is correct data |
-| `duplicates` | rows repeating on the full key (including the validation columns). Defaults **on** here, unlike `validate_tbl_now()` |
+| `duplicates` | rows repeating on the full key (including the revision columns). Defaults **on** here, unlike `validate_tbl_now()` |
 | `units` | the declared units against each other, against the calendar the dates land on, and against the `.delay` they produce |
 | `negatives` | negative incidence counts, and the negative increments a downward revision leaves when cumulative data is de-accumulated |
 | `now` | anything dated after `now`, and the gap from the last observation to `now` |
 | `truncation` | how many recent event dates are still immature, and how much of their eventual total has not arrived |
-| `strata` | the smallest and the sparsest stratum (named, **not** thresholded), and the validations still pending |
+| `strata` | the smallest and the sparsest stratum (named, **not** thresholded), and the revisions still pending |
 
 Each block is also its own exported function, same schema, so they stack with
 `dplyr::bind_rows()` — and `diagnose(x)` *is* that bind:
@@ -1337,17 +1347,17 @@ align_weeks(tn, date_col)            # snap dates to a consistent epiweek day ->
 week_2_date(df, week_col, year_col)  # epiweek + year -> Date
 is_weekday(date, weekend_days = c("Sat","Sun"))
 change_now(tn, as.Date("2023-06-01"))   # move the as-of date. Moving it BACKWARDS
-                                        # returns validations dated after it to
+                                        # returns revisions dated after it to
                                         # "pending" and masks their date
 tbl_now_attributes(tn)               # list of just the tbl_now-specific attributes
 ```
 
 - **`aggregate_time_units` / sparse daily data:** moves every date onto a
   coarser grid (`to = "weeks" | "months" | "years"`), sums the counts, and
-  updates `event_units` / `report_units` / `validation_units` so everything
+  updates `event_units` / `report_units` / `revision_units` so everything
   downstream counts in the new unit. Cumulative counts are de-accumulated first,
   because they are not additive. `axes =` picks which axes move (`"all"`,
-  `"event"`, `"report"`, `"validation"`); `label =` picks whether a period is
+  `"event"`, `"report"`, `"revision"`); `label =` picks whether a period is
   named by its first or last day — use `label = "end"` when you coarsen only a
   later axis, or reports land before their own events. It only ever coarsens:
   asking a weekly object for `"days"` is an error. Aggregate **once**, to the
@@ -1400,16 +1410,16 @@ get_now(x)                                # Date — the as-of date
 get_strata(x) / get_num_strata(x)
 get_covariates(x) / get_num_covariates(x)
 get_case_count(x) / get_is_censored_report(x)    # column name or NULL
-get_is_censored_validation(x)             # the validation-axis flag, or NULL
-get_validation_date(x) / get_validation_type(x) / get_validation_units(x)
-get_validation_levels(x) / has_validation(x)
+get_is_censored_revision(x)             # the revision-axis flag, or NULL
+get_revision_date(x) / get_revision_type(x) / get_revision_units(x)
+get_revision_levels(x) / has_revision(x)
 get_data_type(x)                          # "linelist"|"count-incidence"|"count-cumulative"
 get_temporal_effects(x)                   # list of lazy specs
 get_temporal_effect_cols(x)               # computed column names
 get_initial_reported_cases(x, type) / get_latest_reported_cases(x, type)
 get_nth_reported_cases(x, delay, type)    # cumulative count within a given delay
-get_initial_validated_cases(x, type) / get_latest_validated_cases(x, type)
-get_nth_validated_cases(x, delay, type)   # the same, on the validation axis
+get_initial_revised_cases(x, type) / get_latest_revised_cases(x, type)
+get_nth_revised_cases(x, delay, type)   # the same, on the revision axis
 # type: "total" | "confirmed" | "retracted" | "pending" | "unknown" | "net" | "by_type"
 ```
 
@@ -1441,7 +1451,7 @@ diagnose(x, checks =, by_strata =)        # the structural health check
 diagnose_declarations/ordering/missing/duplicates/units/negatives(x)
 diagnose_now/truncation/strata(x)
 cases_per_date(x, axis =) / delay_summary(x, delay =) / zero_run_summary(x, axis =)
-prop_censored(x) / prop_strata(x) / prop_validation_type(x) / prop_covariate_levels(x)
+prop_censored(x) / prop_strata(x) / prop_revision_type(x) / prop_covariate_levels(x)
 date_ranges(x) / triangle_occupancy(x) / cumulative_growth(x, k =)
 case_autocorrelation(x, lags =) / reporting_completeness(x, delays =)  # unreviewed, warn, NOT in summary()
 autoplot(x, panels =, by_strata =)        # multi-panel diagnostic (patchwork)

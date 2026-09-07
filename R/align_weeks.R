@@ -185,10 +185,10 @@ align_weeks.tbl_now <- function(.data, align_on_day = 7, type = "epi", ...) {
   event_col <- get_event_date(.data)
   report_col <- get_report_date(.data)
   # The THIRD date has to be aligned too. Left on its own weekday grid the
-  # validation delay comes out fractional -- the same trap `.delay` has, and
+  # revision delay comes out fractional -- the same trap `.delay` has, and
   # the reason this function exists.
-  validation_col <- get_validation_date(.data)
-  validation_type_col <- get_validation_type(.data)
+  revision_col <- get_revision_date(.data)
+  revision_type_col <- get_revision_type(.data)
   original <- list(
     now = get_now(.data),
     data_type = get_data_type(.data),
@@ -196,9 +196,9 @@ align_weeks.tbl_now <- function(.data, align_on_day = 7, type = "epi", ...) {
     covariates = get_covariates(.data),
     case_count = get_case_count(.data),
     is_censored_report = get_is_censored_report(.data),
-    is_censored_validation = get_is_censored_validation(.data),
-    validation_units = get_validation_units(.data) %||% "auto",
-    validation_levels = get_validation_levels(.data),
+    is_censored_revision = get_is_censored_revision(.data),
+    revision_units = get_revision_units(.data) %||% "auto",
+    revision_levels = get_revision_levels(.data),
     event_units = get_event_units(.data),
     report_units = get_report_units(.data),
     temporal_effects = get_temporal_effects(.data)
@@ -209,11 +209,11 @@ align_weeks.tbl_now <- function(.data, align_on_day = 7, type = "epi", ...) {
     align_weeks.data.frame(date_col = event_col, align_on_day = align_on_day, type = type, new_date_col = paste0("temp_", event_col)) |>
     align_weeks.data.frame(date_col = report_col, align_on_day = align_on_day, type = type, new_date_col = paste0("temp_", report_col))
 
-  if (!is.null(validation_col)) {
+  if (!is.null(revision_col)) {
     .data <- align_weeks.data.frame(
       .data,
-      date_col = validation_col, align_on_day = align_on_day, type = type,
-      new_date_col = paste0("temp_", validation_col)
+      date_col = revision_col, align_on_day = align_on_day, type = type,
+      new_date_col = paste0("temp_", revision_col)
     )
   }
 
@@ -225,7 +225,7 @@ align_weeks.tbl_now <- function(.data, align_on_day = 7, type = "epi", ...) {
         -!!as.symbol(".event_num"), -!!as.symbol(".report_num")
       ) |>
       dplyr::select(-dplyr::any_of(c(
-        validation_col, ".validation_num", ".validation_delay"
+        revision_col, ".revision_num", ".revision_delay"
       )))
   })
 
@@ -240,30 +240,30 @@ align_weeks.tbl_now <- function(.data, align_on_day = 7, type = "epi", ...) {
   renamed <- .data |>
     dplyr::rename(!!as.symbol(event_col) := !!as.symbol(paste0("temp_", event_col))) |>
     dplyr::rename(!!as.symbol(report_col) := !!as.symbol(paste0("temp_", report_col)))
-  if (!is.null(validation_col)) {
+  if (!is.null(revision_col)) {
     renamed <- dplyr::rename(
       renamed,
-      !!as.symbol(validation_col) := !!as.symbol(paste0("temp_", validation_col))
+      !!as.symbol(revision_col) := !!as.symbol(paste0("temp_", revision_col))
     )
   }
   # `tbl_now()` refuses a grouped data frame; the grouping goes back on at the
   # end, where it belongs to the caller.
   renamed <- dplyr::ungroup(renamed)
 
-  validation_args <- if (is.null(validation_col)) {
+  revision_args <- if (is.null(revision_col)) {
     list()
   } else {
     list(
-      validation_date = validation_col,
-      validation_type = if (!is.null(validation_type_col) &&
-        validation_type_col %in% colnames(renamed)) {
-        validation_type_col
+      revision_date = revision_col,
+      revision_type = if (!is.null(revision_type_col) &&
+        revision_type_col %in% colnames(renamed)) {
+        revision_type_col
       } else {
         NULL
       },
-      validation_units = original$validation_units,
-      validation_levels = original$validation_levels,
-      is_censored_validation = original$is_censored_validation
+      revision_units = original$revision_units,
+      revision_levels = original$revision_levels,
+      is_censored_revision = original$is_censored_revision
     )
   }
 
@@ -281,10 +281,10 @@ align_weeks.tbl_now <- function(.data, align_on_day = 7, type = "epi", ...) {
       report_units = original$report_units,
       now = new_now
     ),
-    validation_args
+    revision_args
   ))
 
-  # Preserve the lazy temporal-effects spec (computed cols are invalidated by
+  # Preserve the lazy temporal-effects spec (computed cols are inrevised by
   # the date-realignment so they are intentionally dropped)
   attr(result, "temporal_effects") <- original$temporal_effects
   .tbl_now_regroup(result, group_columns)

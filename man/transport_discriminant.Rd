@@ -10,7 +10,7 @@ transport_discriminant(
   baseline_window = NULL,
   period = NULL,
   alpha = 0.05,
-  axis = c("report", "validation"),
+  axis = c("report", "revision"),
   drop_censored = TRUE
 )
 }
@@ -27,12 +27,12 @@ reporting cadence.}
 \item{alpha}{Level for the \code{classification} labels. Default \code{0.05}.}
 
 \item{axis}{Which time axis to scan for arrivals: \code{"report"} (default) or
-\code{"validation"}. Needs a validation process (see \code{\link[=add_validation_date]{add_validation_date()}});
+\code{"revision"}. Needs a revision process (see \code{\link[=add_revision_date]{add_revision_date()}});
 cases still \code{"pending"} are left out.}
 
 \item{drop_censored}{Logical. Ignore the rows whose date on \code{axis} is
-flagged censored (\code{is_censored_report}, or \code{is_censored_validation} on the
-validation axis). Default \code{TRUE}: a censored date is a \emph{bound}, not the
+flagged censored (\code{is_censored_report}, or \code{is_censored_revision} on the
+revision axis). Default \code{TRUE}: a censored date is a \emph{bound}, not the
 date the record arrived, so those rows would pile up on the censoring date
 and be rediscovered as the very batch the censoring already recorded.}
 }

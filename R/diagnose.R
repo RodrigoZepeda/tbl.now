@@ -11,7 +11,7 @@
 #
 #   * `floor`  -- the least severe status to report. `validate_tbl_now()` stops
 #                 at `"note"` (it needs exactly one of them, see
-#                 `.diagnose_validation_alerts()`), `diagnose()` reports
+#                 `.diagnose_revision_alerts()`), `diagnose()` reports
 #                 everything.
 #   * `deep`   -- whether to do work that costs a pass over the data and only
 #                 ever yields a note. `validate_tbl_now()` runs on EVERY
@@ -98,7 +98,7 @@
 #'     every `dplyr` verb, and a new warning there would turn a quiet
 #'     construction into a noisy one for data that has always been accepted.}
 #'   \item{`ok`}{The check ran and found nothing.}
-#'   \item{`skipped`}{Could not be assessed -- no validation process, the
+#'   \item{`skipped`}{Could not be assessed -- no revision process, the
 #'     wrong data type, or an optional package that is not installed.}
 #' }
 #'
@@ -172,7 +172,7 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 #' * `diagnose_declarations()` -- the attributes and the columns they name:
 #'   types, existence, collisions, columns the object was never told about, and
 #'   temporal effects that were added but never materialised.
-#' * `diagnose_ordering()` -- the `event <= report <= validation` timeline.
+#' * `diagnose_ordering()` -- the `event <= report <= revision` timeline.
 #' * `diagnose_missing()` -- `NA` values, per column and per stratum. An `NA`
 #'   *count* is reported neutrally: in a reporting triangle it means *not yet
 #'   observed*, which is correct data rather than a defect.
@@ -185,7 +185,7 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 #' * `diagnose_truncation()` -- how many recent event dates are still immature,
 #'   and how much of their eventual total is probably still missing.
 #' * `diagnose_strata()` -- the smallest and the sparsest stratum, and the
-#'   validations still pending.
+#'   revisions still pending.
 #'
 #' @inheritParams diagnose
 #'
@@ -327,7 +327,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
 #'
 #' @keywords internal
 #' @noRd
-.diagnose_validation_checks <- function() {
+.diagnose_revision_checks <- function() {
   c("declarations", "ordering", "missing", "duplicates", "units", "now")
 }
 
@@ -343,7 +343,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
 #'
 #' @keywords internal
 #' @noRd
-.diagnose_validation_alerts <- function() {
+.diagnose_revision_alerts <- function() {
   data.frame(check = "declarations", scope = "same_columns")
 }
 
@@ -663,7 +663,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
 #' costs: `{.val {x}}` runs to about 3.5 ms and a hint carrying a vector of row
 #' numbers to about 15 ms, and a block builds one of each whether or not the
 #' check found anything. Most of them are then thrown away -- a clean object
-#' validated at `floor = "note"` formats eleven messages and reports one -- and
+#' revised at `floor = "note"` formats eleven messages and reports one -- and
 #' since `validate_tbl_now()` runs on every `dplyr` verb, that waste was the
 #' single largest cost in the class. `.diagnose_finalise()` filters first and
 #' formats afterwards, so only a finding somebody will actually read is paid
@@ -900,7 +900,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   event_units <- get_event_units(x)
   data_type <- get_data_type(x)
   is_censored_report <- get_is_censored_report(x)
-  is_censored_validation <- get_is_censored_validation(x)
+  is_censored_revision <- get_is_censored_revision(x)
   case_count <- get_case_count(x)
 
   rows <- list()
@@ -961,23 +961,23 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
        of length 1"
     ))
   }
-  if (!is.null(is_censored_validation) &&
-    (length(is_censored_validation) != 1 ||
-      !is.character(is_censored_validation))) {
-    error("is_censored_validation", .diagnose_text(
-      "Attribute {.val is_censored_validation} must be {.val NULL} or a
+  if (!is.null(is_censored_revision) &&
+    (length(is_censored_revision) != 1 ||
+      !is.character(is_censored_revision))) {
+    error("is_censored_revision", .diagnose_text(
+      "Attribute {.val is_censored_revision} must be {.val NULL} or a
        character vector of length 1"
     ))
   }
-  # A validation delay only exists once there is a validation date to measure
+  # A revision delay only exists once there is a revision date to measure
   # it from; a flag without one names a bound on nothing.
-  if (!is.null(is_censored_validation) && !has_validation(x)) {
-    error("is_censored_validation", .diagnose_text(
-      "Attribute {.val is_censored_validation} is set but the object carries no
-       {.field validation_date}"
+  if (!is.null(is_censored_revision) && !has_revision(x)) {
+    error("is_censored_revision", .diagnose_text(
+      "Attribute {.val is_censored_revision} is set but the object carries no
+       {.field revision_date}"
     ), hint = .diagnose_text(
-      "Attach one with {.fn add_validation_date}, or drop the flag with
-       {.fn remove_is_censored_validation}."
+      "Attach one with {.fn add_revision_date}, or drop the flag with
+       {.fn remove_is_censored_revision}."
     ))
   }
 
@@ -1000,10 +1000,10 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
       "Column {.val {is_censored_report}} (is_censored_report) not found in data"
     ))
   }
-  if (named_column(is_censored_validation) &&
-    !is_censored_validation %in% colnames(x)) {
-    error(is_censored_validation, .diagnose_text(
-      "Column {.val {is_censored_validation}} (is_censored_validation) not
+  if (named_column(is_censored_revision) &&
+    !is_censored_revision %in% colnames(x)) {
+    error(is_censored_revision, .diagnose_text(
+      "Column {.val {is_censored_revision}} (is_censored_revision) not
        found in data"
     ))
   }
@@ -1058,17 +1058,17 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
       "Censored indicator {.val {is_censored_report}} cannot be also strata"
     ))
   }
-  if (!is.null(is_censored_validation) &&
-    any(is_censored_validation %in% covariates)) {
-    error("is_censored_validation", .diagnose_text(
-      "Censored indicator {.val {is_censored_validation}} cannot be also a
+  if (!is.null(is_censored_revision) &&
+    any(is_censored_revision %in% covariates)) {
+    error("is_censored_revision", .diagnose_text(
+      "Censored indicator {.val {is_censored_revision}} cannot be also a
        covariate"
     ))
   }
-  if (!is.null(is_censored_validation) &&
-    any(is_censored_validation %in% strata)) {
-    error("is_censored_validation", .diagnose_text(
-      "Censored indicator {.val {is_censored_validation}} cannot be also strata"
+  if (!is.null(is_censored_revision) &&
+    any(is_censored_revision %in% strata)) {
+    error("is_censored_revision", .diagnose_text(
+      "Censored indicator {.val {is_censored_revision}} cannot be also strata"
     ))
   }
 
@@ -1088,11 +1088,11 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
       "Column {.val {is_censored_report}} must be logical (TRUE/FALSE)"
     ))
   }
-  if (named_column(is_censored_validation) &&
-    is_censored_validation %in% colnames(x) &&
-    !is.logical(x[[is_censored_validation]])) {
-    error(is_censored_validation, .diagnose_text(
-      "Column {.val {is_censored_validation}} must be logical (TRUE/FALSE)"
+  if (named_column(is_censored_revision) &&
+    is_censored_revision %in% colnames(x) &&
+    !is.logical(x[[is_censored_revision]])) {
+    error(is_censored_revision, .diagnose_text(
+      "Column {.val {is_censored_revision}} must be logical (TRUE/FALSE)"
     ))
   }
 
@@ -1177,7 +1177,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   .diagnose_block(rows)
 }
 
-#' The `event <= report <= validation` timeline
+#' The `event <= report <= revision` timeline
 #'
 #' @param context A diagnose context.
 #'
@@ -1189,8 +1189,8 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   x <- context$x
   event <- x[[get_event_date(x)]]
   report <- x[[get_report_date(x)]]
-  validation <- if (has_validation(x)) {
-    x[[get_validation_date(x)]]
+  revision <- if (has_revision(x)) {
+    x[[get_revision_date(x)]]
   } else {
     NULL
   }
@@ -1211,48 +1211,48 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     rows = before_event
   )
 
-  if (is.null(validation)) {
+  if (is.null(revision)) {
     rows[[2]] <- .diagnose_row(
-      "ordering", "report_to_validation", "skipped",
-      .diagnose_text("The object carries no validation process.")
+      "ordering", "report_to_revision", "skipped",
+      .diagnose_text("The object carries no revision process.")
     )
     rows[[3]] <- .diagnose_row(
-      "ordering", "event_to_validation", "skipped",
-      .diagnose_text("The object carries no validation process.")
+      "ordering", "event_to_revision", "skipped",
+      .diagnose_text("The object carries no revision process.")
     )
     return(.diagnose_block(rows))
   }
 
   before_report <- which(
-    !is.na(validation) & !is.na(report) & validation < report
+    !is.na(revision) & !is.na(report) & revision < report
   )
   shown <- utils::head(before_report, 5)
   rows[[2]] <- .diagnose_count_row(
-    "ordering", "report_to_validation", length(before_report), nrow(x),
+    "ordering", "report_to_revision", length(before_report), nrow(x),
     "warning",
     .diagnose_text(
-      "{length(before_report)} row{?s} {?is/are} validated BEFORE they were reported."
+      "{length(before_report)} row{?s} {?is/are} revised BEFORE they were reported."
     ),
-    clean = .diagnose_text("Every validation is on or after its report."),
+    clean = .diagnose_text("Every revision is on or after its report."),
     hint = .diagnose_text(
       "The timeline is {.code event_date <= report_date <=
-       validation_date}; a negative validation delay is not a delay.
+       revision_date}; a negative revision delay is not a delay.
        {cli::qty(length(shown))}First affected row{?s}: {.val {shown}}."
     ),
     rows = before_report
   )
 
   # The transitive case. A row whose `report_date` is missing escapes the check
-  # above entirely, so a validation before the event goes unnoticed there.
+  # above entirely, so a revision before the event goes unnoticed there.
   before_all <- which(
-    !is.na(validation) & !is.na(event) & validation < event
+    !is.na(revision) & !is.na(event) & revision < event
   )
   rows[[3]] <- .diagnose_count_row(
-    "ordering", "event_to_validation", length(before_all), nrow(x), "note",
+    "ordering", "event_to_revision", length(before_all), nrow(x), "note",
     .diagnose_text(
-      "{length(before_all)} row{?s} {?is/are} validated BEFORE the event happened."
+      "{length(before_all)} row{?s} {?is/are} revised BEFORE the event happened."
     ),
-    clean = .diagnose_text("Every validation is on or after its event."),
+    clean = .diagnose_text("Every revision is on or after its event."),
     hint = .diagnose_text(
       "A row with a missing {.field report_date} is only caught here."
     ),
@@ -1321,14 +1321,14 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   # -- everything else, per stratum -------------------------------------------
   case_count <- get_case_count(x)
   censoring <- get_is_censored_report(x)
-  validation <- if (has_validation(x)) get_validation_date(x) else NULL
-  validation_type <- if (has_validation(x)) {
-    get_validation_type(x)
+  revision <- if (has_revision(x)) get_revision_date(x) else NULL
+  revision_type <- if (has_revision(x)) {
+    get_revision_type(x)
   } else {
     NULL
   }
 
-  columns <- c(case_count, validation, validation_type, censoring,
+  columns <- c(case_count, revision, revision_type, censoring,
                get_covariates(x))
   columns <- intersect(unique(columns), colnames(x))
 
@@ -1336,9 +1336,9 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     missing <- is.na(x[[column]])
     # An `NA` COUNT is not a defect: in a reporting triangle it means the cell
     # has not been observed yet, which is different from an observed zero. The
-    # same goes for a validation date that has not come back. Say so, rather
+    # same goes for a revision date that has not come back. Say so, rather
     # than inviting the user to "fix" correct data.
-    neutral <- identical(column, case_count) || identical(column, validation)
+    neutral <- identical(column, case_count) || identical(column, revision)
     for (label in context$labels) {
       selected <- .diagnose_rows(context, label)
       offending <- which(selected & missing)
@@ -1417,14 +1417,14 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   }
 
   # Any column that legitimately distinguishes two rows belongs in the key. The
-  # validation columns are here because a case and its own retraction share an
+  # revision columns are here because a case and its own retraction share an
   # (event, report) pair and are still two different rows -- left out, every
   # confirmed/retracted pair came out as an "exact duplicate", and the advice to
   # call `distinct()` would have deleted the retraction.
   key_cols <- unique(c(
     get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x),
     get_is_censored_report(x), get_temporal_effect_cols(x),
-    .validation_group_cols(x)
+    .revision_group_cols(x)
   ))
   key_cols <- intersect(key_cols, colnames(x))
   repeated <- which(duplicated(
@@ -1484,8 +1484,8 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   x <- context$x
   event_units <- get_event_units(x)
   report_units <- get_report_units(x)
-  validation_units <- if (has_validation(x)) {
-    get_validation_units(x)
+  revision_units <- if (has_revision(x)) {
+    get_revision_units(x)
   } else {
     NULL
   }
@@ -1503,14 +1503,14 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   # -- 1. the declarations against each other ---------------------------------
   # `time_cols_to_numeric()` enforces the first two rules at construction, so
   # this row is mostly reachable through `change_event_date()` and friends. The
-  # validation rule is not enforced anywhere: `.validation_num` is measured
-  # in the CONFIRMATION units while `.event_num` and `.report_num` are in the
-  # EVENT units, so `.validation_delay`, which subtracts one from the other,
-  # only means anything when the two agree.
+  # revision rule is not enforced anywhere: `.revision_num` is measured
+  # in the revision units while `.report_num` is in the report units, so
+  # `.revision_delay`, which subtracts one from the other, only means anything
+  # when those two agree.
   order <- c("days", "weeks", "months", "years")
   declared <- c(event = event_units, report = report_units)
-  if (!is.null(validation_units)) {
-    declared <- c(declared, validation = validation_units)
+  if (!is.null(revision_units)) {
+    declared <- c(declared, revision = revision_units)
   }
 
   # An unrecognised unit string is already an `error` from
@@ -1544,12 +1544,12 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
          {.field event_units} ({.val {event_units}})."
       )))
     }
-    if (!is.null(validation_units) &&
-      !identical(validation_units, event_units)) {
+    if (!is.null(revision_units) &&
+      !identical(revision_units, report_units)) {
       problems <- c(problems, list(.diagnose_text(
-        "{.field validation_units} ({.val {validation_units}}) differs from
-         {.field event_units} ({.val {event_units}}), so
-         {.code .validation_delay} subtracts one scale from another."
+        "{.field revision_units} ({.val {revision_units}}) differs from
+         {.field report_units} ({.val {report_units}}), so
+         {.code .revision_delay} subtracts one scale from another."
       )))
     }
   }
@@ -1562,7 +1562,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     ),
     hint = .diagnose_text(
       "Set them with {.code event_units = } / {.code report_units = } /
-       {.code validation_units = }, or move every axis to {.val numeric}."
+       {.code revision_units = }, or move every axis to {.val numeric}."
     )
   )
 
@@ -1577,10 +1577,10 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     list(name = "event", column = get_event_date(x), units = event_units),
     list(name = "report", column = get_report_date(x), units = report_units)
   )
-  if (!is.null(validation_units)) {
+  if (!is.null(revision_units)) {
     axes <- c(axes, list(list(
-      name = "validation", column = get_validation_date(x),
-      units = validation_units
+      name = "revision", column = get_revision_date(x),
+      units = revision_units
     )))
   }
 
@@ -1773,41 +1773,41 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   now_value <- get_now(x)
   rows <- list()
 
-  # A validation is an OBSERVATION, so nothing can have been confirmed after
+  # A revision is an OBSERVATION, so nothing can have been confirmed after
   # the as-of moment. This is the same rule `now` already obeys for reports;
   # breaking it means the object claims to know something it could not have.
-  if (has_validation(x)) {
-    validation <- x[[get_validation_date(x)]]
-    latest <- suppressWarnings(max(validation, na.rm = TRUE))
-    after <- which(!is.na(validation) & validation > now_value)
+  if (has_revision(x)) {
+    revision <- x[[get_revision_date(x)]]
+    latest <- suppressWarnings(max(revision, na.rm = TRUE))
+    after <- which(!is.na(revision) & revision > now_value)
     rows[[length(rows) + 1L]] <- .diagnose_count_row(
-      "now", "validation_date", length(after), nrow(x), "error",
+      "now", "revision_date", length(after), nrow(x), "error",
       .diagnose_text(
-        "The latest validation ({.val {as.character(latest)}}) is AFTER
+        "The latest revision ({.val {as.character(latest)}}) is AFTER
          {.field now} ({.val {as.character(now_value)}}). Nothing can be
          confirmed after the as-of moment."
       ),
-      clean = .diagnose_text("No validation is dated after {.field now}."),
+      clean = .diagnose_text("No revision is dated after {.field now}."),
       hint = .diagnose_text(
         "Move {.field now} forward with {.fn change_now}, or drop the rows."
       ),
       rows = after
     )
 
-    allowed <- .validation_levels()
-    type_col <- get_validation_type(x)
+    allowed <- .revision_levels()
+    type_col <- get_revision_type(x)
     if (!is.null(type_col) && type_col %in% colnames(x)) {
       values <- as.character(x[[type_col]])
       unknown <- setdiff(stats::na.omit(unique(values)), allowed)
       offending <- which(values %in% unknown)
       rows[[length(rows) + 1L]] <- .diagnose_count_row(
-        "now", "validation_type", length(offending), nrow(x), "error",
+        "now", "revision_type", length(offending), nrow(x), "error",
         .diagnose_text(
-          "{.field validation_type} has unrecognised value{?s}:
+          "{.field revision_type} has unrecognised value{?s}:
            {.val {unknown}}."
         ),
         clean = .diagnose_text(
-          "Every {.field validation_type} is one of {.val {allowed}}."
+          "Every {.field revision_type} is one of {.val {allowed}}."
         ),
         hint = .diagnose_text("The allowed values are {.val {allowed}}."),
         rows = offending
@@ -2096,7 +2096,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   .diagnose_block(rows)
 }
 
-#' The smallest and the sparsest stratum, and the validations still pending
+#' The smallest and the sparsest stratum, and the revisions still pending
 #'
 #' @param context A diagnose context.
 #'
@@ -2183,11 +2183,11 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     }
   }
 
-  # -- the validation backlog ----------------------------------------------
-  if (!has_validation(x)) {
+  # -- the revision backlog ----------------------------------------------
+  if (!has_revision(x)) {
     rows[[length(rows) + 1L]] <- .diagnose_row(
       "strata", "pending", "skipped",
-      .diagnose_text("The object carries no validation process.")
+      .diagnose_text("The object carries no revision process.")
     )
     return(.diagnose_block(rows))
   }
@@ -2196,14 +2196,14 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   if (is.null(summary)) {
     rows[[length(rows) + 1L]] <- .diagnose_row(
       "strata", "pending", "skipped",
-      .diagnose_text("The validations could not be counted.")
+      .diagnose_text("The revisions could not be counted.")
     )
     return(.diagnose_block(rows))
   }
 
   cases <- summary$cases
-  pending <- cases$validation_type %in% "pending"
-  turnaround <- cases$report_to_validation
+  pending <- cases$revision_type %in% "pending"
+  turnaround <- cases$report_to_revision
   typical <- .tbl_now_weighted_quantile(
     turnaround[!pending], cases$count[!pending], 0.5
   )
@@ -2245,11 +2245,11 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
         "{round(open_cases)} case{?s} {?is/are} still pending, {share}% of the
          stratum; {against}."
       ),
-      clean = .diagnose_text("No validation is still pending."),
+      clean = .diagnose_text("No revision is still pending."),
       stratum = label,
       hint = .diagnose_text(
-        "A pending case has no validation date, so it is invisible to
-         anything counting arrivals on the validation axis."
+        "A pending case has no revision date, so it is invisible to
+         anything counting arrivals on the revision axis."
       )
     )
   }
@@ -2297,7 +2297,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     })
   }
 
-  alerts <- .diagnose_validation_alerts()
+  alerts <- .diagnose_revision_alerts()
   informing <- status == "note" &
     paste(findings$check, findings$scope) %in%
       paste(alerts$check, alerts$scope)

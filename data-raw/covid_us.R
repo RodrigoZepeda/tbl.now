@@ -1,6 +1,6 @@
 # =============================================================================
 # covid_us: CDC COVID-19 Case Surveillance Public Use Data, aggregated for the
-# batch-detection case study AND for the validation process.
+# batch-detection case study AND for the revision process.
 #
 # Source file (14 GB, 106M rows) is NOT shipped; download it from
 #   https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data/vbim-akqf/about_data
@@ -14,7 +14,7 @@
 #
 #   onset_dt       the event      symptoms begin
 #   pos_spec_dt    the report     the first positive specimen is collected
-#   cdc_report_dt  the validation the case is registered at CDC with a status
+#   cdc_report_dt  the revision the case is registered at CDC with a status
 #
 # so we keep only cases where all three are present and correctly ordered, and
 # whose whole history falls inside 2020 -- a self-consistent "as of the end of
@@ -23,7 +23,7 @@
 # the chain at all.
 #
 # `current_status` is kept VERBATIM, in CDC's own words, rather than recoded to
-# the package's vocabulary: mapping it is what `tbl_now(validation_levels = )`
+# the package's vocabulary: mapping it is what `tbl_now(revision_levels = )`
 # is for, and the help page and the vignettes use it that way.
 # =============================================================================
 

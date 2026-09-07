@@ -213,7 +213,7 @@
 #' inferred triangle with `0`, including the not-yet-observed cells that a
 #' `tbl_now` carries as `NA`-count rows. This puts those `NA`s back, rebuilding
 #' the object through [baselinenowcast::new_reporting_triangle()] so the
-#' structure is validated once (per-cell `[<-` assignment would reject the
+#' structure is revised once (per-cell `[<-` assignment would reject the
 #' intermediate states).
 #'
 #' @param triangle A `reporting_triangle` matrix from `as_reporting_triangle()`.
@@ -1221,10 +1221,10 @@
 #'
 #' @noRd
 .tbl_now_collapse_censoring <- function(x, fn) {
-  # Both axes are collapsed together: a validation-delay flag splits a cell in
+  # Both axes are collapsed together: a revision-delay flag splits a cell in
   # exactly the same way a report-delay one does.
   censored_col <- intersect(
-    c(get_is_censored_report(x), get_is_censored_validation(x)), names(x)
+    c(get_is_censored_report(x), get_is_censored_revision(x)), names(x)
   )
   if (length(censored_col) == 0L) {
     return(x)
@@ -1235,7 +1235,7 @@
   # still names a column that has already been summed away.
   drop_flags <- function(obj) {
     attr(obj, "is_censored_report") <- NULL
-    attr(obj, "is_censored_validation") <- NULL
+    attr(obj, "is_censored_revision") <- NULL
     validate_tbl_now(obj)
     obj
   }
@@ -2016,7 +2016,7 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' window. Check the epidist issue tracker for the current status.
 #'
 #' @seealso
-#' [add] and [validation_delay], since \pkg{epidist} is about
+#' [add] and [revision_delay], since \pkg{epidist} is about
 #' delay distributions and a `tbl_now` may carry two of them;
 #' [censor_reporting_delays_above()] for the long delays that would otherwise dominate a
 #' fitted distribution;
@@ -2322,6 +2322,14 @@ tbl_now_from_tsibble <- function(data, report_date, event_date = NULL,
   )
 
   for (spec in specs) {
+    if (identical(spec$date_type, "revision_date")) {
+      cli::cli_warn(c(
+        "{.fn tbl_now_to_epinowcast} cannot carry revision-date temporal effects.",
+        "i" = "{.pkg epinowcast}'s completed grid has reference and report dates,
+               but no revision date."
+      ))
+      next
+    }
     from_event_date <- identical(spec$date_type, "event_date")
     on_grid <- add_temporal_effects.data.frame(
       on_grid,

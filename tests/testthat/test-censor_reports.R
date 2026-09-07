@@ -251,7 +251,7 @@ test_that("a condition may name a grouping column", {
   expect_equal(out[[get_is_censored_report(out)]], c(FALSE, TRUE, FALSE, FALSE))
 })
 
-# ---- Count data and the validation process ----------------------------------
+# ---- Count data and the revision process ----------------------------------
 
 test_that("count data is censored cell by cell, and the totals are untouched", {
   df <- data.frame(
@@ -270,7 +270,7 @@ test_that("count data is censored cell by cell, and the totals are untouched", {
   expect_equal(get_data_type(out), "count-incidence")
 })
 
-test_that("censoring a report keeps the validation process attached", {
+test_that("censoring a report keeps the revision process attached", {
   cases <- data.frame(
     onset = as.Date("2021-01-04") + 0:4,
     visit = as.Date(c("2021-01-05", NA, "2021-01-07", "2021-01-08", "2021-01-09")),
@@ -279,7 +279,7 @@ test_that("censoring a report keeps the validation process attached", {
   )
   flu <- suppressWarnings(tbl_now(cases,
     event_date = onset, report_date = visit,
-    validation_date = result, validation_type = outcome,
+    revision_date = result, revision_type = outcome,
     data_type = "linelist", units = "days", verbose = FALSE
   ))
 
@@ -288,17 +288,17 @@ test_that("censoring a report keeps the validation process attached", {
     to_report = as.Date("2021-01-06"), verbose = FALSE
   ))
 
-  expect_true(has_validation(out))
-  expect_equal(get_validation_date(out), "result")
-  expect_equal(get_validation_type(out), "outcome")
+  expect_true(has_revision(out))
+  expect_equal(get_revision_date(out), "result")
+  expect_equal(get_revision_type(out), "outcome")
   expect_equal(out[[get_report_date(out)]][2], as.Date("2021-01-06"))
-  expect_true(".validation_delay" %in% colnames(out))
+  expect_true(".revision_delay" %in% colnames(out))
 })
 
-test_that("censor_validation_delays_above still needs a validation process", {
+test_that("censor_revision_delays_above still needs a revision process", {
   expect_error(
-    censor_validation_delays_above(make_delays(), max_delay = 10),
-    "needs a validation process"
+    censor_revision_delays_above(make_delays(), max_delay = 10),
+    "needs a revision process"
   )
 })
 
@@ -520,7 +520,7 @@ test_that("censoring reports then aggregating keeps every case", {
 
 # ---- The attributes 0.29.0 added --------------------------------------------
 
-test_that("validation_levels and is_censored_validation survive a censoring rebuild", {
+test_that("revision_levels and is_censored_revision survive a censoring rebuild", {
   cases <- data.frame(
     onset = as.Date("2021-01-04") + 0:4,
     visit = as.Date("2021-01-05") + 0:4,
@@ -532,19 +532,19 @@ test_that("validation_levels and is_censored_validation survive a censoring rebu
   )
   flu <- tbl_now(cases,
     event_date = onset, report_date = visit,
-    validation_date = result, validation_type = outcome,
-    validation_levels = levels_map,
+    revision_date = result, revision_type = outcome,
+    revision_levels = levels_map,
     data_type = "linelist", units = "days", verbose = FALSE
   )
-  flagged <- censor_validation_delays_above(flu, 3, verbose = FALSE)
+  flagged <- censor_revision_delays_above(flu, 3, verbose = FALSE)
 
   out <- censor_reporting_delays(flagged, .delay > 0, to_delay = 0, verbose = FALSE)
 
-  expect_equal(get_validation_levels(out), levels_map)
-  expect_equal(get_is_censored_validation(out), ".is_censored_validation")
+  expect_equal(get_revision_levels(out), levels_map)
+  expect_equal(get_is_censored_revision(out), ".is_censored_revision")
   expect_equal(
-    out[[".is_censored_validation"]],
-    flagged[[".is_censored_validation"]]
+    out[[".is_censored_revision"]],
+    flagged[[".is_censored_revision"]]
   )
   # The two censoring axes are independent: this touched only the report one.
   expect_equal(get_is_censored_report(out), ".is_censored_report")

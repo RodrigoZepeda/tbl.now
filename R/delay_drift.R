@@ -27,10 +27,10 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_delay_long <- function(object, strata_cols = NULL,
-                                axis = c("report", "validation")) {
+                                axis = c("report", "revision")) {
   axis <- match.arg(axis)
-  if (identical(axis, "validation")) {
-    .batch_validation_axis(object)
+  if (identical(axis, "revision")) {
+    .batch_revision_axis(object)
   }
   incidence <- object |>
     ungroup() |>
@@ -39,14 +39,11 @@
   event_date_column <- get_event_date(object)
   observations <- as.data.frame(incidence)
 
-  # On the validation axis the delay is still measured FROM THE EVENT, exactly
-  # as on the report axis, so the two are directly comparable: plot both and the
-  # gap between them is the time the laboratory adds. (That is a different
-  # quantity from the `.validation_delay` column, which is the laboratory's
-  # own turnaround, measured from the report.) Pending rows have no validation
-  # date and drop out.
-  delay <- if (identical(axis, "validation")) {
-    observations[[".validation_num"]] - observations[[".event_num"]]
+  # On the revision axis the delay is the laboratory turnaround, measured from
+  # the report. Summary tables expose a separate `event_to_revision` quantity
+  # when the full onset-to-resolution span is the question.
+  delay <- if (identical(axis, "revision")) {
+    observations[[".revision_delay"]]
   } else {
     observations[[".delay"]]
   }
@@ -240,12 +237,10 @@
 #' @param ... Unused.
 #'
 #' @param axis Which time axis the delay is measured to: `"report"` (default)
-#'   or `"validation"`. Both are measured *from the event*, so the two are
-#'   directly comparable -- run each in turn and the gap between them is the
-#'   time the laboratory adds. (This is not the same quantity as the
-#'   `.validation_delay` column, which is the laboratory's own turnaround,
-#'   measured from the report.) Needs a validation process (see
-#'   [add_validation_date()]); cases still `"pending"` are left out.
+#'   or `"revision"`. Report-axis delays are measured from event to report;
+#'   revision-axis delays are measured from report to revision, the same
+#'   quantity as `.revision_delay`. Needs a revision process (see
+#'   [add_revision_date()]); cases still `"pending"` are left out.
 #' @return A \pkg{ggplot2} object.
 #' @param linewidth Multiplier on the width of the mean and median delay lines.
 #'   Default `1` (drawn at `0.6` and `0.8`, so the median stays the heavier of
@@ -272,7 +267,7 @@
 plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
                              by_strata = FALSE, strata = NULL, changepoint = FALSE,
                              level = 0.95, plotly = FALSE,
-                             axis = c("report", "validation"),
+                             axis = c("report", "revision"),
                              linewidth = 1, grid_linewidth = 0.5,
                              palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
@@ -517,12 +512,10 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
 #'   for `"block-bootstrap"`).
 #'
 #' @param axis Which time axis the delay is measured to: `"report"` (default)
-#'   or `"validation"`. Both are measured *from the event*, so the two are
-#'   directly comparable -- run each in turn and the gap between them is the
-#'   time the laboratory adds. (This is not the same quantity as the
-#'   `.validation_delay` column, which is the laboratory's own turnaround,
-#'   measured from the report.) Needs a validation process (see
-#'   [add_validation_date()]); cases still `"pending"` are left out.
+#'   or `"revision"`. Report-axis delays are measured from event to report;
+#'   revision-axis delays are measured from report to revision, the same
+#'   quantity as `.revision_delay`. Needs a revision process (see
+#'   [add_revision_date()]); cases still `"pending"` are left out.
 #' @return A [tibble][tibble::tibble] with **one row per requested `stat` per
 #'   stratum**, and the following columns:
 #'
@@ -639,7 +632,7 @@ diagnose_drift <- function(x, ...,
                              method = c("hamed-rao", "yue-pilon", "block-bootstrap"),
                              by_strata = FALSE, strata = NULL,
                              mature_only = TRUE, level = 0.95, alpha = 0.05,
-                             axis = c("report", "validation")) {
+                             axis = c("report", "revision")) {
   axis <- match.arg(axis)
   if (!is_tbl_now(x)) {
     cli::cli_abort("{.arg x} must be a {.cls tbl_now}.")
@@ -774,12 +767,10 @@ diagnose_drift <- function(x, ...,
 #' @inheritParams diagnose_drift
 #'
 #' @param axis Which time axis the delay is measured to: `"report"` (default)
-#'   or `"validation"`. Both are measured *from the event*, so the two are
-#'   directly comparable -- run each in turn and the gap between them is the
-#'   time the laboratory adds. (This is not the same quantity as the
-#'   `.validation_delay` column, which is the laboratory's own turnaround,
-#'   measured from the report.) Needs a validation process (see
-#'   [add_validation_date()]); cases still `"pending"` are left out.
+#'   or `"revision"`. Report-axis delays are measured from event to report;
+#'   revision-axis delays are measured from report to revision, the same
+#'   quantity as `.revision_delay`. Needs a revision process (see
+#'   [add_revision_date()]); cases still `"pending"` are left out.
 #' @return A [tibble][tibble::tibble] with **one row per requested `stat` per
 #'   stratum**, and the following columns:
 #'
@@ -863,7 +854,7 @@ diagnose_changepoint <- function(x, ...,
                                    stat = c("median", "spread"),
                                    by_strata = FALSE, strata = NULL,
                                    mature_only = TRUE, level = 0.95, alpha = 0.05,
-                                   axis = c("report", "validation")) {
+                                   axis = c("report", "revision")) {
   axis <- match.arg(axis)
   if (!is_tbl_now(x)) {
     cli::cli_abort("{.arg x} must be a {.cls tbl_now}.")

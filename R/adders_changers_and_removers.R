@@ -21,10 +21,10 @@
 #' create or delete a column -- it only changes which existing column the object
 #' treats as playing that role.
 #'
-#' @section The validation process, the optional third date:
+#' @section The revision process, the optional third date:
 #'
-#' `add_validation_date()`, `change_validation_date()` and
-#' `remove_validation_date()` set the **third** date a surveillance record can
+#' `add_revision_date()`, `change_revision_date()` and
+#' `remove_revision_date()` set the **third** date a surveillance record can
 #' carry: after the event happened and after it was reported, somebody decided
 #' whether it was real. For influenza that is the laboratory result -- and it
 #' can come back negative, in which case the case is *retracted* rather than
@@ -32,34 +32,34 @@
 #'
 #' Attaching one is the only verb on this page that changes more than a name:
 #'
-#' * **`now` moves.** A validation is an observation, so the as-of moment
-#'   becomes the latest of the report and validation dates. Validation refuses
-#'   an object whose `now` falls before a validation that has already happened.
-#' * **Two columns appear.** `.validation_num` is the date on the same numeric
-#'   anchor as `.event_num`/`.report_num`; `.validation_delay` is the time from
+#' * **`now` moves.** A revision is an observation, so the as-of moment
+#'   becomes the latest of the report and revision dates. Revision refuses
+#'   an object whose `now` falls before a revision that has already happened.
+#' * **Two columns appear.** `.revision_num` is the date on the same numeric
+#'   anchor as `.event_num`/`.report_num`; `.revision_delay` is the time from
 #'   report to resolution. Both are protected, like `.delay`.
-#' * **Counting gains a dimension.** [to_count()] groups by the validation date
+#' * **Counting gains a dimension.** [to_count()] groups by the revision date
 #'   and outcome as well, so a confirmed and a retracted case on the same
 #'   `(event, report)` pair stay separate rather than being summed together.
 #' * **The timeline is checked.** `event_date <= report_date <=
-#'   validation_date`; rows that break it are warned about, not silently
+#'   revision_date`; rows that break it are warned about, not silently
 #'   accepted.
 #'
 #' A date on its own cannot say whether the test came back positive or negative,
-#' so leaving `validation_type` out gives every dated row `NA` and warns.
+#' so leaving `revision_type` out gives every dated row `NA` and warns.
 #'
-#' Two optional pieces travel with the third date. `validation_levels` is a
+#' Two optional pieces travel with the third date. `revision_levels` is a
 #' named dictionary translating the labels in your data into the four values
-#' `validation_type` may hold -- `c(confirmado = "confirmed", ...)` -- so the
+#' `revision_type` may hold -- `c(confirmado = "confirmed", ...)` -- so the
 #' recoding happens once rather than in every script. And
-#' `add_is_censored_validation()` names a logical column marking rows whose
-#' *validation delay* is a bound rather than a measurement, the validation-axis
-#' twin of `add_is_censored_report()`; [censor_validation_delays_above()][censor_reporting_delays_above]
+#' `add_is_censored_revision()` names a logical column marking rows whose
+#' *revision delay* is a bound rather than a measurement, the revision-axis
+#' twin of `add_is_censored_report()`; [censor_revision_delays_above()][censor_reporting_delays_above]
 #' sets it for you.
 #'
-#' `change_now()` is validation-aware in both directions. Moving `now` forward
+#' `change_now()` is revision-aware in both directions. Moving `now` forward
 #' does nothing to the data; moving it **backwards**, which is how a backtest
-#' asks what was known at an earlier date, returns every validation dated after
+#' asks what was known at an earlier date, returns every revision dated after
 #' that moment to `"pending"` and masks its date. A resolution that has not
 #' happened yet is not a resolution.
 #'
@@ -175,7 +175,7 @@
 #'   change_case_count(inflated) |>
 #'   get_case_count()
 #'
-#' ## ---- The validation process, the optional third date -----------------
+#' ## ---- The revision process, the optional third date -----------------
 #'
 #' data(covid_us)
 #' covid <- covid_us |>
@@ -188,26 +188,26 @@
 #'
 #' ## Onset -> positive specimen -> registration at CDC. A date alone cannot say
 #' # how the case resolved, so this warns until an outcome column is supplied.
-#' covid <- suppressWarnings(add_validation_date(covid, cdc_report_dt))
-#' get_validation_date(covid)
+#' covid <- suppressWarnings(add_revision_date(covid, cdc_report_dt))
+#' get_revision_date(covid)
 #'
 #' ## CDC's own labels are not this package's four, which is what
-#' # `validation_levels` translates.
-#' covid <- change_validation_date(covid, cdc_report_dt,
-#'   validation_type = current_status,
-#'   validation_levels = c(
+#' # `revision_levels` translates.
+#' covid <- change_revision_date(covid, cdc_report_dt,
+#'   revision_type = current_status,
+#'   revision_levels = c(
 #'     "Laboratory-confirmed case" = "confirmed", "Probable Case" = "pending"
 #'   )
 #' )
-#' table(covid[[get_validation_type(covid)]])
-#' get_validation_levels(covid)
+#' table(covid[[get_revision_type(covid)]])
+#' get_revision_levels(covid)
 #'
-#' ## A validation delay you refuse to believe is a bound, not a measurement.
-#' covid <- censor_validation_delays_above(covid, 45, verbose = FALSE)
-#' get_is_censored_validation(covid)
+#' ## A revision delay you refuse to believe is a bound, not a measurement.
+#' covid <- censor_revision_delays_above(covid, 45, verbose = FALSE)
+#' get_is_censored_revision(covid)
 #'
 #' ## Dropping the third date leaves an ordinary two-date object.
-#' has_validation(remove_validation_date(covid))
+#' has_revision(remove_revision_date(covid))
 #'
 #' ## ---- Temporal effects --------------------------------------------------
 #'
@@ -248,23 +248,23 @@ change_now <- function(x, now = NULL, verbose = TRUE) {
     cli::cli_abort("{.arg now} must be a Date of length 1")
   }
 
-  # Re-infer now. The VALIDATION date counts when `now` is being inferred: it is
+  # Re-infer now. The REVISION date counts when `now` is being inferred: it is
   # an observation like any other, so leaving it out would move `now` backwards
   # past a resolution that has already happened.
   now <- tryCatch(
     infer_now(x,
       now = now, event_date = get_event_date(x),
       report_date = get_report_date(x),
-      validation_date = get_validation_date(x)
+      revision_date = get_revision_date(x)
     ),
     error = function(e) get_now(x)
   )
 
   # Moving `now` BACKWARDS is the whole point of this verb -- it is how a
-  # backtest asks "what did this look like as of an earlier date". A validation
+  # backtest asks "what did this look like as of an earlier date". A revision
   # dated after that moment has simply not happened yet, so it reverts to
   # pending rather than making the object invalid.
-  x <- .mask_validations_after(x, now, verbose = verbose)
+  x <- .mask_revisions_after(x, now, verbose = verbose)
 
   attr(x, "now") <- now
 
@@ -274,49 +274,49 @@ change_now <- function(x, now = NULL, verbose = TRUE) {
   return(x)
 }
 
-#' Return validations that have not happened yet to `"pending"`
+#' Return revisions that have not happened yet to `"pending"`
 #'
-#' A validation dated after the as-of moment is not an error in the data, it is
+#' A revision dated after the as-of moment is not an error in the data, it is
 #' the future. Masking it is the same operation
-#' `censor_validation_delays_above()` performs for a resolution you refuse to
+#' `censor_revision_delays_above()` performs for a resolution you refuse to
 #' believe, applied for a different reason.
 #'
 #' @param x A `tbl_now`.
 #' @param now The new as-of moment.
 #' @param verbose Logical. Whether to report how many rows were masked.
 #'
-#' @return `x`, with future validations masked.
+#' @return `x`, with future revisions masked.
 #'
 #' @keywords internal
 #' @noRd
-.mask_validations_after <- function(x, now, verbose = TRUE) {
-  if (!has_validation(x) || is.null(now)) {
+.mask_revisions_after <- function(x, now, verbose = TRUE) {
+  if (!has_revision(x) || is.null(now)) {
     return(x)
   }
 
-  validation_col <- get_validation_date(x)
-  dates <- x[[validation_col]]
+  revision_col <- get_revision_date(x)
+  dates <- x[[revision_col]]
   future <- !is.na(dates) & dates > now
   if (!any(future)) {
     return(x)
   }
 
-  type_col <- get_validation_type(x)
-  x[[validation_col]][future] <- NA
+  type_col <- get_revision_type(x)
+  x[[revision_col]][future] <- NA
   if (!is.null(type_col) && type_col %in% colnames(x)) {
     # A "confirmed" with no date is the contradiction `tbl_now()` warns about,
     # so the outcome moves with the date.
     x[[type_col]][future] <- "pending"
   }
-  if (".validation_num" %in% colnames(x)) {
-    x[[".validation_num"]][future] <- NA_real_
+  if (".revision_num" %in% colnames(x)) {
+    x[[".revision_num"]][future] <- NA_real_
   }
-  if (".validation_delay" %in% colnames(x)) {
-    x[[".validation_delay"]][future] <- NA_real_
+  if (".revision_delay" %in% colnames(x)) {
+    x[[".revision_delay"]][future] <- NA_real_
   }
   # A resolution that has not happened has no delay, and therefore no bound on
   # one either.
-  censored_col <- get_is_censored_validation(x)
+  censored_col <- get_is_censored_revision(x)
   if (!is.null(censored_col) && censored_col %in% colnames(x)) {
     x[[censored_col]][future] <- FALSE
   }
@@ -324,7 +324,7 @@ change_now <- function(x, now = NULL, verbose = TRUE) {
   if (isTRUE(verbose)) {
     cli::cli_inform(c(
       "i" = paste0(
-        "Returned {sum(future)} validation{?s} dated after ",
+        "Returned {sum(future)} revision{?s} dated after ",
         "{.val {as.character(now)}} to {.val pending}."
       )
     ))
@@ -360,6 +360,26 @@ update_now <- function(x, verbose = TRUE) {
   }
   attr(x, "computed_temporal_effect_cols") <- character(0)
   x
+}
+
+#' Keep temporal-effect specs for selected date axes
+#'
+#' @param specs A `temporal_effects` attribute list.
+#' @param date_types Character vector of allowed `date_type` values.
+#'
+#' @return A filtered specs list.
+#'
+#' @keywords internal
+#' @noRd
+.filter_temporal_effect_specs <- function(specs, date_types) {
+  if (is.null(specs) || length(specs) == 0) {
+    return(list())
+  }
+  specs[vapply(
+    specs,
+    function(spec) spec$date_type %in% date_types,
+    logical(1)
+  )]
 }
 
 

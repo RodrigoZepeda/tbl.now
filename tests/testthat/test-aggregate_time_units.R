@@ -35,7 +35,7 @@ make_daily_counts <- function(type = "count-incidence") {
   )
 }
 
-make_validated <- function() {
+make_revised <- function() {
   cases <- data.frame(
     onset = as.Date("2021-01-04") + 0:9,
     visit = as.Date("2021-01-05") + 0:9,
@@ -45,7 +45,7 @@ make_validated <- function() {
   cases$result[10] <- NA
   tbl_now(cases,
     event_date = onset, report_date = visit,
-    validation_date = result, validation_type = outcome,
+    revision_date = result, revision_type = outcome,
     data_type = "linelist", units = "days", verbose = FALSE
   )
 }
@@ -112,23 +112,23 @@ test_that("aggregating only the event axis is refused with a usable hint", {
 
 # ---- Columns that are not in the data ---------------------------------------
 
-test_that("the validation axis needs a validation process", {
+test_that("the revision axis needs a revision process", {
   x <- make_daily_linelist()
-  expect_false(has_validation(x))
+  expect_false(has_revision(x))
   expect_error(
-    aggregate_time_units(x, axes = "validation"),
-    "needs a validation process"
+    aggregate_time_units(x, axes = "revision"),
+    "needs a revision process"
   )
   expect_error(
-    aggregate_time_units(x, axes = c("event", "report", "validation")),
-    "needs a validation process"
+    aggregate_time_units(x, axes = c("event", "report", "revision")),
+    "needs a revision process"
   )
 })
 
-test_that("`axes = \"all\"` simply skips the validation axis when there is none", {
+test_that("`axes = \"all\"` simply skips the revision axis when there is none", {
   out <- aggregate_time_units(make_daily_linelist(), to = "weeks", verbose = FALSE)
   expect_true(is_tbl_now(out))
-  expect_null(get_validation_units(out))
+  expect_null(get_revision_units(out))
 })
 
 # ---- Results worked out by hand ---------------------------------------------
@@ -244,28 +244,28 @@ test_that("aggregating to the unit an object already has is a no-op", {
   )
 })
 
-test_that("the validation axis moves with the others, NAs included", {
-  x <- make_validated()
+test_that("the revision axis moves with the others, NAs included", {
+  x <- make_revised()
   out <- aggregate_time_units(x, to = "weeks", verbose = FALSE)
 
-  expect_equal(get_validation_units(out), "weeks")
-  expect_true(has_validation(out))
-  expect_equal(get_validation_type(out), "outcome")
-  # The pending case has no validation date, and still has none.
-  expect_true(is.na(out[[get_validation_date(out)]][10]))
+  expect_equal(get_revision_units(out), "weeks")
+  expect_true(has_revision(out))
+  expect_equal(get_revision_type(out), "outcome")
+  # The pending case has no revision date, and still has none.
+  expect_true(is.na(out[[get_revision_date(out)]][10]))
   expect_equal(out[["outcome"]], x[["outcome"]])
   # 2021-01-04 is a Monday, so its epi week starts 2021-01-03.
-  expect_equal(out[[get_validation_date(out)]][1], as.Date("2021-01-03"))
+  expect_equal(out[[get_revision_date(out)]][1], as.Date("2021-01-03"))
 })
 
-test_that("aggregating the validation axis alone leaves the other two alone", {
-  x <- make_validated()
+test_that("aggregating the revision axis alone leaves the other two alone", {
+  x <- make_revised()
   out <- suppressWarnings(
-    aggregate_time_units(x, to = "weeks", axes = "validation", verbose = FALSE)
+    aggregate_time_units(x, to = "weeks", axes = "revision", verbose = FALSE)
   )
   expect_equal(get_event_units(out), "days")
   expect_equal(get_report_units(out), "days")
-  expect_equal(get_validation_units(out), "weeks")
+  expect_equal(get_revision_units(out), "weeks")
   expect_equal(out[[get_event_date(out)]], x[[get_event_date(x)]])
 })
 
@@ -708,12 +708,12 @@ test_that("a `now` set beyond the data still moves onto the new grid", {
 })
 
 test_that("`now` is never dragged below a date the aggregation left alone", {
-  x <- make_validated()
+  x <- make_revised()
   original_now <- get_now(x)
   out <- suppressWarnings(
-    aggregate_time_units(x, to = "weeks", axes = "validation", verbose = FALSE)
+    aggregate_time_units(x, to = "weeks", axes = "revision", verbose = FALSE)
   )
-  # Only the validation axis moved, and it moved backwards, so `now` must stay
+  # Only the revision axis moved, and it moved backwards, so `now` must stay
   # where the untouched report axis put it.
   expect_gte(get_now(out), max(out[[get_report_date(out)]], na.rm = TRUE))
   expect_equal(get_now(out), original_now)
@@ -848,7 +848,7 @@ test_that("a censoring flag keeps cells apart instead of being pooled away", {
   expect_equal(sum(out$n), sum(df$n))
 })
 
-test_that("a validation outcome keeps cells apart, so a retraction is not netted", {
+test_that("a revision outcome keeps cells apart, so a retraction is not netted", {
   df <- data.frame(
     event = as.Date("2024-01-01") + c(0, 0, 1),
     report = as.Date("2024-01-02") + c(0, 0, 1),
@@ -858,7 +858,7 @@ test_that("a validation outcome keeps cells apart, so a retraction is not netted
   )
   x <- tbl_now(df,
     event_date = event, report_date = report, case_count = n,
-    validation_date = resolved, validation_type = outcome,
+    revision_date = resolved, revision_type = outcome,
     data_type = "count-incidence", units = "days", verbose = FALSE
   )
   out <- aggregate_time_units(x, to = "weeks", verbose = FALSE)
@@ -897,7 +897,7 @@ test_that("a stratified cumulative series accumulates within each stratum", {
 
 # ---- The attributes 0.29.0 added --------------------------------------------
 
-test_that("validation_levels and is_censored_validation survive aggregation", {
+test_that("revision_levels and is_censored_revision survive aggregation", {
   cases <- data.frame(
     onset = as.Date("2021-01-04") + 0:9,
     visit = as.Date("2021-01-05") + 0:9,
@@ -909,21 +909,21 @@ test_that("validation_levels and is_censored_validation survive aggregation", {
   )
   flu <- tbl_now(cases,
     event_date = onset, report_date = visit,
-    validation_date = result, validation_type = outcome,
-    validation_levels = levels_map,
+    revision_date = result, revision_type = outcome,
+    revision_levels = levels_map,
     data_type = "linelist", units = "days", verbose = FALSE
   )
-  flagged <- censor_validation_delays_above(flu, 0, verbose = FALSE)
-  expect_equal(get_is_censored_validation(flagged), ".is_censored_validation")
+  flagged <- censor_revision_delays_above(flu, 0, verbose = FALSE)
+  expect_equal(get_is_censored_revision(flagged), ".is_censored_revision")
 
   out <- aggregate_time_units(flagged, to = "weeks", verbose = FALSE)
 
   # Every rebuild is a place an attribute can be dropped in silence.
-  expect_equal(get_validation_levels(out), levels_map)
-  expect_equal(get_is_censored_validation(out), ".is_censored_validation")
+  expect_equal(get_revision_levels(out), levels_map)
+  expect_equal(get_is_censored_revision(out), ".is_censored_revision")
   expect_equal(
-    out[[".is_censored_validation"]],
-    flagged[[".is_censored_validation"]]
+    out[[".is_censored_revision"]],
+    flagged[[".is_censored_revision"]]
   )
-  expect_equal(get_validation_units(out), "weeks")
+  expect_equal(get_revision_units(out), "weeks")
 })

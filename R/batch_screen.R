@@ -116,17 +116,17 @@
 #'   the robust null. `"poisson"` and `"robust"` force the choice; note that
 #'   `"poisson"` is anti-conservative (over-flags) on overdispersed counts.
 #' @param axis Which time axis to scan for arrivals: `"report"` (default) or
-#'   `"validation"`. The question is the same either way -- did an unusual
+#'   `"revision"`. The question is the same either way -- did an unusual
 #'   number of records land on this date? -- so a laboratory clearing its
 #'   backlog is found exactly as a surveillance system clearing its inbox is.
-#'   `"validation"` needs a validation process (see [add_validation_date()])
-#'   and ignores cases that are still `"pending"`, which have no validation
+#'   `"revision"` needs a revision process (see [add_revision_date()])
+#'   and ignores cases that are still `"pending"`, which have no revision
 #'   date to arrive on.
 #' @param alpha Significance level for the Benjamini-Hochberg `batch` flag.
 #'   Default `0.05`.
 #' @param drop_censored Logical. Ignore the rows whose date on `axis` is
-#'   flagged censored (`is_censored_report`, or `is_censored_validation` on the
-#'   validation axis). Default `TRUE`: a censored date is a *bound*, not the
+#'   flagged censored (`is_censored_report`, or `is_censored_revision` on the
+#'   revision axis). Default `TRUE`: a censored date is a *bound*, not the
 #'   date the record arrived, so those rows would pile up on the censoring date
 #'   and be rediscovered as the very batch the censoring already recorded.
 #'
@@ -191,7 +191,7 @@ diagnose_batches <- function(x,
                          baseline_window = NULL,
                          period          = NULL,
                          null_model      = c("auto", "poisson", "robust"),
-                         axis            = c("report", "validation"),
+                         axis            = c("report", "revision"),
                          alpha           = 0.05,
                          drop_censored   = TRUE) {
   null_model      <- match.arg(null_model)
@@ -267,7 +267,7 @@ diagnose_batches <- function(x,
                                axis = "report", drop_censored = FALSE) {
   increments      <- .batch_report_increments(data, axis = axis,
                                               drop_censored = drop_censored)
-  registration    <- .batch_registration_totals(increments, data)
+  registration    <- .batch_registration_totals(increments, data, axis = axis)
   baseline_window <- .batch_baseline_window(baseline_window, lookback, period)
   registration    <- .batch_add_baseline(registration, baseline_window, period)
   .batch_add_window_statistics(registration, lookback, baseline_window, period)
@@ -277,24 +277,24 @@ diagnose_batches <- function(x,
 # Step 1: one signed count per (event date, report date, stratum)
 # =============================================================================
 
-#' Resolve the validation column for a batch scan
+#' Resolve the revision column for a batch scan
 #'
 #' @param x A `tbl_now`.
 #'
-#' @return The validation-date column name.
+#' @return The revision-date column name.
 #'
 #' @keywords internal
 #' @noRd
-.batch_validation_axis <- function(x) {
-  validation_col <- get_validation_date(x)
-  if (is.null(validation_col)) {
+.batch_revision_axis <- function(x) {
+  revision_col <- get_revision_date(x)
+  if (is.null(revision_col)) {
     cli::cli_abort(c(
-      "{.code axis = \"validation\"} needs a validation process, and
+      "{.code axis = \"revision\"} needs a revision process, and
        {.arg x} has none.",
-      "i" = "Attach one with {.fn add_validation_date}."
+      "i" = "Attach one with {.fn add_revision_date}."
     ))
   }
-  validation_col
+  revision_col
 }
 
 #' Drop the rows whose arrival date on `axis` is censored.
@@ -302,7 +302,7 @@ diagnose_batches <- function(x,
 #' Censoring on an axis says the date on that axis is a bound rather than the
 #' date the record actually arrived, so the record cannot testify about when
 #' arrivals happened. The flag is matched to the axis: `is_censored_report` for
-#' `"report"`, `is_censored_validation` for `"validation"`.
+#' `"report"`, `is_censored_revision` for `"revision"`.
 #'
 #' It says nothing at all about the event date, which is why only the batch
 #' tests call this. A row censored on the report axis is still a case that
@@ -310,14 +310,14 @@ diagnose_batches <- function(x,
 #'
 #' @param observations The stripped data frame.
 #' @param data The `tbl_now` the flags are read off.
-#' @param axis `"report"` or `"validation"`.
+#' @param axis `"report"` or `"revision"`.
 #'
 #' @returns `observations` without the censored rows.
 #' @keywords internal
 #' @noRd
 .batch_drop_censored <- function(observations, data, axis) {
-  censoring_col <- if (identical(axis, "validation")) {
-    get_is_censored_validation(data)
+  censoring_col <- if (identical(axis, "revision")) {
+    get_is_censored_revision(data)
   } else {
     get_is_censored_report(data)
   }
@@ -359,7 +359,7 @@ diagnose_batches <- function(x,
 #'   `.stratum`.
 #' @keywords internal
 #' @noRd
-.batch_report_increments <- function(data, axis = c("report", "validation"),
+.batch_report_increments <- function(data, axis = c("report", "revision"),
                                      drop_censored = FALSE) {
   axis <- match.arg(axis)
   observations <- as.data.frame(data)
@@ -369,26 +369,26 @@ diagnose_batches <- function(x,
   case_count_col <- get_case_count(data)
 
   # The whole batch machinery asks one question: "did an unusual number of
-  # records arrive on this date?". That question is identical on the
-  # CONFIRMATION axis -- a laboratory clearing its backlog looks exactly like a
-  # surveillance system clearing its inbox -- so the axis is swapped here, at
-  # the single point every batch function and every reporting-process plot goes
-  # through, rather than duplicating any of them.
-  report_col <- if (identical(axis, "validation")) {
-    .batch_validation_axis(data)
+  # records arrive on this date?". That question is identical on the revision
+  # axis -- a laboratory clearing its backlog looks exactly like a surveillance
+  # system clearing its inbox -- so the axis is swapped here, at the single
+  # point every batch function and every reporting-process plot goes through,
+  # rather than duplicating any of them.
+  report_col <- if (identical(axis, "revision")) {
+    .batch_revision_axis(data)
   } else {
     get_report_date(data)
   }
 
-  if (identical(axis, "validation")) {
+  if (identical(axis, "revision")) {
     # A pending case has not been confirmed, so it contributes nothing to the
-    # validation axis -- counting it on a date it does not have would invent
+    # revision axis -- counting it on a date it does not have would invent
     # arrivals.
     observations <- observations[!is.na(observations[[report_col]]), , drop = FALSE]
     if (nrow(observations) == 0) {
       cli::cli_abort(c(
         "No confirmed records: every row is still {.val pending}.",
-        "i" = "There is nothing to look for batches in on the validation axis."
+        "i" = "There is nothing to look for batches in on the revision axis."
       ))
     }
   }
@@ -440,17 +440,28 @@ diagnose_batches <- function(x,
   if (identical(data_type, "count-cumulative")) {
     observations <- .batch_deaccumulate(observations)
   } else {
+    group_cols <- c(
+      ".event_date", ".report_date", ".stratum",
+      if (identical(axis, "revision")) ".revision_delay"
+    )
     observations <- observations |>
-      dplyr::group_by(.data$.event_date, .data$.report_date, .data$.stratum) |>
+      dplyr::group_by(dplyr::across(dplyr::all_of(group_cols))) |>
       dplyr::summarise(.count = sum(.data$.count), .groups = "drop")
   }
 
-  # Integer delay, measured in report-grid steps (unit-agnostic).
-  date_grid <- .batch_date_grid(observations, data, axis = axis)
+  if (identical(axis, "revision")) {
+    observations <- dplyr::mutate(observations, .delay = .data$.revision_delay)
+  } else {
+    # Integer delay, measured in report-grid steps (unit-agnostic).
+    date_grid <- .batch_date_grid(observations, data, axis = axis)
+    observations <- dplyr::mutate(
+      observations,
+      .delay = match(.data$.report_date, date_grid) -
+        match(.data$.event_date, date_grid)
+    )
+  }
+
   observations |>
-    dplyr::mutate(
-      .delay = match(.data$.report_date, date_grid) - match(.data$.event_date, date_grid)
-    ) |>
     dplyr::filter(!is.na(.data$.delay), .data$.delay >= 0L) |>
     dplyr::arrange(.data$.stratum, .data$.report_date, .data$.event_date)
 }
@@ -464,10 +475,21 @@ diagnose_batches <- function(x,
 #' @keywords internal
 #' @noRd
 .batch_deaccumulate <- function(observations) {
+  has_revision_delay <- ".revision_delay" %in% names(observations)
   # Last word per (event, stratum, report date), then difference along report date.
-  latest_per_report <- observations |>
-    dplyr::group_by(.data$.event_date, .data$.stratum, .data$.report_date) |>
-    dplyr::summarise(.cumulative = dplyr::last(.data$.count), .groups = "drop")
+  latest_per_report <- if (has_revision_delay) {
+    observations |>
+      dplyr::group_by(.data$.event_date, .data$.stratum, .data$.report_date) |>
+      dplyr::summarise(
+        .cumulative = dplyr::last(.data$.count),
+        .revision_delay = dplyr::last(.data$.revision_delay),
+        .groups = "drop"
+      )
+  } else {
+    observations |>
+      dplyr::group_by(.data$.event_date, .data$.stratum, .data$.report_date) |>
+      dplyr::summarise(.cumulative = dplyr::last(.data$.count), .groups = "drop")
+  }
 
   origin_groups <- split(
     latest_per_report,
@@ -486,7 +508,7 @@ diagnose_batches <- function(x,
     cumulative_curve  <- as.numeric(origin_rows$.cumulative)
     signed_increments <- c(cumulative_curve[1], diff(cumulative_curve))
 
-    increment_frames[[group_index]] <- data.frame(
+    frame <- data.frame(
       .event_date  = origin_rows$.event_date,
       .report_date = origin_rows$.report_date,
       .stratum     = origin_rows$.stratum,
@@ -494,6 +516,10 @@ diagnose_batches <- function(x,
       row.names    = NULL,
       check.names  = FALSE
     )
+    if (any(!is.na(origin_rows$.revision_delay))) {
+      frame$.revision_delay <- origin_rows$.revision_delay
+    }
+    increment_frames[[group_index]] <- frame
   }
 
   dplyr::bind_rows(increment_frames)
@@ -518,8 +544,8 @@ diagnose_batches <- function(x,
 #' @keywords internal
 #' @noRd
 .batch_date_grid <- function(observations, data, axis = "report") {
-  report_unit <- if (identical(axis, "validation")) {
-    get_validation_units(data) %||% get_report_units(data) %||% "days"
+  report_unit <- if (identical(axis, "revision")) {
+    get_revision_units(data) %||% get_report_units(data) %||% "days"
   } else {
     get_report_units(data) %||% "days"
   }
@@ -539,8 +565,18 @@ diagnose_batches <- function(x,
 #' leaves in its wake.
 #' @keywords internal
 #' @noRd
-.batch_registration_totals <- function(increments, data) {
-  report_unit <- get_report_units(data) %||% "days"
+.batch_registration_totals <- function(increments, data, axis = "report") {
+  axis <- match.arg(axis, c("report", "revision"))
+  report_unit <- if (identical(axis, "revision")) {
+    get_revision_units(data)
+  } else {
+    get_report_units(data) %||% "days"
+  }
+  if (is.null(report_unit)) {
+    cli::cli_abort(
+      "{.code axis = \"revision\"} needs {.field revision_units}, but none were found."
+    )
+  }
   report_grid <- seq(
     from = min(increments$.report_date, na.rm = TRUE),
     to   = max(increments$.report_date, na.rm = TRUE),

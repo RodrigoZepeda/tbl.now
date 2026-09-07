@@ -156,9 +156,9 @@ test_that("a report before its event is one warning naming that row", {
   expect_true(ndata$report[row$rows[[1]]] < ndata$onset[row$rows[[1]]])
 })
 
-test_that("the validation timeline is checked on both of its legs", {
+test_that("the revision timeline is checked on both of its legs", {
   frame <- clean_frame()
-  # Row 2 is validated the day BEFORE it was reported; row 4 is validated
+  # Row 2 is revised the day BEFORE it was reported; row 4 is revised
   # before the event happened, and has no report date at all, so only the
   # transitive check can see it.
   frame$result <- as.Date(c("2024-01-02", "2024-01-02", "2024-01-05", NA))
@@ -169,28 +169,28 @@ test_that("the validation timeline is checked on both of its legs", {
 
   ndata <- suppressWarnings(tbl_now(frame,
     event_date = "onset", report_date = "report", case_count = "n",
-    validation_date = "result", validation_type = "outcome",
+    revision_date = "result", revision_type = "outcome",
     data_type = "count-incidence", now = as.Date("2024-01-05"),
     verbose = FALSE
   ))
   result <- diagnose(ndata)
 
-  before_report <- finding(result, "ordering", "report_to_validation")
+  before_report <- finding(result, "ordering", "report_to_revision")
   expect_equal(as.character(before_report$status), "warning")
   expect_equal(before_report$n_affected, 1)
   expect_equal(before_report$rows[[1]], 2L)
 
-  before_event <- finding(result, "ordering", "event_to_validation")
+  before_event <- finding(result, "ordering", "event_to_revision")
   expect_equal(as.character(before_event$status), "note")
   expect_equal(before_event$n_affected, 1)
   expect_equal(before_event$rows[[1]], 4L)
 })
 
-test_that("the validation legs are skipped without a validation process", {
+test_that("the revision legs are skipped without a revision process", {
   result <- diagnose(clean_tbl())
 
   expect_equal(
-    as.character(finding(result, "ordering", "report_to_validation")$status),
+    as.character(finding(result, "ordering", "report_to_revision")$status),
     "skipped"
   )
 })
@@ -304,12 +304,14 @@ test_that("weekly dates on two weekday grids are found, with the fix named", {
     report = as.Date(c("2024-01-10", "2024-01-17", "2024-01-24")),
     n      = c(1L, 2L, 3L)
   )
-  ndata <- tbl_now(frame,
+  # The fractional-delay warning here is what `diagnose()` is supposed to
+  # find below, not something to re-emit from the constructor.
+  ndata <- suppressWarnings(tbl_now(frame,
     event_date = "onset", report_date = "report", case_count = "n",
     data_type = "count-incidence", event_units = "weeks",
     report_units = "weeks", now = as.Date("2024-01-24"), verbose = FALSE,
     align_weeks = FALSE
-  )
+  ))
   result <- diagnose(ndata)
 
   grid <- finding(result, "units", "report_grid")
@@ -328,22 +330,23 @@ test_that("weekly dates on two weekday grids are found, with the fix named", {
   expect_equal(fractional$n_affected, 3)
 })
 
-test_that("validation units that differ from the event units are flagged", {
+test_that("revision units that differ from the report units are flagged", {
   frame <- clean_frame()
   frame$result <- frame$report + 1
   frame$outcome <- "confirmed"
 
   ndata <- tbl_now(frame,
     event_date = "onset", report_date = "report", case_count = "n",
-    validation_date = "result", validation_type = "outcome",
+    revision_date = "result", revision_type = "outcome",
     data_type = "count-incidence",
     now = as.Date("2024-01-06"), verbose = FALSE
   )
-  attr(ndata, "validation_units") <- "weeks" # days everywhere else
+  attr(ndata, "revision_units") <- "weeks" # days everywhere else
 
   row <- finding(diagnose(ndata), "units", "declared")
   expect_equal(as.character(row$status), "note")
-  expect_match(row$message, "validation_units")
+  expect_match(row$message, "revision_units")
+  expect_match(row$message, "report_units")
 })
 
 test_that("units that agree are reported as ok", {
@@ -415,18 +418,18 @@ test_that("an event dated after now is a note naming the row", {
   expect_equal(row$rows[[1]], 2L)
 })
 
-test_that("a validation after now is an error", {
+test_that("a revision after now is an error", {
   frame <- clean_frame()
   frame$result <- frame$report
   frame$outcome <- "confirmed"
   ndata <- tbl_now(frame,
     event_date = "onset", report_date = "report", case_count = "n",
-    validation_date = "result", validation_type = "outcome",
+    revision_date = "result", revision_type = "outcome",
     data_type = "count-incidence", now = as.Date("2024-01-05"), verbose = FALSE
   )
   attr(ndata, "now") <- as.Date("2024-01-04")
 
-  row <- finding(diagnose(ndata), "now", "validation_date")
+  row <- finding(diagnose(ndata), "now", "revision_date")
   expect_equal(as.character(row$status), "error")
   expect_equal(row$n_affected, 1)
 })
@@ -530,14 +533,14 @@ test_that("an unstratified object skips the stratum comparison", {
   )
 })
 
-test_that("pending validations are counted, not thresholded away", {
+test_that("pending revisions are counted, not thresholded away", {
   frame <- clean_frame()
   frame$result <- as.Date(c("2024-01-02", "2024-01-04", NA, NA))
   frame$outcome <- c("confirmed", "confirmed", "pending", "pending")
 
   ndata <- tbl_now(frame,
     event_date = "onset", report_date = "report", case_count = "n",
-    validation_date = "result", validation_type = "outcome",
+    revision_date = "result", revision_type = "outcome",
     data_type = "count-incidence", now = as.Date("2024-01-05"), verbose = FALSE
   )
 
@@ -673,19 +676,19 @@ test_that("validate_tbl_now() does not emit the notes diagnose() adds", {
   )
 })
 
-test_that("validate_tbl_now() warns when a validation precedes its report", {
+test_that("validate_tbl_now() warns when a revision precedes its report", {
   frame <- clean_frame()
   frame$result <- frame$report
-  frame$result[2] <- frame$report[2] - 1 # validated before it was reported
+  frame$result[2] <- frame$report[2] - 1 # revised before it was reported
   frame$outcome <- "confirmed"
 
   ndata <- suppressWarnings(tbl_now(frame,
     event_date = "onset", report_date = "report", case_count = "n",
-    validation_date = "result", validation_type = "outcome",
+    revision_date = "result", revision_type = "outcome",
     data_type = "count-incidence", now = as.Date("2024-01-05"), verbose = FALSE
   ))
 
-  expect_warning(validate_tbl_now(ndata), "validated BEFORE")
+  expect_warning(validate_tbl_now(ndata), "revised BEFORE")
 })
 
 # Printing ---------------------------------------------------------------------

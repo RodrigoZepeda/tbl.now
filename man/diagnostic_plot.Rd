@@ -11,7 +11,7 @@ diagnostic_plot(
   max_delay = NULL,
   ...,
   plotly = FALSE,
-  axis = c("report", "validation"),
+  axis = c("report", "revision"),
   size = 1,
   linewidth = 1,
   grid_linewidth = 0.3,
@@ -36,13 +36,11 @@ at the delay covering 99\% of reported mass.}
 \item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget (the panels
 stacked) instead of a static \pkg{patchwork}. Default \code{FALSE}.}
 
-\item{axis}{Which time axis the delay is measured to: \code{"report"} (default)
-or \code{"validation"}. Both are measured \emph{from the event}, so the two are
-directly comparable -- run each in turn and the gap between them is the
-time the laboratory adds. (This is not the same quantity as the
-\code{.validation_delay} column, which is the laboratory's own turnaround,
-measured from the report.) Needs a validation process (see
-\code{\link[=add_validation_date]{add_validation_date()}}); cases still \code{"pending"} are left out.}
+\item{axis}{Which time axis the delay is measured on: \code{"report"} (default)
+or \code{"revision"}. Report-axis delays are measured from event to report;
+revision-axis delays are measured from report to revision, the same
+quantity as \code{.revision_delay}. Needs a revision process (see
+\code{\link[=add_revision_date]{add_revision_date()}}); cases still \code{"pending"} are left out.}
 
 \item{size}{Multiplier on point and label sizes, forwarded to every panel
 that draws them (\code{"triangle"}, \code{"transport"}). Default \code{1}.}

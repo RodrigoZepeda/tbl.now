@@ -195,7 +195,7 @@ test_that("max_delay counts delay periods the way epinowcast does", {
   expect_equal(sum(capped, na.rm = TRUE), sum(uncapped, na.rm = TRUE) - dropped)
 })
 
-test_that("max_delay is validated", {
+test_that("max_delay is revised", {
   x <- pooled_fixture()
 
   expect_error(tbl.now:::.cap_max_delay(x, 0, "f"), "at least 1")

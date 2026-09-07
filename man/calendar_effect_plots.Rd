@@ -12,41 +12,41 @@
 \usage{
 plot_day_of_week_effects(
   x,
-  type = c("epidemic", "report"),
+  type = c("epidemic", "report", "revision"),
   measure = c("percent", "normalized"),
   ...
 )
 
 plot_week_of_year_effects(
   x,
-  type = c("epidemic", "report"),
+  type = c("epidemic", "report", "revision"),
   measure = c("percent", "normalized"),
   ...
 )
 
 plot_month_of_year_effects(
   x,
-  type = c("epidemic", "report"),
+  type = c("epidemic", "report", "revision"),
   measure = c("percent", "normalized"),
   ...
 )
 
-plot_holiday_effects(x, type = c("epidemic", "report"), ...)
+plot_holiday_effects(x, type = c("epidemic", "report", "revision"), ...)
 
 plot_weekend_effects(
   x,
-  type = c("epidemic", "report"),
+  type = c("epidemic", "report", "revision"),
   weekend_days = c("Sat", "Sun"),
   ...
 )
 
-plot_holiday_lag_effects(x, type = c("epidemic", "report"), ...)
+plot_holiday_lag_effects(x, type = c("epidemic", "report", "revision"), ...)
 }
 \arguments{
 \item{x}{A \code{\link[=tbl_now]{tbl_now()}} object.}
 
-\item{type}{\code{"epidemic"} (default) for the case-count effect, or \code{"report"}
-for the reporting-delay one.}
+\item{type}{\code{"epidemic"} (default) for the case-count effect, \code{"report"} for
+the reporting-delay one, or \code{"revision"} for revision-date arrivals.}
 
 \item{measure}{\code{"percent"} (default) for the share of cases in each group —
 "10\% of cases in week 1 versus 3\% in week 2" — with the IQR around it, or
@@ -88,7 +88,8 @@ box. Daily data only, since a weekend is a property of the day.
 }
 
 \code{type} picks which process to describe: \code{"epidemic"} (green — how the \emph{cases}
-vary by calendar group) or \code{"report"} (red — how the \emph{reporting} does).
+vary by calendar group), \code{"report"} (red — how the \emph{reporting} does), or
+\code{"revision"} (ochre — how resolved cases arrive on revision dates).
 
 The three day-type / holiday-lag functions have no \code{measure} argument: they
 are always normalized. Their categories are not equal-sized parts of a

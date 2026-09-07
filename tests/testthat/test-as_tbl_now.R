@@ -258,10 +258,12 @@ test_that("as_tbl_now.tbl_now changes event_date", {
   expect_equal(get_event_date(original), "event_date")
 
   # Add other_date as new event_date
-  result <- as_tbl_now(
-    original,
-    event_date = "other_date",
-    report_date = "report_date"
+  suppressWarnings(
+    result <- as_tbl_now(
+      original,
+      event_date = "other_date",
+      report_date = "report_date"
+    )
   )
 
   expect_equal(get_event_date(result), "other_date")
@@ -332,13 +334,15 @@ test_that("as_tbl_now.tbl_now uses change_event_date internally", {
     verbose = FALSE
   )
 
-  result1 <- as_tbl_now(
-    original,
-    event_date = "other_date",
-    report_date = "report_date"
-  )
+  suppressWarnings({
+    result1 <- as_tbl_now(
+      original,
+      event_date = "other_date",
+      report_date = "report_date"
+    )
 
-  result2 <- change_event_date(original, "other_date")
+    result2 <- change_event_date(original, "other_date")
+  })
 
   expect_equal(result1, result2)
 })
@@ -406,10 +410,12 @@ test_that("as_tbl_now.tbl_now recalculates delay", {
   original_delay <- original$.delay
 
   # Change to other_date (which is between event and report)
-  result <- as_tbl_now(
-    original,
-    event_date = "other_date",
-    report_date = "report_date"
+  suppressWarnings(
+    result <- as_tbl_now(
+      original,
+      event_date = "other_date",
+      report_date = "report_date"
+    )
   )
 
   # Delays should be different
@@ -768,6 +774,6 @@ test_that("as_tbl_now validates result", {
     verbose = FALSE
   )
 
-  # Should pass validation
+  # Should pass revision
   expect_true(validate_tbl_now(result))
 })

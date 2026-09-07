@@ -71,8 +71,9 @@ the weekend. Defaults to Saturday and Sunday.
 the period's days that are holidays rather than a 0/1 indicator. For a
 \code{tbl_now}, \code{\link[=compute_temporal_effects]{compute_temporal_effects()}} reads this off the object.}
 
-\item{date_type}{Either \code{event_date} (default) or \code{report_date}
-to add temporal effects to those columns.}
+\item{date_type}{One of \code{event_date} (default), \code{report_date}, or
+\code{revision_date} to add temporal effects to that column. \code{revision_date}
+requires a \code{tbl_now} with a revision process.}
 }
 \value{
 \code{add_temporal_effects()} returns the object with the specification recorded.

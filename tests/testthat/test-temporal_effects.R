@@ -535,6 +535,54 @@ test_that("compute_temporal_effects adds columns to report_date when specified",
   expect_false(".event_day_of_week" %in% names(result))
 })
 
+test_that("revision-date temporal effects require a revision process", {
+  x <- tbl_now(
+    data.frame(
+      event = as.Date("2024-01-01") + 0:1,
+      report = as.Date("2024-01-02") + 0:1
+    ),
+    event_date = event, report_date = report, verbose = FALSE
+  )
+
+  expect_error(
+    add_temporal_effects(
+      x,
+      temporal_effects(day_of_week = TRUE),
+      date_type = "revision_date"
+    ),
+    "revision process"
+  )
+})
+
+test_that("compute_temporal_effects adds columns to revision_date when specified", {
+  x <- tbl_now(
+    data.frame(
+      event = as.Date(c("2024-01-01", "2024-01-02", "2024-01-03")),
+      report = as.Date(c("2024-01-02", "2024-01-03", "2024-01-04")),
+      revised = as.Date(c("2024-01-03", "2024-01-06", NA)),
+      outcome = c("confirmed", "retracted", "pending")
+    ),
+    event_date = event, report_date = report,
+    revision_date = revised, revision_type = outcome,
+    verbose = FALSE
+  ) |>
+    add_temporal_effects(
+      temporal_effects(day_of_week = TRUE, seasons = 7),
+      date_type = "revision_date"
+    )
+
+  result <- compute_temporal_effects(x)
+
+  expect_true(".revision_day_of_week" %in% names(result))
+  expect_true(".revision_season_7_cos" %in% names(result))
+  expect_true(".revision_season_7_sin" %in% names(result))
+  expect_false(".event_day_of_week" %in% names(result))
+  expect_equal(
+    as.character(result$.revision_day_of_week),
+    c("Wednesday", "Saturday", NA)
+  )
+})
+
 test_that("compute_temporal_effects populates computed_temporal_effect_cols", {
   data(denguedat)
 
@@ -833,6 +881,59 @@ test_that("change_report_date invalidates computed temporal-effect columns", {
   expect_identical(get_report_date(result), "corrected")
 })
 
+test_that("change_revision_date invalidates computed temporal-effect columns", {
+  x <- tbl_now(
+    data.frame(
+      event = as.Date(c("2024-01-01", "2024-01-02")),
+      report = as.Date(c("2024-01-02", "2024-01-03")),
+      revised = as.Date(c("2024-01-03", "2024-01-04")),
+      corrected = as.Date(c("2024-01-04", "2024-01-05")),
+      outcome = c("confirmed", "retracted")
+    ),
+    event_date = event, report_date = report,
+    revision_date = revised, revision_type = outcome,
+    now = as.Date("2024-01-05"), verbose = FALSE
+  ) |>
+    add_temporal_effects(
+      temporal_effects(day_of_week = TRUE),
+      date_type = "revision_date"
+    ) |>
+    compute_temporal_effects()
+
+  result <- change_revision_date(x, corrected, outcome)
+
+  expect_false(".revision_day_of_week" %in% names(result))
+  expect_equal(get_temporal_effect_cols(result), character(0))
+  expect_equal(length(get_temporal_effects(result)), 1L)
+  expect_identical(get_revision_date(result), "corrected")
+})
+
+test_that("remove_revision_date drops only revision-date temporal effects", {
+  x <- tbl_now(
+    data.frame(
+      event = as.Date(c("2024-01-01", "2024-01-02")),
+      report = as.Date(c("2024-01-02", "2024-01-03")),
+      revised = as.Date(c("2024-01-03", "2024-01-04")),
+      outcome = c("confirmed", "retracted")
+    ),
+    event_date = event, report_date = report,
+    revision_date = revised, revision_type = outcome,
+    verbose = FALSE
+  ) |>
+    add_temporal_effects(temporal_effects(day_of_week = TRUE)) |>
+    add_temporal_effects(
+      temporal_effects(day_of_week = TRUE),
+      date_type = "revision_date"
+    )
+
+  result <- remove_revision_date(x)
+  specs <- get_temporal_effects(result)
+
+  expect_false(has_revision(result))
+  expect_equal(length(specs), 1L)
+  expect_identical(specs[[1]]$date_type, "event_date")
+})
+
 test_that("converters recompute temporal effects after a date change", {
   skip_if_not_installed("data.table")
 
@@ -853,6 +954,59 @@ test_that("converters recompute temporal effects after a date change", {
 
   expect_true(".event_day_of_week" %in% names(dt))
   expect_equal(as.character(dt$.event_day_of_week), c("Tuesday", "Wednesday"))
+})
+
+test_that("converters recompute revision temporal effects after a revision date change", {
+  skip_if_not_installed("data.table")
+
+  x <- tbl_now(
+    data.frame(
+      event = as.Date(c("2024-01-01", "2024-01-02")),
+      report = as.Date(c("2024-01-02", "2024-01-03")),
+      revised = as.Date(c("2024-01-03", "2024-01-04")),
+      corrected = as.Date(c("2024-01-04", "2024-01-05")),
+      outcome = c("confirmed", "retracted")
+    ),
+    event_date = event, report_date = report,
+    revision_date = revised, revision_type = outcome,
+    now = as.Date("2024-01-05"), verbose = FALSE
+  ) |>
+    add_temporal_effects(
+      temporal_effects(day_of_week = TRUE),
+      date_type = "revision_date"
+    ) |>
+    compute_temporal_effects() |>
+    change_revision_date(corrected, outcome)
+
+  dt <- tbl_now_to_data_table(x, verbose = FALSE)
+
+  expect_true(".revision_day_of_week" %in% names(dt))
+  expect_equal(as.character(dt$.revision_day_of_week), c("Thursday", "Friday"))
+})
+
+test_that("aggregate_time_units coarsens revision-date temporal effects", {
+  x <- tbl_now(
+    data.frame(
+      event = as.Date(c("2024-01-01", "2024-01-08")),
+      report = as.Date(c("2024-01-02", "2024-01-09")),
+      revised = as.Date(c("2024-01-03", "2024-01-10")),
+      outcome = c("confirmed", "retracted")
+    ),
+    event_date = event, report_date = report,
+    revision_date = revised, revision_type = outcome,
+    units = "days", verbose = FALSE
+  ) |>
+    add_temporal_effects(
+      temporal_effects(day_of_week = TRUE, seasons = 21),
+      date_type = "revision_date"
+    )
+
+  result <- aggregate_time_units(x, to = "weeks", verbose = FALSE)
+  spec <- get_temporal_effects(result)[[1]]$t_effects
+
+  expect_false(spec@day_of_week)
+  expect_equal(spec@seasons, 3)
+  expect_identical(get_temporal_effects(result)[[1]]$date_type, "revision_date")
 })
 
 # ============================================================================

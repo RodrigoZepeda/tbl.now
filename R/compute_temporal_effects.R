@@ -23,11 +23,21 @@ compute_temporal_effects <- function(x, overwrite = FALSE) {
       numeric_col <- ".event_num"
       name_prefix <- ".event"
       units <- get_event_units(x)
-    } else {
+    } else if (date_type == "report_date") {
       date_col <- get_report_date(x)
       numeric_col <- ".report_num"
       name_prefix <- ".report"
       units <- get_report_units(x)
+    } else if (date_type == "revision_date" && has_revision(x)) {
+      date_col <- get_revision_date(x)
+      numeric_col <- ".revision_num"
+      name_prefix <- ".revision"
+      units <- get_revision_units(x)
+    } else {
+      cli::cli_abort(c(
+        "Cannot compute temporal effects for {.val {date_type}}.",
+        "i" = "{.code date_type = \"revision_date\"} needs a revision process."
+      ))
     }
 
     x <- add_temporal_effects.data.frame(

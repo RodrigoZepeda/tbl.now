@@ -106,7 +106,7 @@ update.tbl_now <- function(object, ..., new_data,
   }
 
   # Move `now` forward before anything validates. New rows may carry a later
-  # report -- or a later CONFIRMATION -- than the object had, and validation
+  # report -- or a later CONFIRMATION -- than the object had, and revision
   # refuses an object whose `now` sits before an observation that has already
   # happened.
   if (is.null(now)) {
@@ -115,7 +115,7 @@ update.tbl_now <- function(object, ..., new_data,
       now = NULL,
       event_date = get_event_date(object),
       report_date = get_report_date(object),
-      validation_date = get_validation_date(object)
+      revision_date = get_revision_date(object)
     )
     attr(updated_data, "now") <- now
   }
@@ -128,8 +128,8 @@ update.tbl_now <- function(object, ..., new_data,
   if (grepl("count", get_data_type(object)) && remove_duplicates) {
     suppressWarnings(
       updated_data <- updated_data |>
-        # Pass the object: with a validation process the generated set also
-        # holds `.validation_num`/`.validation_delay`, and leaving those in
+        # Pass the object: with a revision process the generated set also
+        # holds `.revision_num`/`.revision_delay`, and leaving those in
         # the de-duplication key would make every row look distinct.
         dplyr::distinct(
           dplyr::pick(-dplyr::one_of(get_protected_generated_cols(object))),
@@ -276,23 +276,23 @@ update.tbl_now <- function(object, ..., new_data,
     updated_data <- updated_data |> dplyr::select(-dplyr::all_of(stale_t_effect_cols))
   }
 
-  # The validation process rides along, when the object had one AND the merged
+  # The revision process rides along, when the object had one AND the merged
   # data still carries its columns. Losing it here would silently turn a
   # three-date object back into a two-date one, and the `now` would move
   # backwards with it.
-  validation_date <- get_validation_date(object)
-  if (!is.null(validation_date) && !validation_date %in% colnames(updated_data)) {
+  revision_date <- get_revision_date(object)
+  if (!is.null(revision_date) && !revision_date %in% colnames(updated_data)) {
     cli::cli_warn(c(
-      "The validation date {.val {validation_date}} is not in the updated
-       data, so the validation process was dropped.",
+      "The revision date {.val {revision_date}} is not in the updated
+       data, so the revision process was dropped.",
       "i" = "Include that column in {.arg new_data} to keep it."
     ))
-    validation_date <- NULL
+    revision_date <- NULL
   }
-  validation_type <- if (is.null(validation_date)) {
+  revision_type <- if (is.null(revision_date)) {
     NULL
   } else {
-    type_col <- get_validation_type(object)
+    type_col <- get_revision_type(object)
     if (!is.null(type_col) && type_col %in% colnames(updated_data)) type_col else NULL
   }
 
@@ -302,14 +302,14 @@ update.tbl_now <- function(object, ..., new_data,
     strata = get_strata(updated_data),
     covariates = get_covariates(updated_data),
     is_censored_report = result_is_censored_report,
-    validation_date = validation_date,
-    validation_type = validation_type,
-    validation_units = get_validation_units(object) %||% "auto",
-    validation_levels = get_validation_levels(object),
-    is_censored_validation = if (is.null(validation_date)) {
+    revision_date = revision_date,
+    revision_type = revision_type,
+    revision_units = get_revision_units(object) %||% "auto",
+    revision_levels = get_revision_levels(object),
+    is_censored_revision = if (is.null(revision_date)) {
       NULL
     } else {
-      cens <- get_is_censored_validation(object)
+      cens <- get_is_censored_revision(object)
       if (!is.null(cens) && cens %in% colnames(updated_data)) cens else NULL
     },
     event_units = get_event_units(object),

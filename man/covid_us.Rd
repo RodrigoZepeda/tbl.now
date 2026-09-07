@@ -10,11 +10,11 @@ A data frame with 192,953 rows and six variables:
 \item{onset_dt}{\code{Date}. The event date -- symptom onset.}
 \item{pos_spec_dt}{\code{Date}. The report date -- collection of the first
 positive specimen.}
-\item{cdc_report_dt}{\code{Date}. The validation date -- when the case was
+\item{cdc_report_dt}{\code{Date}. The revision date -- when the case was
 registered at CDC.}
 \item{current_status}{\code{character}. CDC's classification, either
 \code{"Laboratory-confirmed case"} or \code{"Probable Case"}. Map it with
-\code{validation_levels} (see above).}
+\code{revision_levels} (see above).}
 \item{sex}{\code{character}. \code{"Female"}, \code{"Male"}, \code{"Other"}, \code{"Unknown"} or
 \code{"Missing"}.}
 \item{n}{\code{integer}. Number of cases sharing that combination.}
@@ -33,7 +33,7 @@ data(covid_us)
 \description{
 A compact aggregation of the U.S. CDC's individual-level COVID-19 case
 surveillance database. It is the package's worked example for two different
-things: \strong{batch reporting}, and the \strong{validation process} -- the optional
+things: \strong{batch reporting}, and the \strong{revision process} -- the optional
 third date a surveillance record can carry.
 }
 \details{
@@ -51,16 +51,16 @@ the only chain that runs forward in time, and they map onto the three roles a
 \item{\code{onset_dt}}{the \strong{event} -- symptoms begin.}
 \item{\code{pos_spec_dt}}{the \strong{report} -- the first positive specimen is
 collected, which is when the surveillance system first sees the case.}
-\item{\code{cdc_report_dt}}{the \strong{validation} -- the case is registered at CDC
+\item{\code{cdc_report_dt}}{the \strong{revision} -- the case is registered at CDC
 with a status.}
 }
 }
 
-\section{\code{current_status} and \code{validation_levels}}{
+\section{\code{current_status} and \code{revision_levels}}{
 \code{current_status} is kept in CDC's own words rather than recoded, because
-translating it is exactly what \code{tbl_now(validation_levels = )} is for:
+translating it is exactly what \code{tbl_now(revision_levels = )} is for:
 
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{validation_levels = c(
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{revision_levels = c(
   "Laboratory-confirmed case" = "confirmed",
   "Probable Case"             = "pending"
 )
@@ -71,10 +71,10 @@ without meeting the laboratory-confirmed definition. Every row here has a
 positive specimen, so "probable" means the specimen was collected and the
 case was never laboratory-settled -- \code{"pending"} in this package's
 vocabulary. Note what is \strong{not} there: CDC does not withdraw cases, so
-\code{"retracted"} does not occur in this dataset. It is a two-outcome validation
+\code{"retracted"} does not occur in this dataset. It is a two-outcome revision
 process, and code that needs a retraction has to look elsewhere.
 
-The relationship between the outcome and the validation delay is real rather
+The relationship between the outcome and the revision delay is real rather
 than fabricated: probable cases are registered a median of 2 days after the
 specimen, laboratory-confirmed ones 4 days.
 }
@@ -112,9 +112,9 @@ tn3 <- tbl_now(
   covid_us,
   event_date       = onset_dt,
   report_date      = pos_spec_dt,
-  validation_date  = cdc_report_dt,
-  validation_type  = current_status,
-  validation_levels = c(
+  revision_date  = cdc_report_dt,
+  revision_type  = current_status,
+  revision_levels = c(
     "Laboratory-confirmed case" = "confirmed",
     "Probable Case"             = "pending"
   ),
@@ -123,16 +123,16 @@ tn3 <- tbl_now(
   data_type  = "count-incidence",
   verbose    = FALSE
 )
-has_validation(tn3)
-get_validation_levels(tn3)
+has_revision(tn3)
+get_revision_levels(tn3)
 
 # "How many cases were there" now has more than one answer.
 head(get_latest_reported_cases(tn3))
-head(get_latest_validated_cases(tn3, type = "confirmed"))
+head(get_latest_revised_cases(tn3, type = "confirmed"))
 }
 \seealso{
-\code{\link[=tbl_now]{tbl_now()}} to declare the date columns; \link[=add]{add_validation_date()} to
-attach the third one to an object that has none; \link{validated_cases} to count
+\code{\link[=tbl_now]{tbl_now()}} to declare the date columns; \link[=add]{add_revision_date()} to
+attach the third one to an object that has none; \link{revised_cases} to count
 the outcomes; \link[=tbl_now_summary]{summary()} and \code{\link[=diagnose]{diagnose()}} to inspect the
 result; the package's other datasets -- \link{denguedat}, \link{mpoxdat}, \link{flusight},
 \link{covid_colombia} and \link{hai_bucaramanga}.

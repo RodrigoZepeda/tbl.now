@@ -20,6 +20,19 @@ make_daily_now <- function() {
   )
 }
 
+make_revised_daily_now <- function() {
+  base <- as.data.frame(make_daily_now())[, c("event_date", "report_date", "n")]
+  base$revision_date <- base$report_date + 1
+  base$outcome <- "confirmed"
+  tbl_now(base,
+    event_date = event_date, report_date = report_date,
+    revision_date = revision_date, revision_type = outcome,
+    case_count = n, data_type = "count-incidence",
+    event_units = "days", report_units = "days", revision_units = "days",
+    verbose = FALSE
+  )
+}
+
 test_that("autoplot.tbl_now returns a patchwork object (weekly linelist)", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
@@ -118,6 +131,38 @@ test_that("panel key vocabulary depends on the event unit", {
   expect_equal(
     tbl.now:::.tbl_now_resolve_panels("all", "weeks"),
     tbl.now:::.tbl_now_all_panel_keys("weeks")
+  )
+})
+
+test_that("revision panels appear when a revision process is present", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  object <- make_revised_daily_now()
+  keys <- tbl.now:::.tbl_now_all_panel_keys("days",
+    revision_units = "days", has_revision = TRUE
+  )
+  expect_true(all(c(
+    "revision_weekday", "revision_week", "revision_seasonality"
+  ) %in% keys))
+  expect_equal(
+    tbl.now:::.tbl_now_resolve_panels("revision_calendar", "days",
+      revision_units = "days", has_revision = TRUE
+    ),
+    c("revision_weekday", "revision_week")
+  )
+
+  p <- ggplot2::autoplot(object)
+  expect_s3_class(p, "patchwork")
+  expect_length(p$patches$plots, 10) # 11 panels: the old 8 plus 3 revision
+  expect_equal(
+    ggplot2::autoplot(object, panels = "revision_weekday")$labels$subtitle,
+    "Revision process"
+  )
+  expect_equal(
+    ggplot2::autoplot(object, panels = "revision_weekday")$labels$y,
+    "Percent of revised cases (%)"
   )
 })
 
@@ -552,14 +597,22 @@ test_that("cumulative growth panel works by stratum and full autoplot builds", {
     grp = rep(c("a", "b"), each = 3, times = 2),
     n = c(10, 20, 22, 5, 9, 9, 8, 12, 12, 4, 6, 6)
   )
+
+  suppressWarnings({
   nowobj <- tbl_now(df,
     event_date = event_date, report_date = report_date, case_count = n,
     strata = "grp", data_type = "count-cumulative",
     event_units = "weeks", report_units = "weeks", verbose = FALSE
   )
-  ps <- ggplot2::autoplot(nowobj, panels = "delay_distribution", by_strata = TRUE)
-  expect_equal(ps$labels$title, "Cumulative growth by delay")
-  expect_s3_class(ggplot2::autoplot(nowobj, by_strata = TRUE), "patchwork")
+  })
+  # De-accumulating a cumulative series can produce negative increments at
+  # rows where a revision comes in lower; the autoplot flags those as
+  # "report before event" but that is the data, not what this test checks.
+  suppressWarnings({
+    ps <- ggplot2::autoplot(nowobj, panels = "delay_distribution", by_strata = TRUE)
+    expect_equal(ps$labels$title, "Cumulative growth by delay")
+    expect_s3_class(ggplot2::autoplot(nowobj, by_strata = TRUE), "patchwork")
+  })
 })
 
 # ---------------------------------------------------------------------------
@@ -589,6 +642,7 @@ make_holiday_now <- function() {
 holiday_panel_keys <- c(
   "calendar_holiday", "calendar_holiday_lag", "delay_holiday", "delay_holiday_lag"
 )
+revision_holiday_panel_keys <- c("revision_holiday", "revision_holiday_lag")
 
 test_that("holiday panels appear only when a holiday or weekend effect is attached", {
   skip_on_cran()
@@ -618,6 +672,31 @@ test_that("holiday panels appear only when a holiday or weekend effect is attach
   )
   expect_true(all(holiday_panel_keys %in%
                     .tbl_now_all_panel_keys("days", .tbl_now_holiday_config(full))))
+})
+
+test_that("revision holiday panels use revision-date temporal effects", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("almanac")
+
+  object <- make_revised_daily_now() |>
+    add_temporal_effects(
+      temporal_effects(weekend = TRUE, holidays = almanac::cal_us_federal(),
+                       holiday_lags = 2),
+      date_type = "revision_date"
+    )
+
+  keys <- .tbl_now_all_panel_keys("days",
+    revision_units = "days", has_revision = TRUE,
+    revision_holiday_config = .tbl_now_holiday_config(object, "revision_date")
+  )
+  expect_true(all(revision_holiday_panel_keys %in% keys))
+  expect_false("calendar_holiday" %in% keys)
+  expect_s3_class(ggplot2::autoplot(object, panels = "revision_holiday"), "ggplot")
+  expect_equal(
+    ggplot2::autoplot(object, panels = "revision_holiday_lag")$labels$title,
+    "Holiday lag revision effect"
+  )
 })
 
 test_that("the holiday config folds every attached spec together", {
@@ -864,6 +943,10 @@ test_that("plot_weekend_effects attaches a weekend effect when there is none", {
     plot_weekend_effects(object, type = "report")$labels$title,
     "Weekend and/or holiday delay effects"
   )
+  expect_equal(
+    plot_weekend_effects(make_revised_daily_now(), type = "revision")$labels$title,
+    "Weekend and/or holiday revision effect"
+  )
 
   # The spec goes on a copy -- the caller's object is unchanged
   expect_length(get_temporal_effects(object), 0)
@@ -938,6 +1021,7 @@ test_that("every panel names the process it describes in its subtitle", {
   epidemic_keys  <- c("epidemic", "calendar_weekday", "calendar_week", "seasonality")
   reporting_keys <- c("delay_distribution", "delay_weekday", "delay_week",
                       "delay_seasonality")
+  revision_keys <- c("revision_weekday", "revision_week", "revision_seasonality")
 
   for (key in epidemic_keys) {
     expect_equal(
@@ -950,6 +1034,14 @@ test_that("every panel names the process it describes in its subtitle", {
     expect_equal(
       ggplot2::autoplot(object, panels = key)$labels$subtitle,
       "Reporting delay process",
+      info = key
+    )
+  }
+  revised <- make_revised_daily_now()
+  for (key in revision_keys) {
+    expect_equal(
+      ggplot2::autoplot(revised, panels = key)$labels$subtitle,
+      "Revision process",
       info = key
     )
   }
@@ -966,6 +1058,10 @@ test_that("both periodogram panels are titled 'Cycles (periodogram)'", {
   )
   expect_equal(
     ggplot2::autoplot(object, panels = "delay_seasonality")$labels$title,
+    "Cycles (periodogram)"
+  )
+  expect_equal(
+    ggplot2::autoplot(make_revised_daily_now(), panels = "revision_seasonality")$labels$title,
     "Cycles (periodogram)"
   )
 })
@@ -1058,6 +1154,15 @@ test_that("the plot_* twins draw the same panel as autoplot()", {
   expect_equal(
     plot_cycles(object, type = "report")$labels,
     ggplot2::autoplot(object, panels = "delay_seasonality")$labels
+  )
+  revised <- make_revised_daily_now()
+  expect_equal(
+    plot_day_of_week_effects(revised, type = "revision")$labels,
+    ggplot2::autoplot(revised, panels = "revision_weekday")$labels
+  )
+  expect_equal(
+    plot_cycles(revised, type = "revision")$labels,
+    ggplot2::autoplot(revised, panels = "revision_seasonality")$labels
   )
   expect_s3_class(plot_delay_distribution(object), "ggplot")
   expect_s3_class(plot_observed_cases(object), "ggplot")

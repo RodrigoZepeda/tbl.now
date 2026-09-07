@@ -97,7 +97,7 @@ engine <- function(method, ..., min_date = NULL,
 
 #' Build the engine object
 #'
-#' One place where the class, the argument list and the validation live, so the
+#' One place where the class, the argument list and the revision live, so the
 #' general `engine()` and the six `engine_*()` constructors cannot drift apart.
 #'
 #' @param method Canonical method name.
@@ -371,10 +371,10 @@ is_nowcast_engine <- function(x) {
 #'
 #' @param model,type,n_draws (`engine_diseasenowcasting()`) Arguments of
 #'   [diseasenowcasting::nowcast()]. `model` is where the epidemic and
-#'   validation processes are chosen, e.g.
+#'   revision processes are chosen, e.g.
 #'   `diseasenowcasting::model(epidemic = diseasenowcasting::ar1_epidemic())`.
 #'   On `count-cumulative` data that revises downwards you also want a
-#'   `validation` process, or the negative increments have nowhere to go.
+#'   `revision` process, or the negative increments have nowhere to go.
 #'
 #' @param draws,delays_unit,max_delay (`engine_baselinenowcast()`) Number of
 #'   nowcast samples, the unit of the reporting triangle's delay axis (inferred

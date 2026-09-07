@@ -1,6 +1,7 @@
 .Rproj.user
 .Rhistory
 .RData
+REVIEW_*.md
 .Ruserdata
 .DS_Store
 Rplots.pdf

@@ -13,11 +13,11 @@ tbl_now(
   covariates = NULL,
   case_count = NULL,
   is_censored_report = NULL,
-  validation_date = NULL,
-  validation_type = NULL,
-  validation_units = units,
-  validation_levels = NULL,
-  is_censored_validation = NULL,
+  revision_date = NULL,
+  revision_type = NULL,
+  revision_units = units,
+  revision_levels = NULL,
+  is_censored_revision = NULL,
   now = NULL,
   event_units = units,
   report_units = units,
@@ -79,42 +79,42 @@ set \code{is_censored_report = FALSE} but if the \code{report_date} corresponds 
 and is only an upper bound of the real report date
 set \code{is_censored_report = TRUE}.}
 
-\item{validation_date}{(optional)
+\item{revision_date}{(optional)
 \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 column holding a \strong{third} date: the day the report was resolved. Influenza is
 the picture to keep in mind -- symptoms begin (the event), the patient sees a
 doctor (the report), and days later a swab comes back. The assumed timeline is
-\verb{event_date <= report_date <= validation_date <= now}. Leave \code{NULL} (the
-default) for the usual two-date object. See \code{\link[=add_validation_date]{add_validation_date()}}.}
+\verb{event_date <= report_date <= revision_date <= now}. Leave \code{NULL} (the
+default) for the usual two-date object. See \code{\link[=add_revision_date]{add_revision_date()}}.}
 
-\item{validation_type}{(optional)
+\item{revision_type}{(optional)
 \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
 column saying what the resolution \emph{was}: \code{"confirmed"}, \code{"retracted"} (it was
 reported, but it is not a case after all), \code{"pending"} or \code{NA}. \strong{\code{"pending"}
-means reported and still waiting}, so it carries no validation date --
+means reported and still waiting}, so it carries no revision date --
 which is a different thing from a result that was never recorded (\code{NA}). A
-validation date with no type warns rather than guessing, because a date
+revision date with no type warns rather than guessing, because a date
 alone cannot say whether the case was confirmed or retracted.}
 
-\item{validation_units}{(optional) Character. Either \code{"auto"} (default),
+\item{revision_units}{(optional) Character. Either \code{"auto"} (default),
 \code{"days"}, \code{"weeks"}, \code{"months"}, \code{"years"} or \code{"numeric"} -- the grid the
-validation date lives on, resolved the same way as \code{report_units}.}
+revision date lives on, resolved the same way as \code{report_units}.}
 
-\item{validation_levels}{(optional) \code{NULL} (default) or a \strong{named} character
-vector translating the labels in \code{validation_type} into the canonical
+\item{revision_levels}{(optional) \code{NULL} (default) or a \strong{named} character
+vector translating the labels in \code{revision_type} into the canonical
 outcomes, for data that was not recorded in English:
 \code{c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")}.
 The names are the labels in your data, the values are the canonical ones. The
 column is rewritten to the canonical values and the dictionary is kept as an
-attribute, readable with \code{get_validation_levels()}. Only
+attribute, readable with \code{get_revision_levels()}. Only
 \code{"confirmed"}, \code{"retracted"}, \code{"pending"} and \code{NA} are ever stored.}
 
-\item{is_censored_validation}{(optional)
+\item{is_censored_revision}{(optional)
 \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL} (default).
-The validation-axis counterpart of \code{is_censored_report}: the name of a
-logical column marking rows whose \strong{validation delay} is a bound rather
-than a measurement. Requires a \code{validation_date}. See
-\link[=censor_reporting_delays_above]{censor_validation_delays_above()}.}
+The revision-axis counterpart of \code{is_censored_report}: the name of a
+logical column marking rows whose \strong{revision delay} is a bound rather
+than a measurement. Requires a \code{revision_date}. See
+\link[=censor_reporting_delays_above]{censor_revision_delays_above()}.}
 
 \item{now}{(optional) Date or \code{NULL} (default). The date that is considered the \code{now} of the
 nowcast. If no \code{now} is given then the function automatically uses the last
@@ -128,7 +128,7 @@ nowcast. If no \code{now} is given then the function automatically uses the last
 
 \item{units}{(optional) Character. Either \code{"auto"} (default), \code{"days"},
 \code{"weeks"}, \code{"months"}, \code{"years"} or \code{"numeric"}. The \strong{default} for
-\code{event_units}, \code{report_units} and \code{validation_units}: say it once instead of
+\code{event_units}, \code{report_units} and \code{revision_units}: say it once instead of
 three times. Any of the three that you give explicitly wins over \code{units}, so
 \verb{units = "days", report_units = "weeks"} reads a daily event date against a
 weekly report date.}
@@ -190,7 +190,7 @@ dates without being told again.
 The minimum you must supply is \code{event_date} and \code{report_date} (or one of them
 plus a \code{delay} column, from which the other is reconstructed). Everything else
 is optional and can be added later with \code{\link[=add_strata]{add_strata()}}, \code{\link[=add_covariates]{add_covariates()}},
-\code{\link[=add_validation_date]{add_validation_date()}} and the rest of the \code{\link[=add]{add()}} family.
+\code{\link[=add_revision_date]{add_revision_date()}} and the rest of the \code{\link[=add]{add()}} family.
 
 Once the object exists the usual path is \link[=tbl_now_summary]{summary()} to see
 what is in the data, \code{\link[=diagnose]{diagnose()}} to see what is wrong with it,
@@ -200,7 +200,7 @@ model. \code{vignette("tbl.now")} walks through that path end to end.
 \section{Attributes}{
 
 
-The following attributes are part of a \code{tbl_now} and are validated
+The following attributes are part of a \code{tbl_now} and are revised
 by the \code{\link[=validate_tbl_now]{validate_tbl_now()}} function:
 
 \describe{
@@ -216,11 +216,11 @@ by the \code{\link[=validate_tbl_now]{validate_tbl_now()}} function:
 \item{report_units}{Either \code{days}, \code{weeks}, \code{months}, \code{years} or \code{numeric}. Corresponds to the units of \code{report_date}}
 \item{data_type}{Either \code{linelist}, \code{count-incidence} or \code{count-cumulative} depending on whether it is linelist data
 or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)}
-\item{validation_date}{Name of the column with the (optional) third date: when the report was resolved.}
-\item{validation_type}{Name of the column saying what that resolution was (\code{"confirmed"}, \code{"retracted"}, \code{"pending"}).}
-\item{validation_units}{Units of \code{validation_date}, resolved like \code{report_units}.}
-\item{validation_levels}{The (optional) dictionary translating the labels in \code{validation_type} into the canonical outcomes.}
-\item{is_censored_validation}{Column indicating whether the \emph{validation} delay is only a bound (the validation-axis counterpart of \code{is_censored_report}).}
+\item{revision_date}{Name of the column with the (optional) third date: when the report was resolved.}
+\item{revision_type}{Name of the column saying what that resolution was (\code{"confirmed"}, \code{"retracted"}, \code{"pending"}).}
+\item{revision_units}{Units of \code{revision_date}, resolved like \code{report_units}.}
+\item{revision_levels}{The (optional) dictionary translating the labels in \code{revision_type} into the canonical outcomes.}
+\item{is_censored_revision}{Column indicating whether the \emph{revision} delay is only a bound (the revision-axis counterpart of \code{is_censored_report}).}
 \item{computed_temporal_effect_cols}{Names of the temporal-effect columns that have actually been materialised in the data by \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}.}
 }
 

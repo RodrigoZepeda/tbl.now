@@ -24,15 +24,15 @@ keep working inside a `dplyr` pipeline.
 
 A `tbl_now` stores at least two dates: when the event happened
 (`event_date`) and when it was reported (`report_date`). Optionally it
-can have a (`validation_date`). The assumption is that something happens
+can have a (`revision_date`). The assumption is that something happens
 at the event date, gets reported at the report date and the report gets
-revised at the validation date.
+revised at the revision date.
 
 The difference between the event and the report dates is the reporting
-delay. The difference between the report and the validation dates is the
-validation delay. All nowcasts attempt to predict the total number of
+delay. The difference between the report and the revision dates is the
+revision delay. All nowcasts attempt to predict the total number of
 cases that happened at `event_date` and will eventually be reported
-(and/or validated) at the `report_date` or the `validation_date`
+(and/or revised) at the `report_date` or the `revision_date`
 respectively.
 
 When dates are not measured exactly but represent an upper bound (i.e. they
@@ -98,16 +98,16 @@ Rules that follow from this:
 | `strata` | character vector of stratifying columns | `get_strata()`, `get_num_strata()` |
 | `covariates` | character vector of covariate columns | `get_covariates()`, `get_num_covariates()` |
 | `is_censored_report` | column name of the report-axis censoring flag, or `NULL` | `get_is_censored_report()` |
-| `is_censored_validation` | the same on the validation axis, or `NULL` | `get_is_censored_validation()` |
+| `is_censored_revision` | the same on the revision axis, or `NULL` | `get_is_censored_revision()` |
 | `now` | the "as of" date | `get_now()` |
 | `event_units` | `"days"`, `"weeks"`, `"months"`, `"years"`, `"numeric"` | `get_event_units()` |
 | `report_units` | same | `get_report_units()` |
 | `temporal_effects` | **lazy** effect specs | `get_temporal_effects()` |
 | `computed_temporal_effect_cols` | materialised effect column names | `get_temporal_effect_cols()` |
-| `validation_date` | column name of the validation date, or `NULL` | `get_validation_date()`, `has_validation()` |
-| `validation_type` | column name of the outcome, or `NULL` | `get_validation_type()` |
-| `validation_units` | same set as `report_units` | `get_validation_units()` |
-| `validation_levels` | dictionary of non-canonical outcome labels, or `NULL` | `get_validation_levels()` |
+| `revision_date` | column name of the revision date, or `NULL` | `get_revision_date()`, `has_revision()` |
+| `revision_type` | column name of the outcome, or `NULL` | `get_revision_type()` |
+| `revision_units` | same set as `report_units` | `get_revision_units()` |
+| `revision_levels` | dictionary of non-canonical outcome labels, or `NULL` | `get_revision_levels()` |
 
 Required new attributes should be added to `.TBL_NOW_REQUIRED_ATTRIBUTES`.
 When adding new attributes associated to columns, consider
@@ -131,43 +131,43 @@ whether they should be protected columns and added to `get_protected_cols()`.
     Calling `compute_temporal_effects()` before `add_temporal_effects()`
     is a no-op.
 
-### The validation process (the optional third date)
+### The revision process (the optional third date)
 
-`event <= report <= validation <= now`. It is **optional**: most objects
-have no validation, so every code path must work when
-`has_validation(x)` is `FALSE`, and `.validation_group_cols(x)` returns
+`event <= report <= revision <= now`. It is **optional**: most objects
+have no revision, so every code path must work when
+`has_revision(x)` is `FALSE`, and `.revision_group_cols(x)` returns
 `character(0)`.
 
 1.  **Every rebuild must carry it.**
-    `do.call(tbl_now, c(list(...), .validation_rebuild_args(x, data)))`.
+    `do.call(tbl_now, c(list(...), .revision_rebuild_args(x, data)))`.
     This is the same silent-drop hazard as strata: `summarise()`,
     `group_by()`, `ungroup()`, `update()` and `align_weeks()` each
-    rebuild by hand, and each one dropped the validation until it was
+    rebuild by hand, and each one dropped the revision until it was
     spliced in. **Grep for `do.call(tbl_now` before adding an
     attribute** and fix every site.
 
 2.  **`"pending"` can mean no date, not a missing date.** A pending case is
-    reported and still waiting to have a validation result. Anything that counts arrivals on the validation axis must drop pending rows.
+    reported and still waiting to have a revision result. Anything that counts arrivals on the revision axis must drop pending rows.
 
-3.  **Two different delays.** `.validation_delay` is the laboratory's
+3.  **Two different delays.** `.revision_delay` is the laboratory's
     turnaround, measured **from the report**.
 
-5.  **`now` is validation-aware, in both directions.** `infer_now()`
-    takes the max over both. Setting `now` *before* a validation is not
+5.  **`now` is revision-aware, in both directions.** `infer_now()`
+    takes the max over both. Setting `now` *before* a revision is not
     an error, it should be used for a backtest: `change_now()` calls
-    `.mask_validations_after()`, which returns every validation dated
+    `.mask_revisions_after()`, which returns every revision dated
     after the new `now` to `"pending"` and masks its date,
-    `.validation_num`, `.validation_delay` and censoring flag.
+    `.revision_num`, `.revision_delay` and censoring flag.
 
-6.  **`validation_type` holds four values and no others**, and
-    `validation_levels` is the only way in for anything else. The
-    dictionary is applied by `.resolve_validation_type()` BEFORE the
+6.  **`revision_type` holds four values and no others**, and
+    `revision_levels` is the only way in for anything else. The
+    dictionary is applied by `.resolve_revision_type()` BEFORE the
     check, and it must be idempotent: it runs again on every rebuild, so
-    `.check_validation_levels()` refuses a mapping that would move a
+    `.check_revision_levels()` refuses a mapping that would move a
     canonical value.
 
 7.  **Censoring has two axes.** `is_censored_report` is a bound on the
-    reporting delay, `is_censored_validation` on the validation delay.
+    reporting delay, `is_censored_revision` on the revision delay.
     Both are protected, both are grouping keys, and
     `.tbl_now_collapse_censoring()` collapses both. Neither ever deletes
     a case or rewrites an outcome -- that is what makes it *censoring*
@@ -213,16 +213,16 @@ unless there is a good reason.
 
 ### Protected columns
 
-`get_protected_cols()` returns user-given columns (event/report/validation
-dates, validation type, censoring flags, case count) plus generated numeric
-columns (`.event_num`, `.report_num`, `.delay`, and, when validation exists,
-`.validation_num`, `.validation_delay`). Removing or
+`get_protected_cols()` returns user-given columns (event/report/revision
+dates, revision type, censoring flags, case count) plus generated numeric
+columns (`.event_num`, `.report_num`, `.delay`, and, when revision exists,
+`.revision_num`, `.revision_delay`). Removing or
 renaming any generated protected column must demote with `.demote_to_tibble()`,
 so all `tbl_now` attributes are removed and only user metadata survives.
 
 When reshaping inside the package, operate on `.strip_tbl_now(x)` and rebuild
 with `.tbl_now_rebuild()` or `do.call(tbl_now, c(list(...),
-.validation_rebuild_args(x, data)))`.
+.revision_rebuild_args(x, data)))`.
 
 
 ## 4. Functions
@@ -243,7 +243,7 @@ this order:
 Avoid rewriting a `tbl.now` helper's logic by hand as much as possible. Justify
 whenever you do this and check it works for all data types, nows, and
 combinations of attributes (i.e. what if it doesn't have strata, what if it has two and
-a validation date?). 
+a revision date?). 
 
 ### Duplicate function check (mandatory)
 
@@ -739,7 +739,7 @@ function was fully tested -- ungrouped:
 -   `censor_reporting_delays_above()` aborted inside
     `add_is_censored_report()`, which refuses a `grouped_tbl_now`
     outright.
--   `censor_validation_delays_above()` had the identical bug on the
+-   `censor_revision_delays_above()` had the identical bug on the
     other axis, and shipped in a release whose whole subject was that
     axis.
 -   `aggregate_time_units()` would have returned an ungrouped object,
@@ -790,7 +790,7 @@ difference, rather than leaving it ambiguous.
 Two verbs legitimately do (#61), and the line between them is *select
 versus reshape*:
 
--   the **reported- and validated-cases getters** SELECT a point in the
+-   the **reported- and revised-cases getters** SELECT a point in the
     process, so one row in is still one cell out. A grouping is one more
     key, it is answered by, and it comes back. That is the only way to
     ask for a count by a **covariate** -- a column that matters without
@@ -832,7 +832,7 @@ adding a verb; it is what found the last two of the five.
 The same argument applies to the other shapes a `tbl_now` comes in, and
 a new function should say in its tests which of them it was actually
 tried against: the three `data_type`s, an object with and without a
-validation process, and one with `NULL` strata. Grouping is singled out
+revision process, and one with `NULL` strata. Grouping is singled out
 here only because it is invisible in the object's printout and so is the
 one people forget.
 
@@ -1093,7 +1093,7 @@ Every new article or vignette should be referenced in the
 -   **A uniqueness key that omits an attribute reports real rows as
     duplicates.** `validate_tbl_now()`'s non-uniqueness warning built
     its `distinct()` key from the dates, strata, covariates and effect
-    columns. When validation arrived, a case and its own retraction --
+    columns. When revision arrived, a case and its own retraction --
     same event, same report, opposite outcome -- came out as "exact
     duplicates", advising `dplyr::distinct()`, which would have
     **deleted the retraction**. Any column that legitimately
@@ -1117,7 +1117,7 @@ Before calling a change finished:
     did not abort, the groups came back, and the answer matches the
     ungrouped one. See §8 and `devel/audit_grouped_verbs.R`; this bug
     has shipped six times.
--   [ ] Any new functionality using the report-date or the validation-date
+-   [ ] Any new functionality using the report-date or the revision-date
     handles the cases when those dates are censored either because: 1) 
     censoring doesn't matter, 2) it warns or errors about the censoring, or
     3) it handles the censoring in a specific way consistent with their status.
@@ -1147,7 +1147,7 @@ Before calling a change finished:
 -   [ ] Plots use `tbl_now_palette()` **by role name** and the
     reporting/epidemic grammar; no hex code outside `R/palette.R`; the
     prologue calls `.tbl_now_check_palette()`, and any
-    `size`/`linewidth` it offers is validated with
+    `size`/`linewidth` it offers is revised with
     `.tbl_now_check_size()` and multiplies rather than replaces — see
     §6.
 -   [ ] No examples use `\donttest{}` or `\dontrun{}`. Nor do they use `if (FALSE)`.
@@ -1245,7 +1245,7 @@ and there is a test asserting exactly that. When you add a block:
     — which is why `date_min`/`date_max` appear only when a coverage row
     is present.
 -   put the *subset being described* in `stratum` and the *category* in
-    `quantity`. `"validation_type = confirmed"` is a quantity;
+    `quantity`. `"revision_type = confirmed"` is a quantity;
     `"Female"` is a stratum. Mixing them makes a compositional row
     impossible to interpret.
 -   **say what `n` counts.** One shared schema means the two count
@@ -1284,7 +1284,7 @@ outlives the session that made it.
 ### `skipped` is not `ok`, and the difference is load-bearing
 
 `ok` means the check ran and found nothing. `skipped` means it could not
-run — no validation process, the wrong data type, an optional package
+run — no revision process, the wrong data type, an optional package
 absent. A check that cannot be performed must never be reported as a
 pass; silence that reads as approval is the main way a health check
 misleads.

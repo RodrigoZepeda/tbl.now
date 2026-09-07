@@ -13,7 +13,7 @@ nowcast_backtest(
   keep_draws = FALSE,
   on_error = c("warn", "abort"),
   verbose = TRUE,
-  truth_axis = c("report", "validation"),
+  truth_axis = c("report", "revision"),
   truth_type = "total"
 )
 }
@@ -59,14 +59,14 @@ with a warning, or \code{"abort"} to stop.}
 \item{verbose}{Logical. Whether to report progress.}
 
 \item{truth_axis}{Which process defines the observed counts. \code{"report"}
-(default) scores counts eventually reported. \code{"validation"} scores counts
-eventually resolved on the validation axis and requires a validation-aware
+(default) scores counts eventually reported. \code{"revision"} scores counts
+eventually resolved on the revision axis and requires a revision-aware
 \code{truth}.}
 
-\item{truth_type}{Which case type to score. Defaults to \code{"total"}. Validation
+\item{truth_type}{Which case type to score. Defaults to \code{"total"}. Revision
 types such as \code{"confirmed"}, \code{"retracted"}, \code{"pending"}, \code{"unknown"} and
 \code{"net"} follow the same meanings as \code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}} and
-\code{\link[=get_latest_validated_cases]{get_latest_validated_cases()}}. \code{"by_type"} is refused because scoring needs
+\code{\link[=get_latest_revised_cases]{get_latest_revised_cases()}}. \code{"by_type"} is refused because scoring needs
 one observed value per event-date/stratum target.}
 }
 \value{

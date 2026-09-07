@@ -6,7 +6,7 @@
 \alias{delay_summary}
 \alias{zero_run_summary}
 \alias{prop_censored}
-\alias{prop_validation_type}
+\alias{prop_revision_type}
 \alias{prop_strata}
 \alias{prop_covariate_levels}
 \alias{case_autocorrelation}
@@ -18,28 +18,28 @@
 \usage{
 cases_per_date(
   x,
-  axis = c("event", "report", "validation"),
+  axis = c("event", "report", "revision"),
   by_strata = NULL,
   strata = NULL
 )
 
 delay_summary(
   x,
-  delay = c("event_to_report", "event_to_validation", "report_to_validation"),
+  delay = c("event_to_report", "event_to_revision", "report_to_revision"),
   by_strata = NULL,
   strata = NULL
 )
 
 zero_run_summary(
   x,
-  axis = c("event", "report", "validation"),
+  axis = c("event", "report", "revision"),
   by_strata = NULL,
   strata = NULL
 )
 
 prop_censored(x, by_strata = NULL, strata = NULL)
 
-prop_validation_type(x, by_strata = NULL, strata = NULL)
+prop_revision_type(x, by_strata = NULL, strata = NULL)
 
 prop_strata(x, strata = NULL)
 
@@ -48,7 +48,7 @@ prop_covariate_levels(x, by_strata = NULL, strata = NULL)
 case_autocorrelation(
   x,
   lags = 1,
-  axis = c("event", "report", "validation"),
+  axis = c("event", "report", "revision"),
   by_strata = NULL,
   strata = NULL
 )
@@ -71,7 +71,7 @@ cumulative_growth(x, k = 7, by_strata = NULL, strata = NULL)
 \item{x}{A \code{tbl_now} object.}
 
 \item{axis}{Which time axis to describe: \code{"event"}, \code{"report"} or
-\code{"validation"}.}
+\code{"revision"}.}
 
 \item{by_strata}{Logical. Add one set of rows per stratum on top of the
 pooled (\code{"all"}) rows. Defaults to \code{TRUE} when the object has strata.}
@@ -80,9 +80,9 @@ pooled (\code{"all"}) rows. Defaults to \code{TRUE} when the object has strata.}
 \code{get_strata(x)}.}
 
 \item{delay}{Which delay to describe: \code{"event_to_report"} (the reporting
-delay), \code{"event_to_validation"} (the same span measured to the
-validation, so the two are comparable) or \code{"report_to_validation"}
-(the laboratory's turnaround, the \code{.validation_delay} column).}
+delay), \code{"event_to_revision"} (the same span measured to the
+revision, so the two are comparable) or \code{"report_to_revision"}
+(the laboratory's turnaround, the \code{.revision_delay} column).}
 
 \item{lags}{Integer vector of lags.}
 
@@ -118,7 +118,7 @@ part of \code{summary()} and warn on every call:
 \item \code{delay_summary()} -- the case-weighted delay distribution.
 \item \code{zero_run_summary()} -- lengths of the runs of consecutive zero dates.
 \item \code{prop_censored()} -- proportion of cases flagged censored.
-\item \code{prop_validation_type()} -- proportion of cases per validation outcome.
+\item \code{prop_revision_type()} -- proportion of cases per revision outcome.
 \item \code{prop_strata()} -- proportion of cases per stratum.
 \item \code{prop_covariate_levels()} -- proportion of cases per level of each
 categorical covariate.

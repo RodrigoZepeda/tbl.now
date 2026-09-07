@@ -51,13 +51,13 @@
 #'   reporting cadence.
 #' @param alpha Level for the `classification` labels. Default `0.05`.
 #' @param drop_censored Logical. Ignore the rows whose date on `axis` is
-#'   flagged censored (`is_censored_report`, or `is_censored_validation` on the
-#'   validation axis). Default `TRUE`: a censored date is a *bound*, not the
+#'   flagged censored (`is_censored_report`, or `is_censored_revision` on the
+#'   revision axis). Default `TRUE`: a censored date is a *bound*, not the
 #'   date the record arrived, so those rows would pile up on the censoring date
 #'   and be rediscovered as the very batch the censoring already recorded.
 #'
 #' @param axis Which time axis to scan for arrivals: `"report"` (default) or
-#'   `"validation"`. Needs a validation process (see [add_validation_date()]);
+#'   `"revision"`. Needs a revision process (see [add_revision_date()]);
 #'   cases still `"pending"` are left out.
 #' @returns A tibble of class `transport_discriminant`, one row per (report date,
 #'   stratum), with columns `report_date`, `stratum`, `reported`, `baseline`,
@@ -80,7 +80,7 @@ transport_discriminant <- function(x,
                                     baseline_window = NULL,
                                     period          = NULL,
                                     alpha           = 0.05,
-                                    axis            = c("report", "validation"),
+                                    axis            = c("report", "revision"),
                                     drop_censored   = TRUE) {
   axis <- match.arg(axis)
   check_bool(drop_censored, "drop_censored")

@@ -780,7 +780,7 @@ test_that("update preserves data integrity", {
   expect_true(all(new_events %in% result_events))
 })
 
-test_that("update maintains tbl_now validation", {
+test_that("update maintains tbl_now revision", {
   skip_on_cran()
   test_data <- setup_test_data()
 
@@ -795,7 +795,7 @@ test_that("update maintains tbl_now validation", {
 
   result <- update(initial_tbl, new_data = test_data$update_data)
 
-  # Should pass validation
+  # Should pass revision
   expect_true(validate_tbl_now(result))
 })
 

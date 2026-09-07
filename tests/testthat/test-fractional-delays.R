@@ -24,7 +24,7 @@ numeric_fixture <- function() {
   )
 }
 
-validation_fixture_days <- function() {
+revision_fixture_days <- function() {
   tbl_now(
     data.frame(
       onset = as.Date("2021-01-04") + 0:3,
@@ -33,7 +33,7 @@ validation_fixture_days <- function() {
       outcome = rep("confirmed", 4)
     ),
     event_date = "onset", report_date = "visit",
-    validation_date = "result", validation_type = "outcome",
+    revision_date = "result", revision_type = "outcome",
     data_type = "linelist", units = "days", verbose = FALSE
   )
 }
@@ -71,20 +71,20 @@ test_that("censor_reporting_delays() still refuses one on a numeric axis", {
   )
 })
 
-test_that("censor_validation_delays() refuses a fractional to_delay", {
-  x <- validation_fixture_days()
+test_that("censor_revision_delays() refuses a fractional to_delay", {
+  x <- revision_fixture_days()
 
   expect_error(
-    censor_validation_delays(x, .validation_delay > 30, to_delay = 1.5,
+    censor_revision_delays(x, .revision_delay > 30, to_delay = 1.5,
       verbose = FALSE
     ),
     "whole number"
   )
 
   capped <- suppressMessages(
-    censor_validation_delays(x, .validation_delay > 30, to_delay = 2)
+    censor_revision_delays(x, .revision_delay > 30, to_delay = 2)
   )
-  expect_equal(capped[[".validation_delay"]], c(1, 2, 1, 2))
+  expect_equal(capped[[".revision_delay"]], c(1, 2, 1, 2))
 })
 
 test_that("tbl_now(delay =) refuses a fractional delay column", {
@@ -225,7 +225,7 @@ test_that("validate_tbl_now() still does not run the expensive grid checks", {
 
   shallow <- suppressWarnings(tbl.now:::.tbl_now_findings(
     x,
-    checks = tbl.now:::.diagnose_validation_checks(),
+    checks = tbl.now:::.diagnose_revision_checks(),
     by_strata = FALSE, warn_non_uniqueness = FALSE, warn_now = TRUE,
     floor = "note", deep = FALSE, assert = FALSE, fn = "validate_tbl_now"
   ))

@@ -28,7 +28,7 @@ test_that("all panels returns a patchwork, a single panel returns a plain plot",
   skip_if_not_installed("patchwork")
   tn <- make_diag_tbl()
   expect_s3_class(suppressWarnings(diagnostic_plot(tn)), "patchwork")
-  one <- diagnostic_plot(tn, panels = "triangle")
+  one <- suppressWarnings(diagnostic_plot(tn, panels = "triangle"))
   expect_s3_class(one, "ggplot")
   expect_false(inherits(one, "patchwork"))
 })
@@ -51,6 +51,28 @@ test_that("each panel has a stand-alone plotting function", {
   expect_s3_class(suppressWarnings(plot_transport_discriminant(tn, period = 7)), "ggplot")
   expect_error(plot_reporting_process(mtcars), class = "rlang_error")
   expect_error(plot_epidemic_process(mtcars), class = "rlang_error")
+})
+
+test_that("stand-alone process plots label revision-axis arrivals", {
+  frame <- data.frame(
+    onset = as.Date("2021-01-01") + 0:4,
+    report = as.Date("2021-01-02") + 0:4,
+    result = as.Date("2021-01-04") + 0:4,
+    outcome = "confirmed"
+  )
+  x <- tbl_now(frame,
+    event_date = onset, report_date = report,
+    revision_date = result, revision_type = outcome,
+    data_type = "linelist", verbose = FALSE
+  )
+
+  arrivals <- plot_reporting_process(x, axis = "revision")
+  epidemic <- plot_epidemic_process(x, axis = "revision")
+
+  expect_equal(arrivals$labels$title, "Revision process")
+  expect_equal(arrivals$labels$x, "Revision date")
+  expect_equal(arrivals$labels$y, "Revisions")
+  expect_equal(epidemic$labels$title, "Epidemic process")
 })
 
 test_that(".diag_batch_stripes finds an obvious volume spike and honours k = 0", {
@@ -102,8 +124,8 @@ test_that("an event date with zero rows in the raw data is drawn as a zero, not 
 })
 
 test_that("panels facet by stratum only when strata are present", {
-  expect_equal(n_panels(diagnostic_plot(make_diag_tbl(TRUE),  panels = "triangle")), 2L)
-  expect_equal(n_panels(diagnostic_plot(make_diag_tbl(FALSE), panels = "triangle")), 1L)
+  expect_equal(n_panels(suppressWarnings(diagnostic_plot(make_diag_tbl(TRUE),  panels = "triangle"))), 2L)
+  expect_equal(n_panels(suppressWarnings(diagnostic_plot(make_diag_tbl(FALSE), panels = "triangle"))), 1L)
   expect_equal(n_panels(suppressWarnings(diagnostic_plot(make_diag_tbl(TRUE), panels = "transport"))), 2L)
 })
 

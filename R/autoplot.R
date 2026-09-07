@@ -223,6 +223,46 @@
     dplyr::arrange(.data$report_date)
 }
 
+#' Revised cases per revision date
+#'
+#' Counts resolved cases by `revision_date` (not by event or report date).
+#' Pending rows have no revision date and are excluded.
+#'
+#' @param object A `tbl_now` object with a revision process.
+#' @param strata_cols Optional character vector of columns to split on; when
+#'   supplied the result carries a `strata` label column.
+#'
+#' @return A tibble with `revision_date`, `case_count` (and `strata`).
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_revision_process <- function(object, strata_cols = NULL) {
+  incidence <- object |>
+    ungroup() |>
+    to_count(to = "count-incidence")
+  case_count_column <- get_case_count(incidence)
+  revision_date_column <- get_revision_date(object)
+
+  plot_data <- dplyr::tibble(
+    revision_date = incidence[[revision_date_column]],
+    case_count      = incidence[[case_count_column]]
+  )
+  if (length(strata_cols) > 0) {
+    plot_data$strata <- .tbl_now_strata_label(incidence, strata_cols)
+  }
+
+  plot_data |>
+    dplyr::filter(!is.na(.data$revision_date), !is.na(.data$case_count)) |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(
+      c("revision_date", if (length(strata_cols) > 0) "strata")
+    ))) |>
+    dplyr::summarise(
+      case_count = sum(.data$case_count, na.rm = TRUE),
+      .groups    = "drop"
+    ) |>
+    dplyr::arrange(.data$revision_date)
+}
+
 #' The calendar cycle over which a `"percent"` share is computed
 #'
 #' A share needs a denominator: the block of time over which the calendar groups
@@ -308,7 +348,7 @@
 #' @noRd
 .tbl_now_percent_unavailable <- function(palette) {
   .tbl_now_empty_panel(
-    "Percentages need date-based event/report columns", palette
+    "Percentages need date-based event/report/revision columns", palette
   )
 }
 
@@ -502,7 +542,7 @@
 .tbl_now_holiday_points <- function(object, epidemic_process) {
   no_holidays <- dplyr::slice(epidemic_process, 0)
 
-  specs <- get_temporal_effects(object)
+  specs <- .filter_temporal_effect_specs(get_temporal_effects(object), "event_date")
   if (length(specs) == 0) {
     return(no_holidays)
   }
@@ -535,6 +575,7 @@
 #' sides of a holiday (see `?temporal_effects`).
 #'
 #' @param object A `tbl_now` object.
+#' @param date_type Temporal-effect date type to read from.
 #'
 #' @return `NULL` when no holiday or weekend effect is attached (the holiday
 #'   panels then do not apply). Otherwise a list with:
@@ -546,8 +587,11 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_holiday_config <- function(object) {
-  specs <- get_temporal_effects(object)
+.tbl_now_holiday_config <- function(object, date_type = c(
+  "event_date", "report_date", "revision_date"
+)) {
+  date_type <- match.arg(date_type)
+  specs <- .filter_temporal_effect_specs(get_temporal_effects(object), date_type)
   if (length(specs) == 0) {
     return(NULL)
   }
@@ -781,7 +825,8 @@
   paste0(labels$title, switch(kind,
     case      = " effect",
     delay     = " delay effect",
-    reporting = " reporting effect"
+    reporting = " reporting effect",
+    revision = " revision effect"
   ))
 }
 
@@ -864,10 +909,16 @@
 .tbl_now_panel_calendar <- function(epidemic_process, grouping, palette,
                                     holiday_config = NULL,
                                     measure = "normalized", size = 1,
-                                    linewidth = 1) {
+                                    linewidth = 1,
+                                    date_col = "event_date",
+                                    process = "epidemic",
+                                    title_kind = "case",
+                                    y_label = "cases") {
   overall_mean <- mean(epidemic_process$case_count, na.rm = TRUE)
   if (is.na(overall_mean) || overall_mean == 0) {
-    return(.tbl_now_empty_panel("No cases to compute a calendar effect", palette))
+    return(.tbl_now_empty_panel(
+      paste0("No ", y_label, " to compute a calendar effect"), palette
+    ))
   }
 
   labels <- .tbl_now_calendar_group_spec(grouping)
@@ -876,21 +927,21 @@
       paste0("Calendar effect unavailable for ", grouping), palette
     ))
   }
-  style <- .tbl_now_process_style("epidemic", palette)
+  style <- .tbl_now_process_style(process, palette)
   measure <- .tbl_now_calendar_measure(measure, grouping)
 
   if (identical(measure, "percent")) {
     plot_data <- .tbl_now_percent_shares(
-      epidemic_process, grouping, "event_date", "case_count", holiday_config
+      epidemic_process, grouping, date_col, "case_count", holiday_config
     )
     if (is.null(plot_data)) {
       return(.tbl_now_percent_unavailable(palette))
     }
     value <- "percent"
-    y_lab <- "Percent of cases (%)"
+    y_lab <- paste0("Percent of ", y_label, " (%)")
     reference <- NULL
   } else {
-    grouped <- .tbl_now_add_calendar_group(epidemic_process, grouping,
+    grouped <- .tbl_now_add_calendar_group(epidemic_process, grouping, date_col,
                                            holiday_config = holiday_config)
     if (is.null(grouped)) {
       return(.tbl_now_empty_panel(
@@ -923,7 +974,7 @@
 
   base_plot +
     ggplot2::labs(
-      title = .tbl_now_calendar_title(labels, "case"),
+      title = .tbl_now_calendar_title(labels, title_kind),
       subtitle = style$subtitle,
       x = labels$x, y = y_lab
     ) +
@@ -1043,6 +1094,9 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_calendar_groupings <- function(event_units) {
+  if (is.null(event_units) || length(event_units) != 1) {
+    return(character(0))
+  }
   switch(event_units,
     days   = c("weekday", "week"),
     weeks  = "week",
@@ -1163,6 +1217,32 @@
     subtitle = style$subtitle,
     line_colour = style$line,
     empty_message = "Too few points to estimate delay cycles"
+  )
+}
+
+#' Panel: revision-arrival periodogram
+#'
+#' A periodogram of the revision-arrival series.
+#'
+#' @param revision_process A tibble from `.tbl_now_revision_process()`.
+#' @param revision_units The revision units (used to label the period axis).
+#' @param palette A named colour palette.
+#'
+#' @return A ggplot object (or an empty panel when the series is too short).
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_panel_revision_periodogram <- function(revision_process,
+                                                 revision_units, palette,
+                                                 size = 1, linewidth = 1) {
+  style <- .tbl_now_process_style("revision", palette)
+  .tbl_now_periodogram_panel(
+    revision_process$case_count, revision_units, palette,
+    size = size, linewidth = linewidth,
+    title = "Cycles (periodogram)",
+    subtitle = style$subtitle,
+    line_colour = style$line,
+    empty_message = "Too few points to estimate revision cycles"
   )
 }
 
@@ -1416,7 +1496,11 @@
 .tbl_now_panel_calendar_strata <- function(epidemic_process_by, grouping, palette,
                                            holiday_config = NULL,
                                            measure = "normalized", size = 1,
-                                           linewidth = 1) {
+                                           linewidth = 1,
+                                           date_col = "event_date",
+                                           process = "epidemic",
+                                           title_kind = "case",
+                                           y_label = "cases") {
   labels <- .tbl_now_calendar_group_spec(grouping)
   if (is.null(labels)) {
     return(.tbl_now_empty_panel(
@@ -1427,17 +1511,17 @@
 
   if (identical(measure, "percent")) {
     plot_data <- .tbl_now_percent_shares(
-      epidemic_process_by, grouping, "event_date", "case_count",
+      epidemic_process_by, grouping, date_col, "case_count",
       holiday_config, by_strata = TRUE
     )
     if (is.null(plot_data)) {
       return(.tbl_now_percent_unavailable(palette))
     }
     value <- "percent"
-    y_lab <- "Percent of the stratum's cases (%)"
+    y_lab <- paste0("Percent of the stratum's ", y_label, " (%)")
     reference <- NULL
   } else {
-    grouped <- .tbl_now_add_calendar_group(epidemic_process_by, grouping,
+    grouped <- .tbl_now_add_calendar_group(epidemic_process_by, grouping, date_col,
                                            holiday_config = holiday_config)
     if (is.null(grouped)) {
       return(.tbl_now_empty_panel(
@@ -1474,8 +1558,8 @@
   base_plot +
     .tbl_now_strata_fill_scale() +
     ggplot2::labs(
-      title = .tbl_now_calendar_title(labels, "case"),
-      subtitle = .tbl_now_process_style("epidemic", palette)$subtitle,
+      title = .tbl_now_calendar_title(labels, title_kind),
+      subtitle = .tbl_now_process_style(process, palette)$subtitle,
       x = labels$x, y = y_lab
     ) +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
@@ -1685,18 +1769,34 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_all_panel_keys <- function(event_units, holiday_config = NULL) {
-  calendar_groupings <- c(
+.tbl_now_all_panel_keys <- function(event_units, holiday_config = NULL,
+                                    revision_units = NULL,
+                                    revision_holiday_config = NULL,
+                                    has_revision = FALSE,
+                                    report_holiday_config = holiday_config) {
+  event_groupings <- c(
     .tbl_now_calendar_groupings(event_units),
     .tbl_now_holiday_groupings(holiday_config)
+  )
+  report_groupings <- c(
+    .tbl_now_calendar_groupings(event_units),
+    .tbl_now_holiday_groupings(report_holiday_config)
+  )
+  revision_groupings <- c(
+    .tbl_now_calendar_groupings(revision_units),
+    .tbl_now_holiday_groupings(revision_holiday_config)
   )
   c(
     "delay_distribution",
     "epidemic",
-    if (length(calendar_groupings) > 0) paste0("calendar_", calendar_groupings),
+    if (length(event_groupings) > 0) paste0("calendar_", event_groupings),
     "seasonality",
-    if (length(calendar_groupings) > 0) paste0("delay_", calendar_groupings),
-    "delay_seasonality"
+    if (length(report_groupings) > 0) paste0("delay_", report_groupings),
+    "delay_seasonality",
+    if (has_revision && length(revision_groupings) > 0) {
+      paste0("revision_", revision_groupings)
+    },
+    if (has_revision) "revision_seasonality"
   )
 }
 
@@ -1714,11 +1814,29 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_resolve_panels <- function(panels, event_units, holiday_config = NULL) {
-  all_keys <- .tbl_now_all_panel_keys(event_units, holiday_config)
-  calendar_groupings <- c(
+.tbl_now_resolve_panels <- function(panels, event_units, holiday_config = NULL,
+                                    revision_units = NULL,
+                                    revision_holiday_config = NULL,
+                                    has_revision = FALSE,
+                                    report_holiday_config = holiday_config) {
+  all_keys <- .tbl_now_all_panel_keys(
+    event_units, holiday_config,
+    revision_units = revision_units,
+    revision_holiday_config = revision_holiday_config,
+    has_revision = has_revision,
+    report_holiday_config = report_holiday_config
+  )
+  event_groupings <- c(
     .tbl_now_calendar_groupings(event_units),
     .tbl_now_holiday_groupings(holiday_config)
+  )
+  report_groupings <- c(
+    .tbl_now_calendar_groupings(event_units),
+    .tbl_now_holiday_groupings(report_holiday_config)
+  )
+  revision_groupings <- c(
+    .tbl_now_calendar_groupings(revision_units),
+    .tbl_now_holiday_groupings(revision_holiday_config)
   )
 
   if (is.null(panels)) panels <- "all"
@@ -1728,9 +1846,10 @@
 
   expand_alias <- function(key) {
     switch(key,
-      all            = all_keys,
-      calendar       = paste0("calendar_", calendar_groupings),
-      delay_calendar = paste0("delay_", calendar_groupings),
+      all                 = all_keys,
+      calendar            = paste0("calendar_", event_groupings),
+      delay_calendar      = paste0("delay_", report_groupings),
+      revision_calendar = paste0("revision_", revision_groupings),
       key
     )
   }
@@ -1741,9 +1860,11 @@
     "calendar_weekday", "calendar_week", "calendar_month",
     "calendar_holiday", "calendar_holiday_lag", "seasonality",
     "delay_weekday", "delay_week", "delay_month",
-    "delay_holiday", "delay_holiday_lag", "delay_seasonality"
+    "delay_holiday", "delay_holiday_lag", "delay_seasonality",
+    "revision_weekday", "revision_week", "revision_month",
+    "revision_holiday", "revision_holiday_lag", "revision_seasonality"
   )
-  aliases <- c("all", "calendar", "delay_calendar")
+  aliases <- c("all", "calendar", "delay_calendar", "revision_calendar")
   unknown <- setdiff(requested, known_keys)
   if (length(unknown) > 0) {
     cli::cli_abort(c(
@@ -1756,16 +1877,29 @@
   # two different fixes, so say which one applies.
   holiday_keys <- c(
     "calendar_holiday", "calendar_holiday_lag",
-    "delay_holiday", "delay_holiday_lag"
+    "delay_holiday", "delay_holiday_lag",
+    "revision_holiday", "revision_holiday_lag"
   )
+  revision_keys <- grep("^revision_", requested, value = TRUE)
   inapplicable <- setdiff(requested, all_keys)
   unavailable_holiday <- intersect(inapplicable, holiday_keys)
-  unavailable_unit <- setdiff(inapplicable, holiday_keys)
+  unavailable_revision <- if (!has_revision) {
+    setdiff(intersect(inapplicable, revision_keys), holiday_keys)
+  } else {
+    character(0)
+  }
+  unavailable_unit <- setdiff(inapplicable, c(holiday_keys, unavailable_revision))
 
   if (length(unavailable_unit) > 0) {
     cli::cli_warn(
       "{cli::qty(unavailable_unit)}Panel{?s} {.val {unavailable_unit}} {?does/do} \\
-       not apply to {.val {event_units}} data and {?was/were} skipped."
+       not apply to the selected time units and {?was/were} skipped."
+    )
+  }
+  if (length(unavailable_revision) > 0) {
+    cli::cli_warn(
+      "{cli::qty(unavailable_revision)}Panel{?s} {.val {unavailable_revision}} \\
+       need{?s/} a revision process and {?was/were} skipped."
     )
   }
   if (length(unavailable_holiday) > 0) {
@@ -1820,6 +1954,10 @@
       ctx$delay_per_date, ctx$event_units, palette,
       size = size, linewidth = linewidth
     ),
+    revision_seasonality = .tbl_now_panel_revision_periodogram(
+      ctx$revision_process, ctx$revision_units, palette,
+      size = size, linewidth = linewidth
+    ),
     calendar_weekday = .tbl_now_panel_calendar(
       ctx$epidemic_process, "weekday", palette, ctx$holiday_config, ctx$measure,
       size = size, linewidth = linewidth
@@ -1841,29 +1979,59 @@
       size = size, linewidth = linewidth
     ),
     delay_weekday = .tbl_now_panel_delay_calendar(
-      ctx$delay_per_date, "weekday", palette, ctx$holiday_config,
+      ctx$delay_per_date, "weekday", palette, ctx$report_holiday_config,
       ctx$measure, ctx$reporting_process,
       size = size, linewidth = linewidth
     ),
     delay_week = .tbl_now_panel_delay_calendar(
-      ctx$delay_per_date, "week", palette, ctx$holiday_config,
+      ctx$delay_per_date, "week", palette, ctx$report_holiday_config,
       ctx$measure, ctx$reporting_process,
       size = size, linewidth = linewidth
     ),
     delay_month = .tbl_now_panel_delay_calendar(
-      ctx$delay_per_date, "month", palette, ctx$holiday_config,
+      ctx$delay_per_date, "month", palette, ctx$report_holiday_config,
       ctx$measure, ctx$reporting_process,
       size = size, linewidth = linewidth
     ),
     delay_holiday = .tbl_now_panel_delay_calendar(
-      ctx$delay_per_date, "holiday", palette, ctx$holiday_config,
+      ctx$delay_per_date, "holiday", palette, ctx$report_holiday_config,
       ctx$measure, ctx$reporting_process,
       size = size, linewidth = linewidth
     ),
     delay_holiday_lag = .tbl_now_panel_delay_calendar(
-      ctx$delay_per_date, "holiday_lag", palette, ctx$holiday_config,
+      ctx$delay_per_date, "holiday_lag", palette, ctx$report_holiday_config,
       ctx$measure, ctx$reporting_process,
       size = size, linewidth = linewidth
+    ),
+    revision_weekday = .tbl_now_panel_calendar(
+      ctx$revision_process, "weekday", palette, ctx$revision_holiday_config,
+      ctx$measure, size = size, linewidth = linewidth,
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
+    ),
+    revision_week = .tbl_now_panel_calendar(
+      ctx$revision_process, "week", palette, ctx$revision_holiday_config,
+      ctx$measure, size = size, linewidth = linewidth,
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
+    ),
+    revision_month = .tbl_now_panel_calendar(
+      ctx$revision_process, "month", palette, ctx$revision_holiday_config,
+      ctx$measure, size = size, linewidth = linewidth,
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
+    ),
+    revision_holiday = .tbl_now_panel_calendar(
+      ctx$revision_process, "holiday", palette, ctx$revision_holiday_config,
+      ctx$measure, size = size, linewidth = linewidth,
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
+    ),
+    revision_holiday_lag = .tbl_now_panel_calendar(
+      ctx$revision_process, "holiday_lag", palette, ctx$revision_holiday_config,
+      ctx$measure, size = size, linewidth = linewidth,
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
     ),
     .tbl_now_empty_panel(paste0("Unknown panel: ", key), palette, size = size)
   )
@@ -1894,6 +2062,12 @@
       value  = ctx$delay_per_date_by$mean_delay
     )
   }
+  revision_series <- function() {
+    dplyr::tibble(
+      strata = ctx$revision_process_by$strata,
+      value  = ctx$revision_process_by$case_count
+    )
+  }
 
   switch(key,
     delay_distribution = if (identical(ctx$data_type, "count-cumulative")) {
@@ -1919,6 +2093,13 @@
       empty_message = "Too few points to estimate delay cycles",
       size = size, linewidth = linewidth
     ),
+    revision_seasonality = .tbl_now_periodogram_by(
+      revision_series(), ctx$revision_units, palette,
+      title = "Cycles (periodogram)",
+      subtitle = .tbl_now_process_style("revision", palette)$subtitle,
+      empty_message = "Too few points to estimate revision cycles",
+      size = size, linewidth = linewidth
+    ),
     calendar_weekday = .tbl_now_panel_calendar_strata(
       ctx$epidemic_process_by, "weekday", palette, ctx$holiday_config, ctx$measure,
       size = size, linewidth = linewidth
@@ -1940,29 +2121,59 @@
       size = size, linewidth = linewidth
     ),
     delay_weekday = .tbl_now_panel_delay_calendar_strata(
-      ctx$delay_per_date_by, "weekday", palette, ctx$holiday_config,
+      ctx$delay_per_date_by, "weekday", palette, ctx$report_holiday_config,
       ctx$measure, ctx$reporting_process_by,
       size = size, linewidth = linewidth
     ),
     delay_week = .tbl_now_panel_delay_calendar_strata(
-      ctx$delay_per_date_by, "week", palette, ctx$holiday_config,
+      ctx$delay_per_date_by, "week", palette, ctx$report_holiday_config,
       ctx$measure, ctx$reporting_process_by,
       size = size, linewidth = linewidth
     ),
     delay_month = .tbl_now_panel_delay_calendar_strata(
-      ctx$delay_per_date_by, "month", palette, ctx$holiday_config,
+      ctx$delay_per_date_by, "month", palette, ctx$report_holiday_config,
       ctx$measure, ctx$reporting_process_by,
       size = size, linewidth = linewidth
     ),
     delay_holiday = .tbl_now_panel_delay_calendar_strata(
-      ctx$delay_per_date_by, "holiday", palette, ctx$holiday_config,
+      ctx$delay_per_date_by, "holiday", palette, ctx$report_holiday_config,
       ctx$measure, ctx$reporting_process_by,
       size = size, linewidth = linewidth
     ),
     delay_holiday_lag = .tbl_now_panel_delay_calendar_strata(
-      ctx$delay_per_date_by, "holiday_lag", palette, ctx$holiday_config,
+      ctx$delay_per_date_by, "holiday_lag", palette, ctx$report_holiday_config,
       ctx$measure, ctx$reporting_process_by,
       size = size, linewidth = linewidth
+    ),
+    revision_weekday = .tbl_now_panel_calendar_strata(
+      ctx$revision_process_by, "weekday", palette, ctx$revision_holiday_config,
+      ctx$measure, size = size, linewidth = linewidth,
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
+    ),
+    revision_week = .tbl_now_panel_calendar_strata(
+      ctx$revision_process_by, "week", palette, ctx$revision_holiday_config,
+      ctx$measure, size = size, linewidth = linewidth,
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
+    ),
+    revision_month = .tbl_now_panel_calendar_strata(
+      ctx$revision_process_by, "month", palette, ctx$revision_holiday_config,
+      ctx$measure, size = size, linewidth = linewidth,
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
+    ),
+    revision_holiday = .tbl_now_panel_calendar_strata(
+      ctx$revision_process_by, "holiday", palette, ctx$revision_holiday_config,
+      ctx$measure, size = size, linewidth = linewidth,
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
+    ),
+    revision_holiday_lag = .tbl_now_panel_calendar_strata(
+      ctx$revision_process_by, "holiday_lag", palette, ctx$revision_holiday_config,
+      ctx$measure, size = size, linewidth = linewidth,
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
     ),
     .tbl_now_empty_panel(paste0("Unknown panel: ", key), palette, size = size)
   )
@@ -1978,13 +2189,14 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_panel_xlim <- function(key, xlims) {
-  if (grepl("^calendar_", key)) {
+  if (grepl("^(calendar|revision)_", key)) {
     return(xlims$calendar_effect)
   }
   switch(key,
     delay_distribution = xlims$delay_distribution,
     epidemic           = xlims$event_date,
     seasonality        = xlims$seasonality,
+    revision_seasonality = xlims$seasonality,
     NULL
   )
 }
@@ -2213,12 +2425,27 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
 
   object <- ungroup(object)
   event_units <- get_event_units(object)
+  revision_units <- get_revision_units(object)
   data_type <- get_data_type(object)
+  has_revision_process <- has_revision(object)
 
   # The holiday panels describe the attached temporal-effects spec, so which of
   # them exist depends on the object, not just on its time unit.
-  holiday_config <- .tbl_now_holiday_config(object)
-  panel_keys <- .tbl_now_resolve_panels(panels, event_units, holiday_config)
+  holiday_config <- .tbl_now_holiday_config(object, "event_date")
+  report_holiday_config <- .tbl_now_holiday_config(object, "report_date") %||%
+    holiday_config
+  revision_holiday_config <- if (has_revision_process) {
+    .tbl_now_holiday_config(object, "revision_date")
+  } else {
+    NULL
+  }
+  panel_keys <- .tbl_now_resolve_panels(
+    panels, event_units, holiday_config,
+    revision_units = revision_units,
+    revision_holiday_config = revision_holiday_config,
+    has_revision = has_revision_process,
+    report_holiday_config = report_holiday_config
+  )
 
   strata_cols <- if (isTRUE(by_strata)) {
     .tbl_now_resolve_strata_cols(object, strata)
@@ -2281,6 +2508,12 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
     length(delay_holiday_keys) > 0 ||
     (length(delay_share_keys) > 0 && !is_percent)
   needs_reporting_process <- is_percent && length(delay_share_keys) > 0
+  revision_calendar_keys <- grep(
+    "^revision_(weekday|week|month|holiday_lag|holiday)$",
+    panel_keys, value = TRUE
+  )
+  needs_revision_process <- "revision_seasonality" %in% panel_keys ||
+    length(revision_calendar_keys) > 0
   # For count-cumulative data the delay-distribution panel becomes the cumulative
   # growth-ratio panel instead of a histogram of increments.
   is_cumulative <- identical(data_type, "count-cumulative")
@@ -2292,19 +2525,26 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
       "epidemic", "calendar_weekday", "calendar_week", "calendar_month",
       "calendar_holiday", "calendar_holiday_lag", "seasonality"
     ))
+    revision_needed <- needs_revision_process
     ctx <- list(
       by_strata            = TRUE,
       data_type            = data_type,
       event_units          = event_units,
+      revision_units     = revision_units,
       incomplete_threshold = incomplete_threshold,
       level                = level,
       measure              = measure,
       holiday_config       = holiday_config,
+      report_holiday_config = report_holiday_config,
+      revision_holiday_config = revision_holiday_config,
       reporting_process_by = if (needs_reporting_process) {
         .tbl_now_reporting_process(object, strata_cols)
       },
       epidemic_process_by  = if (epidemic_needed) {
         .tbl_now_epidemic_process_by(object, strata_cols)
+      },
+      revision_process_by = if (revision_needed) {
+        .tbl_now_revision_process(object, strata_cols)
       },
       delay_distribution_by = if ("delay_distribution" %in% panel_keys && !is_cumulative) {
         .tbl_now_delay_distribution_by(object, strata_cols)
@@ -2321,6 +2561,9 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
     delay_per_date <- if (needs_delay_effects) {
       trim_to_complete(.tbl_now_delay_per_date(object))
     }
+    revision_process <- if (needs_revision_process) {
+      .tbl_now_revision_process(object)
+    }
     ctx <- list(
       by_strata            = FALSE,
       data_type            = data_type,
@@ -2328,11 +2571,15 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
       delay_growth         = if (needs_growth) .tbl_now_cumulative_growth(object),
       epidemic_process     = epidemic_process,
       delay_per_date       = delay_per_date,
+      revision_process   = revision_process,
       event_units          = event_units,
+      revision_units     = revision_units,
       incomplete_threshold = incomplete_threshold,
       level                = level,
       measure              = measure,
       holiday_config       = holiday_config,
+      report_holiday_config = report_holiday_config,
+      revision_holiday_config = revision_holiday_config,
       reporting_process    = if (needs_reporting_process) {
         .tbl_now_reporting_process(object)
       },

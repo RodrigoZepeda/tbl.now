@@ -1,4 +1,4 @@
-# The reported- and validated-cases getters, issues #61 and #64.
+# The reported- and revised-cases getters, issues #61 and #64.
 #
 # Every expected number in this file was worked out by hand from the fixture
 # below, which is small enough to hold in your head. It is written out here so
@@ -36,7 +36,7 @@ cases_frame <- function() {
 # nowhere -- so a grouping is the only way to ask about it, which is the case
 # issue #61 was filed for.
 cases_fixture <- function(strata = "sex", covariates = "region",
-                          validation = TRUE) {
+                          revision = TRUE) {
   arguments <- list(
     cases_frame(),
     event_date = "onset", report_date = "visit",
@@ -44,9 +44,9 @@ cases_fixture <- function(strata = "sex", covariates = "region",
     case_count = "n", data_type = "count-incidence", units = "days",
     verbose = FALSE, warn_non_uniqueness = FALSE
   )
-  if (isTRUE(validation)) {
+  if (isTRUE(revision)) {
     arguments <- c(arguments, list(
-      validation_date = "result", validation_type = "outcome"
+      revision_date = "result", revision_type = "outcome"
     ))
   }
   do.call(tbl_now, arguments)
@@ -159,18 +159,18 @@ test_that("grouping is kept by the initial and nth getters too", {
   for (out in list(
     get_initial_reported_cases(x),
     get_nth_reported_cases(x, delay = 2),
-    get_latest_validated_cases(x),
-    get_initial_validated_cases(x),
-    get_nth_validated_cases(x, delay = 2)
+    get_latest_revised_cases(x),
+    get_initial_revised_cases(x),
+    get_nth_revised_cases(x, delay = 2)
   )) {
     expect_true(is_tbl_now(out))
     expect_equal(dplyr::group_vars(out), c("region", "hospital"))
   }
 })
 
-test_that("a grouping survives an object with no validation process", {
-  x <- cases_fixture(validation = FALSE)
-  expect_false(has_validation(x))
+test_that("a grouping survives an object with no revision process", {
+  x <- cases_fixture(revision = FALSE)
+  expect_false(has_revision(x))
 
   out <- x |> dplyr::group_by(hospital) |> get_latest_reported_cases()
   expect_true(is_tbl_now(out))
@@ -209,16 +209,16 @@ test_that("to_count() does not warn about a grouping it set itself", {
   expect_no_warning(to_count(linelist, "count-incidence"))
 })
 
-# The validation axis (#64) ---------------------------------------------------
+# The revision axis (#64) ---------------------------------------------------
 
-test_that("the validated getters count arrivals on the third date", {
+test_that("the revised getters count arrivals on the third date", {
   x <- cases_fixture()
 
   # Row 4 is pending, so it never appears: cells per (onset, sex, region),
   # cumulated over the RESULT date.
   #   (d0, F, N) 1 at d0 then 3 at d1     (d0, M, S) 4 at d2
   #   (d1, F, S) 16 at d1                 (d1, M, N) 32 at d3
-  latest <- get_latest_validated_cases(x)
+  latest <- get_latest_revised_cases(x)
   expect_equal(latest[["n"]], c(3, 4, 16, 32))
   expect_equal(
     latest[["result"]],
@@ -229,24 +229,24 @@ test_that("the validated getters count arrivals on the third date", {
     sum(get_latest_reported_cases(x)[["n"]]) - sum(latest[["n"]]), 8
   )
 
-  expect_equal(get_initial_validated_cases(x)[["n"]], c(1, 4, 16, 32))
+  expect_equal(get_initial_revised_cases(x)[["n"]], c(1, 4, 16, 32))
 
   # The delay counted is from the EVENT: 0, 1, 2, -, 0, 2 for rows 1..6.
-  expect_equal(get_nth_validated_cases(x, delay = 0)[["n"]], c(1, 16))
-  expect_equal(get_nth_validated_cases(x, delay = 1)[["n"]], c(3, 16))
-  expect_equal(get_nth_validated_cases(x, delay = 2)[["n"]], c(3, 4, 16, 32))
+  expect_equal(get_nth_revised_cases(x, delay = 0)[["n"]], c(1, 16))
+  expect_equal(get_nth_revised_cases(x, delay = 1)[["n"]], c(3, 16))
+  expect_equal(get_nth_revised_cases(x, delay = 2)[["n"]], c(3, 4, 16, 32))
 })
 
-test_that("the validated getters return the full three-date object", {
+test_that("the revised getters return the full three-date object", {
   x <- cases_fixture()
-  latest <- get_latest_validated_cases(x)
+  latest <- get_latest_revised_cases(x)
 
   expect_true(is_tbl_now(latest))
-  expect_true(has_validation(latest))
-  expect_equal(get_validation_date(latest), "result")
+  expect_true(has_revision(latest))
+  expect_equal(get_revision_date(latest), "result")
   expect_equal(get_data_type(latest), "count-cumulative")
   expect_true(all(
-    c(".validation_num", ".validation_delay") %in% names(latest)
+    c(".revision_num", ".revision_delay") %in% names(latest)
   ))
   # `"total"` pools outcomes, so the aggregate row has none rather than one of
   # the cases' own.
@@ -261,11 +261,11 @@ test_that("type = filters the outcome on both axes", {
     get_latest_reported_cases(x, type = "confirmed")[["n"]], c(1, 4, 16, 32)
   )
   expect_equal(
-    get_latest_validated_cases(x, type = "confirmed")[["n"]], c(1, 4, 16, 32)
+    get_latest_revised_cases(x, type = "confirmed")[["n"]], c(1, 4, 16, 32)
   )
 
   # Retracted: row 2 alone.
-  retracted <- get_latest_validated_cases(x, type = "retracted")
+  retracted <- get_latest_revised_cases(x, type = "retracted")
   expect_equal(nrow(retracted), 1L)
   expect_equal(retracted[["n"]], 2)
   expect_equal(retracted[["outcome"]], "retracted")
@@ -275,12 +275,12 @@ test_that("type = filters the outcome on both axes", {
   expect_equal(nrow(pending), 1L)
   expect_equal(pending[["n"]], 8)
   expect_error(
-    get_latest_validated_cases(x, type = "pending"), "has no validation date"
+    get_latest_revised_cases(x, type = "pending"), "has no revision date"
   )
 
   # Net: +1 confirmed, -1 retracted. (d0, F, N) is 1 then 1 - 2 = -1.
   expect_equal(
-    get_latest_validated_cases(x, type = "net")[["n"]], c(-1, 4, 16, 32)
+    get_latest_revised_cases(x, type = "net")[["n"]], c(-1, 4, 16, 32)
   )
 })
 
@@ -299,17 +299,17 @@ test_that("type = 'by_type' reports every outcome side by side", {
   expect_true("outcome" %in% get_covariates(reported))
   expect_equal(sum(reported[["n"]]), sum(cases_frame()[["n"]]))
 
-  # The validation axis drops the pending row: it has not arrived there.
-  validated <- get_latest_validated_cases(x, type = "by_type")
-  expect_equal(validated[["n"]], c(1, 2, 4, 16, 32))
-  expect_false("pending" %in% validated[["outcome"]])
-  expect_equal(get_validation_type(validated), "outcome")
+  # The revision axis drops the pending row: it has not arrived there.
+  revised <- get_latest_revised_cases(x, type = "by_type")
+  expect_equal(revised[["n"]], c(1, 2, 4, 16, 32))
+  expect_false("pending" %in% revised[["outcome"]])
+  expect_equal(get_revision_type(revised), "outcome")
 })
 
 test_that("type = respects a grouping too", {
   x <- cases_fixture() |> dplyr::group_by(hospital)
 
-  confirmed <- get_latest_validated_cases(x, type = "confirmed")
+  confirmed <- get_latest_revised_cases(x, type = "confirmed")
   expect_equal(dplyr::group_vars(confirmed), "hospital")
   # Rows 1 (A), 3 (B), 5 (A), 6 (B) -- already one per cell, so splitting by
   # hospital changes nothing but the key.
@@ -317,22 +317,22 @@ test_that("type = respects a grouping too", {
   expect_equal(confirmed[["hospital"]], c("A", "B", "A", "B"))
 })
 
-# No validation process, and a validation that is all NA ----------------------
+# No revision process, and a revision that is all NA ----------------------
 
-test_that("the validated getters refuse an object with no validation", {
-  x <- cases_fixture(validation = FALSE)
+test_that("the revised getters refuse an object with no revision", {
+  x <- cases_fixture(revision = FALSE)
 
-  expect_error(get_latest_validated_cases(x), "needs a validation process")
-  expect_error(get_initial_validated_cases(x), "needs a validation process")
-  expect_error(get_nth_validated_cases(x, 1), "needs a validation process")
+  expect_error(get_latest_revised_cases(x), "needs a revision process")
+  expect_error(get_initial_revised_cases(x), "needs a revision process")
+  expect_error(get_nth_revised_cases(x, 1), "needs a revision process")
 })
 
-test_that("type = on an object with no validation warns and pools", {
-  x <- cases_fixture(validation = FALSE)
+test_that("type = on an object with no revision warns and pools", {
+  x <- cases_fixture(revision = FALSE)
 
   expect_warning(
     pooled <- get_latest_reported_cases(x, type = "confirmed"),
-    "no validation process"
+    "no revision process"
   )
   expect_equal(pooled[["n"]], get_latest_reported_cases(x)[["n"]])
 
@@ -340,21 +340,21 @@ test_that("type = on an object with no validation warns and pools", {
   expect_no_warning(get_latest_reported_cases(x, type = "total"))
 })
 
-test_that("an all-NA validation date is an error that says so", {
+test_that("an all-NA revision date is an error that says so", {
   frame <- cases_frame()
   frame$result <- as.Date(NA)
   frame$outcome <- "pending"
   x <- tbl_now(frame,
     event_date = "onset", report_date = "visit",
-    validation_date = "result", validation_type = "outcome",
+    revision_date = "result", revision_type = "outcome",
     strata = "sex", covariates = "region", case_count = "n",
     data_type = "count-incidence", units = "days",
     verbose = FALSE, warn_non_uniqueness = FALSE
   )
 
-  expect_true(has_validation(x))
-  expect_error(get_latest_validated_cases(x), "nothing has been validated yet")
-  expect_error(get_initial_validated_cases(x), "selected no cases")
+  expect_true(has_revision(x))
+  expect_error(get_latest_revised_cases(x), "nothing has been revised yet")
+  expect_error(get_initial_revised_cases(x), "selected no cases")
 
   # The reporting axis still works, and it is where a pending case is counted.
   expect_equal(sum(get_latest_reported_cases(x)[["n"]]), 63)
@@ -394,7 +394,7 @@ test_that("the getters check their arguments", {
 
   expect_error(get_nth_reported_cases(x, "two"), "non-negative number")
   expect_error(get_nth_reported_cases(x, -1), "non-negative number")
-  expect_error(get_nth_validated_cases(x, NA), "non-negative number")
+  expect_error(get_nth_revised_cases(x, NA), "non-negative number")
   expect_error(get_latest_reported_cases(x, type = "nonsense"), "must be one of")
   expect_error(get_latest_reported_cases(x, type = c("a", "b")), "single string")
 })

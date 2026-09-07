@@ -72,7 +72,7 @@
 #'   refused. Aggregate the report axis too, or use `axes = "all"`.
 #' * A week named by the day it *starts* sits before every date inside it, so
 #'   coarsening a **later** axis alone -- the report against a daily event, or
-#'   the validation against a daily report -- with `label = "start"` produces
+#'   the revision against a daily report -- with `label = "start"` produces
 #'   negative delays, and [validate_tbl_now()] warns. Use `label = "end"`: a
 #'   report that arrived somewhere in week *W* is known by the end of *W*, which
 #'   is the honest bound. When the axes move together the labelling cancels out
@@ -86,8 +86,8 @@
 #'   asking a weekly object for `"days"` is an error rather than a guess.
 #'
 #' @param axes Character. Which time axes to aggregate: `"all"` (the default,
-#'   meaning the event and report axes plus the validation axis when there is
-#'   one), or any of `"event"`, `"report"` and `"validation"`. The unit they are
+#'   meaning the event and report axes plus the revision axis when there is
+#'   one), or any of `"event"`, `"report"` and `"revision"`. The unit they are
 #'   aggregated to is `to`.
 #'
 #' @param label Character. Which end of the period names it: `"start"` (the
@@ -103,7 +103,7 @@
 #'   `TRUE`.
 #'
 #' @return A `tbl_now` on the coarser grid, with `event_units`, `report_units`
-#' and `validation_units` updated for the axes that were aggregated, and `now`
+#' and `revision_units` updated for the axes that were aggregated, and `now`
 #' moved onto the new grid.
 #'
 #' @seealso
@@ -170,7 +170,7 @@ aggregate_time_units <- function(x,
   axis_units <- c(
     event = get_event_units(x),
     report = get_report_units(x),
-    validation = get_validation_units(x) %||% NA_character_
+    revision = get_revision_units(x) %||% NA_character_
   )
 
   changed <- character(0)
@@ -236,7 +236,7 @@ aggregate_time_units <- function(x,
   date_columns <- c(
     event = get_event_date(x),
     report = get_report_date(x),
-    validation = get_validation_date(x) %||% NA_character_
+    revision = get_revision_date(x) %||% NA_character_
   )
 
   data <- .strip_tbl_now(x)
@@ -268,7 +268,7 @@ aggregate_time_units <- function(x,
     event_units = new_units[["event"]],
     report_units = new_units[["report"]],
     t_effects = character(0),
-    validation_units = if (has_validation(x)) new_units[["validation"]] else NULL
+    revision_units = if (has_revision(x)) new_units[["revision"]] else NULL
   )
 
   # Rows that landed in the same cell are one cell now. A linelist keeps one row
@@ -312,12 +312,12 @@ aggregate_time_units <- function(x,
 #' @param x A `tbl_now`.
 #' @param axes The user's `axes` argument.
 #'
-#' @return A character vector of `"event"`, `"report"` and/or `"validation"`.
+#' @return A character vector of `"event"`, `"report"` and/or `"revision"`.
 #'
 #' @keywords internal
 #' @noRd
 .aggregate_resolve_axes <- function(x, axes) {
-  valid <- c("all", "event", "report", "validation")
+  valid <- c("all", "event", "report", "revision")
   if (!is.character(axes) || length(axes) == 0 || anyNA(axes)) {
     cli::cli_abort("{.arg axes} must be a character vector of {.val {valid}}.")
   }
@@ -331,13 +331,13 @@ aggregate_time_units <- function(x,
   }
 
   if ("all" %in% axes) {
-    return(c("event", "report", if (has_validation(x)) "validation"))
+    return(c("event", "report", if (has_revision(x)) "revision"))
   }
 
-  if ("validation" %in% axes && !has_validation(x)) {
+  if ("revision" %in% axes && !has_revision(x)) {
     cli::cli_abort(c(
-      "{.code axes = \"validation\"} needs a validation process, and {.arg x} has none.",
-      "i" = "Attach one with {.fn add_validation_date}, or aggregate the
+      "{.code axes = \"revision\"} needs a revision process, and {.arg x} has none.",
+      "i" = "Attach one with {.fn add_revision_date}, or aggregate the
              {.val event} and {.val report} axes instead."
     ))
   }
@@ -350,7 +350,7 @@ aggregate_time_units <- function(x,
 #' `now` moves onto the new grid with everything else, but flooring only moves
 #' dates *backwards*, so an axis that was left alone can end up holding a date
 #' later than the floored `now`. Taking the maximum keeps
-#' `event <= report <= validation <= now` true by construction.
+#' `event <= report <= revision <= now` true by construction.
 #'
 #' @param x The (ungrouped) `tbl_now` before aggregation.
 #' @param data The aggregated data frame.
@@ -514,9 +514,9 @@ aggregate_time_units <- function(x,
 #'   of `t_effects`, `date_type` and `weekend_days`.
 #' @param calendar_to The new units of the axis this spec is attached to.
 #' @param season_from,season_to The old and new units the Fourier terms are
-#'   measured in. Both `.event_num` and `.report_num` are measured in the EVENT
-#'   units by `time_cols_to_numeric()`, so these are the event axis's units for
-#'   either `date_type`.
+#'   measured in. `.event_num` and `.report_num` are measured in the EVENT
+#'   units by `time_cols_to_numeric()`, while `.revision_num` is measured in
+#'   the revision units by `.add_revision_num()`.
 #'
 #' @return A list of `spec` (the coarsened specification, or `NULL` when nothing
 #'   survives), `dropped` and `rescaled` (character labels for the message).
@@ -623,12 +623,17 @@ aggregate_time_units <- function(x,
   rescaled <- character(0)
 
   for (spec in specs) {
-    axis <- if (identical(spec$date_type, "report_date")) "report" else "event"
+    axis <- switch(spec$date_type,
+      report_date = "report",
+      revision_date = "revision",
+      "event"
+    )
+    season_axis <- if (identical(axis, "revision")) "revision" else "event"
     out <- .coarsen_temporal_effect_spec(
       spec,
       calendar_to = new_units[[axis]],
-      season_from = old_units[["event"]],
-      season_to   = new_units[["event"]]
+      season_from = old_units[[season_axis]],
+      season_to   = new_units[[season_axis]]
     )
     dropped <- c(dropped, out$dropped)
     rescaled <- c(rescaled, out$rescaled)

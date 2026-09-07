@@ -84,10 +84,10 @@ functions it is whatever their named arguments do not already cover.}
 
 \item{model, type, n_draws}{(\code{engine_diseasenowcasting()}) Arguments of
 \code{\link[diseasenowcasting:nowcast]{diseasenowcasting::nowcast()}}. \code{model} is where the epidemic and
-validation processes are chosen, e.g.
+revision processes are chosen, e.g.
 \code{diseasenowcasting::model(epidemic = diseasenowcasting::ar1_epidemic())}.
 On \code{count-cumulative} data that revises downwards you also want a
-\code{validation} process, or the negative increments have nowhere to go.}
+\code{revision} process, or the negative increments have nowhere to go.}
 
 \item{min_date}{How much history to fit on. One of
 \itemize{

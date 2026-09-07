@@ -43,10 +43,10 @@
 #' @keywords internal
 #' @noRd
 .diag_context <- function(x, increments, max_delay = NULL, axis = "report") {
-  # On the validation axis every "report" in these pictures is a validation,
+  # On the revision axis every "report" in these pictures is a revision,
   # so the unit and the wording follow the axis rather than being hard-coded.
-  report_unit <- if (identical(axis, "validation")) {
-    get_validation_units(x) %||% get_report_units(x) %||% "days"
+  report_unit <- if (identical(axis, "revision")) {
+    get_revision_units(x) %||% get_report_units(x) %||% "days"
   } else {
     get_report_units(x) %||% "days"
   }
@@ -54,7 +54,7 @@
   list(
     has_strata  = length(get_strata(x)) > 0L,
     axis        = axis,
-    arrival     = if (identical(axis, "validation")) "validation" else "report",
+    arrival     = if (identical(axis, "revision")) "revision" else "report",
     report_unit = report_unit,
     event_unit  = event_unit,
     unit_days   = .tbl_now_units_to_days(report_unit),
@@ -102,11 +102,11 @@
 #' @param palette A named colour palette (see [tbl_now_palette()]). These two
 #'   panels draw bars and nothing else, so they take no `size` or `linewidth`.
 #' @param axis Which time axis to draw: `"report"` (default) or
-#'   `"validation"`. On the validation axis the picture answers the
+#'   `"revision"`. On the revision axis the picture answers the
 #'   laboratory's version of the question -- when results arrived, rather than
-#'   when reports did. Needs a validation process (see
-#'   [add_validation_date()][add]); cases still `"pending"` have no
-#'   validation date and are left out.
+#'   when reports did. Needs a revision process (see
+#'   [add_revision_date()][add]); cases still `"pending"` have no
+#'   revision date and are left out.
 #'
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
 #'
@@ -129,25 +129,25 @@
 #'
 #' @name plot_epidemic_process
 #' @export
-plot_reporting_process <- function(x, plotly = FALSE, axis = c("report", "validation"),
+plot_reporting_process <- function(x, plotly = FALSE, axis = c("report", "revision"),
                                    palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
   .diag_check(x)
   .tbl_now_check_palette(palette, "plot_reporting_process")
   inc <- .batch_report_increments(x, axis = axis)
-  ctx <- .diag_context(x, inc)
+  ctx <- .diag_context(x, inc, axis = axis)
   .as_plotly(.diag_build_process(inc, ctx, palette, axis = "report"), plotly)
 }
 
 #' @rdname plot_epidemic_process
 #' @export
-plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "validation"),
+plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "revision"),
                                   palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
   .diag_check(x)
   .tbl_now_check_palette(palette, "plot_epidemic_process")
   inc <- .batch_report_increments(x, axis = axis)
-  ctx <- .diag_context(x, inc)
+  ctx <- .diag_context(x, inc, axis = axis)
   .as_plotly(.diag_build_process(inc, ctx, palette, axis = "event"), plotly)
 }
 
@@ -155,10 +155,34 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "validat
 #' @noRd
 .diag_build_process <- function(increments, ctx, palette, axis) {
   key   <- if (axis == "event") ".event_date" else ".report_date"
-  title <- if (axis == "event") "Epidemic process" else "Reporting process"
-  sub   <- if (axis == "event") "Cases by the date they occurred" else "Reports by the date they arrived"
-  xlab  <- if (axis == "event") "Event date" else "Report date"
-  ylab  <- if (axis == "event") "Cases" else "Reports"
+  title <- if (axis == "event") {
+    "Epidemic process"
+  } else if (identical(ctx$arrival, "revision")) {
+    "Revision process"
+  } else {
+    "Reporting process"
+  }
+  sub <- if (axis == "event") {
+    "Cases by the date they occurred"
+  } else if (identical(ctx$arrival, "revision")) {
+    "Revisions by the date they arrived"
+  } else {
+    "Reports by the date they arrived"
+  }
+  xlab <- if (axis == "event") {
+    "Event date"
+  } else if (identical(ctx$arrival, "revision")) {
+    "Revision date"
+  } else {
+    "Report date"
+  }
+  ylab <- if (axis == "event") {
+    "Cases"
+  } else if (identical(ctx$arrival, "revision")) {
+    "Revisions"
+  } else {
+    "Reports"
+  }
   fill  <- if (axis == "event") palette[["epidemic"]] else palette[["reporting"]]
   cap   <- NULL
 
@@ -224,10 +248,10 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "validat
 #'   Default `0.3`; the `mark_batches` stripes are drawn a third heavier.
 #' @param palette A named colour palette (see [tbl_now_palette()]).
 #' @param axis Which time axis to draw: `"report"` (default) or
-#'   `"validation"`. On the validation axis the picture answers the
+#'   `"revision"`. On the revision axis the picture answers the
 #'   laboratory's version of the question -- when results arrived, rather than
-#'   when reports did. Needs a validation process (see [add_validation_date()]);
-#'   cases still `"pending"` have no validation date and are left out.
+#'   when reports did. Needs a revision process (see [add_revision_date()]);
+#'   cases still `"pending"` have no revision date and are left out.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
 #' @seealso
 #' [plot_reporting_hexamap()] for the same grid drawn so that event date, report
@@ -247,7 +271,7 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "validat
 #' @md
 plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
                                     mark_batches = 0L, plotly = FALSE,
-                                    axis = c("report", "validation"),
+                                    axis = c("report", "revision"),
                                     size = 1, grid_linewidth = 0.3,
                                     palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
@@ -402,8 +426,8 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
     .diag_count_scale(palette, "fill") +
     ggplot2::labs(
       x = "Event date", y = sprintf("Delay (%s)", ctx$report_unit),
-      title = if (identical(ctx$arrival, "validation")) {
-        "Validation triangle"
+      title = if (identical(ctx$arrival, "revision")) {
+        "Revision triangle"
       } else {
         "Reporting triangle"
       },
@@ -436,13 +460,11 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 #'   their envelope that carries the message -- so raising this on a long series
 #'   fills the panel in.
 #' @param palette A named colour palette (see [tbl_now_palette()]).
-#' @param axis Which time axis the delay is measured to: `"report"` (default)
-#'   or `"validation"`. Both are measured *from the event*, so the two are
-#'   directly comparable -- run each in turn and the gap between them is the
-#'   time the laboratory adds. (This is not the same quantity as the
-#'   `.validation_delay` column, which is the laboratory's own turnaround,
-#'   measured from the report.) Needs a validation process (see
-#'   [add_validation_date()]); cases still `"pending"` are left out.
+#' @param axis Which time axis the delay is measured on: `"report"` (default)
+#'   or `"revision"`. Report-axis delays are measured from event to report;
+#'   revision-axis delays are measured from report to revision, the same
+#'   quantity as `.revision_delay`. Needs a revision process (see
+#'   [add_revision_date()]); cases still `"pending"` are left out.
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
 #' @seealso
 #' [plot_delay_distribution()] for the pooled delay distribution rather than one
@@ -457,7 +479,7 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 #' @export
 #' @md
 plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
-                                plotly = FALSE, axis = c("report", "validation"),
+                                plotly = FALSE, axis = c("report", "revision"),
                                 linewidth = 1,
                                 palette = .tbl_now_palette()) {
   by <- match.arg(by)
@@ -495,8 +517,8 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
     ggplot2::labs(
       x = sprintf("Delay (%s)", ctx$report_unit),
       y = sprintf("Share of the date's %ss", ctx$arrival),
-      title = if (identical(ctx$arrival, "validation")) {
-        "Validation delay profiles"
+      title = if (identical(ctx$arrival, "revision")) {
+        "Revision delay profiles"
       } else {
         "Delay profiles"
       },
@@ -570,7 +592,7 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, size = 1,
   # so a static plot does not pay for it. `tooltip = "text"` then puts the dates
   # in the tooltip instead of the two z-scores the point is positioned by.
   if (isTRUE(plotly)) {
-    axis <- match.arg(dots$axis %||% "report", c("report", "validation"))
+    axis <- match.arg(dots$axis %||% "report", c("report", "revision"))
     td   <- .diag_transport_hover(td, x, axis, dots$drop_censored %||% TRUE)
   }
   .as_plotly(.diag_build_transport(td, palette, hover = isTRUE(plotly),
@@ -580,7 +602,7 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, size = 1,
 
 #' Attach the hover label for the transport plane.
 #'
-#' A point is one *arrival* date, so the report (or validation) date names it.
+#' A point is one *arrival* date, so the report (or revision) date names it.
 #' The event dates are the other half of the question the plane asks -- a
 #' backlog release reports old events -- so the mean event date behind that
 #' date's arrivals, and the delay it implies, go in the label too.
@@ -623,8 +645,8 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, size = 1,
     by = c("stratum" = ".stratum", "report_date" = ".report_date")
   )
 
-  arrival_label <- if (identical(axis, "validation")) {
-    "Validation date"
+  arrival_label <- if (identical(axis, "revision")) {
+    "Revision date"
   } else {
     "Report date"
   }
@@ -755,13 +777,11 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, size = 1,
 #'   `"transport"` and `"delay_drift"`. Default `0.3`.
 #' @param palette A named colour palette (see [tbl_now_palette()]).
 #'
-#' @param axis Which time axis the delay is measured to: `"report"` (default)
-#'   or `"validation"`. Both are measured *from the event*, so the two are
-#'   directly comparable -- run each in turn and the gap between them is the
-#'   time the laboratory adds. (This is not the same quantity as the
-#'   `.validation_delay` column, which is the laboratory's own turnaround,
-#'   measured from the report.) Needs a validation process (see
-#'   [add_validation_date()]); cases still `"pending"` are left out.
+#' @param axis Which time axis the delay is measured on: `"report"` (default)
+#'   or `"revision"`. Report-axis delays are measured from event to report;
+#'   revision-axis delays are measured from report to revision, the same
+#'   quantity as `.revision_delay`. Needs a revision process (see
+#'   [add_revision_date()]); cases still `"pending"` are left out.
 #' @returns A \pkg{patchwork} object, or a single plot when one panel is selected
 #'   (or a \pkg{plotly} widget when `plotly = TRUE`).
 #'
@@ -787,7 +807,7 @@ diagnostic_plot <- function(x,
                             max_delay = NULL,
                             ...,
                             plotly    = FALSE,
-                            axis      = c("report", "validation"),
+                            axis      = c("report", "revision"),
                             size      = 1,
                             linewidth = 1,
                             grid_linewidth = 0.3,
@@ -899,4 +919,3 @@ diagnostic_plot <- function(x,
   cap      <- as.integer(names(by_delay))[which(cumsum(by_delay) / sum(by_delay) >= 0.99)[1]]
   max(cap, 7L)
 }
-

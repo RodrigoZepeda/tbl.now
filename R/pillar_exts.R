@@ -8,8 +8,8 @@
 #' Turns the list of lazy temporal-effect specs stored on a `tbl_now` into a
 #' single string for the print footer, e.g.
 #' `"[event_date] week_of_year, season(52) | [report_date] holidays"`.
-#' Validation columns are annotated `[validation_date]` and
-#' `[validation_type]`.
+#' Revision columns are annotated `[revision_date]` and
+#' `[revision_type]`.
 #'
 #' @param specs The list of specs as returned by [get_temporal_effects()].
 #'
@@ -35,7 +35,12 @@
       effs <- c(effs, paste0("season(", paste(periods, collapse = ","), ")"))
     }
     if (!is.null(t@holidays)) effs <- c(effs, "holidays")
-    label <- if (sp$date_type == "event_date") "[event_date]" else "[report_date]"
+    label <- switch(sp$date_type,
+      event_date = "[event_date]",
+      report_date = "[report_date]",
+      revision_date = "[revision_date]",
+      paste0("[", sp$date_type, "]")
+    )
     paste0(label, " ", paste(effs, collapse = ", "))
   }, character(1))
 
@@ -64,24 +69,24 @@ tbl_format_footer.tbl_now <- function(x, ...) {
   footer <- cli::cli_fmt({
     cli::cli_rule()
     cli::cli_text("Now: {.val {get_now(x)}} | Event date: {.val {get_event_date(x)}} | Report date: {.val {get_report_date(x)}}")
-    if (has_validation(x)) {
+    if (has_revision(x)) {
       # The third date is easy to forget is there, and it changes what `now`
       # means, so the footer says so rather than leaving it to be discovered.
-      validation_col <- get_validation_date(x)
+      revision_col <- get_revision_date(x)
       resolved <- sum(
-        !is.na(x[[get_validation_type(x)]]) &
-          x[[get_validation_type(x)]] != "pending"
+        !is.na(x[[get_revision_type(x)]]) &
+          x[[get_revision_type(x)]] != "pending"
       )
       cli::cli_text(
-        "Validation date: {.val {validation_col}} ({.val {get_validation_units(x)}}) | resolved: {.val {resolved}}/{.val {nrow(x)}}"
+        "Revision date: {.val {revision_col}} ({.val {get_revision_units(x)}}) | resolved: {.val {resolved}}/{.val {nrow(x)}}"
       )
     }
     if (length(get_is_censored_report(x)) > 0) {
       cli::cli_text("left-censored indicator: {.val {get_is_censored_report(x)}}")
     }
-    if (length(get_is_censored_validation(x)) > 0) {
+    if (length(get_is_censored_revision(x)) > 0) {
       cli::cli_text(
-        "censored validation indicator: {.val {get_is_censored_validation(x)}}"
+        "censored revision indicator: {.val {get_is_censored_revision(x)}}"
       )
     }
     if (get_num_strata(x) > 0) {
@@ -125,14 +130,14 @@ ctl_new_pillar.tbl_now <- function(controller, x, width, ...) {
       annotation <- "[strata]"
     } else if (!is.null(get_covariates(controller)) && (cval %in% get_covariates(controller))) {
       annotation <- "[covariate]"
-    } else if (identical(cval, get_validation_date(controller))) {
-      annotation <- "[validation_date]"
-    } else if (identical(cval, get_validation_type(controller))) {
-      annotation <- "[validation_type]"
+    } else if (identical(cval, get_revision_date(controller))) {
+      annotation <- "[revision_date]"
+    } else if (identical(cval, get_revision_type(controller))) {
+      annotation <- "[revision_type]"
     } else if (identical(cval, get_is_censored_report(controller))) {
       annotation <- "[is_censored_report]"
-    } else if (identical(cval, get_is_censored_validation(controller))) {
-      annotation <- "[is_censored_validation]"
+    } else if (identical(cval, get_is_censored_revision(controller))) {
+      annotation <- "[is_censored_revision]"
     } else if (identical(cval, get_case_count(controller))) {
       annotation <- "[cases]"
     } else if (length(get_temporal_effect_cols(controller)) > 0 &&

@@ -23,8 +23,8 @@ units of every axis being aggregated -- there is no un-aggregating, so
 asking a weekly object for \code{"days"} is an error rather than a guess.}
 
 \item{axes}{Character. Which time axes to aggregate: \code{"all"} (the default,
-meaning the event and report axes plus the validation axis when there is
-one), or any of \code{"event"}, \code{"report"} and \code{"validation"}. The unit they are
+meaning the event and report axes plus the revision axis when there is
+one), or any of \code{"event"}, \code{"report"} and \code{"revision"}. The unit they are
 aggregated to is \code{to}.}
 
 \item{label}{Character. Which end of the period names it: \code{"start"} (the
@@ -41,7 +41,7 @@ Sunday) and the week convention, \code{"epi"} (default) or \code{"iso"}.}
 }
 \value{
 A \code{tbl_now} on the coarser grid, with \code{event_units}, \code{report_units}
-and \code{validation_units} updated for the axes that were aggregated, and \code{now}
+and \code{revision_units} updated for the axes that were aggregated, and \code{now}
 moved onto the new grid.
 }
 \description{
@@ -123,7 +123,7 @@ event axis, so aggregating only the event axis of a daily object is
 refused. Aggregate the report axis too, or use \code{axes = "all"}.
 \item A week named by the day it \emph{starts} sits before every date inside it, so
 coarsening a \strong{later} axis alone -- the report against a daily event, or
-the validation against a daily report -- with \code{label = "start"} produces
+the revision against a daily report -- with \code{label = "start"} produces
 negative delays, and \code{\link[=validate_tbl_now]{validate_tbl_now()}} warns. Use \code{label = "end"}: a
 report that arrived somewhere in week \emph{W} is known by the end of \emph{W}, which
 is the honest bound. When the axes move together the labelling cancels out

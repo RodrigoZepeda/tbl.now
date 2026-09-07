@@ -36,8 +36,8 @@
 #'     there are none.}
 #'   \item{`get_is_censored_report()`}{Character, or `NULL`. The name of the column
 #'     flagging reports whose date is only an upper bound.}
-#'   \item{`get_is_censored_validation()`}{Character, or `NULL`. The same on the
-#'     validation axis: the column flagging rows whose *validation* delay is a
+#'   \item{`get_is_censored_revision()`}{Character, or `NULL`. The same on the
+#'     revision axis: the column flagging rows whose *revision* delay is a
 #'     bound rather than a measurement.}
 #'   \item{`get_now()`}{The `Date` (or number) the nowcast is anchored on.}
 #'   \item{`get_event_units()`, `get_report_units()`}{One of `"days"`,
@@ -50,39 +50,39 @@
 #'   \item{`get_temporal_effect_cols()`}{Character vector of the temporal-effect
 #'     columns actually materialised in the data by
 #'     [compute_temporal_effects()]; `character(0)` when none have been.}
-#'   \item{`get_validation_date()`, `get_validation_type()`}{Character, or
+#'   \item{`get_revision_date()`, `get_revision_type()`}{Character, or
 #'     `NULL`. The name of the column holding the date a case was resolved, and
 #'     of the column holding how it resolved.}
-#'   \item{`get_validation_units()`}{The grid the validation date lives on,
-#'     or `NULL` when the object carries no validation process.}
-#'   \item{`get_validation_levels()`}{The named dictionary translating the
+#'   \item{`get_revision_units()`}{The grid the revision date lives on,
+#'     or `NULL` when the object carries no revision process.}
+#'   \item{`get_revision_levels()`}{The named dictionary translating the
 #'     labels in the data into the canonical outcomes, or `NULL` when the
 #'     column was already canonical.}
-#'   \item{`has_validation()`}{`TRUE` when the object carries a validation
+#'   \item{`has_revision()`}{`TRUE` when the object carries a revision
 #'     date. Every code path must work when it is `FALSE`, because most objects
 #'     have no third date.}
 #' }
 #'
-#' @section The validation process, the optional third date:
+#' @section The revision process, the optional third date:
 #'
 #' A `tbl_now` may carry a **third** date beyond the event and the report: the
 #' date a case was resolved, either confirmed or retracted. Think of influenza:
 #' symptom onset is the event, the medical visit is the report, and the
-#' laboratory result is the validation -- which can come back negative, in
+#' laboratory result is the revision -- which can come back negative, in
 #' which case the case is *retracted* rather than confirmed.
 #'
-#' It is optional and most objects do not have one, so `has_validation()` gates
+#' It is optional and most objects do not have one, so `has_revision()` gates
 #' the four getters below it: they all return `NULL` on an object that was never
 #' given a third date.
 #'
 #' @seealso
 #' [tbl_now_attributes()] to get all of them at once;
 #' [add()], [change()][add] and [remove()][add] to set them, including
-#' [add_validation_date()][add];
-#' [get_latest_validated_cases()][validated_cases] and
-#' [get_latest_validated_cases(type = "net")][validated_cases] to count the
+#' [add_revision_date()][add];
+#' [get_latest_revised_cases()][revised_cases] and
+#' [get_latest_revised_cases(type = "net")][revised_cases] to count the
 #' outcomes;
-#' [validation_delay] for how long resolution takes;
+#' [revision_delay] for how long resolution takes;
 #' [get_latest_reported_cases()][get_latest_first] and friends for reading the
 #' counts rather than the metadata.
 #'
@@ -115,7 +115,7 @@
 #'
 #' # Likewise for a censoring indicator that was never supplied.
 #' get_is_censored_report(ndata)
-#' get_is_censored_validation(ndata)
+#' get_is_censored_revision(ndata)
 #'
 #' # The as-of moment, and the calendar grid the dates live on.
 #' get_now(ndata)
@@ -136,8 +136,8 @@
 #' get_temporal_effect_cols(ndata)
 #'
 #' # The third date is optional, so ask before you read it.
-#' has_validation(ndata)
-#' get_validation_date(ndata)
+#' has_revision(ndata)
+#' get_revision_date(ndata)
 #'
 #' ## Once one is attached, the same name-then-index pattern applies.
 #' data(hai_bucaramanga)
@@ -147,13 +147,13 @@
 #'     event_date = specimen_date, report_date = report_date,
 #'     data_type = "linelist", verbose = FALSE
 #'   ) |>
-#'   add_validation_date(received_date) |>
+#'   add_revision_date(received_date) |>
 #'   suppressWarnings()
 #'
-#' has_validation(hai)
-#' get_validation_date(hai)
-#' get_validation_units(hai)
-#' head(hai[[get_validation_date(hai)]])
+#' has_revision(hai)
+#' get_revision_date(hai)
+#' get_revision_units(hai)
+#' head(hai[[get_revision_date(hai)]])
 #'
 #' @name nowcast_data_getters
 NULL
@@ -272,8 +272,8 @@ get_protected_cols <- function(x) {
 #' @keywords internal
 #' @noRd
 get_protected_generated_cols <- function(x = NULL) {
-  # Return the protected columns from x. The validation pair only exists when
-  # the object was told about a validation date, so `x` is needed to know
+  # Return the protected columns from x. The revision pair only exists when
+  # the object was told about a revision date, so `x` is needed to know
   # whether to include it -- but the argument stays OPTIONAL, because this used
   # to take none and a caller that does not have the object in hand should get
   # the three columns every `tbl_now` has.
@@ -281,7 +281,7 @@ get_protected_generated_cols <- function(x = NULL) {
   if (is.null(x)) {
     return(base_columns)
   }
-  c(base_columns, .validation_generated_cols(x))
+  c(base_columns, .revision_generated_cols(x))
 }
 
 #' Protected columns supplied by the user
@@ -301,9 +301,9 @@ get_protected_given_cols <- function(x) {
   protected_cols <- c(
     "event_date" = get_event_date(x), "report_date" = get_report_date(x),
     "is_censored_report" = get_is_censored_report(x),
-    "is_censored_validation" = get_is_censored_validation(x),
-    "validation_date" = get_validation_date(x),
-    "validation_type" = get_validation_type(x)
+    "is_censored_revision" = get_is_censored_revision(x),
+    "revision_date" = get_revision_date(x),
+    "revision_type" = get_revision_type(x)
   )
 
   if (!is.null(get_data_type(x)) && grepl("count", get_data_type(x))) {

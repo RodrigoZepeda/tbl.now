@@ -31,7 +31,7 @@
 #'     `summary()`; call [case_autocorrelation()] and
 #'     [reporting_completeness()] directly for those.}
 #'   \item{`quantity`}{What the row describes, including the category for the
-#'     compositional rows (`"validation_type = confirmed"`).}
+#'     compositional rows (`"revision_type = confirmed"`).}
 #'   \item{`stratum`}{Which subset of the data the row describes: `"all"` for
 #'     the pooled rows, or the stratum label otherwise.}
 #'   \item{`n`}{How many **things of the block's own kind** the row counts.
@@ -139,10 +139,10 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
   blocks <- list(
     .summary_cases(context, "event"),
     .summary_cases(context, "report"),
-    .summary_cases(context, "validation"),
+    .summary_cases(context, "revision"),
     .summary_zero_runs(context, "event"),
     .summary_zero_runs(context, "report"),
-    .summary_zero_runs(context, "validation"),
+    .summary_zero_runs(context, "revision"),
     .summary_composition(context),
     .summary_coverage(context),
     .summary_occupancy(context)
@@ -155,8 +155,8 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
   } else {
     blocks <- c(blocks, list(
       .summary_delays(context, "event_to_report"),
-      .summary_delays(context, "event_to_validation"),
-      .summary_delays(context, "report_to_validation")
+      .summary_delays(context, "event_to_revision"),
+      .summary_delays(context, "report_to_revision")
     ))
   }
 
@@ -184,7 +184,7 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #' * `delay_summary()` -- the case-weighted delay distribution.
 #' * `zero_run_summary()` -- lengths of the runs of consecutive zero dates.
 #' * `prop_censored()` -- proportion of cases flagged censored.
-#' * `prop_validation_type()` -- proportion of cases per validation outcome.
+#' * `prop_revision_type()` -- proportion of cases per revision outcome.
 #' * `prop_strata()` -- proportion of cases per stratum.
 #' * `prop_covariate_levels()` -- proportion of cases per level of each
 #'   categorical covariate.
@@ -202,11 +202,11 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #'
 #' @param x A `tbl_now` object.
 #' @param axis Which time axis to describe: `"event"`, `"report"` or
-#'   `"validation"`.
+#'   `"revision"`.
 #' @param delay Which delay to describe: `"event_to_report"` (the reporting
-#'   delay), `"event_to_validation"` (the same span measured to the
-#'   validation, so the two are comparable) or `"report_to_validation"`
-#'   (the laboratory's turnaround, the `.validation_delay` column).
+#'   delay), `"event_to_revision"` (the same span measured to the
+#'   revision, so the two are comparable) or `"report_to_revision"`
+#'   (the laboratory's turnaround, the `.revision_delay` column).
 #' @param lags Integer vector of lags.
 #' @param delays Integer vector of delays to report completeness at. Defaults
 #'   to every observed delay.
@@ -277,7 +277,7 @@ NULL
 
 #' @rdname nowcast_summary_components
 #' @export
-cases_per_date <- function(x, axis = c("event", "report", "validation"),
+cases_per_date <- function(x, axis = c("event", "report", "revision"),
                            by_strata = NULL, strata = NULL) {
   axis <- match.arg(axis)
   context <- .summary_context(x, by_strata, strata, "cases_per_date")
@@ -287,8 +287,8 @@ cases_per_date <- function(x, axis = c("event", "report", "validation"),
 #' @rdname nowcast_summary_components
 #' @export
 delay_summary <- function(x,
-                          delay = c("event_to_report", "event_to_validation",
-                                    "report_to_validation"),
+                          delay = c("event_to_report", "event_to_revision",
+                                    "report_to_revision"),
                           by_strata = NULL, strata = NULL) {
   delay <- match.arg(delay)
   if (identical(get_data_type(x), "count-cumulative")) {
@@ -307,7 +307,7 @@ delay_summary <- function(x,
 
 #' @rdname nowcast_summary_components
 #' @export
-zero_run_summary <- function(x, axis = c("event", "report", "validation"),
+zero_run_summary <- function(x, axis = c("event", "report", "revision"),
                              by_strata = NULL, strata = NULL) {
   axis <- match.arg(axis)
   context <- .summary_context(x, by_strata, strata, "zero_run_summary")
@@ -323,9 +323,9 @@ prop_censored <- function(x, by_strata = NULL, strata = NULL) {
 
 #' @rdname nowcast_summary_components
 #' @export
-prop_validation_type <- function(x, by_strata = NULL, strata = NULL) {
-  context <- .summary_context(x, by_strata, strata, "prop_validation_type")
-  .summary_finalise(list(.summary_validation_types(context)))
+prop_revision_type <- function(x, by_strata = NULL, strata = NULL) {
+  context <- .summary_context(x, by_strata, strata, "prop_revision_type")
+  .summary_finalise(list(.summary_revision_types(context)))
 }
 
 #' @rdname nowcast_summary_components
@@ -345,7 +345,7 @@ prop_covariate_levels <- function(x, by_strata = NULL, strata = NULL) {
 #' @rdname nowcast_summary_components
 #' @export
 case_autocorrelation <- function(x, lags = 1,
-                                 axis = c("event", "report", "validation"),
+                                 axis = c("event", "report", "revision"),
                                  by_strata = NULL, strata = NULL) {
   axis <- match.arg(axis)
   .summary_unreviewed_warning("case_autocorrelation")
@@ -475,21 +475,21 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
     cases$censored <- as.logical(observations[[censored_col]])
   }
 
-  if (has_validation(x)) {
-    cases$validation_date <- observations[[get_validation_date(x)]]
-    type_col <- get_validation_type(x)
-    cases$validation_type <- if (is.null(type_col)) {
+  if (has_revision(x)) {
+    cases$revision_date <- observations[[get_revision_date(x)]]
+    type_col <- get_revision_type(x)
+    cases$revision_type <- if (is.null(type_col)) {
       NA_character_
     } else {
       as.character(observations[[type_col]])
     }
     # Measured from the EVENT, so it is directly comparable with
-    # `event_to_report`; `.validation_delay` is the laboratory's own
+    # `event_to_report`; `.revision_delay` is the laboratory's own
     # turnaround, measured from the report. They are different quantities.
-    cases$event_to_validation <-
-      as.numeric(observations[[".validation_num"]] -
+    cases$event_to_revision <-
+      as.numeric(observations[[".revision_num"]] -
                    observations[[".event_num"]])
-    cases$report_to_validation <- as.numeric(observations[[".validation_delay"]])
+    cases$report_to_revision <- as.numeric(observations[[".revision_delay"]])
   }
 
   cases$stratum <- if (length(strata_cols) > 0) {
@@ -533,7 +533,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 #'
 #' `$` on a tibble warns for an unknown column, and half the blocks here ask
 #' about columns that only exist when the object has a censoring flag or a
-#' validation process.
+#' revision process.
 #'
 #' @param data The case table.
 #' @param name Column name.
@@ -676,7 +676,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 #' The column, units and grid end of one time axis
 #'
 #' @param context A summary context.
-#' @param axis `"event"`, `"report"` or `"validation"`.
+#' @param axis `"event"`, `"report"` or `"revision"`.
 #'
 #' @return A list with the case-table column name and the axis units, or `NULL`
 #'   when the object does not have that axis.
@@ -688,10 +688,10 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
   switch(axis,
     event = list(column = "event_date", units = get_event_units(x)),
     report = list(column = "report_date", units = get_report_units(x)),
-    validation = if (has_validation(x)) {
+    revision = if (has_revision(x)) {
       list(
-        column = "validation_date",
-        units = get_validation_units(x) %||% get_report_units(x)
+        column = "revision_date",
+        units = get_revision_units(x) %||% get_report_units(x)
       )
     } else {
       NULL
@@ -701,12 +701,12 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 
 #' Case counts per date on one axis, on the complete grid
 #'
-#' Pending validations are dropped from the validation axis: a pending case
-#' has no validation date, so counting it would invent an arrival on a date it
+#' Pending revisions are dropped from the revision axis: a pending case
+#' has no revision date, so counting it would invent an arrival on a date it
 #' does not have.
 #'
 #' @param context A summary context.
-#' @param axis `"event"`, `"report"` or `"validation"`.
+#' @param axis `"event"`, `"report"` or `"revision"`.
 #' @param rows Logical vector selecting the rows of the case table.
 #' @param subset Optional further filter, a logical vector over the same rows.
 #'
@@ -749,7 +749,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 #' comparable and a stratum that starts late shows its leading zeros.
 #'
 #' @param context A summary context.
-#' @param axis `"event"`, `"report"` or `"validation"`.
+#' @param axis `"event"`, `"report"` or `"revision"`.
 #'
 #' @return A vector of dates (or numbers), possibly empty.
 #'
@@ -771,7 +771,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 #' Case counts per date, for every stratum
 #'
 #' @param context A summary context.
-#' @param axis `"event"`, `"report"` or `"validation"`.
+#' @param axis `"event"`, `"report"` or `"revision"`.
 #'
 #' @return A tibble of `"cases"` rows.
 #'
@@ -782,7 +782,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 
   quantity <- paste0("per_", axis, "_date")
   cases <- context$cases
-  types <- .summary_validation_levels(context)
+  types <- .summary_revision_levels(context)
 
   rows <- lapply(context$labels, function(label) {
     selected <- .summary_rows(context, label)
@@ -798,12 +798,12 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
       )))
     }
 
-    # "Cases per type of validation", but only when there is more than one type
+    # "Cases per type of revision", but only when there is more than one type
     # to tell apart -- a single-outcome column repeats the row above it.
-    if (identical(axis, "validation") && length(types) > 1) {
+    if (identical(axis, "revision") && length(types) > 1) {
       block <- c(block, lapply(types, function(type) {
         .summary_series_row(
-          context, axis, selected, cases[["validation_type"]] %in% type,
+          context, axis, selected, cases[["revision_type"]] %in% type,
           "cases", paste0(quantity, " [", type, "]"), label
         )
       }))
@@ -846,25 +846,25 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 #' @param delay Which of the three delays.
 #'
 #' @return A tibble of `"delay"` rows, or `NULL` when the object has no
-#'   validation and a validation delay was asked for.
+#'   revision and a revision delay was asked for.
 #'
 #' @keywords internal
 #' @noRd
 .summary_delays <- function(context, delay) {
   cases <- context$cases
   if (!delay %in% names(cases)) return(NULL)
-  types <- .summary_validation_levels(context)
-  uses_validation <- delay %in%
-    c("event_to_validation", "report_to_validation")
+  types <- .summary_revision_levels(context)
+  uses_revision <- delay %in%
+    c("event_to_revision", "report_to_revision")
 
   rows <- lapply(context$labels, function(label) {
     selected <- .summary_rows(context, label)
     block <- list(.summary_delay_row(context, delay, selected, NULL, delay, label))
 
-    if (uses_validation && length(types) > 1) {
+    if (uses_revision && length(types) > 1) {
       block <- c(block, lapply(types, function(type) {
         .summary_delay_row(
-          context, delay, selected, cases[["validation_type"]] %in% type,
+          context, delay, selected, cases[["revision_type"]] %in% type,
           paste0(delay, " [", type, "]"), label
         )
       }))
@@ -999,7 +999,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 .summary_composition <- function(context) {
   dplyr::bind_rows(
     .summary_censoring(context),
-    .summary_validation_types(context),
+    .summary_revision_types(context),
     .summary_strata_shares(context),
     .summary_covariate_shares(context)
   )
@@ -1031,16 +1031,16 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
   dplyr::bind_rows(rows)
 }
 
-#' Proportion of cases per validation outcome
+#' Proportion of cases per revision outcome
 #'
 #' @param context A summary context.
 #'
-#' @return A tibble of `"composition"` rows, or `NULL` without a validation.
+#' @return A tibble of `"composition"` rows, or `NULL` without a revision.
 #'
 #' @keywords internal
 #' @noRd
-.summary_validation_types <- function(context) {
-  types <- .summary_validation_levels(context)
+.summary_revision_types <- function(context) {
+  types <- .summary_revision_levels(context)
   if (length(types) == 0) return(NULL)
   cases <- context$cases
 
@@ -1048,9 +1048,9 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
     selected <- .summary_rows(context, label)
     denominator <- sum(cases$count[selected])
     dplyr::bind_rows(lapply(types, function(type) {
-      matched <- selected & cases[["validation_type"]] %in% type
+      matched <- selected & cases[["revision_type"]] %in% type
       .summary_share_row(
-        paste0("validation_type = ", type), label,
+        paste0("revision_type = ", type), label,
         n = sum(matched), total = sum(cases$count[matched]),
         denominator = denominator
       )
@@ -1150,21 +1150,21 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
   )
 }
 
-#' The validation outcomes actually present in the data
+#' The revision outcomes actually present in the data
 #'
 #' @param context A summary context.
 #'
-#' @return A character vector, empty when there is no validation.
+#' @return A character vector, empty when there is no revision.
 #'
 #' @keywords internal
 #' @noRd
-.summary_validation_levels <- function(context) {
-  types <- .summary_column(context$cases, "validation_type")
+.summary_revision_levels <- function(context) {
+  types <- .summary_column(context$cases, "revision_type")
   if (is.null(types)) return(character(0))
   present <- unique(types[!is.na(types)])
   # Report them in the package's own order rather than alphabetically, so
   # `confirmed` always comes before `retracted`.
-  known <- intersect(.validation_levels(), present)
+  known <- intersect(.revision_levels(), present)
   c(known, sort(setdiff(present, known)))
 }
 
@@ -1178,7 +1178,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 #' @noRd
 .summary_coverage <- function(context) {
   cases <- context$cases
-  axes <- c("event", "report", "validation")
+  axes <- c("event", "report", "revision")
 
   rows <- lapply(context$labels, function(label) {
     selected <- .summary_rows(context, label)

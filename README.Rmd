@@ -57,19 +57,19 @@ Specifically a `tbl_now` is a data structure that keeps track of the following a
 <td align="left">The column storing <strong>report dates</strong>; i.e. when that event became known to the surveillance system. <strong>Required</strong>, unless it is reconstructed from <code>delay</code>.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/validation_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="validation"></td>
-<td align="left"><code>validation_date</code></td>
-<td align="left">An optional third date indicating when the report was resolved (see <code>validation_type</code>). <em>Optional</em>.</td>
+<td align="center"><img src="man/figures/revision_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="revision"></td>
+<td align="left"><code>revision_date</code></td>
+<td align="left">An optional third date indicating when the report was resolved (see <code>revision_type</code>). <em>Optional</em>.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/validation_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="validation"></td>
-<td align="left"><code>validation_type</code></td>
-<td align="left">What the validation date resolved to. Only <code>confirmed</code>, <code>retracted</code>, <code>pending</code> or <code>NA</code> are ever stored; use <code>validation_levels</code> for data recorded in other words. <em>Optional</em>.</td>
+<td align="center"><img src="man/figures/revision_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="revision"></td>
+<td align="left"><code>revision_type</code></td>
+<td align="left">What the revision date resolved to. Only <code>confirmed</code>, <code>retracted</code>, <code>pending</code> or <code>NA</code> are ever stored; use <code>revision_levels</code> for data recorded in other words. <em>Optional</em>.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/validation_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="validation_levels"></td>
-<td align="left"><code>validation_levels</code></td>
-<td align="left">A named dictionary translating the labels in <code>validation_type</code> into those four, e.g. <code>c(positive = "confirmed")</code>. <em>Optional</em>.</td>
+<td align="center"><img src="man/figures/revision_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="revision_levels"></td>
+<td align="left"><code>revision_levels</code></td>
+<td align="left">A named dictionary translating the labels in <code>revision_type</code> into those four, e.g. <code>c(positive = "confirmed")</code>. <em>Optional</em>.</td>
 </tr>
 <tr>
 <td align="center"><img src="man/figures/now.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="now"></td>
@@ -98,7 +98,7 @@ Specifically a `tbl_now` is a data structure that keeps track of the following a
 </tr>
 <tr>
 <td align="center"><img src="man/figures/units.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="units"></td>
-<td align="left"><code>event_units</code>, <code>report_units</code>, <code>validation_units</code></td>
+<td align="left"><code>event_units</code>, <code>report_units</code>, <code>revision_units</code></td>
 <td align="left">The time grid each date lives on: <code>days</code>, <code>weeks</code>, <code>months</code>, <code>years</code> or <code>numeric</code>. <em>Optional</em>; inferred (<code>"auto"</code>) by default.</td>
 </tr>
 <tr>
@@ -107,9 +107,9 @@ Specifically a `tbl_now` is a data structure that keeps track of the following a
 <td align="left">Flags report dates that are only an upper bound, e.g. a batch or back-fill dump. <em>Optional</em>.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/censoring.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="is_censored_validation"></td>
-<td align="left"><code>is_censored_validation</code></td>
-<td align="left">The same on the validation axis: flags rows whose <em>validation</em> delay is a bound rather than a measurement. <em>Optional</em>.</td>
+<td align="center"><img src="man/figures/censoring.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="is_censored_revision"></td>
+<td align="left"><code>is_censored_revision</code></td>
+<td align="left">The same on the revision axis: flags rows whose <em>revision</em> delay is a bound rather than a measurement. <em>Optional</em>.</td>
 </tr>
 <tr>
 <td align="center"><img src="man/figures/temporal_effects.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="temporal_effects"></td>

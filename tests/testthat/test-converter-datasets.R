@@ -51,7 +51,7 @@ test_that("count-cumulative converts once the delays are whole periods", {
   # is always Saturday, so raw delays are fractional (0.571 weeks) and no
   # reporting triangle can be built. That is an alignment problem, NOT a
   # cumulative-data problem: `align_weeks = TRUE` fixes it.
-  aligned <- dataset_tbl_now("flusight_aligned")
+  aligned <- suppressWarnings(dataset_tbl_now("flusight_aligned"))
   expect_true(all(aligned$.delay == round(aligned$.delay)))
 
   triangle <- suppressWarnings(
@@ -67,7 +67,7 @@ test_that("count-cumulative converts once the delays are whole periods", {
 test_that("`negatives = 'error'` refuses cumulative input outright", {
   skip_on_cran()
   skip_if_not_installed("baselinenowcast")
-  flusight_now <- dataset_tbl_now("flusight")
+  flusight_now <- suppressWarnings(dataset_tbl_now("flusight"))
   expect_equal(get_data_type(flusight_now), "count-cumulative")
   expect_error(
     suppressWarnings(
@@ -79,7 +79,7 @@ test_that("`negatives = 'error'` refuses cumulative input outright", {
 
 test_that("count-cumulative converts for the other targets too", {
   skip_on_cran()
-  flusight_now <- dataset_tbl_now("flusight")
+  flusight_now <- suppressWarnings(dataset_tbl_now("flusight"))
   for (nm in c("epinowcast", "surveillance", "data.table", "tsibble")) {
     skip_if_not_installed(nm)
     expect_no_error(

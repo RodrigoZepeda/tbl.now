@@ -212,7 +212,7 @@
 #'
 #' A compact aggregation of the U.S. CDC's individual-level COVID-19 case
 #' surveillance database. It is the package's worked example for two different
-#' things: **batch reporting**, and the **validation process** -- the optional
+#' things: **batch reporting**, and the **revision process** -- the optional
 #' third date a surveillance record can carry.
 #'
 #' Each row is a unique (onset date, specimen date, CDC report date, status,
@@ -231,17 +231,17 @@
 #'   \item{`onset_dt`}{the **event** -- symptoms begin.}
 #'   \item{`pos_spec_dt`}{the **report** -- the first positive specimen is
 #'     collected, which is when the surveillance system first sees the case.}
-#'   \item{`cdc_report_dt`}{the **validation** -- the case is registered at CDC
+#'   \item{`cdc_report_dt`}{the **revision** -- the case is registered at CDC
 #'     with a status.}
 #' }
 #'
-#' # `current_status` and `validation_levels`
+#' # `current_status` and `revision_levels`
 #'
 #' `current_status` is kept in CDC's own words rather than recoded, because
-#' translating it is exactly what `tbl_now(validation_levels = )` is for:
+#' translating it is exactly what `tbl_now(revision_levels = )` is for:
 #'
 #' ```r
-#' validation_levels = c(
+#' revision_levels = c(
 #'   "Laboratory-confirmed case" = "confirmed",
 #'   "Probable Case"             = "pending"
 #' )
@@ -252,10 +252,10 @@
 #' positive specimen, so "probable" means the specimen was collected and the
 #' case was never laboratory-settled -- `"pending"` in this package's
 #' vocabulary. Note what is **not** there: CDC does not withdraw cases, so
-#' `"retracted"` does not occur in this dataset. It is a two-outcome validation
+#' `"retracted"` does not occur in this dataset. It is a two-outcome revision
 #' process, and code that needs a retraction has to look elsewhere.
 #'
-#' The relationship between the outcome and the validation delay is real rather
+#' The relationship between the outcome and the revision delay is real rather
 #' than fabricated: probable cases are registered a median of 2 days after the
 #' specimen, laboratory-confirmed ones 4 days.
 #'
@@ -277,11 +277,11 @@
 #'   \item{onset_dt}{`Date`. The event date -- symptom onset.}
 #'   \item{pos_spec_dt}{`Date`. The report date -- collection of the first
 #'     positive specimen.}
-#'   \item{cdc_report_dt}{`Date`. The validation date -- when the case was
+#'   \item{cdc_report_dt}{`Date`. The revision date -- when the case was
 #'     registered at CDC.}
 #'   \item{current_status}{`character`. CDC's classification, either
 #'     `"Laboratory-confirmed case"` or `"Probable Case"`. Map it with
-#'     `validation_levels` (see above).}
+#'     `revision_levels` (see above).}
 #'   \item{sex}{`character`. `"Female"`, `"Male"`, `"Other"`, `"Unknown"` or
 #'     `"Missing"`.}
 #'   \item{n}{`integer`. Number of cases sharing that combination.}
@@ -300,8 +300,8 @@
 #' @keywords datasets
 #'
 #' @seealso
-#' [tbl_now()] to declare the date columns; [add_validation_date()][add] to
-#' attach the third one to an object that has none; [validated_cases] to count
+#' [tbl_now()] to declare the date columns; [add_revision_date()][add] to
+#' attach the third one to an object that has none; [revised_cases] to count
 #' the outcomes; [summary()][tbl_now_summary] and [diagnose()] to inspect the
 #' result; the package's other datasets -- [denguedat], [mpoxdat], [flusight],
 #' [covid_colombia] and [hai_bucaramanga].
@@ -326,9 +326,9 @@
 #'   covid_us,
 #'   event_date       = onset_dt,
 #'   report_date      = pos_spec_dt,
-#'   validation_date  = cdc_report_dt,
-#'   validation_type  = current_status,
-#'   validation_levels = c(
+#'   revision_date  = cdc_report_dt,
+#'   revision_type  = current_status,
+#'   revision_levels = c(
 #'     "Laboratory-confirmed case" = "confirmed",
 #'     "Probable Case"             = "pending"
 #'   ),
@@ -337,12 +337,12 @@
 #'   data_type  = "count-incidence",
 #'   verbose    = FALSE
 #' )
-#' has_validation(tn3)
-#' get_validation_levels(tn3)
+#' has_revision(tn3)
+#' get_revision_levels(tn3)
 #'
 #' # "How many cases were there" now has more than one answer.
 #' head(get_latest_reported_cases(tn3))
-#' head(get_latest_validated_cases(tn3, type = "confirmed"))
+#' head(get_latest_revised_cases(tn3, type = "confirmed"))
 #' @md
 "covid_us"
 

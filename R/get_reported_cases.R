@@ -29,7 +29,7 @@
 #'   reporting delay, in event units, to include. Only used by
 #'   `get_nth_reported_cases()`.
 #'
-#' @inheritParams validated_cases
+#' @inheritParams revised_cases
 #'
 #' @returns A `count-cumulative` `tbl_now` with one row per event date (and
 #' stratum, and grouping column), containing:
@@ -40,12 +40,12 @@
 #' * any strata, covariate, censoring indicator and temporal-effect columns the
 #'   object carried, plus the caller's grouping columns.
 #'
-#' The **validation** columns are not carried: the count pools over many
-#' validation dates, so the result has no single one and does not pretend to.
+#' The **revision** columns are not carried: the count pools over many
+#' revision dates, so the result has no single one and does not pretend to.
 #' `type = "by_type"` is the exception -- it keeps the outcome column, declared
 #' as a covariate, because that is the whole point of the call and an undeclared
 #' column is one [to_count()] would pool away. Use
-#' [get_latest_validated_cases()][validated_cases] when you want the third date
+#' [get_latest_revised_cases()][revised_cases] when you want the third date
 #' on the result.
 #'
 #' @section Grouping is respected:
@@ -60,8 +60,8 @@
 #' `to_count()` cannot, and warns instead.
 #'
 #' @seealso
-#' [get_latest_validated_cases()][validated_cases] and friends for the same idea
-#' on the validation process; [to_count()] for the underlying data shapes;
+#' [get_latest_revised_cases()][revised_cases] and friends for the same idea
+#' on the revision process; [to_count()] for the underlying data shapes;
 #' [score_nowcast()], which uses the latest counts as truth;
 #' [reporting_completeness()][nowcast_summary_components] for the same
 #' information as a proportion.
@@ -102,7 +102,7 @@ NULL
 #' The values `type` may take
 #'
 #' `"total"` is every case the axis has, whatever the laboratory said (and is
-#' the only one that means anything on an object with no validation process).
+#' the only one that means anything on an object with no revision process).
 #' The three canonical outcomes filter to themselves, `"unknown"` picks the
 #' cases whose outcome is `NA`, `"net"` is confirmed minus retracted, and
 #' `"by_type"` reports each outcome on its own row instead of choosing one.
@@ -119,7 +119,7 @@ NULL
 #'
 #' @param x A `tbl_now`.
 #' @param type The user's `type`.
-#' @param axis `"report"` or `"validation"`.
+#' @param axis `"report"` or `"revision"`.
 #' @param fn The calling function, for messages.
 #'
 #' @return A single valid type, possibly demoted to `"total"`.
@@ -142,26 +142,26 @@ NULL
   }
 
   # Everything except "total" is a question about the outcome, and an object
-  # with no validation process has no outcome to answer with. Pooling is what
+  # with no revision process has no outcome to answer with. Pooling is what
   # it can honestly do, and it says so rather than returning a number that
   # looks like it was filtered.
-  if (!has_validation(x)) {
+  if (!has_revision(x)) {
     cli::cli_warn(c(
-      "{.arg x} has no validation process, so {.code type = {.val {type}}}
+      "{.arg x} has no revision process, so {.code type = {.val {type}}}
        cannot be answered; counting every case instead.",
-      "i" = "Attach one with {.fn add_validation_date} to count outcomes
+      "i" = "Attach one with {.fn add_revision_date} to count outcomes
              separately."
     ))
     return("total")
   }
 
-  # A pending case is reported and still waiting, so it has no validation date
+  # A pending case is reported and still waiting, so it has no revision date
   # -- that is exactly what separates it from a resolution nobody wrote down.
-  # There is no point on the validation axis at which to count it.
-  if (identical(axis, "validation") && identical(type, "pending")) {
+  # There is no point on the revision axis at which to count it.
+  if (identical(axis, "revision") && identical(type, "pending")) {
     cli::cli_abort(c(
       "{.fn {fn}} cannot count {.val pending} cases: a pending case has no
-       validation date, so it has not arrived on this axis.",
+       revision date, so it has not arrived on this axis.",
       "i" = "Count them on the reporting axis instead:
              {.code get_latest_reported_cases(x, type = \"pending\")}."
     ))
@@ -170,7 +170,7 @@ NULL
   type
 }
 
-#' Shared engine for the reported- and validated-cases getters
+#' Shared engine for the reported- and revised-cases getters
 #'
 #' Computes, per `event_date` (and strata, and the caller's grouping), the
 #' cumulative count at the selected point on one axis: `"latest"` is the last
@@ -182,12 +182,12 @@ NULL
 #'
 #' Both axes measure their delay **from the event**, which is what makes them
 #' comparable: `.delay` on the reporting axis, and
-#' `.validation_num - .event_num` on the validation one. That second one is
-#' deliberately *not* `.validation_delay`, which is the laboratory's turnaround
+#' `.revision_num - .event_num` on the revision one. That second one is
+#' deliberately *not* `.revision_delay`, which is the laboratory's turnaround
 #' measured from the report.
 #'
 #' @param x A `tbl_now` object.
-#' @param axis `"report"` or `"validation"`: which arrival is being selected on.
+#' @param axis `"report"` or `"revision"`: which arrival is being selected on.
 #' @param which One of `"latest"`, `"initial"` or `"nth"`.
 #' @param delay Maximum delay from the event for `"nth"`.
 #' @param type Which outcomes to count; see `.case_types()`.
@@ -197,17 +197,17 @@ NULL
 #'
 #' @keywords internal
 #' @noRd
-.cases_at <- function(x, axis = c("report", "validation"),
+.cases_at <- function(x, axis = c("report", "revision"),
                       which = c("latest", "initial", "nth"),
                       delay = NULL, type = "total", fn) {
   axis <- match.arg(axis)
   which <- match.arg(which)
   .assert_tbl_now(x, fn)
 
-  if (identical(axis, "validation") && !has_validation(x)) {
+  if (identical(axis, "revision") && !has_revision(x)) {
     cli::cli_abort(c(
-      "{.fn {fn}} needs a validation process, and {.arg x} has none.",
-      "i" = "Attach one with {.fn add_validation_date}.",
+      "{.fn {fn}} needs a revision process, and {.arg x} has none.",
+      "i" = "Attach one with {.fn add_revision_date}.",
       "i" = "For counts of everything reported, use
              {.fn get_latest_reported_cases}."
     ))
@@ -217,8 +217,8 @@ NULL
 
   event_col      <- get_event_date(x)
   report_col     <- get_report_date(x)
-  validation_col <- get_validation_date(x)
-  type_col       <- get_validation_type(x)
+  revision_col <- get_revision_date(x)
+  type_col       <- get_revision_type(x)
   strata         <- get_strata(x)
   covariates     <- get_covariates(x)
   effects        <- get_temporal_effect_cols(x)
@@ -227,19 +227,19 @@ NULL
   count_out      <- count_in %||% "n"
 
   # The report-axis flag is a key on both axes: a delay that is only a bound is
-  # not the same observation as one measured exactly. The validation-axis flag
+  # not the same observation as one measured exactly. The revision-axis flag
   # joins it when that is the axis being selected on.
   censored <- if (identical(axis, "report")) {
     get_is_censored_report(x)
   } else {
-    c(get_is_censored_report(x), get_is_censored_validation(x))
+    c(get_is_censored_report(x), get_is_censored_revision(x))
   }
 
   # Grouping is the caller's question, and these verbs SELECT rather than
   # reshape, so it becomes one more key and comes back at the end (#61).
   group_columns <- dplyr::group_vars(x)
 
-  date_col <- if (identical(axis, "report")) report_col else validation_col
+  date_col <- if (identical(axis, "report")) report_col else revision_col
 
   # Declass once: everything below is plain dplyr on a tibble (fast).
   observations <- dplyr::as_tibble(.declass_tbl_now(ungroup(x)))
@@ -261,9 +261,9 @@ NULL
     keep <- !is.na(outcome) & outcome == type
   }
 
-  # An arrival needs a date. On the validation axis a row with none has not
+  # An arrival needs a date. On the revision axis a row with none has not
   # arrived, so there is no point at which to count it.
-  if (identical(axis, "validation")) {
+  if (identical(axis, "revision")) {
     keep <- keep & !is.na(observations[[date_col]])
   }
 
@@ -271,7 +271,7 @@ NULL
   axis_delay <- if (identical(axis, "report")) {
     observations[[".delay"]]
   } else {
-    observations[[".validation_num"]] - observations[[".event_num"]]
+    observations[[".revision_num"]] - observations[[".event_num"]]
   }
   if (identical(which, "nth")) {
     keep <- keep & !is.na(axis_delay) & axis_delay <= delay
@@ -298,7 +298,7 @@ NULL
   cells <- observations |>
     dplyr::summarise(
       .increment = sum(.data$.case_weight * .data$.case_size),
-      # The report date rides along on the validation axis so the picked row
+      # The report date rides along on the revision axis so the picked row
       # can say which report it belonged to. It is deliberately NOT a key
       # there: two reports resolved on the same day are one arrival, and
       # keying on the report would split them into two partial running totals.
@@ -319,7 +319,7 @@ NULL
   }
 
   # Rows are already in arrival order within the group, so the target is the
-  # first or the last of them. `slice_max()` would not do: on the validation
+  # first or the last of them. `slice_max()` would not do: on the revision
   # axis two reports can resolve on the same date, and it would pick one of the
   # two partial running totals.
   picked <- if (identical(which, "initial")) {
@@ -328,13 +328,13 @@ NULL
     dplyr::slice_tail(cells, n = 1, by = dplyr::all_of(group_cols))
   }
 
-  # On the validation axis the object being built carries a validation process,
+  # On the revision axis the object being built carries a revision process,
   # so it needs an outcome column: without one `tbl_now()` invents `NA`s and
   # warns about them on every call. What that outcome IS depends on the
   # question. A filtered type is constant by construction; `by_type` is a key;
   # and `"total"` and `"net"` pool outcomes together, so the aggregate row
   # genuinely has none and says `NA` rather than picking one of the cases.
-  if (identical(axis, "validation") && !is.null(type_col) &&
+  if (identical(axis, "revision") && !is.null(type_col) &&
     !identical(type, "by_type")) {
     picked[[type_col]] <- switch(type,
       total = NA_character_,
@@ -345,9 +345,9 @@ NULL
   }
 
   carried <- unique(c(
-    event_col, report_col, if (identical(axis, "validation")) validation_col,
+    event_col, report_col, if (identical(axis, "revision")) revision_col,
     censored, strata, effects, covariates, group_columns,
-    if (identical(axis, "validation")) type_col,
+    if (identical(axis, "revision")) type_col,
     if (identical(type, "by_type")) type_col
   ))
 
@@ -358,8 +358,8 @@ NULL
       c(event_col, strata, censored, covariates, group_columns)
     )))
 
-  # `by_type` on the reporting axis has aggregated over the validation DATES,
-  # so the object it returns has no validation process -- but the outcome
+  # `by_type` on the reporting axis has aggregated over the revision DATES,
+  # so the object it returns has no revision process -- but the outcome
   # column is the whole point of the call, and an undeclared column is one
   # `to_count()` would pool away. A covariate is exactly the declaration for
   # "matters, but is not what you nowcast by".
@@ -379,8 +379,8 @@ NULL
     case_count = count_out, verbose = FALSE, force = TRUE,
     warn_non_uniqueness = FALSE, align_weeks = FALSE
   )
-  if (identical(axis, "validation")) {
-    rebuild_args <- c(rebuild_args, .validation_rebuild_args(x, result))
+  if (identical(axis, "revision")) {
+    rebuild_args <- c(rebuild_args, .revision_rebuild_args(x, result))
   }
 
   # Build the tbl_now once (regenerates .event_num / .report_num / .delay).
@@ -402,7 +402,7 @@ NULL
 #' The extra `summarise()` expression that carries the report date
 #'
 #' Empty whenever the report date is already one of the cell's keys -- which it
-#' always is on the reporting axis, and can be on the validation axis if the
+#' always is on the reporting axis, and can be on the revision axis if the
 #' caller grouped by it.
 #'
 #' @param report_col The report-date column name.
@@ -447,12 +447,12 @@ NULL
 .abort_no_cases <- function(x, axis, which, delay, type, fn) {
   reasons <- character(0)
 
-  if (identical(axis, "validation")) {
-    validation_col <- get_validation_date(x)
-    if (all(is.na(x[[validation_col]]))) {
+  if (identical(axis, "revision")) {
+    revision_col <- get_revision_date(x)
+    if (all(is.na(x[[revision_col]]))) {
       reasons <- c(reasons, "i" = paste0(
-        "Every value of {.val ", validation_col, "} is {.code NA}: nothing has ",
-        "been validated yet, so the validation axis is empty."
+        "Every value of {.val ", revision_col, "} is {.code NA}: nothing has ",
+        "been revised yet, so the revision axis is empty."
       ))
     }
   }
@@ -523,9 +523,9 @@ get_nth_reported_cases <- function(x, delay, type = "total") {
   invisible(NULL)
 }
 
-# The validation axis ---------------------------------------------------------
+# The revision axis ---------------------------------------------------------
 
-#' Cases at a chosen point in the validation process
+#' Cases at a chosen point in the revision process
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
@@ -533,32 +533,32 @@ get_nth_reported_cases <- function(x, delay, type = "total") {
 #' asked of the **third** date: not when the system heard about a case, but when
 #' the laboratory settled it.
 #'
-#' * `get_initial_validated_cases()` -- the count as of the **first** result to
+#' * `get_initial_revised_cases()` -- the count as of the **first** result to
 #'   come back for that event date.
-#' * `get_latest_validated_cases()` -- the count as of the **most recent**
+#' * `get_latest_revised_cases()` -- the count as of the **most recent**
 #'   result: everything settled so far.
-#' * `get_nth_validated_cases()` -- the count settled **within a given delay of
+#' * `get_nth_revised_cases()` -- the count settled **within a given delay of
 #'   the event**.
 #'
-#' A case that is still `"pending"` has no validation date, so it has not
+#' A case that is still `"pending"` has no revision date, so it has not
 #' arrived on this axis and none of these count it. That is the point: the gap
 #' between [get_latest_reported_cases()][get_latest_first] and
-#' `get_latest_validated_cases()` is the backlog the laboratory still owes you.
+#' `get_latest_revised_cases()` is the backlog the laboratory still owes you.
 #'
-#' @param x A `tbl_now` with a validation process (see [add_validation_date()]).
+#' @param x A `tbl_now` with a revision process (see [add_revision_date()]).
 #'
 #' @param delay A single non-negative number (or `Inf`) giving the longest delay
 #'   **from the event** to include, in the object's units. Only used by
-#'   `get_nth_validated_cases()`.
+#'   `get_nth_revised_cases()`.
 #'
 #' @param type Which cases to count. One of:
 #'   \describe{
 #'     \item{`"total"`}{(default) every case, whatever the outcome. On the
-#'       validation axis that means every case that has been settled at all.}
+#'       revision axis that means every case that has been settled at all.}
 #'     \item{`"confirmed"`, `"retracted"`, `"pending"`}{only the cases with that
 #'       outcome. `"pending"` is a reporting-axis question only -- a pending case
-#'       has no validation date -- and the validation getters refuse it.}
-#'     \item{`"unknown"`}{the cases whose `validation_type` is `NA`: settled, but
+#'       has no revision date -- and the revision getters refuse it.}
+#'     \item{`"unknown"`}{the cases whose `revision_type` is `NA`: settled, but
 #'       the data does not say which way.}
 #'     \item{`"net"`}{confirmed **minus** retracted -- the running total as a
 #'       surveillance system publishes it, which can go **down** when a case is
@@ -570,27 +570,27 @@ get_nth_reported_cases <- function(x, delay, type = "total") {
 #'       outcome column joins the keys, so you get pending, confirmed and
 #'       retracted side by side.}
 #'   }
-#'   On an object with no validation process anything but `"total"` warns and
+#'   On an object with no revision process anything but `"total"` warns and
 #'   pools, because there is no outcome to filter on.
 #'
 #' @returns A `count-cumulative` `tbl_now` with one row per event date (and
 #' stratum, grouping column, and outcome when `type = "by_type"`), carrying the
-#' event, report and validation dates of the selected arrival, the generated
+#' event, report and revision dates of the selected arrival, the generated
 #' numeric columns, and the count.
 #'
 #' @section Which date the count is indexed by:
 #'
 #' By the **event date**, as every other `get_*_cases()` function is. A case
 #' confirmed three weeks after onset still belongs to the week it began. If you
-#' want counts by validation date instead, group on `get_validation_date(x)`
+#' want counts by revision date instead, group on `get_revision_date(x)`
 #' yourself -- that is a different question (how busy was the laboratory) and
 #' this package does not silently answer it.
 #'
-#' @section Which delay `get_nth_validated_cases()` counts:
+#' @section Which delay `get_nth_revised_cases()` counts:
 #'
 #' The delay **from the event**, so that `get_nth_reported_cases(x, 7)` and
-#' `get_nth_validated_cases(x, 7)` describe the same seven days and can be read
-#' against each other. It is deliberately *not* `.validation_delay`, which is
+#' `get_nth_revised_cases(x, 7)` describe the same seven days and can be read
+#' against each other. It is deliberately *not* `.revision_delay`, which is
 #' the laboratory's turnaround measured from the report. [diagnose_drift()] and
 #' [summary()][summary.tbl_now] make the same choice for the same reason.
 #'
@@ -600,9 +600,9 @@ get_nth_reported_cases <- function(x, delay, type = "total") {
 #'
 #' @seealso
 #' [get_latest_reported_cases()][get_latest_first] for the same counts on the
-#' reporting process; [add_validation_date()][add] to attach a validation;
-#' [validation_delay] for how long resolution takes;
-#' [plot_validation_status()] to see confirmed, retracted and pending over time.
+#' reporting process; [add_revision_date()][add] to attach a revision;
+#' [revision_delay] for how long resolution takes;
+#' [plot_revision_status()] to see confirmed, retracted and pending over time.
 #'
 #' @examples
 #' cases <- data.frame(
@@ -613,50 +613,50 @@ get_nth_reported_cases <- function(x, delay, type = "total") {
 #' )
 #' flu <- tbl_now(cases,
 #'   event_date = onset, report_date = visit,
-#'   validation_date = result, validation_type = outcome,
+#'   revision_date = result, revision_type = outcome,
 #'   data_type = "linelist", verbose = FALSE
 #' )
 #'
 #' # Three answers to "how many cases were there?".
 #' get_latest_reported_cases(flu) # everything reported
-#' get_latest_validated_cases(flu, type = "confirmed") # only the positives
-#' get_latest_validated_cases(flu, type = "net") # positives minus withdrawals
+#' get_latest_revised_cases(flu, type = "confirmed") # only the positives
+#' get_latest_revised_cases(flu, type = "net") # positives minus withdrawals
 #'
 #' # Every outcome side by side.
-#' get_latest_validated_cases(flu, type = "by_type")
+#' get_latest_revised_cases(flu, type = "by_type")
 #'
 #' # And the same question asked earlier in the process: what had come back by
 #' # the first result, and within two days of onset.
-#' get_initial_validated_cases(flu)
-#' get_nth_validated_cases(flu, delay = 2)
+#' get_initial_revised_cases(flu)
+#' get_nth_revised_cases(flu, delay = 2)
 #'
-#' @name validated_cases
+#' @name revised_cases
 NULL
 
-#' @rdname validated_cases
+#' @rdname revised_cases
 #' @export
-get_latest_validated_cases <- function(x, type = "total") {
+get_latest_revised_cases <- function(x, type = "total") {
   .cases_at(x,
-    axis = "validation", which = "latest", type = type,
-    fn = "get_latest_validated_cases"
+    axis = "revision", which = "latest", type = type,
+    fn = "get_latest_revised_cases"
   )
 }
 
-#' @rdname validated_cases
+#' @rdname revised_cases
 #' @export
-get_initial_validated_cases <- function(x, type = "total") {
+get_initial_revised_cases <- function(x, type = "total") {
   .cases_at(x,
-    axis = "validation", which = "initial", type = type,
-    fn = "get_initial_validated_cases"
+    axis = "revision", which = "initial", type = type,
+    fn = "get_initial_revised_cases"
   )
 }
 
-#' @rdname validated_cases
+#' @rdname revised_cases
 #' @export
-get_nth_validated_cases <- function(x, delay, type = "total") {
+get_nth_revised_cases <- function(x, delay, type = "total") {
   .check_getter_delay(delay)
   .cases_at(x,
-    axis = "validation", which = "nth", delay = delay, type = type,
-    fn = "get_nth_validated_cases"
+    axis = "revision", which = "nth", delay = delay, type = type,
+    fn = "get_nth_revised_cases"
   )
 }

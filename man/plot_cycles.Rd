@@ -4,12 +4,12 @@
 \alias{plot_cycles}
 \title{Periodogram of the case counts or of the reporting delay}
 \usage{
-plot_cycles(x, type = c("epidemic", "report"), ...)
+plot_cycles(x, type = c("epidemic", "report", "revision"), ...)
 }
 \arguments{
 \item{x}{A \code{\link[=tbl_now]{tbl_now()}} object.}
 
-\item{type}{\code{"epidemic"} (default) or \code{"report"}.}
+\item{type}{\code{"epidemic"} (default), \code{"report"} or \code{"revision"}.}
 
 \item{...}{Further arguments passed to \code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}}, e.g. \code{by_strata},
 \code{strata}, \code{plotly} or \code{palette}.}

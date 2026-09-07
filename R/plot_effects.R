@@ -24,15 +24,21 @@
 #'
 #' @param family The `autoplot()` grouping (`"weekday"`, `"week"`, `"month"`,
 #'   `"holiday"`, `"holiday_lag"`).
-#' @param type `"epidemic"` (event-date process) or `"report"` (reporting-delay
-#'   process).
+#' @param type `"epidemic"` (event-date process), `"report"` (reporting-delay
+#'   process), or `"revision"` (revision-date process).
 #'
 #' @return A panel key.
 #'
 #' @keywords internal
 #' @noRd
 .tbl_now_effect_key <- function(family, type) {
-  if (identical(type, "report")) paste0("delay_", family) else paste0("calendar_", family)
+  if (identical(type, "report")) {
+    paste0("delay_", family)
+  } else if (identical(type, "revision")) {
+    paste0("revision_", family)
+  } else {
+    paste0("calendar_", family)
+  }
 }
 
 #' Make sure the object carries a weekend effect to draw
@@ -46,6 +52,7 @@
 #' weekend to exist at all.
 #'
 #' @param x A `tbl_now` object.
+#' @param type Matched `type` from the calling function.
 #' @param weekend_days The weekend definition, used only when attaching.
 #' @param fn Name of the calling function, for the error messages.
 #'
@@ -54,14 +61,31 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_with_weekend_effect <- function(x, weekend_days, fn) {
+.tbl_now_with_weekend_effect <- function(x, type, weekend_days, fn) {
   .assert_tbl_now(x, fn)
 
-  event_units <- get_event_units(x)
-  if (!identical(event_units, "days")) {
+  date_type <- switch(type,
+    report = "report_date",
+    revision = "revision_date",
+    "event_date"
+  )
+  units <- switch(type,
+    report = get_report_units(x),
+    revision = {
+      if (!has_revision(x)) {
+        cli::cli_abort(c(
+          "{.fn {fn}} needs a revision process for {.code type = \"revision\"}.",
+          "i" = "Attach one with {.fn add_revision_date} first."
+        ))
+      }
+      get_revision_units(x)
+    },
+    get_event_units(x)
+  )
+  if (!identical(units, "days")) {
     cli::cli_abort(c(
       "A weekend effect needs daily data.",
-      "x" = "{.arg event_units} is {.val {event_units}}.",
+      "x" = "The selected date axis has units {.val {units}}.",
       "i" = paste0(
         "Every date on a coarser grid falls in the same day type, so there is ",
         "nothing to contrast. Use {.fn plot_holiday_effects} for a holiday ",
@@ -72,7 +96,9 @@
 
   already_asked <- any(vapply(
     get_temporal_effects(x),
-    function(spec) isTRUE(spec$t_effects@weekend),
+    function(spec) {
+      identical(spec$date_type, date_type) && isTRUE(spec$t_effects@weekend)
+    },
     logical(1)
   ))
   if (already_asked) {
@@ -80,7 +106,8 @@
   }
 
   add_temporal_effects(x,
-    t_effects = temporal_effects(weekend = TRUE), weekend_days = weekend_days
+    t_effects = temporal_effects(weekend = TRUE), date_type = date_type,
+    weekend_days = weekend_days
   )
 }
 
@@ -106,7 +133,8 @@
 #'   (`"1 before"`, `"Holiday"`, `"1 after"`, ..., plus `"Other"`).
 #'
 #' `type` picks which process to describe: `"epidemic"` (green — how the *cases*
-#' vary by calendar group) or `"report"` (red — how the *reporting* does).
+#' vary by calendar group), `"report"` (red — how the *reporting* does), or
+#' `"revision"` (ochre — how resolved cases arrive on revision dates).
 #'
 #' The three day-type / holiday-lag functions have no `measure` argument: they
 #' are always normalized. Their categories are not equal-sized parts of a
@@ -121,8 +149,8 @@
 #' `plot_day_of_week_effects(x)` return the identical plot.
 #'
 #' @param x A [tbl_now()] object.
-#' @param type `"epidemic"` (default) for the case-count effect, or `"report"`
-#'   for the reporting-delay one.
+#' @param type `"epidemic"` (default) for the case-count effect, `"report"` for
+#'   the reporting-delay one, or `"revision"` for revision-date arrivals.
 #' @param measure `"percent"` (default) for the share of cases in each group —
 #'   "10% of cases in week 1 versus 3% in week 2" — with the IQR around it, or
 #'   `"normalized"` for the value divided by its overall mean (`1` = average).
@@ -195,7 +223,7 @@ NULL
 
 #' @rdname calendar_effect_plots
 #' @export
-plot_day_of_week_effects <- function(x, type = c("epidemic", "report"),
+plot_day_of_week_effects <- function(x, type = c("epidemic", "report", "revision"),
                                      measure = c("percent", "normalized"), ...) {
   .tbl_now_plot_panel(x, .tbl_now_effect_key("weekday", match.arg(type)),
                       measure = match.arg(measure), ...)
@@ -203,7 +231,7 @@ plot_day_of_week_effects <- function(x, type = c("epidemic", "report"),
 
 #' @rdname calendar_effect_plots
 #' @export
-plot_week_of_year_effects <- function(x, type = c("epidemic", "report"),
+plot_week_of_year_effects <- function(x, type = c("epidemic", "report", "revision"),
                                       measure = c("percent", "normalized"), ...) {
   .tbl_now_plot_panel(x, .tbl_now_effect_key("week", match.arg(type)),
                       measure = match.arg(measure), ...)
@@ -211,7 +239,7 @@ plot_week_of_year_effects <- function(x, type = c("epidemic", "report"),
 
 #' @rdname calendar_effect_plots
 #' @export
-plot_month_of_year_effects <- function(x, type = c("epidemic", "report"),
+plot_month_of_year_effects <- function(x, type = c("epidemic", "report", "revision"),
                                        measure = c("percent", "normalized"), ...) {
   .tbl_now_plot_panel(x, .tbl_now_effect_key("month", match.arg(type)),
                       measure = match.arg(measure), ...)
@@ -219,21 +247,22 @@ plot_month_of_year_effects <- function(x, type = c("epidemic", "report"),
 
 #' @rdname calendar_effect_plots
 #' @export
-plot_holiday_effects <- function(x, type = c("epidemic", "report"), ...) {
+plot_holiday_effects <- function(x, type = c("epidemic", "report", "revision"), ...) {
   .tbl_now_plot_panel(x, .tbl_now_effect_key("holiday", match.arg(type)), ...)
 }
 
 #' @rdname calendar_effect_plots
 #' @export
-plot_weekend_effects <- function(x, type = c("epidemic", "report"),
+plot_weekend_effects <- function(x, type = c("epidemic", "report", "revision"),
                                  weekend_days = c("Sat", "Sun"), ...) {
-  x <- .tbl_now_with_weekend_effect(x, weekend_days, "plot_weekend_effects")
-  .tbl_now_plot_panel(x, .tbl_now_effect_key("holiday", match.arg(type)), ...)
+  type <- match.arg(type)
+  x <- .tbl_now_with_weekend_effect(x, type, weekend_days, "plot_weekend_effects")
+  .tbl_now_plot_panel(x, .tbl_now_effect_key("holiday", type), ...)
 }
 
 #' @rdname calendar_effect_plots
 #' @export
-plot_holiday_lag_effects <- function(x, type = c("epidemic", "report"), ...) {
+plot_holiday_lag_effects <- function(x, type = c("epidemic", "report", "revision"), ...) {
   .tbl_now_plot_panel(x, .tbl_now_effect_key("holiday_lag", match.arg(type)), ...)
 }
 
@@ -251,7 +280,7 @@ plot_holiday_lag_effects <- function(x, type = c("epidemic", "report"), ...) {
 #' [plot_scalogram()].
 #'
 #' @param x A [tbl_now()] object.
-#' @param type `"epidemic"` (default) or `"report"`.
+#' @param type `"epidemic"` (default), `"report"` or `"revision"`.
 #' @param ... Further arguments passed to [autoplot.tbl_now()], e.g. `by_strata`,
 #'   `strata`, `plotly` or `palette`.
 #'
@@ -266,9 +295,13 @@ plot_holiday_lag_effects <- function(x, type = c("epidemic", "report"), ...) {
 #'
 #' @export
 #' @md
-plot_cycles <- function(x, type = c("epidemic", "report"), ...) {
+plot_cycles <- function(x, type = c("epidemic", "report", "revision"), ...) {
   type <- match.arg(type)
-  key <- if (identical(type, "report")) "delay_seasonality" else "seasonality"
+  key <- switch(type,
+    report = "delay_seasonality",
+    revision = "revision_seasonality",
+    "seasonality"
+  )
   .tbl_now_plot_panel(x, key, ...)
 }
 

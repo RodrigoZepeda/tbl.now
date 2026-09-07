@@ -151,25 +151,25 @@ test_that("targets outside the truth grid warn and are not scored", {
   expect_setequal(unique(exported$event_date), dates[1:2])
 })
 
-validation_truth_tbl_now <- function() {
+revision_truth_tbl_now <- function() {
   data <- data.frame(
     event_date = as.Date(rep("2020-01-01", 4)),
     report_date = as.Date(c("2020-01-01", "2020-01-02", "2020-01-03", "2020-01-04")),
-    validation_date = as.Date(c("2020-01-05", "2020-01-06", NA, "2020-01-07")),
+    revision_date = as.Date(c("2020-01-05", "2020-01-06", NA, "2020-01-07")),
     outcome = c("confirmed", "retracted", "pending", NA),
     n = c(10, 3, 5, 2)
   )
   tbl_now(data,
     event_date = "event_date", report_date = "report_date",
-    validation_date = "validation_date", validation_type = "outcome",
+    revision_date = "revision_date", revision_type = "outcome",
     case_count = "n", data_type = "count-incidence",
-    event_units = "days", report_units = "days", validation_units = "days",
+    event_units = "days", report_units = "days", revision_units = "days",
     verbose = FALSE
   )
 }
 
-test_that("truth_axis and truth_type control reported and validated scoring", {
-  truth <- validation_truth_tbl_now()
+test_that("truth_axis and truth_type control reported and revised scoring", {
+  truth <- revision_truth_tbl_now()
   nowcast <- tbl_nowcast(
     predictions = data.frame(
       event_date = as.Date("2020-01-01"),
@@ -189,17 +189,17 @@ test_that("truth_axis and truth_type control reported and validated scoring", {
     )
   }
 
-  validated <- c(total = 15, confirmed = 10, retracted = 3, unknown = 2, net = 7)
-  for (truth_type in names(validated)) {
+  revised <- c(total = 15, confirmed = 10, retracted = 3, unknown = 2, net = 7)
+  for (truth_type in names(revised)) {
     scores <- score_nowcast(
-      nowcast, truth = truth, truth_axis = "validation", truth_type = truth_type
+      nowcast, truth = truth, truth_axis = "revision", truth_type = truth_type
     )
-    expect_equal(scores$.observed, unname(validated[[truth_type]]),
-      info = paste("validation", truth_type)
+    expect_equal(scores$.observed, unname(revised[[truth_type]]),
+      info = paste("revision", truth_type)
     )
   }
   expect_error(
-    score_nowcast(nowcast, truth = truth, truth_axis = "validation", truth_type = "pending"),
+    score_nowcast(nowcast, truth = truth, truth_axis = "revision", truth_type = "pending"),
     "pending"
   )
   expect_error(
@@ -208,7 +208,7 @@ test_that("truth_axis and truth_type control reported and validated scoring", {
   )
 })
 
-test_that("validation truth is refused without a validation process", {
+test_that("revision truth is refused without a revision process", {
   truth <- truth_tbl_now(as.Date("2020-01-01"), 20)
   nowcast <- tbl_nowcast(
     predictions = data.frame(
@@ -220,12 +220,12 @@ test_that("validation truth is refused without a validation process", {
 
   expect_warning(
     score <- score_nowcast(nowcast, truth = truth, truth_type = "confirmed"),
-    "no validation process"
+    "no revision process"
   )
   expect_equal(score$.observed, 20)
   expect_error(
-    score_nowcast(nowcast, truth = truth, truth_axis = "validation"),
-    "needs a validation process"
+    score_nowcast(nowcast, truth = truth, truth_axis = "revision"),
+    "needs a revision process"
   )
 })
 
@@ -239,20 +239,20 @@ test_that("a snapshot only keeps the reports available at that date", {
   expect_lt(nrow(snapshot), nrow(x))
 })
 
-test_that("backtest snapshots mask future validations before fitting", {
+test_that("backtest snapshots mask future revisions before fitting", {
   register_spytoy()
   data <- data.frame(
     event_date = as.Date(c("2020-01-01", "2020-01-01", "2020-01-08")),
     report_date = as.Date(c("2020-01-01", "2020-01-05", "2020-01-08")),
-    validation_date = as.Date(c("2020-01-03", "2020-01-20", "2020-01-09")),
+    revision_date = as.Date(c("2020-01-03", "2020-01-20", "2020-01-09")),
     outcome = c("confirmed", "confirmed", "confirmed"),
     n = c(1, 10, 2)
   )
   x <- tbl_now(data,
     event_date = "event_date", report_date = "report_date",
-    validation_date = "validation_date", validation_type = "outcome",
+    revision_date = "revision_date", revision_type = "outcome",
     case_count = "n", data_type = "count-incidence",
-    event_units = "days", report_units = "days", validation_units = "days",
+    event_units = "days", report_units = "days", revision_units = "days",
     verbose = FALSE
   )
 
@@ -262,10 +262,10 @@ test_that("backtest snapshots mask future validations before fitting", {
   fit_data <- spytoy_seen$fit_data
 
   expect_true(all(fit_data$report_date <= as.Date("2020-01-10")))
-  expect_true(is.na(fit_data$validation_date[[2]]))
+  expect_true(is.na(fit_data$revision_date[[2]]))
   expect_equal(fit_data$outcome[[2]], "pending")
-  expect_true(is.na(fit_data$.validation_num[[2]]))
-  expect_true(is.na(fit_data$.validation_delay[[2]]))
+  expect_true(is.na(fit_data$.revision_num[[2]]))
+  expect_true(is.na(fit_data$.revision_delay[[2]]))
 })
 
 test_that("nowcast_backtest() scores every method at every date", {

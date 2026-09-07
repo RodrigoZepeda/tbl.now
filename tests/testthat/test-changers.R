@@ -700,7 +700,7 @@ test_that("changer functions validate after each change", {
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
-  # Each of these should trigger validation
+  # Each of these should trigger revision
   expect_silent({
     result1 <- change_strata(ndata, "gender")
     result2 <- change_covariates(ndata, "temperature")
@@ -1384,10 +1384,10 @@ test_that("changers preserve count data type", {
 })
 
 # ============================================================================
-# Validation tests
+# Revision tests
 # ============================================================================
 
-test_that("changers trigger validation", {
+test_that("changers trigger revision", {
   skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata

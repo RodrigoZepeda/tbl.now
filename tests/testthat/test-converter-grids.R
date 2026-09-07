@@ -354,12 +354,14 @@ test_that("flusight converts to epidist now that empty cells are dropped", {
   # `flusight` is count-cumulative and was the one `error` cell in the article's
   # converter matrix.
   data(flusight, envir = environment())
-  one_state <- flusight |>
-    dplyr::filter(location_name == "Alabama") |>
-    tbl_now(
-      event_date = target_end_date, report_date = as_of,
-      case_count = observation, data_type = "count-cumulative", verbose = FALSE
-    )
+  one_state <- suppressWarnings(
+    flusight |>
+      dplyr::filter(location_name == "Alabama") |>
+      tbl_now(
+        event_date = target_end_date, report_date = as_of,
+        case_count = observation, data_type = "count-cumulative", verbose = FALSE
+      )
+  )
 
   ed <- q(tbl_now_to_epidist(one_state, verbose = FALSE))
   expect_s3_class(ed, "epidist_aggregate_data")
