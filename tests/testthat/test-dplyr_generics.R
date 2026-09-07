@@ -1004,23 +1004,23 @@ test_that("test dropping delay column", {
   skip_on_cran()
   test_data <- setup_test_data()
 
-  expect_warning(
+  quiet_messages(expect_warning(
     test_data$ndata |>
       dplyr::select(-.delay),
     "Dropped protected column"
-  )
+  ))
 })
 
 test_that("test dropping count column", {
   skip_on_cran()
   test_data <- setup_test_data()
 
-  expect_warning(
+  quiet_messages(expect_warning(
     test_data$ndata |>
       to_count(to = "count-incidence") |>
       dplyr::select(-n),
     "Drop"
-  )
+  ))
 })
 
 # Tests for select ----

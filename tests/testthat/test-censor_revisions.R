@@ -76,12 +76,12 @@ test_that("a replacement of the wrong type or length is refused", {
 test_that("censor_revisions skips pending cases and says so", {
   x <- revised()
 
-  expect_warning(
+  quiet_messages(expect_warning(
     out <- censor_revisions(x, is.na(result),
       to_revision = as.Date("2021-05-01"), verbose = TRUE
     ),
     "pending"
-  )
+  ))
 
   # Row 3 is pending: no date written, not flagged.
   expect_true(is.na(out[[get_revision_date(out)]][3]))
@@ -114,10 +114,10 @@ test_that("flagging without a replacement does not skip pending cases", {
 
 test_that("censor_revision_delays skips pending cases too", {
   x <- revised()
-  expect_warning(
+  quiet_messages(expect_warning(
     out <- censor_revision_delays(x, TRUE, to_delay = 1),
     "pending"
-  )
+  ))
   expect_true(is.na(out[[get_revision_date(out)]][3]))
   expect_false(out[[get_is_censored_revision(out)]][3])
 })
@@ -173,7 +173,7 @@ test_that("a replacement after `now` drags `now` forward, never back", {
 })
 
 test_that("existing revision flags are merged, never cleared", {
-  x <- suppressMessages(censor_revision_delays_above(revised(), 10))
+  x <- quiet_messages(censor_revision_delays_above(revised(), 10))
   already <- x[[".is_censored_revision"]]
   expect_true(any(already))
 

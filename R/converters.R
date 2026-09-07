@@ -1615,6 +1615,8 @@ tbl_now_from_epinowcast <- function(data, ...,
 #'   [baselinenowcast::preprocess_negative_values()], which is what that
 #'   function exists for; `"error"` refuses cumulative input instead.
 #' @param verbose Logical. Print the choices that were made.
+#' @param quiet Logical. Suppress incidental output from the underlying
+#'   \pkg{baselinenowcast} converter. Defaults to `TRUE` when `verbose = FALSE`.
 #' @param ... Forwarded to [as_tbl_now()] (`from`) or
 #'   [baselinenowcast::as_reporting_triangle()] (`to`, triangle formats).
 #'
@@ -2498,7 +2500,8 @@ tbl_now_to_baselinenowcast <- function(x, ...,
                                        delays_unit = NULL, max_delay = NULL,
                                        complete = "auto",
                                        negatives = c("redistribute", "error"),
-                                       verbose = TRUE) {
+                                       verbose = TRUE,
+                                       quiet = !isTRUE(verbose)) {
   .assert_tbl_now(x, "tbl_now_to_baselinenowcast")
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_baselinenowcast")
   # A reporting triangle has ONE slot per (event, report) cell, so a column the
@@ -2698,7 +2701,9 @@ tbl_now_to_baselinenowcast <- function(x, ...,
       core <- as.data.frame(long_data)[
         rows, c("reference_date", "report_date", "count"), drop = FALSE
       ]
-      .tbl_now_one_triangle(core, delays_unit = delays_unit, ...)
+      .tbl_now_one_triangle(
+        core, delays_unit = delays_unit, ..., quiet = quiet
+      )
     })
 
     # Keep the strata VALUES, one row per element, rather than parsing them back
@@ -2727,7 +2732,8 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 
   .need_pkg("baselinenowcast")
   triangle <- .tbl_now_one_triangle(
-    as.data.frame(long_data), delays_unit = delays_unit, ...
+    as.data.frame(long_data), delays_unit = delays_unit, ...,
+    quiet = quiet
   )
   return(triangle)
 }
@@ -2746,10 +2752,22 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_one_triangle <- function(core, delays_unit, ...) {
-  triangle <- baselinenowcast::as_reporting_triangle(
-    core, delays_unit = delays_unit, ...
-  )
+.tbl_now_one_triangle <- function(core, delays_unit, ..., quiet = FALSE) {
+  if (isTRUE(quiet)) {
+    triangle <- NULL
+    utils::capture.output(
+      utils::capture.output(
+        triangle <- suppressMessages(baselinenowcast::as_reporting_triangle(
+          core, delays_unit = delays_unit, ...
+        )),
+        type = "message"
+      )
+    )
+  } else {
+    triangle <- baselinenowcast::as_reporting_triangle(
+      core, delays_unit = delays_unit, ...
+    )
+  }
 
   # `as_reporting_triangle()` fills every in-triangle cell with 0; restore the
   # not-yet-observed cells (carried as NA-count rows) back to NA so the

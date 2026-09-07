@@ -57,10 +57,10 @@
 #' @noRd
 .batch_confirmed <- function(x, lookback, baseline_window, period, alpha,
                              axis = "report") {
-  screened <- suppressWarnings(diagnose_batches(
+  screened <- suppressWarnings(suppressMessages(diagnose_batches(
     x, lookback = lookback, baseline_window = baseline_window,
     period = period, alpha = alpha, axis = axis
-  ))
+  )))
   confirmed <- screened[screened$batch %in% TRUE, c("report_date", "stratum"), drop = FALSE]
   names(confirmed)[match("stratum", names(confirmed))] <- ".stratum"
   dplyr::as_tibble(confirmed)

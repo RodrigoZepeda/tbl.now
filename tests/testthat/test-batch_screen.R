@@ -110,10 +110,10 @@ test_that("diagnose_batches() recovers a planted batch and finds none in clean d
   release_date <- as.Date("2021-02-04")
   batched_tbl <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
 
-  suppressWarnings({
+  quiet_messages(suppressWarnings({
     clean_screen   <- diagnose_batches(clean_tbl,   lookback = 3L)
     batched_screen <- diagnose_batches(batched_tbl, lookback = 3L)
-  })
+  }))
 
   expect_s3_class(batched_screen, "diagnose_batches")
   expect_equal(sum(clean_screen$batch, na.rm = TRUE), 0L)
@@ -129,7 +129,7 @@ test_that("a batch screen auto-prints through its own formatter", {
   # `base::print`'s. The package namespace defines an S7 `print` generic, which
   # shadows `base::print` once tbl.now is attached, and the screen came back as a
   # bare tibble. See DEVELOPMENT_SKILL.md section 9.
-  screen <- diagnose_batches(make_flat_linelist(), lookback = 3L)
+  screen <- quiet_messages(diagnose_batches(make_flat_linelist(), lookback = 3L))
   out    <- capture.output(screen)
 
   expect_true(any(grepl("Batch screen", out, fixed = TRUE)))
@@ -145,7 +145,7 @@ test_that("the release date shows a spike paid for by a deficit", {
   release_date <- as.Date("2021-02-04")
   batched_tbl  <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
 
-  screened <- diagnose_batches(batched_tbl, lookback = 3L)
+  screened <- quiet_messages(diagnose_batches(batched_tbl, lookback = 3L))
   release_row <- screened[screened$report_date == release_date, ]
 
   # The spike is large ...
@@ -174,8 +174,8 @@ test_that("Delta is an exact pivot: a within-window transport cannot move it at 
     clean_tbl   <- make_flat_linelist(seed = 100L + replicate_index)
     batched_tbl <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
 
-    clean_screen   <- diagnose_batches(clean_tbl,   lookback = 3L)
-    batched_screen <- diagnose_batches(batched_tbl, lookback = 3L)
+    clean_screen   <- quiet_messages(diagnose_batches(clean_tbl,   lookback = 3L))
+    batched_screen <- quiet_messages(diagnose_batches(batched_tbl, lookback = 3L))
 
     delta_clean   <- clean_screen$delta[clean_screen$report_date == release_date]
     delta_batched <- batched_screen$delta[batched_screen$report_date == release_date]
@@ -193,8 +193,8 @@ test_that("the deficit, by contrast, is exactly what the batch moved", {
   clean_tbl   <- make_flat_linelist(seed = 11L)
   batched_tbl <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
 
-  clean_screen   <- diagnose_batches(clean_tbl,   lookback = 3L)
-  batched_screen <- diagnose_batches(batched_tbl, lookback = 3L)
+  clean_screen   <- quiet_messages(diagnose_batches(clean_tbl,   lookback = 3L))
+  batched_screen <- quiet_messages(diagnose_batches(batched_tbl, lookback = 3L))
 
   clean_deficit   <- clean_screen$deficit[clean_screen$report_date == release_date]
   batched_deficit <- batched_screen$deficit[batched_screen$report_date == release_date]
@@ -212,7 +212,7 @@ test_that("a hold that never releases is classified as hold_or_deletion, not a b
 
   batched_tbl <- simulate_batch(clean_tbl, closed_dates = closed,
                                 drop_unreleased = TRUE, verbose = FALSE)
-  screened <- diagnose_batches(batched_tbl, lookback = 3L)
+  screened <- quiet_messages(diagnose_batches(batched_tbl, lookback = 3L))
 
   # No spike ever arrives, so nothing should be flagged a batch at the tail.
   tail_rows <- utils::tail(screened, 3L)
@@ -246,8 +246,12 @@ test_that("a scheduled weekly closure is absorbed by `period` and not called a b
   # Pin the sensitive Poisson null so the test isolates the calendar correction:
   # `auto` would otherwise read the weekly pileups as overdispersion and switch to
   # the conservative robust null, absorbing the schedule on its own.
-  unadjusted <- diagnose_batches(scheduled_tbl, lookback = 3L, null_model = "poisson")
-  adjusted   <- diagnose_batches(scheduled_tbl, lookback = 3L, period = 7L, null_model = "poisson")
+  unadjusted <- quiet_messages(
+    diagnose_batches(scheduled_tbl, lookback = 3L, null_model = "poisson")
+  )
+  adjusted   <- quiet_messages(
+    diagnose_batches(scheduled_tbl, lookback = 3L, period = 7L, null_model = "poisson")
+  )
 
   unadjusted_flags <- sum(unadjusted$batch, na.rm = TRUE)
   adjusted_flags   <- sum(adjusted$batch,   na.rm = TRUE)
@@ -277,8 +281,11 @@ test_that("diagnose_batches() validates its inputs", {
 test_that("the null model is chosen from the data type", {
   skip_on_cran()
   clean_tbl <- make_flat_linelist(n_origins = 40L)
-  expect_equal(attr(diagnose_batches(clean_tbl), "null_model"), "poisson")
-  expect_equal(attr(diagnose_batches(clean_tbl, null_model = "robust"), "null_model"), "robust")
+  expect_equal(attr(quiet_messages(diagnose_batches(clean_tbl)), "null_model"), "poisson")
+  expect_equal(
+    attr(quiet_messages(diagnose_batches(clean_tbl, null_model = "robust")), "null_model"),
+    "robust"
+  )
 })
 
 test_that("auto falls back to the robust null when the counts are overdispersed", {
@@ -301,7 +308,7 @@ test_that("auto falls back to the robust null when the counts are overdispersed"
     event_date = !!as.symbol("event"), report_date = !!as.symbol("report"),
     case_count = !!as.symbol("n"), data_type = "count-incidence", verbose = FALSE
   )
-  expect_equal(attr(diagnose_batches(overdispersed), "null_model"), "robust")
+  expect_equal(attr(quiet_messages(diagnose_batches(overdispersed)), "null_model"), "robust")
 })
 
 # -- the robust baseline -------------------------------------------------------
@@ -410,8 +417,10 @@ test_that("block permutation is available for overdispersed data", {
   closed      <- as.Date(c("2021-02-01", "2021-02-02", "2021-02-03"))
   batched_tbl <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
 
-  block_result <- diagnose_batches2(batched_tbl, at = as.Date("2021-02-04"), guard = 3L,
-                                   permute = "blocks", n_permutations = 199L, seed = 1L)
+  block_result <- quiet_messages(diagnose_batches2(
+    batched_tbl, at = as.Date("2021-02-04"), guard = 3L,
+    permute = "blocks", n_permutations = 199L, seed = 1L
+  ))
   expect_true(is.finite(block_result$p_value))
   expect_gte(block_result$p_value, 0)
   expect_lte(block_result$p_value, 1)
@@ -441,7 +450,7 @@ test_that("count-cumulative data de-accumulates and screens with the robust null
   # that a count-cumulative tbl_now does not carry; that data-frame `$` probe
   # is what emits the "Unknown or uninitialised column" warnings.
   suppressWarnings({
-    screened <- diagnose_batches(cumulative_tbl, lookback = 2L)
+    screened <- quiet_messages(diagnose_batches(cumulative_tbl, lookback = 2L))
   })
   expect_s3_class(screened, "diagnose_batches")
   expect_equal(attr(screened, "null_model"), "robust")
@@ -487,24 +496,24 @@ test_that("the batch family ignores censored arrival dates", {
     "Ignoring"
   )
   # Dropping them is the same as never having had them.
-  kept <- suppressWarnings(
+  kept <- quiet_messages(suppressWarnings(
     diagnose_batches(clean_tbl |> dplyr::filter(.delay <= 1), lookback = 3L)
-  )
+  ))
   expect_equal(screened$reported, kept$reported)
 
   # And keeping them is a different answer, so the argument does something.
-  with_censored <- suppressWarnings(
+  with_censored <- quiet_messages(suppressWarnings(
     diagnose_batches(censored, lookback = 3L, drop_censored = FALSE)
-  )
+  ))
   expect_false(isTRUE(all.equal(screened$reported, with_censored$reported)))
 
   expect_message_quietly(
     transport <- suppressWarnings(transport_discriminant(censored, lookback = 3L)),
     "Ignoring"
   )
-  transport_with_censored <- suppressWarnings(
+  transport_with_censored <- quiet_messages(suppressWarnings(
     transport_discriminant(censored, lookback = 3L, drop_censored = FALSE)
-  )
+  ))
   expect_false(isTRUE(all.equal(transport$reported, transport_with_censored$reported)))
 
   expect_message_quietly(
@@ -635,10 +644,10 @@ test_that("diagnose_batches() works on a grouped tbl_now", {
   clean_tbl <- make_flat_linelist(n_origins = 40L)
   clean_tbl$sex <- rep(c("F", "M"), length.out = nrow(clean_tbl))
 
-  grouped <- suppressWarnings(
+  grouped <- quiet_messages(suppressWarnings(
     diagnose_batches(clean_tbl |> dplyr::group_by(sex), lookback = 3L)
-  )
-  plain <- suppressWarnings(diagnose_batches(clean_tbl, lookback = 3L))
+  ))
+  plain <- quiet_messages(suppressWarnings(diagnose_batches(clean_tbl, lookback = 3L)))
 
   expect_s3_class(grouped, "diagnose_batches")
   expect_equal(dplyr::as_tibble(grouped), dplyr::as_tibble(plain))
@@ -647,7 +656,9 @@ test_that("diagnose_batches() works on a grouped tbl_now", {
 # -- subsetting a screen -------------------------------------------------------
 
 test_that("a screen subset down to a few columns prints as a tibble", {
-  screened <- suppressWarnings(diagnose_batches(make_flat_linelist(), lookback = 2))
+  screened <- quiet_messages(suppressWarnings(
+    diagnose_batches(make_flat_linelist(), lookback = 2)
+  ))
 
   # The failure this pins: `screened[, cols]` kept the class, so auto-print
   # looked for a `batch` column that was no longer there and aborted inside the
@@ -668,7 +679,9 @@ test_that("a screen subset down to a few columns prints as a tibble", {
 })
 
 test_that("a screen that keeps its columns is still a screen", {
-  screened <- suppressWarnings(diagnose_batches(make_flat_linelist(), lookback = 2))
+  screened <- quiet_messages(suppressWarnings(
+    diagnose_batches(make_flat_linelist(), lookback = 2)
+  ))
 
   # Row subsetting, `head()` and `filter()` leave the report intact, so they
   # must NOT demote: these are how a user looks at a screen.
@@ -684,7 +697,9 @@ test_that("a screen that keeps its columns is still a screen", {
 })
 
 test_that("a screen missing a column still prints rather than aborting", {
-  screened <- suppressWarnings(diagnose_batches(make_flat_linelist(), lookback = 2))
+  screened <- quiet_messages(suppressWarnings(
+    diagnose_batches(make_flat_linelist(), lookback = 2)
+  ))
 
   # `$<-` does not go through `[`, so the class survives; the print method has
   # to cope on its own rather than erroring in the one place that is hardest to

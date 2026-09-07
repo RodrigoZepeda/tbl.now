@@ -186,7 +186,7 @@ test_that("censored report dates do not remove cases from the epidemic curve", {
   # `plot_epidemic_process()` silently deleted every case whose REPORT date had
   # been censored -- a statement about the arrival axis, not the event axis.
   tn <- make_diag_tbl(strata = FALSE)
-  censored <- censor_reporting_delays_above(tn, 1)
+  censored <- quiet_messages(censor_reporting_delays_above(tn, 1))
   expect_gt(sum(censored[[get_is_censored_report(censored)]]), 0)
 
   cases_of <- function(p) sum(ggplot2::ggplot_build(p)$data[[1]]$y)

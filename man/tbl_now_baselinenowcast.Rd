@@ -24,7 +24,8 @@ tbl_now_to_baselinenowcast(
   max_delay = NULL,
   complete = "auto",
   negatives = c("redistribute", "error"),
-  verbose = TRUE
+  verbose = TRUE,
+  quiet = !isTRUE(verbose)
 )
 }
 \arguments{
@@ -45,6 +46,9 @@ from the object's time units when the event and report units agree and are
 \code{"days"} or \code{"weeks"}; otherwise you must supply it explicitly.}
 
 \item{verbose}{Logical. Print the choices that were made.}
+
+\item{quiet}{Logical. Suppress incidental output from the underlying
+\pkg{baselinenowcast} converter. Defaults to \code{TRUE} when \code{verbose = FALSE}.}
 
 \item{x}{A \code{tbl_now} object.}
 

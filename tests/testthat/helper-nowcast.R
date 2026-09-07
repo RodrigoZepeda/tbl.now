@@ -6,7 +6,25 @@
 # never needs Stan, JAGS or INLA -- and never needs an MCMC run to finish.
 
 expect_message_quietly <- function(...) {
-  suppressMessages(testthat::expect_message_quietly(...))
+  out <- NULL
+  utils::capture.output(
+    utils::capture.output(
+      out <- suppressMessages(testthat::expect_message(...)),
+      type = "message"
+    )
+  )
+  invisible(out)
+}
+
+quiet_messages <- function(expr) {
+  out <- NULL
+  utils::capture.output(
+    utils::capture.output(
+      out <- suppressMessages(force(expr)),
+      type = "message"
+    )
+  )
+  invisible(out)
 }
 
 # A deliberately controllable backend: predict the eventual counts, offset by
