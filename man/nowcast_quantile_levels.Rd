@@ -51,5 +51,5 @@ engine("baselinenowcast", quantile_levels = hub_levels)
 \seealso{
 \code{\link[=engine]{engine()}}, whose \code{quantile_levels} argument this is the default for;
 \code{\link[=run_nowcast]{run_nowcast()}} and \code{\link[=nowcast_backtest]{nowcast_backtest()}}, which report at these levels;
-\code{\link[=score_nowcast]{score_nowcast()}} and \code{\link[=as_scoringutils]{as_scoringutils()}}, which score them.
+\code{\link[=score_nowcast]{score_nowcast()}} and \code{\link[=as_forecast_point]{as_forecast_point()}}, which score them.
 }

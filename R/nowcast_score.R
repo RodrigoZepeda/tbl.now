@@ -2,8 +2,8 @@
 # performance-weighted ensemble.
 #
 # The scores are computed here rather than delegated to scoringutils so that
-# weighting an ensemble never depends on an extra package. `as_scoringutils()`
-# is provided for users who want its full score suite.
+# weighting an ensemble never depends on an extra package. The scoringutils
+# coercion helpers are provided for users who want its full score suite.
 
 #' Weighted interval score of a set of quantile predictions
 #'
@@ -75,8 +75,9 @@
 #' than an error.
 #'
 #' It is **not** a second public way of asking the same question -- use
-#' [get_latest_reported_cases()] for that. `score_nowcast()` and
-#' `as_scoringutils()` take the `tbl_now` itself as `truth` and call this.
+#' [get_latest_reported_cases()] for that. `score_nowcast()` and the
+#' scoringutils coercion methods take the `tbl_now` itself as `truth` and call
+#' this.
 #'
 #' @param x A `tbl_now` object holding the *full* data, including the reports
 #'   that arrived after the nowcast's `now`.
@@ -351,30 +352,32 @@
 #' @description `r lifecycle::badge('experimental')`
 #'
 #' A nowcast is a claim about numbers that are not in yet. Once the late reports
-#' arrive you can ask how good the claim was, and these two functions are the two
-#' ways of asking.
+#' arrive you can ask how good the claim was.
 #'
 #' * `score_nowcast()` scores it here: the **weighted interval score** (WIS,
 #'   lower is better), the absolute error of the median, and whether the truth
 #'   fell inside the 50% and 90% intervals -- one row per event date and stratum.
-#' * `as_scoringutils()` hands the same comparison to \pkg{scoringutils}, in the
-#'   long format that package expects, so you can use its full battery of scores
-#'   and its plots.
+#' * `as_forecast_point()` hands the median prediction and the same truth to
+#'   \pkg{scoringutils}, so you can use its point-score functions and plots.
+#' * `scoringutils::as_forecast_quantile()` and
+#'   `scoringutils::as_forecast_sample()` also accept these objects directly
+#'   when \pkg{scoringutils} is installed.
 #'
-#' In both cases `truth` is a `tbl_now` seen *later*, once the reports the
-#' nowcast was predicting have actually arrived. The observed counts are read
-#' from it with [get_latest_reported_cases()][get_latest_first], so there is no
-#' column to name.
+#' In each case `truth` is a `tbl_now` seen *later*, after the information the
+#' nowcast was predicting has arrived. The observed counts are computed from
+#' `truth_axis` and `truth_type`: by default this is
+#' [get_latest_reported_cases()][get_latest_first] with `type = "total"`, while
+#' `truth_axis = "revision"` uses [get_latest_revised_cases()]. There is no
+#' observed column to name; the count column is read from the `tbl_now`.
 #'
-#' @param x For `score_nowcast()`, a [tbl_nowcast]. For `as_scoringutils()`, a
+#' @param x For `score_nowcast()`, a [tbl_nowcast]. For `as_forecast_point()`, a
 #'   [tbl_nowcast] (including an ensemble) or a [nowcast_backtest()].
 #' @param truth The `tbl_now` the nowcast is scored against -- normally the
-#'   *full* object, still holding the reports that arrived after the nowcast's
-#'   `now`. Its eventual counts per event date are worked out for you: this is
-#'   [get_latest_reported_cases()], aggregated over anything that is not a
-#'   stratum, with the count column read off the object
-#'   ([get_case_count()]). A **line list** is aggregated first, so it needs no
-#'   special handling.
+#'   *full* object, still holding the reports or revisions that arrived after
+#'   the nowcast's `now`. Its observed counts per event date are worked out from
+#'   `truth_axis` and `truth_type`, aggregated over anything that is not a
+#'   stratum, with the count column read off the object ([get_case_count()]). A
+#'   **line list** is aggregated first, so it needs no special handling.
 #'
 #'   For a single nowcast, `NULL` (default) uses the `tbl_now` it was built from,
 #'   which is only meaningful when that object still holds the later reports.
@@ -394,22 +397,21 @@
 #' columns, and the columns `.observed`, `wis`, `ae_median`, `coverage_50` and
 #' `coverage_90` -- one row per event date and stratum.
 #'
-#' `as_scoringutils()` accepts either a single [tbl_nowcast] (including one
+#' `as_forecast_point()` accepts either a single [tbl_nowcast] (including one
 #' returned by [nowcast_ensemble()]) or a [nowcast_backtest()]. It returns a
-#' long `tibble` with the columns `observed`, `predicted`, `quantile_level` and
-#' `model`, plus the event date and strata as forecast units. A backtest also
-#' carries `now`, because the same target was predicted retrospectively at more
-#' than one date. There is one row per quantile, ready for
-#' `scoringutils::as_forecast_quantile()`.
+#' `forecast_point` object from \pkg{scoringutils}, using the nowcast's median
+#' quantile as `predicted` and the resolved truth as `observed`.
 #'
-#' The two `scoringutils::as_forecast_*()` methods return the corresponding
-#' `forecast_quantile` or `forecast_sample` object from \pkg{scoringutils}.
+#' The `scoringutils::as_forecast_*()` methods return the corresponding
+#' `forecast_quantile`, `forecast_sample` or `forecast_point` object from
+#' \pkg{scoringutils}.
 #'
 #' When \pkg{scoringutils} is installed, calling its coercion generic directly
-#' is equivalent: `scoringutils::as_forecast_quantile(x, truth = truth)` works
-#' for a [tbl_nowcast], an ensemble, and a [nowcast_backtest()]. A backtest
-#' already carries the truth it was scored against, so its `truth` can normally
-#' be omitted.
+#' is equivalent: `scoringutils::as_forecast_quantile(x, truth = truth)` and
+#' `scoringutils::as_forecast_point(x, truth = truth)` work for a
+#' [tbl_nowcast], an ensemble, and a [nowcast_backtest()]. A backtest already
+#' carries the truth it was scored against, so its `truth` can normally be
+#' omitted.
 #'
 #' [scoringutils::as_forecast_sample()] also accepts those objects when they
 #' carry posterior draws. Draws are retained by a `linear_pool` ensemble, but
@@ -457,8 +459,10 @@
 #' # the 50% interval, which it should about half the time.
 #' score_nowcast(nc, truth = truth)
 #'
-#' # The same comparison handed to scoringutils instead, one row per quantile.
-#' head(as_scoringutils(nc, truth = truth))
+#' # The same comparison handed to scoringutils as a point forecast.
+#' if (requireNamespace("scoringutils", quietly = TRUE)) {
+#'   as_forecast_point(nc, truth = truth)
+#' }
 #'
 #' # With a real model, `truth` is the full object and the nowcast is fitted to
 #' # a snapshot of it taken at an earlier `now`.
@@ -516,15 +520,19 @@ score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "revision"),
 #'
 #' Walks back through time: for every date in `now_dates`, the `tbl_now` is
 #' truncated to the reports that were available then, each method is refitted on
-#' that snapshot, and the resulting nowcast is scored against what was
-#' eventually observed. This is what turns a set of models into ensemble weights
-#' (see [nowcast_weights()] and [nowcast_ensemble()]).
+#' that snapshot, and the resulting nowcast is scored against the resolved truth
+#' defined by `truth_axis` and `truth_type` (reported totals by default). This is
+#' what turns a set of models into ensemble weights (see [nowcast_weights()] and
+#' [nowcast_ensemble()]).
 #'
 #' Be aware that this refits every model once per date: with Bayesian backends
 #' and a long `now_dates` it is genuinely expensive.
 #'
-#' @param x A `tbl_now` object holding the *full* data (the later reports are
-#'   what the retrospective nowcasts are scored against).
+#' @param x A `tbl_now` object holding the *full* data (the later reports or
+#'   revisions are what the retrospective nowcasts are scored against).
+#'   Covariates on each retrospective snapshot should mean values available as
+#'   of that snapshot's `now`; do not attach future realized covariate values
+#'   unless they are an explicit forecast input for the engine.
 #' @param ... The [engine()] objects to backtest, one per model. Each carries its
 #'   own arguments, so there is no keyed side-table of per-method options to get
 #'   wrong.
@@ -1203,9 +1211,31 @@ nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"
 
 #' @rdname score_nowcast
 #' @export
-as_scoringutils <- function(x, truth = NULL,
-                            truth_axis = c("report", "revision"),
-                            truth_type = "total") {
+as_forecast_point <- function(x, truth = NULL,
+                              truth_axis = c("report", "revision"),
+                              truth_type = "total",
+                              ...) {
+  .need_pkg("scoringutils")
+  scoringutils::as_forecast_point(
+    as.data.frame(.as_scoringutils_point(
+      x, truth = truth, truth_axis = truth_axis, truth_type = truth_type
+    )),
+    ...
+  )
+}
+
+#' Build the long quantile frame understood by scoringutils
+#'
+#' @param x A [tbl_nowcast] or [nowcast_backtest()].
+#' @param truth A `tbl_now` or `NULL`.
+#'
+#' @return A long tibble in scoringutils' quantile-forecast format.
+#'
+#' @keywords internal
+#' @noRd
+.as_scoringutils <- function(x, truth = NULL,
+                             truth_axis = c("report", "revision"),
+                             truth_type = "total") {
   truth_axis <- match.arg(truth_axis)
   if (inherits(x, "nowcast_backtest")) {
     key <- c(x$event_date, x$strata %||% character(0))
@@ -1229,6 +1259,37 @@ as_scoringutils <- function(x, truth = NULL,
     .resolve_truth(truth, x, truth_axis = truth_axis, truth_type = truth_type),
     key
   )
+}
+
+#' Build the point frame understood by scoringutils
+#'
+#' This wraps the internal quantile-frame builder and keeps only the median
+#' prediction, which is scoringutils' point-forecast convention for quantile
+#' forecasts.
+#'
+#' @param x A [tbl_nowcast] or [nowcast_backtest()].
+#' @param truth A `tbl_now` or `NULL`.
+#'
+#' @return A tibble in scoringutils' point-forecast format.
+#'
+#' @keywords internal
+#' @noRd
+.as_scoringutils_point <- function(x, truth = NULL,
+                                   truth_axis = c("report", "revision"),
+                                   truth_type = "total") {
+  point <- .as_scoringutils(
+    x, truth = truth, truth_axis = truth_axis, truth_type = truth_type
+  ) |>
+    dplyr::filter(.near(.data$quantile_level, 0.5)) |>
+    dplyr::select(-dplyr::all_of("quantile_level"))
+
+  if (nrow(point) == 0L) {
+    cli::cli_abort(
+      "{.arg x} does not contain a median ({.code .quantile_level = 0.5}) prediction."
+    )
+  }
+
+  point
 }
 
 #' Resolve the truth stored by, or supplied for, a backtest
@@ -1262,7 +1323,7 @@ as_scoringutils <- function(x, truth = NULL,
 
 #' Build the long frame understood by scoringutils
 #'
-#' This is the one implementation behind [as_scoringutils()] for a single
+#' This is the one implementation behind `.as_scoringutils()` for a single
 #' [tbl_nowcast], an ensemble and a [nowcast_backtest()]. Callers only normalise
 #' where their predictions and truth live.
 #'
@@ -1300,7 +1361,7 @@ as_scoringutils <- function(x, truth = NULL,
 #'
 #' These methods let [scoringutils::as_forecast_quantile()] consume the result
 #' of [run_nowcast()], [nowcast_ensemble()] or [nowcast_backtest()] directly.
-#' They first use [as_scoringutils()] to attach the observed values, then let
+#' They first use `.as_scoringutils()` to attach the observed values, then let
 #' \pkg{scoringutils} validate and construct its `forecast_quantile` class.
 #'
 #' @param data A [tbl_nowcast] or [nowcast_backtest()].
@@ -1317,7 +1378,7 @@ as_forecast_quantile_tbl_nowcast <- function(data, ..., truth = NULL,
                                              truth_axis = c("report", "revision"),
                                              truth_type = "total") {
   scoringutils::as_forecast_quantile(
-    as.data.frame(as_scoringutils(
+    as.data.frame(.as_scoringutils(
       data, truth = truth, truth_axis = truth_axis, truth_type = truth_type
     )),
     ...
@@ -1333,7 +1394,51 @@ as_forecast_quantile.nowcast_backtest <- function(data, ..., truth = NULL,
                                                   truth_axis = c("report", "revision"),
                                                   truth_type = "total") {
   scoringutils::as_forecast_quantile(
-    as.data.frame(as_scoringutils(
+    as.data.frame(.as_scoringutils(
+      data, truth = truth, truth_axis = truth_axis, truth_type = truth_type
+    )),
+    ...
+  )
+}
+
+#' Coerce tbl.now nowcasts to scoringutils point forecasts
+#'
+#' These methods let [scoringutils::as_forecast_point()] consume the result of
+#' [run_nowcast()], [nowcast_ensemble()] or [nowcast_backtest()] directly. They
+#' keep the median prediction and pass it to \pkg{scoringutils} with the
+#' resolved observed value.
+#'
+#' @param data A [tbl_nowcast] or [nowcast_backtest()].
+#' @param ... Passed to [scoringutils::as_forecast_point()], most commonly
+#'   `forecast_unit`.
+#' @param truth Optional full `tbl_now` used as truth. A backtest reuses its
+#'   stored truth by default.
+#'
+#' @return A `forecast_point` object from \pkg{scoringutils}.
+#'
+#' @keywords internal
+#' @noRd
+as_forecast_point_tbl_nowcast <- function(data, ..., truth = NULL,
+                                          truth_axis = c("report", "revision"),
+                                          truth_type = "total") {
+  scoringutils::as_forecast_point(
+    as.data.frame(.as_scoringutils_point(
+      data, truth = truth, truth_axis = truth_axis, truth_type = truth_type
+    )),
+    ...
+  )
+}
+
+#' @rdname score_nowcast
+#' @param data A [nowcast_backtest()].
+#' @param ... Passed to the corresponding \pkg{scoringutils} coercion generic,
+#'   most commonly `forecast_unit`.
+#' @exportS3Method scoringutils::as_forecast_point
+as_forecast_point.nowcast_backtest <- function(data, ..., truth = NULL,
+                                               truth_axis = c("report", "revision"),
+                                               truth_type = "total") {
+  scoringutils::as_forecast_point(
+    as.data.frame(.as_scoringutils_point(
       data, truth = truth, truth_axis = truth_axis, truth_type = truth_type
     )),
     ...

@@ -134,7 +134,7 @@ overview
 overview |> dplyr::filter(component == "delay")
 
 # `n` and `total` are different questions. In the compositional block `n`
-# counts the (event, report) cells carrying the category and `total` counts
+# counts the event-report cells carrying the category and `total` counts
 # the cases in them.
 overview |>
   dplyr::filter(component == "composition") |>

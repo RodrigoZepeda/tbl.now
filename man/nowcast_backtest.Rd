@@ -18,8 +18,11 @@ nowcast_backtest(
 )
 }
 \arguments{
-\item{x}{A \code{tbl_now} object holding the \emph{full} data (the later reports are
-what the retrospective nowcasts are scored against).}
+\item{x}{A \code{tbl_now} object holding the \emph{full} data (the later reports or
+revisions are what the retrospective nowcasts are scored against).
+Covariates on each retrospective snapshot should mean values available as
+of that snapshot's \code{now}; do not attach future realized covariate values
+unless they are an explicit forecast input for the engine.}
 
 \item{...}{The \code{\link[=engine]{engine()}} objects to backtest, one per model. Each carries its
 own arguments, so there is no keyed side-table of per-method options to get
@@ -87,9 +90,10 @@ otherwise \code{NULL}.}
 
 Walks back through time: for every date in \code{now_dates}, the \code{tbl_now} is
 truncated to the reports that were available then, each method is refitted on
-that snapshot, and the resulting nowcast is scored against what was
-eventually observed. This is what turns a set of models into ensemble weights
-(see \code{\link[=nowcast_weights]{nowcast_weights()}} and \code{\link[=nowcast_ensemble]{nowcast_ensemble()}}).
+that snapshot, and the resulting nowcast is scored against the resolved truth
+defined by \code{truth_axis} and \code{truth_type} (reported totals by default). This is
+what turns a set of models into ensemble weights (see \code{\link[=nowcast_weights]{nowcast_weights()}} and
+\code{\link[=nowcast_ensemble]{nowcast_ensemble()}}).
 
 Be aware that this refits every model once per date: with Bayesian backends
 and a long \code{now_dates} it is genuinely expensive.

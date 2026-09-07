@@ -712,3 +712,13 @@ your data type wrong, that is the same address.
 * `?nowcast_fit` and `?nowcast_tidy` — the contract in reference form.
 * `?tbl_nowcast` — the object your two methods are turned into.
 * `?tidy.tbl_nowcast`, `?score_nowcast`, `?nowcast_ensemble`.
+
+```{r learning-more, echo=FALSE, results="asis"}
+cat(
+  knitr::knit_child(
+    system.file("fragments", "learning-more.Rmd", package = "tbl.now"),
+    quiet = TRUE
+  ),
+  sep = "\n"
+)
+```

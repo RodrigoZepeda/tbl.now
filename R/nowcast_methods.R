@@ -23,12 +23,27 @@
   if (isTRUE(verbose)) {
     return(force(expr))
   }
-  # MESSAGES only. Warnings are not chatter: the converters use them to say that
-  # strata were pooled, a censoring flag was collapsed or declared covariates
-  # were dropped -- each of which changes what the model saw. Suppressing those
-  # is how a fit comes back looking fine while answering a different question,
-  # which is the same failure warned about in DEVELOPMENT_SKILL section 9.
-  suppressMessages(force(expr))
+  # MESSAGES and STDOUT only. Warnings are not chatter: the converters use them
+  # to say that strata were pooled, a censoring flag was collapsed or declared
+  # covariates were dropped -- each of which changes what the model saw.
+  # Suppressing those is how a fit comes back looking fine while answering a
+  # different question, which is the same failure warned about in
+  # DEVELOPMENT_SKILL section 9.
+  #
+  # `suppressMessages()` alone is not enough: `surveillance::nowcast()` reports
+  # progress with `cat()` ("Building reporting triangle...", "No. cases: ..."),
+  # NobBS's JAGS backend emits "NOTE: Stopping adaptation..." on stderr, and
+  # several external constructors write to stdout rather than to R's condition
+  # system. Wrap them all so `verbose = FALSE` really is quiet.
+  out <- NULL
+  utils::capture.output(
+    utils::capture.output(
+      out <- suppressMessages(force(expr)),
+      type = "message"
+    ),
+    type = "output"
+  )
+  out
 }
 
 #' Build the tidy draws frame from a `[draws x time]` matrix

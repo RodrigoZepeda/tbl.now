@@ -152,7 +152,7 @@ surveillance_fit <- local({
   ))
   now <- get_now(x)
 
-  suppressWarnings(suppressMessages(surveillance::nowcast(
+  quiet_messages(suppressWarnings(surveillance::nowcast(
     now = now,
     when = seq(now - 7 * 5, now, by = "1 week"),
     data = linelist,

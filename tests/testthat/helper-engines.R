@@ -233,8 +233,9 @@ engine_backend_available <- function(engine) {
     return(FALSE)
   }
   if (identical(backend, "cmdstanr")) {
+    cmdstan_version <- getExportedValue("cmdstanr", "cmdstan_version")
     version <- tryCatch(
-      cmdstanr::cmdstan_version(error_on_NA = FALSE),
+      cmdstan_version(error_on_NA = FALSE),
       error = function(e) NULL
     )
     return(!is.null(version))
@@ -271,8 +272,12 @@ engine_args <- function(engine, x) {
     diseasenowcasting = c(
       list(n_draws = 100),
       if (identical(get_data_type(x), "count-cumulative")) {
-        list(model = diseasenowcasting::model(
-          confirmation = diseasenowcasting::confirmation_process()
+        dnc_model <- getExportedValue("diseasenowcasting", "model")
+        dnc_confirmation_process <- getExportedValue(
+          "diseasenowcasting", "confirmation_process"
+        )
+        list(model = dnc_model(
+          confirmation = dnc_confirmation_process()
         ))
       }
     ),

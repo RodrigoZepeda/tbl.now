@@ -412,8 +412,9 @@
 #' The daily grid \pkg{EpiNow2} models on, plus its `accumulate` flag
 #'
 #' \pkg{EpiNow2} 1.9.0 has no `timestep`, `interval` or `period` argument on any
-#' of `estimate_infections()`, `epinow()`, `regional_epinow()` or
-#' `estimate_truncation()` (checked all four formals). It models a **daily**
+#' of `estimate_infections()`, `epinow()`, `regional_epinow()`,
+#' `estimate_truncation()` or `estimate_secondary()` (checked their formals). It
+#' models a **daily**
 #' process, so a weekly series handed over as one row per week is read as one row
 #' per day and the fit is silently wrong on the time axis.
 #'
@@ -1615,6 +1616,8 @@ tbl_now_from_epinowcast <- function(data, ...,
 #'   [baselinenowcast::preprocess_negative_values()], which is what that
 #'   function exists for; `"error"` refuses cumulative input instead.
 #' @param verbose Logical. Print the choices that were made.
+#' @param quiet Logical. Suppress incidental output from the underlying
+#'   \pkg{baselinenowcast} converter. Defaults to `TRUE` when `verbose = FALSE`.
 #' @param ... Forwarded to [as_tbl_now()] (`from`) or
 #'   [baselinenowcast::as_reporting_triangle()] (`to`, triangle formats).
 #'
@@ -2498,7 +2501,8 @@ tbl_now_to_baselinenowcast <- function(x, ...,
                                        delays_unit = NULL, max_delay = NULL,
                                        complete = "auto",
                                        negatives = c("redistribute", "error"),
-                                       verbose = TRUE) {
+                                       verbose = TRUE,
+                                       quiet = !isTRUE(verbose)) {
   .assert_tbl_now(x, "tbl_now_to_baselinenowcast")
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_baselinenowcast")
   # A reporting triangle has ONE slot per (event, report) cell, so a column the
@@ -2698,7 +2702,9 @@ tbl_now_to_baselinenowcast <- function(x, ...,
       core <- as.data.frame(long_data)[
         rows, c("reference_date", "report_date", "count"), drop = FALSE
       ]
-      .tbl_now_one_triangle(core, delays_unit = delays_unit, ...)
+      .tbl_now_one_triangle(
+        core, delays_unit = delays_unit, ..., quiet = quiet
+      )
     })
 
     # Keep the strata VALUES, one row per element, rather than parsing them back
@@ -2727,7 +2733,8 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 
   .need_pkg("baselinenowcast")
   triangle <- .tbl_now_one_triangle(
-    as.data.frame(long_data), delays_unit = delays_unit, ...
+    as.data.frame(long_data), delays_unit = delays_unit, ...,
+    quiet = quiet
   )
   return(triangle)
 }
@@ -2746,10 +2753,22 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_one_triangle <- function(core, delays_unit, ...) {
-  triangle <- baselinenowcast::as_reporting_triangle(
-    core, delays_unit = delays_unit, ...
-  )
+.tbl_now_one_triangle <- function(core, delays_unit, ..., quiet = FALSE) {
+  if (isTRUE(quiet)) {
+    triangle <- NULL
+    utils::capture.output(
+      utils::capture.output(
+        triangle <- suppressMessages(baselinenowcast::as_reporting_triangle(
+          core, delays_unit = delays_unit, ...
+        )),
+        type = "message"
+      )
+    )
+  } else {
+    triangle <- baselinenowcast::as_reporting_triangle(
+      core, delays_unit = delays_unit, ...
+    )
+  }
 
   # `as_reporting_triangle()` fills every in-triangle cell with 0; restore the
   # not-yet-observed cells (carried as NA-count rows) back to NA so the
@@ -2764,9 +2783,15 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 
   # De-accumulated cumulative data can carry negative increments; absorb them
   # into earlier delays rather than handing baselinenowcast a triangle it will
-  # reject.
+  # reject. `preprocess_negative_values()` announces the fix with a message on
+  # every call; honour `quiet` so it stays consistent with the rest of the
+  # converter.
   if (any(triangle < 0, na.rm = TRUE)) {
-    triangle <- baselinenowcast::preprocess_negative_values(triangle)
+    triangle <- if (isTRUE(quiet)) {
+      suppressMessages(baselinenowcast::preprocess_negative_values(triangle))
+    } else {
+      baselinenowcast::preprocess_negative_values(triangle)
+    }
   }
   triangle
 }
@@ -2775,7 +2800,7 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
-#' \pkg{EpiNow2} takes four different input shapes, one per entry point, so
+#' \pkg{EpiNow2} takes several different input shapes, one per entry point, so
 #' `tbl_now_to_EpiNow2()` is told which one you want with `target` -- named after
 #' the \pkg{EpiNow2} function the result is passed to, so it can be handed over
 #' unchanged:
@@ -2788,6 +2813,10 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #'   \item{`"estimate_truncation"`}{a [tbl_now_epinow2_snapshots] list -- one
 #'     `date`/`confirm` snapshot per report date, which is the one \pkg{EpiNow2}
 #'     model that uses the report dimension a `tbl_now` exists to carry.}
+#'   \item{`"estimate_secondary"`}{a `data.frame` of `date` / `primary` /
+#'     `secondary`, where `primary` counts reported arrivals by `report_date`
+#'     and `secondary` counts resolved revisions by `revision_date`, filtered by
+#'     `secondary_type`.}
 #'   \item{`"estimate_dist"`}{the interval-censored `pdate_lwr` / `pdate_upr` /
 #'     `sdate_lwr` / `sdate_upr` / `obs_date` frame that
 #'     [EpiNow2::estimate_dist()] fits a **delay distribution** to (new in
@@ -2797,8 +2826,8 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #' `tbl_now_from_EpiNow2()` inverts the snapshot form: snapshot *k* is the series
 #' as known at report date *k*, so differencing consecutive snapshots recovers
 #' `count-incidence` exactly. There is deliberately **no** inverse for the other
-#' three: a single series has no report dimension to recover, and a delay
-#' distribution is not case data.
+#' targets: a single series has no report dimension to recover, a secondary
+#' stream is already aggregated, and a delay distribution is not case data.
 #'
 #' @param x A `tbl_now` object.
 #' @param data A [tbl_now_epinow2_snapshots], or a plain list of `date`/`confirm`
@@ -2809,6 +2838,11 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #'   taken from the **latest** report dates. `NULL` (default) uses 5, matching
 #'   `EpiNow2::example_truncated`. One snapshot per distinct report date is
 #'   usually far more than the model can fit.
+#' @param secondary_type For `"estimate_secondary"`: which revision outcomes to
+#'   count in the `secondary` stream. One of `"confirmed"` (default), `"total"`,
+#'   `"retracted"` or `"unknown"`. Pending cases are not on the revision axis,
+#'   and `"net"` can be negative, which `EpiNow2::estimate_secondary()` cannot
+#'   represent as a count stream.
 #' @param accumulate How to handle non-daily data. `"auto"` (default) lays a
 #'   weekly series on \pkg{EpiNow2}'s daily grid with an `accumulate` column;
 #'   `FALSE` passes the rows through unchanged, which is almost always wrong (see
@@ -2847,14 +2881,13 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #' Its own answer is the `accumulate` column (see [EpiNow2::fill_missing()]): the
 #' series is laid on a daily grid and the filler days are marked to be added to
 #' the next real observation. `accumulate = "auto"` does this from
-#' [get_event_units()]. Units coarser than a week, and the `"numeric"` grid, are
-#' refused outright rather than approximated.
+#' [get_event_units()] for case-count targets, and from the shared
+#' `report_units` / `revision_units` grid for `estimate_secondary`. Units
+#' coarser than a week, and the `"numeric"` grid, are refused outright rather
+#' than approximated.
 #'
 #' @section What EpiNow2 will not take:
 #'
-#' * [EpiNow2::estimate_secondary()] models **two** data streams (cases and
-#'   deaths, say) against each other. One `tbl_now` is one stream, so there is no
-#'   honest mapping and no target for it.
 #' * [EpiNow2::estimate_delay()] takes a bare vector of delays. Its own help now
 #'   points at `estimate_dist()` as "the recommended replacement", and it throws
 #'   away the censoring a `tbl_now` carries, so there is no target for it either.
@@ -2885,8 +2918,9 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
     x, ...,
     target = c("estimate_infections", "regional_epinow",
-               "estimate_truncation", "estimate_dist"),
+               "estimate_truncation", "estimate_secondary", "estimate_dist"),
     snapshots = NULL,
+    secondary_type = c("confirmed", "total", "retracted", "unknown"),
     accumulate = "auto",
     complete = "auto",
     verbose = TRUE, quiet = FALSE) {
@@ -2905,6 +2939,20 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 
   if (target == "estimate_dist") {
     return(.epinow2_dist_data(x, verbose = verbose))
+  }
+
+  if (target == "estimate_secondary") {
+    .warn_dropped_covariates(
+      x, "tbl_now_to_EpiNow2",
+      advice = "The secondary target is {.val date}/{.val primary}/
+                {.val secondary} only; fit separate models for covariate-specific
+                secondary streams."
+    )
+    .warn_dropped_lazy_temporal_effects(x, "tbl_now_to_EpiNow2")
+    return(.epinow2_secondary_data(
+      x, secondary_type = secondary_type, accumulate = accumulate,
+      complete = complete, verbose = verbose
+    ))
   }
 
   .warn_dropped_covariates(
@@ -3018,6 +3066,178 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
   }
 
   as.data.frame(out)
+}
+
+#' Build the primary/secondary streams `EpiNow2::estimate_secondary()` fits
+#'
+#' The primary stream is the reporting process: cases by `report_date`. The
+#' secondary stream is the revision process: resolved cases by `revision_date`,
+#' filtered to a non-negative outcome count. Both are arrivals by date, not
+#' running totals by event date.
+#'
+#' @param x A `tbl_now` with a revision process.
+#' @param secondary_type Which revision outcome to count.
+#' @param accumulate,complete As in [tbl_now_to_EpiNow2()].
+#' @param verbose Logical.
+#'
+#' @return A `data.frame` with `date`, `primary` and `secondary`.
+#'
+#' @keywords internal
+#' @noRd
+.epinow2_secondary_data <- function(x, secondary_type, accumulate, complete,
+                                    verbose = TRUE) {
+  if (!has_revision(x)) {
+    cli::cli_abort(c(
+      "{.fn EpiNow2::estimate_secondary} needs a revision process, and \\
+       {.arg x} has none.",
+      "i" = "Attach one with {.fn add_revision_date}."
+    ))
+  }
+
+  secondary_type <- rlang::arg_match0(
+    secondary_type, c("confirmed", "total", "retracted", "unknown"),
+    arg_nm = "secondary_type"
+  )
+  accumulate <- .converter_bool_auto(accumulate, "accumulate")
+  complete <- .converter_bool_auto(complete, "complete")
+
+  report_units <- get_report_units(x)
+  revision_units <- get_revision_units(x)
+  stream_units <- unique(c(report_units, revision_units))
+  if (length(stream_units) != 1L) {
+    cli::cli_abort(c(
+      "{.fn EpiNow2::estimate_secondary} needs the report and revision streams \\
+       on the same time grid.",
+      "x" = "Got report units {.val {report_units}} and revision units \\
+             {.val {revision_units}}.",
+      "i" = "Aggregate or align the axes before converting."
+    ))
+  }
+
+  should_accumulate <- switch(accumulate,
+    "auto" = TRUE, "TRUE" = TRUE, "FALSE" = FALSE, TRUE
+  )
+  if (should_accumulate) .epinow2_step_days(stream_units)
+
+  incidence <- suppressWarnings(suppressMessages(
+    to_count(ungroup(x), to = "count-incidence")
+  ))
+  count_col <- get_case_count(incidence)
+  report_col <- get_report_date(incidence)
+  revision_col <- get_revision_date(incidence)
+  type_col <- get_revision_type(incidence)
+
+  primary <- dplyr::as_tibble(incidence) |>
+    dplyr::filter(!is.na(.data[[report_col]]), !is.na(.data[[count_col]])) |>
+    dplyr::summarise(
+      primary = sum(.data[[count_col]], na.rm = TRUE),
+      .by = dplyr::all_of(report_col)
+    ) |>
+    dplyr::rename(date = dplyr::all_of(report_col))
+
+  revised <- dplyr::as_tibble(incidence) |>
+    dplyr::filter(!is.na(.data[[revision_col]]), !is.na(.data[[count_col]]))
+
+  if (identical(secondary_type, "confirmed")) {
+    revised <- dplyr::filter(revised, !is.na(.data[[type_col]]), .data[[type_col]] == "confirmed")
+  } else if (identical(secondary_type, "retracted")) {
+    revised <- dplyr::filter(revised, !is.na(.data[[type_col]]), .data[[type_col]] == "retracted")
+  } else if (identical(secondary_type, "unknown")) {
+    revised <- dplyr::filter(revised, is.na(.data[[type_col]]))
+  }
+
+  secondary <- revised |>
+    dplyr::summarise(
+      secondary = sum(.data[[count_col]], na.rm = TRUE),
+      .by = dplyr::all_of(revision_col)
+    ) |>
+    dplyr::rename(date = dplyr::all_of(revision_col))
+
+  if (nrow(primary) == 0L) {
+    cli::cli_abort("No primary observations remain for {.fn EpiNow2::estimate_secondary}.")
+  }
+  if (nrow(secondary) == 0L) {
+    cli::cli_abort(c(
+      "No secondary observations remain for {.fn EpiNow2::estimate_secondary}.",
+      "i" = "No revised case matched {.code secondary_type = {.val {secondary_type}}}."
+    ))
+  }
+
+  series <- dplyr::full_join(primary, secondary, by = "date") |>
+    dplyr::mutate(
+      primary = tidyr::replace_na(.data$primary, 0),
+      secondary = tidyr::replace_na(.data$secondary, 0)
+    ) |>
+    dplyr::arrange(.data$date)
+
+  should_complete <- switch(complete,
+    "auto" = identical(get_data_type(x), "linelist"),
+    "TRUE" = TRUE,
+    "FALSE" = FALSE,
+    identical(get_data_type(x), "linelist")
+  )
+  if (should_complete) {
+    by <- if (identical(stream_units, "weeks")) "week" else "day"
+    date_grid <- tibble::tibble(
+      date = seq(min(series$date), max(series$date), by = by)
+    )
+    series <- dplyr::full_join(date_grid, series, by = "date") |>
+      dplyr::mutate(
+        primary = tidyr::replace_na(.data$primary, 0),
+        secondary = tidyr::replace_na(.data$secondary, 0)
+      ) |>
+      dplyr::arrange(.data$date)
+  }
+
+  .epinow2_warn_negative_stream(series, "primary")
+  .epinow2_warn_negative_stream(series, "secondary")
+  series$primary[series$primary < 0] <- 0
+  series$secondary[series$secondary < 0] <- 0
+
+  if (should_accumulate && !identical(stream_units, "days")) {
+    series <- as.data.frame(EpiNow2::fill_missing(
+      series,
+      missing_dates = "accumulate",
+      obs_column = "primary",
+      initial_accumulate = .epinow2_step_days(stream_units)
+    ))
+  }
+
+  if (verbose) {
+    cli::cli_h3("Converting {.cls tbl_now} for {.fn EpiNow2::estimate_secondary}")
+    cli::cli_ul()
+    cli::cli_li("primary <- reports by {.val {report_col}}")
+    cli::cli_li("secondary <- {.val {secondary_type}} revisions by {.val {revision_col}}")
+    cli::cli_li("grid: {.val {if (identical(stream_units, 'days')) 'daily' else
+                 paste0('daily, accumulated from ', stream_units)}}")
+    cli::cli_li("rows: {.val {nrow(series)}}")
+    cli::cli_end()
+  }
+
+  as.data.frame(series)
+}
+
+#' Warn and clamp negative EpiNow2 count streams
+#'
+#' @param series A data frame with count columns.
+#' @param column Column to check.
+#'
+#' @return `NULL`, invisibly.
+#'
+#' @keywords internal
+#' @noRd
+.epinow2_warn_negative_stream <- function(series, column) {
+  negative <- series[[column]] < 0
+  if (any(negative, na.rm = TRUE)) {
+    cli::cli_warn(c(
+      "{.fn EpiNow2::estimate_secondary}: {sum(negative, na.rm = TRUE)} \\
+       {.field {column}} date{?s} carr{?ies/y} a negative count after \\
+       de-accumulation; clamping to {.val 0}.",
+      "i" = "{.pkg EpiNow2}'s observation model cannot represent a negative \\
+             count. The downward revision is lost."
+    ))
+  }
+  invisible(NULL)
 }
 
 #' Build the date/confirm series (or snapshots) the count targets take
@@ -3533,12 +3753,15 @@ tbl_now_to_epidist <- function(x, ...,
       }
       cli::cli_end()
     }
-    return(do.call(
-      epidist::as_epidist_linelist_data,
-      c(list(epidist_data),
-        list(pdate_lwr = "pdate_lwr", pdate_upr = "pdate_upr",
-             sdate_lwr = "sdate_lwr", sdate_upr = "sdate_upr"),
-        list(...))
+    return(.epidist_quietly_if(
+      do.call(
+        epidist::as_epidist_linelist_data,
+        c(list(epidist_data),
+          list(pdate_lwr = "pdate_lwr", pdate_upr = "pdate_upr",
+               sdate_lwr = "sdate_lwr", sdate_upr = "sdate_upr"),
+          list(...))
+      ),
+      quiet
     ))
   }
 
@@ -3624,7 +3847,41 @@ tbl_now_to_epidist <- function(x, ...,
   } else {
     epidist::as_epidist_linelist_data
   }
-  do.call(constructor, c(list(epidist_data), constructor_args, list(...)))
+  .epidist_quietly_if(
+    do.call(constructor, c(list(epidist_data), constructor_args, list(...))),
+    quiet
+  )
+}
+
+#' Quietly evaluate an epidist constructor when the user asked for `quiet`
+#'
+#' `epidist::as_epidist_linelist_data()` (and the aggregate constructor) emit
+#' several `cli::cli_inform()` bullets on every call -- "No primary event upper
+#' bound provided, using ...", "No observation time column provided, using ..."
+#' -- that are informational at best and are noise in a `verbose = FALSE,
+#' quiet = TRUE` call, especially inside the test suite. The `quiet` argument
+#' on `tbl_now_to_epidist()` promised to suppress them; this helper makes it so.
+#'
+#' `quiet` is intentionally distinct from the converter's `verbose`. `verbose`
+#' controls the informational summary of what the conversion did (a
+#' user-facing report tbl.now itself emits), while `quiet` controls whether
+#' epidist's own chatter comes with it.
+#'
+#' Warnings are NOT suppressed. If epidist has something material to say about
+#' the constructor's input, it must reach the caller.
+#'
+#' @param expr An expression that calls an epidist constructor.
+#' @param quiet Logical. When `TRUE`, epidist messages are suppressed.
+#'
+#' @return The value of `expr`.
+#'
+#' @keywords internal
+#' @noRd
+.epidist_quietly_if <- function(expr, quiet) {
+  if (isTRUE(quiet)) {
+    return(suppressMessages(force(expr)))
+  }
+  force(expr)
 }
 
 #' @rdname tbl_now_tsibble

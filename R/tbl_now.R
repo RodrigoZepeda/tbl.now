@@ -629,13 +629,14 @@ tbl_now <- function(data,
     force = force
   )
 
-  # `.revision_num` sits on the SAME anchor as `.event_num`/`.report_num`
-  # (the earliest event date), so the three are directly comparable, and
-  # `.revision_delay` is the report-to-resolution time.
+  # `.revision_num` sits on the same anchor as `.event_num`/`.report_num`, while
+  # `.revision_delay` is computed directly from report to resolution in revision
+  # units.  Subtracting `.report_num` only works when all axes use the same units.
   if (!is.null(revision_date)) {
     data <- .add_revision_num(
       data,
-      event_date = event_date, revision_date = revision_date,
+      event_date = event_date, report_date = report_date,
+      revision_date = revision_date,
       revision_units = revision_units, force = force
     )
   }

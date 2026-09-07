@@ -104,7 +104,19 @@ test_that("weights are revised", {
 
   expect_error(nowcast_ensemble(a, b, weights = c(0.5), verbose = FALSE), "length")
   expect_error(nowcast_ensemble(a, b, weights = c(a = 1, c = 1), verbose = FALSE), "no entry")
+  expect_error(
+    nowcast_ensemble(a, b, weights = c(a = 1, b = 1, c = 1), verbose = FALSE),
+    "unknown"
+  )
+  expect_error(
+    nowcast_ensemble(a, b, weights = c(a = 1, a = 1, b = 1), verbose = FALSE),
+    "duplicated"
+  )
   expect_error(nowcast_ensemble(a, b, weights = c(-1, 2), verbose = FALSE), "non-negative")
+  expect_error(nowcast_ensemble(a, b, weights = c(NA, 1), verbose = FALSE), "finite")
+  expect_error(nowcast_ensemble(a, b, weights = c(NaN, 1), verbose = FALSE), "finite")
+  expect_error(nowcast_ensemble(a, b, weights = c(Inf, 1), verbose = FALSE), "finite")
+  expect_error(nowcast_ensemble(a, b, weights = c(-Inf, 1), verbose = FALSE), "finite")
   expect_error(nowcast_ensemble(a, b, weights = c(0, 0), verbose = FALSE), "sum to zero")
   expect_error(
     nowcast_ensemble(a, b, weights = "inverse_score", verbose = FALSE),
@@ -169,6 +181,21 @@ test_that("the linear pool needs draws and produces them", {
   expect_true(all(median$.value > 10 & median$.value < 20))
 })
 
+test_that("the linear pool validates n_draws", {
+  b <- fake_draws_nowcast("b", 10)
+  c_member <- fake_draws_nowcast("c", 20)
+
+  for (n_draws in list(0, -1, NA_real_, Inf, c(10, 20), 2.5)) {
+    expect_error(
+      nowcast_ensemble(
+        b, c_member, type = "linear_pool",
+        n_draws = n_draws, verbose = FALSE
+      ),
+      "n_draws"
+    )
+  }
+})
+
 test_that("the linear pool splits draws according to the weights", {
   b <- fake_draws_nowcast("b", 10)
   c_member <- fake_draws_nowcast("c", 20)
@@ -200,6 +227,38 @@ test_that("differing now dates warn but still combine", {
   b@now <- as.Date("2020-01-20")
 
   expect_warning(nowcast_ensemble(a, b, verbose = FALSE), "different")
+})
+
+test_that("duplicate member prediction keys are refused", {
+  duplicate <- dplyr::bind_rows(
+    tidyr::expand_grid(
+      event_date = as.Date("2020-01-06"),
+      .quantile_level = 0.5
+    ) |>
+      dplyr::mutate(.value = 0),
+    tidyr::expand_grid(
+      event_date = as.Date("2020-01-06"),
+      .quantile_level = 0.5
+    ) |>
+      dplyr::mutate(.value = 100)
+  )
+  a <- tbl_nowcast(
+    predictions = duplicate, method = "a", event_date = "event_date"
+  )
+  b <- fake_nowcast("b", 1, levels = 0.5, dates = as.Date("2020-01-06"))
+
+  expect_error(nowcast_ensemble(a, b, verbose = FALSE), "duplicate")
+})
+
+test_that("duplicate member draw keys are refused", {
+  a <- fake_draws_nowcast("a", 10, dates = as.Date("2020-01-06"))
+  b <- fake_draws_nowcast("b", 20, dates = as.Date("2020-01-06"))
+  b@draws <- dplyr::bind_rows(b@draws, dplyr::slice(b@draws, 1))
+
+  expect_error(
+    nowcast_ensemble(a, b, type = "linear_pool", verbose = FALSE),
+    "duplicate"
+  )
 })
 
 # The invariants ------------------------------------------------------------

@@ -643,22 +643,30 @@ test_that("validate_tbl_now() keeps warn_non_uniqueness off by default", {
   )
   # diagnose() defaults it the other way round.
   expect_equal(
-    as.character(finding(diagnose(ndata), "duplicates", "key")$status), "warning"
+    as.character(
+      finding(quiet_messages(diagnose(ndata)), "duplicates", "key")$status
+    ),
+    "warning"
   )
 })
 
 test_that("validate_tbl_now() reports the same-column case as a message", {
   frame <- clean_frame()
-  ndata <- suppressWarnings(tbl_now(frame,
+  ndata <- quiet_messages(suppressWarnings(tbl_now(frame,
     event_date = "onset", report_date = "onset", case_count = "n",
     data_type = "count-incidence", now = as.Date("2024-01-05"), verbose = FALSE
-  ))
+  )))
 
   # A message, not a warning: it has always been one, and promoting it would
   # change what tbl_now() does on data it has always accepted.
-  expect_message(validate_tbl_now(ndata), "same")
+  expect_message_quietly(validate_tbl_now(ndata), "same")
   expect_equal(
-    as.character(finding(diagnose(ndata), "declarations", "same_columns")$status),
+    as.character(
+      finding(
+        quiet_messages(diagnose(ndata)),
+        "declarations", "same_columns"
+      )$status
+    ),
     "note"
   )
 })
@@ -671,7 +679,9 @@ test_that("validate_tbl_now() does not emit the notes diagnose() adds", {
 
   expect_silent(validate_tbl_now(ndata))
   expect_equal(
-    as.character(finding(diagnose(ndata), "declarations", "undeclared")$status),
+    as.character(
+      finding(quiet_messages(diagnose(ndata)), "declarations", "undeclared")$status
+    ),
     "note"
   )
 })

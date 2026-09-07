@@ -1004,23 +1004,23 @@ test_that("test dropping delay column", {
   skip_on_cran()
   test_data <- setup_test_data()
 
-  expect_warning(
+  quiet_messages(expect_warning(
     test_data$ndata |>
       dplyr::select(-.delay),
     "Dropped protected column"
-  )
+  ))
 })
 
 test_that("test dropping count column", {
   skip_on_cran()
   test_data <- setup_test_data()
 
-  expect_warning(
+  quiet_messages(expect_warning(
     test_data$ndata |>
       to_count(to = "count-incidence") |>
       dplyr::select(-n),
     "Drop"
-  )
+  ))
 })
 
 # Tests for select ----
@@ -1295,9 +1295,9 @@ test_that("date-column rebuilds preserve grouping", {
 test_that("renaming protected generated columns demotes without stale attributes", {
   x <- add_revision_date_fixture(demotion_fixture())
 
-  demoted <- suppressWarnings(
+  demoted <- quiet_messages(suppressWarnings(
     dplyr::rename(x, delay_num = .delay)
-  )
+  ))
 
   expect_false(is_tbl_now(demoted))
   expect_s3_class(demoted, "tbl_df")

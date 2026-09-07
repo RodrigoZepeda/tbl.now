@@ -44,7 +44,7 @@
 #' @seealso
 #' [engine()], whose `quantile_levels` argument this is the default for;
 #' [run_nowcast()] and [nowcast_backtest()], which report at these levels;
-#' [score_nowcast()] and [as_scoringutils()], which score them.
+#' [score_nowcast()] and [as_forecast_point()], which score them.
 #'
 #' @examples
 #' nowcast_quantile_levels()

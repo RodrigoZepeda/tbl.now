@@ -279,6 +279,7 @@ test_that("tidy() reports NA level for NobBS and lets the caller set it", {
 test_that("tbl.now's diseasenowcasting tidy matches the one it replaces", {
   skip_on_cran()
   skip_if_not_installed("diseasenowcasting")
+  dnc_nowcast <- getExportedValue("diseasenowcasting", "nowcast")
   # diseasenowcasting 2.1.0 still owns the registered method, so `tidy()`
   # dispatches to theirs; 2.2.0 removes it and `.onLoad()` then registers this
   # one. Call ours directly and check the handover is not a behaviour change.
@@ -295,7 +296,7 @@ test_that("tbl.now's diseasenowcasting tidy matches the one it replaces", {
     strata = "sex", data_type = "linelist", verbose = FALSE
   )
   fit <- suppressWarnings(suppressMessages(
-    diseasenowcasting::nowcast(x, seed = 42L)
+    dnc_nowcast(x, seed = 42L)
   ))
   prediction <- suppressWarnings(suppressMessages(stats::predict(fit)))
 
@@ -321,6 +322,7 @@ test_that("tbl.now's diseasenowcasting tidy matches the one it replaces", {
 test_that("the diseasenowcasting tidy takes `level`, and refuses `conf.level`", {
   skip_on_cran()
   skip_if_not_installed("diseasenowcasting")
+  dnc_nowcast <- getExportedValue("diseasenowcasting", "nowcast")
   data(denguedat, envir = environment())
   d <- denguedat |>
     dplyr::filter(
@@ -333,7 +335,7 @@ test_that("the diseasenowcasting tidy takes `level`, and refuses `conf.level`", 
     data_type = "linelist", verbose = FALSE
   )
   prediction <- suppressWarnings(suppressMessages(
-    stats::predict(diseasenowcasting::nowcast(x, seed = 42L))
+    stats::predict(dnc_nowcast(x, seed = 42L))
   ))
 
   expect_equal(

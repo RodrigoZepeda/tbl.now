@@ -70,6 +70,11 @@
       envir = asNamespace("scoringutils")
     )
     registerS3method(
+      "as_forecast_point", "tbl.now::tbl_nowcast",
+      as_forecast_point_tbl_nowcast,
+      envir = asNamespace("scoringutils")
+    )
+    registerS3method(
       "as_forecast_sample", "tbl.now::tbl_nowcast",
       as_forecast_sample_tbl_nowcast,
       envir = asNamespace("scoringutils")

@@ -67,6 +67,13 @@ routinely better calibrated than any of their members, and because
 \code{\link[=run_nowcast]{run_nowcast()}} puts every backend on the same tidy footing, combining them
 needs no reshaping on your side.
 }
+\details{
+An ensemble assumes that all members predict the same epidemiological
+quantity. The target dates, strata and quantile levels are checked here, but
+reporting-versus-revision semantics are currently a modelling convention:
+combine members that target the same quantity, and score the result with the
+matching \code{truth_axis} and \code{truth_type} in \code{\link[=score_nowcast]{score_nowcast()}}.
+}
 \examples{
 toy <- function(method, shift) {
   predictions <- data.frame(

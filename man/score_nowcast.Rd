@@ -2,8 +2,9 @@
 % Please edit documentation in R/nowcast_score.R
 \name{score_nowcast}
 \alias{score_nowcast}
-\alias{as_scoringutils}
+\alias{as_forecast_point}
 \alias{as_forecast_quantile.nowcast_backtest}
+\alias{as_forecast_point.nowcast_backtest}
 \alias{as_forecast_sample.nowcast_backtest}
 \title{Score a nowcast against observed data}
 \usage{
@@ -14,14 +15,23 @@ score_nowcast(
   truth_type = "total"
 )
 
-as_scoringutils(
+as_forecast_point(
   x,
+  truth = NULL,
+  truth_axis = c("report", "revision"),
+  truth_type = "total",
+  ...
+)
+
+\method{as_forecast_quantile}{nowcast_backtest}(
+  data,
+  ...,
   truth = NULL,
   truth_axis = c("report", "revision"),
   truth_type = "total"
 )
 
-\method{as_forecast_quantile}{nowcast_backtest}(
+\method{as_forecast_point}{nowcast_backtest}(
   data,
   ...,
   truth = NULL,
@@ -38,16 +48,15 @@ as_scoringutils(
 )
 }
 \arguments{
-\item{x}{For \code{score_nowcast()}, a \link{tbl_nowcast}. For \code{as_scoringutils()}, a
+\item{x}{For \code{score_nowcast()}, a \link{tbl_nowcast}. For \code{as_forecast_point()}, a
 \link{tbl_nowcast} (including an ensemble) or a \code{\link[=nowcast_backtest]{nowcast_backtest()}}.}
 
 \item{truth}{The \code{tbl_now} the nowcast is scored against -- normally the
-\emph{full} object, still holding the reports that arrived after the nowcast's
-\code{now}. Its eventual counts per event date are worked out for you: this is
-\code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}}, aggregated over anything that is not a
-stratum, with the count column read off the object
-(\code{\link[=get_case_count]{get_case_count()}}). A \strong{line list} is aggregated first, so it needs no
-special handling.
+\emph{full} object, still holding the reports or revisions that arrived after
+the nowcast's \code{now}. Its observed counts per event date are worked out from
+\code{truth_axis} and \code{truth_type}, aggregated over anything that is not a
+stratum, with the count column read off the object (\code{\link[=get_case_count]{get_case_count()}}). A
+\strong{line list} is aggregated first, so it needs no special handling.
 
 For a single nowcast, \code{NULL} (default) uses the \code{tbl_now} it was built from,
 which is only meaningful when that object still holds the later reports.
@@ -64,32 +73,31 @@ types such as \code{"confirmed"}, \code{"retracted"}, \code{"pending"}, \code{"u
 \code{\link[=get_latest_revised_cases]{get_latest_revised_cases()}}. \code{"by_type"} is refused because scoring needs
 one observed value per event-date/stratum target.}
 
-\item{data}{A \code{\link[=nowcast_backtest]{nowcast_backtest()}}.}
-
 \item{...}{Passed to the corresponding \pkg{scoringutils} coercion generic,
 most commonly \code{forecast_unit}.}
+
+\item{data}{A \code{\link[=nowcast_backtest]{nowcast_backtest()}}.}
 }
 \value{
 \code{score_nowcast()} returns a \code{tibble} with the event-date column, the strata
 columns, and the columns \code{.observed}, \code{wis}, \code{ae_median}, \code{coverage_50} and
 \code{coverage_90} -- one row per event date and stratum.
 
-\code{as_scoringutils()} accepts either a single \link{tbl_nowcast} (including one
+\code{as_forecast_point()} accepts either a single \link{tbl_nowcast} (including one
 returned by \code{\link[=nowcast_ensemble]{nowcast_ensemble()}}) or a \code{\link[=nowcast_backtest]{nowcast_backtest()}}. It returns a
-long \code{tibble} with the columns \code{observed}, \code{predicted}, \code{quantile_level} and
-\code{model}, plus the event date and strata as forecast units. A backtest also
-carries \code{now}, because the same target was predicted retrospectively at more
-than one date. There is one row per quantile, ready for
-\code{scoringutils::as_forecast_quantile()}.
+\code{forecast_point} object from \pkg{scoringutils}, using the nowcast's median
+quantile as \code{predicted} and the resolved truth as \code{observed}.
 
-The two \verb{scoringutils::as_forecast_*()} methods return the corresponding
-\code{forecast_quantile} or \code{forecast_sample} object from \pkg{scoringutils}.
+The \verb{scoringutils::as_forecast_*()} methods return the corresponding
+\code{forecast_quantile}, \code{forecast_sample} or \code{forecast_point} object from
+\pkg{scoringutils}.
 
 When \pkg{scoringutils} is installed, calling its coercion generic directly
-is equivalent: \code{scoringutils::as_forecast_quantile(x, truth = truth)} works
-for a \link{tbl_nowcast}, an ensemble, and a \code{\link[=nowcast_backtest]{nowcast_backtest()}}. A backtest
-already carries the truth it was scored against, so its \code{truth} can normally
-be omitted.
+is equivalent: \code{scoringutils::as_forecast_quantile(x, truth = truth)} and
+\code{scoringutils::as_forecast_point(x, truth = truth)} work for a
+\link{tbl_nowcast}, an ensemble, and a \code{\link[=nowcast_backtest]{nowcast_backtest()}}. A backtest already
+carries the truth it was scored against, so its \code{truth} can normally be
+omitted.
 
 \code{\link[scoringutils:as_forecast_sample]{scoringutils::as_forecast_sample()}} also accepts those objects when they
 carry posterior draws. Draws are retained by a \code{linear_pool} ensemble, but
@@ -100,21 +108,24 @@ not by a quantile ensemble. A backtest retains them only when run with
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 A nowcast is a claim about numbers that are not in yet. Once the late reports
-arrive you can ask how good the claim was, and these two functions are the two
-ways of asking.
+arrive you can ask how good the claim was.
 \itemize{
 \item \code{score_nowcast()} scores it here: the \strong{weighted interval score} (WIS,
 lower is better), the absolute error of the median, and whether the truth
 fell inside the 50\% and 90\% intervals -- one row per event date and stratum.
-\item \code{as_scoringutils()} hands the same comparison to \pkg{scoringutils}, in the
-long format that package expects, so you can use its full battery of scores
-and its plots.
+\item \code{as_forecast_point()} hands the median prediction and the same truth to
+\pkg{scoringutils}, so you can use its point-score functions and plots.
+\item \code{scoringutils::as_forecast_quantile()} and
+\code{scoringutils::as_forecast_sample()} also accept these objects directly
+when \pkg{scoringutils} is installed.
 }
 
-In both cases \code{truth} is a \code{tbl_now} seen \emph{later}, once the reports the
-nowcast was predicting have actually arrived. The observed counts are read
-from it with \link[=get_latest_first]{get_latest_reported_cases()}, so there is no
-column to name.
+In each case \code{truth} is a \code{tbl_now} seen \emph{later}, after the information the
+nowcast was predicting has arrived. The observed counts are computed from
+\code{truth_axis} and \code{truth_type}: by default this is
+\link[=get_latest_first]{get_latest_reported_cases()} with \code{type = "total"}, while
+\code{truth_axis = "revision"} uses \code{\link[=get_latest_revised_cases]{get_latest_revised_cases()}}. There is no
+observed column to name; the count column is read from the \code{tbl_now}.
 }
 \examples{
 # A nowcast and the truth it should be judged against. Both are built by
@@ -146,8 +157,10 @@ nc <- tbl_nowcast(predictions = preds, method = "toy", event_date = "onset")
 # the 50\% interval, which it should about half the time.
 score_nowcast(nc, truth = truth)
 
-# The same comparison handed to scoringutils instead, one row per quantile.
-head(as_scoringutils(nc, truth = truth))
+# The same comparison handed to scoringutils as a point forecast.
+if (requireNamespace("scoringutils", quietly = TRUE)) {
+  as_forecast_point(nc, truth = truth)
+}
 
 # With a real model, `truth` is the full object and the nowcast is fitted to
 # a snapshot of it taken at an earlier `now`.

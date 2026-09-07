@@ -125,8 +125,13 @@ test_that("the line-list back-ends translate units into their own vocabulary", {
   # `verbose = TRUE` writes through cli, i.e. to the MESSAGE stream, so the
   # messages must not be suppressed here -- only the (unrelated) warnings.
   units_line <- function(x, fn) {
-    msg <- capture.output(
-      invisible(suppressWarnings(get(fn)(x, verbose = TRUE))), type = "message"
+    msg <- character(0)
+    withCallingHandlers(
+      invisible(suppressWarnings(get(fn)(x, verbose = TRUE))),
+      message = function(cnd) {
+        msg <<- c(msg, conditionMessage(cnd))
+        rlang::cnd_muffle(cnd)
+      }
     )
     grep("units|aggregate", msg, value = TRUE)
   }

@@ -130,7 +130,7 @@ test_that("update_now() does not mask -- a revision is an observation", {
 test_that("masking reports what it did, and `verbose = FALSE` silences it", {
   flu <- revision_fixture()
 
-  expect_message(
+  expect_message_quietly(
     suppressWarnings(change_now(flu, as.Date("2021-01-10"))),
     "Returned 7 revisions"
   )

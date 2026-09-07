@@ -10,8 +10,9 @@ tbl_now_to_EpiNow2(
   x,
   ...,
   target = c("estimate_infections", "regional_epinow", "estimate_truncation",
-    "estimate_dist"),
+    "estimate_secondary", "estimate_dist"),
   snapshots = NULL,
+  secondary_type = c("confirmed", "total", "retracted", "unknown"),
   accumulate = "auto",
   complete = "auto",
   verbose = TRUE,
@@ -31,6 +32,12 @@ tbl_now_from_EpiNow2(data, ..., report_dates = NULL, verbose = TRUE)
 taken from the \strong{latest} report dates. \code{NULL} (default) uses 5, matching
 \code{EpiNow2::example_truncated}. One snapshot per distinct report date is
 usually far more than the model can fit.}
+
+\item{secondary_type}{For \code{"estimate_secondary"}: which revision outcomes to
+count in the \code{secondary} stream. One of \code{"confirmed"} (default), \code{"total"},
+\code{"retracted"} or \code{"unknown"}. Pending cases are not on the revision axis,
+and \code{"net"} can be negative, which \code{EpiNow2::estimate_secondary()} cannot
+represent as a count stream.}
 
 \item{accumulate}{How to handle non-daily data. \code{"auto"} (default) lays a
 weekly series on \pkg{EpiNow2}'s daily grid with an \code{accumulate} column;
@@ -70,7 +77,7 @@ For \code{to}, a \code{data.frame} or a \link{tbl_now_epinow2_snapshots}, accord
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-\pkg{EpiNow2} takes four different input shapes, one per entry point, so
+\pkg{EpiNow2} takes several different input shapes, one per entry point, so
 \code{tbl_now_to_EpiNow2()} is told which one you want with \code{target} -- named after
 the \pkg{EpiNow2} function the result is passed to, so it can be handed over
 unchanged:
@@ -83,6 +90,10 @@ object's strata.}
 \item{\code{"estimate_truncation"}}{a \link{tbl_now_epinow2_snapshots} list -- one
 \code{date}/\code{confirm} snapshot per report date, which is the one \pkg{EpiNow2}
 model that uses the report dimension a \code{tbl_now} exists to carry.}
+\item{\code{"estimate_secondary"}}{a \code{data.frame} of \code{date} / \code{primary} /
+\code{secondary}, where \code{primary} counts reported arrivals by \code{report_date}
+and \code{secondary} counts resolved revisions by \code{revision_date}, filtered by
+\code{secondary_type}.}
 \item{\code{"estimate_dist"}}{the interval-censored \code{pdate_lwr} / \code{pdate_upr} /
 \code{sdate_lwr} / \code{sdate_upr} / \code{obs_date} frame that
 \code{\link[EpiNow2:estimate_dist]{EpiNow2::estimate_dist()}} fits a \strong{delay distribution} to (new in
@@ -92,8 +103,8 @@ model that uses the report dimension a \code{tbl_now} exists to carry.}
 \code{tbl_now_from_EpiNow2()} inverts the snapshot form: snapshot \emph{k} is the series
 as known at report date \emph{k}, so differencing consecutive snapshots recovers
 \code{count-incidence} exactly. There is deliberately \strong{no} inverse for the other
-three: a single series has no report dimension to recover, and a delay
-distribution is not case data.
+targets: a single series has no report dimension to recover, a secondary
+stream is already aggregated, and a delay distribution is not case data.
 }
 \section{Non-daily data}{
 
@@ -107,16 +118,15 @@ fast.
 Its own answer is the \code{accumulate} column (see \code{\link[EpiNow2:fill_missing]{EpiNow2::fill_missing()}}): the
 series is laid on a daily grid and the filler days are marked to be added to
 the next real observation. \code{accumulate = "auto"} does this from
-\code{\link[=get_event_units]{get_event_units()}}. Units coarser than a week, and the \code{"numeric"} grid, are
-refused outright rather than approximated.
+\code{\link[=get_event_units]{get_event_units()}} for case-count targets, and from the shared
+\code{report_units} / \code{revision_units} grid for \code{estimate_secondary}. Units
+coarser than a week, and the \code{"numeric"} grid, are refused outright rather
+than approximated.
 }
 
 \section{What EpiNow2 will not take}{
 
 \itemize{
-\item \code{\link[EpiNow2:estimate_secondary]{EpiNow2::estimate_secondary()}} models \strong{two} data streams (cases and
-deaths, say) against each other. One \code{tbl_now} is one stream, so there is no
-honest mapping and no target for it.
 \item \code{\link[EpiNow2:estimate_delay]{EpiNow2::estimate_delay()}} takes a bare vector of delays. Its own help now
 points at \code{estimate_dist()} as "the recommended replacement", and it throws
 away the censoring a \code{tbl_now} carries, so there is no target for it either.

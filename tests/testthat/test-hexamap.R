@@ -37,7 +37,7 @@ test_that("max_delay caps the delay axis", {
 test_that("the max_cells guard bounds the number of points", {
   tn <- make_hex_tbl()
   # a tiny cap must trigger the informational message and still build
-  expect_message(
+  expect_message_quietly(
     p <- plot_reporting_hexamap(tn, complete = TRUE, max_cells = 200L),
     "Capped the delay axis"
   )
@@ -51,6 +51,50 @@ test_that("size and shape reach the point layer", {
   big <- mark_layer(plot_reporting_hexamap(tn, size = 4, shape = 15))
   expect_equal(unique(big$size), 4)
   expect_equal(unique(big$shape), 15)
+})
+
+test_that("revision hexamaps use revision units for their arrival grid", {
+  tn <- suppressWarnings(tbl_now(
+    data.frame(
+      event_date = as.Date("2024-01-01") + 0:5,
+      report_date = as.Date("2024-01-02") + 7 * (0:5),
+      revision_date = as.Date("2024-01-09") + 7 * (0:5),
+      outcome = "confirmed"
+    ),
+    event_date, report_date,
+    revision_date = revision_date, revision_type = outcome,
+    event_units = "days", report_units = "weeks", revision_units = "weeks",
+    data_type = "linelist", verbose = FALSE
+  ))
+
+  p <- plot_reporting_hexamap(tn, axis = "revision")
+  expect_equal(p$labels$title, "Revision hexamap")
+
+  marks <- mark_layer(p)
+  # Consecutive weekly revision arrivals should be one lattice step apart on the
+  # period axis: sqrt(3) / 2 in the Jalal-Burke projection, not seven daily
+  # steps.
+  expect_equal(diff(sort(unique(marks$x))), rep(sqrt(3) / 2, 5), tolerance = 1e-8)
+})
+
+test_that("hexamap axis titles stay outside the plotted lattice", {
+  tn <- make_hex_tbl()
+  p <- plot_reporting_hexamap(tn, text_size = 3.5)
+  build <- ggplot2::ggplot_build(p)$data
+  marks <- mark_layer(p)
+  title_layers <- build[vapply(build, function(layer) {
+    "label" %in% names(layer) && any(layer$label %in% c("Event date", "Report date", "Delay"))
+  }, logical(1))]
+
+  titles <- dplyr::bind_rows(title_layers)
+  event_title <- titles[titles$label == "Event date", ]
+  report_title <- titles[titles$label == "Report date", ]
+  delay_title <- titles[titles$label == "Delay", ]
+
+  expect_lt(event_title$y, min(marks$y))
+  expect_equal(event_title$angle, 0)
+  expect_gt(report_title$y, max(marks$y))
+  expect_gt(delay_title$x, max(marks$x))
 })
 
 test_that("the grid line widths are settable and independent", {

@@ -163,7 +163,7 @@ test_that("line lists are left alone: one row is already one case", {
 test_that("the pooling is announced under verbose and silent otherwise", {
   x <- pooled_fixture()
 
-  expect_message(
+  expect_message_quietly(
     tbl.now:::.pool_undeclared(x, "tbl_now_to_baselinenowcast", verbose = TRUE),
     "sex"
   )

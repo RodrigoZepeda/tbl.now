@@ -5,6 +5,43 @@
 # exist so that testing `run_nowcast()`, scoring, backtesting and ensembling
 # never needs Stan, JAGS or INLA -- and never needs an MCMC run to finish.
 
+expect_message_quietly <- function(object, regexp, ...) {
+  messages <- character()
+  expr <- substitute(object)
+  env <- parent.frame()
+  out <- NULL
+
+  utils::capture.output(
+    utils::capture.output(
+      out <- withCallingHandlers(
+        eval(expr, env),
+        message = function(cnd) {
+          messages <<- c(messages, conditionMessage(cnd))
+          invokeRestart("muffleMessage")
+        }
+      ),
+      type = "message"
+    )
+  )
+
+  testthat::expect_true(
+    any(grepl(regexp, messages, ...)),
+    info = paste0("Expected message matching: ", regexp)
+  )
+  invisible(out)
+}
+
+quiet_messages <- function(expr) {
+  out <- NULL
+  utils::capture.output(
+    utils::capture.output(
+      out <- suppressMessages(force(expr)),
+      type = "message"
+    )
+  )
+  invisible(out)
+}
+
 # A deliberately controllable backend: predict the eventual counts, offset by
 # `bias` and spread by `spread`, so a "good" and a "bad" model differ by one
 # argument.
@@ -146,10 +183,10 @@ score_tbl_now_strata <- function() {
 
 #' A `tbl_now` whose eventual counts are exactly `counts`
 #'
-#' `score_nowcast()` and `as_scoringutils()` take the truth as a `tbl_now` and
-#' read the observed column off it -- there is no `observed_col` to hand them a
-#' bare data frame with. One report per event date, all at delay zero, so
-#' `get_latest_reported_cases()` gives back `counts` unchanged.
+#' `score_nowcast()` and the scoringutils coercion helpers take the truth as a
+#' `tbl_now` and read the observed column off it -- there is no `observed_col`
+#' to hand them a bare data frame with. One report per event date, all at delay
+#' zero, so `get_latest_reported_cases()` gives back `counts` unchanged.
 truth_tbl_now <- function(dates, counts, event_col = "event_date",
                           units = "days") {
   data <- data.frame(ev = dates, rp = dates, n = as.numeric(counts))

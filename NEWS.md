@@ -1,4 +1,44 @@
-# tbl.now 0.33.1
+# tbl.now 0.34.0
+
+## Documentation clarifies scoring, covariates and article endings
+
+The documentation now states that scoring and backtests use the resolved truth
+defined by `truth_axis` and `truth_type`, rather than an ambiguous "eventual"
+quantity. It also makes the covariate as-of rule explicit: covariates used in a
+fit or backtest snapshot should be values available at that snapshot's `now`.
+
+The introductory and custom-model vignettes now end with the shared
+`learning-more` fragment, and the ensemble article places its References header
+before that final fragment.
+
+## `as_forecast_point()` exposes scoringutils point forecasts
+
+`as_forecast_point()` now converts a `tbl_nowcast`, ensemble or
+`nowcast_backtest()` to a `scoringutils` point forecast using the median
+prediction. The old `as_scoringutils()` quantile-frame helper is now internal;
+use `scoringutils::as_forecast_quantile()` directly for quantile scoring.
+
+## Reporting hexamap labels are more robust
+
+`plot_reporting_hexamap()` now keeps its custom event, report and delay labels
+outside the plotted lattice with range-aware spacing, so axis titles are less
+likely to overlap tick labels or data marks when article or user figure sizes
+change.
+
+Revision-axis hexamaps now use `revision_units` for their arrival grid instead
+of always using `report_units`.
+
+## Ensemble validation is stricter
+
+`nowcast_ensemble()` now rejects non-finite fixed weights, duplicated or
+unknown weight names, duplicate prediction/draw keys inside a member, and
+invalid `n_draws` values before doing ensemble arithmetic. These inputs
+previously led to low-level errors, silently ignored weights, or ensemble
+predictions whose values were `NA`.
+
+The ensemble documentation now states that members are assumed to target the
+same reporting or revision quantity, and that the result should be scored with
+the matching `truth_axis` and `truth_type`.
 
 ## Autoplot can show revision-date calendar effects
 

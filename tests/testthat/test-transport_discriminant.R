@@ -25,7 +25,7 @@ make_td_tbl <- function(with_batch = TRUE, seed = 1L) {
 }
 
 test_that("transport_discriminant() returns the documented columns and class", {
-  td <- suppressWarnings(transport_discriminant(make_td_tbl()$tbl))
+  td <- quiet_messages(suppressWarnings(transport_discriminant(make_td_tbl()$tbl)))
   expect_s3_class(td, "transport_discriminant")
   expect_true(all(c(
     "report_date", "stratum", "reported", "baseline", "window_total", "spike",
@@ -37,7 +37,7 @@ test_that("transport_discriminant() returns the documented columns and class", {
 test_that("a transport discriminant auto-prints through its own formatter", {
   # See the twin test in test-batch_screen.R: `capture.output(x)` auto-prints,
   # and the method has to be registered on `base::print` to be found at all.
-  td  <- suppressWarnings(transport_discriminant(make_td_tbl()$tbl))
+  td  <- quiet_messages(suppressWarnings(transport_discriminant(make_td_tbl()$tbl)))
   out <- capture.output(td)
 
   # Only the formatter emits this header; the default tibble print does not.
@@ -49,7 +49,7 @@ test_that("a transport discriminant auto-prints through its own formatter", {
 
 test_that("a planted transport batch scores high on transport, not creation", {
   fixture <- make_td_tbl()
-  td      <- suppressWarnings(transport_discriminant(fixture$tbl))
+  td      <- quiet_messages(suppressWarnings(transport_discriminant(fixture$tbl)))
 
   expect_gte(sum(td$batch, na.rm = TRUE), 1L)     # the release is recovered
   flagged <- td[td$batch %in% TRUE, ]
@@ -62,8 +62,10 @@ test_that("a planted transport batch scores high on transport, not creation", {
 
 test_that("planting a batch flags a release date that clean data does not", {
   fixture <- make_td_tbl(with_batch = TRUE)
-  batched <- suppressWarnings(transport_discriminant(fixture$tbl))
-  clean   <- suppressWarnings(transport_discriminant(make_td_tbl(with_batch = FALSE)$tbl))
+  batched <- quiet_messages(suppressWarnings(transport_discriminant(fixture$tbl)))
+  clean   <- quiet_messages(suppressWarnings(
+    transport_discriminant(make_td_tbl(with_batch = FALSE)$tbl)
+  ))
 
   release <- fixture$batch_date
   expect_true(batched$batch[batched$report_date == release])
@@ -72,8 +74,10 @@ test_that("planting a batch flags a release date that clean data does not", {
 
 test_that("the flags agree with diagnose_batches()'s robust null", {
   fixture <- make_td_tbl()
-  td <- suppressWarnings(transport_discriminant(fixture$tbl))
-  bs <- suppressWarnings(diagnose_batches(fixture$tbl, null_model = "robust"))
+  td <- quiet_messages(suppressWarnings(transport_discriminant(fixture$tbl)))
+  bs <- quiet_messages(suppressWarnings(
+    diagnose_batches(fixture$tbl, null_model = "robust")
+  ))
   expect_equal(sum(td$batch, na.rm = TRUE), sum(bs$batch, na.rm = TRUE))
 })
 
@@ -85,13 +89,13 @@ test_that("transport_discriminant() validates its inputs", {
 })
 
 test_that("print returns the object invisibly", {
-  td <- suppressWarnings(transport_discriminant(make_td_tbl()$tbl))
+  td <- quiet_messages(suppressWarnings(transport_discriminant(make_td_tbl()$tbl)))
   expect_output(print(td), "A tibble")
-  expect_invisible(print(td))
+  utils::capture.output(expect_invisible(print(td)))
 })
 
 test_that("a discriminant subset past its own columns prints as a tibble", {
-  td <- suppressWarnings(transport_discriminant(make_td_tbl()$tbl))
+  td <- quiet_messages(suppressWarnings(transport_discriminant(make_td_tbl()$tbl)))
 
   # The twin of the `diagnose_batches` case: without the demotion the header
   # counted "0 batches and 0 surges" off columns that were no longer there.

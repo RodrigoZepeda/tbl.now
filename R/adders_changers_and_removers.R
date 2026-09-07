@@ -134,6 +134,8 @@
 #' ## ---- Covariates behave the same way ---------------------------------
 #'
 #' # Covariates influence the nowcast but are not of interest in themselves.
+#' # They should be values known at the fitted object's `now`; do not let
+#' # future realized covariates leak into a backtest snapshot.
 #' ndata$temperature <- rnorm(nrow(ndata), 25, 4)
 #' ndata$humidity <- rbeta(nrow(ndata), 0.6, 0.4)
 #' ndata <- ndata |> add_covariates(temperature, humidity)

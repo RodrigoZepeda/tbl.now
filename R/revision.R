@@ -251,10 +251,10 @@ has_revision <- function(x) {
 #' The generated revision columns, when the object has any
 #'
 #' `.revision_num` is the revision date on the same numeric anchor as
-#' `.event_num` and `.report_num`; `.revision_delay` is
-#' `.revision_num - .report_num`, the time from report to resolution. That
-#' second one is the quantity [diagnose_revision_delay()] compares between
-#' confirmed and retracted cases.
+#' `.event_num` and `.report_num`; `.revision_delay` is the direct
+#' report-to-resolution time in `revision_units`. That second one is the
+#' quantity [diagnose_revision_delay()] compares between confirmed and
+#' retracted cases.
 #'
 #' @param x A `tbl_now` object.
 #'
@@ -271,12 +271,14 @@ has_revision <- function(x) {
 
 #' Add `.revision_num` and `.revision_delay`
 #'
-#' Anchored on the same earliest event date `time_cols_to_numeric()` uses, so
-#' `.event_num`, `.report_num` and `.revision_num` are on one scale and
-#' differences between them mean what they look like.
+#' `.revision_num` is anchored on the same earliest event date
+#' `time_cols_to_numeric()` uses, so it remains comparable to the other numeric
+#' date columns. `.revision_delay` is computed directly from `report_date` to
+#' `revision_date`, because the revision axis may use coarser units than the
+#' event/report numeric anchor.
 #'
 #' @param data A data frame that already has `.report_num`.
-#' @param event_date,revision_date Column names.
+#' @param event_date,report_date,revision_date Column names.
 #' @param revision_units The revision date's units.
 #' @param force Overwrite reserved columns rather than aborting.
 #'
@@ -284,7 +286,7 @@ has_revision <- function(x) {
 #'
 #' @keywords internal
 #' @noRd
-.add_revision_num <- function(data, event_date, revision_date,
+.add_revision_num <- function(data, event_date, report_date, revision_date,
                                   revision_units, force = FALSE) {
   for (reserved in c(".revision_num", ".revision_delay")) {
     if (reserved %in% colnames(data) && !force) {
@@ -303,7 +305,9 @@ has_revision <- function(x) {
   } else {
     .date_difference_in_units(revision, anchor, revision_units)
   }
-  data[[".revision_delay"]] <- data[[".revision_num"]] - data[[".report_num"]]
+  data[[".revision_delay"]] <- .tbl_now_units_between(
+    data[[report_date]], revision, revision_units
+  )
   data
 }
 

@@ -38,7 +38,7 @@ test_that("censor_reporting_delays_above merges with existing censoring (never u
 })
 
 test_that("censor_reporting_delays_above emits an informative message unless verbose = FALSE", {
-  expect_message(
+  expect_message_quietly(
     censor_reporting_delays_above(make_delay_data(), max_delay = 60),
     "censored"
   )

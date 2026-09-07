@@ -229,7 +229,7 @@ test_that("count-cumulative is de-accumulated before it is summed", {
 
 test_that("aggregating to the unit an object already has is a no-op", {
   weekly <- aggregate_time_units(make_daily_linelist(), to = "weeks", verbose = FALSE)
-  expect_message(
+  expect_message_quietly(
     again <- aggregate_time_units(weekly, to = "weeks"),
     "nothing to do"
   )
@@ -529,11 +529,11 @@ test_that("aggregate_time_units reports what it dropped and rescaled", {
       day_of_week = TRUE, seasons = 365
     ))
 
-  expect_message(
+  expect_message_quietly(
     aggregate_time_units(x, to = "weeks"),
     "day_of_week"
   )
-  expect_message(
+  expect_message_quietly(
     aggregate_time_units(x, to = "weeks"),
     "Rescaled"
   )
@@ -600,7 +600,7 @@ test_that("the result is still a valid tbl_now a model could be handed", {
 
 test_that("aggregate_time_units reports what it did unless silenced", {
   x <- make_daily_linelist()
-  expect_message(aggregate_time_units(x, to = "weeks"), "Aggregated")
+  expect_message_quietly(aggregate_time_units(x, to = "weeks"), "Aggregated")
   expect_silent(aggregate_time_units(x, to = "weeks", verbose = FALSE))
 })
 
@@ -749,7 +749,6 @@ test_that("complete_zeroes() fills the coarser grid", {
 })
 
 test_that("a real, messy daily line list aggregates to weeks without losing cases", {
-  skip_if_not(exists("hai_bucaramanga"), "dataset not available")
   data(hai_bucaramanga, envir = environment())
   x <- suppressWarnings(tbl_now(hai_bucaramanga,
     event_date = specimen_date, report_date = report_date, strata = sex,
