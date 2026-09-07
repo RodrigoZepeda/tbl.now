@@ -1,4 +1,16 @@
-# tbl.now 0.33.1
+# tbl.now 0.34.0
+
+## Ensemble validation is stricter
+
+`nowcast_ensemble()` now rejects non-finite fixed weights, duplicated or
+unknown weight names, duplicate prediction/draw keys inside a member, and
+invalid `n_draws` values before doing ensemble arithmetic. These inputs
+previously led to low-level errors, silently ignored weights, or ensemble
+predictions whose values were `NA`.
+
+The ensemble documentation now states that members are assumed to target the
+same reporting or revision quantity, and that the result should be scored with
+the matching `truth_axis` and `truth_type`.
 
 ## Autoplot can show revision-date calendar effects
 

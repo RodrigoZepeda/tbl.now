@@ -52,6 +52,13 @@
 #' @return A [tbl_nowcast] whose `fit` property is the list of member nowcasts
 #'   and whose `metadata` holds the `weights` and the combination `type`.
 #'
+#' @details
+#' An ensemble assumes that all members predict the same epidemiological
+#' quantity. The target dates, strata and quantile levels are checked here, but
+#' reporting-versus-revision semantics are currently a modelling convention:
+#' combine members that target the same quantity, and score the result with the
+#' matching `truth_axis` and `truth_type` in [score_nowcast()].
+#'
 #' @seealso
 #' [run_nowcast()] to produce the nowcasts being combined;
 #' [nowcast_backtest()] and [nowcast_weights()] to decide how much to trust each
@@ -241,14 +248,29 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
   if (!is.numeric(weights)) {
     cli::cli_abort("{.arg weights} must be a numeric vector or one of {.val {c('equal', 'inverse_score', 'optim')}}.")
   }
+  if (length(weights) == 0L || anyNA(weights) || any(!is.finite(weights))) {
+    cli::cli_abort("{.arg weights} must contain only finite, non-missing numbers.")
+  }
   if (any(weights < 0)) {
     cli::cli_abort("{.arg weights} must be non-negative.")
   }
 
   if (!is.null(names(weights))) {
+    duplicated_names <- unique(names(weights)[duplicated(names(weights))])
+    if (length(duplicated_names) > 0L) {
+      cli::cli_abort(
+        "{.arg weights} has duplicated name{?s} {.val {duplicated_names}}."
+      )
+    }
     missing_members <- setdiff(member_names, names(weights))
     if (length(missing_members) > 0) {
       cli::cli_abort("{.arg weights} has no entry for {.val {missing_members}}.")
+    }
+    extra_members <- setdiff(names(weights), member_names)
+    if (length(extra_members) > 0) {
+      cli::cli_abort(
+        "{.arg weights} has unknown member name{?s} {.val {extra_members}}."
+      )
     }
     weights <- weights[member_names]
   } else {
@@ -265,6 +287,23 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
     cli::cli_abort("{.arg weights} must not sum to zero.")
   }
   weights / sum(weights)
+}
+
+#' Check that a linear-pool draw count is usable
+#'
+#' @param n_draws User-supplied number of pooled draws.
+#'
+#' @return `n_draws` as an integer.
+#'
+#' @keywords internal
+#' @noRd
+.check_n_draws <- function(n_draws) {
+  if (!is.numeric(n_draws) || length(n_draws) != 1L ||
+    is.na(n_draws) || !is.finite(n_draws) ||
+    n_draws < 1 || n_draws != floor(n_draws)) {
+    cli::cli_abort("{.arg n_draws} must be a single positive whole number.")
+  }
+  as.integer(n_draws)
 }
 
 #' Quantile levels shared by every member
@@ -356,6 +395,50 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
   })
 }
 
+#' Check that each member has one value per ensemble key
+#'
+#' A duplicate row inside one member would make that member count more than
+#' once in the ensemble average or linear-pool sample.
+#'
+#' @param members A named list of `tbl_nowcast` objects.
+#' @param key Character vector of event-date and strata columns.
+#' @param type Which member table to check: `"predictions"` or `"draws"`.
+#'
+#' @return `NULL`, invisibly.
+#'
+#' @keywords internal
+#' @noRd
+.check_ensemble_member_keys <- function(members, key,
+                                        type = c("predictions", "draws")) {
+  type <- match.arg(type)
+  index_col <- if (identical(type, "predictions")) ".quantile_level" else ".draw"
+  key_cols <- c(key, index_col)
+
+  for (nm in names(members)) {
+    table <- if (identical(type, "predictions")) {
+      members[[nm]]@predictions
+    } else {
+      members[[nm]]@draws
+    }
+
+    duplicates <- table |>
+      dplyr::count(dplyr::across(dplyr::all_of(key_cols)), name = ".n") |>
+      dplyr::filter(.data$.n > 1L)
+
+    if (nrow(duplicates) > 0L) {
+      sample <- .format_target_sample(
+        dplyr::select(duplicates, dplyr::all_of(key_cols))
+      )
+      cli::cli_abort(c(
+        "Member {.val {nm}} has duplicate {type} rows for the same ensemble key.",
+        "i" = "Duplicate key sample: {.val {sample}}."
+      ))
+    }
+  }
+
+  invisible(NULL)
+}
+
 #' Weighted average of the members' quantiles
 #'
 #' @param members A named list of `tbl_nowcast` objects.
@@ -369,6 +452,7 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
 #' @noRd
 .ensemble_quantiles <- function(members, weights, key, quantile_levels) {
   members <- .common_targets(members, key)
+  .check_ensemble_member_keys(members, key, "predictions")
   quantile_levels <- .common_quantile_levels(members, quantile_levels)
 
   stacked <- purrr_map_dfr(names(members), function(nm) {
@@ -405,6 +489,7 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
 #' @keywords internal
 #' @noRd
 .ensemble_linear_pool <- function(members, weights, key, quantile_levels, n_draws) {
+  n_draws <- .check_n_draws(n_draws)
   without_draws <- names(members)[vapply(members, function(m) is.null(m@draws), logical(1))]
   if (length(without_draws) > 0) {
     cli::cli_abort(c(
@@ -415,6 +500,8 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
   }
 
   members <- .common_targets(members, key)
+  .check_ensemble_member_keys(members, key, "predictions")
+  .check_ensemble_member_keys(members, key, "draws")
   quantile_levels <- .common_quantile_levels(members, quantile_levels)
   # Give each member a whole number of draws that respects its weight, with the
   # rounding remainder going to the heaviest members.

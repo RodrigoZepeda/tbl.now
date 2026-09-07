@@ -728,6 +728,12 @@ member's own value as the ensemble's. Those targets are dropped, with a warning
 saying how many. This is not hypothetical — `EpiNow2` forecasts one period past
 the end of the data, and before `run_nowcast()` trimmed it that lone extra week
 landed exactly at the `now` edge, which is the part of the picture people read.
+
+That agreement is semantic as well as tabular. `nowcast_ensemble()` checks the
+date grid, strata and quantile levels it can see, but it assumes the members
+target the same reporting or revision quantity. Combine models that answer the
+same question, then score the result with the matching `truth_axis` and
+`truth_type` in `score_nowcast()`.
 :::
 
 ::: {.alert .alert-info}
