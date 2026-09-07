@@ -39,7 +39,9 @@ laboratory's version of the question -- when results arrived, rather than
 when reports did. Needs a validation process (see \code{\link[=add_validation_date]{add_validation_date()}});
 cases still \code{"pending"} have no validation date and are left out.}
 
-\item{palette}{A named colour palette. Defaults to the package palette.}
+\item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}). The
+scalogram is drawn entirely with tiles, so it takes no \code{size} or
+\code{linewidth}.}
 }
 \value{
 A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).

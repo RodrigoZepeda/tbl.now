@@ -100,7 +100,8 @@
 #' Creation and transport scores on one panel, in two colours.
 #' @keywords internal
 #' @noRd
-.conservation_ct_panel <- function(prep, palette, xlab = "Report date") {
+.conservation_ct_panel <- function(prep, palette, xlab = "Report date",
+                                  linewidth = 1, grid_linewidth = 0.3) {
   z_star <- prep$z_star
   reg    <- prep$reg
   long <- dplyr::bind_rows(
@@ -109,22 +110,24 @@
     data.frame(report_date = reg$report_date, .stratum = reg$.stratum,
                value = reg$transport_z, score = "transport (a batch?)")
   )
-  cols <- c("creation (a surge?)"  = palette[["medium_green"]],
-            "transport (a batch?)" = palette[["accent_red"]])
+  cols <- c("creation (a surge?)"  = palette[["epidemic_mid"]],
+            "transport (a batch?)" = palette[["reporting"]])
 
   p <- ggplot2::ggplot(long, ggplot2::aes(.data$report_date, .data$value,
                                           colour = .data$score))
   if (nrow(prep$flagged) > 0L) {
     p <- p + ggplot2::geom_vline(
       data = data.frame(rd = unique(prep$flagged$report_date)),
-      ggplot2::aes(xintercept = .data$rd), colour = "grey85", linewidth = 0.3,
+      ggplot2::aes(xintercept = .data$rd), colour = palette[["guide"]],
+      linewidth = grid_linewidth,
       inherit.aes = FALSE)
   }
   p <- p +
-    ggplot2::geom_hline(yintercept = 0, colour = "grey80", linewidth = 0.3) +
+    ggplot2::geom_hline(yintercept = 0, colour = palette[["guide"]],
+                        linewidth = grid_linewidth) +
     ggplot2::geom_hline(yintercept = c(-z_star, z_star), linetype = "dashed",
-                        colour = "grey70", linewidth = 0.3) +
-    ggplot2::geom_line(linewidth = 0.35, na.rm = TRUE) +
+                        colour = palette[["neutral"]], linewidth = grid_linewidth) +
+    ggplot2::geom_line(linewidth = 0.35 * linewidth, na.rm = TRUE) +
     ggplot2::scale_colour_manual(values = cols, name = NULL) +
     .conservation_y_scale() +
     ggplot2::labs(
@@ -145,15 +148,17 @@
 #' @keywords internal
 #' @noRd
 .conservation_score_line <- function(prep, value, title, subtitle, colour, palette,
-                                     xlab = "Report date", caption = NULL) {
+                                    size = 1, linewidth = 1, grid_linewidth = 0.3,
+                                    xlab = "Report date", caption = NULL) {
   z_star <- prep$z_star
   p <- ggplot2::ggplot(prep$reg, ggplot2::aes(.data$report_date, .data[[value]])) +
-    ggplot2::geom_hline(yintercept = 0, colour = "grey80", linewidth = 0.3) +
+    ggplot2::geom_hline(yintercept = 0, colour = palette[["guide"]],
+                        linewidth = grid_linewidth) +
     ggplot2::geom_hline(yintercept = c(-z_star, z_star), linetype = "dashed",
-                        colour = "grey70", linewidth = 0.3) +
-    ggplot2::geom_line(colour = colour, linewidth = 0.35, na.rm = TRUE) +
+                        colour = palette[["neutral"]], linewidth = grid_linewidth) +
+    ggplot2::geom_line(colour = colour, linewidth = 0.35 * linewidth, na.rm = TRUE) +
     ggplot2::geom_point(data = prep$flagged, ggplot2::aes(y = .data[[value]]),
-                        colour = palette[["accent_red"]], size = 1.8, na.rm = TRUE) +
+                        colour = palette[["reporting"]], size = 1.8 * size, na.rm = TRUE) +
     .conservation_y_scale() +
     ggplot2::labs(x = xlab, y = "z (SDs)", title = title, subtitle = subtitle,
                   caption = caption) +

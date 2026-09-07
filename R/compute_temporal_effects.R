@@ -22,10 +22,12 @@ compute_temporal_effects <- function(x, overwrite = FALSE) {
       date_col <- get_event_date(x)
       numeric_col <- ".event_num"
       name_prefix <- ".event"
+      units <- get_event_units(x)
     } else {
       date_col <- get_report_date(x)
       numeric_col <- ".report_num"
       name_prefix <- ".report"
+      units <- get_report_units(x)
     }
 
     x <- add_temporal_effects.data.frame(
@@ -35,7 +37,8 @@ compute_temporal_effects <- function(x, overwrite = FALSE) {
       numeric_col  = numeric_col,
       name_prefix  = name_prefix,
       overwrite    = overwrite,
-      weekend_days = weekend_days
+      weekend_days = weekend_days,
+      units        = units
     )
   }
 

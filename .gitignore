@@ -22,8 +22,10 @@ diseasenowcasting.Rproj
 repomix-output.xml
 cache
 inst/doc
+paper/
 .positai
 # testthat writes these after a failing run; never commit or ship them
 tests/testthat/_problems/
 tests/testthat/testthat-problems.rds
 vignettes/articles/*_cache/
+figure/

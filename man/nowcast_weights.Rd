@@ -4,7 +4,13 @@
 \alias{nowcast_weights}
 \title{Ensemble weights from a backtest}
 \usage{
-nowcast_weights(backtest, type = c("inverse_score", "optim", "equal"), ...)
+nowcast_weights(
+  backtest,
+  type = c("inverse_score", "optim", "equal"),
+  now = NULL,
+  include_now = FALSE,
+  ...
+)
 }
 \arguments{
 \item{backtest}{A \code{nowcast_backtest} object.}
@@ -20,6 +26,15 @@ principle, but prone to overfitting when the window is short.}
 \item{\code{"equal"}}{\eqn{w_i = 1/M}. Included so that the same code path can
 produce the unweighted ensemble.}
 }}
+
+\item{now}{Optional Date vector of nowcast origins to exclude from the
+weight-training window when \code{include_now = FALSE}. \code{\link[=nowcast_ensemble]{nowcast_ensemble()}}
+passes its members' own \code{now} values here when deriving performance
+weights.}
+
+\item{include_now}{Logical. Should rows at \code{now} be allowed into the
+weight-training window? Default \code{FALSE}; set \code{TRUE} for an in-sample
+diagnostic.}
 
 \item{...}{Unused.}
 }

@@ -97,9 +97,9 @@ test_that("component functions return the same schema as summary()", {
     cases_per_date(fixture_plain()),
     delay_summary(fixture_plain()),
     zero_run_summary(fixture_plain()),
-    case_autocorrelation(fixture_plain()),
+    suppressWarnings(case_autocorrelation(fixture_plain())),
     triangle_occupancy(fixture_plain()),
-    reporting_completeness(fixture_plain())
+    suppressWarnings(reporting_completeness(fixture_plain()))
   )) {
     expect_true(all(names(result) %in% schema))
     expect_identical(names(result), intersect(schema, names(result)))
@@ -340,7 +340,10 @@ test_that("lag-1 autocorrelation is the lagged-pair correlation", {
   #   head = 3, 3, 0, 0 (mean 1.5)   tail = 3, 0, 0, 4 (mean 1.75)
   #   sum of products = 1.875 - 2.625 + 2.625 - 3.375 = -1.5
   #   cor = (-1.5 / 3) / (sqrt(9 / 3) * sqrt(12.75 / 3)) = -0.5 / sqrt(12.75)
-  row <- pick(summary(fixture_plain()), "autocorrelation", "per_event_date lag 1")
+  row <- pick(
+    suppressWarnings(case_autocorrelation(fixture_plain())),
+    "autocorrelation", "per_event_date lag 1"
+  )
 
   expect_equal(row$n, 4L)
   expect_equal(row$value, -0.5 / sqrt(12.75))
@@ -348,7 +351,9 @@ test_that("lag-1 autocorrelation is the lagged-pair correlation", {
 })
 
 test_that("autocorrelation accepts several lags and axes", {
-  result <- case_autocorrelation(fixture_plain(), lags = c(1, 2), axis = "report")
+  result <- suppressWarnings(
+    case_autocorrelation(fixture_plain(), lags = c(1, 2), axis = "report")
+  )
 
   expect_equal(nrow(result), 2)
   # Report grid 2, 0, 1, 3, 4: lag 2 pairs (2, 0, 1) with (1, 3, 4).
@@ -368,7 +373,8 @@ test_that("a constant series has no autocorrelation to report", {
     data_type = "count-incidence", now = as.Date("2024-01-03"), verbose = FALSE
   )
   expect_equal(
-    pick(case_autocorrelation(flat), "autocorrelation", "per_event_date lag 1")$value,
+    pick(suppressWarnings(case_autocorrelation(flat)),
+         "autocorrelation", "per_event_date lag 1")$value,
     NA_real_
   )
 })
@@ -554,7 +560,7 @@ test_that("reporting completeness is the share arrived by each delay", {
   # the event dates 01-01 and 01-02 are used. Their eventual totals are 3 and 3.
   #   delay <= 0: 2/3 and 0/3   -> mean 1/3, sd sqrt(2/9), pooled 2/6
   #   delay <= 2: 3/3 and 3/3   -> mean 1, pooled 1
-  result <- reporting_completeness(fixture_plain())
+  result <- suppressWarnings(reporting_completeness(fixture_plain()))
 
   same_day <- pick(result, "completeness", "delay <= 0")
   expect_equal(same_day$n, 2L)
@@ -571,7 +577,9 @@ test_that("reporting completeness is the share arrived by each delay", {
 test_that("mature_only = FALSE keeps the immature event dates", {
   # 2024-01-05 is one day old and fully reported, so adding it lifts the
   # same-day share to (2/3 + 0/3 + 4/4) / 3 = 5/9, pooled 6/10.
-  result <- reporting_completeness(fixture_plain(), mature_only = FALSE)
+  result <- suppressWarnings(
+    reporting_completeness(fixture_plain(), mature_only = FALSE)
+  )
   same_day <- pick(result, "completeness", "delay <= 0")
 
   expect_equal(same_day$n, 3L)
@@ -587,23 +595,19 @@ test_that("completeness is a distribution, so `value` stays empty", {
   # a gap, an occupancy -- and completeness must not fill it, because that
   # would be a second estimator of a number `prop` already carries. The
   # documented examples select `mean`/`q50`/`prop` for exactly this reason.
-  result <- reporting_completeness(fixture_plain())
+  result <- suppressWarnings(reporting_completeness(fixture_plain()))
   expect_true("value" %in% names(result))
   expect_true(all(is.na(result$value)))
   expect_false(anyNA(result$mean))
   expect_false(anyNA(result$q50))
   expect_false(anyNA(result$prop))
 
-  # And the same rows once stacked into the whole table.
-  whole <- summary(fixture_plain())
-  rows <- whole[whole$component == "completeness", ]
-  expect_gt(nrow(rows), 0)
-  expect_true(all(is.na(rows$value)))
-  expect_false(anyNA(rows$prop))
 })
 
 test_that("reporting_completeness() honours an explicit delay set", {
-  result <- reporting_completeness(fixture_plain(), delays = c(0, 2))
+  result <- suppressWarnings(
+    reporting_completeness(fixture_plain(), delays = c(0, 2))
+  )
   expect_equal(result$quantity, c("delay <= 0", "delay <= 2"))
 })
 
@@ -756,7 +760,7 @@ test_that("a line list and its counts summarise identically", {
   from_counts <- summary(fixture_strata())
   from_cases <- summary(fixture_linelist())
 
-  comparable <- c("cases", "zero_run", "delay", "autocorrelation", "composition")
+  comparable <- c("cases", "zero_run", "delay", "composition")
   left <- from_counts[from_counts$component %in% comparable, ]
   right <- from_cases[from_cases$component %in% comparable, ]
 
@@ -806,7 +810,7 @@ test_that("a block drops the columns it does not populate", {
   # The schema is wide because it holds every block at once; no block fills more
   # than a handful, and a table that is mostly `NA` is unreadable for a reason
   # that has nothing to do with the data.
-  printed <- capture.output(print(case_autocorrelation(fixture_plain())))
+  printed <- capture.output(print(suppressWarnings(case_autocorrelation(fixture_plain()))))
 
   expect_true(any(grepl("value", printed)))
   expect_false(any(grepl("prop_zero", printed)))
@@ -826,4 +830,21 @@ test_that("a summary is still a tibble", {
   expect_s3_class(result, "tbl_df")
   expect_s3_class(dplyr::filter(result, component == "delay"), "tbl_now_summary_table")
   expect_false(inherits(tibble::as_tibble(result), "tbl_now_summary_table"))
+})
+
+# Unreviewed components --------------------------------------------------------
+
+test_that("the AI-written components warn, and are not in summary()", {
+  # They were written by an LLM and have not been checked by a human, so they
+  # cannot sit inside the report a user reads by default.
+  components <- unique(summary(fixture_plain())$component)
+  expect_false("autocorrelation" %in% components)
+  expect_false("completeness" %in% components)
+
+  expect_warning(case_autocorrelation(fixture_plain()), "written by\n?\\s*an AI")
+  expect_warning(reporting_completeness(fixture_plain()), "reviewed by a human")
+
+  # Deliberately not throttled: every call says it.
+  suppressWarnings(case_autocorrelation(fixture_plain()))
+  expect_warning(case_autocorrelation(fixture_plain()), "reviewed by a human")
 })

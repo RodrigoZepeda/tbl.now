@@ -26,7 +26,7 @@
 #' and releases its accumulated backlog on the next open date.  Reports keep
 #' their event dates and merely move *later* on the report axis, so no cases are
 #' created or destroyed -- the defining property of a batch.  Useful for checking
-#' that [diagnose_batches()] and [diagnose_batch_shape()] recover a batch you planted.
+#' that [diagnose_batches()] and [diagnose_batches2()] recover a batch you planted.
 #'
 #' @details
 #' A batch is a **transport**: it moves an item's report date later while leaving
@@ -76,7 +76,7 @@
 #'   modified report dates.
 #'
 #' @seealso
-#' [diagnose_batches()] and [diagnose_batch_shape()], the tests this exists to
+#' [diagnose_batches()] and [diagnose_batches2()], the tests this exists to
 #' validate; [censor_reporting_delays_above()] for recording a real batch rather than
 #' planting one. The
 #' [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)

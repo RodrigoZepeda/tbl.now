@@ -406,7 +406,7 @@ is_nowcast_engine <- function(x) {
 #'   to [get_surveillance_range()] -- both built from the whole object, so every
 #'   stratum is fitted on the same time axis.
 #'
-#' @param generation_time,delays,truncation,rt,stan,convert_args
+#' @param generation_time,delays,truncation,rt,obs,stan,convert_args
 #'   (`engine_epinow2()`) Arguments of `EpiNow2::estimate_infections()` /
 #'   `EpiNow2::regional_epinow()`, plus `convert_args` for
 #'   [tbl_now_to_EpiNow2()]. **Read this before trusting the output**:
@@ -517,7 +517,7 @@ engine_surveillance <- function(..., D = NULL, when = NULL, # nolint: object_nam
 #' @rdname nowcast_engines
 #' @export
 engine_epinow2 <- function(..., generation_time = NULL, delays = NULL,
-                           truncation = NULL, rt = NULL, stan = NULL,
+                           truncation = NULL, rt = NULL, obs = NULL, stan = NULL,
                            convert_args = list(), min_date = NULL,
                            quantile_levels = nowcast_quantile_levels(),
                            label = NULL) {
@@ -526,7 +526,7 @@ engine_epinow2 <- function(..., generation_time = NULL, delays = NULL,
     c(
       list(
         generation_time = generation_time, delays = delays,
-        truncation = truncation, rt = rt, stan = stan,
+        truncation = truncation, rt = rt, obs = obs, stan = stan,
         convert_args = convert_args
       ),
       list(...)

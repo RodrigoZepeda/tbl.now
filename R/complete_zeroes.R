@@ -18,6 +18,17 @@
 #' date on or before the event date's `now`, and within `max_delay`. Filling
 #' beyond that would invent observations from the future.
 #'
+#' ## Rows with a missing date
+#'
+#' A row whose event or report date is `NA` has no cell on the rectangle, so it
+#' takes no part in the grid: the bounds (`max_delay`, the first and last event
+#' date, the last report date) are all computed ignoring it. It is still a case,
+#' though, so it is **carried through unchanged** rather than dropped -- use
+#' [censor_reports()] to give it a bound, or `dplyr::filter()` to remove it, if
+#' you would rather it were on the grid or gone. Only an object in which *every*
+#' row is missing one of the two dates is refused, because then there is no grid
+#' to complete at all.
+#'
 #' @param x A `tbl_now` object.
 #' @param max_delay Maximum delay to fill. For example if set to 5 it will complete
 #' with 0's all reports with delays 0 to 4. But will not fill other delays (say 6)
@@ -32,8 +43,9 @@
 #'   carry any report on or before it, so no row would survive for it.
 #'
 #' @return A `tbl_now` object with the same columns as `x`, plus the rows that
-#' were implicitly zero, carrying `0` in the `case_count` column. The data type
-#' is preserved.
+#' were implicitly zero, carrying `0` in the `case_count` column. Explicit
+#' missing counts in the input remain `NA`; only cells created by
+#' `complete_zeroes()` are filled. The data type is preserved.
 #'
 #' @seealso
 #' [to_count()] for the data shapes this operates on;
@@ -87,15 +99,6 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
   group_columns <- dplyr::group_vars(x)
   if (length(group_columns) > 0) x <- ungroup(x)
 
-  if (is.null(max_delay)) {
-    max_delay <- suppressWarnings(
-      x |>
-        dplyr::distinct(!!as.symbol(".delay")) |>
-        dplyr::pull() |>
-        max()
-    )
-  }
-
   if (!is_tbl_now(x)) {
     cli::cli_abort(
       "Object `x` should be a `tbl.now`. See {.help tbl_now} on how to create one."
@@ -111,21 +114,39 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
     ))
   }
 
+  # Every bound below is computed with `na.rm = TRUE`, and none of them may be
+  # `NA`. A row whose event or report date is missing cannot be placed on the
+  # grid at all -- it has no cell -- but it is still a case, so it is carried
+  # through untouched instead of setting the bound to `NA` and taking the whole
+  # object with it. Without this, one missing report date made `max_delay` `NA`
+  # and `seq(0, NA)` aborted with "'to' must be a finite number" (#66); one
+  # missing event date made `report_bound` `NA` and the final filter dropped
+  # every row a function meant to ADD zeroes was given.
+  event_values <- x |> dplyr::pull(get_event_date(x))
+  delay_values <- x |> dplyr::pull(".delay")
+  report_values <- x |> dplyr::pull(get_report_date(x))
+
+  if (all(is.na(event_values)) || all(is.na(report_values))) {
+    cli::cli_abort(c(
+      "Cannot complete an object with no usable {.field event}/{.field report} \\
+       date pair.",
+      "i" = "Every row has a missing {.val {get_event_date(x)}} or \\
+             {.val {get_report_date(x)}}, so there is no grid to complete."
+    ))
+  }
+
+  if (is.null(max_delay)) {
+    # `max(0, ...)` because a data set whose only delays are negative would give
+    # `seq(0, max_delay)` a DECREASING sequence -- delays -1, -2, ... -- rather
+    # than the single delay-0 column it should complete.
+    max_delay <- max(0, delay_values, na.rm = TRUE)
+  }
+
   # Get the initial event
-  min_event <- suppressWarnings(
-    x |>
-      dplyr::filter(!!as.symbol(get_event_date(x)) == min(!!as.symbol(get_event_date(x)))) |>
-      dplyr::distinct(!!as.symbol(get_event_date(x))) |>
-      dplyr::pull()
-  )
+  min_event <- min(event_values, na.rm = TRUE)
 
   # Get the final event present in the data.
-  max_event_observed <- suppressWarnings(
-    x |>
-      dplyr::filter(!!as.symbol(get_event_date(x)) == max(!!as.symbol(get_event_date(x)))) |>
-      dplyr::distinct(!!as.symbol(get_event_date(x))) |>
-      dplyr::pull()
-  )
+  max_event_observed <- max(event_values, na.rm = TRUE)
 
   # How far to complete. An event date with NO reports at all does not appear in
   # the data, so stopping at the last observed event date leaves a hole exactly
@@ -138,12 +159,7 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
   max_event <- max(max_event_observed, until)
 
   # Get the final report
-  max_report <- suppressWarnings(
-    x |>
-      dplyr::distinct(!!as.symbol(get_report_date(x))) |>
-      dplyr::pull() |>
-      max()
-  )
+  max_report <- max(report_values, na.rm = TRUE)
 
 
   # Reports may not run past what could have been observed. Using the later of
@@ -161,6 +177,19 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
     cli::cli_alert_warning(
       "Computed temporal-effect columns have been lost. Call {.fn compute_temporal_effects} again after {.fn complete_zeroes}."
     )
+  }
+
+  original_marker <- ".tbl_now_complete_original"
+  while (original_marker %in% colnames(x)) {
+    original_marker <- paste0(original_marker, "_")
+  }
+  grid_marker <- ".tbl_now_complete_grid"
+  while (grid_marker %in% c(colnames(x), original_marker)) {
+    grid_marker <- paste0(grid_marker, "_")
+  }
+  reconstructed_report <- ".tbl_now_complete_report"
+  while (reconstructed_report %in% c(colnames(x), original_marker, grid_marker)) {
+    reconstructed_report <- paste0(reconstructed_report, "_")
   }
 
   # Create a table with all dates
@@ -198,18 +227,32 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
     ) |>
     dplyr::distinct() |>
     dplyr::left_join(event_dict, by = get_event_date(x)) |>
-    dplyr::mutate(!!as.symbol(".report_num_new") := !!as.symbol(".event_num_new") + !!as.symbol(".delay"))
+    dplyr::mutate(
+      !!as.symbol(".report_num_new") := !!as.symbol(".event_num_new") + !!as.symbol(".delay"),
+      !!as.symbol(grid_marker) := TRUE
+    )
 
-  # Now add reports back
-  if (get_event_units(x) == "weeks") {
+  # Now add reports back. Reuse the constructor helper so every supported unit
+  # follows the same delay arithmetic.
+  complete_x <- .reconstruct_date_from_delay(
+    complete_x,
+    known_col = get_event_date(x),
+    delay_col = ".delay",
+    units = get_event_units(x),
+    new_col_name = reconstructed_report,
+    direction = "add",
+    arg = "max_delay"
+  )
+  if (get_report_date(x) %in% colnames(complete_x)) {
     complete_x <- complete_x |>
-      dplyr::mutate(!!as.symbol(get_report_date(x)) := !!as.symbol(get_event_date(x)) + lubridate::weeks(!!as.symbol(".delay")))
-  } else if (get_event_units(x) == "days") {
+      dplyr::mutate(
+        !!as.symbol(get_report_date(x)) :=
+          dplyr::coalesce(!!as.symbol(get_report_date(x)), !!as.symbol(reconstructed_report))
+      ) |>
+      dplyr::select(-!!as.symbol(reconstructed_report))
+  } else {
     complete_x <- complete_x |>
-      dplyr::mutate(!!as.symbol(get_report_date(x)) := !!as.symbol(get_event_date(x)) + lubridate::days(!!as.symbol(".delay")))
-  } else if (get_event_units(x) == "numeric") {
-    complete_x <- complete_x |>
-      dplyr::mutate(!!as.symbol(get_report_date(x)) := !!as.symbol(get_event_date(x)) + !!as.symbol(".delay"))
+      dplyr::rename(!!as.symbol(get_report_date(x)) := !!as.symbol(reconstructed_report))
   }
 
   # Completing out to the `now` generates event/delay pairs whose report date
@@ -227,19 +270,35 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
     get_report_date(x), ".delay"
   )
   x <- x |>
-    dplyr::full_join(complete_x, by = join_keys)
-
-  # Remove and rename
-  x <- x |>
-    dplyr::mutate(!!as.symbol(".event_num") := !!as.symbol(".event_num_new")) |>
-    dplyr::mutate(!!as.symbol(".report_num") := !!as.symbol(".report_num_new")) |>
+    dplyr::mutate(!!as.symbol(original_marker) := TRUE) |>
+    dplyr::full_join(complete_x, by = join_keys) |>
     dplyr::select(-!!as.symbol(".event_num_new"), -!!as.symbol(".report_num_new"))
+
+  # Renumber from the event dictionary rather than from what the join carried
+  # over. A row of `x` that has no counterpart in the grid -- a negative delay,
+  # or a missing report date -- matches nothing, so reading `.event_num` off the
+  # join set it to `NA` for rows whose event date is perfectly well known.
+  # Joining the dictionary on the event date alone numbers every row that has an
+  # event date, and leaves only the genuinely undatable ones `NA`.
+  x <- x |>
+    dplyr::left_join(event_dict, by = get_event_date(x)) |>
+    dplyr::mutate(
+      !!as.symbol(".event_num") := !!as.symbol(".event_num_new"),
+      !!as.symbol(".report_num") := !!as.symbol(".event_num_new") + !!as.symbol(".delay")
+    ) |>
+    dplyr::select(-!!as.symbol(".event_num_new"))
 
   # Fix the 0 case for count-cumulative
   if (get_data_type(x) == "count-cumulative") {
     x <- x |>
       dplyr::mutate(!!as.symbol(get_case_count(x)) :=
-        dplyr::if_else(is.na(!!as.symbol(get_case_count(x)) & !!as.symbol(".delay") == 0), 0, !!as.symbol(get_case_count(x))))
+        dplyr::if_else(
+          is.na(!!as.symbol(original_marker)) &
+            is.na(!!as.symbol(get_case_count(x))) &
+            !!as.symbol(".delay") == 0,
+          0,
+          !!as.symbol(get_case_count(x))
+        ))
 
 
     if (max_delay > 0) {
@@ -252,7 +311,8 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
 
         x <- x |>
           dplyr::mutate(!!as.symbol(get_case_count(x)) :=
-            dplyr::if_else(is.na(!!as.symbol(get_case_count(x))) & !!as.symbol(".delay") == !!dval,
+            dplyr::if_else(is.na(!!as.symbol(original_marker)) &
+              is.na(!!as.symbol(get_case_count(x))) & !!as.symbol(".delay") == !!dval,
               dplyr::lag(!!as.symbol(get_case_count(x)), default = 0.0), !!as.symbol(get_case_count(x))
             )) |>
           ungroup()
@@ -260,17 +320,34 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
     }
   }
 
-  # #Replace whatever is missing with 0
-  x <- x |>
-    dplyr::mutate(!!as.symbol(get_case_count(x)) := tidyr::replace_na(!!as.symbol(get_case_count(x)), 0.0))
+  # Replace only generated incidence cells. An explicit `NA` in the input is an
+  # unknown count, not an observed zero.
+  if (get_data_type(x) == "count-incidence") {
+    x <- x |>
+      dplyr::mutate(!!as.symbol(get_case_count(x)) :=
+        dplyr::if_else(
+          is.na(!!as.symbol(original_marker)) &
+            is.na(!!as.symbol(get_case_count(x))),
+          0,
+          !!as.symbol(get_case_count(x))
+        ))
+  }
 
   # Drop generated rows whose report date lies beyond what could have been
   # observed. The bound is `<=`, and is the later of `now` and the last report in
   # the data: with `<` (and the bound at `max_report`) every genuine row reported
   # on the final report date was silently deleted, so a function meant to ADD
   # zeroes removed real cases.
+  # `is.na()` first: a missing report date is not a report date past the bound,
+  # and `NA <= bound` is `NA`, which `filter()` drops. Those rows are the ones
+  # the caller asked about in the first place, so deleting them here would be
+  # the same silent loss the `<` bound used to cause.
   x <- x |>
-    dplyr::filter(!!as.symbol(get_report_date(x)) <= !!report_bound)
+    dplyr::filter(
+      is.na(!!as.symbol(get_report_date(x))) |
+        !!as.symbol(get_report_date(x)) <= !!report_bound
+    ) |>
+    dplyr::select(-dplyr::all_of(c(original_marker, grid_marker)))
 
   return(.tbl_now_regroup(x, group_columns))
 }

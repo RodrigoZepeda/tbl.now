@@ -24,8 +24,8 @@ empty report.}
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Prints the findings \code{\link[=diagnose]{diagnose()}} returned as a report: the errors, warnings
-and notes in full, each with its hint, and the checks that passed, that were
-deliberately not run, and that could not be assessed as one line each.
+and notes in full, each with its hint, and the checks that passed and that
+could not be assessed as one line each.
 
 The object is an ordinary tibble underneath, so
 \code{print(tibble::as_tibble(x))} gives the table and every \code{dplyr} verb still

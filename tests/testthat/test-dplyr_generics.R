@@ -318,12 +318,13 @@ test_that("validate_tbl_now fails when report or event date is not date", {
 
   for (type in c("report_date", "event_date")) {
     ndata <- test_data$ndata
-    ndata <- ndata |>
-      dplyr::mutate(!!as.symbol(attr(ndata, type)) := as.character(!!as.symbol(attr(ndata, type))))
 
     expect_error(
-      suppressWarnings(validate_tbl_now(ndata)),
-      "must be of class Date"
+      ndata |>
+        dplyr::mutate(
+          !!as.symbol(attr(ndata, type)) := as.character(!!as.symbol(attr(ndata, type)))
+        ),
+      "to transform them to either both be dates or integers"
     )
   }
 })
@@ -962,18 +963,37 @@ test_that("filter preserves attributes", {
 test_that("validate works with numeric", {
   skip_on_cran()
   test_data <- setup_test_data()
+  ndata <- test_data$ndata
+  attr(ndata, "event_units") <- "numeric"
+  attr(ndata, "report_units") <- "numeric"
 
-  # The same units the fixture declares, so the numeric columns land on the
-  # scale `.event_num` / `.report_num` were computed on.
-  result <- test_data$ndata |>
-    dplyr::mutate(report_week = as.numeric(difftime(report_week, min(onset_week), units = "days"))) |>
-    dplyr::mutate(onset_week = as.numeric(difftime(onset_week, min(onset_week), units = "days")))
+  # Numeric units let integer date columns use their own origin for
+  # `.event_num` / `.report_num`.
+  result <- ndata |>
+    dplyr::mutate(
+      report_week = as.integer(difftime(report_week, min(onset_week), units = "days")),
+      onset_week = as.integer(difftime(onset_week, min(onset_week), units = "days"))
+    )
 
 
   expect_equal(get_event_date(result), get_event_date(test_data$ndata))
   expect_equal(get_strata(result), get_strata(test_data$ndata))
   expect_equal(result$onset_week, result$.event_num)
   expect_equal(result$report_week, result$.report_num)
+})
+
+test_that("validate rejects double date columns", {
+  skip_on_cran()
+  test_data <- setup_test_data()
+
+  expect_error(
+    test_data$ndata |>
+      dplyr::mutate(
+        report_week = as.double(difftime(report_week, min(onset_week), units = "days")),
+        onset_week = as.double(difftime(onset_week, min(onset_week), units = "days"))
+      ),
+    "to transform them to either both be dates or integers"
+  )
 })
 
 test_that("test dropping delay column", {
@@ -1209,4 +1229,96 @@ test_that("every attribute tbl_now() sets is listed as one the class owns", {
   owned <- tbl.now:::.TBL_NOW_ATTRIBUTES
   actual <- setdiff(names(tbl_now_attributes(x)), "class")
   expect_setequal(intersect(actual, owned), actual)
+})
+
+test_that("mutating protected date columns rebuilds generated delays", {
+  x <- tbl_now(
+    data.frame(
+      event = as.Date("2021-01-01") + 0:2,
+      report = as.Date("2021-01-03") + 0:2,
+      n = 1:3
+    ),
+    event_date = event, report_date = report, case_count = n,
+    data_type = "count-incidence", units = "days", verbose = FALSE
+  )
+
+  moved_event <- x |>
+    dplyr::mutate(event = event - 1)
+  expect_true(is_tbl_now(moved_event))
+  expect_equal(moved_event$.delay, as.numeric(moved_event$report - moved_event$event))
+
+  assigned <- x
+  assigned$event <- assigned$event - 2
+  expect_true(is_tbl_now(assigned))
+  expect_equal(assigned$.delay, as.numeric(assigned$report - assigned$event))
+})
+
+test_that("mutating validation dates rebuilds validation numeric columns", {
+  x <- tbl_now(
+    data.frame(
+      event = as.Date("2021-01-01") + 0:2,
+      report = as.Date("2021-01-02") + 0:2,
+      result = as.Date("2021-01-05") + 0:2,
+      outcome = rep("confirmed", 3)
+    ),
+    event_date = event, report_date = report,
+    validation_date = result, validation_type = outcome,
+    data_type = "linelist", units = "days", verbose = FALSE
+  )
+
+  moved <- x |>
+    dplyr::mutate(result = result - 1)
+  expect_true(is_tbl_now(moved))
+  expect_true(".validation_delay" %in% names(moved))
+  expect_equal(
+    moved$.validation_delay,
+    as.numeric(moved$result - moved$report)
+  )
+})
+
+test_that("date-column rebuilds preserve grouping", {
+  x <- demotion_fixture() |>
+    dplyr::group_by(sex)
+
+  moved <- x |>
+    dplyr::mutate(onset = onset - 1)
+
+  expect_s3_class(moved, "grouped_tbl_now")
+  expect_equal(dplyr::group_vars(moved), "sex")
+  expect_equal(moved$.delay, as.numeric(moved$reported - moved$onset))
+})
+
+test_that("renaming protected generated columns demotes without stale attributes", {
+  x <- add_validation_date_fixture(demotion_fixture())
+
+  demoted <- suppressWarnings(
+    dplyr::rename(x, delay_num = .delay)
+  )
+
+  expect_false(is_tbl_now(demoted))
+  expect_s3_class(demoted, "tbl_df")
+  for (name in tbl.now:::.TBL_NOW_ATTRIBUTES) {
+    expect_null(attr(demoted, name, exact = TRUE), info = name)
+  }
+})
+
+test_that("mutating a count column to non-numeric invalidates count data", {
+  x <- tbl_now(
+    data.frame(
+      event = as.Date("2021-01-01") + 0:2,
+      report = as.Date("2021-01-02") + 0:2,
+      n = 1:3
+    ),
+    event_date = event, report_date = report, case_count = n,
+    data_type = "count-incidence", units = "days", verbose = FALSE
+  )
+
+  changed <- dplyr::mutate(x, n = as.character(n))
+
+  expect_true(is_tbl_now(changed))
+  expect_error(validate_tbl_now(changed), "must be numeric")
+  findings <- diagnose(changed, checks = "declarations")
+  expect_true(any(
+    findings$scope == "case_count" & findings$status == "error"
+  ))
 })

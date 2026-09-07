@@ -106,6 +106,13 @@ get_now(snapshot)
 ```{r cache-load, echo=FALSE, message=FALSE, purl=FALSE}
 cached <- readRDS("ensemble-comparison.rds")
 display <- cached$display
+if (is.null(cached$article_weights) && !is.null(cached$weights)) {
+  cached$article_weights <- cached$weights
+}
+if (is.null(display$member_predictions) && !is.null(display$baseline_predictions)) {
+  display$member_predictions <- display$baseline_predictions |>
+    dplyr::mutate(model = "baselinenowcast", .before = 1)
+}
 
 # The article shows code and prints the REAL output of that code, captured by
 # the precompute. `replay()` renders it as if the visible chunk above had run.
@@ -456,7 +463,7 @@ dengue_by_sex <- denguedat |>
   filter(report_week <= now) |>
   change_now(now = now)
 
-by_sex <- run_nowcast(dengue_by_sex, "baselinenowcast", draws = 1000, verbose = FALSE)
+by_sex <- run_nowcast(dengue_by_sex, engine = engine_baselinenowcast(draws = 1000))
 
 as_tibble(by_sex)
 ```
@@ -500,14 +507,29 @@ Lower WIS is better; `coverage_90` should be `TRUE` about nine times in ten if
 the intervals are honest.
 
 If you would rather use the full \pkg{scoringutils} score suite,
-`as_scoringutils()` reshapes the same object into the format it expects:
+its coercion generic accepts the nowcast directly. Supply the later, full
+`tbl_now` as `truth`:
 
 ```{r scoringutils, eval=FALSE}
 baseline |>
-  as_scoringutils(truth = dengue) |>
-  scoringutils::as_forecast_quantile() |>
+  scoringutils::as_forecast_quantile(truth = dengue) |>
   scoringutils::score()
 ```
+
+`as_scoringutils(baseline, truth = dengue)` is the long tibble underneath that
+object when you want to inspect or alter the forecast units first.
+
+When the nowcast retains posterior draws, it can instead become a sample
+forecast. This follows the same adapter pattern used by \pkg{epinowcast}:
+
+```{r scoringutils-sample, eval=FALSE, purl=FALSE}
+baseline |>
+  scoringutils::as_forecast_sample(truth = dengue) |>
+  scoringutils::score()
+```
+
+Sample conversion is deliberately unavailable for a quantile-only nowcast:
+samples cannot be reconstructed from a handful of quantiles.
 
 `tbl.now`'s own `wis` and the one \pkg{scoringutils} computes agree to machine
 precision — the package's test suite checks exactly that, on the same numbers,
@@ -656,6 +678,12 @@ tidy(ensemble)
 display$ensemble_tidy
 ```
 
+It can also be a member of another ensemble. This makes it possible, for
+example, to combine a `diseasenowcasting` HSGP/AR ensemble with an `epinowcast`
+random walk and a baseline. Quantile ensembles can always be nested; a nested
+member of a `linear_pool` must itself have draws, so its inner ensemble must
+also use `type = "linear_pool"`.
+
 ### Two ways of combining
 
 `type = "quantile"` (the default) averages the members' quantiles level by
@@ -770,12 +798,31 @@ weight an ensemble from a backtest that does not cover every member, give the
 uncovered ones weights yourself; `nowcast_ensemble()` will not invent them.
 :::
 
-`tidy()` on a backtest gives one row per (method, `now` date, target), which goes
+`tidy()` on a backtest gives one row per (method, `now` date, target), carrying
+the retrospective prediction (`estimate`, `conf.low`, `conf.high`) next to what
+was eventually `observed` and the scores that comparison earned. It goes
 straight into `dplyr` or `ggplot2`:
 
 ```{r backtest-summary, echo=FALSE, purl=FALSE}
 cached$backtest_summary
 ```
+
+The backtest also converts directly to \pkg{scoringutils}; it already stores
+the truth, and `now` remains a forecast unit so repeated retrospective
+predictions of one target stay distinct:
+
+```{r backtest-scoringutils, eval=FALSE, purl=FALSE}
+backtest |>
+  scoringutils::as_forecast_quantile() |>
+  scoringutils::score() |>
+  scoringutils::add_relative_skill()
+```
+
+Quantile conversion above needs no extra storage. To use
+`as_forecast_sample()` instead, build the backtest with `keep_draws = TRUE`.
+This can make the object much larger, and every included engine must return
+draws; a mixed backtest containing a quantile-only engine is refused rather
+than scored on only a subset of its methods.
 
 This is the expensive part of the workflow — it is `length(methods) ×
 length(now_dates)` model fits — so keep `now_dates` short when the members are
@@ -814,7 +861,7 @@ This is the part that makes the whole thing worth building. A back-end is **two
 S3 methods**, and they can live in your own package, your analysis script, or a
 one-off chunk. Nothing inside `tbl.now` needs to change.
 
-`run_nowcast(x, method = "mymodel")` builds a little object of class
+`run_nowcast(x, engine = engine("mymodel"))` builds a little object of class
 `c("mymodel", "nowcast_method")` and calls
 
 * `nowcast_fit(method, x, ...)` — run the model, return whatever it returns;

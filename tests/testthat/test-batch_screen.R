@@ -1,5 +1,5 @@
 # =============================================================================
-# Model-free batch detection: diagnose_batches(), diagnose_batch_shape(), simulate_batch()
+# Model-free batch detection: diagnose_batches(), diagnose_batches2(), simulate_batch()
 # =============================================================================
 # These functions are model-free (no nowcast, no RTMB), so every test here is
 # fast and uses small synthetic data with a *known* planted batch.
@@ -114,6 +114,22 @@ test_that("diagnose_batches() recovers a planted batch and finds none in clean d
 
   flagged_dates <- batched_screen$report_date[!is.na(batched_screen$batch) & batched_screen$batch]
   expect_true(release_date %in% flagged_dates)
+})
+
+test_that("a batch screen auto-prints through its own formatter", {
+  # `capture.output(x)` AUTO-prints its argument -- it is not `print(x)` -- which
+  # is the thing that was broken: the method was registered with a plain
+  # `@export`, so it landed in the package's own methods table rather than
+  # `base::print`'s. The package namespace defines an S7 `print` generic, which
+  # shadows `base::print` once tbl.now is attached, and the screen came back as a
+  # bare tibble. See DEVELOPMENT_SKILL.md section 9.
+  screen <- diagnose_batches(make_flat_linelist(), lookback = 3L)
+  out    <- capture.output(screen)
+
+  expect_true(any(grepl("Batch screen", out, fixed = TRUE)))
+  # The negative is the load-bearing half: the tibble header is what shows up
+  # when dispatch silently falls back to the default method.
+  expect_false(any(grepl("A tibble", out, fixed = TRUE)))
 })
 
 test_that("the release date shows a spike paid for by a deficit", {
@@ -328,17 +344,17 @@ test_that("the repeated median resists a batch episode (50% breakdown)", {
   expect_equal(baseline[38], 20, tolerance = 1e-6)
 })
 
-# -- diagnose_batch_shape() --------------------------------------------------------
+# -- diagnose_batches2() --------------------------------------------------------
 
-test_that("diagnose_batch_shape() sees the inflated delays of a released backlog", {
+test_that("diagnose_batches2() sees the inflated delays of a released backlog", {
   clean_tbl    <- make_flat_linelist(n_origins = 70L, per_origin = 15L, seed = 3L)
   closed       <- as.Date(c("2021-02-01", "2021-02-02", "2021-02-03"))
   release_date <- as.Date("2021-02-04")
   batched_tbl  <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
 
-  batched_result <- diagnose_batch_shape(batched_tbl, at = release_date, guard = 3L,
+  batched_result <- diagnose_batches2(batched_tbl, at = release_date, guard = 3L,
                                      n_permutations = 199L, seed = 1L)
-  clean_result   <- diagnose_batch_shape(clean_tbl, at = release_date, guard = 3L,
+  clean_result   <- diagnose_batches2(clean_tbl, at = release_date, guard = 3L,
                                      n_permutations = 199L, seed = 1L)
 
   expect_gt(batched_result$mean_delay_at, batched_result$mean_delay_reference)
@@ -346,13 +362,38 @@ test_that("diagnose_batch_shape() sees the inflated delays of a released backlog
   expect_gt(clean_result$p_value, 0.05)
 })
 
-test_that("diagnose_batch_shape() rejects a report date that does not exist", {
+test_that("diagnose_batches2() rejects a report date off the grid", {
   skip_on_cran()
   clean_tbl <- make_flat_linelist(n_origins = 30L)
   expect_error(
-    diagnose_batch_shape(clean_tbl, at = as.Date("1900-01-01")),
-    "not one of the observed report dates"
+    diagnose_batches2(clean_tbl, at = as.Date("1900-01-01")),
+    "not on the observed report-date grid"
   )
+})
+
+test_that("diagnose_batches2() reports zero arrivals rather than erroring", {
+  skip_on_cran()
+  # A line list cannot represent a zero, so a report date on which nothing
+  # arrived has no rows at all. That is the observation "no arrivals", not a
+  # missing date, and it used to abort.
+  clean_tbl <- make_flat_linelist(n_origins = 30L)
+  report_col <- get_report_date(clean_tbl)
+  observed   <- sort(unique(clean_tbl[[report_col]]))
+  # Make a hole: drop every report that landed on one interior date.
+  empty_date <- observed[15L]
+  raw <- as.data.frame(clean_tbl)[, c("onset", "report"), drop = FALSE]
+  holed <- tbl_now(
+    raw[raw$report != empty_date, , drop = FALSE],
+    event_date = !!as.symbol("onset"), report_date = !!as.symbol("report"),
+    data_type = "linelist", now = max(observed), verbose = FALSE
+  )
+  expect_false(empty_date %in% holed[[report_col]])
+
+  result <- expect_no_error(
+    diagnose_batches2(holed, at = empty_date, n_permutations = 49L)
+  )
+  expect_equal(result$n_at, 0L)
+  expect_true(is.na(result$p_value))
 })
 
 test_that("block permutation is available for overdispersed data", {
@@ -361,7 +402,7 @@ test_that("block permutation is available for overdispersed data", {
   closed      <- as.Date(c("2021-02-01", "2021-02-02", "2021-02-03"))
   batched_tbl <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
 
-  block_result <- diagnose_batch_shape(batched_tbl, at = as.Date("2021-02-04"), guard = 3L,
+  block_result <- diagnose_batches2(batched_tbl, at = as.Date("2021-02-04"), guard = 3L,
                                    permute = "blocks", n_permutations = 199L, seed = 1L)
   expect_true(is.finite(block_result$p_value))
   expect_gte(block_result$p_value, 0)
@@ -392,4 +433,107 @@ test_that("count-cumulative data de-accumulates and screens with the robust null
   expect_s3_class(screened, "diagnose_batches")
   expect_equal(attr(screened, "null_model"), "robust")
   expect_true(all(c("delta", "deficit", "p_transport") %in% names(screened)))
+})
+
+# -- censored dates ------------------------------------------------------------
+
+test_that("the batch family ignores censored arrival dates", {
+  skip_on_cran()
+  # A censored report date is an upper bound, not the date the record arrived,
+  # so those rows would pile up on the bound and be rediscovered as the very
+  # batch the censoring already recorded.
+  clean_tbl <- make_flat_linelist(n_origins = 40L)
+  censored  <- censor_reporting_delays_above(clean_tbl, 1)
+  flag      <- get_is_censored_report(censored)
+  n_censored <- sum(censored[[flag]])
+  expect_gt(n_censored, 0)
+
+  expect_message(
+    screened <- suppressWarnings(diagnose_batches(censored, lookback = 3L)),
+    "Ignoring"
+  )
+  # Dropping them is the same as never having had them.
+  kept <- suppressWarnings(
+    diagnose_batches(clean_tbl |> dplyr::filter(.delay <= 1), lookback = 3L)
+  )
+  expect_equal(screened$reported, kept$reported)
+
+  # And keeping them is a different answer, so the argument does something.
+  with_censored <- suppressWarnings(
+    diagnose_batches(censored, lookback = 3L, drop_censored = FALSE)
+  )
+  expect_false(isTRUE(all.equal(screened$reported, with_censored$reported)))
+
+  expect_message(
+    suppressWarnings(
+      diagnose_batches2(censored, at = get_now(censored) - 5, n_permutations = 49L)
+    ),
+    "Ignoring"
+  )
+})
+
+test_that("diagnose_batches() works on a grouped tbl_now", {
+  skip_on_cran()
+  clean_tbl <- make_flat_linelist(n_origins = 40L)
+  clean_tbl$sex <- rep(c("F", "M"), length.out = nrow(clean_tbl))
+
+  grouped <- suppressWarnings(
+    diagnose_batches(clean_tbl |> dplyr::group_by(sex), lookback = 3L)
+  )
+  plain <- suppressWarnings(diagnose_batches(clean_tbl, lookback = 3L))
+
+  expect_s3_class(grouped, "diagnose_batches")
+  expect_equal(dplyr::as_tibble(grouped), dplyr::as_tibble(plain))
+})
+
+# -- subsetting a screen -------------------------------------------------------
+
+test_that("a screen subset down to a few columns prints as a tibble", {
+  screened <- suppressWarnings(diagnose_batches(make_flat_linelist(), lookback = 2))
+
+  # The failure this pins: `screened[, cols]` kept the class, so auto-print
+  # looked for a `batch` column that was no longer there and aborted inside the
+  # print method -- "Can't subset rows with `!is.na(x$batch) & x$batch`".
+  columns <- screened[, c("report_date", "reported", "baseline")]
+  expect_false(inherits(columns, "diagnose_batches"))
+  expect_s3_class(columns, "tbl_df")
+  expect_silent(out <- capture.output(columns))
+  expect_false(any(grepl("Batch screen", out, fixed = TRUE)))
+
+  # The screen's own attributes go with the class they describe
+  expect_null(attr(columns, "lookback"))
+  expect_null(attr(columns, "alpha"))
+
+  # dplyr keeps the class on its own, so it needs the same treatment
+  expect_false(inherits(dplyr::select(screened, "report_date"), "diagnose_batches"))
+  expect_false(inherits(dplyr::mutate(screened, batch = NULL), "diagnose_batches"))
+})
+
+test_that("a screen that keeps its columns is still a screen", {
+  screened <- suppressWarnings(diagnose_batches(make_flat_linelist(), lookback = 2))
+
+  # Row subsetting, `head()` and `filter()` leave the report intact, so they
+  # must NOT demote: these are how a user looks at a screen.
+  for (subset in list(
+    screened[seq_len(3), ],
+    utils::head(screened, 3),
+    dplyr::filter(screened, !is.na(.data$batch))
+  )) {
+    expect_s3_class(subset, "diagnose_batches")
+    expect_identical(attr(subset, "lookback"), attr(screened, "lookback"))
+    expect_match(capture.output(subset)[1], "Batch screen")
+  }
+})
+
+test_that("a screen missing a column still prints rather than aborting", {
+  screened <- suppressWarnings(diagnose_batches(make_flat_linelist(), lookback = 2))
+
+  # `$<-` does not go through `[`, so the class survives; the print method has
+  # to cope on its own rather than erroring in the one place that is hardest to
+  # read.
+  stripped <- screened
+  stripped$batch <- NULL
+  expect_true(inherits(stripped, "diagnose_batches"))
+  expect_silent(out <- capture.output(stripped))
+  expect_false(any(grepl("Batch screen", out, fixed = TRUE)))
 })

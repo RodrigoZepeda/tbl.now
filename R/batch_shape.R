@@ -57,6 +57,12 @@
 #' (neighbouring report dates share event dates, so individual items are not
 #' exchangeable) use `permute = "blocks"`, which permutes whole report dates.
 #'
+#' `at` need not be a date that carries rows. A line list cannot represent a zero,
+#' so a report date on which nothing arrived has no rows at all; that is the
+#' observation "no arrivals", not a missing one, and the test reports zero
+#' arrivals for it instead of aborting. Only a date off the object's report grid
+#' is an error.
+#'
 #' The `guard` argument omits report dates immediately adjacent to `at` from the
 #' comparison set: if a batch is present, its own deficit dates sit right beside
 #' the spike and would contaminate the reference group. For `"count-cumulative"`
@@ -65,7 +71,9 @@
 #'
 #' @param x A [tbl_now()] object.
 #' @param at The candidate report date (coercible to the class of the report
-#'   column), typically one flagged by [diagnose_batches()].
+#'   column), typically one flagged by [diagnose_batches()]. A date on the
+#'   report grid that carries no rows is reported as zero arrivals, not an
+#'   error.
 #' @param neighbours Number of report dates on each side used as the reference
 #'   group.  Default `3`.
 #' @param guard Number of report dates immediately either side of `at` to skip.
@@ -74,6 +82,11 @@
 #'   Poisson counts) or `"blocks"` (permutes whole report dates; valid under
 #'   overdispersion).
 #' @param n_permutations Number of permutations. Default `999`.
+#' @param drop_censored Logical. Ignore the rows whose date on `axis` is
+#'   flagged censored (`is_censored_report`, or `is_censored_validation` on the
+#'   validation axis). Default `TRUE`: a censored date is a *bound*, not the
+#'   date the record arrived, so those rows would pile up on the censoring date
+#'   and be rediscovered as the very batch the censoring already recorded.
 #' @param axis Which time axis to scan for arrivals: `"report"` (default) or
 #'   `"validation"`. The question is the same either way -- did an unusual
 #'   number of records land on this date? -- so a laboratory clearing its
@@ -105,23 +118,25 @@
 #'
 #' # Pick a report date to interrogate. A real workflow takes this from
 #' ## diagnose_batches(); here we simply name one.
-#' diagnose_batch_shape(dengue_tbl, at = as.Date("1990-06-25"), n_permutations = 99)
+#' diagnose_batches2(dengue_tbl, at = as.Date("1990-06-25"), n_permutations = 99)
 #'
 #' # `n_permutations` sets the resolution of the p-value: 99 keeps the example
 #' ## fast, but use the default (999) for anything you intend to report.
 #'
 #' @export
-diagnose_batch_shape <- function(x,
-                             at,
-                             neighbours     = 3L,
-                             guard          = 1L,
-                             permute        = c("items", "blocks"),
-                             n_permutations = 999L,
-                             axis           = c("report", "validation"),
-                             seed           = NULL) {
+diagnose_batches2 <- function(x,
+                              at,
+                              neighbours     = 3L,
+                              guard          = 1L,
+                              permute        = c("items", "blocks"),
+                              n_permutations = 999L,
+                              axis           = c("report", "validation"),
+                              drop_censored  = TRUE,
+                              seed           = NULL) {
   permute <- match.arg(permute)
   axis    <- match.arg(axis)
-  .batch_experimental_warning("diagnose_batch_shape")
+  check_bool(drop_censored, "drop_censored")
+  .batch_experimental_warning("diagnose_batches2")
   .batch_check_tbl_now(x)
   if (!is.null(seed)) set.seed(seed)
 
@@ -130,7 +145,8 @@ diagnose_batch_shape <- function(x,
   if (neighbours < 1L) cli::cli_abort("`neighbours` must be at least 1. Got {neighbours}.")
   if (guard < 0L)      cli::cli_abort("`guard` must be non-negative. Got {guard}.")
 
-  increments <- .batch_report_increments(x, axis = axis)
+  increments <- .batch_report_increments(x, axis = axis,
+                                         drop_censored = drop_censored)
 
   # Only appearing reports carry a delay; down-revisions do not.
   if (any(increments$.count < 0)) {
@@ -141,7 +157,7 @@ diagnose_batch_shape <- function(x,
     increments <- dplyr::filter(increments, .data$.count > 0)
   }
 
-  candidate_date <- .batch_match_report_date(increments, at)
+  candidate_date <- .batch_match_report_date(increments, at, x, axis)
 
   stratum_levels <- sort(unique(increments$.stratum))
   result_rows <- vector("list", length(stratum_levels))
@@ -292,20 +308,46 @@ diagnose_batch_shape <- function(x,
   permuted_statistics
 }
 
-#' Coerce `at` onto the observed report-date grid, with a helpful error.
+#' Coerce `at` onto the report-date grid, with a helpful error.
+#'
+#' A date with no rows is not an error. A line list cannot represent a zero, and
+#' `count-incidence` data need not either, so a report date on which nothing
+#' arrived simply has no rows -- which is the observation "no arrivals", not a
+#' missing one. Such a date is returned unchanged and the test reports zero
+#' arrivals against its neighbours. Only a date off the object's report grid
+#' altogether, where there is nothing to compare against, is an error.
+#'
+#' @param increments The increments table.
+#' @param x The `tbl_now`, for the report units.
+#' @param axis `"report"` or `"validation"`.
+#'
 #' @keywords internal
 #' @noRd
-.batch_match_report_date <- function(increments, at) {
+.batch_match_report_date <- function(increments, at, x, axis = "report") {
   report_dates <- sort(unique(increments$.report_date))
   candidate    <- tryCatch(
     methods::as(at, class(report_dates)[1]),
     error = function(e) at
   )
-  if (!candidate %in% report_dates) {
-    cli::cli_abort(c(
-      "`at` ({format(at)}) is not one of the observed report dates.",
-      "i" = "Report dates run from {format(min(report_dates))} to {format(max(report_dates))}."
-    ))
+  if (candidate %in% report_dates) return(candidate)
+
+  report_unit <- if (identical(axis, "validation")) {
+    get_validation_units(x) %||% get_report_units(x) %||% "days"
+  } else {
+    get_report_units(x) %||% "days"
   }
-  candidate
+  grid <- .tbl_now_date_seq(min(report_dates), max(report_dates), report_unit)
+  if (candidate %in% grid) {
+    cli::cli_inform(c(
+      "i" = "No records arrived on {format(candidate)}; reporting zero arrivals \
+             rather than a test."
+    ))
+    return(candidate)
+  }
+
+  cli::cli_abort(c(
+    "`at` ({format(at)}) is not on the observed report-date grid.",
+    "i" = "Report dates run from {format(min(report_dates))} to \
+           {format(max(report_dates))}, stepping in {report_unit}."
+  ))
 }

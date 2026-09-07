@@ -195,22 +195,33 @@ tidy_tbl_nowcast <- function(x, probs = NULL, ...) {
   )
 }
 
-#' Tidy the scores of a `nowcast_backtest()`
+#' Tidy the predictions and scores of a `nowcast_backtest()`
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
-#' One row per (method, `now` date, target) with the scores that target earned,
-#' with the dot-prefixed internal column names traded for ordinary ones so the
-#' result goes straight into \pkg{dplyr} or \pkg{ggplot2}.
+#' One row per (method, `now` date, target) carrying both halves of the
+#' comparison -- what the model said and what happened -- with the dot-prefixed
+#' internal column names traded for ordinary ones so the result goes straight
+#' into \pkg{dplyr} or \pkg{ggplot2}.
 #'
 #' @param x A `nowcast_backtest` object.
 #' @param ... Unused, for generic consistency.
 #'
 #' @return A [tibble][tibble::tibble] with the columns `method`, `now`,
-#'   `event_date`, `stratum`, `observed`, `wis`, `ae_median`, `coverage_50` and
-#'   `coverage_90`. `stratum` is `"all"` for an unstratified backtest and the
-#'   `" | "`-pasted strata otherwise, so `(method, now, stratum, event_date)` is
-#'   a unique key.
+#'   `event_date`, `stratum`, `observed`, `estimate`, `conf.low`, `conf.high`,
+#'   `level`, `wis`, `ae_median`, `coverage_50` and `coverage_90`. `stratum` is
+#'   `"all"` for an unstratified backtest and the `" | "`-pasted strata
+#'   otherwise, so `(method, now, stratum, event_date)` is a unique key.
+#'
+#'   `estimate`, `conf.low`, `conf.high` and `level` are the retrospective
+#'   prediction itself, read off the same quantiles the scores were computed
+#'   from and named as [tidy()][tidy.tbl_nowcast] names them: `estimate` is the
+#'   `0.5` quantile and `level` the width of the **widest symmetric pair
+#'   actually present**. [nowcast_backtest()] refuses engines that report
+#'   different quantile levels, so `level` is one number for the whole table.
+#'   When no symmetric pair exists all three of `conf.low`, `conf.high` and
+#'   `level` are `NA`, and `estimate` is `NA` when the median was not among the
+#'   levels reported -- a guessed width defeats the point of the column.
 #'
 #' @seealso
 #' [nowcast_backtest()], which produces the object being tidied;
@@ -235,14 +246,20 @@ tidy_tbl_nowcast <- function(x, probs = NULL, ...) {
 #'   now_dates = as.Date(c("2010-10-04", "2010-11-15")), verbose = FALSE
 #' )
 #'
-#' # One tidy row per method, `now` date, stratum and event date.
+#' # One tidy row per method, `now` date, stratum and event date, carrying the
+#' # retrospective prediction next to what was eventually observed.
 #' head(tidy(bt))
 #'
 #' @exportS3Method generics::tidy
 tidy.nowcast_backtest <- function(x, ...) {
-  scores <- dplyr::as_tibble(x$scores)
   event_col <- x$event_date
   strata <- x$strata %||% character(0)
+  key <- c(".method", ".now", event_col, strata)
+
+  # The scores and the predictions are two views of the same fits, keyed the
+  # same way, so the prediction each score was earned by is a join away.
+  scores <- dplyr::as_tibble(x$scores) |>
+    dplyr::left_join(.backtest_intervals(x), by = key)
 
   dplyr::tibble(
     method     = as.character(scores$.method),
@@ -250,6 +267,10 @@ tidy.nowcast_backtest <- function(x, ...) {
     event_date = as.Date(scores[[event_col]]),
     stratum    = .epinow2_region(scores, strata),
     observed   = as.numeric(scores$.observed),
+    estimate   = as.numeric(scores$.estimate),
+    conf.low   = as.numeric(scores$.conf_low),
+    conf.high  = as.numeric(scores$.conf_high),
+    level      = as.numeric(scores$.level),
     wis        = as.numeric(scores$wis),
     ae_median  = as.numeric(scores$ae_median),
     coverage_50 = as.logical(scores$coverage_50),
@@ -257,5 +278,56 @@ tidy.nowcast_backtest <- function(x, ...) {
   ) |>
     dplyr::arrange(
       .data$method, .data$now, .data$stratum, .data$event_date
+    )
+}
+
+#' A backtest's quantile predictions, one row per target
+#'
+#' The wide half of [tidy.nowcast_backtest()]: the long `predictions` table
+#' collapsed to the median and the widest symmetric interval, keyed by
+#' `(.method, .now, event date, strata)` so it joins straight onto the scores.
+#'
+#' This is [tidy()][tidy.tbl_nowcast]'s reshaping applied to a table that is
+#' already pooled over several fits, which is why it is not that function: a
+#' `tbl_nowcast` carries one method at one `now`, and its output frame has
+#' neither column.
+#'
+#' @param x A `nowcast_backtest` object.
+#'
+#' @return A tibble of the key columns plus `.estimate`, `.conf_low`,
+#'   `.conf_high` and `.level`. The dots keep them from colliding with a stratum
+#'   a user happened to call `level`.
+#'
+#' @keywords internal
+#' @noRd
+.backtest_intervals <- function(x) {
+  predictions <- dplyr::as_tibble(x$predictions)
+  key <- c(".method", ".now", x$event_date, x$strata %||% character(0))
+
+  # Computed over the whole table rather than per method: `nowcast_backtest()`
+  # refuses engines whose quantile levels disagree, so there is one answer.
+  bounds <- .widest_symmetric_pair(predictions$.quantile_level)
+
+  targets <- predictions |>
+    dplyr::distinct(dplyr::across(dplyr::all_of(key)))
+
+  at_level <- function(level) {
+    if (is.na(level)) {
+      return(rep(NA_real_, nrow(targets)))
+    }
+    wanted <- predictions |>
+      dplyr::filter(abs(.data$.quantile_level - level) < 1e-8) |>
+      dplyr::select(dplyr::all_of(c(key, ".value")))
+    targets |>
+      dplyr::left_join(wanted, by = key) |>
+      dplyr::pull(".value")
+  }
+
+  targets |>
+    dplyr::mutate(
+      .estimate  = at_level(0.5),
+      .conf_low  = at_level(bounds$lower),
+      .conf_high = at_level(bounds$upper),
+      .level     = bounds$level
     )
 }

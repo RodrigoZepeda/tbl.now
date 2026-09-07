@@ -10,8 +10,11 @@ nowcast_backtest(
   now_dates = NULL,
   horizon = 4,
   seed = NULL,
+  keep_draws = FALSE,
   on_error = c("warn", "abort"),
-  verbose = TRUE
+  verbose = TRUE,
+  truth_axis = c("report", "validation"),
+  truth_type = "total"
 )
 }
 \arguments{
@@ -29,9 +32,10 @@ plain \code{engine_diseasenowcasting()} are backtested separately, so
 \code{\link[=nowcast_ensemble]{nowcast_ensemble()}} takes a named list of members. An engine with no label
 is labelled by its method.}
 
-\item{now_dates}{Vector of Dates to nowcast at. Defaults to the four most
-recent event dates that are at least \code{horizon} units before the object's
-\code{now}, so that some later reports exist to score against.}
+\item{now_dates}{Vector of retrospective nowcast origins. Defaults to the
+four most recent report-axis dates that are at least \code{horizon} units before
+the object's \code{now}; these dates are used as as-of origins, not as a filter
+on target event dates.}
 
 \item{horizon}{Number of time units of hindsight required when \code{now_dates} is
 chosen automatically. Default \code{4}.}
@@ -43,10 +47,27 @@ if every method consumes the same random numbers in the same order, so
 dropping a method, or refitting one date, silently moves every other fit.
 Seeding per (label, date) makes a fit depend only on which fit it is.}
 
+\item{keep_draws}{Logical. Whether to retain every posterior draw from every
+successful fit. Default \code{FALSE}, because this can make a backtest much
+larger. Set it to \code{TRUE} when the backtest should be passed directly to
+\code{\link[scoringutils:as_forecast_sample]{scoringutils::as_forecast_sample()}}. Engines that return only quantiles
+still cannot be converted to samples.}
+
 \item{on_error}{Either \code{"warn"} (default) to skip a model/date that fails
 with a warning, or \code{"abort"} to stop.}
 
 \item{verbose}{Logical. Whether to report progress.}
+
+\item{truth_axis}{Which process defines the observed counts. \code{"report"}
+(default) scores counts eventually reported. \code{"validation"} scores counts
+eventually resolved on the validation axis and requires a validation-aware
+\code{truth}.}
+
+\item{truth_type}{Which case type to score. Defaults to \code{"total"}. Validation
+types such as \code{"confirmed"}, \code{"retracted"}, \code{"pending"}, \code{"unknown"} and
+\code{"net"} follow the same meanings as \code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}} and
+\code{\link[=get_latest_validated_cases]{get_latest_validated_cases()}}. \code{"by_type"} is refused because scoring needs
+one observed value per event-date/stratum target.}
 }
 \value{
 An object of class \code{nowcast_backtest}: a list with
@@ -54,6 +75,8 @@ An object of class \code{nowcast_backtest}: a list with
 \describe{
 \item{scores}{A \code{tibble} of per-date scores with an extra \code{.now} column.}
 \item{predictions}{A \code{tibble} of every retrospective quantile prediction.}
+\item{draws}{When \code{keep_draws = TRUE}, a \code{tibble} of the retained draws;
+otherwise \code{NULL}.}
 \item{truth}{The observed counts used for scoring.}
 \item{methods}{The labels that produced at least one nowcast.}
 \item{now_dates}{The dates that were nowcast.}

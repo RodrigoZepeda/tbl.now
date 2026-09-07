@@ -205,8 +205,9 @@ test_that("tidy() of a backtest gives one row per method, now date and target", 
   expect_named(
     tidied,
     c(
-      "method", "now", "event_date", "stratum", "observed", "wis",
-      "ae_median", "coverage_50", "coverage_90"
+      "method", "now", "event_date", "stratum", "observed", "estimate",
+      "conf.low", "conf.high", "level", "wis", "ae_median", "coverage_50",
+      "coverage_90"
     )
   )
   expect_setequal(unique(tidied$method), c("scoretoy", "scoretoy2"))
@@ -221,4 +222,101 @@ test_that("tidy() of a backtest gives one row per method, now date and target", 
   # The biased model earns the larger WIS
   mean_wis <- tapply(tidied$wis, tidied$method, mean, na.rm = TRUE)
   expect_gt(mean_wis[["scoretoy2"]], mean_wis[["scoretoy"]])
+})
+
+test_that("tidy() of a backtest carries the predictions, not just the truth (#70)", {
+  register_scoretoy()
+  x <- score_tbl_now()
+  dates <- as.Date(c("2020-06-01", "2020-06-08"))
+
+  backtest <- nowcast_backtest(
+    x,
+    engine("scoretoy", bias = 0),
+    engine("scoretoy2", bias = 25),
+    now_dates = dates, verbose = FALSE
+  )
+
+  tidied <- tidy(backtest)
+
+  # The three prediction columns are the quantiles the scores were computed
+  # from, so they must equal the corresponding rows of `$predictions` -- not
+  # merely be present and finite.
+  at <- function(level) {
+    backtest$predictions |>
+      dplyr::filter(abs(.data$.quantile_level - level) < 1e-8) |>
+      dplyr::transmute(
+        method = .data$.method, now = .data$.now,
+        event_date = .data$event_date, .value = .data$.value
+      ) |>
+      dplyr::arrange(.data$method, .data$now, .data$event_date) |>
+      dplyr::pull(".value")
+  }
+
+  expect_equal(tidied$estimate, at(0.5))
+  expect_equal(tidied$conf.low, at(0.025))
+  expect_equal(tidied$conf.high, at(0.975))
+  expect_equal(unique(tidied$level), 0.95)
+
+  # The biased engine's median sits 25 above the unbiased one's, which is the
+  # whole difference between the two members.
+  medians <- tapply(tidied$estimate, tidied$method, mean)
+  expect_equal(
+    unname(medians[["scoretoy2"]] - medians[["scoretoy"]]), 25
+  )
+
+  # Adding columns must not add rows.
+  expect_equal(nrow(tidied), nrow(backtest$scores))
+})
+
+test_that("tidy() of a backtest keys the predictions on the strata, not the date", {
+  x <- score_tbl_now_strata()
+
+  backtest <- nowcast_backtest(
+    x, example_engine(label = "toy"),
+    now_dates = as.Date("2020-06-01"), verbose = FALSE
+  )
+
+  tidied <- tidy(backtest)
+
+  expect_setequal(unique(tidied$stratum), c("a", "b"))
+  expect_equal(nrow(tidied), nrow(backtest$scores))
+
+  # `b` is built at four times `a`, so joining on the event date alone -- the
+  # bug this keys against -- would hand both strata whichever sorted first and
+  # the two would come out identical.
+  wide <- tidied |>
+    dplyr::select("event_date", "stratum", "estimate") |>
+    tidyr::pivot_wider(names_from = "stratum", values_from = "estimate")
+  expect_false(isTRUE(all.equal(wide$a, wide$b)))
+  expect_true(all(wide$b > wide$a))
+})
+
+test_that("tidy() of a backtest reports NA where the levels cannot support a bound", {
+  register_scoretoy()
+  x <- score_tbl_now()
+
+  backtest <- nowcast_backtest(
+    x, engine("scoretoy", quantile_levels = c(0.25, 0.4, 0.75)),
+    now_dates = as.Date("2020-06-01"), verbose = FALSE
+  )
+
+  tidied <- tidy(backtest)
+
+  # No symmetric pair among (0.25, 0.4, 0.75) -- 0.25/0.75 is symmetric, so
+  # bounds exist; the median is what is absent here.
+  expect_true(all(is.na(tidied$estimate)))
+  expect_equal(unique(tidied$level), 0.5)
+  expect_false(anyNA(tidied$conf.low))
+
+  # And a set with no symmetric pair at all gives NA bounds and an NA level.
+  backtest2 <- nowcast_backtest(
+    x, engine("scoretoy", quantile_levels = c(0.25, 0.5, 0.9)),
+    now_dates = as.Date("2020-06-01"), verbose = FALSE
+  )
+  tidied2 <- tidy(backtest2)
+
+  expect_true(all(is.na(tidied2$conf.low)))
+  expect_true(all(is.na(tidied2$conf.high)))
+  expect_true(all(is.na(tidied2$level)))
+  expect_false(anyNA(tidied2$estimate))
 })

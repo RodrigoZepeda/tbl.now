@@ -44,6 +44,44 @@ test_that("the quantile ensemble averages the members level by level", {
   expect_equal(unname(ensemble@metadata$weights), c(0.5, 0.5))
 })
 
+test_that("an ensemble can be a member of another ensemble", {
+  hsgp <- fake_nowcast("hsgp", c(1, 2, 3, 4, 5))
+  ar <- fake_nowcast("ar", c(3, 4, 5, 6, 7))
+  rw <- fake_nowcast("rw", c(5, 6, 7, 8, 9))
+  baseline <- fake_nowcast("baseline", c(7, 8, 9, 10, 11))
+
+  disease <- nowcast_ensemble(hsgp, ar, name = "disease", verbose = FALSE)
+  combined <- nowcast_ensemble(
+    disease = disease, rw = rw, baseline = baseline, verbose = FALSE
+  )
+
+  expect_true(is_tbl_nowcast(combined))
+  expect_equal(combined@metadata$members, c("disease", "rw", "baseline"))
+  expect_equal(
+    combined@predictions$.value,
+    rep(c(14, 17, 20, 23, 26) / 3, times = 2)
+  )
+  expect_true(is_tbl_nowcast(combined@fit$disease))
+})
+
+test_that("a draw-based ensemble can be nested in a linear pool", {
+  first <- fake_draws_nowcast("first", 10)
+  second <- fake_draws_nowcast("second", 20)
+  third <- fake_draws_nowcast("third", 30)
+  inner <- nowcast_ensemble(
+    first, second, type = "linear_pool", n_draws = 300,
+    name = "inner", verbose = FALSE
+  )
+
+  outer <- nowcast_ensemble(
+    inner, third, type = "linear_pool", n_draws = 400, verbose = FALSE
+  )
+
+  expect_true(is_tbl_nowcast(outer))
+  expect_false(is.null(outer@draws))
+  expect_equal(length(unique(outer@draws$.draw)), 400)
+})
+
 test_that("unequal weights shift the ensemble towards the heavier member", {
   a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
   b <- fake_nowcast("b", c(3, 4, 5, 6, 7))

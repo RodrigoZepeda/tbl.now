@@ -78,8 +78,13 @@ input only, so you do not have to remember
 \code{to_count() |> complete_zeroes()} first. Count data is left exactly as
 supplied, because it \emph{can} distinguish an observed zero from a cell that
 could not be observed yet (\code{NA}) and filling those would claim reporting was
-complete when it was not. \code{TRUE} / \code{FALSE} force either behaviour. Ignored
-for \code{format = "long"}.}
+complete when it was not. \code{TRUE} / \code{FALSE} force either behaviour.
+
+\strong{Ignored for \code{format = "long"}}, which is a tidy data frame with no grid
+to complete. If you build a triangle from the long output yourself, a line
+list will be missing every event period in which nothing was reported --
+call \code{to_count() |> complete_zeroes()} first, or ask for
+\code{format = "triangle_list"}, which does it for you.}
 
 \item{negatives}{How to handle the negative increments that appear when
 \code{count-cumulative} data is de-accumulated (a downward revision).

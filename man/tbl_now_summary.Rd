@@ -5,21 +5,12 @@
 \alias{summary.tbl_now}
 \title{Summarise a \code{tbl_now}}
 \usage{
-\method{summary}{tbl_now}(
-  object,
-  ...,
-  by_strata = NULL,
-  strata = NULL,
-  lags = 1,
-  completeness_delays = NULL,
-  growth_k = 7,
-  mature_only = TRUE
-)
+\method{summary}{tbl_now}(object, ..., by_strata = NULL, strata = NULL, growth_k = 7)
 }
 \arguments{
 \item{object}{A \code{tbl_now} object.}
 
-\item{...}{Unused, for compatibility with the \code{\link[=summary]{summary()}} generic.}
+\item{...}{Unused, for compatibility with the \code{\link[base:summary]{base::summary()}} generic.}
 
 \item{by_strata}{Logical. Add one set of rows per stratum on top of the
 pooled (\code{"all"}) rows. Defaults to \code{TRUE} when the object has strata.}
@@ -27,15 +18,7 @@ pooled (\code{"all"}) rows. Defaults to \code{TRUE} when the object has strata.}
 \item{strata}{Character vector of columns to stratify by. Defaults to
 \code{get_strata(object)}.}
 
-\item{lags}{Integer vector of lags for the autocorrelation rows.}
-
-\item{completeness_delays}{Integer vector of delays for the reporting
-completeness rows. Defaults to \code{0:7}, trimmed to the observed delays.}
-
 \item{growth_k}{Number of delays for the cumulative growth rows.}
-
-\item{mature_only}{Logical. Restrict the completeness rows to event dates
-old enough to have been fully reported (see \code{\link[=reporting_completeness]{reporting_completeness()}}).}
 }
 \value{
 A tibble with the columns described above.
@@ -96,15 +79,24 @@ stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}} and filtered with
 
 \describe{
 \item{\code{component}}{Which block the row belongs to: \code{"cases"}, \code{"delay"},
-\code{"zero_run"}, \code{"composition"}, \code{"autocorrelation"}, \code{"completeness"},
-\code{"growth"} or \code{"coverage"}.}
+\code{"zero_run"}, \code{"composition"}, \code{"growth"} or \code{"coverage"}. The
+\code{"autocorrelation"} and \code{"completeness"} blocks are no longer part of
+\code{summary()}; call \code{\link[=case_autocorrelation]{case_autocorrelation()}} and
+\code{\link[=reporting_completeness]{reporting_completeness()}} directly for those.}
 \item{\code{quantity}}{What the row describes, including the category for the
 compositional rows (\code{"validation_type = confirmed"}).}
 \item{\code{stratum}}{Which subset of the data the row describes: \code{"all"} for
 the pooled rows, or the stratum label otherwise.}
-\item{\code{n}}{Number of observations behind the row -- dates for \code{"cases"},
-runs for \code{"zero_run"}, data rows for \code{"delay"} and \code{"composition"}.}
-\item{\code{total}}{Number of \strong{cases} behind the row.}
+\item{\code{n}}{How many \strong{things of the block's own kind} the row counts.
+It is never a case count, and what it counts changes with the block:
+dates on the grid for \code{"cases"}, runs of zeros for \code{"zero_run"}, and
+(event date, report date) cells for \code{"delay"} and \code{"composition"}.}
+\item{\code{total}}{How many \strong{cases} are behind the row: records for a line
+list, the sum of the case-count column otherwise. So \code{n} and \code{total}
+answer different questions and are equal only when every cell holds
+exactly one case. In the \code{"composition"} block, for instance, \code{n} is
+how many cells carry that category and \code{total} is how many cases do --
+and \code{prop} is computed from \code{total}, the cases.}
 \item{\code{mean}, \code{sd}}{Mean and standard deviation. For the case-weighted
 rows these are the weighted versions, equal to what you would get by
 expanding the counts to one row per case.}
@@ -114,11 +106,10 @@ below on which estimator is used.}
 \item{\code{prop}}{Proportion of cases in this category (compositional rows),
 or the pooled share that had arrived by delay \code{d} (\code{"completeness"}
 rows).}
-\item{\code{value}}{A single scalar that is not a distribution: an
-autocorrelation, a gap, an occupancy. The \code{"completeness"} and
-\code{"growth"} rows are distributions over event dates, so they populate
-\code{mean}/\code{sd}/the quantiles (and \code{prop}) instead and leave \code{value}
-empty.}
+\item{\code{value}}{A single scalar that is not a distribution: a gap, an
+occupancy, an autocorrelation. The \code{"completeness"} and \code{"growth"} rows
+are distributions over event dates, so they populate \code{mean}/\code{sd}/the
+quantiles (and \code{prop}) instead and leave \code{value} empty.}
 \item{\code{date_min}, \code{date_max}}{Date range. Present only when the result
 contains \code{"coverage"} rows.}
 \item{\code{unobserved_cells}}{A \code{"coverage"} row counting the \code{NA}-count rows
@@ -142,13 +133,12 @@ overview
 # It is an ordinary tibble, so pick out the block you want.
 overview |> dplyr::filter(component == "delay")
 
-# How much of each week's eventual total had arrived by delay d? This is the
-# reporting-delay problem, in one table. Completeness is a distribution over
-# event dates, so it lives in `mean`/`q50` (the typical event date) and
-# `prop` (the pooled share), not in the scalar `value` column.
+# `n` and `total` are different questions. In the compositional block `n`
+# counts the (event, report) cells carrying the category and `total` counts
+# the cases in them.
 overview |>
-  dplyr::filter(component == "completeness", stratum == "all") |>
-  dplyr::select(quantity, n, mean, q50, prop)
+  dplyr::filter(component == "composition") |>
+  dplyr::select(quantity, stratum, n, total, prop)
 
 # Pooled rows only, ignoring the strata.
 summary(ndata, by_strata = FALSE)

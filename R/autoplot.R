@@ -1,75 +1,3 @@
-#' Default colour palette for `autoplot.tbl_now()`
-#'
-#' @return A named character vector of hex colours used across the panels.
-#'
-#' @keywords internal
-#' @noRd
-.tbl_now_palette <- function() {
-  c(
-    primary_green  = "#5F7E62",
-    light_green    = "#A8BFA9",
-    accent_red     = "#B85348",
-    near_black     = "#262626",
-    dark_green     = "#334335",
-    medium_green   = "#7A9E7E",
-    light_red      = "#e78b7f",
-    muted_green    = "#607060"
-  )
-}
-
-#' Colours and subtitle for a panel family
-#'
-#' Every panel belongs to one of two processes, and the whole package uses the
-#' same visual grammar for them: **red** for anything reporting-related, **green**
-#' for the epidemic (event-date) process. The subtitle says which one the panel
-#' describes, so a panel lifted out of the `autoplot()` grid still reads on its
-#' own.
-#'
-#' @param process `"reporting"` or `"epidemic"`.
-#' @param palette A named colour palette (see `.tbl_now_palette()`).
-#'
-#' @return A list with `fill`, `line` and `subtitle`.
-#'
-#' @keywords internal
-#' @noRd
-.tbl_now_process_style <- function(process, palette) {
-  if (identical(process, "reporting")) {
-    list(
-      fill     = palette[["light_red"]],
-      line     = palette[["accent_red"]],
-      subtitle = "Reporting delay process"
-    )
-  } else {
-    list(
-      fill     = palette[["light_green"]],
-      line     = palette[["primary_green"]],
-      subtitle = "Epidemic (event-date) process"
-    )
-  }
-}
-
-#' Shared ggplot2 theme for the diagnostic panels
-#'
-#' @param palette A named colour palette (see `.tbl_now_palette()`).
-#'
-#' @return A ggplot2 theme object.
-#'
-#' @keywords internal
-#' @noRd
-.tbl_now_theme <- function(palette) {
-  ggplot2::theme_minimal(base_size = 11) +
-    ggplot2::theme(
-      plot.title       = ggplot2::element_text(face = "bold", colour = palette[["near_black"]]),
-      plot.subtitle    = ggplot2::element_text(colour = palette[["muted_green"]]),
-      plot.caption     = ggplot2::element_text(colour = palette[["muted_green"]], hjust = 0,
-                                               size = 8, lineheight = 1.05),
-      plot.caption.position = "plot",
-      axis.title       = ggplot2::element_text(colour = palette[["near_black"]]),
-      axis.text        = ggplot2::element_text(colour = palette[["near_black"]]),
-      panel.grid.minor = ggplot2::element_blank()
-    )
-}
-
 #' Multiplier converting one delay unit into days
 #'
 #' Used to place the incompleteness vertical line on a `Date` axis.
@@ -395,7 +323,8 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_panel_delay <- function(delay_distribution, palette) {
+.tbl_now_panel_delay <- function(delay_distribution, palette, size = 1,
+                                linewidth = 1) {
   normalised_weight <- delay_distribution$weight / sum(delay_distribution$weight)
   plot_data <- dplyr::mutate(delay_distribution, normalised_weight = normalised_weight)
 
@@ -405,6 +334,7 @@
     ggplot2::geom_histogram(
       ggplot2::aes(weight = .data$normalised_weight),
       fill = style$fill, colour = style$line,
+      linewidth = 0.5 * linewidth,
       binwidth = 1, center = 0
     ) +
     ggplot2::labs(
@@ -427,7 +357,8 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_panel_delay_cumulative <- function(growth, palette) {
+.tbl_now_panel_delay_cumulative <- function(growth, palette, size = 1,
+                                            linewidth = 1) {
   if (nrow(growth) == 0) {
     return(.tbl_now_empty_panel(
       "Not enough cumulative history for growth ratios", palette
@@ -438,12 +369,12 @@
   ggplot2::ggplot(growth, ggplot2::aes(x = .data$delay, y = .data$ratio)) +
     ggplot2::geom_hline(
       yintercept = 1, linetype = "dashed",
-      colour = palette[["near_black"]], linewidth = 0.4
+      colour = palette[["ink"]], linewidth = 0.4 * linewidth
     ) +
     ggplot2::geom_boxplot(
       ggplot2::aes(group = .data$delay),
       fill = style$fill, colour = style$line,
-      outlier.colour = palette[["near_black"]], outlier.size = 0.6, linewidth = 0.4
+      outlier.colour = palette[["ink"]], outlier.size = 0.6 * size, linewidth = 0.4 * linewidth
     ) +
     ggplot2::scale_y_log10() +
     ggplot2::labs(
@@ -463,7 +394,8 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_panel_delay_cumulative_strata <- function(growth_by, palette) {
+.tbl_now_panel_delay_cumulative_strata <- function(growth_by, palette, size = 1,
+                                                   linewidth = 1) {
   if (nrow(growth_by) == 0) {
     return(.tbl_now_empty_panel(
       "Not enough cumulative history for growth ratios", palette
@@ -474,12 +406,12 @@
   )) +
     ggplot2::geom_hline(
       yintercept = 1, linetype = "dashed",
-      colour = palette[["near_black"]], linewidth = 0.4
+      colour = palette[["ink"]], linewidth = 0.4 * linewidth
     ) +
     ggplot2::geom_boxplot(
       ggplot2::aes(group = interaction(.data$delay, .data$strata)),
       position = ggplot2::position_dodge2(preserve = "single"),
-      outlier.size = 0.5, linewidth = 0.3
+      outlier.size = 0.5 * size, linewidth = 0.3 * linewidth
     ) +
     ggplot2::scale_y_log10() +
     .tbl_now_strata_fill_scale() +
@@ -506,13 +438,14 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_panel_epidemic <- function(epidemic_process, incomplete_threshold, level,
-                                    palette, holiday_points = NULL) {
+                                    palette, holiday_points = NULL, size = 1,
+                                    linewidth = 1) {
   base_plot <- ggplot2::ggplot(
     epidemic_process,
     ggplot2::aes(x = .data$event_date, y = .data$case_count)
   ) +
-    ggplot2::geom_area(fill = palette[["light_green"]]) +
-    ggplot2::geom_line(colour = palette[["primary_green"]])
+    ggplot2::geom_area(fill = palette[["epidemic_light"]]) +
+    ggplot2::geom_line(colour = palette[["epidemic"]], linewidth = 0.5 * linewidth)
 
   # Mark event dates that fall on a holiday (from the temporal-effects spec)
   if (!is.null(holiday_points) && nrow(holiday_points) > 0) {
@@ -520,12 +453,12 @@
       ggplot2::geom_point(
         data = holiday_points,
         ggplot2::aes(x = .data$event_date, y = .data$case_count),
-        colour = palette[["accent_red"]], size = 2
+        colour = palette[["reporting"]], size = 2 * size
       ) +
       ggplot2::geom_point(
         data = holiday_points,
         ggplot2::aes(x = .data$event_date, y = .data$case_count),
-        colour = "white", size = 1
+        colour = palette[["surface"]], size = 1 * size
       )
   }
 
@@ -533,14 +466,14 @@
     base_plot <- base_plot +
       ggplot2::geom_vline(
         xintercept = incomplete_threshold,
-        colour = palette[["near_black"]], linetype = "dashed", linewidth = 0.7
+        colour = palette[["ink"]], linetype = "dashed", linewidth = 0.7 * linewidth
       ) +
       ggplot2::annotate(
         "label",
         x = incomplete_threshold, y = Inf,
         label = paste0("Incomplete (<", round(100 * level), "% reported)"),
-        vjust = 1.1, hjust = 1.02, size = 3,
-        colour = palette[["near_black"]], fill = "white"
+        vjust = 1.1, hjust = 1.02, size = 3 * size,
+        colour = palette[["ink"]], fill = palette[["surface"]]
       )
   }
 
@@ -804,8 +737,10 @@
 #'
 #' @param grouping One of `"weekday"`, `"week"` or `"month"`.
 #'
-#' @return A list with `title` (effect name) and `x` (x-axis label), or `NULL`
-#'   for an unknown grouping.
+#' @return A list with `title` (the effect-name stem the panel titles are built
+#'   from), `x` (x-axis label) and optionally the ready-made titles
+#'   `title_case` / `title_delay` / `title_reporting`, or `NULL` for an unknown
+#'   grouping.
 #'
 #' @keywords internal
 #' @noRd
@@ -814,10 +749,60 @@
     weekday     = list(title = "Day-of-week",   x = "Day of week"),
     week        = list(title = "Week-of-year",  x = "Epidemiological week"),
     month       = list(title = "Month-of-year", x = "Month"),
-    holiday     = list(title = "Holiday",       x = "Day type"),
+    # The day-type panel contrasts weekends, holidays or both, depending on the
+    # spec attached, so it is named for all of them rather than for holidays.
+    holiday     = list(
+      title       = "Weekend and/or holiday",
+      title_case  = "Weekend and/or holiday effects",
+      title_delay = "Weekend and/or holiday delay effects",
+      x           = "Day type"
+    ),
     holiday_lag = list(title = "Holiday lag",   x = "Working days from the nearest holiday"),
     NULL
   )
+}
+
+#' The title of a calendar panel
+#'
+#' @param labels A list from `.tbl_now_calendar_group_spec()`.
+#' @param kind `"case"` (the case-count effect), `"delay"` (the normalized
+#'   reporting-delay effect) or `"reporting"` (the `measure = "percent"` twin,
+#'   which describes the reports rather than the delay).
+#'
+#' @return A character title.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_calendar_title <- function(labels, kind) {
+  explicit <- labels[[paste0("title_", kind)]]
+  if (!is.null(explicit)) {
+    return(explicit)
+  }
+  paste0(labels$title, switch(kind,
+    case      = " effect",
+    delay     = " delay effect",
+    reporting = " reporting effect"
+  ))
+}
+
+#' The measure a calendar grouping can actually be drawn in
+#'
+#' The day-type and holiday-lag categories are not equal-sized parts of the
+#' calendar block a percentage would be taken over -- the weekend is two days in
+#' seven, and "1 working day after a holiday" is however many days the calendar
+#' happens to put there -- so a share of the cases in each says more about the
+#' calendar than about the data. Those panels are always normalized, whatever
+#' `measure` asks for.
+#'
+#' @param measure The user's `measure` argument.
+#' @param grouping The calendar grouping being drawn.
+#'
+#' @return `"normalized"` for the holiday groupings, `measure` otherwise.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_calendar_measure <- function(measure, grouping) {
+  if (grouping %in% c("holiday", "holiday_lag")) "normalized" else measure
 }
 
 #' Add a `calendar_group` factor derived from a date column
@@ -878,7 +863,8 @@
 #' @noRd
 .tbl_now_panel_calendar <- function(epidemic_process, grouping, palette,
                                     holiday_config = NULL,
-                                    measure = "normalized") {
+                                    measure = "normalized", size = 1,
+                                    linewidth = 1) {
   overall_mean <- mean(epidemic_process$case_count, na.rm = TRUE)
   if (is.na(overall_mean) || overall_mean == 0) {
     return(.tbl_now_empty_panel("No cases to compute a calendar effect", palette))
@@ -891,6 +877,7 @@
     ))
   }
   style <- .tbl_now_process_style("epidemic", palette)
+  measure <- .tbl_now_calendar_measure(measure, grouping)
 
   if (identical(measure, "percent")) {
     plot_data <- .tbl_now_percent_shares(
@@ -923,20 +910,20 @@
   )) +
     ggplot2::geom_boxplot(
       fill = style$fill, colour = style$line,
-      outlier.colour = palette[["near_black"]], outlier.size = 0.6, linewidth = 0.4
+      outlier.colour = palette[["ink"]], outlier.size = 0.6 * size, linewidth = 0.4 * linewidth
     )
 
   if (!is.null(reference)) {
     base_plot <- base_plot +
       ggplot2::geom_hline(
         yintercept = reference, linetype = "dashed",
-        colour = palette[["near_black"]], linewidth = 0.4
+        colour = palette[["ink"]], linewidth = 0.4 * linewidth
       )
   }
 
   base_plot +
     ggplot2::labs(
-      title = paste0(labels$title, " effect"),
+      title = .tbl_now_calendar_title(labels, "case"),
       subtitle = style$subtitle,
       x = labels$x, y = y_lab
     ) +
@@ -969,7 +956,8 @@
 .tbl_now_panel_delay_calendar <- function(delay_per_date, grouping, palette,
                                           holiday_config = NULL,
                                           measure = "normalized",
-                                          reporting_process = NULL) {
+                                          reporting_process = NULL, size = 1,
+                                          linewidth = 1) {
   labels <- .tbl_now_calendar_group_spec(grouping)
   if (is.null(labels)) {
     return(.tbl_now_empty_panel(
@@ -977,6 +965,7 @@
     ))
   }
   style <- .tbl_now_process_style("reporting", palette)
+  measure <- .tbl_now_calendar_measure(measure, grouping)
 
   if (identical(measure, "percent")) {
     if (is.null(reporting_process) || nrow(reporting_process) == 0) {
@@ -989,7 +978,7 @@
       return(.tbl_now_percent_unavailable(palette))
     }
     value <- "percent"
-    title <- paste0(labels$title, " reporting effect")
+    title <- .tbl_now_calendar_title(labels, "reporting")
     x_lab <- sub("^Day of week$", "Day of week (report date)", labels$x)
     y_lab <- "Percent of reported cases (%)"
     reference <- NULL
@@ -1012,7 +1001,7 @@
       normalized_delay = .data$mean_delay / overall_mean_delay
     )
     value <- "normalized_delay"
-    title <- paste0(labels$title, " delay effect")
+    title <- .tbl_now_calendar_title(labels, "delay")
     x_lab <- labels$x
     y_lab <- "Normalized mean delay (1 = average)"
     reference <- 1
@@ -1023,14 +1012,14 @@
   )) +
     ggplot2::geom_boxplot(
       fill = style$fill, colour = style$line,
-      outlier.colour = palette[["near_black"]], outlier.size = 0.6, linewidth = 0.4
+      outlier.colour = palette[["ink"]], outlier.size = 0.6 * size, linewidth = 0.4 * linewidth
     )
 
   if (!is.null(reference)) {
     base_plot <- base_plot +
       ggplot2::geom_hline(
         yintercept = reference, linetype = "dashed",
-        colour = palette[["near_black"]], linewidth = 0.4
+        colour = palette[["ink"]], linewidth = 0.4 * linewidth
       )
   }
 
@@ -1079,7 +1068,8 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_periodogram_panel <- function(series, event_units, palette, title,
-                                       subtitle, line_colour, empty_message) {
+                                       subtitle, line_colour, empty_message,
+                                       size = 1, linewidth = 1) {
   series <- series[!is.na(series)]
   if (length(series) < 8 || stats::var(series) == 0) {
     return(.tbl_now_empty_panel(empty_message, palette))
@@ -1105,17 +1095,17 @@
   )
 
   ggplot2::ggplot(periodogram, ggplot2::aes(x = .data$period, y = .data$power)) +
-    ggplot2::geom_line(colour = line_colour, linewidth = 0.7) +
+    ggplot2::geom_line(colour = line_colour, linewidth = 0.7 * linewidth) +
     ggplot2::geom_vline(
       xintercept = dominant_period,
-      colour = palette[["near_black"]], linetype = "dashed", linewidth = 0.7
+      colour = palette[["ink"]], linetype = "dashed", linewidth = 0.7 * linewidth
     ) +
     ggplot2::annotate(
       "label",
       x = dominant_period, y = Inf,
       label = paste0("~", round(dominant_period, 1), " ", unit_label),
-      vjust = 1.1, hjust = -0.05, size = 3,
-      colour = palette[["near_black"]], fill = "white"
+      vjust = 1.1, hjust = -0.05, size = 3 * size,
+      colour = palette[["ink"]], fill = palette[["surface"]]
     ) +
     ggplot2::labs(
       title = title,
@@ -1137,10 +1127,12 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_panel_periodogram <- function(epidemic_process, event_units, palette) {
+.tbl_now_panel_periodogram <- function(epidemic_process, event_units, palette,
+                                       size = 1, linewidth = 1) {
   style <- .tbl_now_process_style("epidemic", palette)
   .tbl_now_periodogram_panel(
     epidemic_process$case_count, event_units, palette,
+    size = size, linewidth = linewidth,
     title = "Cycles (periodogram)",
     subtitle = style$subtitle,
     line_colour = style$line,
@@ -1161,10 +1153,12 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_panel_delay_periodogram <- function(delay_per_date, event_units, palette) {
+.tbl_now_panel_delay_periodogram <- function(delay_per_date, event_units, palette,
+                                             size = 1, linewidth = 1) {
   style <- .tbl_now_process_style("reporting", palette)
   .tbl_now_periodogram_panel(
     delay_per_date$mean_delay, event_units, palette,
+    size = size, linewidth = linewidth,
     title = "Cycles (periodogram)",
     subtitle = style$subtitle,
     line_colour = style$line,
@@ -1341,7 +1335,8 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_panel_delay_strata <- function(delay_distribution_by, palette) {
+.tbl_now_panel_delay_strata <- function(delay_distribution_by, palette,
+                                       size = 1, linewidth = 1) {
   if (nrow(delay_distribution_by) == 0) {
     return(.tbl_now_empty_panel("No delays to summarise", palette))
   }
@@ -1373,26 +1368,27 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_panel_epidemic_strata <- function(epidemic_process_by, incomplete_threshold,
-                                           level, palette) {
+                                           level, palette, size = 1,
+                                           linewidth = 1) {
   base_plot <- ggplot2::ggplot(
     epidemic_process_by,
     ggplot2::aes(x = .data$event_date, y = .data$case_count, colour = .data$strata)
   ) +
-    ggplot2::geom_line(linewidth = 0.6) +
+    ggplot2::geom_line(linewidth = 0.6 * linewidth) +
     .tbl_now_strata_colour_scale()
 
   if (!is.na(incomplete_threshold)) {
     base_plot <- base_plot +
       ggplot2::geom_vline(
         xintercept = incomplete_threshold,
-        colour = palette[["near_black"]], linetype = "dashed", linewidth = 0.6
+        colour = palette[["ink"]], linetype = "dashed", linewidth = 0.6 * linewidth
       ) +
       ggplot2::annotate(
         "label",
         x = incomplete_threshold, y = Inf,
         label = paste0("Incomplete (<", round(100 * level), "% reported)"),
-        vjust = 1.1, hjust = 1.02, size = 3,
-        colour = palette[["near_black"]], fill = "white"
+        vjust = 1.1, hjust = 1.02, size = 3 * size,
+        colour = palette[["ink"]], fill = palette[["surface"]]
       )
   }
 
@@ -1419,13 +1415,15 @@
 #' @noRd
 .tbl_now_panel_calendar_strata <- function(epidemic_process_by, grouping, palette,
                                            holiday_config = NULL,
-                                           measure = "normalized") {
+                                           measure = "normalized", size = 1,
+                                           linewidth = 1) {
   labels <- .tbl_now_calendar_group_spec(grouping)
   if (is.null(labels)) {
     return(.tbl_now_empty_panel(
       paste0("Calendar effect unavailable for ", grouping), palette
     ))
   }
+  measure <- .tbl_now_calendar_measure(measure, grouping)
 
   if (identical(measure, "percent")) {
     plot_data <- .tbl_now_percent_shares(
@@ -1462,21 +1460,21 @@
   )) +
     ggplot2::geom_boxplot(
       position = ggplot2::position_dodge2(preserve = "single"),
-      outlier.size = 0.5, linewidth = 0.3
+      outlier.size = 0.5 * size, linewidth = 0.3 * linewidth
     )
 
   if (!is.null(reference)) {
     base_plot <- base_plot +
       ggplot2::geom_hline(
         yintercept = reference, linetype = "dashed",
-        colour = palette[["near_black"]], linewidth = 0.4
+        colour = palette[["ink"]], linewidth = 0.4 * linewidth
       )
   }
 
   base_plot +
     .tbl_now_strata_fill_scale() +
     ggplot2::labs(
-      title = paste0(labels$title, " effect"),
+      title = .tbl_now_calendar_title(labels, "case"),
       subtitle = .tbl_now_process_style("epidemic", palette)$subtitle,
       x = labels$x, y = y_lab
     ) +
@@ -1499,13 +1497,15 @@
 .tbl_now_panel_delay_calendar_strata <- function(delay_per_date_by, grouping, palette,
                                                  holiday_config = NULL,
                                                  measure = "normalized",
-                                                 reporting_process_by = NULL) {
+                                                 reporting_process_by = NULL,
+                                                 size = 1, linewidth = 1) {
   labels <- .tbl_now_calendar_group_spec(grouping)
   if (is.null(labels)) {
     return(.tbl_now_empty_panel(
       paste0("Delay effect unavailable for ", grouping), palette
     ))
   }
+  measure <- .tbl_now_calendar_measure(measure, grouping)
 
   if (identical(measure, "percent")) {
     if (is.null(reporting_process_by) || nrow(reporting_process_by) == 0) {
@@ -1519,7 +1519,7 @@
       return(.tbl_now_percent_unavailable(palette))
     }
     value <- "percent"
-    title <- paste0(labels$title, " reporting effect")
+    title <- .tbl_now_calendar_title(labels, "reporting")
     x_lab <- sub("^Day of week$", "Day of week (report date)", labels$x)
     y_lab <- "Percent of the stratum's reports (%)"
     reference <- NULL
@@ -1541,7 +1541,7 @@
       ) |>
       dplyr::ungroup()
     value <- "normalized_delay"
-    title <- paste0(labels$title, " delay effect")
+    title <- .tbl_now_calendar_title(labels, "delay")
     x_lab <- labels$x
     y_lab <- "Normalized mean delay (1 = stratum average)"
     reference <- 1
@@ -1552,14 +1552,14 @@
   )) +
     ggplot2::geom_boxplot(
       position = ggplot2::position_dodge2(preserve = "single"),
-      outlier.size = 0.5, linewidth = 0.3
+      outlier.size = 0.5 * size, linewidth = 0.3 * linewidth
     )
 
   if (!is.null(reference)) {
     base_plot <- base_plot +
       ggplot2::geom_hline(
         yintercept = reference, linetype = "dashed",
-        colour = palette[["near_black"]], linewidth = 0.4
+        colour = palette[["ink"]], linewidth = 0.4 * linewidth
       )
   }
 
@@ -1588,7 +1588,8 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_periodogram_by <- function(series_by, event_units, palette, title,
-                                    subtitle, empty_message) {
+                                    subtitle, empty_message, size = 1,
+                                    linewidth = 1) {
   strata_levels <- unique(series_by$strata)
   spectra <- lapply(strata_levels, function(stratum) {
     values <- series_by$value[series_by$strata == stratum]
@@ -1623,7 +1624,7 @@
   ggplot2::ggplot(periodogram, ggplot2::aes(
     x = .data$period, y = .data$power, colour = .data$strata
   )) +
-    ggplot2::geom_line(linewidth = 0.6) +
+    ggplot2::geom_line(linewidth = 0.6 * linewidth) +
     .tbl_now_strata_colour_scale() +
     ggplot2::labs(
       title = title, subtitle = subtitle,
@@ -1640,11 +1641,11 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_empty_panel <- function(message, palette) {
+.tbl_now_empty_panel <- function(message, palette, size = 1) {
   ggplot2::ggplot() +
     ggplot2::annotate("text",
       x = 0, y = 0, label = message,
-      colour = palette[["accent_red"]], size = 3.5
+      colour = palette[["reporting"]], size = 3.5 * size
     ) +
     ggplot2::theme_void()
 }
@@ -1795,62 +1796,76 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_build_panel <- function(key, ctx, palette) {
+.tbl_now_build_panel <- function(key, ctx, palette, size = 1, linewidth = 1) {
   if (isTRUE(ctx$by_strata)) {
-    return(.tbl_now_build_panel_strata(key, ctx, palette))
+    return(.tbl_now_build_panel_strata(key, ctx, palette, size = size,
+                                       linewidth = linewidth))
   }
   switch(key,
     delay_distribution = if (identical(ctx$data_type, "count-cumulative")) {
-      .tbl_now_panel_delay_cumulative(ctx$delay_growth, palette)
+      .tbl_now_panel_delay_cumulative(ctx$delay_growth, palette, size = size, linewidth = linewidth)
     } else {
-      .tbl_now_panel_delay(ctx$delay_distribution, palette)
+      .tbl_now_panel_delay(ctx$delay_distribution, palette, size = size, linewidth = linewidth)
     },
     epidemic = .tbl_now_panel_epidemic(
       ctx$epidemic_process, ctx$incomplete_threshold, ctx$level, palette,
-      ctx$holiday_points
+      ctx$holiday_points,
+      size = size, linewidth = linewidth
     ),
     seasonality = .tbl_now_panel_periodogram(
-      ctx$epidemic_process, ctx$event_units, palette
+      ctx$epidemic_process, ctx$event_units, palette,
+      size = size, linewidth = linewidth
     ),
     delay_seasonality = .tbl_now_panel_delay_periodogram(
-      ctx$delay_per_date, ctx$event_units, palette
+      ctx$delay_per_date, ctx$event_units, palette,
+      size = size, linewidth = linewidth
     ),
     calendar_weekday = .tbl_now_panel_calendar(
-      ctx$epidemic_process, "weekday", palette, ctx$holiday_config, ctx$measure
+      ctx$epidemic_process, "weekday", palette, ctx$holiday_config, ctx$measure,
+      size = size, linewidth = linewidth
     ),
     calendar_week = .tbl_now_panel_calendar(
-      ctx$epidemic_process, "week", palette, ctx$holiday_config, ctx$measure
+      ctx$epidemic_process, "week", palette, ctx$holiday_config, ctx$measure,
+      size = size, linewidth = linewidth
     ),
     calendar_month = .tbl_now_panel_calendar(
-      ctx$epidemic_process, "month", palette, ctx$holiday_config, ctx$measure
+      ctx$epidemic_process, "month", palette, ctx$holiday_config, ctx$measure,
+      size = size, linewidth = linewidth
     ),
     calendar_holiday = .tbl_now_panel_calendar(
-      ctx$epidemic_process, "holiday", palette, ctx$holiday_config, ctx$measure
+      ctx$epidemic_process, "holiday", palette, ctx$holiday_config, ctx$measure,
+      size = size, linewidth = linewidth
     ),
     calendar_holiday_lag = .tbl_now_panel_calendar(
-      ctx$epidemic_process, "holiday_lag", palette, ctx$holiday_config, ctx$measure
+      ctx$epidemic_process, "holiday_lag", palette, ctx$holiday_config, ctx$measure,
+      size = size, linewidth = linewidth
     ),
     delay_weekday = .tbl_now_panel_delay_calendar(
       ctx$delay_per_date, "weekday", palette, ctx$holiday_config,
-      ctx$measure, ctx$reporting_process
+      ctx$measure, ctx$reporting_process,
+      size = size, linewidth = linewidth
     ),
     delay_week = .tbl_now_panel_delay_calendar(
       ctx$delay_per_date, "week", palette, ctx$holiday_config,
-      ctx$measure, ctx$reporting_process
+      ctx$measure, ctx$reporting_process,
+      size = size, linewidth = linewidth
     ),
     delay_month = .tbl_now_panel_delay_calendar(
       ctx$delay_per_date, "month", palette, ctx$holiday_config,
-      ctx$measure, ctx$reporting_process
+      ctx$measure, ctx$reporting_process,
+      size = size, linewidth = linewidth
     ),
     delay_holiday = .tbl_now_panel_delay_calendar(
       ctx$delay_per_date, "holiday", palette, ctx$holiday_config,
-      ctx$measure, ctx$reporting_process
+      ctx$measure, ctx$reporting_process,
+      size = size, linewidth = linewidth
     ),
     delay_holiday_lag = .tbl_now_panel_delay_calendar(
       ctx$delay_per_date, "holiday_lag", palette, ctx$holiday_config,
-      ctx$measure, ctx$reporting_process
+      ctx$measure, ctx$reporting_process,
+      size = size, linewidth = linewidth
     ),
-    .tbl_now_empty_panel(paste0("Unknown panel: ", key), palette)
+    .tbl_now_empty_panel(paste0("Unknown panel: ", key), palette, size = size)
   )
 }
 
@@ -1865,7 +1880,8 @@
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_build_panel_strata <- function(key, ctx, palette) {
+.tbl_now_build_panel_strata <- function(key, ctx, palette, size = 1,
+                                        linewidth = 1) {
   incidence_series <- function() {
     dplyr::tibble(
       strata = ctx$epidemic_process_by$strata,
@@ -1881,61 +1897,74 @@
 
   switch(key,
     delay_distribution = if (identical(ctx$data_type, "count-cumulative")) {
-      .tbl_now_panel_delay_cumulative_strata(ctx$delay_growth_by, palette)
+      .tbl_now_panel_delay_cumulative_strata(ctx$delay_growth_by, palette, size = size, linewidth = linewidth)
     } else {
-      .tbl_now_panel_delay_strata(ctx$delay_distribution_by, palette)
+      .tbl_now_panel_delay_strata(ctx$delay_distribution_by, palette, size = size, linewidth = linewidth)
     },
     epidemic = .tbl_now_panel_epidemic_strata(
-      ctx$epidemic_process_by, ctx$incomplete_threshold, ctx$level, palette
+      ctx$epidemic_process_by, ctx$incomplete_threshold, ctx$level, palette,
+      size = size, linewidth = linewidth
     ),
     seasonality = .tbl_now_periodogram_by(
       incidence_series(), ctx$event_units, palette,
       title = "Cycles (periodogram)",
       subtitle = .tbl_now_process_style("epidemic", palette)$subtitle,
-      empty_message = "Too few points to estimate cycles"
+      empty_message = "Too few points to estimate cycles",
+      size = size, linewidth = linewidth
     ),
     delay_seasonality = .tbl_now_periodogram_by(
       delay_series(), ctx$event_units, palette,
       title = "Cycles (periodogram)",
       subtitle = .tbl_now_process_style("reporting", palette)$subtitle,
-      empty_message = "Too few points to estimate delay cycles"
+      empty_message = "Too few points to estimate delay cycles",
+      size = size, linewidth = linewidth
     ),
     calendar_weekday = .tbl_now_panel_calendar_strata(
-      ctx$epidemic_process_by, "weekday", palette, ctx$holiday_config, ctx$measure
+      ctx$epidemic_process_by, "weekday", palette, ctx$holiday_config, ctx$measure,
+      size = size, linewidth = linewidth
     ),
     calendar_week = .tbl_now_panel_calendar_strata(
-      ctx$epidemic_process_by, "week", palette, ctx$holiday_config, ctx$measure
+      ctx$epidemic_process_by, "week", palette, ctx$holiday_config, ctx$measure,
+      size = size, linewidth = linewidth
     ),
     calendar_month = .tbl_now_panel_calendar_strata(
-      ctx$epidemic_process_by, "month", palette, ctx$holiday_config, ctx$measure
+      ctx$epidemic_process_by, "month", palette, ctx$holiday_config, ctx$measure,
+      size = size, linewidth = linewidth
     ),
     calendar_holiday = .tbl_now_panel_calendar_strata(
-      ctx$epidemic_process_by, "holiday", palette, ctx$holiday_config, ctx$measure
+      ctx$epidemic_process_by, "holiday", palette, ctx$holiday_config, ctx$measure,
+      size = size, linewidth = linewidth
     ),
     calendar_holiday_lag = .tbl_now_panel_calendar_strata(
-      ctx$epidemic_process_by, "holiday_lag", palette, ctx$holiday_config, ctx$measure
+      ctx$epidemic_process_by, "holiday_lag", palette, ctx$holiday_config, ctx$measure,
+      size = size, linewidth = linewidth
     ),
     delay_weekday = .tbl_now_panel_delay_calendar_strata(
       ctx$delay_per_date_by, "weekday", palette, ctx$holiday_config,
-      ctx$measure, ctx$reporting_process_by
+      ctx$measure, ctx$reporting_process_by,
+      size = size, linewidth = linewidth
     ),
     delay_week = .tbl_now_panel_delay_calendar_strata(
       ctx$delay_per_date_by, "week", palette, ctx$holiday_config,
-      ctx$measure, ctx$reporting_process_by
+      ctx$measure, ctx$reporting_process_by,
+      size = size, linewidth = linewidth
     ),
     delay_month = .tbl_now_panel_delay_calendar_strata(
       ctx$delay_per_date_by, "month", palette, ctx$holiday_config,
-      ctx$measure, ctx$reporting_process_by
+      ctx$measure, ctx$reporting_process_by,
+      size = size, linewidth = linewidth
     ),
     delay_holiday = .tbl_now_panel_delay_calendar_strata(
       ctx$delay_per_date_by, "holiday", palette, ctx$holiday_config,
-      ctx$measure, ctx$reporting_process_by
+      ctx$measure, ctx$reporting_process_by,
+      size = size, linewidth = linewidth
     ),
     delay_holiday_lag = .tbl_now_panel_delay_calendar_strata(
       ctx$delay_per_date_by, "holiday_lag", palette, ctx$holiday_config,
-      ctx$measure, ctx$reporting_process_by
+      ctx$measure, ctx$reporting_process_by,
+      size = size, linewidth = linewidth
     ),
-    .tbl_now_empty_panel(paste0("Unknown panel: ", key), palette)
+    .tbl_now_empty_panel(paste0("Unknown panel: ", key), palette, size = size)
   )
 }
 
@@ -1994,7 +2023,8 @@ ggplot2::autoplot
 #' * `"calendar_weekday"`, `"calendar_week"`, `"calendar_month"` — boxplots of
 #'   the *normalized* case effect (each event date's cases divided by the overall
 #'   mean, so 1 is average) by day of week, epidemiological week, or month.
-#' * `"calendar_holiday"` — the same normalized boxplots by **day type**. The
+#' * `"calendar_holiday"` — the same normalized boxplots by **day type**, titled
+#'   "Weekend and/or holiday effects" because that is what the day types are. The
 #'   categories follow the attached [temporal_effects()] spec: a holiday calendar
 #'   and a `weekend` effect together give `Weekday` / `Weekend` / `Holiday`, a
 #'   calendar alone gives `Non-holiday` / `Holiday`, and a `weekend` effect alone
@@ -2064,8 +2094,8 @@ ggplot2::autoplot
 #'   [get_strata()]); pass a subset (e.g. `strata = "gender"`) to group by only
 #'   some of them. Ignored when `by_strata = FALSE`.
 #' @param measure How to express the calendar-effect boxplots (the day-of-week,
-#'   week-of-year, month-of-year, holiday and holiday-lag panels; every other
-#'   panel ignores it).
+#'   week-of-year and month-of-year panels; every other panel ignores it, and the
+#'   two **holiday** pairs are always `"normalized"` — see below).
 #'
 #'   * `"normalized"`  — the value divided by its overall mean, so `1`
 #'     (the dashed line) marks an average level. Case-count panels normalize the
@@ -2079,6 +2109,13 @@ ggplot2::autoplot
 #'     panels then switch from the event date to the **report date**, so they
 #'     answer "what share of the reports *arrive* on a weekend?". Needs `Date`
 #'     event/report columns.
+#'
+#'   The four holiday panels (`"calendar_holiday"`, `"calendar_holiday_lag"` and
+#'   their delay twins) ignore `measure` and are always drawn `"normalized"`.
+#'   Their categories are not equal-sized parts of a calendar block — the weekend
+#'   is two days in seven — so a share would mostly report how the calendar is
+#'   built rather than how the data behave: "29% of cases at the weekend" is
+#'   average, not low.
 #' @param level Completeness level used for the incompleteness line in the
 #'   `"epidemic"` panel (and to trim the delay panels). The line is drawn at
 #'   `now - q`, where `q` is the `level` quantile of the delay distribution. With
@@ -2086,8 +2123,15 @@ ggplot2::autoplot
 #'   yet to arrive.
 #' @param plotly If `TRUE`, return an interactive \pkg{plotly} widget (the panels
 #'   stacked) instead of a static \pkg{patchwork}. Default `FALSE`.
-#' @param palette A named character vector of colours. Defaults to the package
-#'   palette.
+#' @param size Multiplier on every point, outlier and annotation-label size the
+#'   panels draw. Default `1`. It multiplies rather than replaces, so a panel
+#'   that deliberately draws one mark larger than another keeps that difference
+#'   at any setting.
+#' @param linewidth Multiplier on every line, boxplot outline and reference-line
+#'   width the panels draw. Default `1`.
+#' @param palette A named colour palette (see [tbl_now_palette()]). Every colour
+#'   is named for the role it plays, so overriding one role re-themes every
+#'   panel that uses it.
 #' @param delay_distribution_xlim,event_date_xlim,calendar_effect_xlim,seasonality_xlim
 #'   Optional length-2 vectors giving the x-axis limits for the corresponding
 #'   panel (delay-distribution histogram, epidemic process, calendar-effect
@@ -2141,6 +2185,7 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
                              strata = NULL,
                              measure = c("percent", "normalized"),
                              level = 0.95, plotly = FALSE,
+                             size = 1, linewidth = 1,
                              palette = .tbl_now_palette(),
                              delay_distribution_xlim = NULL,
                              event_date_xlim = NULL,
@@ -2155,6 +2200,9 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
   if (!is_tbl_now(object)) {
     cli::cli_abort("{.arg object} must be a {.cls tbl_now}.")
   }
+  .tbl_now_check_palette(palette, "autoplot.tbl_now")
+  .tbl_now_check_size(size, "size")
+  .tbl_now_check_size(linewidth, "linewidth")
   if (!is.numeric(level) || length(level) != 1 || level < 0 || level > 1) {
     cli::cli_abort("{.arg level} must be a single number between 0 and 1.")
   }
@@ -2221,12 +2269,18 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
     "^delay_(weekday|week|month|holiday_lag|holiday)$", panel_keys, value = TRUE
   )
   is_percent <- identical(measure, "percent")
-  # With `measure = "percent"` the delay calendar panels move to the report date
-  # and share out report counts, so they need the reporting process instead of
-  # the per-event-date mean delay.
+  # The two holiday delay panels are always normalized, whatever `measure` says
+  # (see `.tbl_now_calendar_measure()`), so they need the per-event-date mean
+  # delay even in percent mode -- and never need the reporting process.
+  delay_holiday_keys <- grep("^delay_holiday(_lag)?$", panel_keys, value = TRUE)
+  delay_share_keys <- setdiff(delay_calendar_keys, delay_holiday_keys)
+  # With `measure = "percent"` the remaining delay calendar panels move to the
+  # report date and share out report counts, so they need the reporting process
+  # instead of the per-event-date mean delay.
   needs_delay_effects <- "delay_seasonality" %in% panel_keys ||
-    (length(delay_calendar_keys) > 0 && !is_percent)
-  needs_reporting_process <- is_percent && length(delay_calendar_keys) > 0
+    length(delay_holiday_keys) > 0 ||
+    (length(delay_share_keys) > 0 && !is_percent)
+  needs_reporting_process <- is_percent && length(delay_share_keys) > 0
   # For count-cumulative data the delay-distribution panel becomes the cumulative
   # growth-ratio panel instead of a histogram of increments.
   is_cumulative <- identical(data_type, "count-cumulative")
@@ -2295,7 +2349,8 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
   )
 
   built_panels <- lapply(panel_keys, function(key) {
-    panel <- .tbl_now_build_panel(key, ctx, palette) + shared_theme
+    panel <- .tbl_now_build_panel(key, ctx, palette, size = size,
+                                  linewidth = linewidth) + shared_theme
     .tbl_now_apply_xlim(panel, .tbl_now_panel_xlim(key, xlims))
   })
 

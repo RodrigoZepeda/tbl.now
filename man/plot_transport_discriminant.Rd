@@ -8,6 +8,8 @@ plot_transport_discriminant(
   x,
   ...,
   plotly = FALSE,
+  size = 1,
+  grid_linewidth = 0.3,
   palette = .tbl_now_palette()
 )
 }
@@ -20,7 +22,16 @@ plot_transport_discriminant(
 \item{plotly}{If \code{TRUE}, return an interactive \pkg{plotly} widget instead of a
 static plot. Default \code{FALSE}.}
 
-\item{palette}{A named colour palette. Defaults to the package palette.}
+\item{size}{Multiplier on the size of the points and their date labels.
+Default \code{1}: unflagged points are drawn at \code{1.1}, confirmed batches at
+\code{2.6}. It is a multiplier rather than an absolute size precisely so that
+enlarging the marks keeps the flagged ones bigger than the rest.}
+
+\item{grid_linewidth}{Line width of the zero lines and the dashed
+significance thresholds this function draws -- the package's own reference
+grid, not \pkg{ggplot2}'s. Default \code{0.3}.}
+
+\item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}).}
 }
 \value{
 A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).

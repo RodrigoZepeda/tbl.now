@@ -11,7 +11,8 @@ diagnose_batches(
   period = NULL,
   null_model = c("auto", "poisson", "robust"),
   axis = c("report", "validation"),
-  alpha = 0.05
+  alpha = 0.05,
+  drop_censored = TRUE
 )
 }
 \arguments{
@@ -52,6 +53,12 @@ date to arrive on.}
 
 \item{alpha}{Significance level for the Benjamini-Hochberg \code{batch} flag.
 Default \code{0.05}.}
+
+\item{drop_censored}{Logical. Ignore the rows whose date on \code{axis} is
+flagged censored (\code{is_censored_report}, or \code{is_censored_validation} on the
+validation axis). Default \code{TRUE}: a censored date is a \emph{bound}, not the
+date the record arrived, so those rows would pile up on the censoring date
+and be rediscovered as the very batch the censoring already recorded.}
 }
 \value{
 A tibble of class \code{diagnose_batches}, one row per (report date, stratum),
@@ -148,7 +155,7 @@ flagged[order(flagged$p_transport_bh), c("report_date", "reported", "baseline")]
 
 }
 \seealso{
-\code{\link[=diagnose_batch_shape]{diagnose_batch_shape()}} for the complementary test on \emph{which} event dates a
+\code{\link[=diagnose_batches2]{diagnose_batches2()}} for the complementary test on \emph{which} event dates a
 flagged report date drew from; \code{\link[=transport_discriminant]{transport_discriminant()}} for the two
 coordinates behind the test, without the hypothesis test on top;
 \code{\link[=simulate_batch]{simulate_batch()}} to plant a known batch and check the screen finds it;

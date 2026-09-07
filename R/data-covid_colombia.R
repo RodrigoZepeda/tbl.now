@@ -38,18 +38,17 @@
 #' [hai_bucaramanga].
 #'
 #' @examples
-#' ## Build a stratified tbl_now (event = notification, report = diagnosis,
-#' # strata = sex).  Pipe through temporal effects for day-of-week covariates.
-#' if (requireNamespace("tbl.now", quietly = TRUE)) {
-#'   tn <- tbl.now::tbl_now(
-#'     covid_colombia,
-#'     event_date  = notification_date,
-#'     report_date = diagnosis_date,
-#'     strata      = sex,
-#'     case_count  = n,
-#'     data_type   = "count-incidence",
-#'     verbose     = FALSE
-#'   )
-#'   print(tn)
-#' }
+#' data(covid_colombia)
+#'
+#' # A stratified tbl_now: event = notification, report = diagnosis.
+#' tn <- tbl_now(
+#'   covid_colombia,
+#'   event_date  = notification_date,
+#'   report_date = diagnosis_date,
+#'   strata      = sex,
+#'   case_count  = n,
+#'   data_type   = "count-incidence",
+#'   verbose     = FALSE
+#' )
+#' tn
 "covid_colombia"

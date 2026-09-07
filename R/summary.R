@@ -12,17 +12,12 @@
 #' [dplyr::bind_rows()] of those pieces.
 #'
 #' @param object A `tbl_now` object.
-#' @param ... Unused, for compatibility with the [summary()] generic.
+#' @param ... Unused, for compatibility with the [base::summary()] generic.
 #' @param by_strata Logical. Add one set of rows per stratum on top of the
 #'   pooled (`"all"`) rows. Defaults to `TRUE` when the object has strata.
 #' @param strata Character vector of columns to stratify by. Defaults to
 #'   `get_strata(object)`.
-#' @param lags Integer vector of lags for the autocorrelation rows.
-#' @param completeness_delays Integer vector of delays for the reporting
-#'   completeness rows. Defaults to `0:7`, trimmed to the observed delays.
 #' @param growth_k Number of delays for the cumulative growth rows.
-#' @param mature_only Logical. Restrict the completeness rows to event dates
-#'   old enough to have been fully reported (see [reporting_completeness()]).
 #'
 #' @section The columns:
 #'
@@ -31,15 +26,24 @@
 #'
 #' \describe{
 #'   \item{`component`}{Which block the row belongs to: `"cases"`, `"delay"`,
-#'     `"zero_run"`, `"composition"`, `"autocorrelation"`, `"completeness"`,
-#'     `"growth"` or `"coverage"`.}
+#'     `"zero_run"`, `"composition"`, `"growth"` or `"coverage"`. The
+#'     `"autocorrelation"` and `"completeness"` blocks are no longer part of
+#'     `summary()`; call [case_autocorrelation()] and
+#'     [reporting_completeness()] directly for those.}
 #'   \item{`quantity`}{What the row describes, including the category for the
 #'     compositional rows (`"validation_type = confirmed"`).}
 #'   \item{`stratum`}{Which subset of the data the row describes: `"all"` for
 #'     the pooled rows, or the stratum label otherwise.}
-#'   \item{`n`}{Number of observations behind the row -- dates for `"cases"`,
-#'     runs for `"zero_run"`, data rows for `"delay"` and `"composition"`.}
-#'   \item{`total`}{Number of **cases** behind the row.}
+#'   \item{`n`}{How many **things of the block's own kind** the row counts.
+#'     It is never a case count, and what it counts changes with the block:
+#'     dates on the grid for `"cases"`, runs of zeros for `"zero_run"`, and
+#'     (event date, report date) cells for `"delay"` and `"composition"`.}
+#'   \item{`total`}{How many **cases** are behind the row: records for a line
+#'     list, the sum of the case-count column otherwise. So `n` and `total`
+#'     answer different questions and are equal only when every cell holds
+#'     exactly one case. In the `"composition"` block, for instance, `n` is
+#'     how many cells carry that category and `total` is how many cases do --
+#'     and `prop` is computed from `total`, the cases.}
 #'   \item{`mean`, `sd`}{Mean and standard deviation. For the case-weighted
 #'     rows these are the weighted versions, equal to what you would get by
 #'     expanding the counts to one row per case.}
@@ -49,11 +53,10 @@
 #'   \item{`prop`}{Proportion of cases in this category (compositional rows),
 #'     or the pooled share that had arrived by delay `d` (`"completeness"`
 #'     rows).}
-#'   \item{`value`}{A single scalar that is not a distribution: an
-#'     autocorrelation, a gap, an occupancy. The `"completeness"` and
-#'     `"growth"` rows are distributions over event dates, so they populate
-#'     `mean`/`sd`/the quantiles (and `prop`) instead and leave `value`
-#'     empty.}
+#'   \item{`value`}{A single scalar that is not a distribution: a gap, an
+#'     occupancy, an autocorrelation. The `"completeness"` and `"growth"` rows
+#'     are distributions over event dates, so they populate `mean`/`sd`/the
+#'     quantiles (and `prop`) instead and leave `value` empty.}
 #'   \item{`date_min`, `date_max`}{Date range. Present only when the result
 #'     contains `"coverage"` rows.}
 #'   \item{`unobserved_cells`}{A `"coverage"` row counting the `NA`-count rows
@@ -116,13 +119,12 @@
 #' # It is an ordinary tibble, so pick out the block you want.
 #' overview |> dplyr::filter(component == "delay")
 #'
-#' # How much of each week's eventual total had arrived by delay d? This is the
-#' # reporting-delay problem, in one table. Completeness is a distribution over
-#' # event dates, so it lives in `mean`/`q50` (the typical event date) and
-#' # `prop` (the pooled share), not in the scalar `value` column.
+#' # `n` and `total` are different questions. In the compositional block `n`
+#' # counts the (event, report) cells carrying the category and `total` counts
+#' # the cases in them.
 #' overview |>
-#'   dplyr::filter(component == "completeness", stratum == "all") |>
-#'   dplyr::select(quantity, n, mean, q50, prop)
+#'   dplyr::filter(component == "composition") |>
+#'   dplyr::select(quantity, stratum, n, total, prop)
 #'
 #' # Pooled rows only, ignoring the strata.
 #' summary(ndata, by_strata = FALSE)
@@ -131,8 +133,7 @@
 #' @md
 #' @exportS3Method base::summary
 summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
-                            lags = 1, completeness_delays = NULL,
-                            growth_k = 7, mature_only = TRUE) {
+                            growth_k = 7) {
   context <- .summary_context(object, by_strata, strata, "summary")
 
   blocks <- list(
@@ -142,15 +143,9 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
     .summary_zero_runs(context, "event"),
     .summary_zero_runs(context, "report"),
     .summary_zero_runs(context, "validation"),
-    .summary_autocorrelation(context, "event", lags),
-    .summary_autocorrelation(context, "report", lags),
     .summary_composition(context),
     .summary_coverage(context),
-    .summary_occupancy(context),
-    # The full curve is one row per observed delay per stratum, which on real
-    # data is most of the table. `reporting_completeness()` still gives all of
-    # it; the summary shows the head, where the information is.
-    .summary_completeness(context, completeness_delays %||% 0:7, mature_only)
+    .summary_occupancy(context)
   )
 
   # A cumulative total cannot be summed across delays, so the delay
@@ -180,7 +175,10 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #' filtering it away.
 #'
 #' Every one of these returns the same schema as `summary()` itself, so they can
-#' be stacked with [dplyr::bind_rows()], compared across datasets, or used alone:
+#' be stacked with [dplyr::bind_rows()], compared across datasets, or used alone.
+#' Two of them -- `case_autocorrelation()` and `reporting_completeness()` -- were
+#' written by an AI and have not been checked by a human, so they are **not**
+#' part of `summary()` and warn on every call:
 #'
 #' * `cases_per_date()` -- case counts per date on one axis.
 #' * `delay_summary()` -- the case-weighted delay distribution.
@@ -191,12 +189,14 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #' * `prop_covariate_levels()` -- proportion of cases per level of each
 #'   categorical covariate.
 #' * `case_autocorrelation()` -- lagged autocorrelation of the case series.
+#'   **Unreviewed:** not part of `summary()`, and warns on every call.
 #' * `date_ranges()` -- totals, date ranges and `now`.
 #' * `triangle_occupancy()` -- how full the reporting triangle is, and how
 #'   stale the object is.
 #' * `reporting_completeness()` -- share of each event date's eventual total
 #'   that had arrived by delay `d`, as a distribution over event dates
 #'   (`mean`, `sd`, the quantiles) plus the pooled share in `prop`.
+#'   **Unreviewed:** not part of `summary()`, and warns on every call.
 #' * `cumulative_growth()` -- ratio of one delay's running total to the
 #'   previous one's.
 #'
@@ -245,6 +245,8 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #' delay_summary(ndata)
 #'
 #' # How sparse the series is, and how strongly one week predicts the next.
+#' # `case_autocorrelation()` warns because it is unreviewed; the warning is
+#' # deliberately not suppressed here, since it belongs with the number.
 #' zero_run_summary(ndata, axis = "event")
 #' case_autocorrelation(ndata, lags = 1)
 #'
@@ -254,11 +256,11 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #' date_ranges(ndata)
 #' triangle_occupancy(ndata)
 #'
-#' # The two that matter most for nowcasting: what share of a week's eventual
-#' # total had arrived by delay d, and how fast the total is still growing.
-#' # Both are distributions over event dates, so they fill `mean`/`q50` -- and
-#' # completeness also `prop`, the pooled share -- rather than the scalar
-#' # `value` column.
+#' # What share of a week's eventual total had arrived by delay d, and how fast
+#' # the total is still growing. Both are distributions over event dates, so
+#' # they fill `mean`/`q50` -- and completeness also `prop`, the pooled share --
+#' # rather than the scalar `value` column. `reporting_completeness()` is
+#' # unreviewed and warns; see above.
 #' reporting_completeness(ndata, delays = 0:3) |>
 #'   dplyr::select(quantity, stratum, n, mean, q50, prop)
 #' cumulative_growth(ndata, k = 3)
@@ -346,6 +348,7 @@ case_autocorrelation <- function(x, lags = 1,
                                  axis = c("event", "report", "validation"),
                                  by_strata = NULL, strata = NULL) {
   axis <- match.arg(axis)
+  .summary_unreviewed_warning("case_autocorrelation")
   context <- .summary_context(x, by_strata, strata, "case_autocorrelation")
   .summary_finalise(list(.summary_autocorrelation(context, axis, lags)))
 }
@@ -368,6 +371,7 @@ triangle_occupancy <- function(x, by_strata = NULL, strata = NULL) {
 #' @export
 reporting_completeness <- function(x, delays = NULL, mature_only = TRUE,
                                    by_strata = NULL, strata = NULL) {
+  .summary_unreviewed_warning("reporting_completeness")
   context <- .summary_context(x, by_strata, strata, "reporting_completeness")
   .summary_finalise(list(.summary_completeness(context, delays, mature_only)))
 }
@@ -377,6 +381,31 @@ reporting_completeness <- function(x, delays = NULL, mature_only = TRUE,
 cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
   context <- .summary_context(x, by_strata, strata, "cumulative_growth")
   .summary_finalise(list(.summary_growth(context, k)))
+}
+
+#' Warn that a block is unreviewed AI-written code.
+#'
+#' `case_autocorrelation()` and `reporting_completeness()` were written by an
+#' LLM and have not yet been checked by a human, which is why they were taken
+#' out of `summary()`: a report a user reads by default must not contain a
+#' statistic nobody has verified. They stay exported so the work is not lost,
+#' but every call says what they are.
+#' @param function_name The calling function, for the message.
+#' @keywords internal
+#' @noRd
+.summary_unreviewed_warning <- function(function_name) {
+  cli::cli_warn(
+    c(
+      "!" = "{.fn {function_name}} is {.emph experimental} and was written by
+             an AI; it has not yet been reviewed by a human.",
+      "i" = "It is no longer part of {.fn summary}. Check the numbers before
+             you rely on them."
+    )
+    # Deliberately NOT throttled with `.frequency`, unlike the other
+    # experimental diagnostics: an unreviewed number must carry its warning
+    # every time it is produced, including inside a loop or a report.
+  )
+  invisible(NULL)
 }
 
 # Shared context --------------------------------------------------------------
@@ -1487,7 +1516,7 @@ print.tbl_now_summary_table <- function(x, ..., n = 10) {
     block <- x[x$component == component, , drop = FALSE]
     cli::cat_line()
     cli::cat_line(cli::style_bold(component))
-    cli::cat_line(.summary_block_lines(block, n))
+    cli::cat_line(.summary_block_lines(block, n, component))
   }
 
   cli::cat_line()
@@ -1499,16 +1528,55 @@ print.tbl_now_summary_table <- function(x, ..., n = 10) {
   invisible(x)
 }
 
+#' What `n` and `total` count in one component
+#'
+#' The schema is shared, so the two count columns necessarily mean different
+#' things in different blocks -- `n` is never a case count, and `total` always
+#' is. Printing them side by side without saying so is how a reader ends up
+#' guessing (they are not report days and people; they are cells and cases).
+#'
+#' @param component The component name.
+#' @param columns The columns the printed block actually has.
+#'
+#' @return A single grey line, or `NULL` when neither count column is shown.
+#'
+#' @keywords internal
+#' @noRd
+.summary_block_gloss <- function(component, columns) {
+  meaning <- switch(
+    component,
+    cases        = c(n = "dates on the grid", total = "cases"),
+    zero_run     = c(n = "runs of consecutive zero dates",
+                     total = "zero dates in those runs"),
+    delay        = c(n = "(event, report) cells", total = "cases"),
+    composition  = c(n = "(event, report) cells in the category",
+                     total = "cases in the category"),
+    completeness = c(n = "event dates", total = "cases arrived by that delay"),
+    growth       = c(n = "event dates", total = "cases added"),
+    coverage     = c(n = "cells, or distinct dates on a date row",
+                     total = "cases"),
+    autocorrelation = c(n = "lagged date pairs"),
+    NULL
+  )
+  if (is.null(meaning)) return(NULL)
+
+  shown <- intersect(c("n", "total"), intersect(columns, names(meaning)))
+  if (length(shown) == 0L) return(NULL)
+  paste0("  ", paste0(shown, " = ", meaning[shown], collapse = "; "))
+}
+
 #' One component of a summary, as printable lines
 #'
+
 #' @param block The rows of one component.
 #' @param n Maximum number of rows to show.
+#' @param component The component name, for the `n`/`total` gloss.
 #'
 #' @return A character vector of lines.
 #'
 #' @keywords internal
 #' @noRd
-.summary_block_lines <- function(block, n) {
+.summary_block_lines <- function(block, n, component = block$component[1]) {
   shown <- if (is.finite(n) && nrow(block) > n) {
     utils::head(block, n)
   } else {
@@ -1526,11 +1594,13 @@ print.tbl_now_summary_table <- function(x, ..., n = 10) {
   }
 
   table <- dplyr::as_tibble(shown[, keep, drop = FALSE])
+  gloss <- .summary_block_gloss(component, names(table))
   # `format()` on a tibble returns its printed lines, so the table reaches
   # stdout without a bare `print()` inside package code. The first line is
   # pillar's "# A tibble: n x m" header, which duplicates the count this print
   # method already gave.
   lines <- format(table, n = nrow(table))[-1]
+  if (!is.null(gloss)) lines <- c(cli::col_grey(gloss), lines)
 
   if (nrow(shown) < nrow(block)) {
     lines <- c(lines, cli::col_grey(cli::format_inline(

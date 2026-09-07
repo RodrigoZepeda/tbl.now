@@ -69,6 +69,7 @@ engine_epinow2(
   delays = NULL,
   truncation = NULL,
   rt = NULL,
+  obs = NULL,
   stan = NULL,
   convert_args = list(),
   min_date = NULL,
@@ -148,7 +149,7 @@ defaults to \code{get_surveillance_when(x, length = D + 1)} and \code{control$dR
 to \code{\link[=get_surveillance_range]{get_surveillance_range()}} -- both built from the whole object, so every
 stratum is fitted on the same time axis.}
 
-\item{generation_time, delays, truncation, rt, stan, convert_args}{(\code{engine_epinow2()}) Arguments of \code{EpiNow2::estimate_infections()} /
+\item{generation_time, delays, truncation, rt, obs, stan, convert_args}{(\code{engine_epinow2()}) Arguments of \code{EpiNow2::estimate_infections()} /
 \code{EpiNow2::regional_epinow()}, plus \code{convert_args} for
 \code{\link[=tbl_now_to_EpiNow2]{tbl_now_to_EpiNow2()}}. \strong{Read this before trusting the output}:
 EpiNow2 defaults to \code{delays = delay_opts()}, which is \code{Fixed(0)} -- no

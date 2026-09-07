@@ -25,12 +25,16 @@
 #' Return `p` as-is, or as an interactive plotly widget when `plotly = TRUE`.
 #' @keywords internal
 #' @noRd
-.as_plotly <- function(p, plotly = FALSE) {
+.as_plotly <- function(p, plotly = FALSE, tooltip = NULL) {
   if (!isTRUE(plotly)) {
     return(p)
   }
   .require_plotly()
-  suppressWarnings(plotly::ggplotly(p))
+  if (is.null(tooltip)) {
+    suppressWarnings(plotly::ggplotly(p))
+  } else {
+    suppressWarnings(plotly::ggplotly(p, tooltip = tooltip))
+  }
 }
 
 #' Combine panels into a patchwork, or -- when `plotly = TRUE` -- a stacked
@@ -50,7 +54,7 @@
     out <- out + patchwork::plot_annotation(
       title = title,
       theme = ggplot2::theme(
-        plot.title = ggplot2::element_text(face = "bold", colour = palette[["near_black"]])
+        plot.title = ggplot2::element_text(face = "bold", colour = palette[["ink"]])
       )
     )
   }

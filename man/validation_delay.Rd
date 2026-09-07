@@ -8,12 +8,22 @@
 \usage{
 diagnose_validation_delay(x, by = NULL)
 
-plot_validation_delay(x, by = NULL)
+plot_validation_delay(
+  x,
+  by = NULL,
+  linewidth = 1,
+  palette = .tbl_now_palette()
+)
 }
 \arguments{
 \item{x}{A \code{tbl_now} with a validation process.}
 
 \item{by}{Optional stratum column to compare within; \code{NULL} (default) pools.}
+
+\item{linewidth}{Multiplier on the box outlines of
+\code{plot_validation_delay()}. Default \code{1} (drawn at \code{0.5}).}
+
+\item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}).}
 }
 \value{
 \code{diagnose_validation_delay()} returns a one-row-per-comparison \code{tibble} with

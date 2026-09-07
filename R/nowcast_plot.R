@@ -110,13 +110,15 @@
 #' @export
 S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
                                               show_reported = TRUE,
-                                              colour = NULL) {
+                                              colour = NULL, linewidth = 1,
+                                              palette = .tbl_now_palette()) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg ggplot2} is required for {.fn autoplot}.")
   }
 
-  palette <- .tbl_now_palette()
-  colour <- colour %||% palette[["primary_green"]]
+  .tbl_now_check_palette(palette, "autoplot.tbl_nowcast")
+  .tbl_now_check_size(linewidth, "linewidth")
+  colour <- colour %||% palette[["epidemic"]]
 
   event_col <- object@event_date
   strata <- object@strata
@@ -203,7 +205,7 @@ S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
         # Neutral grey, not a palette hue: these are the OBSERVED counts, and
         # colouring them green would put them in the same visual family as the
         # estimate drawn on top of them.
-        values = c("Reported by now" = "#dfe1df"), name = NULL
+        values = c("Reported by now" = palette[["observed"]]), name = NULL
       )
   }
 
@@ -230,7 +232,7 @@ S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
       ggplot2::geom_line(
         data = median,
         ggplot2::aes(x = .data[[event_col]], y = .data$.value),
-        colour = colour, linewidth = 0.7
+        colour = colour, linewidth = 0.7 * linewidth
       )
   }
 

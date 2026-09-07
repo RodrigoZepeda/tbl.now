@@ -1,8 +1,9 @@
-#' Healthcare-Associated Infections -- Bucaramanga, Colombia 2016-2023
+#' Healthcare-Associated Infections -- Bucaramanga, Colombia 2020-2023
 #'
 #' A line list of healthcare-associated infections (IAAS, *Infecciones Asociadas
 #' a la Atencion en Salud*) notified in the municipality of Bucaramanga,
-#' Santander, Colombia, between January 2016 and January 2023. Each row is one
+#' Santander, Colombia, between January 2020 and January 2023 as reported
+#' by March 19th 2026. Each row is one
 #' notified infection: a specimen taken from a hospitalised patient, the
 #' laboratory result, and the isolated microorganism.
 #'

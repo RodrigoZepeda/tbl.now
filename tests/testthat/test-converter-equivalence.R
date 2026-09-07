@@ -195,3 +195,198 @@ test_that("every converter accepts COUNT-INCIDENCE input without erroring", {
     )
   }
 })
+
+# ---- the grid must reach the `now`, not the last row (#67 and its audit) ----
+#
+# `equivalence_pair()` above has a report for every event week, so a converter
+# that stops at the last row it was handed still looks right. This fixture does
+# not: its last three event days carry no reports at all, which a line list has
+# no way to record, so `now` is three days past the last event date present.
+#
+# `test-engines-linelist-equivalence.R` asserts the same property one level up,
+# on the fitted nowcast.
+
+gap_linelist <- function(n_strata = 0L) {
+  origin <- as.Date("2021-01-04")
+  cells <- tidyr::expand_grid(.period = 0:39, .delay = 0:2)
+  if (n_strata > 0) {
+    cells <- tidyr::expand_grid(cells, sex = c("F", "M"))
+  }
+  cells |>
+    dplyr::mutate(
+      event = origin + .data$.period,
+      report = .data$event + .data$.delay,
+      n = 3L
+    ) |>
+    dplyr::filter(.data$.period <= 36) |>
+    dplyr::select(dplyr::any_of(c("event", "report", "sex")), "n") |>
+    tidyr::uncount(!!as.symbol("n")) |>
+    tbl_now(
+      event_date = event, report_date = report,
+      strata = if (n_strata > 0) "sex" else NULL,
+      data_type = "linelist", units = "days", verbose = FALSE
+    )
+}
+
+gap_pair <- function(n_strata = 0L) {
+  linelist <- gap_linelist(n_strata)
+  list(
+    linelist = linelist,
+    counts = suppressWarnings(suppressMessages(
+      complete_zeroes(to_count(linelist, to = "count-incidence"))
+    ))
+  )
+}
+
+test_that("baselinenowcast reaches the `now` when the last days are silent", {
+  skip_if_not_installed("baselinenowcast")
+  pair <- gap_pair()
+
+  from_linelist <- suppressWarnings(suppressMessages(
+    tbl_now_to_baselinenowcast(pair$linelist, verbose = FALSE)
+  ))
+  from_counts <- suppressWarnings(suppressMessages(
+    tbl_now_to_baselinenowcast(pair$counts, verbose = FALSE)
+  ))
+
+  expect_equal(
+    as.Date(utils::tail(rownames(from_linelist), 1)), get_now(pair$linelist)
+  )
+  expect_equal(unclass(from_linelist), unclass(from_counts))
+})
+
+test_that("epinowcast reaches the `now` when the last days are silent", {
+  skip_if_not_installed("epinowcast")
+  pair <- gap_pair()
+
+  reference_dates <- function(x) {
+    sort(unique(as.Date(
+      epinowcast::enw_get_data(x, "reporting_triangle")$reference_date
+    )))
+  }
+  from_linelist <- suppressWarnings(suppressMessages(
+    tbl_now_to_epinowcast(pair$linelist, verbose = FALSE, quiet = TRUE)
+  ))
+  from_counts <- suppressWarnings(suppressMessages(
+    tbl_now_to_epinowcast(pair$counts, verbose = FALSE, quiet = TRUE)
+  ))
+
+  expect_equal(max(reference_dates(from_linelist)), get_now(pair$linelist))
+  expect_equal(reference_dates(from_linelist), reference_dates(from_counts))
+})
+
+test_that("EpiNow2 series reach the `now` when the last days are silent", {
+  skip_if_not_installed("EpiNow2")
+
+  # `.epinow2_series_data()` built its series from `get_latest_reported_cases()`
+  # and, on daily data, handed it straight on: the line list stopped two days
+  # short of the `now` while the completed counts did not. `complete = "auto"`
+  # is what closes that.
+  for (target in c("estimate_infections", "regional_epinow")) {
+    pair <- gap_pair(n_strata = if (target == "regional_epinow") 1L else 0L)
+    from_linelist <- suppressWarnings(suppressMessages(
+      tbl_now_to_EpiNow2(pair$linelist, target = target,
+                         verbose = FALSE, quiet = TRUE)
+    ))
+    from_counts <- suppressWarnings(suppressMessages(
+      tbl_now_to_EpiNow2(pair$counts, target = target,
+                         verbose = FALSE, quiet = TRUE)
+    ))
+
+    expect_equal(max(from_linelist$date), get_now(pair$linelist))
+    expect_equal(from_linelist, from_counts)
+  }
+})
+
+test_that("EpiNow2 snapshots reach their own `as_of`", {
+  skip_if_not_installed("EpiNow2")
+
+  # `.epinow2_snapshots()` completes each snapshot with `complete_zeroes()`,
+  # which REFUSES a line list -- and its `tryCatch()` returned the short
+  # snapshot rather than reporting that. `estimate_truncation()` wants "a
+  # complete vector of dates" in every snapshot, so this mattered.
+  pair <- gap_pair()
+  from_linelist <- suppressWarnings(suppressMessages(
+    tbl_now_to_EpiNow2(pair$linelist, target = "estimate_truncation",
+                       verbose = FALSE, quiet = TRUE)
+  ))
+  from_counts <- suppressWarnings(suppressMessages(
+    tbl_now_to_EpiNow2(pair$counts, target = "estimate_truncation",
+                       verbose = FALSE, quiet = TRUE)
+  ))
+
+  expect_equal(
+    lapply(from_linelist, function(s) s$date),
+    lapply(from_counts, function(s) s$date)
+  )
+  # Each snapshot runs to the report date it was taken on.
+  report_dates <- attr(from_linelist, "report_dates")
+  for (i in seq_along(from_linelist)) {
+    expect_equal(max(from_linelist[[i]]$date), report_dates[[i]])
+  }
+})
+
+test_that("EpiNow2 leaves COUNT input exactly as supplied", {
+  skip_if_not_installed("EpiNow2")
+
+  # Count data can distinguish an observed zero from a cell that could not be
+  # observed yet, so `complete = "auto"` must not touch it -- the same contract
+  # `tbl_now_to_baselinenowcast()` keeps.
+  counts <- to_count(gap_linelist(), to = "count-incidence")
+  auto <- suppressWarnings(suppressMessages(
+    tbl_now_to_EpiNow2(counts, verbose = FALSE, quiet = TRUE)
+  ))
+  off <- suppressWarnings(suppressMessages(
+    tbl_now_to_EpiNow2(counts, complete = FALSE, verbose = FALSE, quiet = TRUE)
+  ))
+  expect_equal(auto, off)
+
+  forced <- suppressWarnings(suppressMessages(
+    tbl_now_to_EpiNow2(counts, complete = TRUE, verbose = FALSE, quiet = TRUE)
+  ))
+  expect_gt(nrow(forced), nrow(auto))
+  expect_equal(max(forced$date), get_now(counts))
+})
+
+test_that("NobBS and surveillance line lists are unchanged by completion", {
+  # Both take a LINE LIST, and both are handed the `now` by their fit method
+  # (`NobBS(now =)`, `get_surveillance_range()`), so the empty periods are the
+  # back-end's business rather than the converter's. What must hold is that
+  # completing the counts adds no cases: a completed zero expands to no rows.
+  pair <- gap_pair()
+
+  skip_if_not_installed("NobBS")
+  nobbs_of <- function(x) {
+    suppressWarnings(suppressMessages(tbl_now_to_nobbs(x, verbose = FALSE))) |>
+      dplyr::as_tibble() |>
+      dplyr::arrange(!!as.symbol("onset_date"), !!as.symbol("report_date"))
+  }
+  expect_equal(nobbs_of(pair$linelist), nobbs_of(pair$counts))
+
+  skip_if_not_installed("surveillance")
+  surveillance_of <- function(x) {
+    suppressWarnings(suppressMessages(
+      tbl_now_to_surveillance(x, verbose = FALSE)
+    )) |>
+      dplyr::as_tibble() |>
+      dplyr::arrange(!!as.symbol("dHospital"), !!as.symbol("dReport"))
+  }
+  expect_equal(surveillance_of(pair$linelist), surveillance_of(pair$counts))
+})
+
+test_that("epidist gets the same delay distribution either way", {
+  skip_if_not_installed("epidist")
+
+  # `epidist` fits a DELAY DISTRIBUTION and has no event grid, so there is
+  # nothing to complete -- but the counts must still expand back to the same
+  # cases, which is the property that would break if they did not.
+  pair <- gap_pair()
+  delays_of <- function(x) {
+    frame <- suppressWarnings(suppressMessages(
+      tbl_now_to_epidist(x, verbose = FALSE)
+    ))
+    weight <- if ("n" %in% names(frame)) frame$n else rep(1, nrow(frame))
+    tapply(weight, frame$sdate_lwr - frame$pdate_lwr, sum)
+  }
+  expect_equal(delays_of(pair$linelist), delays_of(pair$counts))
+})

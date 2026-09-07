@@ -58,4 +58,29 @@
     "as_tibble", "tbl.now::tbl_nowcast", as_tibble_tbl_nowcast,
     envir = asNamespace("tibble")
   )
+
+  # `scoringutils` is optional, so do not load it just to register a method.
+  # When it is already loaded, register now; otherwise its load hook does the
+  # same job later. As with `tidy()` above, the S7 class name contains `::` and
+  # cannot be represented by an ordinary R method name or `@exportS3Method`.
+  register_scoringutils <- function(...) {
+    registerS3method(
+      "as_forecast_quantile", "tbl.now::tbl_nowcast",
+      as_forecast_quantile_tbl_nowcast,
+      envir = asNamespace("scoringutils")
+    )
+    registerS3method(
+      "as_forecast_sample", "tbl.now::tbl_nowcast",
+      as_forecast_sample_tbl_nowcast,
+      envir = asNamespace("scoringutils")
+    )
+  }
+  if ("scoringutils" %in% loadedNamespaces()) {
+    register_scoringutils()
+  } else {
+    setHook(
+      packageEvent("scoringutils", "onLoad"), register_scoringutils,
+      action = "append"
+    )
+  }
 }

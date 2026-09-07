@@ -124,6 +124,11 @@
 #'   date to arrive on.
 #' @param alpha Significance level for the Benjamini-Hochberg `batch` flag.
 #'   Default `0.05`.
+#' @param drop_censored Logical. Ignore the rows whose date on `axis` is
+#'   flagged censored (`is_censored_report`, or `is_censored_validation` on the
+#'   validation axis). Default `TRUE`: a censored date is a *bound*, not the
+#'   date the record arrived, so those rows would pile up on the censoring date
+#'   and be rediscovered as the very batch the censoring already recorded.
 #'
 #' @returns A tibble of class `diagnose_batches`, one row per (report date, stratum),
 #'   with a `print()` method that summarises the flagged dates. Columns:
@@ -148,7 +153,7 @@
 #'   }
 #'
 #' @seealso
-#' [diagnose_batch_shape()] for the complementary test on *which* event dates a
+#' [diagnose_batches2()] for the complementary test on *which* event dates a
 #' flagged report date drew from; [transport_discriminant()] for the two
 #' coordinates behind the test, without the hypothesis test on top;
 #' [simulate_batch()] to plant a known batch and check the screen finds it;
@@ -187,9 +192,11 @@ diagnose_batches <- function(x,
                          period          = NULL,
                          null_model      = c("auto", "poisson", "robust"),
                          axis            = c("report", "validation"),
-                         alpha           = 0.05) {
+                         alpha           = 0.05,
+                         drop_censored   = TRUE) {
   null_model      <- match.arg(null_model)
   axis            <- match.arg(axis)
+  check_bool(drop_censored, "drop_censored")
   .batch_experimental_warning("diagnose_batches")
   .batch_check_tbl_now(x)
 
@@ -205,7 +212,8 @@ diagnose_batches <- function(x,
   period <- .batch_resolve_period(x, period)
 
   # -- 1-4. reporting totals, baseline and the window statistics Delta and W ----
-  registration <- .batch_registration(x, lookback, baseline_window, period, axis = axis)
+  registration <- .batch_registration(x, lookback, baseline_window, period,
+                                      axis = axis, drop_censored = drop_censored)
 
   # -- 5. p-values under the appropriate null ---------------------------------
   # The exact Poisson/Binomial null is only valid when the counts are Poisson AND
@@ -256,8 +264,9 @@ diagnose_batches <- function(x,
 #' @keywords internal
 #' @noRd
 .batch_registration <- function(data, lookback, baseline_window, period,
-                               axis = "report") {
-  increments      <- .batch_report_increments(data, axis = axis)
+                               axis = "report", drop_censored = FALSE) {
+  increments      <- .batch_report_increments(data, axis = axis,
+                                              drop_censored = drop_censored)
   registration    <- .batch_registration_totals(increments, data)
   baseline_window <- .batch_baseline_window(baseline_window, lookback, period)
   registration    <- .batch_add_baseline(registration, baseline_window, period)
@@ -288,6 +297,54 @@ diagnose_batches <- function(x,
   validation_col
 }
 
+#' Drop the rows whose arrival date on `axis` is censored.
+#'
+#' Censoring on an axis says the date on that axis is a bound rather than the
+#' date the record actually arrived, so the record cannot testify about when
+#' arrivals happened. The flag is matched to the axis: `is_censored_report` for
+#' `"report"`, `is_censored_validation` for `"validation"`.
+#'
+#' It says nothing at all about the event date, which is why only the batch
+#' tests call this. A row censored on the report axis is still a case that
+#' happened on its event date.
+#'
+#' @param observations The stripped data frame.
+#' @param data The `tbl_now` the flags are read off.
+#' @param axis `"report"` or `"validation"`.
+#'
+#' @returns `observations` without the censored rows.
+#' @keywords internal
+#' @noRd
+.batch_drop_censored <- function(observations, data, axis) {
+  censoring_col <- if (identical(axis, "validation")) {
+    get_is_censored_validation(data)
+  } else {
+    get_is_censored_report(data)
+  }
+  if (is.null(censoring_col) || !censoring_col %in% names(observations)) {
+    return(observations)
+  }
+
+  # The checker allows 0/1 as well as TRUE/FALSE; `%in% TRUE` also sends an
+  # `NA` flag to "not known to be censored", which is the conservative side.
+  censored <- as.logical(observations[[censoring_col]]) %in% TRUE
+  if (!any(censored)) return(observations)
+
+  cli::cli_inform(c(
+    "i" = "Ignoring {sum(censored)} row{?s} flagged by {.field {censoring_col}}: \
+           a censored date is a bound, not an arrival."
+  ))
+  kept <- observations[!censored, , drop = FALSE]
+  if (nrow(kept) == 0L) {
+    cli::cli_abort(c(
+      "Every row is censored on the {.val {axis}} axis, so nothing is left to
+       scan for batches.",
+      "i" = "Pass {.code drop_censored = FALSE} to scan them anyway."
+    ))
+  }
+  kept
+}
+
 #' Reduce a `tbl_now` to signed counts indexed by (event, report, stratum).
 #'
 #' Handles the three `tbl.now` data types uniformly:
@@ -302,7 +359,8 @@ diagnose_batches <- function(x,
 #'   `.stratum`.
 #' @keywords internal
 #' @noRd
-.batch_report_increments <- function(data, axis = c("report", "validation")) {
+.batch_report_increments <- function(data, axis = c("report", "validation"),
+                                     drop_censored = FALSE) {
   axis <- match.arg(axis)
   observations <- as.data.frame(data)
   event_col    <- get_event_date(data)
@@ -333,6 +391,21 @@ diagnose_batches <- function(x,
         "i" = "There is nothing to look for batches in on the validation axis."
       ))
     }
+  }
+
+  # A censored arrival date is a BOUND, not the date the record arrived: the
+  # censoring already recorded that we do not know when it came in (often
+  # because it was batched). Leaving those rows in makes the censoring date
+  # look like a mass arrival, so every batch diagnostic would rediscover the
+  # censoring it was told about.
+  #
+  # It defaults to FALSE, and only the batch tests ask for it. The flag is a
+  # statement about the ARRIVAL axis and about nothing else: those rows carry a
+  # real event date and a real case, so dropping them anywhere the question is
+  # "what happened, and when" -- `plot_epidemic_process()` above all -- would
+  # silently delete cases from the epidemic curve.
+  if (isTRUE(drop_censored)) {
+    observations <- .batch_drop_censored(observations, data, axis)
   }
 
   # The per-row count, before any de-accumulation.
@@ -1055,7 +1128,7 @@ diagnose_batches <- function(x,
 #'
 #' The batch detectors are new and their statistical behaviour and interface are
 #' still settling.  Every user-facing entry point (`diagnose_batches()`,
-#' `diagnose_batch_shape()`, `simulate_batch()`) calls this so a user is always told
+#' `diagnose_batches2()`, `simulate_batch()`) calls this so a user is always told
 #' that a flagged batch is a *potential* batch, not a confirmed one.
 #' @param function_name The calling function, for the message.
 #' @keywords internal
@@ -1089,12 +1162,101 @@ diagnose_batches <- function(x,
   invisible(TRUE)
 }
 
-#' Print a batch screen
+#' The columns a batch screen needs to describe itself
+#'
+#' Exactly the columns `print.diagnose_batches()` reads. Kept next to the print
+#' method so the two cannot drift apart.
+#'
+#' @keywords internal
+#' @noRd
+.batch_screen_report_cols <- c(
+  "report_date", "stratum", "reported", "baseline", "deficit", "delta", "batch"
+)
+
+#' Keep a report class only while the report is still there
+#'
+#' `diagnose_batches` and `transport_discriminant` are tibbles whose `print()`
+#' method summarises the screen. Subsetting one down to a few columns -- the
+#' obvious `screened[, c("report_date", "reported")]` -- left an object that
+#' still claimed to be a screen and could no longer print as one: the print
+#' method read a `batch` column that was gone, and the object aborted inside its
+#' own `print()`, which is the one place an error is hardest to read. So a
+#' subset that drops a column the summary needs comes back as the plain tibble
+#' it now is.
+#'
+#' Silent, unlike the `tbl_now` demotion. A `tbl_now` that loses a protected
+#' column loses the ability to be nowcast, which is worth a warning; this loses
+#' a print format, and warning on every `screened[, 1:3]` at the console would
+#' be noise.
+#'
+#' @param out The result of the subsetting.
+#' @param template The object it was subset from.
+#' @param required Columns the class's own methods read.
+#'
+#' @return `out`, demoted to a tibble when a required column is missing.
+#'
+#' @keywords internal
+#' @noRd
+.batch_report_reconstruct <- function(out, template, required) {
+  # `drop = TRUE` can hand back a bare vector, which never carried the class.
+  if (!is.data.frame(out) || all(required %in% names(out))) {
+    return(out)
+  }
+  report_class <- class(template)[1]
+  class(out) <- setdiff(class(out), report_class)
+  # The screen's own attributes describe a screen; without the columns they
+  # annotate they are only litter for `attributes()` to trip over.
+  for (kept in c("lookback", "period", "null_model", "alpha", "dispersion")) {
+    attr(out, kept) <- NULL
+  }
+  out
+}
+
+#' Subset a batch screen
+#'
 #' @param x A `diagnose_batches` object.
-#' @param ... Unused.
+#' @param ... Passed to the tibble method.
+#'
+#' @return A `diagnose_batches`, or a tibble when the subset can no longer be
+#'   printed as a screen (see `.batch_report_reconstruct()`).
+#'
 #' @export
 #' @noRd
+`[.diagnose_batches` <- function(x, ...) {
+  out <- NextMethod()
+  .batch_report_reconstruct(out, x, .batch_screen_report_cols)
+}
+
+#' @importFrom dplyr dplyr_reconstruct
+#' @exportS3Method dplyr::dplyr_reconstruct
+#' @noRd
+dplyr_reconstruct.diagnose_batches <- function(data, template) {
+  out <- NextMethod()
+  .batch_report_reconstruct(out, template, .batch_screen_report_cols)
+}
+
+#' Print a batch screen
+#'
+#' Registered on `base::print`, not with a plain `@export`. The package
+#' namespace defines an S7 `print` generic, which shadows `base::print` for an
+#' attached session, so a plainly-exported `print.*` method lands in the wrong
+#' methods table and never dispatches on auto-print -- the object came back as a
+#' bare tibble. See DEVELOPMENT_SKILL.md section 9.
+#'
+#' @param x A `diagnose_batches` object.
+#' @param ... Unused.
+#' @exportS3Method base::print
+#' @noRd
 print.diagnose_batches <- function(x, ...) {
+  # `[<-`, `$<-` and a hand-built object can still strip a column without going
+  # through the subsetting methods above. Printing the table is always better
+  # than aborting in a print method.
+  if (!all(.batch_screen_report_cols %in% names(x))) {
+    # Strip the class rather than coercing: a coercion that kept it would send
+    # this method straight back into itself.
+    class(x) <- setdiff(class(x), "diagnose_batches")
+    return(print(x, ...))
+  }
   flagged <- x[!is.na(x$batch) & x$batch, , drop = FALSE]
 
   # stdout (`cat_*`), not messages (`cli_*`): print output must survive

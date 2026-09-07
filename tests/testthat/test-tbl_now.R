@@ -116,6 +116,61 @@ test_that("tbl_now infers 'count' data_type correctly", {
   expect_equal(attr(result, "data_type"), "count-cumulative")
 })
 
+test_that("tbl_now refuses non-numeric count columns", {
+  bad_counts <- count_data |>
+    dplyr::mutate(n = as.character(n))
+
+  expect_error(
+    tbl_now(
+      data = bad_counts,
+      event_date = "onset_week",
+      report_date = "report_week",
+      case_count = n,
+      data_type = "count-incidence",
+      units = "days",
+      verbose = FALSE
+    ),
+    "must be numeric"
+  )
+})
+
+test_that("tbl_now documents empty and one-row construction contract", {
+  empty <- data.frame(
+    event = as.Date(character()),
+    report = as.Date(character())
+  )
+  expect_error(
+    tbl_now(
+      empty,
+      event_date = event, report_date = report,
+      data_type = "linelist", units = "days",
+      now = as.Date("2021-01-01"), verbose = FALSE
+    ),
+    "empty data.frame"
+  )
+
+  one <- data.frame(
+    event = as.Date("2021-01-01"),
+    report = as.Date("2021-01-02")
+  )
+  expect_error(
+    tbl_now(
+      one,
+      event_date = event, report_date = report,
+      data_type = "linelist", verbose = FALSE
+    ),
+    "Cannot infer time units"
+  )
+
+  declared <- tbl_now(
+    one,
+    event_date = event, report_date = report,
+    data_type = "linelist", units = "days", verbose = FALSE
+  )
+  expect_true(is_tbl_now(declared))
+  expect_equal(declared$.delay, 1)
+})
+
 test_that("tbl_now handles optional 'is_censored_report' column", {
   result <- tbl_now(
     data = ll_data,

@@ -82,13 +82,36 @@ to the unit you actually want.
 unknown total, not a total that quietly leaves it out. Use
 \code{\link[=complete_zeroes]{complete_zeroes()}} first if the \code{NA}s are really zeroes.
 }
+}
+\section{What happens to the temporal effects}{
 
 Any temporal-effect \strong{columns} that were materialised by
 \code{\link[=compute_temporal_effects]{compute_temporal_effects()}} are dropped, because a day-of-week term computed
-on daily dates is meaningless once those dates are weeks. The lazy
-\code{\link[=temporal_effects]{temporal_effects()}} spec is kept, so \code{compute_temporal_effects()} will
-rebuild them on the new grid.
+on daily dates is meaningless once those dates are weeks.
+
+The lazy \code{\link[=temporal_effects]{temporal_effects()}} specification moves onto the new grid with
+everything else, and the effects the new grid cannot express are \strong{dropped
+from it} rather than silently rebuilt on dates that cannot carry them:
+\itemize{
+\item \code{day_of_week}, \code{weekend}, \code{day_of_month}, \code{holiday_lags} and \code{weekend_lags}
+are properties of a \emph{day}, so they survive only \code{to = "days"}.
+\item \code{week_of_year} survives \code{"weeks"}; \code{month_of_year} survives \code{"months"}.
+\item \strong{\code{seasons} are rescaled.} A Fourier period is a length, not a position in
+the calendar, so it converts: a 365-day season becomes a 52.14-week one, and
+\verb{seasons = 52, season_length = 7} becomes \code{seasons = 52} in weeks. A period
+that ends up two units or shorter is dropped -- it is at or below the new
+grid's Nyquist limit, so it can no longer be told from a constant or from a
+longer wave.
+\item \strong{\code{holidays} are kept.} On a coarser grid the holiday column stops being a
+0/1 indicator and becomes the \strong{share of the period's days that the calendar
+marks} -- 1/7 for a week containing Christmas Day -- which is the same
+number as the indicator when the period is one day long.
 }
+
+A specification with nothing left is removed. \code{verbose = TRUE} says what was
+dropped and what was rescaled.
+}
+
 \section{Aggregating one axis only}{
 
 \code{axes} exists because the two axes do not always move together: a system may
@@ -133,10 +156,20 @@ counts <- to_count(daily, to = "count-incidence")
 sum(counts$n)
 sum(aggregate_time_units(counts, to = "months", verbose = FALSE)$n)
 
+# A weekly grid cannot carry a day-of-week effect, so it is dropped from the
+# specification; the 365-day season is rescaled to 52.14 weeks instead.
+spec <- daily |>
+  add_temporal_effects(
+    temporal_effects(day_of_week = TRUE, seasons = c(7, 365))
+  )
+get_temporal_effects(aggregate_time_units(spec, to = "weeks", verbose = FALSE))
+
 }
 \seealso{
 \code{\link[=align_weeks]{align_weeks()}}, which snaps weekly dates to a common weekday without
 changing the units or the counts; \code{\link[=to_count]{to_count()}} to change data type without
 touching the dates; \code{\link[=complete_zeroes]{complete_zeroes()}} for the cells the coarser grid still
-leaves empty; \code{\link[=tbl_now]{tbl_now()}}'s \code{units} argument to declare the units up front.
+leaves empty; \code{\link[=tbl_now]{tbl_now()}}'s \code{units} argument to declare the units up front;
+\code{\link[=temporal_effects]{temporal_effects()}} and \code{\link[=compute_temporal_effects]{compute_temporal_effects()}} for the specification
+this coarsens.
 }

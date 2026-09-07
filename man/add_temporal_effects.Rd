@@ -18,7 +18,8 @@ add_temporal_effects(x, t_effects = NULL, overwrite = FALSE, ...)
   date_col = NULL,
   numeric_col = NULL,
   name_prefix = paste0(".", date_col),
-  weekend_days = c("Sat", "Sun")
+  weekend_days = c("Sat", "Sun"),
+  units = "days"
 )
 
 \method{add_temporal_effects}{tbl_now}(
@@ -63,6 +64,12 @@ the weekend. Defaults to Saturday and Sunday.
 \item Numeric: integers 1-7 in \code{\link[lubridate:wday]{lubridate::wday()}} numbering with
 \code{week_start = 1}, so \strong{1 = Monday} and 7 = Sunday.
 }}
+
+\item{units}{Character. The time units \code{date_col} is measured in: \code{"days"}
+(the default), \code{"weeks"}, \code{"months"} or \code{"years"}. It only affects the
+\strong{holiday} column, which on a grid coarser than days becomes the \emph{share} of
+the period's days that are holidays rather than a 0/1 indicator. For a
+\code{tbl_now}, \code{\link[=compute_temporal_effects]{compute_temporal_effects()}} reads this off the object.}
 
 \item{date_type}{Either \code{event_date} (default) or \code{report_date}
 to add temporal effects to those columns.}

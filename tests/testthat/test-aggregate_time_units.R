@@ -347,9 +347,9 @@ test_that("covariates, censoring and a user-set `now` survive the aggregation", 
   expect_equal(get_now(out), as.Date("2024-01-28"))
 })
 
-test_that("materialised temporal-effect columns are dropped, the spec is kept", {
+test_that("materialised temporal-effect columns are dropped", {
   x <- make_daily_linelist() |>
-    add_temporal_effects(t_effects = temporal_effects(day_of_week = TRUE)) |>
+    add_temporal_effects(t_effects = temporal_effects(week_of_year = TRUE)) |>
     compute_temporal_effects()
 
   effect_cols <- get_temporal_effect_cols(x)
@@ -359,9 +359,200 @@ test_that("materialised temporal-effect columns are dropped, the spec is kept", 
 
   expect_false(any(effect_cols %in% colnames(out)))
   expect_equal(get_temporal_effect_cols(out), character(0))
-  # The lazy spec survives, so the columns can be rebuilt on the new grid.
+  # An epiweek effect still means something on a weekly grid, so the spec
+  # survives and the columns can be rebuilt on it.
   expect_equal(get_temporal_effects(out), get_temporal_effects(x))
   expect_true(all(effect_cols %in% colnames(compute_temporal_effects(out))))
+})
+
+# -- the lazy spec on a coarser grid (#65) -----------------------------------
+# An effect the new grid cannot express has to leave the SPEC, not just the
+# columns: the spec outlives the columns, so a day-of-week effect left in it
+# would be rebuilt by the next `compute_temporal_effects()` on dates that are
+# all the same weekday.
+
+spec_effects <- function(x, i = 1) {
+  get_temporal_effects(x)[[i]]$t_effects
+}
+
+test_that("day-level effects are dropped from the spec by any coarsening", {
+  x <- make_daily_linelist() |>
+    add_temporal_effects(t_effects = temporal_effects(
+      day_of_week = TRUE, weekend = TRUE, day_of_month = TRUE,
+      weekend_lags = 2, week_of_year = TRUE, month_of_year = TRUE,
+      # A ten-year wave survives every grid below, so the specification is
+      # always there to be inspected.
+      seasons = 3650
+    ))
+
+  for (unit in c("weeks", "months", "years")) {
+    out <- aggregate_time_units(x, to = unit, verbose = FALSE)
+    effects <- spec_effects(out)
+    expect_false(effects@day_of_week, label = unit)
+    expect_false(effects@weekend, label = unit)
+    expect_false(effects@day_of_month, label = unit)
+    expect_equal(effects@weekend_lags, 0L, label = unit)
+  }
+
+  # ... and the columns are not rebuilt either.
+  weekly <- compute_temporal_effects(
+    aggregate_time_units(x, to = "weeks", verbose = FALSE)
+  )
+  expect_false(".event_day_of_week" %in% colnames(weekly))
+  expect_true(".event_week_of_year" %in% colnames(weekly))
+})
+
+test_that("week- and month-of-year effects survive only their own grid", {
+  x <- make_daily_linelist() |>
+    add_temporal_effects(t_effects = temporal_effects(
+      week_of_year = TRUE, month_of_year = TRUE
+    ))
+
+  weekly <- spec_effects(aggregate_time_units(x, to = "weeks", verbose = FALSE))
+  expect_true(weekly@week_of_year)
+  expect_true(weekly@month_of_year)
+
+  monthly <- spec_effects(aggregate_time_units(x, to = "months", verbose = FALSE))
+  expect_false(monthly@week_of_year)
+  expect_true(monthly@month_of_year)
+
+  # Nothing is left on a yearly grid, so the specification goes with it.
+  yearly <- aggregate_time_units(x, to = "years", verbose = FALSE)
+  expect_equal(get_temporal_effects(yearly), list())
+})
+
+test_that("Fourier periods are rescaled, and the too-short ones dropped", {
+  x <- make_daily_linelist() |>
+    add_temporal_effects(t_effects = temporal_effects(seasons = c(7, 365)))
+
+  weekly <- spec_effects(aggregate_time_units(x, to = "weeks", verbose = FALSE))
+  # 7 days is one week -- a constant, not a wave -- so only the year survives.
+  expect_equal(weekly@seasons, round(365 / 7, 6))
+  expect_equal(weekly@season_length, 1)
+
+  # The same period written the other way round comes out the same.
+  alt <- make_daily_linelist() |>
+    add_temporal_effects(t_effects = temporal_effects(seasons = 52, season_length = 7))
+  expect_equal(
+    spec_effects(aggregate_time_units(alt, to = "weeks", verbose = FALSE))@seasons,
+    52
+  )
+
+  # A yearly grid cannot resolve a one-year wave either.
+  yearly <- aggregate_time_units(x, to = "years", verbose = FALSE)
+  expect_equal(get_temporal_effects(yearly), list())
+})
+
+test_that("the holiday calendar is kept, and its column becomes a share", {
+  skip_if_not_installed("almanac")
+
+  df <- data.frame(
+    onset = as.Date("2024-12-16") + c(0, 1, 9, 10),
+    reported = as.Date("2024-12-16") + c(2, 3, 11, 12)
+  )
+  calendar <- almanac::rcalendar(almanac::hol_christmas())
+  x <- tbl_now(df,
+    event_date = onset, report_date = reported,
+    data_type = "linelist", units = "days", verbose = FALSE
+  ) |>
+    add_temporal_effects(t_effects = temporal_effects(
+      day_of_week = TRUE, holidays = calendar
+    ))
+
+  out <- aggregate_time_units(x, to = "weeks", verbose = FALSE)
+  effects <- spec_effects(out)
+  expect_false(effects@day_of_week)
+  expect_false(is.null(effects@holidays))
+
+  computed <- compute_temporal_effects(out)
+  share <- computed[[".event_holiday"]]
+  weeks <- computed[[get_event_date(out)]]
+  # 2024-12-25 sits in the epi week beginning 2024-12-22: one day in seven.
+  expect_equal(share[weeks == as.Date("2024-12-22")], rep(1 / 7, 2))
+  expect_equal(share[weeks == as.Date("2024-12-15")], rep(0, 2))
+})
+
+test_that("the holiday column is still a 0/1 indicator on a daily grid", {
+  skip_if_not_installed("almanac")
+
+  df <- data.frame(
+    onset = as.Date("2024-12-24") + 0:2,
+    reported = as.Date("2024-12-26") + 0:2
+  )
+  x <- tbl_now(df,
+    event_date = onset, report_date = reported,
+    data_type = "linelist", units = "days", verbose = FALSE
+  ) |>
+    add_temporal_effects(t_effects = temporal_effects(
+      holidays = almanac::rcalendar(almanac::hol_christmas())
+    )) |>
+    compute_temporal_effects()
+
+  expect_identical(x[[".event_holiday"]], c(0L, 1L, 0L))
+})
+
+test_that("each spec is coarsened against its OWN axis", {
+  x <- make_daily_linelist() |>
+    add_temporal_effects(t_effects = temporal_effects(day_of_week = TRUE)) |>
+    add_temporal_effects(
+      t_effects = temporal_effects(day_of_week = TRUE),
+      date_type = "report_date"
+    )
+
+  # Only the report axis moves, so only the report-axis spec loses its effect.
+  # `label = "end"` because a week named by its first day would sit before the
+  # daily events it reports (see ?aggregate_time_units).
+  out <- aggregate_time_units(
+    x,
+    to = "weeks", axes = "report", label = "end", verbose = FALSE
+  )
+
+  specs <- get_temporal_effects(out)
+  expect_length(specs, 1)
+  expect_equal(specs[[1]]$date_type, "event_date")
+  expect_true(specs[[1]]$t_effects@day_of_week)
+})
+
+test_that("an unchanged axis keeps its specification untouched", {
+  x <- make_daily_linelist() |>
+    add_temporal_effects(t_effects = temporal_effects(
+      day_of_week = TRUE, seasons = 365
+    ))
+
+  out <- aggregate_time_units(x, to = "days", verbose = FALSE)
+  expect_equal(get_temporal_effects(out), get_temporal_effects(x))
+})
+
+test_that("aggregate_time_units reports what it dropped and rescaled", {
+  x <- make_daily_linelist() |>
+    add_temporal_effects(t_effects = temporal_effects(
+      day_of_week = TRUE, seasons = 365
+    ))
+
+  expect_message(
+    aggregate_time_units(x, to = "weeks"),
+    "day_of_week"
+  )
+  expect_message(
+    aggregate_time_units(x, to = "weeks"),
+    "Rescaled"
+  )
+})
+
+test_that("the spec is coarsened on a grouped tbl_now too", {
+  x <- make_daily_linelist() |>
+    add_temporal_effects(t_effects = temporal_effects(
+      day_of_week = TRUE, week_of_year = TRUE
+    ))
+
+  out <- aggregate_time_units(x |> group_by(sex), to = "weeks", verbose = FALSE)
+  ungrouped <- aggregate_time_units(x, to = "weeks", verbose = FALSE)
+
+  expect_true(is_tbl_now(out))
+  expect_equal(dplyr::group_vars(out), "sex")
+  expect_equal(as_tibble(ungroup(out)), as_tibble(ungroup(ungrouped)))
+  expect_equal(get_temporal_effects(out), get_temporal_effects(ungrouped))
+  expect_false(spec_effects(out)@day_of_week)
 })
 
 test_that("`type` and `align_on_day` mean what they mean in align_weeks()", {

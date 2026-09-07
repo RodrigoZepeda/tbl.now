@@ -16,6 +16,8 @@ plot_delay_drift(
   level = 0.95,
   plotly = FALSE,
   axis = c("report", "validation"),
+  linewidth = 1,
+  grid_linewidth = 0.5,
   palette = .tbl_now_palette()
 )
 }
@@ -58,7 +60,15 @@ time the laboratory adds. (This is not the same quantity as the
 measured from the report.) Needs a validation process (see
 \code{\link[=add_validation_date]{add_validation_date()}}); cases still \code{"pending"} are left out.}
 
-\item{palette}{A named colour palette (defaults to the package palette).}
+\item{linewidth}{Multiplier on the width of the mean and median delay lines.
+Default \code{1} (drawn at \code{0.6} and \code{0.8}, so the median stays the heavier of
+the two at any setting).}
+
+\item{grid_linewidth}{Line width of the dashed maturity line and of the
+\code{changepoint} marker -- the reference lines the package draws itself, not
+\pkg{ggplot2}'s panel grid. Default \code{0.5}.}
+
+\item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}).}
 }
 \value{
 A \pkg{ggplot2} object.

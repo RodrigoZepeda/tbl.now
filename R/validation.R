@@ -577,6 +577,10 @@ remove_validation_date <- function(x) {
 #' The [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' puts this alongside the other checks.
 #'
+#' @param linewidth Multiplier on the box outlines of
+#'   `plot_validation_delay()`. Default `1` (drawn at `0.5`).
+#' @param palette A named colour palette (see [tbl_now_palette()]).
+#'
 #' @examples
 #' cases <- data.frame(
 #'   onset = as.Date("2021-01-04") + rep(0:9, each = 4),
@@ -638,12 +642,14 @@ diagnose_validation_delay <- function(x, by = NULL) {
 
 #' @rdname validation_delay
 #' @export
-plot_validation_delay <- function(x, by = NULL) {
+plot_validation_delay <- function(x, by = NULL, linewidth = 1,
+                                  palette = .tbl_now_palette()) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_validation_delay}.")
   }
+  .tbl_now_check_palette(palette, "plot_validation_delay")
+  .tbl_now_check_size(linewidth, "linewidth")
   delays <- .validation_delay_table(x, by, "plot_validation_delay")
-  palette <- .tbl_now_palette()
 
   ggplot2::ggplot(
     delays,
@@ -651,13 +657,14 @@ plot_validation_delay <- function(x, by = NULL) {
       x = .data$.validation_delay, y = .data$outcome, fill = .data$outcome
     )
   ) +
-    ggplot2::geom_boxplot(outlier.alpha = 0.25, width = 0.6) +
+    ggplot2::geom_boxplot(outlier.alpha = 0.25, width = 0.6,
+                          linewidth = 0.5 * linewidth) +
     ggplot2::facet_wrap("stratum", scales = "free_y") +
     # RED: this is the reporting process -- when we found out -- not the
     # epidemic process.
     ggplot2::scale_fill_manual(
       values = c(
-        confirmed = palette[["light_red"]], retracted = palette[["accent_red"]]
+        confirmed = palette[["reporting_light"]], retracted = palette[["reporting"]]
       ),
       guide = "none"
     ) +
@@ -667,7 +674,7 @@ plot_validation_delay <- function(x, by = NULL) {
       title = "Time from report to resolution",
       subtitle = "Reporting delay process"
     ) +
-    ggplot2::theme_minimal(base_size = 10)
+    .tbl_now_theme(palette)
 }
 
 #' The validation delays, tidied for comparison
@@ -824,6 +831,8 @@ censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
 #' @param by Optional stratum column to facet by.
 #' @param proportion When `TRUE` (default) the bands are shares summing to 1;
 #'   `FALSE` shows the counts instead, which keeps the epidemic curve visible.
+#' @param palette A named colour palette (see [tbl_now_palette()]). The plot is
+#'   drawn entirely with stacked areas, so it takes no `size` or `linewidth`.
 #'
 #' @return A `ggplot`.
 #'
@@ -841,9 +850,10 @@ censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
 #'
 #' @section Colours:
 #'
-#' `confirmed` is drawn in the palette's green (it is a real case -- the
-#' epidemic process), `retracted` in the accent red (it was removed by the
-#' reporting process), and `pending` in grey (not yet known either way).
+#' `confirmed` is drawn with the palette's `epidemic` role (it is a real case --
+#' the epidemic process), `retracted` with `reporting` (it was removed by the
+#' reporting process), and `pending` with the neutral `pending` role (not yet
+#' known either way). Override any of them through `palette`.
 #'
 #' @seealso [diagnose_validation_delay()], [validated_cases].
 #'
@@ -864,11 +874,13 @@ censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
 #' plot_validation_status(flu)
 #'
 #' @export
-plot_validation_status <- function(x, by = NULL, proportion = TRUE) {
+plot_validation_status <- function(x, by = NULL, proportion = TRUE,
+                                  palette = .tbl_now_palette()) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_validation_status}.")
   }
   .assert_tbl_now(x, "plot_validation_status")
+  .tbl_now_check_palette(palette, "plot_validation_status")
   if (!has_validation(x)) {
     cli::cli_abort(c(
       "{.fn plot_validation_status} needs a validation process.",
@@ -879,7 +891,6 @@ plot_validation_status <- function(x, by = NULL, proportion = TRUE) {
   event_col <- get_event_date(x)
   type_col <- get_validation_type(x)
   count_col <- get_case_count(x)
-  palette <- .tbl_now_palette()
 
   observations <- dplyr::as_tibble(.declass_tbl_now(dplyr::ungroup(x)))
   observations$.outcome <- factor(
@@ -916,9 +927,9 @@ plot_validation_status <- function(x, by = NULL, proportion = TRUE) {
     ggplot2::scale_fill_manual(
       name = NULL,
       values = c(
-        confirmed = palette[["primary_green"]],
-        retracted = palette[["accent_red"]],
-        pending = "#c9cec9"
+        confirmed = palette[["epidemic"]],
+        retracted = palette[["reporting"]],
+        pending = palette[["pending"]]
       ),
       drop = FALSE
     ) +
@@ -928,7 +939,7 @@ plot_validation_status <- function(x, by = NULL, proportion = TRUE) {
       title = "How much of each day has been resolved",
       subtitle = paste0("As of ", format(get_now(x)))
     ) +
-    ggplot2::theme_minimal(base_size = 10) +
+    .tbl_now_theme(palette) +
     ggplot2::theme(legend.position = "top")
 
   if (isTRUE(proportion)) {

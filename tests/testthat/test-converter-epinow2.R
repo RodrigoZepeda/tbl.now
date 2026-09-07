@@ -218,6 +218,30 @@ test_that("`snapshots` caps how many are emitted", {
   expect_length(snaps, 3L)
 })
 
+test_that("invalid EpiNow2 converter controls are refused", {
+  skip_if_not_installed("EpiNow2")
+  x <- epinow2_weekly()
+
+  expect_error(
+    q(tbl_now_to_EpiNow2(x, complete = "bad", verbose = FALSE, quiet = TRUE)),
+    "complete"
+  )
+  expect_error(
+    q(tbl_now_to_EpiNow2(x, accumulate = "bad", verbose = FALSE, quiet = TRUE)),
+    "accumulate"
+  )
+
+  for (bad in list(0, -1, 1.5, NA_real_, "3", c(1, 2))) {
+    expect_error(
+      q(tbl_now_to_EpiNow2(
+        x, target = "estimate_truncation", snapshots = bad,
+        verbose = FALSE, quiet = TRUE
+      )),
+      "snapshots"
+    )
+  }
+})
+
 test_that("each snapshot is the series as known at its own report date", {
   skip_if_not_installed("EpiNow2")
   x <- epinow2_weekly()
@@ -464,6 +488,36 @@ test_that("estimate_dist keeps the censoring flag the others must drop", {
       censored, verbose = FALSE, quiet = TRUE
     )),
     1L
+  )
+})
+
+test_that("EpiNow2 series targets warn when lazy temporal effects are dropped", {
+  skip_if_not_installed("EpiNow2")
+  unstratified <- epinow2_weekly() |>
+    add_temporal_effects(temporal_effects(day_of_week = TRUE))
+  stratified <- epinow2_weekly(strata = TRUE) |>
+    add_temporal_effects(temporal_effects(day_of_week = TRUE))
+
+  expect_warning(
+    suppressMessages(tbl_now_to_EpiNow2(
+      unstratified, target = "estimate_infections",
+      verbose = FALSE, quiet = TRUE
+    )),
+    "temporal effects"
+  )
+  expect_warning(
+    suppressMessages(tbl_now_to_EpiNow2(
+      stratified, target = "regional_epinow",
+      verbose = FALSE, quiet = TRUE
+    )),
+    "temporal effects"
+  )
+  expect_warning(
+    suppressMessages(tbl_now_to_EpiNow2(
+      unstratified, target = "estimate_truncation",
+      verbose = FALSE, quiet = TRUE
+    )),
+    "temporal effects"
   )
 })
 

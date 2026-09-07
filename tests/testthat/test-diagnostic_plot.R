@@ -77,7 +77,9 @@ test_that("the reporting triangle separates reported zeros from not-yet-reportab
   tn    <- make_diag_tbl(strata = FALSE)
   build <- ggplot2::ggplot_build(suppressWarnings(plot_reporting_triangle(tn)))
   fills <- unlist(lapply(build$data, function(d) d$fill))
-  expect_true(tbl.now:::.DIAG_ZERO_COLOUR %in% fills)   # a zero-coloured layer is drawn
+  # The zero colour used to be a private constant, `.DIAG_ZERO_COLOUR`; it is now
+  # the palette's `zero` role, so it can be re-themed like every other colour.
+  expect_true(unname(tbl_now_palette()[["zero"]]) %in% fills)
 })
 
 test_that("an event date with zero rows in the raw data is drawn as a zero, not left blank", {
@@ -123,4 +125,61 @@ test_that("inputs are validated", {
   expect_error(diagnostic_plot(tn, panels = "ledger"),  "Unknown panel")   # old name, renamed
   expect_error(diagnostic_plot(tn, panels = "staleness"),  "Unknown panel") # old name, renamed
   expect_error(diagnostic_plot(mtcars), class = "rlang_error")
+})
+
+# -- the transport plane's hover ----------------------------------------------
+
+test_that("plot_transport_discriminant() names its axes in plain text", {
+  # `expression()` is plotmath: plotly cannot render it and drops the label
+  # silently, leaving the widget with unnamed axes.
+  tn <- make_diag_tbl(strata = FALSE)
+  p  <- suppressWarnings(plot_transport_discriminant(tn, lookback = 3L))
+  expect_type(p$labels$x, "character")
+  expect_type(p$labels$y, "character")
+
+  # No `text` aesthetic on the static plot, so ggplot2 has nothing to warn about.
+  expect_silent(ggplot2::ggplot_build(p))
+})
+
+test_that("the plotly transport plane hovers on the dates, not the z scores", {
+  skip_if_not_installed("plotly")
+  tn <- make_diag_tbl(strata = FALSE)
+  widget <- suppressWarnings(
+    plot_transport_discriminant(tn, lookback = 3L, plotly = TRUE)
+  )
+  expect_s3_class(widget, "plotly")
+  expect_equal(widget$x$layout$xaxis$title$text, "Creation z")
+  expect_equal(widget$x$layout$yaxis$title$text, "Transport z")
+
+  hover <- unlist(lapply(widget$x$data, function(trace) trace$text))
+  hover <- hover[!is.na(hover)]
+  expect_true(any(grepl("Report date: ", hover, fixed = TRUE)))
+  expect_true(any(grepl("Mean event date: ", hover, fixed = TRUE)))
+})
+
+# -- censoring belongs to the arrival axis only -------------------------------
+
+test_that("censored report dates do not remove cases from the epidemic curve", {
+  # This shipped wrong once: the drop lived in the shared increments helper, so
+  # `plot_epidemic_process()` silently deleted every case whose REPORT date had
+  # been censored -- a statement about the arrival axis, not the event axis.
+  tn <- make_diag_tbl(strata = FALSE)
+  censored <- censor_reporting_delays_above(tn, 1)
+  expect_gt(sum(censored[[get_is_censored_report(censored)]]), 0)
+
+  cases_of <- function(p) sum(ggplot2::ggplot_build(p)$data[[1]]$y)
+
+  # Every case is still on the epidemic curve, and no message about dropping.
+  expect_no_message(epidemic <- plot_epidemic_process(censored))
+  expect_equal(cases_of(epidemic), cases_of(plot_epidemic_process(tn)))
+
+  # The reporting process keeps them too -- the plot shows what is in the data;
+  # it is the test that is entitled to ignore the bound.
+  expect_no_message(plot_reporting_process(censored))
+
+  # But the batch test does drop them.
+  expect_message(
+    suppressWarnings(transport_discriminant(censored, lookback = 3L)),
+    "Ignoring"
+  )
 })

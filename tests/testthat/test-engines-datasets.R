@@ -116,3 +116,59 @@ test_that("the delay cap reaches the CONVERTER, not the modelling call", {
   )))
   expect_true(is_tbl_nowcast(nowcast))
 })
+
+test_that("a stratified line list is completed before its triangles (#67)", {
+  skip_if_not_installed("baselinenowcast")
+  skip_on_cran()
+
+  # A line list cannot record a period in which nothing was reported: the rows
+  # are simply absent. The stratified fit used to build its triangles from
+  # `format = "long"`, which the converter deliberately never completes, so the
+  # reference axis silently stopped short and the answer differed from the same
+  # object passed through `to_count() |> complete_zeroes()`.
+  set.seed(20260904L)
+  origin <- as.Date("2021-01-04")
+  cells <- tidyr::expand_grid(
+    .period = 0:29, .delay = 0:2, sex = c("F", "M")
+  ) |>
+    dplyr::mutate(
+      event = origin + .data$.period,
+      report = .data$event + .data$.delay,
+      n = 2L
+    ) |>
+    # Silence a handful of (period, stratum) pairs entirely: in a line list
+    # these leave no trace at all.
+    dplyr::filter(!(.data$.period %in% c(7, 8, 19) & .data$sex == "F"))
+
+  linelist <- cells |>
+    dplyr::select("event", "report", "sex", "n") |>
+    tidyr::uncount(!!as.symbol("n")) |>
+    tbl_now(
+      event_date = event, report_date = report, strata = sex,
+      data_type = "linelist", units = "days", verbose = FALSE
+    )
+
+  set.seed(1)
+  from_linelist <- suppressWarnings(suppressMessages(
+    run_nowcast(linelist, engine_baselinenowcast(draws = 25), verbose = FALSE)
+  ))
+  set.seed(1)
+  from_counts <- suppressWarnings(suppressMessages(
+    run_nowcast(
+      complete_zeroes(to_count(linelist, to = "count-incidence")),
+      engine_baselinenowcast(draws = 25), verbose = FALSE
+    )
+  ))
+
+  tidy_linelist <- generics::tidy(from_linelist)
+  # The silenced periods are back, for both strata, and the axis runs to `now`.
+  expect_equal(max(tidy_linelist$event_date), get_now(linelist))
+  expect_equal(
+    dplyr::n_distinct(tidy_linelist$event_date),
+    dplyr::n_distinct(dplyr::pull(complete_zeroes(
+      to_count(linelist, to = "count-incidence")
+    ), "event"))
+  )
+  # Same object, same seed, same nowcast.
+  expect_equal(tidy_linelist, generics::tidy(from_counts))
+})
