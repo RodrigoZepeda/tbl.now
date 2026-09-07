@@ -622,17 +622,21 @@ df_now |>
   add_temporal_effects(temporal_effects(weekend_lags = 1)) # the Monday after
 ```
 
-#### Event- vs report-date effects
+#### Event-, report-, and validation-date effects
 
 By default effects are derived from the **event date** and named `.event_*`. Pass
 `date_type = "report_date"` to `add_temporal_effects()` to derive them from the
-**report date** instead (columns named `.report_*`). Both can coexist on the same
-`tbl_now`, and every converter carries both sets of columns.
+**report date** instead (columns named `.report_*`). On a `tbl_now` with a
+validation process, pass `date_type = "validation_date"` to derive effects from
+the **validation date** as `.validation_*` columns. All three can coexist on the
+same `tbl_now`; converters that can carry covariates carry the materialised
+columns.
 
 ```{r, eval=FALSE}
 df_now |>
   add_temporal_effects(temporal_effects(week_of_year = TRUE), date_type = "event_date") |>
-  add_temporal_effects(temporal_effects(day_of_week = TRUE),  date_type = "report_date")
+  add_temporal_effects(temporal_effects(day_of_week = TRUE),  date_type = "report_date") |>
+  add_temporal_effects(temporal_effects(weekend = TRUE),      date_type = "validation_date")
 ```
 
 
@@ -1078,17 +1082,17 @@ autoplot(dengue_now, strata = "gender", by_strata = TRUE)
 
 `autoplot()` draws the whole grid in one call. When you want a single effect on its own — in its own figure, at its own size — every panel also has a standalone `plot_*()` twin. They take the same object and return the identical plot, so `autoplot(x, panels = "calendar_weekday")` and `plot_day_of_week_effects(x)` are the same figure. Use `autoplot()` for the overview; reach for a `plot_*()` when you want to place one effect in a report.
 
-Each calendar/holiday twin takes a `type` argument choosing the process: `type = "epidemic"` (the default, green — how the *cases* vary) or `type = "report"` (red — how the *reporting* does).
+Each calendar/holiday twin takes a `type` argument choosing the process: `type = "epidemic"` (the default, green — how the *cases* vary), `type = "report"` (red — how the *reporting* does), or `type = "validation"` (ochre — how resolved cases arrive on validation dates).
 
 | Function | `autoplot()` panel |
 |---|---|
-| `plot_day_of_week_effects(x, type = )` | `calendar_weekday` / `delay_weekday` |
-| `plot_week_of_year_effects(x, type = )` | `calendar_week` / `delay_week` |
-| `plot_month_of_year_effects(x, type = )` | `calendar_month` / `delay_month` |
-| `plot_holiday_effects(x, type = )` | `calendar_holiday` / `delay_holiday` |
-| `plot_weekend_effects(x, type = )` | `calendar_holiday` / `delay_holiday`, attaching `temporal_effects(weekend = TRUE)` first |
-| `plot_holiday_lag_effects(x, type = )` | `calendar_holiday_lag` / `delay_holiday_lag` |
-| `plot_cycles(x, type = )` | `seasonality` / `delay_seasonality` |
+| `plot_day_of_week_effects(x, type = )` | `calendar_weekday` / `delay_weekday` / `validation_weekday` |
+| `plot_week_of_year_effects(x, type = )` | `calendar_week` / `delay_week` / `validation_week` |
+| `plot_month_of_year_effects(x, type = )` | `calendar_month` / `delay_month` / `validation_month` |
+| `plot_holiday_effects(x, type = )` | `calendar_holiday` / `delay_holiday` / `validation_holiday` |
+| `plot_weekend_effects(x, type = )` | `calendar_holiday` / `delay_holiday` / `validation_holiday`, attaching `temporal_effects(weekend = TRUE)` first |
+| `plot_holiday_lag_effects(x, type = )` | `calendar_holiday_lag` / `delay_holiday_lag` / `validation_holiday_lag` |
+| `plot_cycles(x, type = )` | `seasonality` / `delay_seasonality` / `validation_seasonality` |
 | `plot_delay_distribution(x)` | `delay_distribution` |
 | `plot_observed_cases(x)` | `epidemic` |
 
@@ -1450,4 +1454,3 @@ See the [vignette on using different models](https://rodrigozepeda.github.io/tbl
 
 
 ## References
-

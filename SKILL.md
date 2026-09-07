@@ -419,7 +419,8 @@ spec <- temporal_effects(
   holidays      = NULL          # an almanac::rcalendar(), see next skill
 )
 
-# 2) attach (NO columns created yet). date_type = "event_date" (default) or "report_date"
+# 2) attach (NO columns created yet). date_type = "event_date" (default),
+# "report_date", or "validation_date" when the object has validation
 tn <- add_temporal_effects(tn, spec, date_type = "event_date")
 
 # 3) materialise the columns when ready for modelling
@@ -430,7 +431,8 @@ get_temporal_effect_cols(tn)   # character(0) before compute; column names after
 ```
 
 - `add_temporal_effects()` can be called repeatedly (appends specs); you can mix
-  `date_type = "event_date"` and `"report_date"`.
+  `date_type = "event_date"`, `"report_date"`, and `"validation_date"` when the
+  object has a validation process.
 - **Seasonality / Fourier**: `seasons` are the cycle periods. For *daily* data
   with weekly seasonality use `seasons = 52, season_length = 7` (period = 364
   days); `season_length` defaults to `1` (period = `seasons`).
@@ -587,6 +589,12 @@ patterned?):
    many cases *occur*, but very much changes how long they take to be *reported*.
 9. **Delay periodicity periodogram** (`"delay_seasonality"`) — a cycle in the delay
    (e.g. a weekly reporting rhythm).
+10. **Validation calendar effects** (`"validation_weekday"`, `"validation_week"`,
+   `"validation_month"`, `"validation_holiday"`, `"validation_holiday_lag"`) —
+   validation-date twins for resolved cases. These appear in `autoplot()` when
+   the object has a validation process.
+11. **Validation periodicity periodogram** (`"validation_seasonality"`) — cycles
+   in validation arrivals.
 
 Which panels are available depends on the object. **Calendar/delay** panels follow
 the unit: **daily** → day-of-week *and* week-of-year; **weekly** → week-of-year;
@@ -604,6 +612,7 @@ Key arguments:
 autoplot(
   tn,
   panels = "all",         # "all" (default) | "calendar" | "delay_calendar" |
+                          #   "validation_calendar" |
                           #   a vector of concrete panel keys above.
                           #   A SINGLE key returns a plain ggplot (not a patchwork).
   by_strata = FALSE,      # TRUE => split every panel by stratum (dodged boxes /
@@ -656,6 +665,7 @@ The two families carry the package's grammar and are worth knowing:
 |---|---|
 | `reporting`, `reporting_light` | the **reporting** process — report dates, delays, *when we found out* |
 | `epidemic`, `epidemic_light`, `epidemic_mid`, `epidemic_dark` | the **epidemic** process — event dates, case counts, *what happened* |
+| `validation`, `validation_light` | the **validation** process — validation dates and resolution arrivals |
 | `ink`, `ink_muted`, `ink_inverse` | text |
 | `surface`, `surface_muted`, `surface_dark` | label fills and ramp ends |
 | `grid_major`, `grid_minor`, `guide`, `guide_strong`, `annotation`, `neutral` | the grids and reference lines the package draws itself |

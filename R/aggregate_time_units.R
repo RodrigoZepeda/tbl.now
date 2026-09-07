@@ -514,9 +514,9 @@ aggregate_time_units <- function(x,
 #'   of `t_effects`, `date_type` and `weekend_days`.
 #' @param calendar_to The new units of the axis this spec is attached to.
 #' @param season_from,season_to The old and new units the Fourier terms are
-#'   measured in. Both `.event_num` and `.report_num` are measured in the EVENT
-#'   units by `time_cols_to_numeric()`, so these are the event axis's units for
-#'   either `date_type`.
+#'   measured in. `.event_num` and `.report_num` are measured in the EVENT
+#'   units by `time_cols_to_numeric()`, while `.validation_num` is measured in
+#'   the validation units by `.add_validation_num()`.
 #'
 #' @return A list of `spec` (the coarsened specification, or `NULL` when nothing
 #'   survives), `dropped` and `rescaled` (character labels for the message).
@@ -623,12 +623,17 @@ aggregate_time_units <- function(x,
   rescaled <- character(0)
 
   for (spec in specs) {
-    axis <- if (identical(spec$date_type, "report_date")) "report" else "event"
+    axis <- switch(spec$date_type,
+      report_date = "report",
+      validation_date = "validation",
+      "event"
+    )
+    season_axis <- if (identical(axis, "validation")) "validation" else "event"
     out <- .coarsen_temporal_effect_spec(
       spec,
       calendar_to = new_units[[axis]],
-      season_from = old_units[["event"]],
-      season_to   = new_units[["event"]]
+      season_from = old_units[[season_axis]],
+      season_to   = new_units[[season_axis]]
     )
     dropped <- c(dropped, out$dropped)
     rescaled <- c(rescaled, out$rescaled)

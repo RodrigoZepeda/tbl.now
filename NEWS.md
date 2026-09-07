@@ -1,5 +1,21 @@
 # tbl.now 0.33.1
 
+## Autoplot can show validation-date calendar effects
+
+The calendar-effect helpers now accept `type = "validation"`, and
+`autoplot()` includes validation calendar and cycle panels whenever a
+`tbl_now` has a validation process. Validation panels use the new
+`validation` palette role, `#C79800` by default.
+
+## Temporal effects can target validation dates
+
+`add_temporal_effects()` now accepts `date_type = "validation_date"` for
+validation-aware `tbl_now` objects. `compute_temporal_effects()` materialises
+those specs as `.validation_*` columns using the validation date and
+`.validation_num`. Validation-date changers now preserve lazy temporal-effect
+specs while invalidating computed columns, and `remove_validation_date()` drops
+validation-date specs while keeping event/report specs.
+
 ## Temporal-effect columns are invalidated when date columns change
 
 `change_event_date()` and `change_report_date()` now drop already materialised

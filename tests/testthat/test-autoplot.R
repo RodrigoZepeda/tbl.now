@@ -20,6 +20,19 @@ make_daily_now <- function() {
   )
 }
 
+make_validated_daily_now <- function() {
+  base <- as.data.frame(make_daily_now())[, c("event_date", "report_date", "n")]
+  base$validation_date <- base$report_date + 1
+  base$outcome <- "confirmed"
+  tbl_now(base,
+    event_date = event_date, report_date = report_date,
+    validation_date = validation_date, validation_type = outcome,
+    case_count = n, data_type = "count-incidence",
+    event_units = "days", report_units = "days", validation_units = "days",
+    verbose = FALSE
+  )
+}
+
 test_that("autoplot.tbl_now returns a patchwork object (weekly linelist)", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
@@ -118,6 +131,38 @@ test_that("panel key vocabulary depends on the event unit", {
   expect_equal(
     tbl.now:::.tbl_now_resolve_panels("all", "weeks"),
     tbl.now:::.tbl_now_all_panel_keys("weeks")
+  )
+})
+
+test_that("validation panels appear when a validation process is present", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  object <- make_validated_daily_now()
+  keys <- tbl.now:::.tbl_now_all_panel_keys("days",
+    validation_units = "days", has_validation = TRUE
+  )
+  expect_true(all(c(
+    "validation_weekday", "validation_week", "validation_seasonality"
+  ) %in% keys))
+  expect_equal(
+    tbl.now:::.tbl_now_resolve_panels("validation_calendar", "days",
+      validation_units = "days", has_validation = TRUE
+    ),
+    c("validation_weekday", "validation_week")
+  )
+
+  p <- ggplot2::autoplot(object)
+  expect_s3_class(p, "patchwork")
+  expect_length(p$patches$plots, 10) # 11 panels: the old 8 plus 3 validation
+  expect_equal(
+    ggplot2::autoplot(object, panels = "validation_weekday")$labels$subtitle,
+    "Validation process"
+  )
+  expect_equal(
+    ggplot2::autoplot(object, panels = "validation_weekday")$labels$y,
+    "Percent of validated cases (%)"
   )
 })
 
@@ -589,6 +634,7 @@ make_holiday_now <- function() {
 holiday_panel_keys <- c(
   "calendar_holiday", "calendar_holiday_lag", "delay_holiday", "delay_holiday_lag"
 )
+validation_holiday_panel_keys <- c("validation_holiday", "validation_holiday_lag")
 
 test_that("holiday panels appear only when a holiday or weekend effect is attached", {
   skip_on_cran()
@@ -618,6 +664,31 @@ test_that("holiday panels appear only when a holiday or weekend effect is attach
   )
   expect_true(all(holiday_panel_keys %in%
                     .tbl_now_all_panel_keys("days", .tbl_now_holiday_config(full))))
+})
+
+test_that("validation holiday panels use validation-date temporal effects", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("almanac")
+
+  object <- make_validated_daily_now() |>
+    add_temporal_effects(
+      temporal_effects(weekend = TRUE, holidays = almanac::cal_us_federal(),
+                       holiday_lags = 2),
+      date_type = "validation_date"
+    )
+
+  keys <- .tbl_now_all_panel_keys("days",
+    validation_units = "days", has_validation = TRUE,
+    validation_holiday_config = .tbl_now_holiday_config(object, "validation_date")
+  )
+  expect_true(all(validation_holiday_panel_keys %in% keys))
+  expect_false("calendar_holiday" %in% keys)
+  expect_s3_class(ggplot2::autoplot(object, panels = "validation_holiday"), "ggplot")
+  expect_equal(
+    ggplot2::autoplot(object, panels = "validation_holiday_lag")$labels$title,
+    "Holiday lag validation effect"
+  )
 })
 
 test_that("the holiday config folds every attached spec together", {
@@ -864,6 +935,10 @@ test_that("plot_weekend_effects attaches a weekend effect when there is none", {
     plot_weekend_effects(object, type = "report")$labels$title,
     "Weekend and/or holiday delay effects"
   )
+  expect_equal(
+    plot_weekend_effects(make_validated_daily_now(), type = "validation")$labels$title,
+    "Weekend and/or holiday validation effect"
+  )
 
   # The spec goes on a copy -- the caller's object is unchanged
   expect_length(get_temporal_effects(object), 0)
@@ -938,6 +1013,7 @@ test_that("every panel names the process it describes in its subtitle", {
   epidemic_keys  <- c("epidemic", "calendar_weekday", "calendar_week", "seasonality")
   reporting_keys <- c("delay_distribution", "delay_weekday", "delay_week",
                       "delay_seasonality")
+  validation_keys <- c("validation_weekday", "validation_week", "validation_seasonality")
 
   for (key in epidemic_keys) {
     expect_equal(
@@ -950,6 +1026,14 @@ test_that("every panel names the process it describes in its subtitle", {
     expect_equal(
       ggplot2::autoplot(object, panels = key)$labels$subtitle,
       "Reporting delay process",
+      info = key
+    )
+  }
+  validated <- make_validated_daily_now()
+  for (key in validation_keys) {
+    expect_equal(
+      ggplot2::autoplot(validated, panels = key)$labels$subtitle,
+      "Validation process",
       info = key
     )
   }
@@ -966,6 +1050,10 @@ test_that("both periodogram panels are titled 'Cycles (periodogram)'", {
   )
   expect_equal(
     ggplot2::autoplot(object, panels = "delay_seasonality")$labels$title,
+    "Cycles (periodogram)"
+  )
+  expect_equal(
+    ggplot2::autoplot(make_validated_daily_now(), panels = "validation_seasonality")$labels$title,
     "Cycles (periodogram)"
   )
 })
@@ -1058,6 +1146,15 @@ test_that("the plot_* twins draw the same panel as autoplot()", {
   expect_equal(
     plot_cycles(object, type = "report")$labels,
     ggplot2::autoplot(object, panels = "delay_seasonality")$labels
+  )
+  validated <- make_validated_daily_now()
+  expect_equal(
+    plot_day_of_week_effects(validated, type = "validation")$labels,
+    ggplot2::autoplot(validated, panels = "validation_weekday")$labels
+  )
+  expect_equal(
+    plot_cycles(validated, type = "validation")$labels,
+    ggplot2::autoplot(validated, panels = "validation_seasonality")$labels
   )
   expect_s3_class(plot_delay_distribution(object), "ggplot")
   expect_s3_class(plot_observed_cases(object), "ggplot")

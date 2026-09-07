@@ -11,6 +11,8 @@ tbl_now_palette(
   epidemic_light = "#A8BFA9",
   epidemic_mid = "#7A9E7E",
   epidemic_dark = "#334335",
+  validation = "#C79800",
+  validation_light = "#E6CE80",
   ink = "#262626",
   ink_muted = "#607060",
   ink_inverse = "#FFFFFF",
@@ -43,6 +45,10 @@ intervals).}
 ramp).}
 
 \item{epidemic_dark}{Darkest epidemic colour (dense overplotted curves).}
+
+\item{validation}{Strong colour of the validation process.}
+
+\item{validation_light}{Attenuated validation colour (box fills).}
 
 \item{ink}{Body text, axis text and titles.}
 
@@ -103,6 +109,8 @@ The package has one visual grammar and the role names state it:
 about \strong{when we found out}. Red by default.
 \item \strong{\verb{epidemic*}} -- the \emph{epidemic} process: event dates, case counts,
 anything about \strong{what happened}. Green by default.
+\item \strong{\verb{validation*}} -- the \emph{validation} process: validation dates and
+resolution arrivals. Ochre by default.
 }
 
 A palette that swaps the two hues is fine; a \emph{plot} that draws delays with an

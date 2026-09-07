@@ -23,11 +23,21 @@ compute_temporal_effects <- function(x, overwrite = FALSE) {
       numeric_col <- ".event_num"
       name_prefix <- ".event"
       units <- get_event_units(x)
-    } else {
+    } else if (date_type == "report_date") {
       date_col <- get_report_date(x)
       numeric_col <- ".report_num"
       name_prefix <- ".report"
       units <- get_report_units(x)
+    } else if (date_type == "validation_date" && has_validation(x)) {
+      date_col <- get_validation_date(x)
+      numeric_col <- ".validation_num"
+      name_prefix <- ".validation"
+      units <- get_validation_units(x)
+    } else {
+      cli::cli_abort(c(
+        "Cannot compute temporal effects for {.val {date_type}}.",
+        "i" = "{.code date_type = \"validation_date\"} needs a validation process."
+      ))
     }
 
     x <- add_temporal_effects.data.frame(

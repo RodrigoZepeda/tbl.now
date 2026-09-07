@@ -22,6 +22,7 @@ test_that("the palette is complete, named by role, and hue-free", {
   # The whole point of the rename: no role is named after the colour it happens
   # to hold, so a palette in other hues can still fill every role.
   expect_false(any(grepl("green|red|black|blue|grey|gray", names(pal))))
+  expect_equal(unname(pal[["validation"]]), "#C79800")
 })
 
 test_that("overriding one role leaves the rest at their defaults", {

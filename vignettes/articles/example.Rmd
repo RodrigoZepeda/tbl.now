@@ -28,6 +28,11 @@ has <- function(pkg) requireNamespace(pkg, quietly = TRUE)
 run_stan <- FALSE
 ```
 
+<!-- This article has been thoroughly reviewed by a human. Any correction done by an AI
+that has not been reviewed by a human should preface the corresponding section by
+stating "This section was last edited by an AI model automatically". These labels
+can only be removed by humans.-->
+
 This article is an end-to-end walk-through of the `tbl.now` workflow on
 a real, **deliberately unpolished** dataset. We will:
 

@@ -432,9 +432,14 @@ remove_validation_date <- function(x) {
     return(x)
   }
 
+  specs <- .filter_temporal_effect_specs(
+    get_temporal_effects(x), c("event_date", "report_date")
+  )
+
   generated <- c(
     ".event_num", ".report_num", ".delay",
-    ".validation_num", ".validation_delay"
+    ".validation_num", ".validation_delay",
+    get_temporal_effect_cols(x)
   )
   # A `.validation_type` we built ourselves is ours to remove; one the user
   # supplied is their column and stays.
@@ -453,16 +458,17 @@ remove_validation_date <- function(x) {
   bare <- .strip_tbl_now(x)
   bare <- bare[, setdiff(colnames(bare), c(generated, ours)), drop = FALSE]
 
-  tbl_now(
+  result <- tbl_now(
     bare,
     event_date = get_event_date(x), report_date = get_report_date(x),
     case_count = get_case_count(x), strata = get_strata(x),
     covariates = get_covariates(x), is_censored_report = get_is_censored_report(x),
     data_type = get_data_type(x),
     event_units = get_event_units(x), report_units = get_report_units(x),
-    t_effects = get_temporal_effect_cols(x),
     verbose = FALSE, warn_non_uniqueness = FALSE
   )
+  attr(result, "temporal_effects") <- specs
+  result
 }
 
 #' Rebuild a `tbl_now` with a validation process attached
@@ -475,16 +481,19 @@ remove_validation_date <- function(x) {
 #' @noRd
 .set_validation <- function(x, validation_date, validation_type,
                               validation_units, validation_levels = NULL) {
+  specs <- get_temporal_effects(x)
+
   # Every generated column has to go: `tbl_now()` rebuilds them and refuses to
   # write over one that is already there.
   generated <- c(
     ".event_num", ".report_num", ".delay",
-    ".validation_num", ".validation_delay"
+    ".validation_num", ".validation_delay",
+    get_temporal_effect_cols(x)
   )
   bare <- .strip_tbl_now(x)
   bare <- bare[, setdiff(colnames(bare), generated), drop = FALSE]
 
-  tbl_now(
+  result <- tbl_now(
     bare,
     event_date = get_event_date(x), report_date = get_report_date(x),
     case_count = get_case_count(x), strata = get_strata(x),
@@ -496,9 +505,10 @@ remove_validation_date <- function(x) {
     is_censored_validation = get_is_censored_validation(x),
     data_type = get_data_type(x),
     event_units = get_event_units(x), report_units = get_report_units(x),
-    t_effects = get_temporal_effect_cols(x),
     verbose = FALSE, warn_non_uniqueness = FALSE
   )
+  attr(result, "temporal_effects") <- specs
+  result
 }
 
 #' Columns the validation process adds to a grouping

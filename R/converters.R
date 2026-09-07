@@ -2322,6 +2322,14 @@ tbl_now_from_tsibble <- function(data, report_date, event_date = NULL,
   )
 
   for (spec in specs) {
+    if (identical(spec$date_type, "validation_date")) {
+      cli::cli_warn(c(
+        "{.fn tbl_now_to_epinowcast} cannot carry validation-date temporal effects.",
+        "i" = "{.pkg epinowcast}'s completed grid has reference and report dates,
+               but no validation date."
+      ))
+      next
+    }
     from_event_date <- identical(spec$date_type, "event_date")
     on_grid <- add_temporal_effects.data.frame(
       on_grid,

@@ -362,6 +362,26 @@ update_now <- function(x, verbose = TRUE) {
   x
 }
 
+#' Keep temporal-effect specs for selected date axes
+#'
+#' @param specs A `temporal_effects` attribute list.
+#' @param date_types Character vector of allowed `date_type` values.
+#'
+#' @return A filtered specs list.
+#'
+#' @keywords internal
+#' @noRd
+.filter_temporal_effect_specs <- function(specs, date_types) {
+  if (is.null(specs) || length(specs) == 0) {
+    return(list())
+  }
+  specs[vapply(
+    specs,
+    function(spec) spec$date_type %in% date_types,
+    logical(1)
+  )]
+}
+
 
 #' @rdname add
 #' @export

@@ -35,7 +35,12 @@
       effs <- c(effs, paste0("season(", paste(periods, collapse = ","), ")"))
     }
     if (!is.null(t@holidays)) effs <- c(effs, "holidays")
-    label <- if (sp$date_type == "event_date") "[event_date]" else "[report_date]"
+    label <- switch(sp$date_type,
+      event_date = "[event_date]",
+      report_date = "[report_date]",
+      validation_date = "[validation_date]",
+      paste0("[", sp$date_type, "]")
+    )
     paste0(label, " ", paste(effs, collapse = ", "))
   }, character(1))
 

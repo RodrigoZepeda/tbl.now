@@ -31,8 +31,9 @@
 #' effects. For date-related effects (such as month or day of the week)
 #' use `date_col`.
 #'
-#' @param date_type Either `event_date` (default) or `report_date`
-#' to add temporal effects to those columns.
+#' @param date_type One of `event_date` (default), `report_date`, or
+#' `validation_date` to add temporal effects to that column. `validation_date`
+#' requires a `tbl_now` with a validation process.
 #'
 #' @param t_effects A [temporal_effects()] object codifying the
 #' temporal effects to be used.
@@ -610,8 +611,17 @@ add_temporal_effects.tbl_now <- function(x, t_effects = NULL, overwrite = FALSE,
     )
   }
 
-  if (!date_type %in% c("event_date", "report_date")) {
-    cli::cli_abort("Invalid `date_type` use {.val event_date} or {.val report_date}")
+  if (!date_type %in% c("event_date", "report_date", "validation_date")) {
+    cli::cli_abort(
+      "Invalid {.arg date_type}; use {.val event_date}, {.val report_date}, or {.val validation_date}."
+    )
+  }
+
+  if (identical(date_type, "validation_date") && !has_validation(x)) {
+    cli::cli_abort(c(
+      "{.code date_type = \"validation_date\"} needs a validation process.",
+      "i" = "Attach one with {.fn add_validation_date} first."
+    ))
   }
 
   # Store the spec lazily — columns are computed only when compute_temporal_effects() is called
