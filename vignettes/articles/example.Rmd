@@ -21,6 +21,9 @@ knitr::opts_chunk$set(
   fig.align = "center"
 )
 options(tibble.width = Inf, width = 160, pillar.width = 160)
+options(pillar.print_max = 5, pillar.print_min = 5, 
+        tibble.print_min = 5, dplyr.print_min = 5,
+        tibble.print_max = 5, dplyr.print_max = 5)
 
 has <- function(pkg) requireNamespace(pkg, quietly = TRUE)
 
@@ -71,9 +74,14 @@ isolated.
 data(hai_bucaramanga)
 ```
 
-```{r}
+```{r, eval = FALSE}
 hai_bucaramanga
 ```
+
+```{r, echo = FALSE}
+hai_bucaramanga |> tail()
+```
+
 
 For our example, six columns matter:
 
@@ -647,8 +655,9 @@ see, what would the nowcast have produced with the information
 available at a previous date contrasting it with the information
 known by now. You can use `nowcast_backtest()` for that purpose:
 for every past date it truncates the data to the reports that were 
-available *then*, refits the nowcast,  and scores the result against what
-was eventually observed.
+available *then*, refits the nowcast, and scores the result against the
+resolved truth defined by `truth_axis` and `truth_type` (reported totals by
+default).
 
 To best evaluate the nowcast we need something to compare against. Hence
 we will fit a second model:  `baselinenowcast`. 

@@ -1,5 +1,23 @@
 # tbl.now 0.34.0
 
+## Documentation clarifies scoring, covariates and article endings
+
+The documentation now states that scoring and backtests use the resolved truth
+defined by `truth_axis` and `truth_type`, rather than an ambiguous "eventual"
+quantity. It also makes the covariate as-of rule explicit: covariates used in a
+fit or backtest snapshot should be values available at that snapshot's `now`.
+
+The introductory and custom-model vignettes now end with the shared
+`learning-more` fragment, and the ensemble article places its References header
+before that final fragment.
+
+## `as_forecast_point()` exposes scoringutils point forecasts
+
+`as_forecast_point()` now converts a `tbl_nowcast`, ensemble or
+`nowcast_backtest()` to a `scoringutils` point forecast using the median
+prediction. The old `as_scoringutils()` quantile-frame helper is now internal;
+use `scoringutils::as_forecast_quantile()` directly for quantile scoring.
+
 ## Reporting hexamap labels are more robust
 
 `plot_reporting_hexamap()` now keeps its custom event, report and delay labels

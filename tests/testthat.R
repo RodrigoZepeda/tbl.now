@@ -9,4 +9,4 @@
 library(testthat)
 library(tbl.now)
 
-test_check("tbl.now")
+suppressMessages(test_check("tbl.now"))

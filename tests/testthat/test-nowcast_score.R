@@ -76,7 +76,7 @@ test_that("score_nowcast() needs a truth it can find", {
     "must be a <tbl_now>"
   )
   expect_error(
-    as_scoringutils(nowcast, truth = data.frame(event_date = as.Date("2020-01-06"), y = 1)),
+    .as_scoringutils(nowcast, truth = data.frame(event_date = as.Date("2020-01-06"), y = 1)),
     "must be a <tbl_now>"
   )
 })
@@ -145,7 +145,7 @@ test_that("targets outside the truth grid warn and are not scored", {
   expect_equal(scores$event_date, dates[1:2])
 
   expect_warning(
-    exported <- as_scoringutils(nowcast, truth = truth),
+    exported <- .as_scoringutils(nowcast, truth = truth),
     "absent from `truth`"
   )
   expect_setequal(unique(exported$event_date), dates[1:2])
@@ -458,7 +458,7 @@ test_that("performance-weighted ensembles hold out member now dates", {
   expect_equal(sum(ensemble@metadata$weights), 1)
 })
 
-test_that("as_scoringutils() produces the expected column names", {
+test_that(".as_scoringutils() produces the expected column names", {
   predictions <- data.frame(
     event_date = as.Date("2020-01-06"),
     .quantile_level = c(0.25, 0.5, 0.75), .value = c(8, 10, 13)
@@ -468,7 +468,7 @@ test_that("as_scoringutils() produces the expected column names", {
   )
   truth <- truth_tbl_now(as.Date("2020-01-06"), 11)
 
-  exported <- as_scoringutils(nowcast, truth = truth)
+  exported <- .as_scoringutils(nowcast, truth = truth)
 
   expect_true(all(
     c("observed", "predicted", "quantile_level", "model") %in% colnames(exported)
@@ -479,7 +479,7 @@ test_that("as_scoringutils() produces the expected column names", {
   expect_no_error(scoringutils::as_forecast_quantile(as.data.frame(exported)))
 })
 
-test_that("as_scoringutils() ignores grouping on a tbl_now truth", {
+test_that(".as_scoringutils() ignores grouping on a tbl_now truth", {
   predictions <- data.frame(
     event_date = as.Date("2020-01-06"),
     .quantile_level = c(0.25, 0.5, 0.75), .value = c(8, 10, 13)
@@ -490,12 +490,12 @@ test_that("as_scoringutils() ignores grouping on a tbl_now truth", {
   truth <- truth_tbl_now(as.Date("2020-01-06"), 11)
 
   expect_equal(
-    as_scoringutils(nowcast, truth = dplyr::group_by(truth, rp)),
-    as_scoringutils(nowcast, truth = truth)
+    .as_scoringutils(nowcast, truth = dplyr::group_by(truth, rp)),
+    .as_scoringutils(nowcast, truth = truth)
   )
 })
 
-test_that("as_scoringutils() converts a backtest with its stored truth", {
+test_that(".as_scoringutils() converts a backtest with its stored truth", {
   register_scoretoy()
   x <- score_tbl_now()
   dates <- as.Date(c("2020-06-01", "2020-06-08"))
@@ -506,7 +506,7 @@ test_that("as_scoringutils() converts a backtest with its stored truth", {
     now_dates = dates, verbose = FALSE
   )
 
-  exported <- as_scoringutils(backtest)
+  exported <- .as_scoringutils(backtest)
 
   expect_true(all(
     c("observed", "predicted", "quantile_level", "model", "now") %in%
@@ -515,6 +515,28 @@ test_that("as_scoringutils() converts a backtest with its stored truth", {
   expect_setequal(unique(exported$model), backtest$methods)
   expect_setequal(unique(exported$now), dates)
   expect_equal(nrow(exported), nrow(backtest$predictions))
+})
+
+test_that("as_forecast_point() converts median predictions", {
+  skip_if_not_installed("scoringutils")
+  register_scoretoy()
+  truth <- score_tbl_now()
+  nowcast <- run_nowcast(
+    truth, engine("scoretoy", bias = 0), verbose = FALSE
+  )
+
+  converted <- as_forecast_point(nowcast, truth = truth)
+
+  expect_s3_class(converted, "forecast_point")
+  expect_true(all(
+    c("model", "event_date") %in% scoringutils::get_forecast_unit(converted)
+  ))
+  expect_equal(
+    converted$predicted,
+    nowcast@predictions$.value[
+      .near(nowcast@predictions$.quantile_level, 0.5)
+    ]
+  )
 })
 
 test_that("scoringutils directly coerces nowcasts, ensembles and backtests", {
@@ -536,10 +558,15 @@ test_that("scoringutils directly coerces nowcasts, ensembles and backtests", {
   for (object in list(first, ensemble)) {
     converted <- scoringutils::as_forecast_quantile(object, truth = truth)
     expect_s3_class(converted, "forecast_quantile")
+    converted_point <- scoringutils::as_forecast_point(object, truth = truth)
+    expect_s3_class(converted_point, "forecast_point")
   }
   converted_backtest <- scoringutils::as_forecast_quantile(backtest)
   expect_s3_class(converted_backtest, "forecast_quantile")
   expect_true("now" %in% scoringutils::get_forecast_unit(converted_backtest))
+  converted_point_backtest <- scoringutils::as_forecast_point(backtest)
+  expect_s3_class(converted_point_backtest, "forecast_point")
+  expect_true("now" %in% scoringutils::get_forecast_unit(converted_point_backtest))
   expect_no_error(suppressWarnings(
     scoringutils::add_relative_skill(scoringutils::score(converted_backtest))
   ))
@@ -684,11 +711,9 @@ test_that("score_nowcast() agrees with scoringutils end to end", {
   truth <- truth_tbl_now(dates, stats::rpois(length(dates), means))
 
   ours <- score_nowcast(nowcast, truth = truth)
-  theirs <- as_scoringutils(nowcast, truth = truth) |>
-    as.data.frame() |>
-    scoringutils::as_forecast_quantile(
-      forecast_unit = c("event_date", "model")
-    ) |>
+  theirs <- scoringutils::as_forecast_quantile(
+    nowcast, truth = truth, forecast_unit = c("event_date", "model")
+  ) |>
     scoringutils::score() |>
     as.data.frame()
   theirs <- theirs[order(theirs$event_date), ]

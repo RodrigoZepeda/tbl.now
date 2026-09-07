@@ -488,9 +488,11 @@ pretending.
 
 ## 2. Scoring a nowcast
 
-`score_nowcast()` compares the predictive quantiles with what was eventually
-observed, using the weighted interval score (WIS) of @bracher2021, plus the
-absolute error of the median and the 50% and 90% interval coverage.
+`score_nowcast()` compares the predictive quantiles with a resolved truth table,
+using the weighted interval score (WIS) of @bracher2021, plus the absolute error
+of the median and the 50% and 90% interval coverage. By default that truth is
+the total eventually reported on the report axis; revision-aware series can
+instead be scored with `truth_axis = "revision"` and the matching `truth_type`.
 
 Scoring only makes sense against data the model had not seen, which is why
 `snapshot` was truncated at `now` and the truth comes from the full series:
@@ -516,8 +518,8 @@ baseline |>
   scoringutils::score()
 ```
 
-`as_scoringutils(baseline, truth = dengue)` is the long tibble underneath that
-object when you want to inspect or alter the forecast units first.
+For point-score workflows, `as_forecast_point(baseline, truth = dengue)` keeps
+the median prediction and hands that to \pkg{scoringutils}.
 
 When the nowcast retains posterior draws, it can instead become a sample
 forecast. This follows the same adapter pattern used by \pkg{epinowcast}:
@@ -764,8 +766,9 @@ nowcast_ensemble(members, weights = c(
 
 or *learn* them from how the members actually performed. `nowcast_backtest()`
 walks back through time: at each retrospective date it truncates the data to the
-reports available then, refits every method, and scores the result against what
-was eventually observed.
+reports available then, refits every method, and scores the result against the
+resolved truth defined by `truth_axis` and `truth_type` (reported totals by
+default).
 
 It takes the **same engines** you fitted with, so there is no second place to
 keep the arguments in step. An engine's `label` becomes its name in the result —
@@ -880,6 +883,8 @@ assume about the `tbl_now` it is handed, how to reuse the converters instead of
 reshaping by hand, a complete worked back-end that needs no modelling package,
 and what shipping one in a package involves.
 
+## References
+
 ```{r learning-more, echo=FALSE, results="asis"}
 cat(
   knitr::knit_child(
@@ -889,5 +894,3 @@ cat(
   sep = "\n"
 )
 ```
-
-## References

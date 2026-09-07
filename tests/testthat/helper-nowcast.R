@@ -146,10 +146,10 @@ score_tbl_now_strata <- function() {
 
 #' A `tbl_now` whose eventual counts are exactly `counts`
 #'
-#' `score_nowcast()` and `as_scoringutils()` take the truth as a `tbl_now` and
-#' read the observed column off it -- there is no `observed_col` to hand them a
-#' bare data frame with. One report per event date, all at delay zero, so
-#' `get_latest_reported_cases()` gives back `counts` unchanged.
+#' `score_nowcast()` and the scoringutils coercion helpers take the truth as a
+#' `tbl_now` and read the observed column off it -- there is no `observed_col`
+#' to hand them a bare data frame with. One report per event date, all at delay
+#' zero, so `get_latest_reported_cases()` gives back `counts` unchanged.
 truth_tbl_now <- function(dates, counts, event_col = "event_date",
                           units = "days") {
   data <- data.frame(ev = dates, rp = dates, n = as.numeric(counts))

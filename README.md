@@ -14,22 +14,20 @@ status](https://www.r-pkg.org/badges/version/tbl.now)](https://CRAN.R-project.or
 [![R-CMD-check](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-[`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) provides an
-extension of the [`tibble()`](https://tibble.tidyverse.org/) for
-storing, validating, and manipulating epidemiological nowcasting data.
-It standardizes the representation of event dates, report dates, strata,
-temporal covariates, etc and in a way that is compatible with many
-frameworks including
+[`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) extends
+[`tibble()`](https://tibble.tidyverse.org/) for storing, validating, and
+manipulating epidemiological nowcasting data. It standardizes event
+dates, report dates, strata, temporal covariates, and related metadata
+in a shape compatible with many frameworks, including
 [diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/),
 [epinowcast](https://package.epinowcast.org/),
 [NobBS](https://cran.r-project.org/web/packages/NobBS/index.html),
 [surveillance](https://cran.r-project.org/web/packages/surveillance/index.html),
 [EpiNow2](https://epiforecasts.io/EpiNow2/), and more.
 
-Specifically a `tbl_now` is a data structure that keeps track of the
-following attributes relevant for a nowcasting excercise so that all
-`dplyr` transformations (i.e. the ones from tidyverse) keep track of the
-relevant nowcasting variables:
+A `tbl_now` keeps track of the attributes needed for a nowcasting
+exercise, so `dplyr` transformations preserve the relevant nowcasting
+variables:
 
 <table>
 
@@ -156,9 +154,9 @@ words. <em>Optional</em>.
 
 <td align="left">
 
-A named dictionary translating the labels in
-<code>revision_type</code> into those four, e.g. <code>c(positive =
-“confirmed”)</code>. <em>Optional</em>.
+A named dictionary translating the labels in <code>revision_type</code>
+into those four, e.g. <code>c(positive = “confirmed”)</code>.
+<em>Optional</em>.
 </td>
 
 </tr>
@@ -322,8 +320,8 @@ back-fill dump. <em>Optional</em>.
 
 <td align="left">
 
-The same on the revision axis: flags rows whose <em>revision</em>
-delay is a bound rather than a measurement. <em>Optional</em>.
+The same on the revision axis: flags rows whose <em>revision</em> delay
+is a bound rather than a measurement. <em>Optional</em>.
 </td>
 
 </tr>
