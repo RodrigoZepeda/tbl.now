@@ -1295,9 +1295,9 @@ test_that("date-column rebuilds preserve grouping", {
 test_that("renaming protected generated columns demotes without stale attributes", {
   x <- add_revision_date_fixture(demotion_fixture())
 
-  demoted <- suppressWarnings(
+  demoted <- quiet_messages(suppressWarnings(
     dplyr::rename(x, delay_num = .delay)
-  )
+  ))
 
   expect_false(is_tbl_now(demoted))
   expect_s3_class(demoted, "tbl_df")

@@ -643,7 +643,10 @@ test_that("validate_tbl_now() keeps warn_non_uniqueness off by default", {
   )
   # diagnose() defaults it the other way round.
   expect_equal(
-    as.character(finding(diagnose(ndata), "duplicates", "key")$status), "warning"
+    as.character(
+      finding(quiet_messages(diagnose(ndata)), "duplicates", "key")$status
+    ),
+    "warning"
   )
 })
 
@@ -658,7 +661,12 @@ test_that("validate_tbl_now() reports the same-column case as a message", {
   # change what tbl_now() does on data it has always accepted.
   expect_message_quietly(validate_tbl_now(ndata), "same")
   expect_equal(
-    as.character(finding(diagnose(ndata), "declarations", "same_columns")$status),
+    as.character(
+      finding(
+        quiet_messages(diagnose(ndata)),
+        "declarations", "same_columns"
+      )$status
+    ),
     "note"
   )
 })
