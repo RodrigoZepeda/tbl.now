@@ -362,7 +362,7 @@ test_that("infer_data_type detects linelist data when n column missing", {
 test_that("infer_data_type shows message when verbose = TRUE", {
   test_data <- setup_test_data()
 
-  expect_message(
+  expect_message_quietly(
     infer_data_type(test_data$count_data,
       data_type = "auto",
       event_date = "event_date",
@@ -372,7 +372,7 @@ test_that("infer_data_type shows message when verbose = TRUE", {
     "count-cumulative"
   )
 
-  expect_message(
+  expect_message_quietly(
     infer_data_type(test_data$count_data2,
       data_type = "auto",
       event_date = "event_date",
@@ -382,7 +382,7 @@ test_that("infer_data_type shows message when verbose = TRUE", {
     "count-incidence"
   )
 
-  expect_message(
+  expect_message_quietly(
     infer_data_type(test_data$linelist_data,
       data_type = "auto",
       event_date = "event_date",

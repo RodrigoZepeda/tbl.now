@@ -311,7 +311,7 @@ test_that("complete_zeroes emits message when temporal-effect columns exist", {
   x <- make_count_incidence() |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE)) |>
     compute_temporal_effects()
-  expect_message(complete_zeroes(x), "compute_temporal_effects")
+  expect_message_quietly(complete_zeroes(x), "compute_temporal_effects")
 })
 
 # === complete_zeroes with an is_censored_report column ===========================

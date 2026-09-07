@@ -1100,7 +1100,7 @@ test_that("print method reports when no effects are switched on", {
 
 test_that("print method returns its input invisibly", {
   te <- temporal_effects(day_of_week = TRUE)
-  res <- withVisible(print(te))
+  utils::capture.output(res <- withVisible(print(te)))
   expect_false(res$visible)
   expect_identical(res$value, te)
 })

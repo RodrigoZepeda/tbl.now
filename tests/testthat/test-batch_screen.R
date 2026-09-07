@@ -482,7 +482,7 @@ test_that("the batch family ignores censored arrival dates", {
   n_censored <- sum(censored[[flag]])
   expect_gt(n_censored, 0)
 
-  expect_message(
+  expect_message_quietly(
     screened <- suppressWarnings(diagnose_batches(censored, lookback = 3L)),
     "Ignoring"
   )
@@ -498,7 +498,7 @@ test_that("the batch family ignores censored arrival dates", {
   )
   expect_false(isTRUE(all.equal(screened$reported, with_censored$reported)))
 
-  expect_message(
+  expect_message_quietly(
     transport <- suppressWarnings(transport_discriminant(censored, lookback = 3L)),
     "Ignoring"
   )
@@ -507,7 +507,7 @@ test_that("the batch family ignores censored arrival dates", {
   )
   expect_false(isTRUE(all.equal(transport$reported, transport_with_censored$reported)))
 
-  expect_message(
+  expect_message_quietly(
     suppressWarnings(
       diagnose_batches2(censored, at = get_now(censored) - 5, n_permutations = 49L)
     ),

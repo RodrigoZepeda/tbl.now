@@ -87,7 +87,7 @@ test_that("transport_discriminant() validates its inputs", {
 test_that("print returns the object invisibly", {
   td <- suppressWarnings(transport_discriminant(make_td_tbl()$tbl))
   expect_output(print(td), "A tibble")
-  expect_invisible(print(td))
+  utils::capture.output(expect_invisible(print(td)))
 })
 
 test_that("a discriminant subset past its own columns prints as a tibble", {

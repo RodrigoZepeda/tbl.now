@@ -306,8 +306,8 @@ test_that("censor_revision_delays_above still needs a revision process", {
 
 test_that("the censoring functions report what they did unless silenced", {
   x <- make_delays()
-  expect_message(censor_reports(x, .delay > 60), "Censored")
-  expect_message(censor_reporting_delays(x, .delay > 60), "Censored")
+  expect_message_quietly(censor_reports(x, .delay > 60), "Censored")
+  expect_message_quietly(censor_reporting_delays(x, .delay > 60), "Censored")
   expect_silent(censor_reporting_delays(x, .delay > 60, verbose = FALSE))
 })
 

@@ -200,7 +200,7 @@ test_that("censored report dates do not remove cases from the epidemic curve", {
   expect_no_message(plot_reporting_process(censored))
 
   # But the batch test does drop them.
-  expect_message(
+  expect_message_quietly(
     suppressWarnings(transport_discriminant(censored, lookback = 3L)),
     "Ignoring"
   )

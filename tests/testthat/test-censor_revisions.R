@@ -250,7 +250,7 @@ test_that("censor_revision_delays works on a grouped tbl_now", {
 
 test_that("the revision verbs report what they did unless silenced", {
   x <- revised()
-  expect_message(
+  expect_message_quietly(
     censor_revision_delays(x, .revision_delay > 10, verbose = TRUE),
     "Censored"
   )

@@ -387,7 +387,7 @@ test_that("error when delay column is not numeric", {
 
 test_that("verbose=TRUE emits message when report_date is reconstructed", {
   d <- make_daily_data()
-  expect_message(
+  expect_message_quietly(
     tbl_now(d,
       event_date = event_date, delay = delay_days,
       event_units = "days", verbose = TRUE
@@ -398,7 +398,7 @@ test_that("verbose=TRUE emits message when report_date is reconstructed", {
 
 test_that("verbose=TRUE emits message when event_date is reconstructed", {
   d <- make_daily_data()
-  expect_message(
+  expect_message_quietly(
     tbl_now(d,
       report_date = report_date, delay = delay_days,
       event_units = "days", verbose = TRUE

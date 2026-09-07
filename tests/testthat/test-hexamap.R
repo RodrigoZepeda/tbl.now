@@ -37,7 +37,7 @@ test_that("max_delay caps the delay axis", {
 test_that("the max_cells guard bounds the number of points", {
   tn <- make_hex_tbl()
   # a tiny cap must trigger the informational message and still build
-  expect_message(
+  expect_message_quietly(
     p <- plot_reporting_hexamap(tn, complete = TRUE, max_cells = 200L),
     "Capped the delay axis"
   )

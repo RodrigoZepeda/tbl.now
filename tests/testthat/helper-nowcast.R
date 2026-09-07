@@ -5,6 +5,10 @@
 # exist so that testing `run_nowcast()`, scoring, backtesting and ensembling
 # never needs Stan, JAGS or INLA -- and never needs an MCMC run to finish.
 
+expect_message_quietly <- function(...) {
+  suppressMessages(testthat::expect_message_quietly(...))
+}
+
 # A deliberately controllable backend: predict the eventual counts, offset by
 # `bias` and spread by `spread`, so a "good" and a "bad" model differ by one
 # argument.

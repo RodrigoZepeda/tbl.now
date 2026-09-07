@@ -676,7 +676,7 @@ test_that("from_* verbose prints a conversion summary", {
     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-03")),
     sdate_lwr = as.Date(c("2020-03-05", "2020-03-04", "2020-03-08"))
   )
-  expect_message(
+  expect_message_quietly(
     tbl_now_from_epidist(ll,
       event_units = "days", report_units = "days",
       verbose = TRUE
@@ -943,7 +943,7 @@ test_that("tbl_now_from_epinowcast verbose prints strata and case_count", {
   skip_on_cran()
   skip_if_not_installed("epinowcast")
   obs <- head(epinowcast::germany_covid19_hosp, 200)
-  expect_message(
+  expect_message_quietly(
     tbl_now_from_epinowcast(obs, strata = c("location", "age_group"), verbose = TRUE),
     "case_count"
   )
@@ -957,7 +957,7 @@ test_that("tbl_now_from_epidist interval verbose prints covariates", {
     sdate_lwr = as.Date(c("2020-03-05", "2020-03-04")),
     sdate_upr = as.Date(c("2020-03-06", "2020-03-05"))
   )
-  expect_message(
+  expect_message_quietly(
     suppressWarnings(
       tbl_now_from_epidist(iv,
         format = "interval",
@@ -991,7 +991,7 @@ test_that("tbl_now_to_epinowcast verbose prints the conversion summary", {
   skip_on_cran()
   skip_if_not_installed("epinowcast")
   cumul <- to_count(make_incidence_now(), to = "count-cumulative")
-  expect_message(
+  expect_message_quietly(
     suppressWarnings(tbl_now_to_epinowcast(cumul, verbose = TRUE, quiet = TRUE)),
     "epinowcast"
   )
@@ -1010,7 +1010,7 @@ test_that("tbl_now_to_epinowcast warns + coerces non-cumulative input", {
 test_that("tbl_now_to_baselinenowcast verbose prints the conversion summary", {
   skip_on_cran()
   skip_if_not_installed("baselinenowcast")
-  expect_message(
+  expect_message_quietly(
     tbl_now_to_baselinenowcast(make_incidence_now(), format = "long",
                                verbose = TRUE, quiet = TRUE),
     "baselinenowcast"
@@ -1061,7 +1061,7 @@ test_that("tbl_now_to_baselinenowcast can still refuse cumulative input", {
 
 # test_that("tbl_now_to_EpiNow2 verbose prints the conversion summary", {
 #   skip_if_not_installed("data.table")
-#   expect_message(
+#   expect_message_quietly(
 #     tbl_now_to_EpiNow2(make_incidence_now(), verbose = TRUE),
 #     "EpiNow2"
 #   )
@@ -1070,7 +1070,7 @@ test_that("tbl_now_to_baselinenowcast can still refuse cumulative input", {
 test_that("tbl_now_to_data_table verbose prints the conversion summary", {
   skip_on_cran()
   skip_if_not_installed("data.table")
-  expect_message(
+  expect_message_quietly(
     tbl_now_to_data_table(make_incidence_now(), verbose = TRUE),
     "data.table"
   )
@@ -1079,7 +1079,7 @@ test_that("tbl_now_to_data_table verbose prints the conversion summary", {
 test_that("tbl_now_to_tsibble verbose prints the conversion summary", {
   skip_on_cran()
   skip_if_not_installed("tsibble")
-  expect_message(
+  expect_message_quietly(
     tbl_now_to_tsibble(make_incidence_now(), verbose = TRUE),
     "tsibble"
   )
@@ -1093,7 +1093,7 @@ test_that("tbl_now_to_epidist verbose prints the conversion summary", {
     event_date = "onset_week", report_date = "report_week",
     verbose = FALSE
   )
-  expect_message(
+  expect_message_quietly(
     suppressWarnings(tbl_now_to_epidist(ll, format = "linelist", verbose = TRUE)),
     "epidist"
   )

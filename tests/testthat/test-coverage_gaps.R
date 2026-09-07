@@ -142,7 +142,7 @@ test_that("remove_is_censored_report emits message on count-cumulative data", {
   x <- base_cumulative()
   x$cens <- c(FALSE, FALSE, FALSE, FALSE)
   x2 <- change_is_censored_report(x, cens)
-  expect_message(remove_is_censored_report(x2), "cumulative")
+  expect_message_quietly(remove_is_censored_report(x2), "cumulative")
 })
 
 # --- remove_strata / remove_all_strata ---
@@ -154,7 +154,7 @@ test_that("remove_strata removes one strata column", {
 
 test_that("remove_strata emits message on count-cumulative data", {
   x <- base_cumulative()
-  expect_message(suppressWarnings(remove_strata(x, sex)), "cumulative")
+  expect_message_quietly(suppressWarnings(remove_strata(x, sex)), "cumulative")
 })
 
 test_that("remove_all_strata removes all strata", {
@@ -165,7 +165,7 @@ test_that("remove_all_strata removes all strata", {
 
 test_that("remove_all_strata emits message on count-cumulative data", {
   x <- base_cumulative()
-  expect_message(remove_all_strata(x), "cumulative")
+  expect_message_quietly(remove_all_strata(x), "cumulative")
 })
 
 # --- remove_covariates / remove_all_covariates ---
@@ -179,7 +179,7 @@ test_that("remove_covariates emits message on count-cumulative data", {
   x <- base_cumulative()
   x$tmp_cov <- rnorm(4)
   x <- change_covariates(x, tmp_cov)
-  expect_message(suppressWarnings(remove_covariates(x, tmp_cov)), "cumulative")
+  expect_message_quietly(suppressWarnings(remove_covariates(x, tmp_cov)), "cumulative")
 })
 
 test_that("remove_all_covariates removes all covariates", {
@@ -192,14 +192,14 @@ test_that("remove_all_covariates emits message on count-cumulative data", {
   x <- base_cumulative()
   x$tmp_cov <- rnorm(4)
   x <- change_covariates(x, tmp_cov)
-  expect_message(remove_all_covariates(x), "cumulative")
+  expect_message_quietly(remove_all_covariates(x), "cumulative")
 })
 
 # --- replace_temporal_effects ---
 test_that("replace_temporal_effects emits message on count-cumulative data", {
   x <- base_cumulative()
   te <- temporal_effects(week_of_year = TRUE)
-  expect_message(replace_temporal_effects(x, te), "cumulative")
+  expect_message_quietly(replace_temporal_effects(x, te), "cumulative")
 })
 
 test_that("replace_temporal_effects replaces the spec", {
@@ -338,7 +338,7 @@ test_that("compute_temporal_effects with overwrite=TRUE replaces existing cols",
 test_that("rowwise.tbl_now emits message and returns a result", {
   # cli_alert_warning fires as a message, not an R warning
   x <- base_weekly()
-  expect_message(result <- rowwise(x), "rowwise")
+  expect_message_quietly(result <- rowwise(x), "rowwise")
 })
 
 test_that("summarise.tbl_now with .groups argument works", {
@@ -389,7 +389,7 @@ test_that("validate_tbl_now emits message when event and report date are the sam
   # cli_alert_warning fires as a message, not an R warning
   x <- base_daily()
   attr(x, "report_date") <- get_event_date(x)
-  expect_message(validate_tbl_now(x), "same")
+  expect_message_quietly(validate_tbl_now(x), "same")
 })
 
 # ============================================================
@@ -584,7 +584,7 @@ test_that("rename_with.tbl_now renaming event_date col updates event_date attrib
 test_that("rename_with.tbl_now renaming a protected generated col emits message", {
   x <- base_daily()
   add_prefix <- function(nm) paste0("x_", nm)
-  expect_message(
+  expect_message_quietly(
     result <- rename_with(x, add_prefix, .cols = ".delay"),
     "protected"
   )

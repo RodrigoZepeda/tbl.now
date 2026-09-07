@@ -551,7 +551,7 @@ test_that("predictions after `now` are dropped, with a message naming them", {
 
   # The fixture reports one interval, so the "cannot report levels" warning is
   # expected noise here; the message about `now` is what is under test.
-  expect_message(
+  expect_message_quietly(
     out <- suppressWarnings(tbl.now:::.tidy_to_predictions(
       tidied, x, nowcast_quantile_levels(), "EpiNow2"
     )),
