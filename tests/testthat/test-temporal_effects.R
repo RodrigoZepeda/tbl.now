@@ -788,6 +788,73 @@ test_that("selecting away a computed temporal-effect column removes it from comp
   expect_equal(length(get_temporal_effects(selected)), 1L)
 })
 
+test_that("change_event_date invalidates computed temporal-effect columns", {
+  x <- tbl_now(
+    data.frame(
+      event = as.Date(c("2024-01-01", "2024-01-02")),
+      report = as.Date(c("2024-01-02", "2024-01-03")),
+      corrected = as.Date(c("2024-01-02", "2024-01-03"))
+    ),
+    event_date = event, report_date = report,
+    now = as.Date("2024-01-03"), verbose = FALSE
+  ) |>
+    add_temporal_effects(temporal_effects(day_of_week = TRUE)) |>
+    compute_temporal_effects()
+
+  result <- change_event_date(x, corrected)
+
+  expect_false(".event_day_of_week" %in% names(result))
+  expect_equal(get_temporal_effect_cols(result), character(0))
+  expect_equal(length(get_temporal_effects(result)), 1L)
+  expect_identical(get_event_date(result), "corrected")
+})
+
+test_that("change_report_date invalidates computed temporal-effect columns", {
+  x <- tbl_now(
+    data.frame(
+      event = as.Date(c("2024-01-01", "2024-01-02")),
+      report = as.Date(c("2024-01-01", "2024-01-02")),
+      corrected = as.Date(c("2024-01-02", "2024-01-03"))
+    ),
+    event_date = event, report_date = report,
+    now = as.Date("2024-01-03"), verbose = FALSE
+  ) |>
+    add_temporal_effects(
+      temporal_effects(day_of_week = TRUE),
+      date_type = "report_date"
+    ) |>
+    compute_temporal_effects()
+
+  result <- change_report_date(x, corrected)
+
+  expect_false(".report_day_of_week" %in% names(result))
+  expect_equal(get_temporal_effect_cols(result), character(0))
+  expect_equal(length(get_temporal_effects(result)), 1L)
+  expect_identical(get_report_date(result), "corrected")
+})
+
+test_that("converters recompute temporal effects after a date change", {
+  skip_if_not_installed("data.table")
+
+  x <- tbl_now(
+    data.frame(
+      event = as.Date(c("2024-01-01", "2024-01-02")),
+      report = as.Date(c("2024-01-02", "2024-01-03")),
+      corrected = as.Date(c("2024-01-02", "2024-01-03"))
+    ),
+    event_date = event, report_date = report,
+    now = as.Date("2024-01-03"), verbose = FALSE
+  ) |>
+    add_temporal_effects(temporal_effects(day_of_week = TRUE)) |>
+    compute_temporal_effects() |>
+    change_event_date(corrected)
+
+  dt <- tbl_now_to_data_table(x, verbose = FALSE)
+
+  expect_true(".event_day_of_week" %in% names(dt))
+  expect_equal(as.character(dt$.event_day_of_week), c("Tuesday", "Wednesday"))
+})
+
 # ============================================================================
 # Integration: tbl_now constructor + compute_temporal_effects
 # ============================================================================

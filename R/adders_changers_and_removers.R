@@ -338,6 +338,30 @@ update_now <- function(x, verbose = TRUE) {
   change_now(x, verbose = verbose)
 }
 
+#' Drop materialised temporal-effect columns after date changes
+#'
+#' Lazy temporal-effect specs remain valid when an object starts using a
+#' different event/report date column, but any columns already computed from the
+#' previous dates are stale. Drop those columns so the next materialisation
+#' derives them from the current declarations.
+#'
+#' @param x A `tbl_now` object.
+#'
+#' @return `x` with computed temporal-effect columns removed and their tracker
+#'   cleared.
+#'
+#' @keywords internal
+#' @noRd
+.invalidate_computed_temporal_effects <- function(x) {
+  cols <- intersect(get_temporal_effect_cols(x), colnames(x))
+  if (length(cols) > 0) {
+    x <- x |>
+      dplyr::select(-dplyr::any_of(cols))
+  }
+  attr(x, "computed_temporal_effect_cols") <- character(0)
+  x
+}
+
 
 #' @rdname add
 #' @export
@@ -369,6 +393,7 @@ change_event_date <- function(x, event_date) {
     event_units = get_event_units(x),
     force = TRUE
   )
+  x <- .invalidate_computed_temporal_effects(x)
 
   # Re-infer now if needed
   now <- tryCatch(
@@ -418,6 +443,7 @@ change_report_date <- function(x, report_date) {
     event_units = get_event_units(x),
     force = TRUE
   )
+  x <- .invalidate_computed_temporal_effects(x)
 
 
   # Re-infer now if needed

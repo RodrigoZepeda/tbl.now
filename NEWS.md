@@ -1,5 +1,13 @@
 # tbl.now 0.33.1
 
+## Temporal-effect columns are invalidated when date columns change
+
+`change_event_date()` and `change_report_date()` now drop already materialised
+temporal-effect columns and clear their tracking attribute. The lazy
+`temporal_effects()` specification is preserved, so later calls to
+`compute_temporal_effects()` or converters that carry temporal effects rebuild
+fresh columns from the current event/report date declarations.
+
 ## `complete_zeroes()` preserves missing counts and completes coarser grids
 
 `complete_zeroes()` now preserves explicit `NA` counts in the input instead of
