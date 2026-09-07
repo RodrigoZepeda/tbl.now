@@ -86,7 +86,7 @@ test_that("epinowcast round-trip preserves every observation (no info lost)", {
   skip_on_cran()
   skip_if_not_installed("epinowcast")
   skip_if_not_installed("data.table")
-  library(data.table)
+  library(data.table, quietly = TRUE, warn.conflicts = FALSE)
 
   obs  <- as.data.table(subset(epinowcast::germany_covid19_hosp, location == "DE"))
   obs$location <- NULL

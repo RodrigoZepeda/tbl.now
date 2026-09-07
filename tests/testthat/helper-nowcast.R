@@ -5,13 +5,28 @@
 # exist so that testing `run_nowcast()`, scoring, backtesting and ensembling
 # never needs Stan, JAGS or INLA -- and never needs an MCMC run to finish.
 
-expect_message_quietly <- function(...) {
+expect_message_quietly <- function(object, regexp, ...) {
+  messages <- character()
+  expr <- substitute(object)
+  env <- parent.frame()
   out <- NULL
+
   utils::capture.output(
     utils::capture.output(
-      out <- suppressMessages(testthat::expect_message(...)),
+      out <- withCallingHandlers(
+        eval(expr, env),
+        message = function(cnd) {
+          messages <<- c(messages, conditionMessage(cnd))
+          invokeRestart("muffleMessage")
+        }
+      ),
       type = "message"
     )
+  )
+
+  testthat::expect_true(
+    any(grepl(regexp, messages, ...)),
+    info = paste0("Expected message matching: ", regexp)
   )
   invisible(out)
 }
