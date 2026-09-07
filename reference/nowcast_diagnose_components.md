@@ -12,7 +12,7 @@ or used on their own.
   types, existence, collisions, columns the object was never told about,
   and temporal effects that were added but never materialised.
 
-- `diagnose_ordering()` – the `event <= report <= validation` timeline.
+- `diagnose_ordering()` – the `event <= report <= revision` timeline.
 
 - `diagnose_missing()` – `NA` values, per column and per stratum. An
   `NA` *count* is reported neutrally: in a reporting triangle it means
@@ -36,7 +36,7 @@ or used on their own.
   missing.
 
 - `diagnose_strata()` – the smallest and the sparsest stratum, and the
-  validations still pending.
+  revisions still pending.
 
 ## Usage
 
@@ -143,8 +143,8 @@ diagnose_ordering(ndata)
 #> ✔ ordering/event_to_report: Every report is on or after its event.
 #> 
 #> Skipped (2)
-#> ─ ordering/event_to_validation: The object carries no validation process.
-#> ─ ordering/report_to_validation: The object carries no validation process.
+#> ─ ordering/event_to_revision: The object carries no revision process.
+#> ─ ordering/report_to_revision: The object carries no revision process.
 #> 
 #> ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 diagnose_units(ndata)

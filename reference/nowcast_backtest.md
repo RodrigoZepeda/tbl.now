@@ -26,7 +26,7 @@ nowcast_backtest(
   keep_draws = FALSE,
   on_error = c("warn", "abort"),
   verbose = TRUE,
-  truth_axis = c("report", "validation"),
+  truth_axis = c("report", "revision"),
   truth_type = "total"
 )
 ```
@@ -99,18 +99,17 @@ nowcast_backtest(
 - truth_axis:
 
   Which process defines the observed counts. `"report"` (default) scores
-  counts eventually reported. `"validation"` scores counts eventually
-  resolved on the validation axis and requires a validation-aware
-  `truth`.
+  counts eventually reported. `"revision"` scores counts eventually
+  resolved on the revision axis and requires a revision-aware `truth`.
 
 - truth_type:
 
-  Which case type to score. Defaults to `"total"`. Validation types such
+  Which case type to score. Defaults to `"total"`. Revision types such
   as `"confirmed"`, `"retracted"`, `"pending"`, `"unknown"` and `"net"`
   follow the same meanings as
   [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
   and
-  [`get_latest_validated_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md).
+  [`get_latest_revised_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.md).
   `"by_type"` is refused because scoring needs one observed value per
   event-date/stratum target.
 

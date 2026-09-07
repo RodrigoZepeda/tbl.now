@@ -118,7 +118,7 @@ and filtered with
 - `quantity`:
 
   What the row describes, including the category for the compositional
-  rows (`"validation_type = confirmed"`).
+  rows (`"revision_type = confirmed"`).
 
 - `stratum`:
 

@@ -104,17 +104,17 @@ assuming a column is called <code>onset_week</code>, write
 <span></span>
 <span><span class="fu">get_case_count</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">get_validation_date</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">get_revision_date</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">get_validation_type</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">get_revision_type</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">get_validation_units</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">get_revision_units</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">get_is_censored_validation</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">get_is_censored_revision</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">get_validation_levels</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">get_revision_levels</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">has_validation</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">has_revision</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -148,9 +148,9 @@ there are none.</p></dd>
 <dd><p>Character, or <code>NULL</code>. The name of the column
 flagging reports whose date is only an upper bound.</p></dd>
 
-<dt><code>get_is_censored_validation()</code></dt>
+<dt><code>get_is_censored_revision()</code></dt>
 <dd><p>Character, or <code>NULL</code>. The same on the
-validation axis: the column flagging rows whose <em>validation</em> delay is a
+revision axis: the column flagging rows whose <em>revision</em> delay is a
 bound rather than a measurement.</p></dd>
 
 <dt><code>get_now()</code></dt>
@@ -174,22 +174,22 @@ object carries, or <code>NULL</code>. This is the <em>request</em>, not the data
 columns actually materialised in the data by
 <code><a href="add_temporal_effects.html">compute_temporal_effects()</a></code>; <code>character(0)</code> when none have been.</p></dd>
 
-<dt><code>get_validation_date()</code>, <code>get_validation_type()</code></dt>
+<dt><code>get_revision_date()</code>, <code>get_revision_type()</code></dt>
 <dd><p>Character, or
 <code>NULL</code>. The name of the column holding the date a case was resolved, and
 of the column holding how it resolved.</p></dd>
 
-<dt><code>get_validation_units()</code></dt>
-<dd><p>The grid the validation date lives on,
-or <code>NULL</code> when the object carries no validation process.</p></dd>
+<dt><code>get_revision_units()</code></dt>
+<dd><p>The grid the revision date lives on,
+or <code>NULL</code> when the object carries no revision process.</p></dd>
 
-<dt><code>get_validation_levels()</code></dt>
+<dt><code>get_revision_levels()</code></dt>
 <dd><p>The named dictionary translating the
 labels in the data into the canonical outcomes, or <code>NULL</code> when the
 column was already canonical.</p></dd>
 
-<dt><code>has_validation()</code></dt>
-<dd><p><code>TRUE</code> when the object carries a validation
+<dt><code>has_revision()</code></dt>
+<dd><p><code>TRUE</code> when the object carries a revision
 date. Every code path must work when it is <code>FALSE</code>, because most objects
 have no third date.</p></dd>
 
@@ -205,16 +205,16 @@ helpers, <code>get_num_strata()</code> and <code>get_num_covariates()</code>, re
 which is usually easier to work with.</p>
     </div>
     <div class="section level2">
-    <h2 id="the-validation-process-the-optional-third-date">The validation process, the optional third date<a class="anchor" aria-label="anchor" href="#the-validation-process-the-optional-third-date"></a></h2>
+    <h2 id="the-revision-process-the-optional-third-date">The revision process, the optional third date<a class="anchor" aria-label="anchor" href="#the-revision-process-the-optional-third-date"></a></h2>
 
 
 
 <p>A <code>tbl_now</code> may carry a <strong>third</strong> date beyond the event and the report: the
 date a case was resolved, either confirmed or retracted. Think of influenza:
 symptom onset is the event, the medical visit is the report, and the
-laboratory result is the validation – which can come back negative, in
+laboratory result is the revision – which can come back negative, in
 which case the case is <em>retracted</em> rather than confirmed.</p>
-<p>It is optional and most objects do not have one, so <code>has_validation()</code> gates
+<p>It is optional and most objects do not have one, so <code>has_revision()</code> gates
 the four getters below it: they all return <code>NULL</code> on an object that was never
 given a third date.</p>
     </div>
@@ -222,11 +222,11 @@ given a third date.</p>
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="tbl_now_attributes.html">tbl_now_attributes()</a></code> to get all of them at once;
 <code><a href="add.html">add()</a></code>, <a href="add.html">change()</a> and <a href="add.html">remove()</a> to set them, including
-<a href="add.html">add_validation_date()</a>;
-<a href="validated_cases.html">get_latest_validated_cases()</a> and
-<a href="validated_cases.html">get_latest_validated_cases(type = "net")</a> to count the
+<a href="add.html">add_revision_date()</a>;
+<a href="revised_cases.html">get_latest_revised_cases()</a> and
+<a href="revised_cases.html">get_latest_revised_cases(type = "net")</a> to count the
 outcomes;
-<a href="validation_delay.html">validation_delay</a> for how long resolution takes;
+<a href="revision_delay.html">revision_delay</a> for how long resolution takes;
 <a href="get_latest_first.html">get_latest_reported_cases()</a> and friends for reading the
 counts rather than the metadata.</p></div>
     </div>
@@ -270,7 +270,7 @@ counts rather than the metadata.</p></div>
 <span class="r-in"><span><span class="co"># Likewise for a censoring indicator that was never supplied.</span></span></span>
 <span class="r-in"><span><span class="fu">get_is_censored_report</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
-<span class="r-in"><span><span class="fu">get_is_censored_validation</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">get_is_censored_revision</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># The as-of moment, and the calendar grid the dates live on.</span></span></span>
@@ -313,9 +313,9 @@ counts rather than the metadata.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] ".event_month_of_year"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># The third date is optional, so ask before you read it.</span></span></span>
-<span class="r-in"><span><span class="fu">has_validation</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">has_revision</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
-<span class="r-in"><span><span class="fu">get_validation_date</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">get_revision_date</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Once one is attached, the same name-then-index pattern applies.</span></span></span>
@@ -326,16 +326,16 @@ counts rather than the metadata.</p></div>
 <span class="r-in"><span>    event_date <span class="op">=</span> <span class="va">specimen_date</span>, report_date <span class="op">=</span> <span class="va">report_date</span>,</span></span>
 <span class="r-in"><span>    data_type <span class="op">=</span> <span class="st">"linelist"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="add.html">add_validation_date</a></span><span class="op">(</span><span class="va">received_date</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="add.html">add_revision_date</a></span><span class="op">(</span><span class="va">received_date</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu">has_validation</span><span class="op">(</span><span class="va">hai</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">has_revision</span><span class="op">(</span><span class="va">hai</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
-<span class="r-in"><span><span class="fu">get_validation_date</span><span class="op">(</span><span class="va">hai</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">get_revision_date</span><span class="op">(</span><span class="va">hai</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "received_date"</span>
-<span class="r-in"><span><span class="fu">get_validation_units</span><span class="op">(</span><span class="va">hai</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">get_revision_units</span><span class="op">(</span><span class="va">hai</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "days"</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">hai</span><span class="op">[[</span><span class="fu">get_validation_date</span><span class="op">(</span><span class="va">hai</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">hai</span><span class="op">[[</span><span class="fu">get_revision_date</span><span class="op">(</span><span class="va">hai</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] NA NA NA NA NA NA</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

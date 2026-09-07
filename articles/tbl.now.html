@@ -136,12 +136,12 @@ nowcasting packages</a> <span class="citation">(<a href="#ref-gelman2020bayesian
 </h2>
 <p>In an epidemiological nowcast, we typically observe at least two key
 dates<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;More key dates are possible such as a
-&lt;code&gt;validation_date&lt;/code&gt;. For example in the case of influenza one
+&lt;code&gt;revision_date&lt;/code&gt;. For example in the case of influenza one
 might consider the &lt;code&gt;event_date&lt;/code&gt; = symptom onset, the
 &lt;code&gt;report_date&lt;/code&gt; = when the patient was first diagnosed by a
-medical professional, and &lt;code&gt;validation_date&lt;/code&gt; = when the
-positive test’s results for influenza were recorded. We will come back
-to these multiple dates later.&lt;/p&gt;"><sup>1</sup></a>:</p>
+medical professional, and &lt;code&gt;revision_date&lt;/code&gt; = when the positive
+test’s results for influenza were recorded. We will come back to these
+multiple dates later.&lt;/p&gt;"><sup>1</sup></a>:</p>
 <ul>
 <li><p><code>event_date</code>: when the underlying event occurred
 (e.g., symptom onset, exposure, sample collection).</p></li>
@@ -314,13 +314,13 @@ where the report date represents not the exact date it was reported but
 an upper limit to that exact date (i.e. left-censored). As an example,
 one can consider a system error and reports from a lab are not
 registered until a week after.</p></li>
-<li><p><strong>is_censored_validation</strong> (optional): the same flag
-on the validation axis. It marks rows whose <em>validation</em> delay –
-the time from report to resolution – is a bound rather than a
-measurement. See the <a href="#the-validation-process">validation
-process</a> section.</p></li>
-<li><p><strong>validation_levels</strong> (optional): a named dictionary
-translating the labels in <code>validation_type</code> into the four
+<li><p><strong>is_censored_revision</strong> (optional): the same flag
+on the revision axis. It marks rows whose <em>revision</em> delay – the
+time from report to resolution – is a bound rather than a measurement.
+See the <a href="#the-revision-process">revision process</a>
+section.</p></li>
+<li><p><strong>revision_levels</strong> (optional): a named dictionary
+translating the labels in <code>revision_type</code> into the four
 values that column may hold. Surveillance data is not always recorded in
 English, and this is how <code>c(confirmado = "confirmed")</code>
 becomes <code>"confirmed"</code> once rather than in every script that
@@ -737,7 +737,7 @@ weeks do <strong>not</strong> nest inside months, so aggregate once,
 straight to the unit you want.</p>
 <p>Note the <code>units = "days"</code> above: it is a single default
 for <code>event_units</code>, <code>report_units</code> and
-<code>validation_units</code>, and any of the three you give explicitly
+<code>revision_units</code>, and any of the three you give explicitly
 still wins over it.</p>
 </div>
 <div class="section level3">
@@ -993,45 +993,47 @@ direction:</p>
 <span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>weekend_lags <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span> <span class="co"># the Monday after</span></span></code></pre></div>
 </div>
 <div class="section level4">
-<h4 id="event--vs-report-date-effects">Event- vs report-date effects<a class="anchor" aria-label="anchor" href="#event--vs-report-date-effects"></a>
+<h4 id="event--report--and-revision-date-effects">Event-, report-, and revision-date effects<a class="anchor" aria-label="anchor" href="#event--report--and-revision-date-effects"></a>
 </h4>
 <p>By default effects are derived from the <strong>event date</strong>
 and named <code>.event_*</code>. Pass
 <code>date_type = "report_date"</code> to
 <code><a href="../reference/add_temporal_effects.html">add_temporal_effects()</a></code> to derive them from the
 <strong>report date</strong> instead (columns named
-<code>.report_*</code>). Both can coexist on the same
-<code>tbl_now</code>, and every converter carries both sets of
-columns.</p>
+<code>.report_*</code>). On a <code>tbl_now</code> with a revision
+process, pass <code>date_type = "revision_date"</code> to derive effects
+from the <strong>revision date</strong> as <code>.revision_*</code>
+columns. All three can coexist on the same <code>tbl_now</code>;
+converters that can carry covariates carry the materialised columns.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>week_of_year <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, date_type <span class="op">=</span> <span class="st">"event_date"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>day_of_week <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,  date_type <span class="op">=</span> <span class="st">"report_date"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>day_of_week <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,  date_type <span class="op">=</span> <span class="st">"report_date"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="fu"><a href="../reference/temporal_effects.html">temporal_effects</a></span><span class="op">(</span>weekend <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,      date_type <span class="op">=</span> <span class="st">"revision_date"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level3">
-<h3 id="the-validation-process">The validation process<a class="anchor" aria-label="anchor" href="#the-validation-process"></a>
+<h3 id="the-revision-process">The revision process<a class="anchor" aria-label="anchor" href="#the-revision-process"></a>
 </h3>
 <p>Some surveillance systems have a <strong>third</strong> date. A case
 is not only reported – it is later <em>resolved</em>: a laboratory
 issues the result that confirms it, or rules it out. Influenza is the
 standard picture: symptoms begin (the event), the patient visits a
 doctor (the report), and days later a swab comes back positive (the
-validation) or negative (a <em>retraction</em> – the case was reported
-but is not a case after all).</p>
+revision) or negative (a <em>retraction</em> – the case was reported but
+is not a case after all).</p>
 <p>A <code>tbl_now</code> can carry this with
-<code>validation_date</code>, an optional <code>validation_type</code>,
-and its own <code>validation_units</code>. The timeline it assumes
-is</p>
+<code>revision_date</code>, an optional <code>revision_type</code>, and
+its own <code>revision_units</code>. The timeline it assumes is</p>
 <p><span class="math display">\text{event date} \le \text{report date}
-\le \text{validation date} \le \text{now}</span></p>
-<p><code>validation_type</code> takes the values
-<code>"confirmed"</code>, <code>"retracted"</code>,
-<code>"pending"</code> or <code>NA</code>, <strong>and nothing
-else</strong>. <strong>Pending</strong> is the important one: it means
-the case has been reported and is still waiting for a result, so it has
-<em>no</em> validation date. That is a different thing from a case whose
-result you simply never recorded, which is <code>NA</code>.</p>
+\le \text{revision date} \le \text{now}</span></p>
+<p><code>revision_type</code> takes the values <code>"confirmed"</code>,
+<code>"retracted"</code>, <code>"pending"</code> or <code>NA</code>,
+<strong>and nothing else</strong>. <strong>Pending</strong> is the
+important one: it means the case has been reported and is still waiting
+for a result, so it has <em>no</em> revision date. That is a different
+thing from a case whose result you simply never recorded, which is
+<code>NA</code>.</p>
 <p>We will use <code>covid_us</code>, the CDC’s COVID-19 case
 surveillance data for 2020, which records all three dates: when symptoms
 began, when the first positive specimen was collected, and when the case
@@ -1049,14 +1051,14 @@ was registered at CDC with a status.</p>
 <span><span class="co">#&gt; Laboratory-confirmed case             Probable Case </span></span>
 <span><span class="co">#&gt;                    165663                     27290</span></span></code></pre></div>
 <div class="section level4">
-<h4 id="validation_levels-getting-other-peoples-words-into-those-four">
-<code>validation_levels</code>: getting other people’s words into
-those four<a class="anchor" aria-label="anchor" href="#validation_levels-getting-other-peoples-words-into-those-four"></a>
+<h4 id="revision_levels-getting-other-peoples-words-into-those-four">
+<code>revision_levels</code>: getting other people’s words into
+those four<a class="anchor" aria-label="anchor" href="#revision_levels-getting-other-peoples-words-into-those-four"></a>
 </h4>
 <p>CDC does not say <code>"confirmed"</code>; it says
 <code>"Laboratory-confirmed case"</code>. Recoding that by hand before
 every call is the kind of step that gets forgotten in one script out of
-five, so the object does it once. <code>validation_levels</code> is a
+five, so the object does it once. <code>revision_levels</code> is a
 <strong>named</strong> vector whose names are the labels in your data
 and whose values are the canonical outcomes:</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
@@ -1065,9 +1067,9 @@ and whose values are the canonical outcomes:</p>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
 <span>    event_date        <span class="op">=</span> <span class="va">onset_dt</span>,      <span class="co"># symptoms began</span></span>
 <span>    report_date       <span class="op">=</span> <span class="va">pos_spec_dt</span>,   <span class="co"># the first positive specimen</span></span>
-<span>    validation_date   <span class="op">=</span> <span class="va">cdc_report_dt</span>, <span class="co"># the case was registered at CDC</span></span>
-<span>    validation_type   <span class="op">=</span> <span class="va">current_status</span>,</span>
-<span>    validation_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    revision_date   <span class="op">=</span> <span class="va">cdc_report_dt</span>, <span class="co"># the case was registered at CDC</span></span>
+<span>    revision_type   <span class="op">=</span> <span class="va">current_status</span>,</span>
+<span>    revision_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>      <span class="st">"Laboratory-confirmed case"</span> <span class="op">=</span> <span class="st">"confirmed"</span>,</span>
 <span>      <span class="st">"Probable Case"</span>             <span class="op">=</span> <span class="st">"pending"</span></span>
 <span>    <span class="op">)</span>,</span>
@@ -1081,7 +1083,7 @@ and whose values are the canonical outcomes:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; confirmed   pending </span></span>
 <span><span class="co">#&gt;     55354     20269</span></span>
-<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_validation_levels</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_revision_levels</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Laboratory-confirmed case             Probable Case </span></span>
 <span><span class="co">#&gt;               "confirmed"                 "pending"</span></span></code></pre></div>
 <p>The column now holds the canonical values, and the dictionary is kept
@@ -1092,7 +1094,7 @@ Anything the dictionary does not name, and that is not already one of
 the four, is an error rather than a silently accepted category.</p>
 <p>A note on this particular dataset: CDC never withdraws a case, so
 <code>"retracted"</code> does not occur in <code>covid_us</code>. It is
-a two-outcome validation process.</p>
+a two-outcome revision process.</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">covid_now</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  75,623 × 11</span></span></span>
@@ -1100,7 +1102,7 @@ a two-outcome validation process.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
 <span><span class="co">#&gt;    onset_dt     pos_spec_dt  cdc_report_dt current_status sex       n .event_num</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt;    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_dat</span>… <span style="color: #949494;">[validation_</span>… <span style="color: #949494;">[validation_t</span>… <span style="color: #949494;">[str</span>… <span style="color: #949494;">[cas</span>…      <span style="color: #949494;">[...]</span></span></span>
+<span><span class="co">#&gt;    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_dat</span>… <span style="color: #949494;">[revision_da</span>… <span style="color: #949494;">[revision_typ</span>… <span style="color: #949494;">[str</span>… <span style="color: #949494;">[cas</span>…      <span style="color: #949494;">[...]</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2020-09-01   2020-09-01   2020-09-01    confirmed      Fema…    80          0</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2020-09-01   2020-09-01   2020-09-01    confirmed      Male     50          0</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2020-09-01   2020-09-01   2020-09-01    confirmed      Unkn…     5          0</span></span>
@@ -1113,17 +1115,17 @@ a two-outcome validation process.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2020-09-01   2020-09-01   2020-09-03    confirmed      Fema…   104          0</span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-12-31</span> | Event date: <span style="color: #0000BB;">"onset_dt"</span> | Report date: <span style="color: #0000BB;">"pos_spec_dt"</span></span></span>
-<span><span class="co">#&gt; # Validation date: <span style="color: #0000BB;">"cdc_report_dt"</span> (<span style="color: #0000BB;">"days"</span>) | resolved: <span style="color: #0000BB;">55354</span>/<span style="color: #0000BB;">75623</span></span></span>
+<span><span class="co">#&gt; # Revision date: <span style="color: #0000BB;">"cdc_report_dt"</span> (<span style="color: #0000BB;">"days"</span>) | resolved: <span style="color: #0000BB;">55354</span>/<span style="color: #0000BB;">75623</span></span></span>
 <span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"sex"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 75,613 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;, .validation_num &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   .validation_delay &lt;dbl&gt;</span></span></span></code></pre></div>
-<p>The footer now carries a validation line – the column, its units, and
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;, .revision_num &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   .revision_delay &lt;dbl&gt;</span></span></span></code></pre></div>
+<p>The footer now carries a revision line – the column, its units, and
 how many cases have actually been resolved. Two derived columns appear
-alongside <code>.delay</code>: <code>.validation_num</code> (the
-validation date on the same numeric grid as the other dates) and
-<code>.validation_delay</code>, the laboratory’s
+alongside <code>.delay</code>: <code>.revision_num</code> (the revision
+date on the same numeric grid as the other dates) and
+<code>.revision_delay</code>, the laboratory’s
 <strong>turnaround</strong> – the time from report to result, which is a
 different quantity from the reporting delay.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
@@ -1132,23 +1134,23 @@ different quantity from the reporting delay.</p>
 <span><span class="co">#&gt; [1] 4</span></span>
 <span></span>
 <span><span class="co"># Turnaround: specimen to registration at CDC.</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">$</span><span class="va">.validation_delay</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">$</span><span class="va">.revision_delay</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 6</span></span></code></pre></div>
-<p>Validation also moves <code>now</code>. A result issued on a date
-means you were, by definition, still observing the system on that date,
-so <code>now</code> is never earlier than the last validation – even
-when reporting stopped before it.</p>
+<p>Revision also moves <code>now</code>. A result issued on a date means
+you were, by definition, still observing the system on that date, so
+<code>now</code> is never earlier than the last revision – even when
+reporting stopped before it.</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "2020-12-31"</span></span>
-<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_validation_units</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_revision_units</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "days"</span></span>
-<span><span class="fu"><a href="../reference/nowcast_data_getters.html">has_validation</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/nowcast_data_getters.html">has_revision</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <p>It also moves <em>backwards</em> correctly. <code><a href="../reference/add.html">change_now()</a></code>
 is how you ask what the data looked like at an earlier moment – the loop
-a backtest walks – and a validation dated after that moment has simply
-not happened yet, so it reverts to <code>"pending"</code> with its date
+a backtest walks – and a revision dated after that moment has simply not
+happened yet, so it reverts to <code>"pending"</code> with its date
 masked rather than making the object invalid:</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">as_of_october</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add.html">change_now</a></span><span class="op">(</span><span class="va">covid_now</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-10-15"</span><span class="op">)</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -1168,65 +1170,65 @@ masked rather than making the object invalid:</p>
 than one answer, and the right one depends on the question:</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># cases the laboratory confirmed</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/validated_cases.html">get_latest_validated_cases</a></span><span class="op">(</span><span class="va">covid_now</span>, type <span class="op">=</span> <span class="st">"confirmed"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/revised_cases.html">get_latest_revised_cases</a></span><span class="op">(</span><span class="va">covid_now</span>, type <span class="op">=</span> <span class="st">"confirmed"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  3 × 11</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
-<span><span class="co">#&gt;   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt     sex     </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[validation_date]</span> <span style="color: #949494;">[strata]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-09-01   2020-09-03             0           2 2020-12-30        Female  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-09-01   2020-09-02             0           1 2020-12-31        Male    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-09-01   2020-09-01             0           0 2020-09-03        Missing </span></span>
+<span><span class="co">#&gt;   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt   sex     </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[revision_date]</span> <span style="color: #949494;">[strata]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-09-01   2020-09-03             0           2 2020-12-30      Female  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-09-01   2020-09-02             0           1 2020-12-31      Male    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-09-01   2020-09-01             0           0 2020-09-03      Missing </span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-12-31</span> | Event date: <span style="color: #0000BB;">"onset_dt"</span> | Report date: <span style="color: #0000BB;">"pos_spec_dt"</span></span></span>
-<span><span class="co">#&gt; # Validation date: <span style="color: #0000BB;">"cdc_report_dt"</span> (<span style="color: #0000BB;">"days"</span>) | resolved: <span style="color: #0000BB;">3</span>/<span style="color: #0000BB;">3</span></span></span>
+<span><span class="co">#&gt; # Revision date: <span style="color: #0000BB;">"cdc_report_dt"</span> (<span style="color: #0000BB;">"days"</span>) | resolved: <span style="color: #0000BB;">3</span>/<span style="color: #0000BB;">3</span></span></span>
 <span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"sex"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 5 more variables: current_status &lt;chr&gt;, n &lt;dbl&gt;, .delay &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   .validation_num &lt;dbl&gt;, .validation_delay &lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   .revision_num &lt;dbl&gt;, .revision_delay &lt;dbl&gt;</span></span></span>
 <span></span>
 <span><span class="co"># confirmed minus retracted</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/validated_cases.html">get_latest_validated_cases</a></span><span class="op">(</span><span class="va">covid_now</span>, type <span class="op">=</span> <span class="st">"net"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/revised_cases.html">get_latest_revised_cases</a></span><span class="op">(</span><span class="va">covid_now</span>, type <span class="op">=</span> <span class="st">"net"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  3 × 11</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
-<span><span class="co">#&gt;   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt     sex     </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[validation_date]</span> <span style="color: #949494;">[strata]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-09-01   2020-09-03             0           2 2020-12-30        Female  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-09-01   2020-09-02             0           1 2020-12-31        Male    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-09-01   2020-09-01             0           0 2020-09-03        Missing </span></span>
+<span><span class="co">#&gt;   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt   sex     </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[revision_date]</span> <span style="color: #949494;">[strata]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-09-01   2020-09-03             0           2 2020-12-30      Female  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-09-01   2020-09-02             0           1 2020-12-31      Male    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-09-01   2020-09-01             0           0 2020-09-03      Missing </span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-12-31</span> | Event date: <span style="color: #0000BB;">"onset_dt"</span> | Report date: <span style="color: #0000BB;">"pos_spec_dt"</span></span></span>
-<span><span class="co">#&gt; # Validation date: <span style="color: #0000BB;">"cdc_report_dt"</span> (<span style="color: #0000BB;">"days"</span>) | resolved: <span style="color: #0000BB;">0</span>/<span style="color: #0000BB;">3</span></span></span>
+<span><span class="co">#&gt; # Revision date: <span style="color: #0000BB;">"cdc_report_dt"</span> (<span style="color: #0000BB;">"days"</span>) | resolved: <span style="color: #0000BB;">0</span>/<span style="color: #0000BB;">3</span></span></span>
 <span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"sex"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 5 more variables: current_status &lt;chr&gt;, n &lt;dbl&gt;, .delay &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   .validation_num &lt;dbl&gt;, .validation_delay &lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   .revision_num &lt;dbl&gt;, .revision_delay &lt;dbl&gt;</span></span></span>
 <span></span>
 <span><span class="co"># every outcome side by side</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/validated_cases.html">get_latest_validated_cases</a></span><span class="op">(</span><span class="va">covid_now</span>, type <span class="op">=</span> <span class="st">"by_type"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/revised_cases.html">get_latest_revised_cases</a></span><span class="op">(</span><span class="va">covid_now</span>, type <span class="op">=</span> <span class="st">"by_type"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  3 × 11</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span></span>
-<span><span class="co">#&gt;   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt     sex     </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[validation_date]</span> <span style="color: #949494;">[strata]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-09-01   2020-09-03             0           2 2020-12-30        Female  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-09-01   2020-09-01             0           0 2020-10-07        Female  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-09-01   2020-09-02             0           1 2020-12-31        Male    </span></span>
+<span><span class="co">#&gt;   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt   sex     </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[revision_date]</span> <span style="color: #949494;">[strata]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-09-01   2020-09-03             0           2 2020-12-30      Female  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-09-01   2020-09-01             0           0 2020-10-07      Female  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-09-01   2020-09-02             0           1 2020-12-31      Male    </span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2020-12-31</span> | Event date: <span style="color: #0000BB;">"onset_dt"</span> | Report date: <span style="color: #0000BB;">"pos_spec_dt"</span></span></span>
-<span><span class="co">#&gt; # Validation date: <span style="color: #0000BB;">"cdc_report_dt"</span> (<span style="color: #0000BB;">"days"</span>) | resolved: <span style="color: #0000BB;">2</span>/<span style="color: #0000BB;">3</span></span></span>
+<span><span class="co">#&gt; # Revision date: <span style="color: #0000BB;">"cdc_report_dt"</span> (<span style="color: #0000BB;">"days"</span>) | resolved: <span style="color: #0000BB;">2</span>/<span style="color: #0000BB;">3</span></span></span>
 <span><span class="co">#&gt; # Strata: <span style="color: #0000BB;">"sex"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 5 more variables: current_status &lt;chr&gt;, n &lt;dbl&gt;, .delay &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   .validation_num &lt;dbl&gt;, .validation_delay &lt;dbl&gt;</span></span></span></code></pre></div>
-<p><code>get_nth_validated_cases(x, delay)</code> counts only the cases
+<span><span class="co">#&gt; <span style="color: #949494;">#   .revision_num &lt;dbl&gt;, .revision_delay &lt;dbl&gt;</span></span></span></code></pre></div>
+<p><code>get_nth_revised_cases(x, delay)</code> counts only the cases
 settled <em>within</em> a given number of periods <strong>of the
-event</strong>, and <code><a href="../reference/validated_cases.html">get_initial_validated_cases()</a></code> counts
-what the first result to come back had settled. They mirror
+event</strong>, and <code><a href="../reference/revised_cases.html">get_initial_revised_cases()</a></code> counts what
+the first result to come back had settled. They mirror
 <code><a href="../reference/get_latest_first.html">get_nth_reported_cases()</a></code> and
 <code><a href="../reference/get_latest_first.html">get_initial_reported_cases()</a></code> on the report axis, return the
 same <code>count-cumulative</code> shape, and take the same
@@ -1235,43 +1237,43 @@ too, so <code>get_latest_reported_cases(x, type = "pending")</code> is
 how you count the backlog the laboratory still owes you.</p>
 </div>
 <div class="section level4">
-<h4 id="validation-delays-you-do-not-believe">Validation delays you do not believe<a class="anchor" aria-label="anchor" href="#validation-delays-you-do-not-believe"></a>
+<h4 id="revision-delays-you-do-not-believe">Revision delays you do not believe<a class="anchor" aria-label="anchor" href="#revision-delays-you-do-not-believe"></a>
 </h4>
-<p>If your data records absurdly long validation delays – a result
+<p>If your data records absurdly long revision delays – a result
 “issued” two years later is usually a data-entry artefact, not a
-laboratory – <code><a href="../reference/censoring.html">censor_validation_delays_above()</a></code> marks them
-with the <strong><code>is_censored_validation</code></strong> flag. It
-is the validation-axis twin of <code>is_censored_report</code>, and it
-works the same way: the case and its date are kept, and the
-<em>delay</em> is recorded as a bound rather than a measurement, for
-models that can use censored observations.</p>
+laboratory – <code><a href="../reference/censoring.html">censor_revision_delays_above()</a></code> marks them with
+the <strong><code>is_censored_revision</code></strong> flag. It is the
+revision-axis twin of <code>is_censored_report</code>, and it works the
+same way: the case and its date are kept, and the <em>delay</em> is
+recorded as a bound rather than a measurement, for models that can use
+censored observations.</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">capped</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/censoring.html">censor_validation_delays_above</a></span><span class="op">(</span><span class="va">covid_now</span>, max_delay <span class="op">=</span> <span class="fl">60</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">capped</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/censoring.html">censor_revision_delays_above</a></span><span class="op">(</span><span class="va">covid_now</span>, max_delay <span class="op">=</span> <span class="fl">60</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_is_censored_validation</a></span><span class="op">(</span><span class="va">capped</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] ".is_censored_validation"</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">capped</span><span class="op">$</span><span class="va">n</span><span class="op">[</span><span class="va">capped</span><span class="op">[[</span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_is_censored_validation</a></span><span class="op">(</span><span class="va">capped</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_is_censored_revision</a></span><span class="op">(</span><span class="va">capped</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] ".is_censored_revision"</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">capped</span><span class="op">$</span><span class="va">n</span><span class="op">[</span><span class="va">capped</span><span class="op">[[</span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_is_censored_revision</a></span><span class="op">(</span><span class="va">capped</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 2286</span></span></code></pre></div>
 <p>Nothing is deleted and no outcome is rewritten, so
-<code>get_latest_validated_cases(type = "confirmed")</code> still counts
+<code>get_latest_revised_cases(type = "confirmed")</code> still counts
 those cases. Set the flag by hand with
-<code><a href="../reference/add.html">add_is_censored_validation()</a></code> when your data already carries
+<code><a href="../reference/add.html">add_is_censored_revision()</a></code> when your data already carries
 one.</p>
 </div>
 <div class="section level4">
 <h4 id="how-much-of-the-epidemic-has-been-resolved">How much of the epidemic has been resolved?<a class="anchor" aria-label="anchor" href="#how-much-of-the-epidemic-has-been-resolved"></a>
 </h4>
-<p><code><a href="../reference/plot_validation_status.html">plot_validation_status()</a></code> shows the share of cases
+<p><code><a href="../reference/plot_revision_status.html">plot_revision_status()</a></code> shows the share of cases
 confirmed, retracted and pending over time. A pending share that grows
 towards the right-hand edge is normal – recent cases have not had time
 to come back from the laboratory – but a pending share that grows in the
 <em>middle</em> of the series is a laboratory falling behind.</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_validation_status.html">plot_validation_status</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_revision_status.html">plot_revision_status</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tbl.now_files/figure-html/unnamed-chunk-30-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level4">
-<h4 id="the-validation-axis">The validation axis<a class="anchor" aria-label="anchor" href="#the-validation-axis"></a>
+<h4 id="the-revision-axis">The revision axis<a class="anchor" aria-label="anchor" href="#the-revision-axis"></a>
 </h4>
 <p>Every reporting diagnostic in the package asks one question: did an
 unusual number of records arrive on this date, and with what delay? That
@@ -1280,26 +1282,26 @@ so the diagnostics take an <code>axis</code> argument instead of being
 duplicated:</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The same picture, drawn for the laboratory instead of the surveillance desk.</span></span>
-<span><span class="fu"><a href="../reference/plot_reporting_triangle.html">plot_reporting_triangle</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/plot_delay_profiles.html">plot_delay_profiles</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/diagnostic_plot.html">diagnostic_plot</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_reporting_triangle.html">plot_reporting_triangle</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"revision"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_delay_profiles.html">plot_delay_profiles</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"revision"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"revision"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/diagnostic_plot.html">diagnostic_plot</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"revision"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># A laboratory clearing a backlog is a batch, exactly as a surveillance system</span></span>
 <span><span class="co"># clearing its inbox is.</span></span>
-<span><span class="fu"><a href="../reference/diagnose_batches.html">diagnose_batches</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"validation"</span><span class="op">)</span></span></code></pre></div>
-<p>Two notes on what <code>axis = "validation"</code> means. Delays are
+<span><span class="fu"><a href="../reference/diagnose_batches.html">diagnose_batches</a></span><span class="op">(</span><span class="va">covid_now</span>, axis <span class="op">=</span> <span class="st">"revision"</span><span class="op">)</span></span></code></pre></div>
+<p>Two notes on what <code>axis = "revision"</code> means. Delays are
 still measured <strong>from the event</strong>, so the report and
-validation axes are directly comparable and the gap between them is the
+revision axes are directly comparable and the gap between them is the
 time the laboratory adds. And cases that are still
-<code>"pending"</code> are excluded: they have no validation date, so
+<code>"pending"</code> are excluded: they have no revision date, so
 counting them would invent an arrival on a date they do not have.</p>
-<p>Finally, when a system produces both validations and retractions you
+<p>Finally, when a system produces both revisions and retractions you
 can ask whether they take equally long – a laboratory that rules cases
 out faster than it confirms them will bias any nowcast that treats the
-two alike. <code><a href="../reference/validation_delay.html">diagnose_validation_delay()</a></code> tests exactly that
-(a Wilcoxon rank-sum test on the two delay distributions) and
-<code><a href="../reference/validation_delay.html">plot_validation_delay()</a></code> draws it. <code>covid_us</code>
+two alike. <code><a href="../reference/revision_delay.html">diagnose_revision_delay()</a></code> tests exactly that (a
+Wilcoxon rank-sum test on the two delay distributions) and
+<code><a href="../reference/revision_delay.html">plot_revision_delay()</a></code> draws it. <code>covid_us</code>
 records no retractions, so there is nothing to compare here.</p>
 </div>
 </div>
@@ -1680,8 +1682,9 @@ the same object and return the identical plot, so
 <code>plot_*()</code> when you want to place one effect in a report.</p>
 <p>Each calendar/holiday twin takes a <code>type</code> argument
 choosing the process: <code>type = "epidemic"</code> (the default, green
-— how the <em>cases</em> vary) or <code>type = "report"</code> (red —
-how the <em>reporting</em> does).</p>
+— how the <em>cases</em> vary), <code>type = "report"</code> (red — how
+the <em>reporting</em> does), or <code>type = "revision"</code> (ochre —
+how resolved cases arrive on revision dates).</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -1696,44 +1699,50 @@ how the <em>reporting</em> does).</p>
 <tr class="odd">
 <td><code>plot_day_of_week_effects(x, type = )</code></td>
 <td>
-<code>calendar_weekday</code> / <code>delay_weekday</code>
+<code>calendar_weekday</code> / <code>delay_weekday</code> /
+<code>revision_weekday</code>
 </td>
 </tr>
 <tr class="even">
 <td><code>plot_week_of_year_effects(x, type = )</code></td>
 <td>
-<code>calendar_week</code> / <code>delay_week</code>
+<code>calendar_week</code> / <code>delay_week</code> /
+<code>revision_week</code>
 </td>
 </tr>
 <tr class="odd">
 <td><code>plot_month_of_year_effects(x, type = )</code></td>
 <td>
-<code>calendar_month</code> / <code>delay_month</code>
+<code>calendar_month</code> / <code>delay_month</code> /
+<code>revision_month</code>
 </td>
 </tr>
 <tr class="even">
 <td><code>plot_holiday_effects(x, type = )</code></td>
 <td>
-<code>calendar_holiday</code> / <code>delay_holiday</code>
+<code>calendar_holiday</code> / <code>delay_holiday</code> /
+<code>revision_holiday</code>
 </td>
 </tr>
 <tr class="odd">
 <td><code>plot_weekend_effects(x, type = )</code></td>
 <td>
-<code>calendar_holiday</code> / <code>delay_holiday</code>,
-attaching <code>temporal_effects(weekend = TRUE)</code> first</td>
+<code>calendar_holiday</code> / <code>delay_holiday</code> /
+<code>revision_holiday</code>, attaching
+<code>temporal_effects(weekend = TRUE)</code> first</td>
 </tr>
 <tr class="even">
 <td><code>plot_holiday_lag_effects(x, type = )</code></td>
 <td>
-<code>calendar_holiday_lag</code> /
-<code>delay_holiday_lag</code>
+<code>calendar_holiday_lag</code> / <code>delay_holiday_lag</code> /
+<code>revision_holiday_lag</code>
 </td>
 </tr>
 <tr class="odd">
 <td><code>plot_cycles(x, type = )</code></td>
 <td>
-<code>seasonality</code> / <code>delay_seasonality</code>
+<code>seasonality</code> / <code>delay_seasonality</code> /
+<code>revision_seasonality</code>
 </td>
 </tr>
 <tr class="even">
@@ -1880,7 +1889,7 @@ them:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> event_to_report  <span style="text-decoration: underline;">5</span>154 <span style="text-decoration: underline;">52</span>987  1.74  1.21     1     3    26</span></span></code></pre></div>
 <p>The others are <code><a href="../reference/nowcast_summary_components.html">cases_per_date()</a></code>,
 <code><a href="../reference/nowcast_summary_components.html">zero_run_summary()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_censored()</a></code>,
-<code><a href="../reference/nowcast_summary_components.html">prop_validation_type()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_strata()</a></code>,
+<code><a href="../reference/nowcast_summary_components.html">prop_revision_type()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_strata()</a></code>,
 <code><a href="../reference/nowcast_summary_components.html">prop_covariate_levels()</a></code>, <code><a href="../reference/nowcast_summary_components.html">date_ranges()</a></code>,
 <code><a href="../reference/nowcast_summary_components.html">triangle_occupancy()</a></code> and <code><a href="../reference/nowcast_summary_components.html">cumulative_growth()</a></code>.
 Two more – <code><a href="../reference/nowcast_summary_components.html">case_autocorrelation()</a></code> and
@@ -1928,7 +1937,7 @@ and <code><a href="../reference/diagnose_batches.html">diagnose_batches()</a></c
 <p><code>skipped</code> is a distinct status from <code>ok</code>, and
 the difference matters: <code>ok</code> means the check ran and found
 nothing, whereas <code>skipped</code> means it could not run at all —
-here because <code>dengue_now</code> carries no validation process. A
+here because <code>dengue_now</code> carries no revision process. A
 check that cannot be performed is never silently reported as a pass.</p>
 <p>Like <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, every block is callable on its own —
 <code><a href="../reference/nowcast_diagnose_components.html">diagnose_declarations()</a></code>, <code><a href="../reference/nowcast_diagnose_components.html">diagnose_ordering()</a></code>,

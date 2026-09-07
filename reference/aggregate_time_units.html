@@ -101,8 +101,8 @@ asking a weekly object for <code>"days"</code> is an error rather than a guess.<
 
 <dt id="arg-axes">axes<a class="anchor" aria-label="anchor" href="#arg-axes"></a></dt>
 <dd><p>Character. Which time axes to aggregate: <code>"all"</code> (the default,
-meaning the event and report axes plus the validation axis when there is
-one), or any of <code>"event"</code>, <code>"report"</code> and <code>"validation"</code>. The unit they are
+meaning the event and report axes plus the revision axis when there is
+one), or any of <code>"event"</code>, <code>"report"</code> and <code>"revision"</code>. The unit they are
 aggregated to is <code>to</code>.</p></dd>
 
 
@@ -127,7 +127,7 @@ Sunday) and the week convention, <code>"epi"</code> (default) or <code>"iso"</co
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>tbl_now</code> on the coarser grid, with <code>event_units</code>, <code>report_units</code>
-and <code>validation_units</code> updated for the axes that were aggregated, and <code>now</code>
+and <code>revision_units</code> updated for the axes that were aggregated, and <code>now</code>
 moved onto the new grid.</p>
     </div>
     <div class="section level2">
@@ -188,7 +188,7 @@ event axis, so aggregating only the event axis of a daily object is
 refused. Aggregate the report axis too, or use <code>axes = "all"</code>.</p></li>
 <li><p>A week named by the day it <em>starts</em> sits before every date inside it, so
 coarsening a <strong>later</strong> axis alone – the report against a daily event, or
-the validation against a daily report – with <code>label = "start"</code> produces
+the revision against a daily report – with <code>label = "start"</code> produces
 negative delays, and <code><a href="validate_tbl_now.html">validate_tbl_now()</a></code> warns. Use <code>label = "end"</code>: a
 report that arrived somewhere in week <em>W</em> is known by the end of <em>W</em>, which
 is the honest bound. When the axes move together the labelling cancels out

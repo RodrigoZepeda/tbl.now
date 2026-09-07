@@ -51,7 +51,15 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.33.1" id="tblnow-0331">tbl.now 0.33.1<a class="anchor" aria-label="anchor" href="#tblnow-0331"></a></h2>
 <div class="section level3">
-<h3 id="temporal-effect-columns-are-invalidated-when-date-columns-change-0-33-1">Temporal-effect columns are invalidated when date columns change<a class="anchor" aria-label="anchor" href="#temporal-effect-columns-are-invalidated-when-date-columns-change-0-33-1"></a></h3>
+<h3 id="autoplot-can-show-revision-date-calendar-effects-0-33-1">Autoplot can show revision-date calendar effects<a class="anchor" aria-label="anchor" href="#autoplot-can-show-revision-date-calendar-effects-0-33-1"></a></h3>
+<p>The calendar-effect helpers now accept <code>type = "revision"</code>, and <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> includes revision calendar and cycle panels whenever a <code>tbl_now</code> has a revision process. Revision panels use the new <code>revision</code> palette role, <code>#C79800</code> by default.</p>
+</div>
+<div class="section level3">
+<h3 id="temporal-effects-can-target-revision-dates-0-33-1">Temporal effects can target revision dates<a class="anchor" aria-label="anchor" href="#temporal-effects-can-target-revision-dates-0-33-1"></a></h3>
+<p><code><a href="../reference/add_temporal_effects.html">add_temporal_effects()</a></code> now accepts <code>date_type = "revision_date"</code> for revision-aware <code>tbl_now</code> objects. <code><a href="../reference/add_temporal_effects.html">compute_temporal_effects()</a></code> materialises those specs as <code>.revision_*</code> columns using the revision date and <code>.revision_num</code>. Revision-date changers now preserve lazy temporal-effect specs while invalidating computed columns, and <code><a href="../reference/add.html">remove_revision_date()</a></code> drops revision-date specs while keeping event/report specs.</p>
+</div>
+<div class="section level3">
+<h3 id="temporal-effect-columns-are-inrevised-when-date-columns-change-0-33-1">Temporal-effect columns are inrevised when date columns change<a class="anchor" aria-label="anchor" href="#temporal-effect-columns-are-inrevised-when-date-columns-change-0-33-1"></a></h3>
 <p><code><a href="../reference/add.html">change_event_date()</a></code> and <code><a href="../reference/add.html">change_report_date()</a></code> now drop already materialised temporal-effect columns and clear their tracking attribute. The lazy <code><a href="../reference/temporal_effects.html">temporal_effects()</a></code> specification is preserved, so later calls to <code><a href="../reference/add_temporal_effects.html">compute_temporal_effects()</a></code> or converters that carry temporal effects rebuild fresh columns from the current event/report date declarations.</p>
 </div>
 <div class="section level3">
@@ -63,14 +71,14 @@
 <div class="section level3">
 <h3 id="backtesting-and-scoring-are-stricter-about-fairness-0-33-1">Backtesting and scoring are stricter about fairness<a class="anchor" aria-label="anchor" href="#backtesting-and-scoring-are-stricter-about-fairness-0-33-1"></a></h3>
 <p><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code> and <code><a href="../reference/score_nowcast.html">as_scoringutils()</a></code> now warn when predictions contain targets outside the supplied truth grid. Missing observed rows inside the <code>tbl_now</code> truth grid are scored as zero, because <code>tbl_now</code> objects need not store zero-count cells; targets outside that grid are still omitted because there is no observed value to score.</p>
-<p><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code>, <code><a href="../reference/score_nowcast.html">as_scoringutils()</a></code> and <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> gained explicit <code>truth_axis</code> and <code>truth_type</code> arguments. The default remains reported totals (<code>truth_axis = "report"</code>, <code>truth_type = "total"</code>), and validation-aware truth can now be scored with <code>truth_axis = "validation"</code>.</p>
+<p><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code>, <code><a href="../reference/score_nowcast.html">as_scoringutils()</a></code> and <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> gained explicit <code>truth_axis</code> and <code>truth_type</code> arguments. The default remains reported totals (<code>truth_axis = "report"</code>, <code>truth_type = "total"</code>), and revision-aware truth can now be scored with <code>truth_axis = "revision"</code>.</p>
 <p><code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> now validates explicit <code>now_dates</code>: they must be non-missing Dates within the observed surveillance window and cannot be after the object’s <code>now</code>. A <code>now_date</code> equal to the object’s <code>now</code> is allowed with a warning, because today’s data may still be incomplete.</p>
 <p><code><a href="../reference/nowcast_weights.html">nowcast_weights()</a></code> gained <code>now</code> and <code>include_now</code> arguments. When <code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code> derives performance weights from a backtest, rows at the members’ own <code>now</code> dates are excluded by default so weights are trained on a holdout window unless <code>include_now = TRUE</code> is set explicitly.</p>
 </div>
 <div class="section level3">
 <h3 id="constructors-and-dplyr-rebuilds-are-stricter-0-33-1">Constructors and dplyr rebuilds are stricter<a class="anchor" aria-label="anchor" href="#constructors-and-dplyr-rebuilds-are-stricter-0-33-1"></a></h3>
-<p><code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code> and <code>$&lt;-</code> now rebuild generated numeric date columns when event, report, or validation dates are edited, including <code>.validation_num</code> and <code>.validation_delay</code> for validation-aware objects.</p>
-<p>Demotion after renaming protected generated columns now drops all <code>tbl_now</code> attributes, and count-data validation now errors when the declared count column is not numeric. Empty <code><a href="../reference/tbl_now.html">tbl_now()</a></code> inputs remain unsupported, and one-row inputs must declare their units.</p>
+<p><code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code> and <code>$&lt;-</code> now rebuild generated numeric date columns when event, report, or revision dates are edited, including <code>.revision_num</code> and <code>.revision_delay</code> for revision-aware objects.</p>
+<p>Demotion after renaming protected generated columns now drops all <code>tbl_now</code> attributes, and count-data revision now errors when the declared count column is not numeric. Empty <code><a href="../reference/tbl_now.html">tbl_now()</a></code> inputs remain unsupported, and one-row inputs must declare their units.</p>
 </div>
 <div class="section level3">
 <h3 id="epinow2-converter-and-engine-checks-are-stricter-0-33-1">EpiNow2 converter and engine checks are stricter<a class="anchor" aria-label="anchor" href="#epinow2-converter-and-engine-checks-are-stricter-0-33-1"></a></h3>
@@ -181,7 +189,7 @@
 <code><a href="../reference/plot_delay_profiles.html">plot_delay_profiles()</a></code>: <code>linewidth</code>
 </li>
 <li>
-<code><a href="../reference/validation_delay.html">plot_validation_delay()</a></code>: <code>linewidth</code>
+<code><a href="../reference/revision_delay.html">plot_revision_delay()</a></code>: <code>linewidth</code>
 </li>
 <li>
 <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> and the <code>plot_*_effects()</code> panels: <code>size</code>, <code>linewidth</code>
@@ -191,8 +199,8 @@
 <li>
 <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> on a <code>tbl_nowcast</code>: <code>linewidth</code>
 </li>
-</ul><p><code><a href="../reference/plot_epidemic_process.html">plot_reporting_process()</a></code>, <code><a href="../reference/plot_epidemic_process.html">plot_epidemic_process()</a></code>, <code><a href="../reference/plot_scalogram.html">plot_scalogram()</a></code> and <code><a href="../reference/plot_validation_status.html">plot_validation_status()</a></code> draw only bars, tiles or areas, so they take neither, and say so in their documentation rather than offering an argument that would do nothing.</p>
-<p><code><a href="../reference/validation_delay.html">plot_validation_delay()</a></code> and <code><a href="../reference/plot_validation_status.html">plot_validation_status()</a></code> also gained the <code>palette</code> argument they had been missing – they used to call the default palette internally – and now use the shared package theme instead of a bare <code><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">ggplot2::theme_minimal()</a></code>.</p>
+</ul><p><code><a href="../reference/plot_epidemic_process.html">plot_reporting_process()</a></code>, <code><a href="../reference/plot_epidemic_process.html">plot_epidemic_process()</a></code>, <code><a href="../reference/plot_scalogram.html">plot_scalogram()</a></code> and <code><a href="../reference/plot_revision_status.html">plot_revision_status()</a></code> draw only bars, tiles or areas, so they take neither, and say so in their documentation rather than offering an argument that would do nothing.</p>
+<p><code><a href="../reference/revision_delay.html">plot_revision_delay()</a></code> and <code><a href="../reference/plot_revision_status.html">plot_revision_status()</a></code> also gained the <code>palette</code> argument they had been missing – they used to call the default palette internally – and now use the shared package theme instead of a bare <code><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">ggplot2::theme_minimal()</a></code>.</p>
 </div>
 <div class="section level3">
 <h3 id="breaking-the-hexamap-draws-points-not-hexagons-0-33-0">Breaking: the hexamap draws points, not hexagons<a class="anchor" aria-label="anchor" href="#breaking-the-hexamap-draws-points-not-hexagons-0-33-0"></a></h3>
@@ -237,7 +245,7 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 </div>
 <div class="section level3">
 <h3 id="the-batch-family-ignores-censored-arrival-dates-0-33-0">The batch family ignores censored arrival dates<a class="anchor" aria-label="anchor" href="#the-batch-family-ignores-censored-arrival-dates-0-33-0"></a></h3>
-<p>The batch <em>tests</em> – <code><a href="../reference/diagnose_batches.html">diagnose_batches()</a></code>, <code><a href="../reference/diagnose_batches2.html">diagnose_batches2()</a></code> and <code><a href="../reference/transport_discriminant.html">transport_discriminant()</a></code> – now drop the rows flagged censored on the axis they are scanning: <code>is_censored_report</code> for <code>axis = "report"</code>, <code>is_censored_validation</code> for <code>axis = "validation"</code>.</p>
+<p>The batch <em>tests</em> – <code><a href="../reference/diagnose_batches.html">diagnose_batches()</a></code>, <code><a href="../reference/diagnose_batches2.html">diagnose_batches2()</a></code> and <code><a href="../reference/transport_discriminant.html">transport_discriminant()</a></code> – now drop the rows flagged censored on the axis they are scanning: <code>is_censored_report</code> for <code>axis = "report"</code>, <code>is_censored_revision</code> for <code>axis = "revision"</code>.</p>
 <p>Only those three. The flag is a statement about the arrival axis and about nothing else, so a row censored on the report axis is still a case that happened on its event date: every plot, including <code><a href="../reference/plot_epidemic_process.html">plot_epidemic_process()</a></code> and the <code><a href="../reference/diagnostic_plot.html">diagnostic_plot()</a></code> panels other than <code>transport</code>, keeps every row.</p>
 <p>A censored date is a <strong>bound</strong>, not the date the record arrived. Censoring is usually applied <em>because</em> something was already known about those dates, and the censored rows all carry the same bound, so leaving them in piles them onto one date and the detector rediscovers, as a finding, the artefact it was told about. Pass <code>drop_censored = FALSE</code> to scan them anyway.</p>
 </div>
@@ -250,7 +258,7 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 <h3 id="plot_transport_discriminant-is-usable-as-a-plotly-widget-0-33-0">
 <code>plot_transport_discriminant()</code> is usable as a plotly widget<a class="anchor" aria-label="anchor" href="#plot_transport_discriminant-is-usable-as-a-plotly-widget-0-33-0"></a></h3>
 <ul><li>The axis labels were <code><a href="https://rdrr.io/r/base/expression.html" class="external-link">expression()</a></code>s. <code>ggplotly()</code> cannot render plotmath and drops them silently, so the interactive plot had unnamed axes. They are now plain text (“Creation z”, “Transport z”).</li>
-<li>Hovering a point shows the dates behind it: the report (or validation) date the point <em>is</em>, the mean event date of the records that arrived then, the mean delay that implies, and the arrivals against their baseline. The two z-scores are what the point is already positioned by, so they are no longer all the tooltip says.</li>
+<li>Hovering a point shows the dates behind it: the report (or revision) date the point <em>is</em>, the mean event date of the records that arrived then, the mean delay that implies, and the arrivals against their baseline. The two z-scores are what the point is already positioned by, so they are no longer all the tooltip says.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="summary-says-what-n-and-total-count-0-33-0">
@@ -311,35 +319,35 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.31.0" id="tblnow-0310">tbl.now 0.31.0<a class="anchor" aria-label="anchor" href="#tblnow-0310"></a></h2>
 <div class="section level3">
-<h3 id="breaking-the-_confirmed-counters-are-gone-replaced-by-a-validated-cases-family-0-31-0">Breaking: the <code>*_confirmed()</code> counters are gone, replaced by a validated-cases family (#64)<a class="anchor" aria-label="anchor" href="#breaking-the-_confirmed-counters-are-gone-replaced-by-a-validated-cases-family-0-31-0"></a></h3>
+<h3 id="breaking-the-_confirmed-counters-are-gone-replaced-by-a-revised-cases-family-0-31-0">Breaking: the <code>*_confirmed()</code> counters are gone, replaced by a revised-cases family (#64)<a class="anchor" aria-label="anchor" href="#breaking-the-_confirmed-counters-are-gone-replaced-by-a-revised-cases-family-0-31-0"></a></h3>
 <p><code>get_latest_confirmed()</code>, <code>get_net_confirmed()</code>, <code>get_initial_confirmed()</code> and <code>get_nth_confirmed()</code> are <strong>removed</strong>. They answered a version of the question <code><a href="../reference/get_latest_first.html">get_latest_reported_cases()</a></code> already answered, in a different return shape (a plain tibble), with a delay measured from a different anchor – so the two families could not be read against each other.</p>
-<p>In their place, the reporting getters have an exact twin on the validation axis:</p>
+<p>In their place, the reporting getters have an exact twin on the revision axis:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/validated_cases.html">get_initial_validated_cases</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                     <span class="co"># as of the FIRST result back</span></span>
-<span><span class="fu"><a href="../reference/validated_cases.html">get_latest_validated_cases</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                      <span class="co"># everything settled so far</span></span>
-<span><span class="fu"><a href="../reference/validated_cases.html">get_nth_validated_cases</a></span><span class="op">(</span><span class="va">x</span>, delay <span class="op">=</span> <span class="fl">7</span><span class="op">)</span>              <span class="co"># settled within 7 periods</span></span>
-<span><span class="fu"><a href="../reference/validated_cases.html">get_latest_validated_cases</a></span><span class="op">(</span><span class="va">x</span>, type <span class="op">=</span> <span class="st">"confirmed"</span><span class="op">)</span>  <span class="co"># was get_latest_confirmed()</span></span>
-<span><span class="fu"><a href="../reference/validated_cases.html">get_latest_validated_cases</a></span><span class="op">(</span><span class="va">x</span>, type <span class="op">=</span> <span class="st">"net"</span><span class="op">)</span>        <span class="co"># was get_net_confirmed()</span></span>
-<span><span class="fu"><a href="../reference/validated_cases.html">get_latest_validated_cases</a></span><span class="op">(</span><span class="va">x</span>, type <span class="op">=</span> <span class="st">"by_type"</span><span class="op">)</span>    <span class="co"># every outcome, side by side</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/revised_cases.html">get_initial_revised_cases</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                     <span class="co"># as of the FIRST result back</span></span>
+<span><span class="fu"><a href="../reference/revised_cases.html">get_latest_revised_cases</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                      <span class="co"># everything settled so far</span></span>
+<span><span class="fu"><a href="../reference/revised_cases.html">get_nth_revised_cases</a></span><span class="op">(</span><span class="va">x</span>, delay <span class="op">=</span> <span class="fl">7</span><span class="op">)</span>              <span class="co"># settled within 7 periods</span></span>
+<span><span class="fu"><a href="../reference/revised_cases.html">get_latest_revised_cases</a></span><span class="op">(</span><span class="va">x</span>, type <span class="op">=</span> <span class="st">"confirmed"</span><span class="op">)</span>  <span class="co"># was get_latest_confirmed()</span></span>
+<span><span class="fu"><a href="../reference/revised_cases.html">get_latest_revised_cases</a></span><span class="op">(</span><span class="va">x</span>, type <span class="op">=</span> <span class="st">"net"</span><span class="op">)</span>        <span class="co"># was get_net_confirmed()</span></span>
+<span><span class="fu"><a href="../reference/revised_cases.html">get_latest_revised_cases</a></span><span class="op">(</span><span class="va">x</span>, type <span class="op">=</span> <span class="st">"by_type"</span><span class="op">)</span>    <span class="co"># every outcome, side by side</span></span></code></pre></div>
 <ul><li>They return the <strong>same <code>count-cumulative</code> <code>tbl_now</code></strong> the reporting getters return, carrying all three dates and the generated numeric columns, rather than a bare tibble.</li>
 <li>
-<code>type =</code> is new on <strong>both</strong> families, so the reporting axis can be filtered the same way: <code>"total"</code> (default), <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code>, <code>"unknown"</code>, <code>"net"</code>, or <code>"by_type"</code> for one row per outcome. On an object with no validation process anything but <code>"total"</code> warns and pools.</li>
+<code>type =</code> is new on <strong>both</strong> families, so the reporting axis can be filtered the same way: <code>"total"</code> (default), <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code>, <code>"unknown"</code>, <code>"net"</code>, or <code>"by_type"</code> for one row per outcome. On an object with no revision process anything but <code>"total"</code> warns and pools.</li>
 <li>
-<code><a href="../reference/validated_cases.html">get_nth_validated_cases()</a></code> counts the delay <strong>from the event</strong>, so it and <code><a href="../reference/get_latest_first.html">get_nth_reported_cases()</a></code> describe the same period. <code>get_nth_confirmed()</code> measured from the report, which is <code>.validation_delay</code> – a different quantity. Reading the old and new numbers as the same thing is the one migration hazard.</li>
-<li>A pending case has no validation date, so it never appears on the validation axis; <code>type = "pending"</code> is refused there and belongs on the reporting axis.</li>
-<li>An empty selection – nothing validated yet, no case with that outcome, no arrival within the delay – is an <strong>error naming the reason</strong>, rather than a failure inside <code><a href="../reference/tbl_now.html">tbl_now()</a></code> about an empty data frame.</li>
+<code><a href="../reference/revised_cases.html">get_nth_revised_cases()</a></code> counts the delay <strong>from the event</strong>, so it and <code><a href="../reference/get_latest_first.html">get_nth_reported_cases()</a></code> describe the same period. <code>get_nth_confirmed()</code> measured from the report, which is <code>.revision_delay</code> – a different quantity. Reading the old and new numbers as the same thing is the one migration hazard.</li>
+<li>A pending case has no revision date, so it never appears on the revision axis; <code>type = "pending"</code> is refused there and belongs on the reporting axis.</li>
+<li>An empty selection – nothing revised yet, no case with that outcome, no arrival within the delay – is an <strong>error naming the reason</strong>, rather than a failure inside <code><a href="../reference/tbl_now.html">tbl_now()</a></code> about an empty data frame.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="the-reported-cases-getters-respect-a-grouping-to_count-says-it-does-not-0-31-0">The reported-cases getters respect a grouping; <code>to_count()</code> says it does not (#61)<a class="anchor" aria-label="anchor" href="#the-reported-cases-getters-respect-a-grouping-to_count-says-it-does-not-0-31-0"></a></h3>
-<p><code><a href="../reference/get_latest_first.html">get_latest_reported_cases()</a></code>, <code><a href="../reference/get_latest_first.html">get_initial_reported_cases()</a></code> and <code><a href="../reference/get_latest_first.html">get_nth_reported_cases()</a></code> (and the three new validated ones) now <strong>keep the caller’s grouping and answer by it</strong>: the grouping columns join the event date and the strata as keys, and come back on the result.</p>
+<p><code><a href="../reference/get_latest_first.html">get_latest_reported_cases()</a></code>, <code><a href="../reference/get_latest_first.html">get_initial_reported_cases()</a></code> and <code><a href="../reference/get_latest_first.html">get_nth_reported_cases()</a></code> (and the three new revised ones) now <strong>keep the caller’s grouping and answer by it</strong>: the grouping columns join the event date and the strata as keys, and come back on the result.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tn</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">hospital</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>This is the only way to ask for a count by a <strong>covariate</strong> – a column that matters without being something you nowcast by. These verbs can do it because they <em>select</em> a point in the process rather than reshaping the object.</p>
 <p><code><a href="../reference/to_count.html">to_count()</a></code> cannot, and now <strong>warns</strong> rather than dropping the grouping in silence: after aggregating, one row is an (event, report) cell rather than one of the rows that were grouped, so the grouping describes nothing that is left. Declare the column with <code><a href="../reference/add.html">add_strata()</a></code> or <code><a href="../reference/add.html">add_covariates()</a></code> to keep it out of the sum.</p>
 </div>
 <div class="section level3">
-<h3 id="is_tbl_now-is-a-class-check-again-not-a-validation-run-0-31-0">
-<code>is_tbl_now()</code> is a class check again, not a validation run (#62)<a class="anchor" aria-label="anchor" href="#is_tbl_now-is-a-class-check-again-not-a-validation-run-0-31-0"></a></h3>
+<h3 id="is_tbl_now-is-a-class-check-again-not-a-revision-run-0-31-0">
+<code>is_tbl_now()</code> is a class check again, not a revision run (#62)<a class="anchor" aria-label="anchor" href="#is_tbl_now-is-a-class-check-again-not-a-revision-run-0-31-0"></a></h3>
 <p><code><a href="../reference/validate_tbl_now.html">is_tbl_now()</a></code> used to call <code><a href="../reference/validate_tbl_now.html">validate_tbl_now()</a></code> inside a <code><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch()</a></code> that caught errors but not warnings, so the object’s findings escaped from wherever the predicate was called – which is every <code>.assert_tbl_now()</code> in the package. A verb that fixed a problem warned about it twice, after the fix.</p>
 <p>It is now a structural check: the class, the attributes a <code>tbl_now</code> cannot do without, and the columns those attributes name. Cheap, and silent.</p>
 <ul><li>
@@ -350,7 +358,7 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 <h3 id="fractional-delays-are-refused-where-they-are-created-and-reported-where-they-are-found-0-31-0">Fractional delays are refused where they are created, and reported where they are found (#63)<a class="anchor" aria-label="anchor" href="#fractional-delays-are-refused-where-they-are-created-and-reported-where-they-are-found-0-31-0"></a></h3>
 <p>A calendar has no half-days, so a fractional delay had to become something. It became <code><a href="https://rdrr.io/r/base/Round.html" class="external-link">round()</a></code> – round-half-to-<em>even</em>, so <code>2.5</code> went down and <code>3.5</code> went up, silently – while the numeric axis refused the same value outright.</p>
 <ul><li>
-<code>censor_reporting_delays(to_delay =)</code>, <code>censor_validation_delays(to_delay =)</code> and <code>tbl_now(delay =)</code> now <strong>abort</strong> on a delay that is not a whole number of the axis’s units, on every axis. Round it yourself if that is what you mean.</li>
+<code>censor_reporting_delays(to_delay =)</code>, <code>censor_revision_delays(to_delay =)</code> and <code>tbl_now(delay =)</code> now <strong>abort</strong> on a delay that is not a whole number of the axis’s units, on every axis. Round it yourself if that is what you mean.</li>
 <li>
 <code><a href="../reference/validate_tbl_now.html">validate_tbl_now()</a></code> <strong>warns</strong> when an object’s <code>.delay</code> is fractional; it was a <code><a href="../reference/diagnose.html">diagnose()</a></code>-only note. The remaining way in is two date columns on different weekday grids, which is exactly what <code><a href="../reference/align_weeks.html">align_weeks()</a></code> fixes – so this stays a warning rather than an error, and the object you need to hand to <code><a href="../reference/align_weeks.html">align_weeks()</a></code> can still be built.</li>
 </ul></div>
@@ -368,7 +376,7 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 <span><span class="va">hai</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/aggregate_time_units.html">aggregate_time_units</a></span><span class="op">(</span>to <span class="op">=</span> <span class="st">"weeks"</span><span class="op">)</span></span></code></pre></div>
 <ul><li>Counts are <strong>added up</strong>, not merely relabelled. <code>count-cumulative</code> totals are de-accumulated first, aggregated as increments and accumulated again on the new grid, because a cumulative total is not additive.</li>
 <li>
-<code>axes =</code> picks which axes move (<code>"all"</code>, <code>"event"</code>, <code>"report"</code>, <code>"validation"</code>), and <code>label =</code> picks whether a period is named by its first or its last day. Use <code>label = "end"</code> when you coarsen only a later axis, or a report lands before its own event.</li>
+<code>axes =</code> picks which axes move (<code>"all"</code>, <code>"event"</code>, <code>"report"</code>, <code>"revision"</code>), and <code>label =</code> picks whether a period is named by its first or its last day. Use <code>label = "end"</code> when you coarsen only a later axis, or a report lands before its own event.</li>
 <li>Weeks go through the same epi/ISO machinery as <code><a href="../reference/align_weeks.html">align_weeks()</a></code>, so <code>type</code> and <code>align_on_day</code> mean what they mean there.</li>
 <li>It only ever coarsens: asking a weekly object for <code>"days"</code> is an error, not a guess. So is aggregating a <code>numeric</code> axis, which has no calendar.</li>
 <li>Weeks do <strong>not</strong> nest inside months. Aggregating to weeks and then to months is not the same as going straight to months; aggregate once, to the unit you want.</li>
@@ -392,16 +400,16 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 <td><code><a href="../reference/censoring.html">censor_reporting_delays()</a></code></td>
 <td><code><a href="../reference/censoring.html">censor_reporting_delays_above()</a></code></td>
 </tr><tr><td>
-<strong>validation</strong> (<code>is_censored_validation</code>)</td>
-<td><code><a href="../reference/censoring.html">censor_validations()</a></code></td>
-<td><code><a href="../reference/censoring.html">censor_validation_delays()</a></code></td>
-<td><code><a href="../reference/censoring.html">censor_validation_delays_above()</a></code></td>
+<strong>revision</strong> (<code>is_censored_revision</code>)</td>
+<td><code><a href="../reference/censoring.html">censor_revisions()</a></code></td>
+<td><code><a href="../reference/censoring.html">censor_revision_delays()</a></code></td>
+<td><code><a href="../reference/censoring.html">censor_revision_delays_above()</a></code></td>
 </tr></tbody></table><ul><li>
 <code>censor_delays_above()</code> is renamed <strong><code><a href="../reference/censoring.html">censor_reporting_delays_above()</a></code></strong> and <code>censor_delays()</code> (added earlier in this release, never shipped) is renamed <strong><code><a href="../reference/censoring.html">censor_reporting_delays()</a></code></strong>, so every name says which axis it moves. Their behaviour is unchanged, and the <code>_above()</code> help now says plainly that it considers as censored <strong>every</strong> delay longer than <code>max_delay</code>.</li>
 <li>
-<code><a href="../reference/censoring.html">censor_validations()</a></code> and <code><a href="../reference/censoring.html">censor_validation_delays()</a></code> are new: the validation-axis twins of <code><a href="../reference/censoring.html">censor_reports()</a></code> and <code><a href="../reference/censoring.html">censor_reporting_delays()</a></code>.</li>
+<code><a href="../reference/censoring.html">censor_revisions()</a></code> and <code><a href="../reference/censoring.html">censor_revision_delays()</a></code> are new: the revision-axis twins of <code><a href="../reference/censoring.html">censor_reports()</a></code> and <code><a href="../reference/censoring.html">censor_reporting_delays()</a></code>.</li>
 <li>All six are documented together on <code><a href="../reference/censoring.html">?censoring</a></code>.</li>
-</ul><p><strong><code>"pending"</code> cases are skipped when a validation date would be written</strong>, with a warning saying how many. A pending case is reported and still waiting, so it has no resolution date; writing one would assert a resolution that never happened and make the case look resolved to everything counting arrivals on that axis. Set <code>validation_type</code> to <code>"confirmed"</code> or <code>"retracted"</code> first if the case really was resolved. Flagging without a replacement is unaffected – no date is written, so nothing is contradicted.</p>
+</ul><p><strong><code>"pending"</code> cases are skipped when a revision date would be written</strong>, with a warning saying how many. A pending case is reported and still waiting, so it has no resolution date; writing one would assert a resolution that never happened and make the case look resolved to everything counting arrivals on that axis. Set <code>revision_type</code> to <code>"confirmed"</code> or <code>"retracted"</code> first if the case really was resolved. Flagging without a replacement is unaffected – no date is written, so nothing is contradicted.</p>
 <ul><li>
 <code>NA</code> is not a match: a condition that cannot be evaluated on a row is not a condition that row met.</li>
 <li>Existing censoring flags are merged, never cleared, and the flag column is created as <code>.is_censored_report</code> when the object has none.</li>
@@ -410,7 +418,7 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 </div>
 <div class="section level3">
 <h3 id="new-one-units-argument-instead-of-three-0-30-0">New: one <code>units</code> argument instead of three (#58)<a class="anchor" aria-label="anchor" href="#new-one-units-argument-instead-of-three-0-30-0"></a></h3>
-<p><code><a href="../reference/tbl_now.html">tbl_now()</a></code> gains <code>units</code>, the shared default for <code>event_units</code>, <code>report_units</code> and <code>validation_units</code>:</p>
+<p><code><a href="../reference/tbl_now.html">tbl_now()</a></code> gains <code>units</code>, the shared default for <code>event_units</code>, <code>report_units</code> and <code>revision_units</code>:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span>, event_date <span class="op">=</span> <span class="va">specimen_date</span>, report_date <span class="op">=</span> <span class="va">report_date</span>,</span>
 <span>        strata <span class="op">=</span> <span class="va">sex</span>, data_type <span class="op">=</span> <span class="st">"linelist"</span>, units <span class="op">=</span> <span class="st">"days"</span><span class="op">)</span></span></code></pre></div>
@@ -422,7 +430,7 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 <code><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by()</a></code> (with no grouping variables), <code><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise()</a></code> and <code><a href="https://dplyr.tidyverse.org/reference/reframe.html" class="external-link">reframe()</a></code> copied the <strong>event</strong> units onto the report axis when rebuilding, so a mixed-unit object silently became a uniform one. They now carry <code>report_units</code> across.</li>
 <li>
 <code>infer_units()</code> on a column with a single distinct date warned about <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code> returning <code>Inf</code> before aborting with an unrelated message. It now says which column it is, and points at <code>units</code>.</li>
-<li>Censoring a grouped <code>tbl_now</code> aborted inside <code><a href="../reference/add.html">add_is_censored_report()</a></code> / <code><a href="../reference/add.html">add_is_censored_validation()</a></code>, which refuse a <code>grouped_tbl_now</code>. All four censoring verbs – <code><a href="../reference/censoring.html">censor_reports()</a></code>, <code><a href="../reference/censoring.html">censor_reporting_delays()</a></code>, <code><a href="../reference/censoring.html">censor_reporting_delays_above()</a></code> and <code><a href="../reference/censoring.html">censor_validation_delays_above()</a></code> – now ungroup, work, and put the grouping back.</li>
+<li>Censoring a grouped <code>tbl_now</code> aborted inside <code><a href="../reference/add.html">add_is_censored_report()</a></code> / <code><a href="../reference/add.html">add_is_censored_revision()</a></code>, which refuse a <code>grouped_tbl_now</code>. All four censoring verbs – <code><a href="../reference/censoring.html">censor_reports()</a></code>, <code><a href="../reference/censoring.html">censor_reporting_delays()</a></code>, <code><a href="../reference/censoring.html">censor_reporting_delays_above()</a></code> and <code><a href="../reference/censoring.html">censor_revision_delays_above()</a></code> – now ungroup, work, and put the grouping back.</li>
 <li>The two censoring axes share one implementation of “merge this flag in without un-censoring anything”, rather than a copy each.</li>
 <li>
 <strong>Demotion is now one operation.</strong> Dropping a protected column returns a plain tibble, and that used to be <code><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble()</a></code> – which leaves unknown attributes alone on a tibble but rebuilds a <code>grouped_df</code> and drops them. So a demoted object kept the class’s attributes, or lost them, according to whether the caller had grouped it. It now strips them explicitly, either way.</li>
@@ -462,37 +470,37 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 <td><code>.is_censored_report</code></td>
 </tr></tbody></table></div>
 <div class="section level3">
-<h3 id="new-is_censored_validation-the-validation-axis-censoring-flag-0-29-0">New: <code>is_censored_validation</code>, the validation-axis censoring flag (#53)<a class="anchor" aria-label="anchor" href="#new-is_censored_validation-the-validation-axis-censoring-flag-0-29-0"></a></h3>
-<p>The twin of <code>is_censored_report</code>, for models that use censored validation delays. It marks rows whose time from report to resolution is a <strong>bound</strong> rather than a measurement.</p>
+<h3 id="new-is_censored_revision-the-revision-axis-censoring-flag-0-29-0">New: <code>is_censored_revision</code>, the revision-axis censoring flag (#53)<a class="anchor" aria-label="anchor" href="#new-is_censored_revision-the-revision-axis-censoring-flag-0-29-0"></a></h3>
+<p>The twin of <code>is_censored_report</code>, for models that use censored revision delays. It marks rows whose time from report to resolution is a <strong>bound</strong> rather than a measurement.</p>
 <ul><li>
-<code>tbl_now(is_censored_validation = )</code>, <code><a href="../reference/nowcast_data_getters.html">get_is_censored_validation()</a></code>, <code><a href="../reference/add.html">add_is_censored_validation()</a></code>, <code><a href="../reference/add.html">change_is_censored_validation()</a></code>, <code><a href="../reference/add.html">remove_is_censored_validation()</a></code>. It requires a <code>validation_date</code>: there is no validation delay to bound without one.</li>
+<code>tbl_now(is_censored_revision = )</code>, <code><a href="../reference/nowcast_data_getters.html">get_is_censored_revision()</a></code>, <code><a href="../reference/add.html">add_is_censored_revision()</a></code>, <code><a href="../reference/add.html">change_is_censored_revision()</a></code>, <code><a href="../reference/add.html">remove_is_censored_revision()</a></code>. It requires a <code>revision_date</code>: there is no revision delay to bound without one.</li>
 <li>The column is protected, is carried through every <code>dplyr</code> verb and through <code><a href="../reference/to_count.html">to_count()</a></code>, <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code> and <code><a href="../reference/align_weeks.html">align_weeks()</a></code>, and joins the grouping keys – a censored resolution and an exact one on the same <code>(event, report, outcome)</code> triple stay two rows rather than being summed into one.</li>
 </ul><div class="section level4">
-<h4 id="breaking-censor_validation_delays_above-flags-instead-of-erasing-0-29-0">Breaking: <code>censor_validation_delays_above()</code> flags instead of erasing<a class="anchor" aria-label="anchor" href="#breaking-censor_validation_delays_above-flags-instead-of-erasing-0-29-0"></a></h4>
-<p>It used to set the offending rows’ <code>validation_type</code> to <code>"pending"</code> and delete their validation date. That was wrong: a case confirmed after 200 days is still a confirmed case, and the object should say so. It now sets <code>is_censored_validation</code> and leaves the date and the outcome alone, exactly as <code><a href="../reference/censoring.html">censor_reporting_delays_above()</a></code> does on the report axis. <code>get_latest_confirmed()</code> therefore still counts those cases.</p>
+<h4 id="breaking-censor_revision_delays_above-flags-instead-of-erasing-0-29-0">Breaking: <code>censor_revision_delays_above()</code> flags instead of erasing<a class="anchor" aria-label="anchor" href="#breaking-censor_revision_delays_above-flags-instead-of-erasing-0-29-0"></a></h4>
+<p>It used to set the offending rows’ <code>revision_type</code> to <code>"pending"</code> and delete their revision date. That was wrong: a case confirmed after 200 days is still a confirmed case, and the object should say so. It now sets <code>is_censored_revision</code> and leaves the date and the outcome alone, exactly as <code><a href="../reference/censoring.html">censor_reporting_delays_above()</a></code> does on the report axis. <code>get_latest_confirmed()</code> therefore still counts those cases.</p>
 </div>
 </div>
 <div class="section level3">
-<h3 id="new-validation_levels-for-data-not-recorded-in-english-0-29-0">New: <code>validation_levels</code>, for data not recorded in English (#54)<a class="anchor" aria-label="anchor" href="#new-validation_levels-for-data-not-recorded-in-english-0-29-0"></a></h3>
-<p><code>validation_type</code> may hold only <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code> or <code>NA</code> – that was already enforced, and the error now names the way out. <code>tbl_now(validation_levels = )</code> is that way out: a named dictionary whose names are the labels in your data and whose values are the canonical four.</p>
+<h3 id="new-revision_levels-for-data-not-recorded-in-english-0-29-0">New: <code>revision_levels</code>, for data not recorded in English (#54)<a class="anchor" aria-label="anchor" href="#new-revision_levels-for-data-not-recorded-in-english-0-29-0"></a></h3>
+<p><code>revision_type</code> may hold only <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code> or <code>NA</code> – that was already enforced, and the error now names the way out. <code>tbl_now(revision_levels = )</code> is that way out: a named dictionary whose names are the labels in your data and whose values are the canonical four.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">casos</span>,</span>
-<span>  validation_type   <span class="op">=</span> <span class="va">desenlace</span>,</span>
-<span>  validation_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  revision_type   <span class="op">=</span> <span class="va">desenlace</span>,</span>
+<span>  revision_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    confirmado <span class="op">=</span> <span class="st">"confirmed"</span>, retractado <span class="op">=</span> <span class="st">"retracted"</span>, pendiente <span class="op">=</span> <span class="st">"pending"</span></span>
 <span>  <span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The column is rewritten to the canonical values; the dictionary is kept on the object and read back with <code><a href="../reference/nowcast_data_getters.html">get_validation_levels()</a></code>. A dictionary that would recode a canonical value into a different one is refused, because it would flip the column on every rebuild.</p>
+<p>The column is rewritten to the canonical values; the dictionary is kept on the object and read back with <code><a href="../reference/nowcast_data_getters.html">get_revision_levels()</a></code>. A dictionary that would recode a canonical value into a different one is refused, because it would flip the column on every rebuild.</p>
 </div>
 <div class="section level3">
 <h3 id="fixed-change_now-re-censors-instead-of-erroring-0-29-0">Fixed: <code>change_now()</code> re-censors instead of erroring (#51)<a class="anchor" aria-label="anchor" href="#fixed-change_now-re-censors-instead-of-erroring-0-29-0"></a></h3>
-<p>Moving <code>now</code> <strong>backwards</strong> is what <code><a href="../reference/add.html">change_now()</a></code> is for – it is how a backtest walks through time. On an object carrying a validation process it aborted for every <code>now</code> earlier than the last validation, which is nearly every historical as-of date.</p>
-<p>It now masks validations dated after the new <code>now</code>: the validation date becomes <code>NA</code> and the outcome returns to <code>"pending"</code>, because a resolution that has not happened yet is not a resolution. <code><a href="../reference/add.html">change_now()</a></code> and <code><a href="../reference/add.html">update_now()</a></code> gain <code>verbose</code> to silence the report of how many rows were masked.</p>
+<p>Moving <code>now</code> <strong>backwards</strong> is what <code><a href="../reference/add.html">change_now()</a></code> is for – it is how a backtest walks through time. On an object carrying a revision process it aborted for every <code>now</code> earlier than the last revision, which is nearly every historical as-of date.</p>
+<p>It now masks revisions dated after the new <code>now</code>: the revision date becomes <code>NA</code> and the outcome returns to <code>"pending"</code>, because a resolution that has not happened yet is not a resolution. <code><a href="../reference/add.html">change_now()</a></code> and <code><a href="../reference/add.html">update_now()</a></code> gain <code>verbose</code> to silence the report of how many rows were masked.</p>
 </div>
 <div class="section level3">
-<h3 id="covid_us-carries-a-validation-process-0-29-0">
-<code>covid_us</code> carries a validation process (#52)<a class="anchor" aria-label="anchor" href="#covid_us-carries-a-validation-process-0-29-0"></a></h3>
+<h3 id="covid_us-carries-a-revision-process-0-29-0">
+<code>covid_us</code> carries a revision process (#52)<a class="anchor" aria-label="anchor" href="#covid_us-carries-a-revision-process-0-29-0"></a></h3>
 <p>No shipped dataset had one, so every example fabricated an outcome by row position. <code>covid_us</code> is rebuilt from the same CDC source with the two date columns that were being left on the floor, and it now runs onset -&gt; positive specimen -&gt; registration at CDC:</p>
 <table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>was</th>
 <th>is</th>
@@ -500,70 +508,70 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 <code>cdc_case_earliest_dt</code>, <code>cdc_report_dt</code>, <code>n</code> (2020-2021)</td>
 <td>
 <code>onset_dt</code>, <code>pos_spec_dt</code>, <code>cdc_report_dt</code>, <code>current_status</code>, <code>sex</code>, <code>n</code> (2020)</td>
-</tr></tbody></table><p><code>cdc_case_earliest_dt</code> is CDC-derived and equals <code>onset_dt</code> for 99.997% of the rows kept, so it is gone as redundant; <code>sex</code> is a stratum, and <code>current_status</code> is the validation outcome – in CDC’s own words, so that mapping it is a worked example of <code>validation_levels</code>. The relationship between outcome and validation delay is real rather than fabricated: probable cases are registered a median of 2 days after the specimen, laboratory-confirmed ones 4 days. CDC does not withdraw cases, so <code>"retracted"</code> does not occur.</p>
+</tr></tbody></table><p><code>cdc_case_earliest_dt</code> is CDC-derived and equals <code>onset_dt</code> for 99.997% of the rows kept, so it is gone as redundant; <code>sex</code> is a stratum, and <code>current_status</code> is the revision outcome – in CDC’s own words, so that mapping it is a worked example of <code>revision_levels</code>. The relationship between outcome and revision delay is real rather than fabricated: probable cases are registered a median of 2 days after the specimen, laboratory-confirmed ones 4 days. CDC does not withdraw cases, so <code>"retracted"</code> does not occur.</p>
 </div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.28.0" id="tblnow-0280">tbl.now 0.28.0<a class="anchor" aria-label="anchor" href="#tblnow-0280"></a></h2>
 <div class="section level3">
-<h3 id="breaking-the-confirmation-process-is-now-the-validation-process-0-28-0">Breaking: the confirmation process is now the validation process<a class="anchor" aria-label="anchor" href="#breaking-the-confirmation-process-is-now-the-validation-process-0-28-0"></a></h3>
-<p>The optional third date a <code>tbl_now</code> can carry is called a <strong>validation</strong> rather than a confirmation, throughout. The old spelling is gone, not deprecated – it had not shipped.</p>
+<h3 id="breaking-the-confirmation-process-is-now-the-revision-process-0-28-0">Breaking: the confirmation process is now the revision process<a class="anchor" aria-label="anchor" href="#breaking-the-confirmation-process-is-now-the-revision-process-0-28-0"></a></h3>
+<p>The optional third date a <code>tbl_now</code> can carry is called a <strong>revision</strong> rather than a confirmation, throughout. The old spelling is gone, not deprecated – it had not shipped.</p>
 <table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>was</th>
 <th>is</th>
 </tr></thead><tbody><tr><td>
 <code>add_confirmation()</code>, <code>change_confirmation()</code>, <code>remove_confirmation()</code>
 </td>
 <td>
-<code><a href="../reference/add.html">add_validation_date()</a></code>, <code><a href="../reference/add.html">change_validation_date()</a></code>, <code><a href="../reference/add.html">remove_validation_date()</a></code>
+<code><a href="../reference/add.html">add_revision_date()</a></code>, <code><a href="../reference/add.html">change_revision_date()</a></code>, <code><a href="../reference/add.html">remove_revision_date()</a></code>
 </td>
 </tr><tr><td>
 <code>get_confirmation_date()</code>, <code>get_confirmation_type()</code>, <code>get_confirmation_units()</code>, <code>has_confirmation()</code>
 </td>
 <td>
-<code><a href="../reference/nowcast_data_getters.html">get_validation_date()</a></code>, <code><a href="../reference/nowcast_data_getters.html">get_validation_type()</a></code>, <code><a href="../reference/nowcast_data_getters.html">get_validation_units()</a></code>, <code><a href="../reference/nowcast_data_getters.html">has_validation()</a></code>
+<code><a href="../reference/nowcast_data_getters.html">get_revision_date()</a></code>, <code><a href="../reference/nowcast_data_getters.html">get_revision_type()</a></code>, <code><a href="../reference/nowcast_data_getters.html">get_revision_units()</a></code>, <code><a href="../reference/nowcast_data_getters.html">has_revision()</a></code>
 </td>
 </tr><tr><td>
 <code>confirmation_counts</code>, <code>confirmation_delay</code>
 </td>
 <td>
-<code>validation_counts</code>, <code>validation_delay</code>
+<code>revision_counts</code>, <code>revision_delay</code>
 </td>
 </tr><tr><td>
 <code>censor_confirmation_delays_above()</code>, <code>diagnose_confirmation_delay()</code>
 </td>
 <td>
-<code><a href="../reference/censoring.html">censor_validation_delays_above()</a></code>, <code><a href="../reference/validation_delay.html">diagnose_validation_delay()</a></code>
+<code><a href="../reference/censoring.html">censor_revision_delays_above()</a></code>, <code><a href="../reference/revision_delay.html">diagnose_revision_delay()</a></code>
 </td>
 </tr><tr><td>
 <code>plot_confirmation_delay()</code>, <code>plot_confirmation_status()</code>, <code>prop_confirmation_type()</code>
 </td>
 <td>
-<code><a href="../reference/validation_delay.html">plot_validation_delay()</a></code>, <code><a href="../reference/plot_validation_status.html">plot_validation_status()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_validation_type()</a></code>
+<code><a href="../reference/revision_delay.html">plot_revision_delay()</a></code>, <code><a href="../reference/plot_revision_status.html">plot_revision_status()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_revision_type()</a></code>
 </td>
 </tr><tr><td>
 <code>confirmation_date</code>, <code>confirmation_type</code>, <code>confirmation_units</code> arguments</td>
 <td>
-<code>validation_date</code>, <code>validation_type</code>, <code>validation_units</code>
+<code>revision_date</code>, <code>revision_type</code>, <code>revision_units</code>
 </td>
 </tr><tr><td>
 <code>.confirmation_num</code>, <code>.confirmation_delay</code> columns</td>
 <td>
-<code>.validation_num</code>, <code>.validation_delay</code>
+<code>.revision_num</code>, <code>.revision_delay</code>
 </td>
 </tr><tr><td><code>axis = "confirmation"</code></td>
-<td><code>axis = "validation"</code></td>
+<td><code>axis = "revision"</code></td>
 </tr><tr><td>
 <code>"event_to_confirmation"</code>, <code>"report_to_confirmation"</code>
 </td>
 <td>
-<code>"event_to_validation"</code>, <code>"report_to_validation"</code>
+<code>"event_to_revision"</code>, <code>"report_to_revision"</code>
 </td>
-</tr></tbody></table><p>The <strong>outcome values are unchanged</strong>: a case is still <code>"confirmed"</code>, <code>"retracted"</code> or <code>"pending"</code>. Validation is what the process does; confirmed is one of the things it can conclude.</p>
+</tr></tbody></table><p>The <strong>outcome values are unchanged</strong>: a case is still <code>"confirmed"</code>, <code>"retracted"</code> or <code>"pending"</code>. Revision is what the process does; confirmed is one of the things it can conclude.</p>
 <p><code>diseasenowcasting::confirmation_process()</code> is that package’s name and is untouched – <code>model(confirmation = confirmation_process())</code> still reads exactly as it did.</p>
 </div>
 <div class="section level3">
 <h3 id="documentation-fewer-fuller-reference-pages-0-28-0">Documentation: fewer, fuller reference pages<a class="anchor" aria-label="anchor" href="#documentation-fewer-fuller-reference-pages-0-28-0"></a></h3>
-<ul><li>The validation getters now live on <code><a href="../reference/nowcast_data_getters.html">?nowcast_data_getters</a></code>, next to <code><a href="../reference/nowcast_data_getters.html">get_event_date()</a></code>, and the validation setters on <code><a href="../reference/add.html">?add</a></code>, next to <code><a href="../reference/add.html">change_event_date()</a></code>. Someone asking “what did this object record, and how do I change it” now finds every answer on one page instead of four.</li>
+<ul><li>The revision getters now live on <code><a href="../reference/nowcast_data_getters.html">?nowcast_data_getters</a></code>, next to <code><a href="../reference/nowcast_data_getters.html">get_event_date()</a></code>, and the revision setters on <code><a href="../reference/add.html">?add</a></code>, next to <code><a href="../reference/add.html">change_event_date()</a></code>. Someone asking “what did this object record, and how do I change it” now finds every answer on one page instead of four.</li>
 <li>
 <em>Describing and diagnosing a tbl_now</em> and <em>Diagnosing reporting batches</em> are now <strong>one article</strong>, <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html"><em>Diagnosing a tbl_now</em></a>, running structure-first: what is in the data (<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>), what is structurally wrong with it (<code><a href="../reference/diagnose.html">diagnose()</a></code>), and then the statistical tests <code><a href="../reference/diagnose.html">diagnose()</a></code> signposts but refuses to run.</li>
 <li>The attribute diagrams in the README now appear on the pkgdown site. They lived in <code>inst/figures/</code>, which pkgdown does not copy; <code>man/figures/</code> is the directory it publishes, and GitHub renders it just as happily.</li>
@@ -1349,7 +1357,7 @@ i Declare it with `add_strata()` to nowcast it separately.</code></pre>
 <p>The report-batch detectors were rebuilt on a single, exact principle: <strong>a batch moves reports along the report axis without creating them</strong>, so a window of report dates spanning both the lull and the release has an unchanged total, whereas a genuine epidemic surge inflates it. The previous heuristic <code>detect_report_batches()</code> / <code>plot_report_batches()</code> (multi-signal robust-z, and the model-based conditional scan) are <strong>removed</strong> and replaced by three model-free, <code>r lifecycle::badge("experimental")</code> functions. Each derives its mathematics in a <strong>“The mathematics”</strong> section of its help page.</p>
 <ul><li>New <code>batch_test()</code> returns, per (report date, stratum), the <code>deficit</code> (reports missing beforehand — sensitive to a batch) and <code>delta</code> (the window total minus its expected value — sensitive to a real surge), and classifies each date as <code>"batch"</code>, <code>"surge"</code>, <code>"batch_and_surge"</code>, <code>"hold_or_deletion"</code> or <code>"none"</code>. The transport (batch) test conditions on the window total, so its size does not depend on the unknown incidence nor on the quality of the baseline; the baseline itself is refit from report dates <em>outside</em> each candidate window, which makes <code>delta</code> invariant to a within-window batch pathwise. It handles all data types, including <code>"count-cumulative"</code> (signed increments), and takes a <code>period</code> argument that absorbs a fixed reporting schedule (weekends, holidays).</li>
 <li>New <code>batch_shape_test()</code> tests whether a flagged report date drew on unusually <em>old</em> event dates, by a permutation rank-sum on the reporting delays. It is exactly distribution-free whenever incidence is locally log-linear.</li>
-<li>New <code><a href="../reference/simulate_batch.html">simulate_batch()</a></code> plants a known batch (a deterministic close-and-release) in a <code>tbl_now</code>, for validation and teaching.</li>
+<li>New <code><a href="../reference/simulate_batch.html">simulate_batch()</a></code> plants a known batch (a deterministic close-and-release) in a <code>tbl_now</code>, for revision and teaching.</li>
 <li>New <strong>Batch detection</strong> article, with worked examples on dengue (a planted batch), FluSight (count-cumulative), and a weekend reporting schedule.</li>
 </ul></div>
 </div>

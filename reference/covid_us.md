@@ -2,7 +2,7 @@
 
 A compact aggregation of the U.S. CDC's individual-level COVID-19 case
 surveillance database. It is the package's worked example for two
-different things: **batch reporting**, and the **validation process** –
+different things: **batch reporting**, and the **revision process** –
 the optional third date a surveillance record can carry.
 
 ## Usage
@@ -25,13 +25,13 @@ A data frame with 192,953 rows and six variables:
 
 - cdc_report_dt:
 
-  `Date`. The validation date – when the case was registered at CDC.
+  `Date`. The revision date – when the case was registered at CDC.
 
 - current_status:
 
   `character`. CDC's classification, either
   `"Laboratory-confirmed case"` or `"Probable Case"`. Map it with
-  `validation_levels` (see above).
+  `revision_levels` (see above).
 
 - sex:
 
@@ -77,14 +77,14 @@ knows about:
 
 - `cdc_report_dt`:
 
-  the **validation** – the case is registered at CDC with a status.
+  the **revision** – the case is registered at CDC with a status.
 
-## `current_status` and `validation_levels`
+## `current_status` and `revision_levels`
 
 `current_status` is kept in CDC's own words rather than recoded, because
-translating it is exactly what `tbl_now(validation_levels = )` is for:
+translating it is exactly what `tbl_now(revision_levels = )` is for:
 
-    validation_levels = c(
+    revision_levels = c(
       "Laboratory-confirmed case" = "confirmed",
       "Probable Case"             = "pending"
     )
@@ -95,10 +95,10 @@ here has a positive specimen, so "probable" means the specimen was
 collected and the case was never laboratory-settled – `"pending"` in
 this package's vocabulary. Note what is **not** there: CDC does not
 withdraw cases, so `"retracted"` does not occur in this dataset. It is a
-two-outcome validation process, and code that needs a retraction has to
+two-outcome revision process, and code that needs a retraction has to
 look elsewhere.
 
-The relationship between the outcome and the validation delay is real
+The relationship between the outcome and the revision delay is real
 rather than fabricated: probable cases are registered a median of 2 days
 after the specimen, laboratory-confirmed ones 4 days.
 
@@ -123,9 +123,9 @@ recover.
 
 [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
 to declare the date columns;
-[add_validation_date()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+[add_revision_date()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 to attach the third one to an object that has none;
-[validated_cases](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
+[revised_cases](https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.md)
 to count the outcomes;
 [summary()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.md)
 and
@@ -188,9 +188,9 @@ tn3 <- tbl_now(
   covid_us,
   event_date       = onset_dt,
   report_date      = pos_spec_dt,
-  validation_date  = cdc_report_dt,
-  validation_type  = current_status,
-  validation_levels = c(
+  revision_date  = cdc_report_dt,
+  revision_type  = current_status,
+  revision_levels = c(
     "Laboratory-confirmed case" = "confirmed",
     "Probable Case"             = "pending"
   ),
@@ -199,9 +199,9 @@ tn3 <- tbl_now(
   data_type  = "count-incidence",
   verbose    = FALSE
 )
-has_validation(tn3)
+has_revision(tn3)
 #> [1] TRUE
-get_validation_levels(tn3)
+get_revision_levels(tn3)
 #> Laboratory-confirmed case             Probable Case 
 #>               "confirmed"                 "pending" 
 
@@ -223,24 +223,24 @@ head(get_latest_reported_cases(tn3))
 #> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
 #> # Strata: "sex"
 #> # ────────────────────────────────────────────────────────────────────────────────
-head(get_latest_validated_cases(tn3, type = "confirmed"))
+head(get_latest_revised_cases(tn3, type = "confirmed"))
 #> # A tibble:  6 × 11
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
-#>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt     sex     
-#>   <date>       <date>             <dbl>       <dbl> <date>            <chr>   
-#>   [event_date] [report_date]      [...]       [...] [validation_date] [strata]
-#> 1 2020-01-01   2020-09-04             0         247 2020-09-07        Female  
-#> 2 2020-01-01   2020-07-08             0         189 2020-08-17        Male    
-#> 3 2020-01-03   2020-04-24             2         114 2020-05-03        Female  
-#> 4 2020-01-03   2020-03-31             2          90 2020-04-05        Male    
-#> 5 2020-01-04   2020-07-06             3         187 2020-09-12        Male    
-#> 6 2020-01-04   2020-09-14             3         257 2020-09-24        Unknown 
+#>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt   sex     
+#>   <date>       <date>             <dbl>       <dbl> <date>          <chr>   
+#>   [event_date] [report_date]      [...]       [...] [revision_date] [strata]
+#> 1 2020-01-01   2020-09-04             0         247 2020-09-07      Female  
+#> 2 2020-01-01   2020-07-08             0         189 2020-08-17      Male    
+#> 3 2020-01-03   2020-04-24             2         114 2020-05-03      Female  
+#> 4 2020-01-03   2020-03-31             2          90 2020-04-05      Male    
+#> 5 2020-01-04   2020-07-06             3         187 2020-09-12      Male    
+#> 6 2020-01-04   2020-09-14             3         257 2020-09-24      Unknown 
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
-#> # Validation date: "cdc_report_dt" ("days") | resolved: 6/6
+#> # Revision date: "cdc_report_dt" ("days") | resolved: 6/6
 #> # Strata: "sex"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 5 more variables: current_status <chr>, n <dbl>, .delay <dbl>,
-#> #   .validation_num <dbl>, .validation_delay <dbl>
+#> #   .revision_num <dbl>, .revision_delay <dbl>
 ```

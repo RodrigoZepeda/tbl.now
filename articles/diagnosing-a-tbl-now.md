@@ -291,7 +291,7 @@ The full set is
 [`delay_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`zero_run_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`prop_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`prop_revision_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`date_ranges()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
@@ -347,7 +347,7 @@ diagnose(dengue_now)
 #> ℹ truncation/event_date: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
 #> 
 #> ✔ 15 passed: declarations/temporal_effects, declarations/undeclared, missing/gender, missing/onset_week, missing/report_week, now/event_date, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, units/declared, units/delay, units/event_grid, and units/report_grid
-#> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_validation, ordering/report_to_validation, and strata/pending
+#> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_revision, ordering/report_to_revision, and strata/pending
 #> 
 #> ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 ```
@@ -412,16 +412,16 @@ diagnose(dengue_now) |>
   filter(status == "skipped") |>
   select(check, scope, message)
 #> # A tibble: 5 × 3
-#>   check      scope                message                                                                               
-#>   <chr>      <chr>                <chr>                                                                                 
-#> 1 duplicates key                  A line list is one row per case, so identical rows are two cases rather than a repeat.
-#> 2 negatives  count                A line list has no count column to go negative.                                       
-#> 3 ordering   event_to_validation  The object carries no validation process.                                             
-#> 4 ordering   report_to_validation The object carries no validation process.                                             
-#> 5 strata     pending              The object carries no validation process.
+#>   check      scope              message                                                                               
+#>   <chr>      <chr>              <chr>                                                                                 
+#> 1 duplicates key                A line list is one row per case, so identical rows are two cases rather than a repeat.
+#> 2 negatives  count              A line list has no count column to go negative.                                       
+#> 3 ordering   event_to_revision  The object carries no revision process.                                               
+#> 4 ordering   report_to_revision The object carries no revision process.                                               
+#> 5 strata     pending            The object carries no revision process.
 ```
 
-`dengue_now` is a line list with no validation process, so four checks
+`dengue_now` is a line list with no revision process, so four checks
 have nothing to work on. None of them is a pass. Reporting them as `ok`
 would be a quiet lie, and this is the single most common way a health
 check misleads: silence that reads as approval.

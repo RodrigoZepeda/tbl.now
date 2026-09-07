@@ -85,6 +85,8 @@ every role below – the plots validate it and name what is missing.</p>
 <span>  epidemic_light <span class="op">=</span> <span class="st">"#A8BFA9"</span>,</span>
 <span>  epidemic_mid <span class="op">=</span> <span class="st">"#7A9E7E"</span>,</span>
 <span>  epidemic_dark <span class="op">=</span> <span class="st">"#334335"</span>,</span>
+<span>  revision <span class="op">=</span> <span class="st">"#C79800"</span>,</span>
+<span>  revision_light <span class="op">=</span> <span class="st">"#E6CE80"</span>,</span>
 <span>  ink <span class="op">=</span> <span class="st">"#262626"</span>,</span>
 <span>  ink_muted <span class="op">=</span> <span class="st">"#607060"</span>,</span>
 <span>  ink_inverse <span class="op">=</span> <span class="st">"#FFFFFF"</span>,</span>
@@ -132,6 +134,14 @@ ramp).</p></dd>
 
 <dt id="arg-epidemic-dark">epidemic_dark<a class="anchor" aria-label="anchor" href="#arg-epidemic-dark"></a></dt>
 <dd><p>Darkest epidemic colour (dense overplotted curves).</p></dd>
+
+
+<dt id="arg-revision">revision<a class="anchor" aria-label="anchor" href="#arg-revision"></a></dt>
+<dd><p>Strong colour of the revision process.</p></dd>
+
+
+<dt id="arg-revision-light">revision_light<a class="anchor" aria-label="anchor" href="#arg-revision-light"></a></dt>
+<dd><p>Attenuated revision colour (box fills).</p></dd>
 
 
 <dt id="arg-ink">ink<a class="anchor" aria-label="anchor" href="#arg-ink"></a></dt>
@@ -210,6 +220,8 @@ the data in the same visual family as the model fitted to it.</p></dd>
 about <strong>when we found out</strong>. Red by default.</p></li>
 <li><p><strong><code>epidemic*</code></strong> – the <em>epidemic</em> process: event dates, case counts,
 anything about <strong>what happened</strong>. Green by default.</p></li>
+<li><p><strong><code>revision*</code></strong> – the <em>revision</em> process: revision dates and
+resolution arrivals. Ochre by default.</p></li>
 </ul><p>A palette that swaps the two hues is fine; a <em>plot</em> that draws delays with an
 <code>epidemic*</code> role is a bug, whatever colour it comes out.</p>
 <p>The remaining roles are furniture — text, gridlines, reference lines and the
@@ -231,6 +243,8 @@ three data states that are not a process (<code>zero</code>, <code>pending</code
 <span class="r-out co"><span class="r-pr">#&gt;</span> epidemic_light   #A8BFA9</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> epidemic_mid     #7A9E7E</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> epidemic_dark    #334335</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> revision         #C79800</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> revision_light   #E6CE80</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ink              #262626</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ink_muted        #607060</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ink_inverse      #FFFFFF</span>
@@ -256,6 +270,8 @@ three data states that are not a process (<code>zero</code>, <code>pending</code
 <span class="r-out co"><span class="r-pr">#&gt;</span> epidemic_light   #A8BFA9</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> epidemic_mid     #7A9E7E</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> epidemic_dark    #334335</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> revision         #C79800</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> revision_light   #E6CE80</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ink              #262626</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ink_muted        #607060</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ink_inverse      #FFFFFF</span>

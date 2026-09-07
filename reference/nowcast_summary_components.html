@@ -13,7 +13,7 @@ cases_per_date() – case counts per date on one axis.
 delay_summary() – the case-weighted delay distribution.
 zero_run_summary() – lengths of the runs of consecutive zero dates.
 prop_censored() – proportion of cases flagged censored.
-prop_validation_type() – proportion of cases per validation outcome.
+prop_revision_type() – proportion of cases per revision outcome.
 prop_strata() – proportion of cases per stratum.
 prop_covariate_levels() – proportion of cases per level of each
 categorical covariate.
@@ -43,7 +43,7 @@ cases_per_date() – case counts per date on one axis.
 delay_summary() – the case-weighted delay distribution.
 zero_run_summary() – lengths of the runs of consecutive zero dates.
 prop_censored() – proportion of cases flagged censored.
-prop_validation_type() – proportion of cases per validation outcome.
+prop_revision_type() – proportion of cases per revision outcome.
 prop_strata() – proportion of cases per stratum.
 prop_covariate_levels() – proportion of cases per level of each
 categorical covariate.
@@ -123,7 +123,7 @@ part of <code><a href="https://rdrr.io/r/base/summary.html" class="external-link
 <li><p><code>delay_summary()</code> – the case-weighted delay distribution.</p></li>
 <li><p><code>zero_run_summary()</code> – lengths of the runs of consecutive zero dates.</p></li>
 <li><p><code>prop_censored()</code> – proportion of cases flagged censored.</p></li>
-<li><p><code>prop_validation_type()</code> – proportion of cases per validation outcome.</p></li>
+<li><p><code>prop_revision_type()</code> – proportion of cases per revision outcome.</p></li>
 <li><p><code>prop_strata()</code> – proportion of cases per stratum.</p></li>
 <li><p><code>prop_covariate_levels()</code> – proportion of cases per level of each
 categorical covariate.</p></li>
@@ -144,28 +144,28 @@ previous one's.</p></li>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">cases_per_date</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
-<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"event"</span>, <span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
+<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"event"</span>, <span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
 <span>  by_strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">delay_summary</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
-<span>  delay <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"event_to_report"</span>, <span class="st">"event_to_validation"</span>, <span class="st">"report_to_validation"</span><span class="op">)</span>,</span>
+<span>  delay <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"event_to_report"</span>, <span class="st">"event_to_revision"</span>, <span class="st">"report_to_revision"</span><span class="op">)</span>,</span>
 <span>  by_strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">zero_run_summary</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
-<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"event"</span>, <span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
+<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"event"</span>, <span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
 <span>  by_strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">prop_censored</span><span class="op">(</span><span class="va">x</span>, by_strata <span class="op">=</span> <span class="cn">NULL</span>, strata <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">prop_validation_type</span><span class="op">(</span><span class="va">x</span>, by_strata <span class="op">=</span> <span class="cn">NULL</span>, strata <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="fu">prop_revision_type</span><span class="op">(</span><span class="va">x</span>, by_strata <span class="op">=</span> <span class="cn">NULL</span>, strata <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">prop_strata</span><span class="op">(</span><span class="va">x</span>, strata <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
@@ -174,7 +174,7 @@ previous one's.</p></li>
 <span><span class="fu">case_autocorrelation</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  lags <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"event"</span>, <span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
+<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"event"</span>, <span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
 <span>  by_strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
@@ -204,7 +204,7 @@ previous one's.</p></li>
 
 <dt id="arg-axis">axis<a class="anchor" aria-label="anchor" href="#arg-axis"></a></dt>
 <dd><p>Which time axis to describe: <code>"event"</code>, <code>"report"</code> or
-<code>"validation"</code>.</p></dd>
+<code>"revision"</code>.</p></dd>
 
 
 <dt id="arg-by-strata">by_strata<a class="anchor" aria-label="anchor" href="#arg-by-strata"></a></dt>
@@ -219,9 +219,9 @@ pooled (<code>"all"</code>) rows. Defaults to <code>TRUE</code> when the object 
 
 <dt id="arg-delay">delay<a class="anchor" aria-label="anchor" href="#arg-delay"></a></dt>
 <dd><p>Which delay to describe: <code>"event_to_report"</code> (the reporting
-delay), <code>"event_to_validation"</code> (the same span measured to the
-validation, so the two are comparable) or <code>"report_to_validation"</code>
-(the laboratory's turnaround, the <code>.validation_delay</code> column).</p></dd>
+delay), <code>"event_to_revision"</code> (the same span measured to the
+revision, so the two are comparable) or <code>"report_to_revision"</code>
+(the laboratory's turnaround, the <code>.revision_delay</code> column).</p></dd>
 
 
 <dt id="arg-lags">lags<a class="anchor" aria-label="anchor" href="#arg-lags"></a></dt>

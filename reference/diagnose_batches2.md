@@ -20,7 +20,7 @@ diagnose_batches2(
   guard = 1L,
   permute = c("items", "blocks"),
   n_permutations = 999L,
-  axis = c("report", "validation"),
+  axis = c("report", "revision"),
   drop_censored = TRUE,
   seed = NULL
 )
@@ -65,18 +65,18 @@ diagnose_batches2(
 - axis:
 
   Which time axis to scan for arrivals: `"report"` (default) or
-  `"validation"`. The question is the same either way – did an unusual
+  `"revision"`. The question is the same either way – did an unusual
   number of records land on this date? – so a laboratory clearing its
   backlog is found exactly as a surveillance system clearing its inbox
-  is. `"validation"` needs a validation process (see
-  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md))
-  and ignores cases that are still `"pending"`, which have no validation
+  is. `"revision"` needs a revision process (see
+  [`add_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md))
+  and ignores cases that are still `"pending"`, which have no revision
   date to arrive on.
 
 - drop_censored:
 
   Logical. Ignore the rows whose date on `axis` is flagged censored
-  (`is_censored_report`, or `is_censored_validation` on the validation
+  (`is_censored_report`, or `is_censored_revision` on the revision
   axis). Default `TRUE`: a censored date is a *bound*, not the date the
   record arrived, so those rows would pile up on the censoring date and
   be rediscovered as the very batch the censoring already recorded.

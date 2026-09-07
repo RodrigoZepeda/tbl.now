@@ -80,7 +80,7 @@ the <code>tbl_now</code> declares strata.</p>
 <span>  max_delay <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span>,</span>
 <span>  plotly <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
+<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
 <span>  size <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  linewidth <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  grid_linewidth <span class="op">=</span> <span class="fl">0.3</span>,</span>
@@ -122,13 +122,11 @@ stacked) instead of a static <span class="pkg">patchwork</span>. Default <code>F
 
 
 <dt id="arg-axis">axis<a class="anchor" aria-label="anchor" href="#arg-axis"></a></dt>
-<dd><p>Which time axis the delay is measured to: <code>"report"</code> (default)
-or <code>"validation"</code>. Both are measured <em>from the event</em>, so the two are
-directly comparable – run each in turn and the gap between them is the
-time the laboratory adds. (This is not the same quantity as the
-<code>.validation_delay</code> column, which is the laboratory's own turnaround,
-measured from the report.) Needs a validation process (see
-<code><a href="add.html">add_validation_date()</a></code>); cases still <code>"pending"</code> are left out.</p></dd>
+<dd><p>Which time axis the delay is measured on: <code>"report"</code> (default)
+or <code>"revision"</code>. Report-axis delays are measured from event to report;
+revision-axis delays are measured from report to revision, the same
+quantity as <code>.revision_delay</code>. Needs a revision process (see
+<code><a href="add.html">add_revision_date()</a></code>); cases still <code>"pending"</code> are left out.</p></dd>
 
 
 <dt id="arg-size">size<a class="anchor" aria-label="anchor" href="#arg-size"></a></dt>

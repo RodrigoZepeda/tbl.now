@@ -26,7 +26,7 @@ diagnose_changepoint(
   mature_only = TRUE,
   level = 0.95,
   alpha = 0.05,
-  axis = c("report", "validation")
+  axis = c("report", "revision")
 )
 ```
 
@@ -73,12 +73,10 @@ diagnose_changepoint(
 - axis:
 
   Which time axis the delay is measured to: `"report"` (default) or
-  `"validation"`. Both are measured *from the event*, so the two are
-  directly comparable – run each in turn and the gap between them is the
-  time the laboratory adds. (This is not the same quantity as the
-  `.validation_delay` column, which is the laboratory's own turnaround,
-  measured from the report.) Needs a validation process (see
-  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
+  `"revision"`. Report-axis delays are measured from event to report;
+  revision-axis delays are measured from report to revision, the same
+  quantity as `.revision_delay`. Needs a revision process (see
+  [`add_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
   cases still `"pending"` are left out.
 
 ## Value

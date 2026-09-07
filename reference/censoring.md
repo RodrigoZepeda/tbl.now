@@ -29,17 +29,17 @@ are six verbs. On the **reporting** axis (event date to report date, the
   threshold *is* the rule: "anything that took more than 60 days is a
   lower bound, not a measurement".
 
-On the **validation** axis (report date to resolution, the
-`is_censored_validation` flag), the same three:
+On the **revision** axis (report date to resolution, the
+`is_censored_revision` flag), the same three:
 
-- `censor_validations()` – rows matching a condition get a **replacement
-  validation date** and the flag.
+- `censor_revisions()` – rows matching a condition get a **replacement
+  revision date** and the flag.
 
-- `censor_validation_delays()` – the same, said as a delay from the
+- `censor_revision_delays()` – the same, said as a delay from the
   report.
 
-- `censor_validation_delays_above()` – **considers as censored every
-  validation delay longer than `max_delay`**, in the object's validation
+- `censor_revision_delays_above()` – **considers as censored every
+  revision delay longer than `max_delay`**, in the object's revision
   units: a laboratory result that took months is a case you have stopped
   believing the turnaround of.
 
@@ -52,27 +52,27 @@ censor_reports(x, condition, to_report = get_now(x), verbose = TRUE)
 
 censor_reporting_delays(x, condition, to_delay = NULL, verbose = TRUE)
 
-censor_validations(x, condition, to_validation = get_now(x), verbose = TRUE)
+censor_revisions(x, condition, to_revision = get_now(x), verbose = TRUE)
 
-censor_validation_delays(x, condition, to_delay = NULL, verbose = TRUE)
+censor_revision_delays(x, condition, to_delay = NULL, verbose = TRUE)
 
-censor_validation_delays_above(x, max_delay, verbose = TRUE)
+censor_revision_delays_above(x, max_delay, verbose = TRUE)
 ```
 
 ## Arguments
 
 - x:
 
-  A `tbl_now` object. The three validation verbs require one that
-  carries a validation process (see
-  [add_validation_date()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)).
+  A `tbl_now` object. The three revision verbs require one that carries
+  a revision process (see
+  [add_revision_date()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)).
 
 - max_delay:
 
   Numeric. Every delay **strictly greater** than this is considered
   censored; the rest are left alone. In the object's event units for
-  `censor_reporting_delays_above()`, validation units for
-  `censor_validation_delays_above()`.
+  `censor_reporting_delays_above()`, revision units for
+  `censor_revision_delays_above()`.
 
 - verbose:
 
@@ -99,18 +99,18 @@ censor_validation_delays_above(x, max_delay, verbose = TRUE)
   The replacement delay for the matching rows. For
   `censor_reporting_delays()` it is in the object's **event** units and
   the report date becomes `event_date + to_delay`; for
-  `censor_validation_delays()` it is in **validation** units and the
-  validation date becomes `report_date + to_delay`, because that is what
-  `.validation_delay` measures. A single number or one per row. `NULL`
+  `censor_revision_delays()` it is in **revision** units and the
+  revision date becomes `report_date + to_delay`, because that is what
+  `.revision_delay` measures. A single number or one per row. `NULL`
   (the default) leaves the dates alone and only sets the flag. It must
   be a **whole number** of those units, on every axis: there is no such
   date as half a day later, and a calendar axis used to bend `2.5` to
   `2` and `3.5` to `4` without saying so.
 
-- to_validation:
+- to_revision:
 
-  The replacement validation date for the matching rows: a single value,
-  or one per row of `x`. Must match the class of the validation column.
+  The replacement revision date for the matching rows: a single value,
+  or one per row of `x`. Must match the class of the revision column.
   Defaults to `get_now(x)` – the case has not been resolved as of now.
   `NULL` leaves the dates alone and only sets the flag. Pending cases
   are skipped; see *Pending cases are skipped*.
@@ -118,27 +118,27 @@ censor_validation_delays_above(x, max_delay, verbose = TRUE)
 ## Value
 
 A `tbl_now` with that axis's censoring column updated, creating it when
-absent (`.is_censored_report` or `.is_censored_validation`), and with
-the dates replaced where a replacement was asked for. The three
-reporting verbs touch `is_censored_report` and the report date; the
-three validation verbs touch `is_censored_validation` and the validation
-date. Neither rewrites `validation_type`, and nothing is ever deleted.
+absent (`.is_censored_report` or `.is_censored_revision`), and with the
+dates replaced where a replacement was asked for. The three reporting
+verbs touch `is_censored_report` and the report date; the three revision
+verbs touch `is_censored_revision` and the revision date. Neither
+rewrites `revision_type`, and nothing is ever deleted.
 
 ## Details
 
 The reporting delay is read from the generated `.delay` column (report
-date minus event date, in the object's event units); the validation
-delay from `.validation_delay` (validation date minus report date, in
-validation units). Existing censoring flags are merged rather than
-overwritten, so a delay that was already censored stays censored, and
-the flag column is created (as `.is_censored_report` /
-`.is_censored_validation`) when the object has none.
+date minus event date, in the object's event units); the revision delay
+from `.revision_delay` (revision date minus report date, in revision
+units). Existing censoring flags are merged rather than overwritten, so
+a delay that was already censored stays censored, and the flag column is
+created (as `.is_censored_report` / `.is_censored_revision`) when the
+object has none.
 
 The threshold functions keep the case **and its date**. Nothing is
 deleted and no outcome is rewritten: the flag says the delay is a bound
 rather than a measurement, and it is up to the model to use that. A case
 that was confirmed after 200 days is still a confirmed case, and
-[get_latest_validated_cases()](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
+[get_latest_revised_cases()](https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.md)
 still counts it.
 
 `condition` is evaluated inside the data, like a
@@ -163,22 +163,21 @@ is dropped when the report date moves, because it describes a date that
 has just changed; run
 [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
 again to rebuild it. The `.event_*` ones are kept – the event dates
-never move – and neither is touched by the validation verbs.
+never move – and neither is touched by the revision verbs.
 
 ## Pending cases are skipped
 
 `"pending"` means **reported and still waiting**, so a pending case has
-no validation date – that is the whole difference between it and a
+no revision date – that is the whole difference between it and a
 resolution that was never recorded. Writing a date onto one would assert
 a resolution that never happened, and make the case look resolved to
-everything counting arrivals on the validation axis.
+everything counting arrivals on the revision axis.
 
-So `censor_validations()` and `censor_validation_delays()` **skip
-pending rows** when they would write a date, and say how many they
-skipped. To censor a case that really was resolved but whose date is
-missing, make sure its `validation_type` says so first. Flagging without
-a replacement is not affected: no date is written, so there is nothing
-to contradict.
+So `censor_revisions()` and `censor_revision_delays()` **skip pending
+rows** when they would write a date, and say how many they skipped. To
+censor a case that really was resolved but whose date is missing, make
+sure its `revision_type` says so first. Flagging without a replacement
+is not affected: no date is written, so there is nothing to contradict.
 
 ## See also
 
@@ -186,9 +185,9 @@ to contradict.
 and
 [change_is_censored_report()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 to set the flag by hand, and
-[add_is_censored_validation()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-for the validation axis;
-[`diagnose_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
+[add_is_censored_revision()](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+for the revision axis;
+[`diagnose_revision_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md)
 and
 [`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.md)
 to find the threshold worth using;
@@ -249,7 +248,7 @@ fixed[[get_report_date(fixed)]]
 fixed[[get_is_censored_report(fixed)]]
 #> [1] FALSE  TRUE  TRUE FALSE
 
-## ---- The validation counterpart ----------------------------------------
+## ---- The revision counterpart ----------------------------------------
 
 cases <- data.frame(
   onset = as.Date("2021-01-04") + 0:4,
@@ -259,13 +258,13 @@ cases <- data.frame(
 )
 flu <- tbl_now(cases,
   event_date = onset, report_date = visit,
-  validation_date = result, validation_type = outcome,
+  revision_date = result, revision_type = outcome,
   data_type = "linelist", verbose = FALSE
 )
 
 # That one is flagged; all five stay confirmed, and the date is kept.
-flagged <- censor_validation_delays_above(flu, 30, verbose = FALSE)
-flagged[[get_is_censored_validation(flagged)]]
+flagged <- censor_revision_delays_above(flu, 30, verbose = FALSE)
+flagged[[get_is_censored_revision(flagged)]]
 #> [1] FALSE FALSE FALSE  TRUE FALSE
 table(flagged[["outcome"]])
 #> 
@@ -273,11 +272,11 @@ table(flagged[["outcome"]])
 #>         5 
 
 # The condition form: cap that turnaround at 30 days from the report, which
-# moves the validation date to match.
-capped_lab <- censor_validation_delays(flu, .validation_delay > 30,
+# moves the revision date to match.
+capped_lab <- censor_revision_delays(flu, .revision_delay > 30,
   to_delay = 30, verbose = FALSE
 )
-capped_lab$.validation_delay
+capped_lab$.revision_delay
 #> [1]  1  2  1 30  2
 
 ## A pending case has no resolution date, so there is nothing to censor --
@@ -285,8 +284,8 @@ capped_lab$.validation_delay
 waiting <- flu
 waiting[["outcome"]][2] <- "pending"
 waiting[["result"]][2] <- as.Date(NA)
-waiting <- change_validation_date(waiting, "result", "outcome")
-out <- censor_validations(waiting, is.na(result), verbose = FALSE)
+waiting <- change_revision_date(waiting, "result", "outcome")
+out <- censor_revisions(waiting, is.na(result), verbose = FALSE)
 out[["result"]][2] # still NA
 #> [1] NA
 ```

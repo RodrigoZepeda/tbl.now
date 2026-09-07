@@ -33,8 +33,9 @@ panel does, for one calendar grouping:
   holiday (`"1 before"`, `"Holiday"`, `"1 after"`, ..., plus `"Other"`).
 
 `type` picks which process to describe: `"epidemic"` (green — how the
-*cases* vary by calendar group) or `"report"` (red — how the *reporting*
-does).
+*cases* vary by calendar group), `"report"` (red — how the *reporting*
+does), or `"revision"` (ochre — how resolved cases arrive on revision
+dates).
 
 The three day-type / holiday-lag functions have no `measure` argument:
 they are always normalized. Their categories are not equal-sized parts
@@ -55,35 +56,35 @@ same: `autoplot(x, panels = "calendar_weekday")` and
 ``` r
 plot_day_of_week_effects(
   x,
-  type = c("epidemic", "report"),
+  type = c("epidemic", "report", "revision"),
   measure = c("percent", "normalized"),
   ...
 )
 
 plot_week_of_year_effects(
   x,
-  type = c("epidemic", "report"),
+  type = c("epidemic", "report", "revision"),
   measure = c("percent", "normalized"),
   ...
 )
 
 plot_month_of_year_effects(
   x,
-  type = c("epidemic", "report"),
+  type = c("epidemic", "report", "revision"),
   measure = c("percent", "normalized"),
   ...
 )
 
-plot_holiday_effects(x, type = c("epidemic", "report"), ...)
+plot_holiday_effects(x, type = c("epidemic", "report", "revision"), ...)
 
 plot_weekend_effects(
   x,
-  type = c("epidemic", "report"),
+  type = c("epidemic", "report", "revision"),
   weekend_days = c("Sat", "Sun"),
   ...
 )
 
-plot_holiday_lag_effects(x, type = c("epidemic", "report"), ...)
+plot_holiday_lag_effects(x, type = c("epidemic", "report", "revision"), ...)
 ```
 
 ## Arguments
@@ -96,8 +97,8 @@ plot_holiday_lag_effects(x, type = c("epidemic", "report"), ...)
 
 - type:
 
-  `"epidemic"` (default) for the case-count effect, or `"report"` for
-  the reporting-delay one.
+  `"epidemic"` (default) for the case-count effect, `"report"` for the
+  reporting-delay one, or `"revision"` for revision-date arrivals.
 
 - measure:
 

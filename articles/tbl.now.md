@@ -233,13 +233,13 @@ attributes are:
   consider a system error and reports from a lab are not registered
   until a week after.
 
-- **is_censored_validation** (optional): the same flag on the validation
-  axis. It marks rows whose *validation* delay – the time from report to
-  resolution – is a bound rather than a measurement. See the [validation
-  process](#the-validation-process) section.
+- **is_censored_revision** (optional): the same flag on the revision
+  axis. It marks rows whose *revision* delay – the time from report to
+  resolution – is a bound rather than a measurement. See the [revision
+  process](#the-revision-process) section.
 
-- **validation_levels** (optional): a named dictionary translating the
-  labels in `validation_type` into the four values that column may hold.
+- **revision_levels** (optional): a named dictionary translating the
+  labels in `revision_type` into the four values that column may hold.
   Surveillance data is not always recorded in English, and this is how
   `c(confirmado = "confirmed")` becomes `"confirmed"` once rather than
   in every script that touches the data.
@@ -578,8 +578,8 @@ additive. Note also that weeks do **not** nest inside months, so
 aggregate once, straight to the unit you want.
 
 Note the `units = "days"` above: it is a single default for
-`event_units`, `report_units` and `validation_units`, and any of the
-three you give explicitly still wins over it.
+`event_units`, `report_units` and `revision_units`, and any of the three
+you give explicitly still wins over it.
 
 ### Censoring the dates that are not really dates
 
@@ -857,42 +857,46 @@ df_now |>
   add_temporal_effects(temporal_effects(weekend_lags = 1)) # the Monday after
 ```
 
-#### Event- vs report-date effects
+#### Event-, report-, and revision-date effects
 
 By default effects are derived from the **event date** and named
 `.event_*`. Pass `date_type = "report_date"` to
 [`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
 to derive them from the **report date** instead (columns named
-`.report_*`). Both can coexist on the same `tbl_now`, and every
-converter carries both sets of columns.
+`.report_*`). On a `tbl_now` with a revision process, pass
+`date_type = "revision_date"` to derive effects from the **revision
+date** as `.revision_*` columns. All three can coexist on the same
+`tbl_now`; converters that can carry covariates carry the materialised
+columns.
 
 ``` r
 
 df_now |>
   add_temporal_effects(temporal_effects(week_of_year = TRUE), date_type = "event_date") |>
-  add_temporal_effects(temporal_effects(day_of_week = TRUE),  date_type = "report_date")
+  add_temporal_effects(temporal_effects(day_of_week = TRUE),  date_type = "report_date") |>
+  add_temporal_effects(temporal_effects(weekend = TRUE),      date_type = "revision_date")
 ```
 
-### The validation process
+### The revision process
 
 Some surveillance systems have a **third** date. A case is not only
 reported – it is later *resolved*: a laboratory issues the result that
 confirms it, or rules it out. Influenza is the standard picture:
 symptoms begin (the event), the patient visits a doctor (the report),
-and days later a swab comes back positive (the validation) or negative
-(a *retraction* – the case was reported but is not a case after all).
+and days later a swab comes back positive (the revision) or negative (a
+*retraction* – the case was reported but is not a case after all).
 
-A `tbl_now` can carry this with `validation_date`, an optional
-`validation_type`, and its own `validation_units`. The timeline it
-assumes is
+A `tbl_now` can carry this with `revision_date`, an optional
+`revision_type`, and its own `revision_units`. The timeline it assumes
+is
 
-\text{event date} \le \text{report date} \le \text{validation date} \le
+\text{event date} \le \text{report date} \le \text{revision date} \le
 \text{now}
 
-`validation_type` takes the values `"confirmed"`, `"retracted"`,
+`revision_type` takes the values `"confirmed"`, `"retracted"`,
 `"pending"` or `NA`, **and nothing else**. **Pending** is the important
 one: it means the case has been reported and is still waiting for a
-result, so it has *no* validation date. That is a different thing from a
+result, so it has *no* revision date. That is a different thing from a
 case whose result you simply never recorded, which is `NA`.
 
 We will use `covid_us`, the CDC’s COVID-19 case surveillance data for
@@ -915,12 +919,12 @@ table(covid_us$current_status)
 #>                    165663                     27290
 ```
 
-#### `validation_levels`: getting other people’s words into those four
+#### `revision_levels`: getting other people’s words into those four
 
 CDC does not say `"confirmed"`; it says `"Laboratory-confirmed case"`.
 Recoding that by hand before every call is the kind of step that gets
 forgotten in one script out of five, so the object does it once.
-`validation_levels` is a **named** vector whose names are the labels in
+`revision_levels` is a **named** vector whose names are the labels in
 your data and whose values are the canonical outcomes:
 
 ``` r
@@ -930,9 +934,9 @@ covid_now <- covid_us |>
   tbl_now(
     event_date        = onset_dt,      # symptoms began
     report_date       = pos_spec_dt,   # the first positive specimen
-    validation_date   = cdc_report_dt, # the case was registered at CDC
-    validation_type   = current_status,
-    validation_levels = c(
+    revision_date   = cdc_report_dt, # the case was registered at CDC
+    revision_type   = current_status,
+    revision_levels = c(
       "Laboratory-confirmed case" = "confirmed",
       "Probable Case"             = "pending"
     ),
@@ -946,7 +950,7 @@ table(covid_now$current_status)
 #> 
 #> confirmed   pending 
 #>     55354     20269
-get_validation_levels(covid_now)
+get_revision_levels(covid_now)
 #> Laboratory-confirmed case             Probable Case 
 #>               "confirmed"                 "pending"
 ```
@@ -959,8 +963,8 @@ Anything the dictionary does not name, and that is not already one of
 the four, is an error rather than a silently accepted category.
 
 A note on this particular dataset: CDC never withdraws a case, so
-`"retracted"` does not occur in `covid_us`. It is a two-outcome
-validation process.
+`"retracted"` does not occur in `covid_us`. It is a two-outcome revision
+process.
 
 ``` r
 
@@ -970,7 +974,7 @@ covid_now
 #> # Frequency: Event: `days` | Report: `days`
 #>    onset_dt     pos_spec_dt  cdc_report_dt current_status sex       n .event_num
 #>    <date>       <date>       <date>        <chr>          <chr> <int>      <dbl>
-#>    [event_date] [report_dat… [validation_… [validation_t… [str… [cas…      [...]
+#>    [event_date] [report_dat… [revision_da… [revision_typ… [str… [cas…      [...]
 #>  1 2020-09-01   2020-09-01   2020-09-01    confirmed      Fema…    80          0
 #>  2 2020-09-01   2020-09-01   2020-09-01    confirmed      Male     50          0
 #>  3 2020-09-01   2020-09-01   2020-09-01    confirmed      Unkn…     5          0
@@ -983,20 +987,20 @@ covid_now
 #> 10 2020-09-01   2020-09-01   2020-09-03    confirmed      Fema…   104          0
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
-#> # Validation date: "cdc_report_dt" ("days") | resolved: 55354/75623
+#> # Revision date: "cdc_report_dt" ("days") | resolved: 55354/75623
 #> # Strata: "sex"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 75,613 more rows
-#> # ℹ 4 more variables: .report_num <dbl>, .delay <dbl>, .validation_num <dbl>,
-#> #   .validation_delay <dbl>
+#> # ℹ 4 more variables: .report_num <dbl>, .delay <dbl>, .revision_num <dbl>,
+#> #   .revision_delay <dbl>
 ```
 
-The footer now carries a validation line – the column, its units, and
-how many cases have actually been resolved. Two derived columns appear
-alongside `.delay`: `.validation_num` (the validation date on the same
-numeric grid as the other dates) and `.validation_delay`, the
-laboratory’s **turnaround** – the time from report to result, which is a
-different quantity from the reporting delay.
+The footer now carries a revision line – the column, its units, and how
+many cases have actually been resolved. Two derived columns appear
+alongside `.delay`: `.revision_num` (the revision date on the same
+numeric grid as the other dates) and `.revision_delay`, the laboratory’s
+**turnaround** – the time from report to result, which is a different
+quantity from the reporting delay.
 
 ``` r
 
@@ -1005,31 +1009,30 @@ median(covid_now$.delay, na.rm = TRUE)
 #> [1] 4
 
 # Turnaround: specimen to registration at CDC.
-median(covid_now$.validation_delay, na.rm = TRUE)
+median(covid_now$.revision_delay, na.rm = TRUE)
 #> [1] 6
 ```
 
-Validation also moves `now`. A result issued on a date means you were,
-by definition, still observing the system on that date, so `now` is
-never earlier than the last validation – even when reporting stopped
-before it.
+Revision also moves `now`. A result issued on a date means you were, by
+definition, still observing the system on that date, so `now` is never
+earlier than the last revision – even when reporting stopped before it.
 
 ``` r
 
 get_now(covid_now)
 #> [1] "2020-12-31"
-get_validation_units(covid_now)
+get_revision_units(covid_now)
 #> [1] "days"
-has_validation(covid_now)
+has_revision(covid_now)
 #> [1] TRUE
 ```
 
 It also moves *backwards* correctly.
 [`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 is how you ask what the data looked like at an earlier moment – the loop
-a backtest walks – and a validation dated after that moment has simply
-not happened yet, so it reverts to `"pending"` with its date masked
-rather than making the object invalid:
+a backtest walks – and a revision dated after that moment has simply not
+happened yet, so it reverts to `"pending"` with its date masked rather
+than making the object invalid:
 
 ``` r
 
@@ -1052,66 +1055,66 @@ one answer, and the right one depends on the question:
 ``` r
 
 # cases the laboratory confirmed
-head(get_latest_validated_cases(covid_now, type = "confirmed"), 3)
+head(get_latest_revised_cases(covid_now, type = "confirmed"), 3)
 #> # A tibble:  3 × 11
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
-#>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt     sex     
-#>   <date>       <date>             <dbl>       <dbl> <date>            <chr>   
-#>   [event_date] [report_date]      [...]       [...] [validation_date] [strata]
-#> 1 2020-09-01   2020-09-03             0           2 2020-12-30        Female  
-#> 2 2020-09-01   2020-09-02             0           1 2020-12-31        Male    
-#> 3 2020-09-01   2020-09-01             0           0 2020-09-03        Missing 
+#>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt   sex     
+#>   <date>       <date>             <dbl>       <dbl> <date>          <chr>   
+#>   [event_date] [report_date]      [...]       [...] [revision_date] [strata]
+#> 1 2020-09-01   2020-09-03             0           2 2020-12-30      Female  
+#> 2 2020-09-01   2020-09-02             0           1 2020-12-31      Male    
+#> 3 2020-09-01   2020-09-01             0           0 2020-09-03      Missing 
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
-#> # Validation date: "cdc_report_dt" ("days") | resolved: 3/3
+#> # Revision date: "cdc_report_dt" ("days") | resolved: 3/3
 #> # Strata: "sex"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 5 more variables: current_status <chr>, n <dbl>, .delay <dbl>,
-#> #   .validation_num <dbl>, .validation_delay <dbl>
+#> #   .revision_num <dbl>, .revision_delay <dbl>
 
 # confirmed minus retracted
-head(get_latest_validated_cases(covid_now, type = "net"), 3)
+head(get_latest_revised_cases(covid_now, type = "net"), 3)
 #> # A tibble:  3 × 11
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
-#>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt     sex     
-#>   <date>       <date>             <dbl>       <dbl> <date>            <chr>   
-#>   [event_date] [report_date]      [...]       [...] [validation_date] [strata]
-#> 1 2020-09-01   2020-09-03             0           2 2020-12-30        Female  
-#> 2 2020-09-01   2020-09-02             0           1 2020-12-31        Male    
-#> 3 2020-09-01   2020-09-01             0           0 2020-09-03        Missing 
+#>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt   sex     
+#>   <date>       <date>             <dbl>       <dbl> <date>          <chr>   
+#>   [event_date] [report_date]      [...]       [...] [revision_date] [strata]
+#> 1 2020-09-01   2020-09-03             0           2 2020-12-30      Female  
+#> 2 2020-09-01   2020-09-02             0           1 2020-12-31      Male    
+#> 3 2020-09-01   2020-09-01             0           0 2020-09-03      Missing 
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
-#> # Validation date: "cdc_report_dt" ("days") | resolved: 0/3
+#> # Revision date: "cdc_report_dt" ("days") | resolved: 0/3
 #> # Strata: "sex"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 5 more variables: current_status <chr>, n <dbl>, .delay <dbl>,
-#> #   .validation_num <dbl>, .validation_delay <dbl>
+#> #   .revision_num <dbl>, .revision_delay <dbl>
 
 # every outcome side by side
-head(get_latest_validated_cases(covid_now, type = "by_type"), 3)
+head(get_latest_revised_cases(covid_now, type = "by_type"), 3)
 #> # A tibble:  3 × 11
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `days` | Report: `days`
-#>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt     sex     
-#>   <date>       <date>             <dbl>       <dbl> <date>            <chr>   
-#>   [event_date] [report_date]      [...]       [...] [validation_date] [strata]
-#> 1 2020-09-01   2020-09-03             0           2 2020-12-30        Female  
-#> 2 2020-09-01   2020-09-01             0           0 2020-10-07        Female  
-#> 3 2020-09-01   2020-09-02             0           1 2020-12-31        Male    
+#>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt   sex     
+#>   <date>       <date>             <dbl>       <dbl> <date>          <chr>   
+#>   [event_date] [report_date]      [...]       [...] [revision_date] [strata]
+#> 1 2020-09-01   2020-09-03             0           2 2020-12-30      Female  
+#> 2 2020-09-01   2020-09-01             0           0 2020-10-07      Female  
+#> 3 2020-09-01   2020-09-02             0           1 2020-12-31      Male    
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
-#> # Validation date: "cdc_report_dt" ("days") | resolved: 2/3
+#> # Revision date: "cdc_report_dt" ("days") | resolved: 2/3
 #> # Strata: "sex"
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 5 more variables: current_status <chr>, n <dbl>, .delay <dbl>,
-#> #   .validation_num <dbl>, .validation_delay <dbl>
+#> #   .revision_num <dbl>, .revision_delay <dbl>
 ```
 
-`get_nth_validated_cases(x, delay)` counts only the cases settled
-*within* a given number of periods **of the event**, and
-[`get_initial_validated_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
+`get_nth_revised_cases(x, delay)` counts only the cases settled *within*
+a given number of periods **of the event**, and
+[`get_initial_revised_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.md)
 counts what the first result to come back had settled. They mirror
 [`get_nth_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
 and
@@ -1121,36 +1124,36 @@ the same `type =` argument – which the reporting-axis getters accept
 too, so `get_latest_reported_cases(x, type = "pending")` is how you
 count the backlog the laboratory still owes you.
 
-#### Validation delays you do not believe
+#### Revision delays you do not believe
 
-If your data records absurdly long validation delays – a result “issued”
+If your data records absurdly long revision delays – a result “issued”
 two years later is usually a data-entry artefact, not a laboratory –
-[`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
-marks them with the **`is_censored_validation`** flag. It is the
-validation-axis twin of `is_censored_report`, and it works the same way:
+[`censor_revision_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+marks them with the **`is_censored_revision`** flag. It is the
+revision-axis twin of `is_censored_report`, and it works the same way:
 the case and its date are kept, and the *delay* is recorded as a bound
 rather than a measurement, for models that can use censored
 observations.
 
 ``` r
 
-capped <- censor_validation_delays_above(covid_now, max_delay = 60, verbose = FALSE)
+capped <- censor_revision_delays_above(covid_now, max_delay = 60, verbose = FALSE)
 
-get_is_censored_validation(capped)
-#> [1] ".is_censored_validation"
-sum(capped$n[capped[[get_is_censored_validation(capped)]]])
+get_is_censored_revision(capped)
+#> [1] ".is_censored_revision"
+sum(capped$n[capped[[get_is_censored_revision(capped)]]])
 #> [1] 2286
 ```
 
 Nothing is deleted and no outcome is rewritten, so
-`get_latest_validated_cases(type = "confirmed")` still counts those
-cases. Set the flag by hand with
-[`add_is_censored_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+`get_latest_revised_cases(type = "confirmed")` still counts those cases.
+Set the flag by hand with
+[`add_is_censored_revision()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 when your data already carries one.
 
 #### How much of the epidemic has been resolved?
 
-[`plot_validation_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_validation_status.md)
+[`plot_revision_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_revision_status.md)
 shows the share of cases confirmed, retracted and pending over time. A
 pending share that grows towards the right-hand edge is normal – recent
 cases have not had time to come back from the laboratory – but a pending
@@ -1159,12 +1162,12 @@ behind.
 
 ``` r
 
-plot_validation_status(covid_now)
+plot_revision_status(covid_now)
 ```
 
 ![](tbl.now_files/figure-html/unnamed-chunk-30-1.png)
 
-#### The validation axis
+#### The revision axis
 
 Every reporting diagnostic in the package asks one question: did an
 unusual number of records arrive on this date, and with what delay? That
@@ -1174,31 +1177,31 @@ so the diagnostics take an `axis` argument instead of being duplicated:
 ``` r
 
 # The same picture, drawn for the laboratory instead of the surveillance desk.
-plot_reporting_triangle(covid_now, axis = "validation")
-plot_delay_profiles(covid_now, axis = "validation")
-plot_delay_drift(covid_now, axis = "validation")
-diagnostic_plot(covid_now, axis = "validation")
+plot_reporting_triangle(covid_now, axis = "revision")
+plot_delay_profiles(covid_now, axis = "revision")
+plot_delay_drift(covid_now, axis = "revision")
+diagnostic_plot(covid_now, axis = "revision")
 
 # A laboratory clearing a backlog is a batch, exactly as a surveillance system
 # clearing its inbox is.
-diagnose_batches(covid_now, axis = "validation")
+diagnose_batches(covid_now, axis = "revision")
 ```
 
-Two notes on what `axis = "validation"` means. Delays are still measured
-**from the event**, so the report and validation axes are directly
+Two notes on what `axis = "revision"` means. Delays are still measured
+**from the event**, so the report and revision axes are directly
 comparable and the gap between them is the time the laboratory adds. And
-cases that are still `"pending"` are excluded: they have no validation
+cases that are still `"pending"` are excluded: they have no revision
 date, so counting them would invent an arrival on a date they do not
 have.
 
-Finally, when a system produces both validations and retractions you can
+Finally, when a system produces both revisions and retractions you can
 ask whether they take equally long – a laboratory that rules cases out
 faster than it confirms them will bias any nowcast that treats the two
 alike.
-[`diagnose_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
+[`diagnose_revision_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md)
 tests exactly that (a Wilcoxon rank-sum test on the two delay
 distributions) and
-[`plot_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
+[`plot_revision_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md)
 draws it. `covid_us` records no retractions, so there is nothing to
 compare here.
 
@@ -1638,18 +1641,20 @@ for the overview; reach for a `plot_*()` when you want to place one
 effect in a report.
 
 Each calendar/holiday twin takes a `type` argument choosing the process:
-`type = "epidemic"` (the default, green — how the *cases* vary) or
-`type = "report"` (red — how the *reporting* does).
+`type = "epidemic"` (the default, green — how the *cases* vary),
+`type = "report"` (red — how the *reporting* does), or
+`type = "revision"` (ochre — how resolved cases arrive on revision
+dates).
 
 | Function | [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html) panel |
 |----|----|
-| `plot_day_of_week_effects(x, type = )` | `calendar_weekday` / `delay_weekday` |
-| `plot_week_of_year_effects(x, type = )` | `calendar_week` / `delay_week` |
-| `plot_month_of_year_effects(x, type = )` | `calendar_month` / `delay_month` |
-| `plot_holiday_effects(x, type = )` | `calendar_holiday` / `delay_holiday` |
-| `plot_weekend_effects(x, type = )` | `calendar_holiday` / `delay_holiday`, attaching `temporal_effects(weekend = TRUE)` first |
-| `plot_holiday_lag_effects(x, type = )` | `calendar_holiday_lag` / `delay_holiday_lag` |
-| `plot_cycles(x, type = )` | `seasonality` / `delay_seasonality` |
+| `plot_day_of_week_effects(x, type = )` | `calendar_weekday` / `delay_weekday` / `revision_weekday` |
+| `plot_week_of_year_effects(x, type = )` | `calendar_week` / `delay_week` / `revision_week` |
+| `plot_month_of_year_effects(x, type = )` | `calendar_month` / `delay_month` / `revision_month` |
+| `plot_holiday_effects(x, type = )` | `calendar_holiday` / `delay_holiday` / `revision_holiday` |
+| `plot_weekend_effects(x, type = )` | `calendar_holiday` / `delay_holiday` / `revision_holiday`, attaching `temporal_effects(weekend = TRUE)` first |
+| `plot_holiday_lag_effects(x, type = )` | `calendar_holiday_lag` / `delay_holiday_lag` / `revision_holiday_lag` |
+| `plot_cycles(x, type = )` | `seasonality` / `delay_seasonality` / `revision_seasonality` |
 | `plot_delay_distribution(x)` | `delay_distribution` |
 | `plot_observed_cases(x)` | `epidemic` |
 
@@ -1816,7 +1821,7 @@ The others are
 [`cases_per_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`zero_run_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`prop_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+[`prop_revision_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`date_ranges()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
@@ -1878,7 +1883,7 @@ and
 
 `skipped` is a distinct status from `ok`, and the difference matters:
 `ok` means the check ran and found nothing, whereas `skipped` means it
-could not run at all — here because `dengue_now` carries no validation
+could not run at all — here because `dengue_now` carries no revision
 process. A check that cannot be performed is never silently reported as
 a pass.
 
@@ -2359,11 +2364,11 @@ Wickham, Hadley, Mine Çetinkaya-Rundel, and Garrett Grolemund. 2023. *R
 for Data Science: Import, Tidy, Transform, Visualize, and Model Data*.
 O’Reilly Media, Inc.
 
-[^1]: More key dates are possible such as a `validation_date`. For
-    example in the case of influenza one might consider the `event_date`
-    = symptom onset, the `report_date` = when the patient was first
-    diagnosed by a medical professional, and `validation_date` = when
-    the positive test’s results for influenza were recorded. We will
-    come back to these multiple dates later.
+[^1]: More key dates are possible such as a `revision_date`. For example
+    in the case of influenza one might consider the `event_date` =
+    symptom onset, the `report_date` = when the patient was first
+    diagnosed by a medical professional, and `revision_date` = when the
+    positive test’s results for influenza were recorded. We will come
+    back to these multiple dates later.
 
 [^2]: Optional attributes are set to `NULL` by default.

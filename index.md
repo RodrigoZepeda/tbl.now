@@ -21,17 +21,17 @@ relevant nowcasting variables:
 |:--:|:---|:---|
 | ![event_date](reference/figures/event_date.svg) | `event_date` | The column storing **event dates**; i.e. when the epidemiological phenomenon of interest happened (symptom onset, hospitalisation, death, …). **Required.** |
 | ![report_date](reference/figures/report_date.svg) | `report_date` | The column storing **report dates**; i.e. when that event became known to the surveillance system. **Required**, unless it is reconstructed from `delay`. |
-| ![validation](reference/figures/validation_date.svg) | `validation_date` | An optional third date indicating when the report was resolved (see `validation_type`). *Optional*. |
-| ![validation](reference/figures/validation_type.svg) | `validation_type` | What the validation date resolved to. Only `confirmed`, `retracted`, `pending` or `NA` are ever stored; use `validation_levels` for data recorded in other words. *Optional*. |
-| ![validation_levels](reference/figures/validation_type.svg) | `validation_levels` | A named dictionary translating the labels in `validation_type` into those four, e.g. `c(positive = “confirmed”)`. *Optional*. |
+| ![revision](reference/figures/revision_date.svg) | `revision_date` | An optional third date indicating when the report was resolved (see `revision_type`). *Optional*. |
+| ![revision](reference/figures/revision_type.svg) | `revision_type` | What the revision date resolved to. Only `confirmed`, `retracted`, `pending` or `NA` are ever stored; use `revision_levels` for data recorded in other words. *Optional*. |
+| ![revision_levels](reference/figures/revision_type.svg) | `revision_levels` | A named dictionary translating the labels in `revision_type` into those four, e.g. `c(positive = “confirmed”)`. *Optional*. |
 | ![now](reference/figures/now.svg) | `now` | The date the nowcast is anchored to — “today” from the model’s point of view. *Optional*; defaults to the latest date. |
 | ![strata](reference/figures/strata.svg) | `strata` | Columns you want a separate nowcast for (e.g. gender, region). *Optional*. |
 | ![covariates](reference/figures/covariates.svg) | `covariates` | Columns that inform the nowcast but that you do *not* want it broken down by (e.g. temperature or precipitation). *Optional*. |
 | ![case_count](reference/figures/case_count.svg) | `case_count` | The column holding the counts when the data is given as aggregated (rather than line-list). *Optional*. |
 | ![data_type](reference/figures/datatype.svg) | `data_type` | Whether the data represents a `linelist` (each row is a case), `count-incidence`(each row is a collection of cases per event-report date) or `count-cumulative`(each row is the cummulative number cases for that event accumulating in the report axis). *Optional*; inferred by default. |
-| ![units](reference/figures/units.svg) | `event_units`, `report_units`, `validation_units` | The time grid each date lives on: `days`, `weeks`, `months`, `years` or `numeric`. *Optional*; inferred (`“auto”`) by default. |
+| ![units](reference/figures/units.svg) | `event_units`, `report_units`, `revision_units` | The time grid each date lives on: `days`, `weeks`, `months`, `years` or `numeric`. *Optional*; inferred (`“auto”`) by default. |
 | ![is_censored_report](reference/figures/censoring.svg) | `is_censored_report` | Flags report dates that are only an upper bound, e.g. a batch or back-fill dump. *Optional*. |
-| ![is_censored_validation](reference/figures/censoring.svg) | `is_censored_validation` | The same on the validation axis: flags rows whose *validation* delay is a bound rather than a measurement. *Optional*. |
+| ![is_censored_revision](reference/figures/censoring.svg) | `is_censored_revision` | The same on the revision axis: flags rows whose *revision* delay is a bound rather than a measurement. *Optional*. |
 | ![temporal_effects](reference/figures/temporal_effects.svg) | `t_effects` | Columns holding temporal effects (day of week, holidays, …) that some models can use. *Optional*. |
 
 You can specify an object as a `tbl.now` with the `tbl_now` command:

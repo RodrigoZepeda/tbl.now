@@ -43,17 +43,17 @@ get_is_censored_report(x)
 
 get_case_count(x)
 
-get_validation_date(x)
+get_revision_date(x)
 
-get_validation_type(x)
+get_revision_type(x)
 
-get_validation_units(x)
+get_revision_units(x)
 
-get_is_censored_validation(x)
+get_is_censored_revision(x)
 
-get_validation_levels(x)
+get_revision_levels(x)
 
-has_validation(x)
+has_revision(x)
 ```
 
 ## Arguments
@@ -89,10 +89,10 @@ A column name, a count, or a metadata value, depending on the function:
   Character, or `NULL`. The name of the column flagging reports whose
   date is only an upper bound.
 
-- `get_is_censored_validation()`:
+- `get_is_censored_revision()`:
 
-  Character, or `NULL`. The same on the validation axis: the column
-  flagging rows whose *validation* delay is a bound rather than a
+  Character, or `NULL`. The same on the revision axis: the column
+  flagging rows whose *revision* delay is a bound rather than a
   measurement.
 
 - `get_now()`:
@@ -123,24 +123,24 @@ A column name, a count, or a metadata value, depending on the function:
   [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md);
   `character(0)` when none have been.
 
-- `get_validation_date()`, `get_validation_type()`:
+- `get_revision_date()`, `get_revision_type()`:
 
   Character, or `NULL`. The name of the column holding the date a case
   was resolved, and of the column holding how it resolved.
 
-- `get_validation_units()`:
+- `get_revision_units()`:
 
-  The grid the validation date lives on, or `NULL` when the object
-  carries no validation process.
+  The grid the revision date lives on, or `NULL` when the object carries
+  no revision process.
 
-- `get_validation_levels()`:
+- `get_revision_levels()`:
 
   The named dictionary translating the labels in the data into the
   canonical outcomes, or `NULL` when the column was already canonical.
 
-- `has_validation()`:
+- `has_revision()`:
 
-  `TRUE` when the object carries a validation date. Every code path must
+  `TRUE` when the object carries a revision date. Every code path must
   work when it is `FALSE`, because most objects have no third date.
 
 ## Details
@@ -153,15 +153,15 @@ attribute, so `is.null(get_strata(x))` is the test for "unstratified".
 The two counting helpers, `get_num_strata()` and `get_num_covariates()`,
 return `0` instead, which is usually easier to work with.
 
-## The validation process, the optional third date
+## The revision process, the optional third date
 
 A `tbl_now` may carry a **third** date beyond the event and the report:
 the date a case was resolved, either confirmed or retracted. Think of
 influenza: symptom onset is the event, the medical visit is the report,
-and the laboratory result is the validation – which can come back
+and the laboratory result is the revision – which can come back
 negative, in which case the case is *retracted* rather than confirmed.
 
-It is optional and most objects do not have one, so `has_validation()`
+It is optional and most objects do not have one, so `has_revision()`
 gates the four getters below it: they all return `NULL` on an object
 that was never given a third date.
 
@@ -173,12 +173,12 @@ to get all of them at once;
 [change()](https://rodrigozepeda.github.io/tbl.now/reference/add.md) and
 [remove()](https://rodrigozepeda.github.io/tbl.now/reference/add.md) to
 set them, including
-[add_validation_date()](https://rodrigozepeda.github.io/tbl.now/reference/add.md);
-[get_latest_validated_cases()](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
-and [get_latest_validated_cases(type =
-"net")](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
+[add_revision_date()](https://rodrigozepeda.github.io/tbl.now/reference/add.md);
+[get_latest_revised_cases()](https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.md)
+and [get_latest_revised_cases(type =
+"net")](https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.md)
 to count the outcomes;
-[validation_delay](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
+[revision_delay](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md)
 for how long resolution takes;
 [get_latest_reported_cases()](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
 and friends for reading the counts rather than the metadata.
@@ -223,7 +223,7 @@ get_num_covariates(ndata)
 # Likewise for a censoring indicator that was never supplied.
 get_is_censored_report(ndata)
 #> NULL
-get_is_censored_validation(ndata)
+get_is_censored_revision(ndata)
 #> NULL
 
 # The as-of moment, and the calendar grid the dates live on.
@@ -266,9 +266,9 @@ get_temporal_effect_cols(ndata)
 #> [1] ".event_month_of_year"
 
 # The third date is optional, so ask before you read it.
-has_validation(ndata)
+has_revision(ndata)
 #> [1] FALSE
-get_validation_date(ndata)
+get_revision_date(ndata)
 #> NULL
 
 ## Once one is attached, the same name-then-index pattern applies.
@@ -279,15 +279,15 @@ hai <- hai_bucaramanga |>
     event_date = specimen_date, report_date = report_date,
     data_type = "linelist", verbose = FALSE
   ) |>
-  add_validation_date(received_date) |>
+  add_revision_date(received_date) |>
   suppressWarnings()
 
-has_validation(hai)
+has_revision(hai)
 #> [1] TRUE
-get_validation_date(hai)
+get_revision_date(hai)
 #> [1] "received_date"
-get_validation_units(hai)
+get_revision_units(hai)
 #> [1] "days"
-head(hai[[get_validation_date(hai)]])
+head(hai[[get_revision_date(hai)]])
 #> [1] NA NA NA NA NA NA
 ```

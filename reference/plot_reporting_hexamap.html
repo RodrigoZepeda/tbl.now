@@ -85,7 +85,7 @@ the fast-reporting bulk sits along the short-delay bottom edge.</p>
 <span>  format <span class="op">=</span> <span class="st">"%d/%b/%y"</span>,</span>
 <span>  max_cells <span class="op">=</span> <span class="fl">12000L</span>,</span>
 <span>  trans <span class="op">=</span> <span class="st">"sqrt"</span>,</span>
-<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
+<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
 <span>  size <span class="op">=</span> <span class="fl">1.5</span>,</span>
 <span>  shape <span class="op">=</span> <span class="fl">16</span>,</span>
 <span>  text_size <span class="op">=</span> <span class="fl">2.3</span>,</span>
@@ -137,10 +137,10 @@ Default <code>"%d/%b/%y"</code>.</p></dd>
 
 <dt id="arg-axis">axis<a class="anchor" aria-label="anchor" href="#arg-axis"></a></dt>
 <dd><p>Which time axis to draw: <code>"report"</code> (default) or
-<code>"validation"</code>. On the validation axis the picture answers the
+<code>"revision"</code>. On the revision axis the picture answers the
 laboratory's version of the question – when results arrived, rather than
-when reports did. Needs a validation process (see <code><a href="add.html">add_validation_date()</a></code>);
-cases still <code>"pending"</code> have no validation date and are left out.</p></dd>
+when reports did. Needs a revision process (see <code><a href="add.html">add_revision_date()</a></code>);
+cases still <code>"pending"</code> have no revision date and are left out.</p></dd>
 
 
 <dt id="arg-size">size<a class="anchor" aria-label="anchor" href="#arg-size"></a></dt>

@@ -101,7 +101,7 @@
 <ul><li>
 <code>now =</code> — the “as-of” date for the nowcast. Defaults to <code>max(report_date)</code>.</li>
 <li>
-<code>units =</code> — the shared default for <code>event_units</code>, <code>report_units</code> and <code>validation_units</code>. Say <code>units = "days"</code> once instead of three times; anything you give explicitly still wins (<code>units = "days", report_units = "weeks"</code>).</li>
+<code>units =</code> — the shared default for <code>event_units</code>, <code>report_units</code> and <code>revision_units</code>. Say <code>units = "days"</code> once instead of three times; anything you give explicitly still wins (<code>units = "days", report_units = "weeks"</code>).</li>
 <li>
 <code>event_units</code> / <code>report_units</code> — <code>"days" | "weeks" | "months" | "years" | "numeric"</code>; <code>"auto"</code> infers from spacing. <code>report_units</code> must be <strong>coarser than or equal to</strong> <code>event_units</code>.</li>
 <li>
@@ -180,25 +180,25 @@
 <p><strong>A grouping is answered by, not dropped.</strong> Unlike <code><a href="reference/to_count.html">to_count()</a></code>, these getters keep the caller’s grouping: the grouping columns join the event date and the strata as keys and come back on the result. That is the only way to ask for the latest count by a <strong>covariate</strong> — a column that matters without being something you nowcast by.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tn</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">hospital</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="op">)</span>   <span class="co"># keyed AND grouped by hospital</span></span></code></pre></div>
-<p><strong><code>type =</code> filters on the validation outcome</strong> (see the validation family below). <code>type = "total"</code> (the default) counts every case; <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code> and <code>"unknown"</code> filter to one outcome; <code>"net"</code> is confirmed − retracted; <code>"by_type"</code> returns one row per outcome. On an object with no validation process anything but <code>"total"</code> warns and pools.</p>
+<p><strong><code>type =</code> filters on the revision outcome</strong> (see the revision family below). <code>type = "total"</code> (the default) counts every case; <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code> and <code>"unknown"</code> filter to one outcome; <code>"net"</code> is confirmed − retracted; <code>"by_type"</code> returns one row per outcome. On an object with no revision process anything but <code>"total"</code> warns and pools.</p>
 <hr></div>
 <div class="section level2">
-<h2 id="skill-the-same-three-questions-on-the-validation-axis">Skill: the same three questions on the validation axis<a class="anchor" aria-label="anchor" href="#skill-the-same-three-questions-on-the-validation-axis"></a></h2>
+<h2 id="skill-the-same-three-questions-on-the-revision-axis">Skill: the same three questions on the revision axis<a class="anchor" aria-label="anchor" href="#skill-the-same-three-questions-on-the-revision-axis"></a></h2>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/validated_cases.html">get_initial_validated_cases</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>              <span class="co"># as of the FIRST result to come back</span></span>
-<span><span class="fu"><a href="reference/validated_cases.html">get_latest_validated_cases</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>               <span class="co"># everything settled so far</span></span>
-<span><span class="fu"><a href="reference/validated_cases.html">get_nth_validated_cases</a></span><span class="op">(</span><span class="va">tn</span>, delay <span class="op">=</span> <span class="fl">7</span><span class="op">)</span>       <span class="co"># settled within 7 periods OF THE EVENT</span></span>
-<span><span class="fu"><a href="reference/validated_cases.html">get_latest_validated_cases</a></span><span class="op">(</span><span class="va">tn</span>, type <span class="op">=</span> <span class="st">"confirmed"</span><span class="op">)</span>   <span class="co"># only the positives</span></span>
-<span><span class="fu"><a href="reference/validated_cases.html">get_latest_validated_cases</a></span><span class="op">(</span><span class="va">tn</span>, type <span class="op">=</span> <span class="st">"net"</span><span class="op">)</span>         <span class="co"># confirmed minus retracted</span></span>
-<span><span class="fu"><a href="reference/validated_cases.html">get_latest_validated_cases</a></span><span class="op">(</span><span class="va">tn</span>, type <span class="op">=</span> <span class="st">"by_type"</span><span class="op">)</span>     <span class="co"># every outcome, side by side</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/revised_cases.html">get_initial_revised_cases</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>              <span class="co"># as of the FIRST result to come back</span></span>
+<span><span class="fu"><a href="reference/revised_cases.html">get_latest_revised_cases</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>               <span class="co"># everything settled so far</span></span>
+<span><span class="fu"><a href="reference/revised_cases.html">get_nth_revised_cases</a></span><span class="op">(</span><span class="va">tn</span>, delay <span class="op">=</span> <span class="fl">7</span><span class="op">)</span>       <span class="co"># settled within 7 periods OF THE EVENT</span></span>
+<span><span class="fu"><a href="reference/revised_cases.html">get_latest_revised_cases</a></span><span class="op">(</span><span class="va">tn</span>, type <span class="op">=</span> <span class="st">"confirmed"</span><span class="op">)</span>   <span class="co"># only the positives</span></span>
+<span><span class="fu"><a href="reference/revised_cases.html">get_latest_revised_cases</a></span><span class="op">(</span><span class="va">tn</span>, type <span class="op">=</span> <span class="st">"net"</span><span class="op">)</span>         <span class="co"># confirmed minus retracted</span></span>
+<span><span class="fu"><a href="reference/revised_cases.html">get_latest_revised_cases</a></span><span class="op">(</span><span class="va">tn</span>, type <span class="op">=</span> <span class="st">"by_type"</span><span class="op">)</span>     <span class="co"># every outcome, side by side</span></span></code></pre></div>
 <p>Exactly the reporting-axis family, one axis over: same <code>count-cumulative</code> return, same <code>type =</code>, same respect for a grouping. The differences worth knowing:</p>
 <ul><li>
-<strong>A pending case never appears.</strong> It has no validation date, so it has not arrived on this axis. <code>type = "pending"</code> is refused here and belongs on the reporting axis: <code>get_latest_reported_cases(tn, type = "pending")</code>.</li>
+<strong>A pending case never appears.</strong> It has no revision date, so it has not arrived on this axis. <code>type = "pending"</code> is refused here and belongs on the reporting axis: <code>get_latest_reported_cases(tn, type = "pending")</code>.</li>
 <li>
-<strong><code>delay</code> is measured from the EVENT</strong>, not from the report, so <code>get_nth_reported_cases(tn, 7)</code> and <code>get_nth_validated_cases(tn, 7)</code> describe the same seven days. <code>.validation_delay</code> (report → resolution) is a different quantity.</li>
+<strong><code>delay</code> is measured from the EVENT</strong>, not from the report, so <code>get_nth_reported_cases(tn, 7)</code> and <code>get_nth_revised_cases(tn, 7)</code> describe the same seven days. <code>.revision_delay</code> (report → resolution) is a different quantity.</li>
 <li>
-<strong>An empty selection is an error, not a zero-row object.</strong> Nothing validated yet, or no case with that outcome, aborts with the reason named.</li>
-<li>The result carries all three dates. <code>validation_type</code> on it is the outcome when the call filtered to one, and <code>NA</code> for <code>"total"</code> and <code>"net"</code>, which pool outcomes and so have none.</li>
+<strong>An empty selection is an error, not a zero-row object.</strong> Nothing revised yet, or no case with that outcome, aborts with the reason named.</li>
+<li>The result carries all three dates. <code>revision_type</code> on it is the outcome when the call filtered to one, and <code>NA</code> for <code>"total"</code> and <code>"net"</code>, which pool outcomes and so have none.</li>
 </ul><p>These replace <code>get_latest_confirmed()</code>, <code>get_net_confirmed()</code>, <code>get_initial_confirmed()</code> and <code>get_nth_confirmed()</code>, <strong>removed</strong> in 0.31.0.</p>
 <hr></div>
 <div class="section level2">
@@ -250,13 +250,13 @@
 <span><span class="fu"><a href="reference/censoring.html">censor_reporting_delays</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">.delay</span> <span class="op">&gt;</span> <span class="fl">60</span>, to_delay <span class="op">=</span> <span class="fl">60</span><span class="op">)</span> <span class="co"># ... and cap the report date</span></span>
 <span><span class="fu"><a href="reference/censoring.html">censor_reporting_delays_above</a></span><span class="op">(</span><span class="va">tn</span>, max_delay <span class="op">=</span> <span class="fl">60</span><span class="op">)</span>       <span class="co"># EVERY delay &gt; 60 -&gt; flag</span></span>
 <span></span>
-<span><span class="co"># Validation axis (report -&gt; resolution), sets `is_censored_validation`</span></span>
-<span><span class="fu"><a href="reference/censoring.html">censor_validations</a></span><span class="op">(</span><span class="va">tn</span>, <span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span><span class="op">)</span>                   <span class="co"># missing result -&gt; `now` + flag</span></span>
-<span><span class="fu"><a href="reference/censoring.html">censor_validation_delays</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">.validation_delay</span> <span class="op">&gt;</span> <span class="fl">30</span>, to_delay <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/censoring.html">censor_validation_delays_above</a></span><span class="op">(</span><span class="va">tn</span>, max_delay <span class="op">=</span> <span class="fl">30</span><span class="op">)</span>      <span class="co"># EVERY turnaround &gt; 30 -&gt; flag</span></span></code></pre></div>
+<span><span class="co"># Revision axis (report -&gt; resolution), sets `is_censored_revision`</span></span>
+<span><span class="fu"><a href="reference/censoring.html">censor_revisions</a></span><span class="op">(</span><span class="va">tn</span>, <span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span><span class="op">)</span>                   <span class="co"># missing result -&gt; `now` + flag</span></span>
+<span><span class="fu"><a href="reference/censoring.html">censor_revision_delays</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">.revision_delay</span> <span class="op">&gt;</span> <span class="fl">30</span>, to_delay <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/censoring.html">censor_revision_delays_above</a></span><span class="op">(</span><span class="va">tn</span>, max_delay <span class="op">=</span> <span class="fl">30</span><span class="op">)</span>      <span class="co"># EVERY turnaround &gt; 30 -&gt; flag</span></span></code></pre></div>
 <p>Six verbs: two axes x {by date, by delay, threshold}. The <code>*_above()</code> pair is the threshold shorthand – <strong>every</strong> delay strictly greater than <code>max_delay</code> is considered censored, every other row is left alone.</p>
-<p><code>condition</code> is a <code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter()</a></code>-style expression evaluated in the data (<code>.delay</code> and <code>.validation_delay</code> are visible); <code>NA</code> is <strong>not</strong> a match. Existing flags are merged, never cleared, and the flag column is created as <code>.is_censored_report</code> / <code>.is_censored_validation</code> when there is none. Replacing a date rebuilds the object, moves <code>now</code> forward if the replacement lands after it, and drops any <code>.report_*</code> temporal-effect column that has just gone stale.</p>
-<p><strong>Pending cases are skipped by the validation verbs.</strong> <code>"pending"</code> means reported and still waiting, so the case has no validation date; writing one would assert a resolution that never happened. <code><a href="reference/censoring.html">censor_validations()</a></code> and <code><a href="reference/censoring.html">censor_validation_delays()</a></code> leave those rows alone and say how many they skipped. Flagging without a replacement is unaffected – no date is written.</p>
+<p><code>condition</code> is a <code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter()</a></code>-style expression evaluated in the data (<code>.delay</code> and <code>.revision_delay</code> are visible); <code>NA</code> is <strong>not</strong> a match. Existing flags are merged, never cleared, and the flag column is created as <code>.is_censored_report</code> / <code>.is_censored_revision</code> when there is none. Replacing a date rebuilds the object, moves <code>now</code> forward if the replacement lands after it, and drops any <code>.report_*</code> temporal-effect column that has just gone stale.</p>
+<p><strong>Pending cases are skipped by the revision verbs.</strong> <code>"pending"</code> means reported and still waiting, so the case has no revision date; writing one would assert a resolution that never happened. <code><a href="reference/censoring.html">censor_revisions()</a></code> and <code><a href="reference/censoring.html">censor_revision_delays()</a></code> leave those rows alone and say how many they skipped. Flagging without a replacement is unaffected – no date is written.</p>
 <p><strong>The converters drop it, and say so.</strong> A flag that varies <em>within</em> an <code>(event_date, report_date)</code> cell (a per-case “upper bound only” mark, unlike one derived from the delay) puts two rows in a cell a reporting triangle has one slot for. Every converter but <code><a href="reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> therefore collapses it first, warning either way:</p>
 <table class="table"><thead><tr><th>input</th>
 <th>what happens</th>
@@ -266,35 +266,35 @@
 <td>column <strong>dropped</strong>; one row per case, unchanged</td>
 </tr></tbody></table><p><code><a href="reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> keeps it — a delay-distribution fit is the one consumer that can use censoring.</p>
 <div class="section level3">
-<h3 id="the-validation-axis-has-its-own-flag">The validation axis has its own flag<a class="anchor" aria-label="anchor" href="#the-validation-axis-has-its-own-flag"></a></h3>
-<p><code>is_censored_validation</code> is the exact twin of <code>is_censored_report</code>, one axis over: it marks rows whose <strong>validation delay</strong> (report → resolution) is a bound rather than a measurement. It requires a <code>validation_date</code> — there is no validation delay to bound without one.</p>
+<h3 id="the-revision-axis-has-its-own-flag">The revision axis has its own flag<a class="anchor" aria-label="anchor" href="#the-revision-axis-has-its-own-flag"></a></h3>
+<p><code>is_censored_revision</code> is the exact twin of <code>is_censored_report</code>, one axis over: it marks rows whose <strong>revision delay</strong> (report → resolution) is a bound rather than a measurement. It requires a <code>revision_date</code> — there is no revision delay to bound without one.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>, <span class="va">...</span>, validation_date <span class="op">=</span> <span class="va">result</span>, validation_type <span class="op">=</span> <span class="va">outcome</span>,</span>
-<span>              is_censored_validation <span class="op">=</span> <span class="va">slow_result</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">df</span>, <span class="va">...</span>, revision_date <span class="op">=</span> <span class="va">result</span>, revision_type <span class="op">=</span> <span class="va">outcome</span>,</span>
+<span>              is_censored_revision <span class="op">=</span> <span class="va">slow_result</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">add_is_censored_validation</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">slow_result</span><span class="op">)</span></span>
-<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">change_is_censored_validation</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">slower</span><span class="op">)</span>   <span class="co"># NULL to clear</span></span>
-<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">remove_is_censored_validation</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_is_censored_validation</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>                    <span class="co"># column name, or NULL</span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">add_is_censored_revision</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">slow_result</span><span class="op">)</span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">change_is_censored_revision</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">slower</span><span class="op">)</span>   <span class="co"># NULL to clear</span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add.html">remove_is_censored_revision</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_is_censored_revision</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>                    <span class="co"># column name, or NULL</span></span>
 <span></span>
 <span><span class="co"># Or let the threshold set it. The case, its date and its outcome are KEPT;</span></span>
-<span><span class="co"># only the delay becomes a bound, so get_latest_validated_cases() still counts it.</span></span>
-<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/censoring.html">censor_validation_delays_above</a></span><span class="op">(</span><span class="va">tn</span>, max_delay <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># only the delay becomes a bound, so get_latest_revised_cases() still counts it.</span></span>
+<span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/censoring.html">censor_revision_delays_above</a></span><span class="op">(</span><span class="va">tn</span>, max_delay <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span></code></pre></div>
 <p>Both flags join the grouping keys, so a censored resolution and an exact one on the same <code>(event, report, outcome)</code> triple stay two rows rather than being summed into one. The converters collapse both, by the same table above.</p>
 <hr></div>
 </div>
 <div class="section level2">
-<h2 id="skill-validation_type-and-other-peoples-words">Skill: <code>validation_type</code> and other people’s words<a class="anchor" aria-label="anchor" href="#skill-validation_type-and-other-peoples-words"></a></h2>
-<p><code>validation_type</code> may hold <strong>only</strong> <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code> or <code>NA</code>. Anything else is an error at construction and at every rebuild.</p>
-<p><code>validation_levels</code> is how data recorded in other words gets into those four: a <strong>named</strong> vector whose names are the labels in your data and whose values are the canonical outcomes.</p>
+<h2 id="skill-revision_type-and-other-peoples-words">Skill: <code>revision_type</code> and other people’s words<a class="anchor" aria-label="anchor" href="#skill-revision_type-and-other-peoples-words"></a></h2>
+<p><code>revision_type</code> may hold <strong>only</strong> <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code> or <code>NA</code>. Anything else is an error at construction and at every rebuild.</p>
+<p><code>revision_levels</code> is how data recorded in other words gets into those four: a <strong>named</strong> vector whose names are the labels in your data and whose values are the canonical outcomes.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">casos</span>, <span class="va">...</span>,</span>
-<span>  validation_type   <span class="op">=</span> <span class="va">desenlace</span>,</span>
-<span>  validation_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>confirmado <span class="op">=</span> <span class="st">"confirmed"</span>, retractado <span class="op">=</span> <span class="st">"retracted"</span>,</span>
+<span>  revision_type   <span class="op">=</span> <span class="va">desenlace</span>,</span>
+<span>  revision_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>confirmado <span class="op">=</span> <span class="st">"confirmed"</span>, retractado <span class="op">=</span> <span class="st">"retracted"</span>,</span>
 <span>                        pendiente <span class="op">=</span> <span class="st">"pending"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_validation_levels</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>   <span class="co"># the dictionary, or NULL</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_revision_levels</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>   <span class="co"># the dictionary, or NULL</span></span></code></pre></div>
 <p>The column is rewritten to the canonical values and the dictionary is stored on the object, so it survives <code>dplyr</code> and every rebuild. A dictionary that would recode a canonical value into a <em>different</em> one is refused: recoding runs again on every rebuild, so it has to be idempotent.</p>
 <p><code>covid_us</code> is the shipped worked example — CDC says <code>"Laboratory-confirmed case"</code> and <code>"Probable Case"</code>, and mapping those is what the argument is for.</p>
 <hr></div>
@@ -316,7 +316,8 @@
 <span>  holidays      <span class="op">=</span> <span class="cn">NULL</span>          <span class="co"># an almanac::rcalendar(), see next skill</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2) attach (NO columns created yet). date_type = "event_date" (default) or "report_date"</span></span>
+<span><span class="co"># 2) attach (NO columns created yet). date_type = "event_date" (default),</span></span>
+<span><span class="co"># "report_date", or "revision_date" when the object has revision</span></span>
 <span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span><span class="va">tn</span>, <span class="va">spec</span>, date_type <span class="op">=</span> <span class="st">"event_date"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 3) materialise the columns when ready for modelling</span></span>
@@ -325,7 +326,7 @@
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>       <span class="co"># list of specs (length 0 = none attached)</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_temporal_effect_cols</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>   <span class="co"># character(0) before compute; column names after</span></span></code></pre></div>
 <ul><li>
-<code><a href="reference/add_temporal_effects.html">add_temporal_effects()</a></code> can be called repeatedly (appends specs); you can mix <code>date_type = "event_date"</code> and <code>"report_date"</code>.</li>
+<code><a href="reference/add_temporal_effects.html">add_temporal_effects()</a></code> can be called repeatedly (appends specs); you can mix <code>date_type = "event_date"</code>, <code>"report_date"</code>, and <code>"revision_date"</code> when the object has a revision process.</li>
 <li>
 <strong>Seasonality / Fourier</strong>: <code>seasons</code> are the cycle periods. For <em>daily</em> data with weekly seasonality use <code>seasons = 52, season_length = 7</code> (period = 364 days); <code>season_length</code> defaults to <code>1</code> (period = <code>seasons</code>).</li>
 <li>
@@ -434,12 +435,17 @@
 <strong>Delay holiday effects</strong> (<code>"delay_holiday"</code>, <code>"delay_holiday_lag"</code>) — the delay twins of panels 4/5. Often the more telling pair: a holiday rarely changes how many cases <em>occur</em>, but very much changes how long they take to be <em>reported</em>.</li>
 <li>
 <strong>Delay periodicity periodogram</strong> (<code>"delay_seasonality"</code>) — a cycle in the delay (e.g. a weekly reporting rhythm).</li>
+<li>
+<strong>Revision calendar effects</strong> (<code>"revision_weekday"</code>, <code>"revision_week"</code>, <code>"revision_month"</code>, <code>"revision_holiday"</code>, <code>"revision_holiday_lag"</code>) — revision-date twins for resolved cases. These appear in <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> when the object has a revision process.</li>
+<li>
+<strong>Revision periodicity periodogram</strong> (<code>"revision_seasonality"</code>) — cycles in revision arrivals.</li>
 </ol><p>Which panels are available depends on the object. <strong>Calendar/delay</strong> panels follow the unit: <strong>daily</strong> → day-of-week <em>and</em> week-of-year; <strong>weekly</strong> → week-of-year; <strong>monthly</strong> → month-of-year. (So on <em>daily</em> data each week-of-year box legitimately summarizes ~7 daily values — that is not a stratification artefact.) The four <strong>holiday</strong> panels follow the <em>temporal-effects spec</em>, not the unit: they appear only when there is one to describe (<code>calendar_holiday</code>/<code>delay_holiday</code> need a <code>holidays</code> calendar <strong>or</strong> <code>weekend = TRUE</code>; the <code>_lag</code> panels additionally need a non-zero <code>holiday_lags</code>). Asking for one without the effect warns and skips it. The spec is read directly — <strong>no</strong> <code><a href="reference/add_temporal_effects.html">compute_temporal_effects()</a></code> needed first.</p>
 <p>Key arguments:</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span></span>
 <span>  <span class="va">tn</span>,</span>
 <span>  panels <span class="op">=</span> <span class="st">"all"</span>,         <span class="co"># "all" (default) | "calendar" | "delay_calendar" |</span></span>
+<span>                          <span class="co">#   "revision_calendar" |</span></span>
 <span>                          <span class="co">#   a vector of concrete panel keys above.</span></span>
 <span>                          <span class="co">#   A SINGLE key returns a plain ggplot (not a patchwork).</span></span>
 <span>  by_strata <span class="op">=</span> <span class="cn">FALSE</span>,      <span class="co"># TRUE =&gt; split every panel by stratum (dodged boxes /</span></span>
@@ -489,6 +495,10 @@
 <td>the <strong>epidemic</strong> process — event dates, case counts, <em>what happened</em>
 </td>
 </tr><tr><td>
+<code>revision</code>, <code>revision_light</code>
+</td>
+<td>the <strong>revision</strong> process — revision dates and resolution arrivals</td>
+</tr><tr><td>
 <code>ink</code>, <code>ink_muted</code>, <code>ink_inverse</code>
 </td>
 <td>text</td>
@@ -521,7 +531,7 @@
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plot_reporting_hexamap.html">plot_reporting_hexamap</a></span><span class="op">(</span><span class="va">tn</span>, size <span class="op">=</span> <span class="fl">4</span>, shape <span class="op">=</span> <span class="fl">15</span><span class="op">)</span>   <span class="co"># squares that nearly tile</span></span>
 <span><span class="fu"><a href="reference/plot_reporting_hexamap.html">plot_reporting_hexamap</a></span><span class="op">(</span><span class="va">tn</span>, text_size <span class="op">=</span> <span class="fl">3</span>, grid_linewidth_major <span class="op">=</span> <span class="fl">0.6</span>,</span>
 <span>                       legend_width <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="reference/plot_epidemic_process.html">plot_reporting_process()</a></code>, <code><a href="reference/plot_epidemic_process.html">plot_epidemic_process()</a></code>, <code><a href="reference/plot_scalogram.html">plot_scalogram()</a></code> and <code><a href="reference/plot_validation_status.html">plot_validation_status()</a></code> draw only bars, tiles or areas, so they take neither.</p>
+<p><code><a href="reference/plot_epidemic_process.html">plot_reporting_process()</a></code>, <code><a href="reference/plot_epidemic_process.html">plot_epidemic_process()</a></code>, <code><a href="reference/plot_scalogram.html">plot_scalogram()</a></code> and <code><a href="reference/plot_revision_status.html">plot_revision_status()</a></code> draw only bars, tiles or areas, so they take neither.</p>
 <hr></div>
 </div>
 <div class="section level2">
@@ -538,14 +548,14 @@
 <table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>component</th>
 <th>rows</th>
 </tr></thead><tbody><tr><td><code>cases</code></td>
-<td>counts per event / report / validation date, and per validation outcome; plus <code>censored_per_*_date</code> when there is a censoring flag</td>
+<td>counts per event / report / revision date, and per revision outcome; plus <code>censored_per_*_date</code> when there is a censoring flag</td>
 </tr><tr><td><code>delay</code></td>
 <td>
-<code>event_to_report</code>, <code>event_to_validation</code>, <code>report_to_validation</code>, split by outcome when there is more than one</td>
+<code>event_to_report</code>, <code>event_to_revision</code>, <code>report_to_revision</code>, split by outcome when there is more than one</td>
 </tr><tr><td><code>zero_run</code></td>
 <td>lengths of the runs of consecutive zero dates, per axis</td>
 </tr><tr><td><code>composition</code></td>
-<td>shares: <code>censored</code>, <code>validation_type = ...</code>, <code>strata = ...</code>, <code>covariate: &lt;col&gt; = &lt;level&gt;</code> (in <code>prop</code>)</td>
+<td>shares: <code>censored</code>, <code>revision_type = ...</code>, <code>strata = ...</code>, <code>covariate: &lt;col&gt; = &lt;level&gt;</code> (in <code>prop</code>)</td>
 </tr><tr><td><code>coverage</code></td>
 <td>
 <code>total_cases</code>, the date ranges, <code>now</code>, <code>max_delay</code>, the triangle cell counts and occupancy, <code>now_gap_*</code>
@@ -554,11 +564,11 @@
 <td>ratio of each event date’s running total from one delay to the next (<code>count-cumulative</code> only)</td>
 </tr></tbody></table><p>Each block is also its own exported function, returning the same schema, so they stack with <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">dplyr::bind_rows()</a></code>:</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/nowcast_summary_components.html">cases_per_date</a></span><span class="op">(</span><span class="va">tn</span>, axis <span class="op">=</span> <span class="st">"event"</span><span class="op">)</span>       <span class="co"># "event" / "report" / "validation"</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/nowcast_summary_components.html">cases_per_date</a></span><span class="op">(</span><span class="va">tn</span>, axis <span class="op">=</span> <span class="st">"event"</span><span class="op">)</span>       <span class="co"># "event" / "report" / "revision"</span></span>
 <span><span class="fu"><a href="reference/nowcast_summary_components.html">delay_summary</a></span><span class="op">(</span><span class="va">tn</span>, delay <span class="op">=</span> <span class="st">"event_to_report"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_summary_components.html">zero_run_summary</a></span><span class="op">(</span><span class="va">tn</span>, axis <span class="op">=</span> <span class="st">"event"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_summary_components.html">prop_censored</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>; <span class="fu"><a href="reference/nowcast_summary_components.html">prop_strata</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/nowcast_summary_components.html">prop_validation_type</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>; <span class="fu"><a href="reference/nowcast_summary_components.html">prop_covariate_levels</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/nowcast_summary_components.html">prop_revision_type</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>; <span class="fu"><a href="reference/nowcast_summary_components.html">prop_covariate_levels</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_summary_components.html">date_ranges</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>; <span class="fu"><a href="reference/nowcast_summary_components.html">triangle_occupancy</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_summary_components.html">cumulative_growth</a></span><span class="op">(</span><span class="va">tn</span>, k <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span>
 <span></span>
@@ -576,7 +586,7 @@
 <strong><code>NA</code> counts are dropped</strong> as not-yet-observed cells (an <code>NA</code> is “not seen yet”, a <code>0</code> is “seen, and it was zero”). The <code>unobserved_cells</code> coverage row counts them, so the drop is visible rather than silent.</li>
 <li>
 <strong><code>count-cumulative</code> gets no <code>delay</code> rows.</strong> <code><a href="reference/nowcast_summary_components.html">delay_summary()</a></code> errors on it — a cumulative total is not additive across delays. Use the <code>growth</code> rows, or <code>to_count(x, to = "count-incidence")</code> first (remembering that de-accumulating can produce negative increments).</li>
-</ul><p><code>report_to_validation</code> is the <strong>laboratory’s turnaround, measured from the report</strong>; <code>event_to_validation</code> is measured from the event, so it is directly comparable with <code>event_to_report</code>. They are different quantities.</p>
+</ul><p><code>report_to_revision</code> is the <strong>laboratory’s turnaround, measured from the report</strong>; <code>event_to_revision</code> is measured from the event, so it is directly comparable with <code>event_to_report</code>. They are different quantities.</p>
 <hr></div>
 <div class="section level2">
 <h2 id="skill-health-check-a-tbl_now-diagnose">Skill: health-check a <code>tbl_now</code> (<code>diagnose</code>)<a class="anchor" aria-label="anchor" href="#skill-health-check-a-tbl_now-diagnose"></a></h2>
@@ -609,7 +619,7 @@
 </tr><tr><td><code>ok</code></td>
 <td>the check ran and found nothing</td>
 </tr><tr><td><code>skipped</code></td>
-<td>could not be assessed (no validation process, wrong data type, package not installed)</td>
+<td>could not be assessed (no revision process, wrong data type, package not installed)</td>
 </tr></tbody></table><p><code>check</code> is one of:</p>
 <table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>check</th>
 <th>what it looks for</th>
@@ -617,12 +627,12 @@
 <td>attribute types, the columns they name, role collisions, <strong>undeclared columns</strong>, temporal effects added but never materialised</td>
 </tr><tr><td><code>ordering</code></td>
 <td>
-<code>event &lt;= report &lt;= validation</code>, including the transitive leg a missing <code>report_date</code> would otherwise hide</td>
+<code>event &lt;= report &lt;= revision</code>, including the transitive leg a missing <code>report_date</code> would otherwise hide</td>
 </tr><tr><td><code>missing</code></td>
 <td>
 <code>NA</code>s per column and per stratum. An <code>NA</code> <strong>count</strong> is reported <em>neutrally</em> — in a triangle it means <em>not yet observed</em>, which is correct data</td>
 </tr><tr><td><code>duplicates</code></td>
-<td>rows repeating on the full key (including the validation columns). Defaults <strong>on</strong> here, unlike <code><a href="reference/validate_tbl_now.html">validate_tbl_now()</a></code>
+<td>rows repeating on the full key (including the revision columns). Defaults <strong>on</strong> here, unlike <code><a href="reference/validate_tbl_now.html">validate_tbl_now()</a></code>
 </td>
 </tr><tr><td><code>units</code></td>
 <td>the declared units against each other, against the calendar the dates land on, and against the <code>.delay</code> they produce</td>
@@ -634,7 +644,7 @@
 </tr><tr><td><code>truncation</code></td>
 <td>how many recent event dates are still immature, and how much of their eventual total has not arrived</td>
 </tr><tr><td><code>strata</code></td>
-<td>the smallest and the sparsest stratum (named, <strong>not</strong> thresholded), and the validations still pending</td>
+<td>the smallest and the sparsest stratum (named, <strong>not</strong> thresholded), and the revisions still pending</td>
 </tr></tbody></table><p>Each block is also its own exported function, same schema, so they stack with <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">dplyr::bind_rows()</a></code> — and <code>diagnose(x)</code> <em>is</em> that bind:</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/nowcast_diagnose_components.html">diagnose_declarations</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>; <span class="fu"><a href="reference/nowcast_diagnose_components.html">diagnose_ordering</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>; <span class="fu"><a href="reference/nowcast_diagnose_components.html">diagnose_missing</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
@@ -943,11 +953,11 @@
 <span><span class="fu"><a href="reference/align_weeks.html">week_2_date</a></span><span class="op">(</span><span class="va">df</span>, <span class="va">week_col</span>, <span class="va">year_col</span><span class="op">)</span>  <span class="co"># epiweek + year -&gt; Date</span></span>
 <span><span class="fu"><a href="reference/is_weekday.html">is_weekday</a></span><span class="op">(</span><span class="va">date</span>, weekend_days <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Sat"</span>,<span class="st">"Sun"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/add.html">change_now</a></span><span class="op">(</span><span class="va">tn</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2023-06-01"</span><span class="op">)</span><span class="op">)</span>   <span class="co"># move the as-of date. Moving it BACKWARDS</span></span>
-<span>                                        <span class="co"># returns validations dated after it to</span></span>
+<span>                                        <span class="co"># returns revisions dated after it to</span></span>
 <span>                                        <span class="co"># "pending" and masks their date</span></span>
 <span><span class="fu"><a href="reference/tbl_now_attributes.html">tbl_now_attributes</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span>               <span class="co"># list of just the tbl_now-specific attributes</span></span></code></pre></div>
 <ul><li>
-<strong><code>aggregate_time_units</code> / sparse daily data:</strong> moves every date onto a coarser grid (<code>to = "weeks" | "months" | "years"</code>), sums the counts, and updates <code>event_units</code> / <code>report_units</code> / <code>validation_units</code> so everything downstream counts in the new unit. Cumulative counts are de-accumulated first, because they are not additive. <code>axes =</code> picks which axes move (<code>"all"</code>, <code>"event"</code>, <code>"report"</code>, <code>"validation"</code>); <code>label =</code> picks whether a period is named by its first or last day — use <code>label = "end"</code> when you coarsen only a later axis, or reports land before their own events. It only ever coarsens: asking a weekly object for <code>"days"</code> is an error. Aggregate <strong>once</strong>, to the unit you want — weeks do not nest inside months. Materialised temporal-effect columns are dropped and the lazy spec is coarsened with the dates — see the temporal-effects skill above for what survives which grid.</li>
+<strong><code>aggregate_time_units</code> / sparse daily data:</strong> moves every date onto a coarser grid (<code>to = "weeks" | "months" | "years"</code>), sums the counts, and updates <code>event_units</code> / <code>report_units</code> / <code>revision_units</code> so everything downstream counts in the new unit. Cumulative counts are de-accumulated first, because they are not additive. <code>axes =</code> picks which axes move (<code>"all"</code>, <code>"event"</code>, <code>"report"</code>, <code>"revision"</code>); <code>label =</code> picks whether a period is named by its first or last day — use <code>label = "end"</code> when you coarsen only a later axis, or reports land before their own events. It only ever coarsens: asking a weekly object for <code>"days"</code> is an error. Aggregate <strong>once</strong>, to the unit you want — weeks do not nest inside months. Materialised temporal-effect columns are dropped and the lazy spec is coarsened with the dates — see the temporal-effects skill above for what survives which grid.</li>
 <li>
 <strong><code>align_weeks</code> / weekly data:</strong> weekly dates reported on inconsistent weekdays give fractional <code>.delay</code>. Use <code>align_weeks = TRUE</code> in <code><a href="reference/tbl_now.html">tbl_now()</a></code> or <code><a href="reference/align_weeks.html">align_weeks()</a></code> afterward to force integer delays.</li>
 <li>
@@ -983,16 +993,16 @@
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_strata</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_num_strata</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_covariates</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_num_covariates</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_case_count</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_is_censored_report</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>    <span class="co"># column name or NULL</span></span>
-<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_is_censored_validation</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>             <span class="co"># the validation-axis flag, or NULL</span></span>
-<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_validation_date</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_validation_type</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_validation_units</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_validation_levels</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">has_validation</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_is_censored_revision</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>             <span class="co"># the revision-axis flag, or NULL</span></span>
+<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_revision_date</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_revision_type</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">get_revision_units</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/nowcast_data_getters.html">get_revision_levels</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_data_getters.html">has_revision</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_data_type</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                          <span class="co"># "linelist"|"count-incidence"|"count-cumulative"</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                   <span class="co"># list of lazy specs</span></span>
 <span><span class="fu"><a href="reference/nowcast_data_getters.html">get_temporal_effect_cols</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>               <span class="co"># computed column names</span></span>
 <span><span class="fu"><a href="reference/get_latest_first.html">get_initial_reported_cases</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">type</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">type</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/get_latest_first.html">get_nth_reported_cases</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">delay</span>, <span class="va">type</span><span class="op">)</span>    <span class="co"># cumulative count within a given delay</span></span>
-<span><span class="fu"><a href="reference/validated_cases.html">get_initial_validated_cases</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">type</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/validated_cases.html">get_latest_validated_cases</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">type</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/validated_cases.html">get_nth_validated_cases</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">delay</span>, <span class="va">type</span><span class="op">)</span>   <span class="co"># the same, on the validation axis</span></span>
+<span><span class="fu"><a href="reference/revised_cases.html">get_initial_revised_cases</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">type</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/revised_cases.html">get_latest_revised_cases</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">type</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/revised_cases.html">get_nth_revised_cases</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">delay</span>, <span class="va">type</span><span class="op">)</span>   <span class="co"># the same, on the revision axis</span></span>
 <span><span class="co"># type: "total" | "confirmed" | "retracted" | "pending" | "unknown" | "net" | "by_type"</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -1021,7 +1031,7 @@
 <span><span class="va">diagnose_declarations</span><span class="op">/</span><span class="va">ordering</span><span class="op">/</span><span class="va">missing</span><span class="op">/</span><span class="va">duplicates</span><span class="op">/</span><span class="va">units</span><span class="op">/</span><span class="fu">negatives</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span><span class="va">diagnose_now</span><span class="op">/</span><span class="va">truncation</span><span class="op">/</span><span class="fu">strata</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_summary_components.html">cases_per_date</a></span><span class="op">(</span><span class="va">x</span>, axis <span class="op">=</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_summary_components.html">delay_summary</a></span><span class="op">(</span><span class="va">x</span>, delay <span class="op">=</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_summary_components.html">zero_run_summary</a></span><span class="op">(</span><span class="va">x</span>, axis <span class="op">=</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/nowcast_summary_components.html">prop_censored</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_summary_components.html">prop_strata</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_summary_components.html">prop_validation_type</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_summary_components.html">prop_covariate_levels</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/nowcast_summary_components.html">prop_censored</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_summary_components.html">prop_strata</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_summary_components.html">prop_revision_type</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_summary_components.html">prop_covariate_levels</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_summary_components.html">date_ranges</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_summary_components.html">triangle_occupancy</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_summary_components.html">cumulative_growth</a></span><span class="op">(</span><span class="va">x</span>, k <span class="op">=</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/nowcast_summary_components.html">case_autocorrelation</a></span><span class="op">(</span><span class="va">x</span>, lags <span class="op">=</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="reference/nowcast_summary_components.html">reporting_completeness</a></span><span class="op">(</span><span class="va">x</span>, delays <span class="op">=</span><span class="op">)</span>  <span class="co"># unreviewed, warn, NOT in summary()</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">x</span>, panels <span class="op">=</span>, by_strata <span class="op">=</span><span class="op">)</span>        <span class="co"># multi-panel diagnostic (patchwork)</span></span>

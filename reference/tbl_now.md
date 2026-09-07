@@ -30,11 +30,11 @@ tbl_now(
   covariates = NULL,
   case_count = NULL,
   is_censored_report = NULL,
-  validation_date = NULL,
-  validation_type = NULL,
-  validation_units = units,
-  validation_levels = NULL,
-  is_censored_validation = NULL,
+  revision_date = NULL,
+  revision_type = NULL,
+  revision_units = units,
+  revision_levels = NULL,
+  is_censored_revision = NULL,
   now = NULL,
   event_units = units,
   report_units = units,
@@ -119,7 +119,7 @@ tbl_now(
   but if the `report_date` corresponds to an error and is only an upper
   bound of the real report date set `is_censored_report = TRUE`.
 
-- validation_date:
+- revision_date:
 
   (optional)
   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
@@ -127,50 +127,50 @@ tbl_now(
   Influenza is the picture to keep in mind – symptoms begin (the event),
   the patient sees a doctor (the report), and days later a swab comes
   back. The assumed timeline is
-  `event_date <= report_date <= validation_date <= now`. Leave `NULL`
-  (the default) for the usual two-date object. See
-  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md).
+  `event_date <= report_date <= revision_date <= now`. Leave `NULL` (the
+  default) for the usual two-date object. See
+  [`add_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md).
 
-- validation_type:
+- revision_type:
 
   (optional)
   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   column saying what the resolution *was*: `"confirmed"`, `"retracted"`
   (it was reported, but it is not a case after all), `"pending"` or
   `NA`. **`"pending"` means reported and still waiting**, so it carries
-  no validation date – which is a different thing from a result that was
-  never recorded (`NA`). A validation date with no type warns rather
-  than guessing, because a date alone cannot say whether the case was
+  no revision date – which is a different thing from a result that was
+  never recorded (`NA`). A revision date with no type warns rather than
+  guessing, because a date alone cannot say whether the case was
   confirmed or retracted.
 
-- validation_units:
+- revision_units:
 
   (optional) Character. Either `"auto"` (default), `"days"`, `"weeks"`,
-  `"months"`, `"years"` or `"numeric"` – the grid the validation date
+  `"months"`, `"years"` or `"numeric"` – the grid the revision date
   lives on, resolved the same way as `report_units`.
 
-- validation_levels:
+- revision_levels:
 
   (optional) `NULL` (default) or a **named** character vector
-  translating the labels in `validation_type` into the canonical
-  outcomes, for data that was not recorded in English:
+  translating the labels in `revision_type` into the canonical outcomes,
+  for data that was not recorded in English:
   `c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")`.
   The names are the labels in your data, the values are the canonical
   ones. The column is rewritten to the canonical values and the
   dictionary is kept as an attribute, readable with
-  [`get_validation_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md).
+  [`get_revision_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md).
   Only `"confirmed"`, `"retracted"`, `"pending"` and `NA` are ever
   stored.
 
-- is_censored_validation:
+- is_censored_revision:
 
   (optional)
   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
-  or `NULL` (default). The validation-axis counterpart of
+  or `NULL` (default). The revision-axis counterpart of
   `is_censored_report`: the name of a logical column marking rows whose
-  **validation delay** is a bound rather than a measurement. Requires a
-  `validation_date`. See
-  [censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md).
+  **revision delay** is a bound rather than a measurement. Requires a
+  `revision_date`. See
+  [censor_revision_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md).
 
 - now:
 
@@ -192,7 +192,7 @@ tbl_now(
 
   (optional) Character. Either `"auto"` (default), `"days"`, `"weeks"`,
   `"months"`, `"years"` or `"numeric"`. The **default** for
-  `event_units`, `report_units` and `validation_units`: say it once
+  `event_units`, `report_units` and `revision_units`: say it once
   instead of three times. Any of the three that you give explicitly wins
   over `units`, so `units = "days", report_units = "weeks"` reads a
   daily event date against a weekly report date.
@@ -259,7 +259,7 @@ them plus a `delay` column, from which the other is reconstructed).
 Everything else is optional and can be added later with
 [`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md),
 [`add_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md),
-[`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+[`add_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 and the rest of the
 [`add()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 family.
@@ -278,8 +278,7 @@ walks through that path end to end.
 
 ## Attributes
 
-The following attributes are part of a `tbl_now` and are validated by
-the
+The following attributes are part of a `tbl_now` and are revised by the
 [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
 function:
 
@@ -335,29 +334,29 @@ function:
   report date's incidence) or cumulative (overall known cases at report
   date)
 
-- validation_date:
+- revision_date:
 
   Name of the column with the (optional) third date: when the report was
   resolved.
 
-- validation_type:
+- revision_type:
 
   Name of the column saying what that resolution was (`"confirmed"`,
   `"retracted"`, `"pending"`).
 
-- validation_units:
+- revision_units:
 
-  Units of `validation_date`, resolved like `report_units`.
+  Units of `revision_date`, resolved like `report_units`.
 
-- validation_levels:
+- revision_levels:
 
-  The (optional) dictionary translating the labels in `validation_type`
+  The (optional) dictionary translating the labels in `revision_type`
   into the canonical outcomes.
 
-- is_censored_validation:
+- is_censored_revision:
 
-  Column indicating whether the *validation* delay is only a bound (the
-  validation-axis counterpart of `is_censored_report`).
+  Column indicating whether the *revision* delay is only a bound (the
+  revision-axis counterpart of `is_censored_report`).
 
 - computed_temporal_effect_cols:
 

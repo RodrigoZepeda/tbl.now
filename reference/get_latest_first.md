@@ -29,18 +29,18 @@ get_nth_reported_cases(x, delay, type = "total")
 
   `"total"`
 
-  :   (default) every case, whatever the outcome. On the validation axis
+  :   (default) every case, whatever the outcome. On the revision axis
       that means every case that has been settled at all.
 
   `"confirmed"`, `"retracted"`, `"pending"`
 
   :   only the cases with that outcome. `"pending"` is a reporting-axis
-      question only – a pending case has no validation date – and the
-      validation getters refuse it.
+      question only – a pending case has no revision date – and the
+      revision getters refuse it.
 
   `"unknown"`
 
-  :   the cases whose `validation_type` is `NA`: settled, but the data
+  :   the cases whose `revision_type` is `NA`: settled, but the data
       does not say which way.
 
   `"net"`
@@ -58,8 +58,8 @@ get_nth_reported_cases(x, delay, type = "total")
       joins the keys, so you get pending, confirmed and retracted side
       by side.
 
-  On an object with no validation process anything but `"total"` warns
-  and pools, because there is no outcome to filter on.
+  On an object with no revision process anything but `"total"` warns and
+  pools, because there is no outcome to filter on.
 
 - delay:
 
@@ -86,14 +86,14 @@ and grouping column), containing:
 - any strata, covariate, censoring indicator and temporal-effect columns
   the object carried, plus the caller's grouping columns.
 
-The **validation** columns are not carried: the count pools over many
-validation dates, so the result has no single one and does not pretend
-to. `type = "by_type"` is the exception – it keeps the outcome column,
+The **revision** columns are not carried: the count pools over many
+revision dates, so the result has no single one and does not pretend to.
+`type = "by_type"` is the exception – it keeps the outcome column,
 declared as a covariate, because that is the whole point of the call and
 an undeclared column is one
 [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
 would pool away. Use
-[get_latest_validated_cases()](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
+[get_latest_revised_cases()](https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.md)
 when you want the third date on the result.
 
 ## Details
@@ -133,8 +133,8 @@ cannot, and warns instead.
 
 ## See also
 
-[get_latest_validated_cases()](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
-and friends for the same idea on the validation process;
+[get_latest_revised_cases()](https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.md)
+and friends for the same idea on the revision process;
 [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
 for the underlying data shapes;
 [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md),

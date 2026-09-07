@@ -54,7 +54,7 @@ x$name <- value
 
 ## Value
 
-A `tbl_now` object, or a plain data frame when the operation invalidated
+A `tbl_now` object, or a plain data frame when the operation inrevised
 the class.
 
 ## Details

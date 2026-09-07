@@ -5,7 +5,7 @@ can be stacked with dplyr::bind_rows() or used on their own.
 diagnose_declarations() – the attributes and the columns they name:
 types, existence, collisions, columns the object was never told about, and
 temporal effects that were added but never materialised.
-diagnose_ordering() – the event &amp;lt;= report &amp;lt;= validation timeline.
+diagnose_ordering() – the event &amp;lt;= report &amp;lt;= revision timeline.
 diagnose_missing() – NA values, per column and per stratum. An NA
 count is reported neutrally: in a reporting triangle it means not yet
 observed, which is correct data rather than a defect.
@@ -18,7 +18,7 @@ diagnose_now() – anything dated after now, and how stale the object is.
 diagnose_truncation() – how many recent event dates are still immature,
 and how much of their eventual total is probably still missing.
 diagnose_strata() – the smallest and the sparsest stratum, and the
-validations still pending.
+revisions still pending.
 
 "><meta property="og:description" content="
 Each function returns one block of diagnose(), in the same schema, so they
@@ -26,7 +26,7 @@ can be stacked with dplyr::bind_rows() or used on their own.
 diagnose_declarations() – the attributes and the columns they name:
 types, existence, collisions, columns the object was never told about, and
 temporal effects that were added but never materialised.
-diagnose_ordering() – the event &amp;lt;= report &amp;lt;= validation timeline.
+diagnose_ordering() – the event &amp;lt;= report &amp;lt;= revision timeline.
 diagnose_missing() – NA values, per column and per stratum. An NA
 count is reported neutrally: in a reporting triangle it means not yet
 observed, which is correct data rather than a defect.
@@ -39,7 +39,7 @@ diagnose_now() – anything dated after now, and how stale the object is.
 diagnose_truncation() – how many recent event dates are still immature,
 and how much of their eventual total is probably still missing.
 diagnose_strata() – the smallest and the sparsest stratum, and the
-validations still pending.
+revisions still pending.
 
 "><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -97,7 +97,7 @@ validations still pending.
 can be stacked with <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">dplyr::bind_rows()</a></code> or used on their own.</p><ul><li><p><code>diagnose_declarations()</code> – the attributes and the columns they name:
 types, existence, collisions, columns the object was never told about, and
 temporal effects that were added but never materialised.</p></li>
-<li><p><code>diagnose_ordering()</code> – the <code>event &lt;= report &lt;= validation</code> timeline.</p></li>
+<li><p><code>diagnose_ordering()</code> – the <code>event &lt;= report &lt;= revision</code> timeline.</p></li>
 <li><p><code>diagnose_missing()</code> – <code>NA</code> values, per column and per stratum. An <code>NA</code>
 <em>count</em> is reported neutrally: in a reporting triangle it means <em>not yet
 observed</em>, which is correct data rather than a defect.</p></li>
@@ -110,7 +110,7 @@ downward revision leaves behind when cumulative data is de-accumulated.</p></li>
 <li><p><code>diagnose_truncation()</code> – how many recent event dates are still immature,
 and how much of their eventual total is probably still missing.</p></li>
 <li><p><code>diagnose_strata()</code> – the smallest and the sparsest stratum, and the
-validations still pending.</p></li>
+revisions still pending.</p></li>
 </ul></div>
 
     <div class="section level2">
@@ -211,8 +211,8 @@ explains how to read each finding.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">ordering/event_to_report:</span> Every report is on or after its event.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Skipped (2)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> <span style="font-weight: bold;">ordering/event_to_validation:</span> The object carries no validation process.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> <span style="font-weight: bold;">ordering/report_to_validation:</span> The object carries no validation process.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> <span style="font-weight: bold;">ordering/event_to_revision:</span> The object carries no revision process.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> <span style="font-weight: bold;">ordering/report_to_revision:</span> The object carries no revision process.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span><span class="fu">diagnose_units</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>

@@ -110,7 +110,7 @@ is_tbl_now(messy)
 is_tbl_now(data.frame(x = 1:3))
 #> [1] FALSE
 
-## ... and asking for validation says so, with a reason. (Wrapped in try()
+## ... and asking for revision says so, with a reason. (Wrapped in try()
 # because it is meant to fail here.)
 try(validate_tbl_now(data.frame(x = 1:3)))
 #> Error in .tbl_now_emit_findings(findings) : 

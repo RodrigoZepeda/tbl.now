@@ -82,7 +82,7 @@ read off one plot. A batch is a single report date, i.e. one such diagonal.</p>
 <span>  report_ticks <span class="op">=</span> <span class="fl">6L</span>,</span>
 <span>  mark_batches <span class="op">=</span> <span class="fl">0L</span>,</span>
 <span>  plotly <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
+<span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
 <span>  size <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  grid_linewidth <span class="op">=</span> <span class="fl">0.3</span>,</span>
 <span>  palette <span class="op">=</span> <span class="fu">.tbl_now_palette</span><span class="op">(</span><span class="op">)</span></span>
@@ -120,10 +120,10 @@ static plot. Default <code>FALSE</code>.</p></dd>
 
 <dt id="arg-axis">axis<a class="anchor" aria-label="anchor" href="#arg-axis"></a></dt>
 <dd><p>Which time axis to draw: <code>"report"</code> (default) or
-<code>"validation"</code>. On the validation axis the picture answers the
+<code>"revision"</code>. On the revision axis the picture answers the
 laboratory's version of the question – when results arrived, rather than
-when reports did. Needs a validation process (see <code><a href="add.html">add_validation_date()</a></code>);
-cases still <code>"pending"</code> have no validation date and are left out.</p></dd>
+when reports did. Needs a revision process (see <code><a href="add.html">add_revision_date()</a></code>);
+cases still <code>"pending"</code> have no revision date and are left out.</p></dd>
 
 
 <dt id="arg-size">size<a class="anchor" aria-label="anchor" href="#arg-size"></a></dt>

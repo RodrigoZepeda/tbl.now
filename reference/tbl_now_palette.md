@@ -25,6 +25,8 @@ tbl_now_palette(
   epidemic_light = "#A8BFA9",
   epidemic_mid = "#7A9E7E",
   epidemic_dark = "#334335",
+  revision = "#C79800",
+  revision_light = "#E6CE80",
   ink = "#262626",
   ink_muted = "#607060",
   ink_inverse = "#FFFFFF",
@@ -69,6 +71,14 @@ tbl_now_palette(
 - epidemic_dark:
 
   Darkest epidemic colour (dense overplotted curves).
+
+- revision:
+
+  Strong colour of the revision process.
+
+- revision_light:
+
+  Attenuated revision colour (box fills).
 
 - ink:
 
@@ -150,6 +160,9 @@ The package has one visual grammar and the role names state it:
 - **`epidemic*`** – the *epidemic* process: event dates, case counts,
   anything about **what happened**. Green by default.
 
+- **`revision*`** – the *revision* process: revision dates and
+  resolution arrivals. Ochre by default.
+
 A palette that swaps the two hues is fine; a *plot* that draws delays
 with an `epidemic*` role is a bug, whatever colour it comes out.
 
@@ -176,6 +189,8 @@ tbl_now_palette()
 #> epidemic_light   #A8BFA9
 #> epidemic_mid     #7A9E7E
 #> epidemic_dark    #334335
+#> revision         #C79800
+#> revision_light   #E6CE80
 #> ink              #262626
 #> ink_muted        #607060
 #> ink_inverse      #FFFFFF
@@ -201,6 +216,8 @@ tbl_now_palette(reporting = "#5B4B8A")
 #> epidemic_light   #A8BFA9
 #> epidemic_mid     #7A9E7E
 #> epidemic_dark    #334335
+#> revision         #C79800
+#> revision_light   #E6CE80
 #> ink              #262626
 #> ink_muted        #607060
 #> ink_inverse      #FFFFFF

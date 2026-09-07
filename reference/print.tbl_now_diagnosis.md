@@ -76,7 +76,7 @@ diagnose(ndata)
 #> ℹ truncation/event_date: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
 #> 
 #> ✔ 15 passed: declarations/temporal_effects, declarations/undeclared, missing/gender, missing/onset_week, missing/report_week, now/event_date, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, units/declared, units/delay, units/event_grid, and units/report_grid
-#> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_validation, ordering/report_to_validation, and strata/pending
+#> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_revision, ordering/report_to_revision, and strata/pending
 #> 
 #> ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 
@@ -119,9 +119,9 @@ print(diagnose(ndata), all = TRUE)
 #> Skipped (5)
 #> ─ duplicates/key: A line list is one row per case, so identical rows are two cases rather than a repeat.
 #> ─ negatives/count: A line list has no count column to go negative.
-#> ─ ordering/event_to_validation: The object carries no validation process.
-#> ─ ordering/report_to_validation: The object carries no validation process.
-#> ─ strata/pending: The object carries no validation process.
+#> ─ ordering/event_to_revision: The object carries no revision process.
+#> ─ ordering/report_to_revision: The object carries no revision process.
+#> ─ strata/pending: The object carries no revision process.
 #> 
 #> ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 

@@ -26,7 +26,7 @@ call:
 
 - `prop_censored()` – proportion of cases flagged censored.
 
-- `prop_validation_type()` – proportion of cases per validation outcome.
+- `prop_revision_type()` – proportion of cases per revision outcome.
 
 - `prop_strata()` – proportion of cases per stratum.
 
@@ -58,28 +58,28 @@ call:
 ``` r
 cases_per_date(
   x,
-  axis = c("event", "report", "validation"),
+  axis = c("event", "report", "revision"),
   by_strata = NULL,
   strata = NULL
 )
 
 delay_summary(
   x,
-  delay = c("event_to_report", "event_to_validation", "report_to_validation"),
+  delay = c("event_to_report", "event_to_revision", "report_to_revision"),
   by_strata = NULL,
   strata = NULL
 )
 
 zero_run_summary(
   x,
-  axis = c("event", "report", "validation"),
+  axis = c("event", "report", "revision"),
   by_strata = NULL,
   strata = NULL
 )
 
 prop_censored(x, by_strata = NULL, strata = NULL)
 
-prop_validation_type(x, by_strata = NULL, strata = NULL)
+prop_revision_type(x, by_strata = NULL, strata = NULL)
 
 prop_strata(x, strata = NULL)
 
@@ -88,7 +88,7 @@ prop_covariate_levels(x, by_strata = NULL, strata = NULL)
 case_autocorrelation(
   x,
   lags = 1,
-  axis = c("event", "report", "validation"),
+  axis = c("event", "report", "revision"),
   by_strata = NULL,
   strata = NULL
 )
@@ -116,7 +116,7 @@ cumulative_growth(x, k = 7, by_strata = NULL, strata = NULL)
 
 - axis:
 
-  Which time axis to describe: `"event"`, `"report"` or `"validation"`.
+  Which time axis to describe: `"event"`, `"report"` or `"revision"`.
 
 - by_strata:
 
@@ -131,9 +131,9 @@ cumulative_growth(x, k = 7, by_strata = NULL, strata = NULL)
 - delay:
 
   Which delay to describe: `"event_to_report"` (the reporting delay),
-  `"event_to_validation"` (the same span measured to the validation, so
-  the two are comparable) or `"report_to_validation"` (the laboratory's
-  turnaround, the `.validation_delay` column).
+  `"event_to_revision"` (the same span measured to the revision, so the
+  two are comparable) or `"report_to_revision"` (the laboratory's
+  turnaround, the `.revision_delay` column).
 
 - lags:
 

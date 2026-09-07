@@ -21,7 +21,7 @@ plot_scalogram(
   wname = "PAUL",
   format = "%d/%b/%y",
   plotly = FALSE,
-  axis = c("report", "validation"),
+  axis = c("report", "revision"),
   palette = .tbl_now_palette()
 )
 ```
@@ -62,12 +62,12 @@ plot_scalogram(
 
 - axis:
 
-  Which time axis to draw: `"report"` (default) or `"validation"`. On
-  the validation axis the picture answers the laboratory's version of
-  the question – when results arrived, rather than when reports did.
-  Needs a validation process (see
-  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
-  cases still `"pending"` have no validation date and are left out.
+  Which time axis to draw: `"report"` (default) or `"revision"`. On the
+  revision axis the picture answers the laboratory's version of the
+  question – when results arrived, rather than when reports did. Needs a
+  revision process (see
+  [`add_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
+  cases still `"pending"` have no revision date and are left out.
 
 - palette:
 

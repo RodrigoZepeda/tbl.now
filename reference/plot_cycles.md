@@ -17,7 +17,7 @@ For a *time-resolved* view — which cycles are strong **when** — see
 ## Usage
 
 ``` r
-plot_cycles(x, type = c("epidemic", "report"), ...)
+plot_cycles(x, type = c("epidemic", "report", "revision"), ...)
 ```
 
 ## Arguments
@@ -30,7 +30,7 @@ plot_cycles(x, type = c("epidemic", "report"), ...)
 
 - type:
 
-  `"epidemic"` (default) or `"report"`.
+  `"epidemic"` (default), `"report"` or `"revision"`.
 
 - ...:
 

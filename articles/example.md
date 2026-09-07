@@ -18,7 +18,7 @@ a real, **deliberately unpolished** dataset. We will:
 
 We’ll start the process by nowcasting with two dates (event and report
 dates) and then we’ll focus on nowcasting with three dates (event,
-report, and validation dates).
+report, and revision dates).
 
 Let’s start by calling the libraries:
 
@@ -139,6 +139,14 @@ The
 [`tbl.now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl.now-package.md)
 automatically fires several warnings. Let’s take a look!
 
+The
+[`tbl.now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl.now-package.md)
+package also considers the possibility of a third `revision_date` where
+reports that have already been submitted by `report_date` are either
+`confirmed` or `rejected` (or maybe just one of those). We show more
+diagnostics for such an example in the [article on diagnosing a
+`tbl.now()`](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html).
+
 ## 3. What is wrong?
 
 These same warnings can also be accessed with the
@@ -176,7 +184,7 @@ diagnose(hai_bucaramanga)
 #> ℹ truncation/event_date: 24 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 20.5% of their eventual total has not arrived.
 #> 
 #> ✔ 12 passed: declarations/temporal_effects, missing/sex, now/event_date, now/now_gap_event, now/now_gap_report, now/report_date, units/declared, units/delay, units/event_grid, and units/report_grid
-#> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_validation, ordering/report_to_validation, and strata/pending
+#> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_revision, ordering/report_to_revision, and strata/pending
 #> 
 #> ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 ```
@@ -308,7 +316,7 @@ diagnose(hai_bucaramanga)
 #> ℹ truncation/event_date: 300 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 74.7% of their eventual total has not arrived.
 #> 
 #> ✔ 20 passed: declarations/temporal_effects, missing/.is_censored_report, missing/report_date, missing/sex, missing/specimen_date, now/event_date, now/now_gap_event, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, units/declared, units/delay, units/event_grid, and units/report_grid
-#> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_validation, ordering/report_to_validation, and strata/pending
+#> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_revision, ordering/report_to_revision, and strata/pending
 #> 
 #> ℹ 32 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 ```
@@ -1055,43 +1063,56 @@ for more information.
 
 ## Summary
 
-In this example we showed: 1. How to create a
-[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
-object. 2. How to
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-and summarise with [`summary()`](https://rdrr.io/r/base/summary.html) as
-well as visualize with
-[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html) a
-[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md).
-3. How to add
-[`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
-to the object which can be displayed in the plots. 4. How to aggregate
-the time units with
-[`aggregate_time_units()`](https://rodrigozepeda.github.io/tbl.now/reference/aggregate_time_units.md)
-to pass from days to weeks.  
-5. How to identify drifts and batches with
-[`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md),
-[`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
-and
-[`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md).
-6. How to identify potential batches with
-[`plot_reporting_hexamap()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.md)
-in conjunction with
-[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
-(and
-[`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md)).
-7. How to perform a nowcast by setting an
-[`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md)
-and running with
-[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md).
-8. How to clean with
-[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-and
-[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html) a
-nowcast. 9. How to backtest a nowcast with
-[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
-and create an ensemble with
-[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md).
+In this example we showed:
+
+1.  How to create a
+    [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+    object.
+
+2.  How to
+    [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+    and summarise with
+    [`summary()`](https://rdrr.io/r/base/summary.html) as well as
+    visualize with
+    [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+    a
+    [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md).
+
+3.  How to add
+    [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
+    to the object which can be displayed in the plots.
+
+4.  How to aggregate the time units with
+    [`aggregate_time_units()`](https://rodrigozepeda.github.io/tbl.now/reference/aggregate_time_units.md)
+    to pass from days to weeks.
+
+5.  How to identify drifts and batches with
+    [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md),
+    [`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
+    and
+    [`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md). 6.
+    How to identify potential batches with
+    [`plot_reporting_hexamap()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.md)
+    in conjunction with
+    [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
+    (and
+    [`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md)).
+
+6.  How to perform a nowcast by setting an
+    [`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md)
+    and running with
+    [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md).
+
+7.  How to clean with
+    [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+    and
+    [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+    a nowcast.
+
+8.  How to backtest a nowcast with
+    [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
+    and create an ensemble with
+    [`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md).
 
 If you have any questions regarding this article or comments please
 [open an issue](https://github.com/RodrigoZepeda/tbl.now/issues/new)

@@ -43,8 +43,8 @@ aggregate_time_units(
 - axes:
 
   Character. Which time axes to aggregate: `"all"` (the default, meaning
-  the event and report axes plus the validation axis when there is one),
-  or any of `"event"`, `"report"` and `"validation"`. The unit they are
+  the event and report axes plus the revision axis when there is one),
+  or any of `"event"`, `"report"` and `"revision"`. The unit they are
   aggregated to is `to`.
 
 - label:
@@ -69,7 +69,7 @@ aggregate_time_units(
 ## Value
 
 A `tbl_now` on the coarser grid, with `event_units`, `report_units` and
-`validation_units` updated for the axes that were aggregated, and `now`
+`revision_units` updated for the axes that were aggregated, and `now`
 moved onto the new grid.
 
 ## Details
@@ -154,8 +154,8 @@ batches. Two things follow:
 
 - A week named by the day it *starts* sits before every date inside it,
   so coarsening a **later** axis alone – the report against a daily
-  event, or the validation against a daily report – with
-  `label = "start"` produces negative delays, and
+  event, or the revision against a daily report – with `label = "start"`
+  produces negative delays, and
   [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
   warns. Use `label = "end"`: a report that arrived somewhere in week
   *W* is known by the end of *W*, which is the honest bound. When the

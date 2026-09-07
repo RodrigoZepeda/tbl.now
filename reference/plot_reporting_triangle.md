@@ -20,7 +20,7 @@ plot_reporting_triangle(
   report_ticks = 6L,
   mark_batches = 0L,
   plotly = FALSE,
-  axis = c("report", "validation"),
+  axis = c("report", "revision"),
   size = 1,
   grid_linewidth = 0.3,
   palette = .tbl_now_palette()
@@ -59,12 +59,12 @@ plot_reporting_triangle(
 
 - axis:
 
-  Which time axis to draw: `"report"` (default) or `"validation"`. On
-  the validation axis the picture answers the laboratory's version of
-  the question – when results arrived, rather than when reports did.
-  Needs a validation process (see
-  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
-  cases still `"pending"` have no validation date and are left out.
+  Which time axis to draw: `"report"` (default) or `"revision"`. On the
+  revision axis the picture answers the laboratory's version of the
+  question – when results arrived, rather than when reports did. Needs a
+  revision process (see
+  [`add_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
+  cases still `"pending"` have no revision date and are left out.
 
 - size:
 

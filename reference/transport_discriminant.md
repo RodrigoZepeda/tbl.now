@@ -19,7 +19,7 @@ transport_discriminant(
   baseline_window = NULL,
   period = NULL,
   alpha = 0.05,
-  axis = c("report", "validation"),
+  axis = c("report", "revision"),
   drop_censored = TRUE
 )
 ```
@@ -50,14 +50,14 @@ transport_discriminant(
 - axis:
 
   Which time axis to scan for arrivals: `"report"` (default) or
-  `"validation"`. Needs a validation process (see
-  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
+  `"revision"`. Needs a revision process (see
+  [`add_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
   cases still `"pending"` are left out.
 
 - drop_censored:
 
   Logical. Ignore the rows whose date on `axis` is flagged censored
-  (`is_censored_report`, or `is_censored_validation` on the validation
+  (`is_censored_report`, or `is_censored_revision` on the revision
   axis). Default `TRUE`: a censored date is a *bound*, not the date the
   record arrived, so those rows would pile up on the censoring date and
   be rediscovered as the very batch the censoring already recorded.

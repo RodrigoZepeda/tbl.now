@@ -65,13 +65,15 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_observed_cases.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_revision_status.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_transport_discriminant.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_validation_status.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_diagnosis.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_palette.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_summary_table.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/reexports.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/simulate_batch.html</loc></url>
@@ -104,7 +106,5 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/update.tbl_now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.html</loc></url>
 </urlset>
 

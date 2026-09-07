@@ -85,7 +85,7 @@ and a long <code>now_dates</code> it is genuinely expensive.</p>
 <span>  keep_draws <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  on_error <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"warn"</span>, <span class="st">"abort"</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  truth_axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
+<span>  truth_axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
 <span>  truth_type <span class="op">=</span> <span class="st">"total"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -151,16 +151,16 @@ with a warning, or <code>"abort"</code> to stop.</p></dd>
 
 <dt id="arg-truth-axis">truth_axis<a class="anchor" aria-label="anchor" href="#arg-truth-axis"></a></dt>
 <dd><p>Which process defines the observed counts. <code>"report"</code>
-(default) scores counts eventually reported. <code>"validation"</code> scores counts
-eventually resolved on the validation axis and requires a validation-aware
+(default) scores counts eventually reported. <code>"revision"</code> scores counts
+eventually resolved on the revision axis and requires a revision-aware
 <code>truth</code>.</p></dd>
 
 
 <dt id="arg-truth-type">truth_type<a class="anchor" aria-label="anchor" href="#arg-truth-type"></a></dt>
-<dd><p>Which case type to score. Defaults to <code>"total"</code>. Validation
+<dd><p>Which case type to score. Defaults to <code>"total"</code>. Revision
 types such as <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code>, <code>"unknown"</code> and
 <code>"net"</code> follow the same meanings as <code><a href="get_latest_first.html">get_latest_reported_cases()</a></code> and
-<code><a href="validated_cases.html">get_latest_validated_cases()</a></code>. <code>"by_type"</code> is refused because scoring needs
+<code><a href="revised_cases.html">get_latest_revised_cases()</a></code>. <code>"by_type"</code> is refused because scoring needs
 one observed value per event-date/stratum target.</p></dd>
 
 </dl></div>

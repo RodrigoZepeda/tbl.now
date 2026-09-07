@@ -65,29 +65,29 @@ replace_temporal_effects(x, t_effects)
 
 remove_temporal_effects(x)
 
-change_is_censored_validation(x, is_censored_validation)
+change_is_censored_revision(x, is_censored_revision)
 
-add_is_censored_validation(x, is_censored_validation)
+add_is_censored_revision(x, is_censored_revision)
 
-remove_is_censored_validation(x)
+remove_is_censored_revision(x)
 
-add_validation_date(
+add_revision_date(
   x,
-  validation_date,
-  validation_type = NULL,
-  validation_units = "auto",
-  validation_levels = NULL
+  revision_date,
+  revision_type = NULL,
+  revision_units = "auto",
+  revision_levels = NULL
 )
 
-change_validation_date(
+change_revision_date(
   x,
-  validation_date,
-  validation_type = NULL,
-  validation_units = "auto",
-  validation_levels = NULL
+  revision_date,
+  revision_type = NULL,
+  revision_units = "auto",
+  revision_levels = NULL
 )
 
-remove_validation_date(x)
+remove_revision_date(x)
 ```
 
 ## Arguments
@@ -162,17 +162,17 @@ remove_validation_date(x)
   object or a character vector with the names of the columns containing
   the temporal effects.
 
-- is_censored_validation:
+- is_censored_revision:
 
   (optional)
   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
-  or `NULL` (default). The validation-axis counterpart of
+  or `NULL` (default). The revision-axis counterpart of
   `is_censored_report`: the name of a logical column marking rows whose
-  **validation delay** is a bound rather than a measurement. Requires a
-  `validation_date`. See
-  [censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md).
+  **revision delay** is a bound rather than a measurement. Requires a
+  `revision_date`. See
+  [censor_revision_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md).
 
-- validation_date:
+- revision_date:
 
   (optional)
   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
@@ -180,38 +180,37 @@ remove_validation_date(x)
   Influenza is the picture to keep in mind – symptoms begin (the event),
   the patient sees a doctor (the report), and days later a swab comes
   back. The assumed timeline is
-  `event_date <= report_date <= validation_date <= now`. Leave `NULL`
-  (the default) for the usual two-date object. See
-  `add_validation_date()`.
+  `event_date <= report_date <= revision_date <= now`. Leave `NULL` (the
+  default) for the usual two-date object. See `add_revision_date()`.
 
-- validation_type:
+- revision_type:
 
   (optional)
   [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
   column saying what the resolution *was*: `"confirmed"`, `"retracted"`
   (it was reported, but it is not a case after all), `"pending"` or
   `NA`. **`"pending"` means reported and still waiting**, so it carries
-  no validation date – which is a different thing from a result that was
-  never recorded (`NA`). A validation date with no type warns rather
-  than guessing, because a date alone cannot say whether the case was
+  no revision date – which is a different thing from a result that was
+  never recorded (`NA`). A revision date with no type warns rather than
+  guessing, because a date alone cannot say whether the case was
   confirmed or retracted.
 
-- validation_units:
+- revision_units:
 
   (optional) Character. Either `"auto"` (default), `"days"`, `"weeks"`,
-  `"months"`, `"years"` or `"numeric"` – the grid the validation date
+  `"months"`, `"years"` or `"numeric"` – the grid the revision date
   lives on, resolved the same way as `report_units`.
 
-- validation_levels:
+- revision_levels:
 
   (optional) `NULL` (default) or a **named** character vector
-  translating the labels in `validation_type` into the canonical
-  outcomes, for data that was not recorded in English:
+  translating the labels in `revision_type` into the canonical outcomes,
+  for data that was not recorded in English:
   `c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")`.
   The names are the labels in your data, the values are the canonical
   ones. The column is rewritten to the canonical values and the
   dictionary is kept as an attribute, readable with
-  [`get_validation_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md).
+  [`get_revision_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md).
   Only `"confirmed"`, `"retracted"`, `"pending"` and `NA` are ever
   stored.
 
@@ -260,10 +259,10 @@ latest date actually present:
     get_now(update_now(ndata_1992))
     #> [1] "1991-12-30"
 
-## The validation process, the optional third date
+## The revision process, the optional third date
 
-`add_validation_date()`, `change_validation_date()` and
-`remove_validation_date()` set the **third** date a surveillance record
+`add_revision_date()`, `change_revision_date()` and
+`remove_revision_date()` set the **third** date a surveillance record
 can carry: after the event happened and after it was reported, somebody
 decided whether it was real. For influenza that is the laboratory result
 – and it can come back negative, in which case the case is *retracted*
@@ -272,43 +271,43 @@ rather than confirmed.
 Attaching one is the only verb on this page that changes more than a
 name:
 
-- **`now` moves.** A validation is an observation, so the as-of moment
-  becomes the latest of the report and validation dates. Validation
-  refuses an object whose `now` falls before a validation that has
-  already happened.
+- **`now` moves.** A revision is an observation, so the as-of moment
+  becomes the latest of the report and revision dates. Revision refuses
+  an object whose `now` falls before a revision that has already
+  happened.
 
-- **Two columns appear.** `.validation_num` is the date on the same
-  numeric anchor as `.event_num`/`.report_num`; `.validation_delay` is
-  the time from report to resolution. Both are protected, like `.delay`.
+- **Two columns appear.** `.revision_num` is the date on the same
+  numeric anchor as `.event_num`/`.report_num`; `.revision_delay` is the
+  time from report to resolution. Both are protected, like `.delay`.
 
 - **Counting gains a dimension.**
   [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
-  groups by the validation date and outcome as well, so a confirmed and
-  a retracted case on the same `(event, report)` pair stay separate
-  rather than being summed together.
+  groups by the revision date and outcome as well, so a confirmed and a
+  retracted case on the same `(event, report)` pair stay separate rather
+  than being summed together.
 
 - **The timeline is checked.**
-  `event_date <= report_date <= validation_date`; rows that break it are
+  `event_date <= report_date <= revision_date`; rows that break it are
   warned about, not silently accepted.
 
 A date on its own cannot say whether the test came back positive or
-negative, so leaving `validation_type` out gives every dated row `NA`
-and warns.
+negative, so leaving `revision_type` out gives every dated row `NA` and
+warns.
 
-Two optional pieces travel with the third date. `validation_levels` is a
+Two optional pieces travel with the third date. `revision_levels` is a
 named dictionary translating the labels in your data into the four
-values `validation_type` may hold – `c(confirmado = "confirmed", ...)` –
+values `revision_type` may hold – `c(confirmado = "confirmed", ...)` –
 so the recoding happens once rather than in every script. And
-`add_is_censored_validation()` names a logical column marking rows whose
-*validation delay* is a bound rather than a measurement, the
-validation-axis twin of `add_is_censored_report()`;
-[censor_validation_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+`add_is_censored_revision()` names a logical column marking rows whose
+*revision delay* is a bound rather than a measurement, the revision-axis
+twin of `add_is_censored_report()`;
+[censor_revision_delays_above()](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
 sets it for you.
 
-`change_now()` is validation-aware in both directions. Moving `now`
+`change_now()` is revision-aware in both directions. Moving `now`
 forward does nothing to the data; moving it **backwards**, which is how
 a backtest asks what was known at an earlier date, returns every
-validation dated after that moment to `"pending"` and masks its date. A
+revision dated after that moment to `"pending"` and masks its date. A
 resolution that has not happened yet is not a resolution.
 
 ## See also
@@ -427,7 +426,7 @@ counts |>
 #>   different grids. `align_weeks()` is the fix for weekly data.
 #> [1] "inflated"
 
-## ---- The validation process, the optional third date -----------------
+## ---- The revision process, the optional third date -----------------
 
 data(covid_us)
 covid <- covid_us |>
@@ -440,33 +439,33 @@ covid <- covid_us |>
 
 ## Onset -> positive specimen -> registration at CDC. A date alone cannot say
 # how the case resolved, so this warns until an outcome column is supplied.
-covid <- suppressWarnings(add_validation_date(covid, cdc_report_dt))
-get_validation_date(covid)
+covid <- suppressWarnings(add_revision_date(covid, cdc_report_dt))
+get_revision_date(covid)
 #> [1] "cdc_report_dt"
 
 ## CDC's own labels are not this package's four, which is what
-# `validation_levels` translates.
-covid <- change_validation_date(covid, cdc_report_dt,
-  validation_type = current_status,
-  validation_levels = c(
+# `revision_levels` translates.
+covid <- change_revision_date(covid, cdc_report_dt,
+  revision_type = current_status,
+  revision_levels = c(
     "Laboratory-confirmed case" = "confirmed", "Probable Case" = "pending"
   )
 )
-table(covid[[get_validation_type(covid)]])
+table(covid[[get_revision_type(covid)]])
 #> 
 #> confirmed   pending 
 #>     27273     11961 
-get_validation_levels(covid)
+get_revision_levels(covid)
 #> Laboratory-confirmed case             Probable Case 
 #>               "confirmed"                 "pending" 
 
-## A validation delay you refuse to believe is a bound, not a measurement.
-covid <- censor_validation_delays_above(covid, 45, verbose = FALSE)
-get_is_censored_validation(covid)
-#> [1] ".is_censored_validation"
+## A revision delay you refuse to believe is a bound, not a measurement.
+covid <- censor_revision_delays_above(covid, 45, verbose = FALSE)
+get_is_censored_revision(covid)
+#> [1] ".is_censored_revision"
 
 ## Dropping the third date leaves an ordinary two-date object.
-has_validation(remove_validation_date(covid))
+has_revision(remove_revision_date(covid))
 #> [1] FALSE
 
 ## ---- Temporal effects --------------------------------------------------

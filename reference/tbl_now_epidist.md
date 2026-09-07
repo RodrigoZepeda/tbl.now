@@ -189,7 +189,7 @@ Check the epidist issue tracker for the current status.
 ## See also
 
 [add](https://rodrigozepeda.github.io/tbl.now/reference/add.md) and
-[validation_delay](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md),
+[revision_delay](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md),
 since epidist is about delay distributions and a `tbl_now` may carry two
 of them;
 [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)

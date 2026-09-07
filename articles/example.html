@@ -86,6 +86,10 @@
 
     
     
+<!-- This article has been thoroughly reviewed by a human. Any correction done by an AI
+that has not been reviewed by a human should preface the corresponding section by
+stating "This section was last edited by an AI model automatically". These labels
+can only be removed by humans.-->
 <p>This article is an end-to-end walk-through of the
 <code>tbl.now</code> workflow on a real, <strong>deliberately
 unpolished</strong> dataset. We will:</p>
@@ -111,7 +115,7 @@ we found.</li>
 </ol>
 <p>We’ll start the process by nowcasting with two dates (event and
 report dates) and then we’ll focus on nowcasting with three dates
-(event, report, and validation dates).</p>
+(event, report, and revision dates).</p>
 <p>Let’s start by calling the libraries:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
@@ -217,6 +221,14 @@ a case), and stratify by <code>sex</code>.</p>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span></span></span></code></pre></div>
 <p>The <code><a href="../reference/tbl.now-package.html">tbl.now()</a></code> automatically fires several warnings.
 Let’s take a look!</p>
+<div class="alert alert-info">
+<p>The <code><a href="../reference/tbl.now-package.html">tbl.now()</a></code> package also considers the possibility of
+a third <code>revision_date</code> where reports that have already been
+submitted by <code>report_date</code> are either <code>confirmed</code>
+or <code>rejected</code> (or maybe just one of those). We show more
+diagnostics for such an example in the <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">article
+on diagnosing a <code>tbl.now()</code></a>.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="what-is-wrong">3. What is wrong?<a class="anchor" aria-label="anchor" href="#what-is-wrong"></a>
@@ -254,7 +266,7 @@ additional notes:</p>
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date:</span> 24 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 20.5% of their eventual total has not arrived.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> 12 passed: <span style="color: #00BB00;">declarations/temporal_effects</span>, <span style="color: #00BB00;">missing/sex</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_event</span>, <span style="color: #00BB00;">now/now_gap_report</span>, <span style="color: #00BB00;">now/report_date</span>, <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/delay</span>, <span style="color: #00BB00;">units/event_grid</span>, and <span style="color: #00BB00;">units/report_grid</span></span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">─</span> 5 skipped: <span style="color: #00BB00;">duplicates/key</span>, <span style="color: #00BB00;">negatives/count</span>, <span style="color: #00BB00;">ordering/event_to_validation</span>, <span style="color: #00BB00;">ordering/report_to_validation</span>, and <span style="color: #00BB00;">strata/pending</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">─</span> 5 skipped: <span style="color: #00BB00;">duplicates/key</span>, <span style="color: #00BB00;">negatives/count</span>, <span style="color: #00BB00;">ordering/event_to_revision</span>, <span style="color: #00BB00;">ordering/report_to_revision</span>, and <span style="color: #00BB00;">strata/pending</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span></span></code></pre></div>
 <p>Let’s see what they identify.</p>
@@ -369,7 +381,7 @@ issues:</p>
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date:</span> 300 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 74.7% of their eventual total has not arrived.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> 20 passed: <span style="color: #00BB00;">declarations/temporal_effects</span>, <span style="color: #00BB00;">missing/.is_censored_report</span>, <span style="color: #00BB00;">missing/report_date</span>, <span style="color: #00BB00;">missing/sex</span>, <span style="color: #00BB00;">missing/specimen_date</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_event</span>, <span style="color: #00BB00;">now/now_gap_report</span>, <span style="color: #00BB00;">now/report_date</span>, <span style="color: #00BB00;">ordering/event_to_report</span>, <span style="color: #00BB00;">simultaneously missing/event and report dates</span>, <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/delay</span>, <span style="color: #00BB00;">units/event_grid</span>, and <span style="color: #00BB00;">units/report_grid</span></span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">─</span> 5 skipped: <span style="color: #00BB00;">duplicates/key</span>, <span style="color: #00BB00;">negatives/count</span>, <span style="color: #00BB00;">ordering/event_to_validation</span>, <span style="color: #00BB00;">ordering/report_to_validation</span>, and <span style="color: #00BB00;">strata/pending</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">─</span> 5 skipped: <span style="color: #00BB00;">duplicates/key</span>, <span style="color: #00BB00;">negatives/count</span>, <span style="color: #00BB00;">ordering/event_to_revision</span>, <span style="color: #00BB00;">ordering/report_to_revision</span>, and <span style="color: #00BB00;">strata/pending</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">ℹ 32 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span></span></code></pre></div>
 </div>
@@ -933,24 +945,30 @@ nowcasting</a> for more information.</p>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
-<p>In this example we showed: 1. How to create a <code><a href="../reference/tbl_now.html">tbl_now()</a></code>
-object. 2. How to <code><a href="../reference/diagnose.html">diagnose()</a></code> and summarise with
+<p>In this example we showed:</p>
+<ol style="list-style-type: decimal">
+<li><p>How to create a <code><a href="../reference/tbl_now.html">tbl_now()</a></code> object.</p></li>
+<li><p>How to <code><a href="../reference/diagnose.html">diagnose()</a></code> and summarise with
 <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> as well as visualize with <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code>
-a <code><a href="../reference/tbl_now.html">tbl_now()</a></code>. 3. How to add <code><a href="../reference/temporal_effects.html">temporal_effects()</a></code>
-to the object which can be displayed in the plots. 4. How to aggregate
-the time units with <code><a href="../reference/aggregate_time_units.html">aggregate_time_units()</a></code> to pass from
-days to weeks.<br>
-5. How to identify drifts and batches with
+a <code><a href="../reference/tbl_now.html">tbl_now()</a></code>.</p></li>
+<li><p>How to add <code><a href="../reference/temporal_effects.html">temporal_effects()</a></code> to the object which
+can be displayed in the plots.</p></li>
+<li><p>How to aggregate the time units with
+<code><a href="../reference/aggregate_time_units.html">aggregate_time_units()</a></code> to pass from days to weeks.</p></li>
+<li><p>How to identify drifts and batches with
 <code><a href="../reference/plot_delay_drift.html">plot_delay_drift()</a></code>, <code><a href="../reference/diagnose_drift.html">diagnose_drift()</a></code> and
 <code><a href="../reference/diagnose_changepoint.html">diagnose_changepoint()</a></code>. 6. How to identify potential
 batches with <code><a href="../reference/plot_reporting_hexamap.html">plot_reporting_hexamap()</a></code> in conjunction with
-<code><a href="../reference/diagnose_batches.html">diagnose_batches()</a></code> (and <code><a href="../reference/diagnose_batches2.html">diagnose_batches2()</a></code>).
-7. How to perform a nowcast by setting an <code><a href="../reference/engine.html">engine()</a></code> and
-running with <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code>. 8. How to clean with
-<code><a href="../reference/tidy.nowcast.html">tidy()</a></code> and <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> a nowcast. 9. How to
-backtest a nowcast with <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> and create an
-ensemble with <code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code>.</p>
-<div class="alert alert-tip">
+<code><a href="../reference/diagnose_batches.html">diagnose_batches()</a></code> (and
+<code><a href="../reference/diagnose_batches2.html">diagnose_batches2()</a></code>).</p></li>
+<li><p>How to perform a nowcast by setting an <code><a href="../reference/engine.html">engine()</a></code> and
+running with <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code>.</p></li>
+<li><p>How to clean with <code><a href="../reference/tidy.nowcast.html">tidy()</a></code> and <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code>
+a nowcast.</p></li>
+<li><p>How to backtest a nowcast with <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code>
+and create an ensemble with <code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code>.</p></li>
+</ol>
+<div class="alert alert-info">
 <p>If you have any questions regarding this article or comments please
 <a href="https://github.com/RodrigoZepeda/tbl.now/issues/new" class="external-link">open an
 issue</a></p>

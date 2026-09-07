@@ -117,8 +117,9 @@ compute_temporal_effects(x, overwrite = FALSE)
 
 - date_type:
 
-  Either `event_date` (default) or `report_date` to add temporal effects
-  to those columns.
+  One of `event_date` (default), `report_date`, or `revision_date` to
+  add temporal effects to that column. `revision_date` requires a
+  `tbl_now` with a revision process.
 
 ## Value
 

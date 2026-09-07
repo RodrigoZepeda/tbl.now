@@ -98,10 +98,10 @@ engine_epinow2(
 
   (`engine_diseasenowcasting()`) Arguments of
   `diseasenowcasting::nowcast()`. `model` is where the epidemic and
-  validation processes are chosen, e.g.
+  revision processes are chosen, e.g.
   `diseasenowcasting::model(epidemic = diseasenowcasting::ar1_epidemic())`.
   On `count-cumulative` data that revises downwards you also want a
-  `validation` process, or the negative increments have nowhere to go.
+  `revision` process, or the negative increments have nowhere to go.
 
 - min_date:
 

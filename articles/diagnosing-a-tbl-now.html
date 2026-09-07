@@ -336,7 +336,7 @@ without computing the rest:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> strata = Male   <span style="text-decoration: underline;">26</span>395 0.498</span></span></code></pre></div>
 <p>The full set is <code><a href="../reference/nowcast_summary_components.html">cases_per_date()</a></code>,
 <code><a href="../reference/nowcast_summary_components.html">delay_summary()</a></code>, <code><a href="../reference/nowcast_summary_components.html">zero_run_summary()</a></code>,
-<code><a href="../reference/nowcast_summary_components.html">prop_censored()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_validation_type()</a></code>,
+<code><a href="../reference/nowcast_summary_components.html">prop_censored()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_revision_type()</a></code>,
 <code><a href="../reference/nowcast_summary_components.html">prop_strata()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_covariate_levels()</a></code>,
 <code><a href="../reference/nowcast_summary_components.html">date_ranges()</a></code>, <code><a href="../reference/nowcast_summary_components.html">triangle_occupancy()</a></code> and
 <code><a href="../reference/nowcast_summary_components.html">cumulative_growth()</a></code>, plus the two unreviewed ones –
@@ -384,7 +384,7 @@ passed, that were deliberately not run, and that could not be assessed.
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> 15 passed: <span style="color: #00BB00;">declarations/temporal_effects</span>, <span style="color: #00BB00;">declarations/undeclared</span>, <span style="color: #00BB00;">missing/gender</span>, <span style="color: #00BB00;">missing/onset_week</span>, <span style="color: #00BB00;">missing/report_week</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_report</span>, <span style="color: #00BB00;">now/report_date</span>, <span style="color: #00BB00;">ordering/event_to_report</span>, <span style="color: #00BB00;">simultaneously missing/event and report dates</span>, <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/delay</span>, <span style="color: #00BB00;">units/event_grid</span>, and <span style="color: #00BB00;">units/report_grid</span></span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">─</span> 5 skipped: <span style="color: #00BB00;">duplicates/key</span>, <span style="color: #00BB00;">negatives/count</span>, <span style="color: #00BB00;">ordering/event_to_validation</span>, <span style="color: #00BB00;">ordering/report_to_validation</span>, and <span style="color: #00BB00;">strata/pending</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">─</span> 5 skipped: <span style="color: #00BB00;">duplicates/key</span>, <span style="color: #00BB00;">negatives/count</span>, <span style="color: #00BB00;">ordering/event_to_revision</span>, <span style="color: #00BB00;">ordering/report_to_revision</span>, and <span style="color: #00BB00;">strata/pending</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span></span></code></pre></div>
 <p>It is a tibble underneath, in the schema the rest of this section
@@ -440,14 +440,14 @@ run</strong>:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"skipped"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">check</span>, <span class="va">scope</span>, <span class="va">message</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 3</span></span></span>
-<span><span class="co">#&gt;   check      scope                message                                                                               </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                                                 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> duplicates key                  A line list is one row per case, so identical rows are two cases rather than a repeat.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> negatives  count                A line list has no count column to go negative.                                       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> ordering   event_to_validation  The object carries no validation process.                                             </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ordering   report_to_validation The object carries no validation process.                                             </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> strata     pending              The object carries no validation process.</span></span></code></pre></div>
-<p><code>dengue_now</code> is a line list with no validation process, so
+<span><span class="co">#&gt;   check      scope              message                                                                               </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                                                 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> duplicates key                A line list is one row per case, so identical rows are two cases rather than a repeat.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> negatives  count              A line list has no count column to go negative.                                       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> ordering   event_to_revision  The object carries no revision process.                                               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ordering   report_to_revision The object carries no revision process.                                               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> strata     pending            The object carries no revision process.</span></span></code></pre></div>
+<p><code>dengue_now</code> is a line list with no revision process, so
 four checks have nothing to work on. None of them is a pass. Reporting
 them as <code>ok</code> would be a quiet lie, and this is the single
 most common way a health check misleads: silence that reads as

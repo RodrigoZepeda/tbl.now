@@ -100,11 +100,11 @@ dates without being told again.</p>
 <span>  covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  case_count <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  is_censored_report <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  validation_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  validation_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  validation_units <span class="op">=</span> <span class="va">units</span>,</span>
-<span>  validation_levels <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  is_censored_validation <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  revision_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  revision_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  revision_units <span class="op">=</span> <span class="va">units</span>,</span>
+<span>  revision_levels <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  is_censored_revision <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  now <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  event_units <span class="op">=</span> <span class="va">units</span>,</span>
 <span>  report_units <span class="op">=</span> <span class="va">units</span>,</span>
@@ -186,51 +186,51 @@ and is only an upper bound of the real report date
 set <code>is_censored_report = TRUE</code>.</p></dd>
 
 
-<dt id="arg-validation-date">validation_date<a class="anchor" aria-label="anchor" href="#arg-validation-date"></a></dt>
+<dt id="arg-revision-date">revision_date<a class="anchor" aria-label="anchor" href="#arg-revision-date"></a></dt>
 <dd><p>(optional)
 <a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a>
 column holding a <strong>third</strong> date: the day the report was resolved. Influenza is
 the picture to keep in mind – symptoms begin (the event), the patient sees a
 doctor (the report), and days later a swab comes back. The assumed timeline is
-<code>event_date &lt;= report_date &lt;= validation_date &lt;= now</code>. Leave <code>NULL</code> (the
-default) for the usual two-date object. See <code><a href="add.html">add_validation_date()</a></code>.</p></dd>
+<code>event_date &lt;= report_date &lt;= revision_date &lt;= now</code>. Leave <code>NULL</code> (the
+default) for the usual two-date object. See <code><a href="add.html">add_revision_date()</a></code>.</p></dd>
 
 
-<dt id="arg-validation-type">validation_type<a class="anchor" aria-label="anchor" href="#arg-validation-type"></a></dt>
+<dt id="arg-revision-type">revision_type<a class="anchor" aria-label="anchor" href="#arg-revision-type"></a></dt>
 <dd><p>(optional)
 <a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a>
 column saying what the resolution <em>was</em>: <code>"confirmed"</code>, <code>"retracted"</code> (it was
 reported, but it is not a case after all), <code>"pending"</code> or <code>NA</code>. <strong><code>"pending"</code>
-means reported and still waiting</strong>, so it carries no validation date –
+means reported and still waiting</strong>, so it carries no revision date –
 which is a different thing from a result that was never recorded (<code>NA</code>). A
-validation date with no type warns rather than guessing, because a date
+revision date with no type warns rather than guessing, because a date
 alone cannot say whether the case was confirmed or retracted.</p></dd>
 
 
-<dt id="arg-validation-units">validation_units<a class="anchor" aria-label="anchor" href="#arg-validation-units"></a></dt>
+<dt id="arg-revision-units">revision_units<a class="anchor" aria-label="anchor" href="#arg-revision-units"></a></dt>
 <dd><p>(optional) Character. Either <code>"auto"</code> (default),
 <code>"days"</code>, <code>"weeks"</code>, <code>"months"</code>, <code>"years"</code> or <code>"numeric"</code> – the grid the
-validation date lives on, resolved the same way as <code>report_units</code>.</p></dd>
+revision date lives on, resolved the same way as <code>report_units</code>.</p></dd>
 
 
-<dt id="arg-validation-levels">validation_levels<a class="anchor" aria-label="anchor" href="#arg-validation-levels"></a></dt>
+<dt id="arg-revision-levels">revision_levels<a class="anchor" aria-label="anchor" href="#arg-revision-levels"></a></dt>
 <dd><p>(optional) <code>NULL</code> (default) or a <strong>named</strong> character
-vector translating the labels in <code>validation_type</code> into the canonical
+vector translating the labels in <code>revision_type</code> into the canonical
 outcomes, for data that was not recorded in English:
 <code>c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")</code>.
 The names are the labels in your data, the values are the canonical ones. The
 column is rewritten to the canonical values and the dictionary is kept as an
-attribute, readable with <code><a href="nowcast_data_getters.html">get_validation_levels()</a></code>. Only
+attribute, readable with <code><a href="nowcast_data_getters.html">get_revision_levels()</a></code>. Only
 <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code> and <code>NA</code> are ever stored.</p></dd>
 
 
-<dt id="arg-is-censored-validation">is_censored_validation<a class="anchor" aria-label="anchor" href="#arg-is-censored-validation"></a></dt>
+<dt id="arg-is-censored-revision">is_censored_revision<a class="anchor" aria-label="anchor" href="#arg-is-censored-revision"></a></dt>
 <dd><p>(optional)
 <a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a> or <code>NULL</code> (default).
-The validation-axis counterpart of <code>is_censored_report</code>: the name of a
-logical column marking rows whose <strong>validation delay</strong> is a bound rather
-than a measurement. Requires a <code>validation_date</code>. See
-<a href="censoring.html">censor_validation_delays_above()</a>.</p></dd>
+The revision-axis counterpart of <code>is_censored_report</code>: the name of a
+logical column marking rows whose <strong>revision delay</strong> is a bound rather
+than a measurement. Requires a <code>revision_date</code>. See
+<a href="censoring.html">censor_revision_delays_above()</a>.</p></dd>
 
 
 <dt id="arg-now">now<a class="anchor" aria-label="anchor" href="#arg-now"></a></dt>
@@ -252,7 +252,7 @@ nowcast. If no <code>now</code> is given then the function automatically uses th
 <dt id="arg-units">units<a class="anchor" aria-label="anchor" href="#arg-units"></a></dt>
 <dd><p>(optional) Character. Either <code>"auto"</code> (default), <code>"days"</code>,
 <code>"weeks"</code>, <code>"months"</code>, <code>"years"</code> or <code>"numeric"</code>. The <strong>default</strong> for
-<code>event_units</code>, <code>report_units</code> and <code>validation_units</code>: say it once instead of
+<code>event_units</code>, <code>report_units</code> and <code>revision_units</code>: say it once instead of
 three times. Any of the three that you give explicitly wins over <code>units</code>, so
 <code>units = "days", report_units = "weeks"</code> reads a daily event date against a
 weekly report date.</p></dd>
@@ -312,7 +312,7 @@ strata, covariates and so on, plus the <code>now</code> of the nowcast. List the
     <p>The minimum you must supply is <code>event_date</code> and <code>report_date</code> (or one of them
 plus a <code>delay</code> column, from which the other is reconstructed). Everything else
 is optional and can be added later with <code><a href="add.html">add_strata()</a></code>, <code><a href="add.html">add_covariates()</a></code>,
-<code><a href="add.html">add_validation_date()</a></code> and the rest of the <code><a href="add.html">add()</a></code> family.</p>
+<code><a href="add.html">add_revision_date()</a></code> and the rest of the <code><a href="add.html">add()</a></code> family.</p>
 <p>Once the object exists the usual path is <a href="tbl_now_summary.html">summary()</a> to see
 what is in the data, <code><a href="diagnose.html">diagnose()</a></code> to see what is wrong with it,
 <a href="autoplot.tbl_now.html">autoplot()</a> to look at it, and <code><a href="run_nowcast.html">run_nowcast()</a></code> to fit a
@@ -323,7 +323,7 @@ model. <code><a href="../articles/tbl.now.html">vignette("tbl.now")</a></code> w
 
 
 
-<p>The following attributes are part of a <code>tbl_now</code> and are validated
+<p>The following attributes are part of a <code>tbl_now</code> and are revised
 by the <code><a href="validate_tbl_now.html">validate_tbl_now()</a></code> function:</p>
 <dl><dt>event_date</dt>
 <dd><p>Name of the column refering to the event of interest.</p></dd>
@@ -359,20 +359,20 @@ by the <code><a href="validate_tbl_now.html">validate_tbl_now()</a></code> funct
 <dd><p>Either <code>linelist</code>, <code>count-incidence</code> or <code>count-cumulative</code> depending on whether it is linelist data
 or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)</p></dd>
 
-<dt>validation_date</dt>
+<dt>revision_date</dt>
 <dd><p>Name of the column with the (optional) third date: when the report was resolved.</p></dd>
 
-<dt>validation_type</dt>
+<dt>revision_type</dt>
 <dd><p>Name of the column saying what that resolution was (<code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code>).</p></dd>
 
-<dt>validation_units</dt>
-<dd><p>Units of <code>validation_date</code>, resolved like <code>report_units</code>.</p></dd>
+<dt>revision_units</dt>
+<dd><p>Units of <code>revision_date</code>, resolved like <code>report_units</code>.</p></dd>
 
-<dt>validation_levels</dt>
-<dd><p>The (optional) dictionary translating the labels in <code>validation_type</code> into the canonical outcomes.</p></dd>
+<dt>revision_levels</dt>
+<dd><p>The (optional) dictionary translating the labels in <code>revision_type</code> into the canonical outcomes.</p></dd>
 
-<dt>is_censored_validation</dt>
-<dd><p>Column indicating whether the <em>validation</em> delay is only a bound (the validation-axis counterpart of <code>is_censored_report</code>).</p></dd>
+<dt>is_censored_revision</dt>
+<dd><p>Column indicating whether the <em>revision</em> delay is only a bound (the revision-axis counterpart of <code>is_censored_report</code>).</p></dd>
 
 <dt>computed_temporal_effect_cols</dt>
 <dd><p>Names of the temporal-effect columns that have actually been materialised in the data by <code><a href="add_temporal_effects.html">compute_temporal_effects()</a></code>.</p></dd>

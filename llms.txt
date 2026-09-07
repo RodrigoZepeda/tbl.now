@@ -21,17 +21,17 @@ relevant nowcasting variables:
 |:--:|:---|:---|
 | ![event_date](reference/figures/event_date.svg) | `event_date` | The column storing **event dates**; i.e. when the epidemiological phenomenon of interest happened (symptom onset, hospitalisation, death, …). **Required.** |
 | ![report_date](reference/figures/report_date.svg) | `report_date` | The column storing **report dates**; i.e. when that event became known to the surveillance system. **Required**, unless it is reconstructed from `delay`. |
-| ![validation](reference/figures/validation_date.svg) | `validation_date` | An optional third date indicating when the report was resolved (see `validation_type`). *Optional*. |
-| ![validation](reference/figures/validation_type.svg) | `validation_type` | What the validation date resolved to. Only `confirmed`, `retracted`, `pending` or `NA` are ever stored; use `validation_levels` for data recorded in other words. *Optional*. |
-| ![validation_levels](reference/figures/validation_type.svg) | `validation_levels` | A named dictionary translating the labels in `validation_type` into those four, e.g. `c(positive = “confirmed”)`. *Optional*. |
+| ![revision](reference/figures/revision_date.svg) | `revision_date` | An optional third date indicating when the report was resolved (see `revision_type`). *Optional*. |
+| ![revision](reference/figures/revision_type.svg) | `revision_type` | What the revision date resolved to. Only `confirmed`, `retracted`, `pending` or `NA` are ever stored; use `revision_levels` for data recorded in other words. *Optional*. |
+| ![revision_levels](reference/figures/revision_type.svg) | `revision_levels` | A named dictionary translating the labels in `revision_type` into those four, e.g. `c(positive = “confirmed”)`. *Optional*. |
 | ![now](reference/figures/now.svg) | `now` | The date the nowcast is anchored to — “today” from the model’s point of view. *Optional*; defaults to the latest date. |
 | ![strata](reference/figures/strata.svg) | `strata` | Columns you want a separate nowcast for (e.g. gender, region). *Optional*. |
 | ![covariates](reference/figures/covariates.svg) | `covariates` | Columns that inform the nowcast but that you do *not* want it broken down by (e.g. temperature or precipitation). *Optional*. |
 | ![case_count](reference/figures/case_count.svg) | `case_count` | The column holding the counts when the data is given as aggregated (rather than line-list). *Optional*. |
 | ![data_type](reference/figures/datatype.svg) | `data_type` | Whether the data represents a `linelist` (each row is a case), `count-incidence`(each row is a collection of cases per event-report date) or `count-cumulative`(each row is the cummulative number cases for that event accumulating in the report axis). *Optional*; inferred by default. |
-| ![units](reference/figures/units.svg) | `event_units`, `report_units`, `validation_units` | The time grid each date lives on: `days`, `weeks`, `months`, `years` or `numeric`. *Optional*; inferred (`“auto”`) by default. |
+| ![units](reference/figures/units.svg) | `event_units`, `report_units`, `revision_units` | The time grid each date lives on: `days`, `weeks`, `months`, `years` or `numeric`. *Optional*; inferred (`“auto”`) by default. |
 | ![is_censored_report](reference/figures/censoring.svg) | `is_censored_report` | Flags report dates that are only an upper bound, e.g. a batch or back-fill dump. *Optional*. |
-| ![is_censored_validation](reference/figures/censoring.svg) | `is_censored_validation` | The same on the validation axis: flags rows whose *validation* delay is a bound rather than a measurement. *Optional*. |
+| ![is_censored_revision](reference/figures/censoring.svg) | `is_censored_revision` | The same on the revision axis: flags rows whose *revision* delay is a bound rather than a measurement. *Optional*. |
 | ![temporal_effects](reference/figures/temporal_effects.svg) | `t_effects` | Columns holding temporal effects (day of week, holidays, …) that some models can use. *Optional*. |
 
 You can specify an object as a `tbl.now` with the `tbl_now` command:
@@ -202,12 +202,12 @@ Read what the object was told about itself, and change it.
   [`get_temporal_effect_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-  [`get_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-  [`get_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-  [`get_validation_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-  [`get_is_censored_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-  [`get_validation_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-  [`has_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_revision_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_revision_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_is_censored_revision()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`get_revision_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  [`has_revision()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
   **\[experimental\]** :
 
   Read what a `tbl_now` was told about itself
@@ -235,12 +235,12 @@ Read what the object was told about itself, and change it.
   [`remove_all_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`replace_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   [`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-  [`change_is_censored_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-  [`add_is_censored_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-  [`remove_is_censored_validation()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-  [`change_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-  [`remove_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`change_is_censored_revision()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`add_is_censored_revision()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`remove_is_censored_revision()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`add_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`change_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  [`remove_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
   **\[stable\]** :
 
   Set, change and remove the attributes of a `tbl_now`
@@ -269,9 +269,9 @@ Put the data on the grid a model needs.
 - [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
   [`censor_reports()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
   [`censor_reporting_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
-  [`censor_validations()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
-  [`censor_validation_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
-  [`censor_validation_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  [`censor_revisions()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  [`censor_revision_delays()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+  [`censor_revision_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
   **\[experimental\]** : Record a report or a delay as a bound rather
   than a fact
 
@@ -291,18 +291,17 @@ Calendar structure, recorded lazily and materialised on demand.
 
   Attach calendar effects to a `tbl_now`, and turn them into columns
 
-## The validation process
+## The revision process
 
 The optional third date, and the outcomes it carries.
 
-- [`get_latest_validated_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
-  [`get_initial_validated_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
-  [`get_nth_validated_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md)
-  **\[experimental\]** : Cases at a chosen point in the validation
-  process
-- [`diagnose_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
-  [`plot_validation_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/validation_delay.md)
-  **\[experimental\]** : Compare validation delays between confirmed and
+- [`get_latest_revised_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.md)
+  [`get_initial_revised_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.md)
+  [`get_nth_revised_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.md)
+  **\[experimental\]** : Cases at a chosen point in the revision process
+- [`diagnose_revision_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md)
+  [`plot_revision_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md)
+  **\[experimental\]** : Compare revision delays between confirmed and
   retracted cases
 
 ## Summarising
@@ -319,7 +318,7 @@ returns a tibble, and every block of it is also a function of its own.
   [`delay_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`zero_run_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`prop_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-  [`prop_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+  [`prop_revision_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
@@ -417,7 +416,7 @@ One grid, or any panel of it on its own.
   **\[experimental\]** : Calendar effects on the case counts or on the
   reporting delay
 
-- [`plot_validation_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_validation_status.md)
+- [`plot_revision_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_revision_status.md)
   **\[experimental\]** : How much of each day has been resolved
 
 - [`plot_cycles()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_cycles.md)

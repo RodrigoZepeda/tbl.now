@@ -18,7 +18,8 @@ plot_holiday_lag_effects() — by position relative to the nearest holiday
 
 
 type picks which process to describe: "epidemic" (green — how the cases
-vary by calendar group) or "report" (red — how the reporting does).
+vary by calendar group), "report" (red — how the reporting does), or
+"revision" (ochre — how resolved cases arrive on revision dates).
 The three day-type / holiday-lag functions have no measure argument: they
 are always normalized. Their categories are not equal-sized parts of a
 calendar block — the weekend is two days in seven — so a percentage share
@@ -47,7 +48,8 @@ plot_holiday_lag_effects() — by position relative to the nearest holiday
 
 
 type picks which process to describe: "epidemic" (green — how the cases
-vary by calendar group) or "report" (red — how the reporting does).
+vary by calendar group), "report" (red — how the reporting does), or
+"revision" (ochre — how resolved cases arrive on revision dates).
 The three day-type / holiday-lag functions have no measure argument: they
 are always normalized. Their categories are not equal-sized parts of a
 calendar block — the weekend is two days in seven — so a percentage share
@@ -124,7 +126,8 @@ box. Daily data only, since a weekend is a property of the day.</p></li>
 <li><p><code>plot_holiday_lag_effects()</code> — by position relative to the nearest holiday
 (<code>"1 before"</code>, <code>"Holiday"</code>, <code>"1 after"</code>, ..., plus <code>"Other"</code>).</p></li>
 </ul><p><code>type</code> picks which process to describe: <code>"epidemic"</code> (green — how the <em>cases</em>
-vary by calendar group) or <code>"report"</code> (red — how the <em>reporting</em> does).</p>
+vary by calendar group), <code>"report"</code> (red — how the <em>reporting</em> does), or
+<code>"revision"</code> (ochre — how resolved cases arrive on revision dates).</p>
 <p>The three day-type / holiday-lag functions have no <code>measure</code> argument: they
 are always normalized. Their categories are not equal-sized parts of a
 calendar block — the weekend is two days in seven — so a percentage share
@@ -141,35 +144,35 @@ the same: <code>autoplot(x, panels = "calendar_weekday")</code> and
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plot_day_of_week_effects</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
-<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span><span class="op">)</span>,</span>
+<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
 <span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"percent"</span>, <span class="st">"normalized"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">plot_week_of_year_effects</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
-<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span><span class="op">)</span>,</span>
+<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
 <span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"percent"</span>, <span class="st">"normalized"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">plot_month_of_year_effects</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
-<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span><span class="op">)</span>,</span>
+<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
 <span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"percent"</span>, <span class="st">"normalized"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">plot_holiday_effects</span><span class="op">(</span><span class="va">x</span>, type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span>
+<span><span class="fu">plot_holiday_effects</span><span class="op">(</span><span class="va">x</span>, type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">plot_weekend_effects</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
-<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span><span class="op">)</span>,</span>
+<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
 <span>  weekend_days <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Sat"</span>, <span class="st">"Sun"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">plot_holiday_lag_effects</span><span class="op">(</span><span class="va">x</span>, type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">plot_holiday_lag_effects</span><span class="op">(</span><span class="va">x</span>, type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"epidemic"</span>, <span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -181,8 +184,8 @@ the same: <code>autoplot(x, panels = "calendar_weekday")</code> and
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
-<dd><p><code>"epidemic"</code> (default) for the case-count effect, or <code>"report"</code>
-for the reporting-delay one.</p></dd>
+<dd><p><code>"epidemic"</code> (default) for the case-count effect, <code>"report"</code> for
+the reporting-delay one, or <code>"revision"</code> for revision-date arrivals.</p></dd>
 
 
 <dt id="arg-measure">measure<a class="anchor" aria-label="anchor" href="#arg-measure"></a></dt>

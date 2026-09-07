@@ -22,7 +22,7 @@ plot_reporting_hexamap(
   format = "%d/%b/%y",
   max_cells = 12000L,
   trans = "sqrt",
-  axis = c("report", "validation"),
+  axis = c("report", "revision"),
   size = 1.5,
   shape = 16,
   text_size = 2.3,
@@ -76,12 +76,12 @@ plot_reporting_hexamap(
 
 - axis:
 
-  Which time axis to draw: `"report"` (default) or `"validation"`. On
-  the validation axis the picture answers the laboratory's version of
-  the question – when results arrived, rather than when reports did.
-  Needs a validation process (see
-  [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
-  cases still `"pending"` have no validation date and are left out.
+  Which time axis to draw: `"report"` (default) or `"revision"`. On the
+  revision axis the picture answers the laboratory's version of the
+  question – when results arrived, rather than when reports did. Needs a
+  revision process (see
+  [`add_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
+  cases still `"pending"` have no revision date and are left out.
 
 - size:
 
