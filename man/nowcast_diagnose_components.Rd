@@ -65,7 +65,7 @@ can be stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}} or used on
 \item \code{diagnose_declarations()} -- the attributes and the columns they name:
 types, existence, collisions, columns the object was never told about, and
 temporal effects that were added but never materialised.
-\item \code{diagnose_ordering()} -- the \verb{event <= report <= validation} timeline.
+\item \code{diagnose_ordering()} -- the \verb{event <= report <= revision} timeline.
 \item \code{diagnose_missing()} -- \code{NA} values, per column and per stratum. An \code{NA}
 \emph{count} is reported neutrally: in a reporting triangle it means \emph{not yet
 observed}, which is correct data rather than a defect.
@@ -78,7 +78,7 @@ downward revision leaves behind when cumulative data is de-accumulated.
 \item \code{diagnose_truncation()} -- how many recent event dates are still immature,
 and how much of their eventual total is probably still missing.
 \item \code{diagnose_strata()} -- the smallest and the sparsest stratum, and the
-validations still pending.
+revisions still pending.
 }
 }
 \examples{

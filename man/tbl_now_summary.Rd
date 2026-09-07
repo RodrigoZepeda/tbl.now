@@ -84,7 +84,7 @@ stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}} and filtered with
 \code{summary()}; call \code{\link[=case_autocorrelation]{case_autocorrelation()}} and
 \code{\link[=reporting_completeness]{reporting_completeness()}} directly for those.}
 \item{\code{quantity}}{What the row describes, including the category for the
-compositional rows (\code{"validation_type = confirmed"}).}
+compositional rows (\code{"revision_type = confirmed"}).}
 \item{\code{stratum}}{Which subset of the data the row describes: \code{"all"} for
 the pooled rows, or the stratum label otherwise.}
 \item{\code{n}}{How many \strong{things of the block's own kind} the row counts.

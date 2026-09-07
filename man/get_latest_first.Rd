@@ -19,11 +19,11 @@ get_nth_reported_cases(x, delay, type = "total")
 \item{type}{Which cases to count. One of:
 \describe{
 \item{\code{"total"}}{(default) every case, whatever the outcome. On the
-validation axis that means every case that has been settled at all.}
+revision axis that means every case that has been settled at all.}
 \item{\code{"confirmed"}, \code{"retracted"}, \code{"pending"}}{only the cases with that
 outcome. \code{"pending"} is a reporting-axis question only -- a pending case
-has no validation date -- and the validation getters refuse it.}
-\item{\code{"unknown"}}{the cases whose \code{validation_type} is \code{NA}: settled, but
+has no revision date -- and the revision getters refuse it.}
+\item{\code{"unknown"}}{the cases whose \code{revision_type} is \code{NA}: settled, but
 the data does not say which way.}
 \item{\code{"net"}}{confirmed \strong{minus} retracted -- the running total as a
 surveillance system publishes it, which can go \strong{down} when a case is
@@ -35,7 +35,7 @@ reports, and the one \pkg{diseasenowcasting}'s signed-increment
 outcome column joins the keys, so you get pending, confirmed and
 retracted side by side.}
 }
-On an object with no validation process anything but \code{"total"} warns and
+On an object with no revision process anything but \code{"total"} warns and
 pools, because there is no outcome to filter on.}
 
 \item{delay}{A single non-negative number (or \code{Inf}) giving the maximum
@@ -54,12 +54,12 @@ stratum, and grouping column), containing:
 object carried, plus the caller's grouping columns.
 }
 
-The \strong{validation} columns are not carried: the count pools over many
-validation dates, so the result has no single one and does not pretend to.
+The \strong{revision} columns are not carried: the count pools over many
+revision dates, so the result has no single one and does not pretend to.
 \code{type = "by_type"} is the exception -- it keeps the outcome column, declared
 as a covariate, because that is the whole point of the call and an undeclared
 column is one \code{\link[=to_count]{to_count()}} would pool away. Use
-\link[=validated_cases]{get_latest_validated_cases()} when you want the third date
+\link[=revised_cases]{get_latest_revised_cases()} when you want the third date
 on the result.
 }
 \description{
@@ -133,8 +133,8 @@ dengue |>
 
 }
 \seealso{
-\link[=validated_cases]{get_latest_validated_cases()} and friends for the same idea
-on the validation process; \code{\link[=to_count]{to_count()}} for the underlying data shapes;
+\link[=revised_cases]{get_latest_revised_cases()} and friends for the same idea
+on the revision process; \code{\link[=to_count]{to_count()}} for the underlying data shapes;
 \code{\link[=score_nowcast]{score_nowcast()}}, which uses the latest counts as truth;
 \link[=nowcast_summary_components]{reporting_completeness()} for the same
 information as a proportion.

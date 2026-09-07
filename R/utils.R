@@ -146,8 +146,8 @@ tbl_now_attributes <- function(x) {
 
   # Everything on `x` that a bare tibble does not have. Diffing against the
   # DEFAULT tbl_now instead would silently drop any attribute the default does
-  # not happen to carry -- which is every optional one (`validation_date`,
-  # `validation_type`, `validation_units`), the exact case a user asks about.
+  # not happen to carry -- which is every optional one (`revision_date`,
+  # `revision_type`, `revision_units`), the exact case a user asks about.
   own <- setdiff(
     names(attributes(x)),
     c(names(tibble_attributes), names(default_attributes)[
@@ -229,18 +229,18 @@ tbl_now_attributes <- function(x) {
 #'
 #' The verbs that reshape a `tbl_now` all have to hand its attributes back to
 #' [tbl_now()] one by one, and every such list is a place an attribute can be
-#' dropped in silence -- which is how strata, and later the validation process,
+#' dropped in silence -- which is how strata, and later the revision process,
 #' each went missing from a rebuild. This is that list, in one place.
 #'
 #' The generated columns (`.event_num`, `.report_num`, `.delay`,
-#' `.validation_num`, `.validation_delay`) are removed first, because
+#' `.revision_num`, `.revision_delay`) are removed first, because
 #' [tbl_now()] recomputes them and refuses to overwrite one that is already
 #' there.
 #'
 #' `...` overrides any argument of [tbl_now()]; an override of `NULL` is
 #' honoured (it drops the attribute) rather than being read as "not supplied".
 #'
-#' Note `.set_validation()` in `R/validation.R` does NOT go through this: it
+#' Note `.set_revision()` in `R/revision.R` does NOT go through this: it
 #' receives its column names as tidyselect quosures (`{{ }}`), which cannot
 #' survive a `do.call()` on a list.
 #'
@@ -255,7 +255,7 @@ tbl_now_attributes <- function(x) {
 .tbl_now_rebuild <- function(x, data, ...) {
   generated <- c(
     ".event_num", ".report_num", ".delay",
-    ".validation_num", ".validation_delay"
+    ".revision_num", ".revision_delay"
   )
   bare <- .strip_tbl_now(data)
   bare <- bare[, setdiff(colnames(bare), generated), drop = FALSE]
@@ -276,7 +276,7 @@ tbl_now_attributes <- function(x) {
     verbose = FALSE,
     warn_non_uniqueness = FALSE
   )
-  args <- c(args, .validation_rebuild_args(x, bare))
+  args <- c(args, .revision_rebuild_args(x, bare))
 
   overrides <- list(...)
   # Single-bracket assignment so an override of NULL sets the element to NULL

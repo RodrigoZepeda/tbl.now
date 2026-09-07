@@ -13,7 +13,7 @@ xmas_cal <- function() {
 }
 
 # ---------------------------------------------------------------------------
-# Constructor + validation
+# Constructor + revision
 # ---------------------------------------------------------------------------
 
 test_that("temporal_effects() stores lag depths", {

@@ -98,7 +98,7 @@ test_that("unequal weights shift the ensemble towards the heavier member", {
   expect_equal(positional@predictions$.value, ensemble@predictions$.value)
 })
 
-test_that("weights are validated", {
+test_that("weights are revised", {
   a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
   b <- fake_nowcast("b", c(3, 4, 5, 6, 7))
 

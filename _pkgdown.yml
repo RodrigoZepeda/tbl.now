@@ -94,11 +94,11 @@ reference:
   - temporal_effects
   - add_temporal_effects
 
-- title: The validation process
+- title: The revision process
   desc: The optional third date, and the outcomes it carries.
   contents:
-  - validated_cases
-  - validation_delay
+  - revised_cases
+  - revision_delay
 
 - title: Summarising
   desc: >
@@ -131,7 +131,7 @@ reference:
   - autoplot.tbl_now
   - diagnostic_plot
   - calendar_effect_plots
-  - plot_validation_status
+  - plot_revision_status
   - plot_cycles
   - plot_delay_distribution
   - plot_delay_drift

@@ -163,7 +163,7 @@ prop_strata(dengue_now) |>
 ```
 
 The full set is `cases_per_date()`, `delay_summary()`, `zero_run_summary()`,
-`prop_censored()`, `prop_validation_type()`, `prop_strata()`,
+`prop_censored()`, `prop_revision_type()`, `prop_strata()`,
 `prop_covariate_levels()`, `date_ranges()`, `triangle_occupancy()` and
 `cumulative_growth()`, plus the two unreviewed ones -- `case_autocorrelation()`
 and `reporting_completeness()` -- which share the schema but are not part of
@@ -228,7 +228,7 @@ diagnose(dengue_now) |>
   select(check, scope, message)
 ```
 
-`dengue_now` is a line list with no validation process, so four checks have
+`dengue_now` is a line list with no revision process, so four checks have
 nothing to work on. None of them is a pass. Reporting them as `ok` would be a
 quiet lie, and this is the single most common way a health check misleads:
 silence that reads as approval.

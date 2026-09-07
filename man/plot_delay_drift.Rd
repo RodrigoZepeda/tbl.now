@@ -15,7 +15,7 @@ plot_delay_drift(
   changepoint = FALSE,
   level = 0.95,
   plotly = FALSE,
-  axis = c("report", "validation"),
+  axis = c("report", "revision"),
   linewidth = 1,
   grid_linewidth = 0.5,
   palette = .tbl_now_palette()
@@ -53,12 +53,10 @@ with a vertical line, when one is detected (p < 0.05). See
 static plot. Default \code{FALSE}.}
 
 \item{axis}{Which time axis the delay is measured to: \code{"report"} (default)
-or \code{"validation"}. Both are measured \emph{from the event}, so the two are
-directly comparable -- run each in turn and the gap between them is the
-time the laboratory adds. (This is not the same quantity as the
-\code{.validation_delay} column, which is the laboratory's own turnaround,
-measured from the report.) Needs a validation process (see
-\code{\link[=add_validation_date]{add_validation_date()}}); cases still \code{"pending"} are left out.}
+or \code{"revision"}. Report-axis delays are measured from event to report;
+revision-axis delays are measured from report to revision, the same
+quantity as \code{.revision_delay}. Needs a revision process (see
+\code{\link[=add_revision_date]{add_revision_date()}}); cases still \code{"pending"} are left out.}
 
 \item{linewidth}{Multiplier on the width of the mean and median delay lines.
 Default \code{1} (drawn at \code{0.6} and \code{0.8}, so the median stays the heavier of

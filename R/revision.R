@@ -1,62 +1,62 @@
-# The validation process: a THIRD date, after the event and the report.
+# The revision process: a THIRD date, after the event and the report.
 #
 # Influenza is the motivating case. A case has
 #
 #   event_date         when the person fell ill (symptom onset)
 #   report_date        when the system heard about it (the medical visit)
-#   validation_date  when the laboratory settled it (the test result)
+#   revision_date  when the laboratory settled it (the test result)
 #
 # and the test can come back either way, so a report is not the end of the
 # story: it can be CONFIRMED (positive) or RETRACTED (negative, the case never
 # was one). Until the result arrives the case is PENDING.
 #
-# The honest timeline is `event_date <= report_date <= validation_date`, and
+# The honest timeline is `event_date <= report_date <= revision_date`, and
 # the package checks it rather than assuming it.
 #
-# Everything here is optional. An object with no `validation_date` behaves
+# Everything here is optional. An object with no `revision_date` behaves
 # exactly as it did before this file existed.
 
-#' The values `validation_type` may take
+#' The values `revision_type` may take
 #'
 #' `"pending"` is the default state of every case: reported, not yet resolved.
 #' `"confirmed"` and `"retracted"` are the two ways a case leaves that state.
 #' `NA` means the outcome is genuinely unknown -- which is what a
-#' `validation_date` with no `validation_type` gives you, because a date
+#' `revision_date` with no `revision_type` gives you, because a date
 #' alone cannot say whether the test was positive or negative.
 #'
 #' @return A character vector of the allowed values.
 #'
 #' @keywords internal
 #' @noRd
-.validation_levels <- function() {
+.revision_levels <- function() {
   c("confirmed", "retracted", "pending")
 }
 
-#' Check a user dictionary of `validation_type` labels
+#' Check a user dictionary of `revision_type` labels
 #'
 #' Surveillance data is not always recorded in English, and recoding it by hand
 #' before every call is exactly the kind of step that gets forgotten. A
 #' dictionary lets the object do it once: the names are the labels as they
 #' appear in the data, the values are the canonical outcomes.
 #'
-#' @param validation_levels A named character vector, or `NULL`.
+#' @param revision_levels A named character vector, or `NULL`.
 #'
-#' @return `validation_levels`, unchanged, or `NULL`.
+#' @return `revision_levels`, unchanged, or `NULL`.
 #'
 #' @keywords internal
 #' @noRd
-.check_validation_levels <- function(validation_levels) {
-  if (is.null(validation_levels)) {
+.check_revision_levels <- function(revision_levels) {
+  if (is.null(revision_levels)) {
     return(NULL)
   }
 
-  allowed <- .validation_levels()
-  labels <- names(validation_levels)
+  allowed <- .revision_levels()
+  labels <- names(revision_levels)
 
-  if (!is.character(validation_levels) || is.null(labels) ||
+  if (!is.character(revision_levels) || is.null(labels) ||
     anyNA(labels) || !all(nzchar(labels))) {
     cli::cli_abort(c(
-      "{.arg validation_levels} must be a NAMED character vector.",
+      "{.arg revision_levels} must be a NAMED character vector.",
       "i" = "The names are the labels in your data, the values are the
              canonical outcomes.",
       "*" = "For example
@@ -67,14 +67,14 @@
   if (anyDuplicated(labels) > 0) {
     repeated <- unique(labels[duplicated(labels)])
     cli::cli_abort(
-      "{.arg validation_levels} maps {.val {repeated}} more than once."
+      "{.arg revision_levels} maps {.val {repeated}} more than once."
     )
   }
 
-  unknown <- setdiff(unique(unname(validation_levels)), allowed)
+  unknown <- setdiff(unique(unname(revision_levels)), allowed)
   if (length(unknown) > 0) {
     cli::cli_abort(c(
-      "{.arg validation_levels} maps to {length(unknown)} value{?s} that
+      "{.arg revision_levels} maps to {length(unknown)} value{?s} that
        {?is/are} not an outcome: {.val {unknown}}.",
       "i" = "The right-hand side must be one of {.val {allowed}}."
     ))
@@ -84,107 +84,107 @@
   # dictionary that renames a canonical value into a DIFFERENT one would flip
   # the column back and forth. Mapping a canonical value to itself is fine.
   canonical <- intersect(labels, allowed)
-  flipped <- canonical[unname(validation_levels[canonical]) != canonical]
+  flipped <- canonical[unname(revision_levels[canonical]) != canonical]
   if (length(flipped) > 0) {
     cli::cli_abort(c(
-      "{.arg validation_levels} remaps the canonical value{?s}
+      "{.arg revision_levels} remaps the canonical value{?s}
        {.val {flipped}} to something else.",
       "i" = "That recoding is not repeatable: every rebuild of the object
              would apply it again."
     ))
   }
 
-  validation_levels
+  revision_levels
 }
 
-#' Translate `validation_type` values through the dictionary
+#' Translate `revision_type` values through the dictionary
 #'
 #' @param values A character vector of outcomes as recorded.
-#' @param validation_levels The dictionary, or `NULL`.
+#' @param revision_levels The dictionary, or `NULL`.
 #'
 #' @return A character vector of canonical outcomes.
 #'
 #' @keywords internal
 #' @noRd
-.recode_validation_type <- function(values, validation_levels) {
-  if (is.null(validation_levels) || length(values) == 0) {
+.recode_revision_type <- function(values, revision_levels) {
+  if (is.null(revision_levels) || length(values) == 0) {
     return(values)
   }
-  hit <- match(values, names(validation_levels))
-  ifelse(is.na(hit), values, unname(validation_levels)[hit])
+  hit <- match(values, names(revision_levels))
+  ifelse(is.na(hit), values, unname(revision_levels)[hit])
 }
 
-#' Build (or validate) the `validation_type` column
+#' Build (or validate) the `revision_type` column
 #'
 #' @param data A data frame.
-#' @param validation_date Name of the validation-date column, or `NULL`.
-#' @param validation_type Name of the type column, or `NULL`.
-#' @param validation_levels A named character dictionary of non-canonical
+#' @param revision_date Name of the revision-date column, or `NULL`.
+#' @param revision_type Name of the type column, or `NULL`.
+#' @param revision_levels A named character dictionary of non-canonical
 #'   labels, or `NULL`.
 #' @param verbose Logical.
 #'
-#' @return The data frame, with a `validation_type` column when one is needed.
+#' @return The data frame, with a `revision_type` column when one is needed.
 #'
 #' @keywords internal
 #' @noRd
-.resolve_validation_type <- function(data, validation_date, validation_type,
-                                       validation_levels = NULL,
+.resolve_revision_type <- function(data, revision_date, revision_type,
+                                       revision_levels = NULL,
                                        verbose = TRUE) {
-  if (is.null(validation_date)) {
-    return(list(data = data, validation_type = validation_type))
+  if (is.null(revision_date)) {
+    return(list(data = data, revision_type = revision_type))
   }
 
-  dates <- data[[validation_date]]
+  dates <- data[[revision_date]]
   has_date <- !is.na(dates)
 
-  if (is.null(validation_type)) {
+  if (is.null(revision_type)) {
     # Every case starts pending; a date resolves it -- but a date alone cannot
     # say WHICH way. A negative test has a date too, so calling it "confirmed"
     # would invert the meaning of the data. `NA` and a warning is the honest
     # answer: the outcome is recorded as unknown until the caller says.
-    validation_type <- ".validation_type"
-    data[[validation_type]] <- ifelse(has_date, NA_character_, "pending")
+    revision_type <- ".revision_type"
+    data[[revision_type]] <- ifelse(has_date, NA_character_, "pending")
 
     if (any(has_date)) {
-      allowed <- .validation_levels()
+      allowed <- .revision_levels()
       cli::cli_warn(c(
         paste0(
-          "{sum(has_date)} row{?s} have a {.arg validation_date} but no ",
-          "{.arg validation_type}, so their outcome is {.val NA}."
+          "{sum(has_date)} row{?s} have a {.arg revision_date} but no ",
+          "{.arg revision_type}, so their outcome is {.val NA}."
         ),
         "i" = paste0(
           "A date alone cannot say whether the case was confirmed or ",
           "retracted -- a negative test has a date too."
         ),
         "i" = paste0(
-          "Pass {.arg validation_type} (a column of {.val {allowed}}) ",
+          "Pass {.arg revision_type} (a column of {.val {allowed}}) ",
           "to say which."
         )
       ))
     }
-    return(list(data = data, validation_type = validation_type))
+    return(list(data = data, revision_type = revision_type))
   }
 
   # The dictionary runs FIRST, so everything downstream -- the check below, the
   # counts, the plots -- only ever sees the canonical four.
-  values <- .recode_validation_type(
-    as.character(data[[validation_type]]), validation_levels
+  values <- .recode_revision_type(
+    as.character(data[[revision_type]]), revision_levels
   )
   # A row with no date has not been resolved, whatever the column says.
   values[!has_date & is.na(values)] <- "pending"
 
-  allowed <- .validation_levels()
+  allowed <- .revision_levels()
   unknown <- setdiff(stats::na.omit(unique(values)), allowed)
   if (length(unknown) > 0) {
-    hint <- if (is.null(validation_levels)) {
-      "Map them with {.arg validation_levels}, e.g.
+    hint <- if (is.null(revision_levels)) {
+      "Map them with {.arg revision_levels}, e.g.
        {.code c(confirmado = \"confirmed\")}."
     } else {
-      "{.arg validation_levels} maps none of them."
+      "{.arg revision_levels} maps none of them."
     }
     cli::cli_abort(c(
       paste0(
-        "{.arg validation_type} contains {length(unknown)} unrecognised ",
+        "{.arg revision_type} contains {length(unknown)} unrecognised ",
         "value{?s}: {.val {unknown}}."
       ),
       "i" = "Allowed values are {.val {allowed}}, or {.val NA}.",
@@ -197,12 +197,12 @@
   if (any(resolved_without_date) && isTRUE(verbose)) {
     cli::cli_warn(
       "{sum(resolved_without_date)} row{?s} are {.val confirmed}/{.val retracted}
-       but carry no {.arg validation_date}."
+       but carry no {.arg revision_date}."
     )
   }
 
-  data[[validation_type]] <- values
-  list(data = data, validation_type = validation_type)
+  data[[revision_type]] <- values
+  list(data = data, revision_type = revision_type)
 }
 
 # Getters -----
@@ -214,79 +214,79 @@
 
 #' @rdname nowcast_data_getters
 #' @export
-get_validation_date <- function(x) {
-  attr(x, "validation_date", exact = TRUE)
+get_revision_date <- function(x) {
+  attr(x, "revision_date", exact = TRUE)
 }
 
 #' @rdname nowcast_data_getters
 #' @export
-get_validation_type <- function(x) {
-  attr(x, "validation_type", exact = TRUE)
+get_revision_type <- function(x) {
+  attr(x, "revision_type", exact = TRUE)
 }
 
 #' @rdname nowcast_data_getters
 #' @export
-get_validation_units <- function(x) {
-  attr(x, "validation_units", exact = TRUE)
+get_revision_units <- function(x) {
+  attr(x, "revision_units", exact = TRUE)
 }
 
 #' @rdname nowcast_data_getters
 #' @export
-get_is_censored_validation <- function(x) {
-  attr(x, "is_censored_validation", exact = TRUE)
+get_is_censored_revision <- function(x) {
+  attr(x, "is_censored_revision", exact = TRUE)
 }
 
 #' @rdname nowcast_data_getters
 #' @export
-get_validation_levels <- function(x) {
-  attr(x, "validation_levels", exact = TRUE)
+get_revision_levels <- function(x) {
+  attr(x, "revision_levels", exact = TRUE)
 }
 
 #' @rdname nowcast_data_getters
 #' @export
-has_validation <- function(x) {
-  !is.null(get_validation_date(x))
+has_revision <- function(x) {
+  !is.null(get_revision_date(x))
 }
 
-#' The generated validation columns, when the object has any
+#' The generated revision columns, when the object has any
 #'
-#' `.validation_num` is the validation date on the same numeric anchor as
-#' `.event_num` and `.report_num`; `.validation_delay` is
-#' `.validation_num - .report_num`, the time from report to resolution. That
-#' second one is the quantity [diagnose_validation_delay()] compares between
+#' `.revision_num` is the revision date on the same numeric anchor as
+#' `.event_num` and `.report_num`; `.revision_delay` is
+#' `.revision_num - .report_num`, the time from report to resolution. That
+#' second one is the quantity [diagnose_revision_delay()] compares between
 #' confirmed and retracted cases.
 #'
 #' @param x A `tbl_now` object.
 #'
-#' @return A character vector, empty when the object carries no validation.
+#' @return A character vector, empty when the object carries no revision.
 #'
 #' @keywords internal
 #' @noRd
-.validation_generated_cols <- function(x) {
-  if (!has_validation(x)) {
+.revision_generated_cols <- function(x) {
+  if (!has_revision(x)) {
     return(character(0))
   }
-  c(".validation_num", ".validation_delay")
+  c(".revision_num", ".revision_delay")
 }
 
-#' Add `.validation_num` and `.validation_delay`
+#' Add `.revision_num` and `.revision_delay`
 #'
 #' Anchored on the same earliest event date `time_cols_to_numeric()` uses, so
-#' `.event_num`, `.report_num` and `.validation_num` are on one scale and
+#' `.event_num`, `.report_num` and `.revision_num` are on one scale and
 #' differences between them mean what they look like.
 #'
 #' @param data A data frame that already has `.report_num`.
-#' @param event_date,validation_date Column names.
-#' @param validation_units The validation date's units.
+#' @param event_date,revision_date Column names.
+#' @param revision_units The revision date's units.
 #' @param force Overwrite reserved columns rather than aborting.
 #'
 #' @return The data frame with the two columns added.
 #'
 #' @keywords internal
 #' @noRd
-.add_validation_num <- function(data, event_date, validation_date,
-                                  validation_units, force = FALSE) {
-  for (reserved in c(".validation_num", ".validation_delay")) {
+.add_revision_num <- function(data, event_date, revision_date,
+                                  revision_units, force = FALSE) {
+  for (reserved in c(".revision_num", ".revision_delay")) {
     if (reserved %in% colnames(data) && !force) {
       cli::cli_abort(
         "Data already has a column named {.val {reserved}}, which this class
@@ -296,14 +296,14 @@ has_validation <- function(x) {
   }
 
   anchor <- suppressWarnings(min(data[[event_date]], na.rm = TRUE))
-  validation <- data[[validation_date]]
+  revision <- data[[revision_date]]
 
-  data[[".validation_num"]] <- if (identical(validation_units, "numeric")) {
-    as.numeric(validation) - as.numeric(anchor)
+  data[[".revision_num"]] <- if (identical(revision_units, "numeric")) {
+    as.numeric(revision) - as.numeric(anchor)
   } else {
-    .date_difference_in_units(validation, anchor, validation_units)
+    .date_difference_in_units(revision, anchor, revision_units)
   }
-  data[[".validation_delay"]] <- data[[".validation_num"]] - data[[".report_num"]]
+  data[[".revision_delay"]] <- data[[".revision_num"]] - data[[".report_num"]]
   data
 }
 
@@ -336,25 +336,25 @@ has_validation <- function(x) {
 
 #' @rdname add
 #' @export
-change_is_censored_validation <- function(x, is_censored_validation) {
-  .assert_tbl_now(x, "change_is_censored_validation")
+change_is_censored_revision <- function(x, is_censored_revision) {
+  .assert_tbl_now(x, "change_is_censored_revision")
 
   value_pos <- tidyselect::eval_select(
-    rlang::expr({{ is_censored_validation }}), x
+    rlang::expr({{ is_censored_revision }}), x
   )
   value <- if (length(value_pos) == 0) NULL else colnames(x)[value_pos]
 
   if (length(value) > 1) {
     cli::cli_abort(
-      "{.arg is_censored_validation} must be the name of one column (length 1)"
+      "{.arg is_censored_revision} must be the name of one column (length 1)"
     )
   }
 
-  if (!is.null(value) && !has_validation(x)) {
+  if (!is.null(value) && !has_revision(x)) {
     cli::cli_abort(c(
-      "{.arg x} has no validation process, so a validation delay cannot be
+      "{.arg x} has no revision process, so a revision delay cannot be
        censored.",
-      "i" = "Attach one with {.fn add_validation_date} first."
+      "i" = "Attach one with {.fn add_revision_date} first."
     ))
   }
 
@@ -362,7 +362,7 @@ change_is_censored_validation <- function(x, is_censored_validation) {
     cli::cli_abort("Column {.val {value}} must be logical")
   }
 
-  attr(x, "is_censored_validation") <- value
+  attr(x, "is_censored_revision") <- value
 
   validate_tbl_now(x)
 
@@ -371,64 +371,64 @@ change_is_censored_validation <- function(x, is_censored_validation) {
 
 #' @rdname add
 #' @export
-add_is_censored_validation <- function(x, is_censored_validation) {
-  if (length(get_is_censored_validation(x)) > 0) {
+add_is_censored_revision <- function(x, is_censored_revision) {
+  if (length(get_is_censored_revision(x)) > 0) {
     cli::cli_abort(
       paste0(
-        "Already has value {.val {get_is_censored_validation(x)}} as the ",
-        "validation censoring indicator.",
-        " Use {.help remove_is_censored_validation} to remove it before adding",
-        " or {.help change_is_censored_validation} to change it."
+        "Already has value {.val {get_is_censored_revision(x)}} as the ",
+        "revision censoring indicator.",
+        " Use {.help remove_is_censored_revision} to remove it before adding",
+        " or {.help change_is_censored_revision} to change it."
       )
     )
   }
 
-  change_is_censored_validation(x, {{ is_censored_validation }})
+  change_is_censored_revision(x, {{ is_censored_revision }})
 }
 
 #' @rdname add
 #' @export
-remove_is_censored_validation <- function(x) {
-  .assert_tbl_now(x, "remove_is_censored_validation")
-  change_is_censored_validation(x, NULL)
+remove_is_censored_revision <- function(x) {
+  .assert_tbl_now(x, "remove_is_censored_revision")
+  change_is_censored_revision(x, NULL)
 }
 
 #' @rdname add
 #' @export
-add_validation_date <- function(x, validation_date, validation_type = NULL,
-                             validation_units = "auto",
-                             validation_levels = NULL) {
-  .assert_tbl_now(x, "add_validation_date")
-  if (has_validation(x)) {
+add_revision_date <- function(x, revision_date, revision_type = NULL,
+                             revision_units = "auto",
+                             revision_levels = NULL) {
+  .assert_tbl_now(x, "add_revision_date")
+  if (has_revision(x)) {
     cli::cli_abort(c(
-      "{.arg x} already has a validation date
-       ({.val {get_validation_date(x)}}).",
-      "i" = "Use {.fn change_validation_date} to replace it."
+      "{.arg x} already has a revision date
+       ({.val {get_revision_date(x)}}).",
+      "i" = "Use {.fn change_revision_date} to replace it."
     ))
   }
-  .set_validation(
-    x, {{ validation_date }}, {{ validation_type }}, validation_units,
-    validation_levels
+  .set_revision(
+    x, {{ revision_date }}, {{ revision_type }}, revision_units,
+    revision_levels
   )
 }
 
 #' @rdname add
 #' @export
-change_validation_date <- function(x, validation_date, validation_type = NULL,
-                                validation_units = "auto",
-                                validation_levels = NULL) {
-  .assert_tbl_now(x, "change_validation_date")
-  .set_validation(
-    x, {{ validation_date }}, {{ validation_type }}, validation_units,
-    validation_levels
+change_revision_date <- function(x, revision_date, revision_type = NULL,
+                                revision_units = "auto",
+                                revision_levels = NULL) {
+  .assert_tbl_now(x, "change_revision_date")
+  .set_revision(
+    x, {{ revision_date }}, {{ revision_type }}, revision_units,
+    revision_levels
   )
 }
 
 #' @rdname add
 #' @export
-remove_validation_date <- function(x) {
-  .assert_tbl_now(x, "remove_validation_date")
-  if (!has_validation(x)) {
+remove_revision_date <- function(x) {
+  .assert_tbl_now(x, "remove_revision_date")
+  if (!has_revision(x)) {
     return(x)
   }
 
@@ -438,21 +438,21 @@ remove_validation_date <- function(x) {
 
   generated <- c(
     ".event_num", ".report_num", ".delay",
-    ".validation_num", ".validation_delay",
+    ".revision_num", ".revision_delay",
     get_temporal_effect_cols(x)
   )
-  # A `.validation_type` we built ourselves is ours to remove; one the user
+  # A `.revision_type` we built ourselves is ours to remove; one the user
   # supplied is their column and stays.
-  ours <- if (identical(get_validation_type(x), ".validation_type")) {
-    ".validation_type"
+  ours <- if (identical(get_revision_type(x), ".revision_type")) {
+    ".revision_type"
   } else {
     character(0)
   }
 
   # A censoring flag we built ourselves goes with the process it belonged to;
   # one the user supplied is their column and stays as data, unreferenced.
-  if (identical(get_is_censored_validation(x), ".is_censored_validation")) {
-    ours <- c(ours, ".is_censored_validation")
+  if (identical(get_is_censored_revision(x), ".is_censored_revision")) {
+    ours <- c(ours, ".is_censored_revision")
   }
 
   bare <- .strip_tbl_now(x)
@@ -471,7 +471,7 @@ remove_validation_date <- function(x) {
   result
 }
 
-#' Rebuild a `tbl_now` with a validation process attached
+#' Rebuild a `tbl_now` with a revision process attached
 #'
 #' @inheritParams tbl_now
 #'
@@ -479,15 +479,15 @@ remove_validation_date <- function(x) {
 #'
 #' @keywords internal
 #' @noRd
-.set_validation <- function(x, validation_date, validation_type,
-                              validation_units, validation_levels = NULL) {
+.set_revision <- function(x, revision_date, revision_type,
+                              revision_units, revision_levels = NULL) {
   specs <- get_temporal_effects(x)
 
   # Every generated column has to go: `tbl_now()` rebuilds them and refuses to
   # write over one that is already there.
   generated <- c(
     ".event_num", ".report_num", ".delay",
-    ".validation_num", ".validation_delay",
+    ".revision_num", ".revision_delay",
     get_temporal_effect_cols(x)
   )
   bare <- .strip_tbl_now(x)
@@ -498,11 +498,11 @@ remove_validation_date <- function(x) {
     event_date = get_event_date(x), report_date = get_report_date(x),
     case_count = get_case_count(x), strata = get_strata(x),
     covariates = get_covariates(x), is_censored_report = get_is_censored_report(x),
-    validation_date = {{ validation_date }},
-    validation_type = {{ validation_type }},
-    validation_units = validation_units,
-    validation_levels = validation_levels %||% get_validation_levels(x),
-    is_censored_validation = get_is_censored_validation(x),
+    revision_date = {{ revision_date }},
+    revision_type = {{ revision_type }},
+    revision_units = revision_units,
+    revision_levels = revision_levels %||% get_revision_levels(x),
+    is_censored_revision = get_is_censored_revision(x),
     data_type = get_data_type(x),
     event_units = get_event_units(x), report_units = get_report_units(x),
     verbose = FALSE, warn_non_uniqueness = FALSE
@@ -511,35 +511,35 @@ remove_validation_date <- function(x) {
   result
 }
 
-#' Columns the validation process adds to a grouping
+#' Columns the revision process adds to a grouping
 #'
 #' A confirmed and a retracted case on the same `(event, report)` pair are two
 #' different things, so aggregating over them would sum a case with its own
-#' retraction. Grouping keeps them apart -- and keeps the validation DATE too,
+#' retraction. Grouping keeps them apart -- and keeps the revision DATE too,
 #' because that is the third time axis the whole feature exists to carry.
 #'
 #' @param x A `tbl_now` object.
 #'
-#' @return A character vector, empty when the object carries no validation.
+#' @return A character vector, empty when the object carries no revision.
 #'
 #' @keywords internal
 #' @noRd
-.validation_group_cols <- function(x) {
-  if (!has_validation(x)) {
+.revision_group_cols <- function(x) {
+  if (!has_revision(x)) {
     return(character(0))
   }
   # The censoring flag joins them for the same reason: a resolution whose delay
   # is only a bound is not the same observation as one measured exactly, so
   # summing the two together would report a bound as a fact.
   c(
-    get_validation_date(x), ".validation_num", get_validation_type(x),
-    get_is_censored_validation(x)
+    get_revision_date(x), ".revision_num", get_revision_type(x),
+    get_is_censored_revision(x)
   )
 }
 
-# Does the validation delay depend on the outcome? -----
+# Does the revision delay depend on the outcome? -----
 
-#' Compare validation delays between confirmed and retracted cases
+#' Compare revision delays between confirmed and retracted cases
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
@@ -549,22 +549,22 @@ remove_validation_date <- function(x) {
 #' assumes it is will be wrong about how many pending cases are still to be
 #' confirmed.
 #'
-#' `diagnose_validation_delay()` compares the two delay distributions;
-#' `plot_validation_delay()` shows them.
+#' `diagnose_revision_delay()` compares the two delay distributions;
+#' `plot_revision_delay()` shows them.
 #'
-#' @param x A `tbl_now` with a validation process.
+#' @param x A `tbl_now` with a revision process.
 #' @param by Optional stratum column to compare within; `NULL` (default) pools.
 #'
 #' @return
-#' `diagnose_validation_delay()` returns a one-row-per-comparison `tibble` with
+#' `diagnose_revision_delay()` returns a one-row-per-comparison `tibble` with
 #' `stratum`, `n_confirmed`, `n_retracted`, `median_confirmed`,
 #' `median_retracted`, `difference`, `statistic` and `p.value`.
 #'
-#' `plot_validation_delay()` returns a `ggplot`.
+#' `plot_revision_delay()` returns a `ggplot`.
 #'
 #' @section The test:
 #'
-#' A two-sided **Wilcoxon rank-sum** test on the validation delays. It is used
+#' A two-sided **Wilcoxon rank-sum** test on the revision delays. It is used
 #' rather than a t-test because reporting delays are strongly right-skewed and
 #' frequently have a point mass at zero, so a difference in means is neither
 #' robust nor the quantity of interest -- what matters is whether one outcome
@@ -576,19 +576,19 @@ remove_validation_date <- function(x) {
 #' median days) alongside it.
 #'
 #' Rows with a missing or negative delay are dropped, and how many is reported
-#' in the `dropped` attribute of the result. A negative validation delay means
-#' the record is validated before it was reported, which the timeline forbids.
+#' in the `dropped` attribute of the result. A negative revision delay means
+#' the record is revised before it was reported, which the timeline forbids.
 #'
 #' @seealso
-#' [add_validation_date()][add] to attach a validation process;
-#' [censor_validation_delays_above()][censoring] for resolutions that
-#' never arrive; [validated_cases] for counting the outcomes;
+#' [add_revision_date()][add] to attach a revision process;
+#' [censor_revision_delays_above()][censoring] for resolutions that
+#' never arrive; [revised_cases] for counting the outcomes;
 #' [diagnose_drift()] for the same question about the *reporting* delay over time.
 #' The [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' puts this alongside the other checks.
 #'
 #' @param linewidth Multiplier on the box outlines of
-#'   `plot_validation_delay()`. Default `1` (drawn at `0.5`).
+#'   `plot_revision_delay()`. Default `1` (drawn at `0.5`).
 #' @param palette A named colour palette (see [tbl_now_palette()]).
 #'
 #' @examples
@@ -601,28 +601,28 @@ remove_validation_date <- function(x) {
 #' )
 #' flu <- tbl_now(cases,
 #'   event_date = onset, report_date = visit,
-#'   validation_date = result, validation_type = outcome,
+#'   revision_date = result, revision_type = outcome,
 #'   data_type = "linelist", verbose = FALSE
 #' )
 #'
-#' # Retractions here come back about four days later than validations, and
+#' # Retractions here come back about four days later than revisions, and
 #' # the test says so.
-#' diagnose_validation_delay(flu)
+#' diagnose_revision_delay(flu)
 #'
 #' # The same comparison as a picture.
-#' plot_validation_delay(flu)
+#' plot_revision_delay(flu)
 #'
-#' @name validation_delay
+#' @name revision_delay
 NULL
 
-#' @rdname validation_delay
+#' @rdname revision_delay
 #' @export
-diagnose_validation_delay <- function(x, by = NULL) {
-  delays <- .validation_delay_table(x, by, "diagnose_validation_delay")
+diagnose_revision_delay <- function(x, by = NULL) {
+  delays <- .revision_delay_table(x, by, "diagnose_revision_delay")
 
   results <- lapply(split(delays, delays$stratum), function(piece) {
-    confirmed <- piece$.validation_delay[piece$outcome == "confirmed"]
-    retracted <- piece$.validation_delay[piece$outcome == "retracted"]
+    confirmed <- piece$.revision_delay[piece$outcome == "confirmed"]
+    retracted <- piece$.revision_delay[piece$outcome == "retracted"]
 
     if (length(confirmed) < 2 || length(retracted) < 2) {
       return(dplyr::tibble(
@@ -650,21 +650,21 @@ diagnose_validation_delay <- function(x, by = NULL) {
   out
 }
 
-#' @rdname validation_delay
+#' @rdname revision_delay
 #' @export
-plot_validation_delay <- function(x, by = NULL, linewidth = 1,
+plot_revision_delay <- function(x, by = NULL, linewidth = 1,
                                   palette = .tbl_now_palette()) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_validation_delay}.")
+    cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_revision_delay}.")
   }
-  .tbl_now_check_palette(palette, "plot_validation_delay")
+  .tbl_now_check_palette(palette, "plot_revision_delay")
   .tbl_now_check_size(linewidth, "linewidth")
-  delays <- .validation_delay_table(x, by, "plot_validation_delay")
+  delays <- .revision_delay_table(x, by, "plot_revision_delay")
 
   ggplot2::ggplot(
     delays,
     ggplot2::aes(
-      x = .data$.validation_delay, y = .data$outcome, fill = .data$outcome
+      x = .data$.revision_delay, y = .data$outcome, fill = .data$outcome
     )
   ) +
     ggplot2::geom_boxplot(outlier.alpha = 0.25, width = 0.6,
@@ -679,7 +679,7 @@ plot_validation_delay <- function(x, by = NULL, linewidth = 1,
       guide = "none"
     ) +
     ggplot2::labs(
-      x = paste0("Validation delay (", get_validation_units(x), ")"),
+      x = paste0("Revision delay (", get_revision_units(x), ")"),
       y = NULL,
       title = "Time from report to resolution",
       subtitle = "Reporting delay process"
@@ -687,27 +687,27 @@ plot_validation_delay <- function(x, by = NULL, linewidth = 1,
     .tbl_now_theme(palette)
 }
 
-#' The validation delays, tidied for comparison
+#' The revision delays, tidied for comparison
 #'
 #' @param x A `tbl_now`.
 #' @param by Optional stratum column.
 #' @param fn Calling function, for messages.
 #'
-#' @return A tibble of `stratum`, `outcome` and `.validation_delay`, with a
+#' @return A tibble of `stratum`, `outcome` and `.revision_delay`, with a
 #'   `dropped` attribute counting the unusable rows.
 #'
 #' @keywords internal
 #' @noRd
-.validation_delay_table <- function(x, by, fn) {
+.revision_delay_table <- function(x, by, fn) {
   .assert_tbl_now(x, fn)
-  if (!has_validation(x)) {
+  if (!has_revision(x)) {
     cli::cli_abort(c(
-      "{.fn {fn}} needs a validation process, and {.arg x} has none.",
-      "i" = "Attach one with {.fn add_validation_date}."
+      "{.fn {fn}} needs a revision process, and {.arg x} has none.",
+      "i" = "Attach one with {.fn add_revision_date}."
     ))
   }
 
-  type_col <- get_validation_type(x)
+  type_col <- get_revision_type(x)
   observations <- dplyr::as_tibble(.declass_tbl_now(dplyr::ungroup(x)))
   observations$outcome <- as.character(observations[[type_col]])
 
@@ -724,14 +724,14 @@ plot_validation_delay <- function(x, by = NULL, linewidth = 1,
   usable <- observations |>
     dplyr::filter(
       .data$outcome %in% c("confirmed", "retracted"),
-      !is.na(.data$.validation_delay),
-      .data$.validation_delay >= 0
+      !is.na(.data$.revision_delay),
+      .data$.revision_delay >= 0
     ) |>
-    dplyr::select("stratum", "outcome", ".validation_delay")
+    dplyr::select("stratum", "outcome", ".revision_delay")
 
   if (nrow(usable) == 0) {
     cli::cli_abort(c(
-      "No usable validation delays.",
+      "No usable revision delays.",
       "i" = "Rows need a {.val confirmed} or {.val retracted} outcome and a
              non-negative delay."
     ))
@@ -741,16 +741,16 @@ plot_validation_delay <- function(x, by = NULL, linewidth = 1,
   usable
 }
 
-#' Validation arguments for rebuilding a `tbl_now`
+#' Revision arguments for rebuilding a `tbl_now`
 #'
 #' Several verbs rebuild the object by calling `tbl_now()` with an explicit list
 #' of attributes (`summarise()`, `reframe()`, `update()`, ...). Every such list
-#' is a place the validation process can be silently dropped, which is how a
+#' is a place the revision process can be silently dropped, which is how a
 #' three-date object quietly becomes a two-date one -- and the `now` moves
 #' backwards with it.
 #'
 #' This returns the arguments to splice into that call, and returns nothing when
-#' the object has no validation or the rebuilt data no longer carries its
+#' the object has no revision or the rebuilt data no longer carries its
 #' columns.
 #'
 #' @param x The original `tbl_now`.
@@ -760,23 +760,23 @@ plot_validation_delay <- function(x, by = NULL, linewidth = 1,
 #'
 #' @keywords internal
 #' @noRd
-.validation_rebuild_args <- function(x, data) {
-  validation_date <- get_validation_date(x)
-  if (is.null(validation_date) || !validation_date %in% colnames(data)) {
+.revision_rebuild_args <- function(x, data) {
+  revision_date <- get_revision_date(x)
+  if (is.null(revision_date) || !revision_date %in% colnames(data)) {
     return(list())
   }
-  type_col <- get_validation_type(x)
-  censored_col <- get_is_censored_validation(x)
+  type_col <- get_revision_type(x)
+  censored_col <- get_is_censored_revision(x)
   list(
-    validation_date = validation_date,
-    validation_type = if (!is.null(type_col) && type_col %in% colnames(data)) {
+    revision_date = revision_date,
+    revision_type = if (!is.null(type_col) && type_col %in% colnames(data)) {
       type_col
     } else {
       NULL
     },
-    validation_units = get_validation_units(x) %||% "auto",
-    validation_levels = get_validation_levels(x),
-    is_censored_validation = if (!is.null(censored_col) &&
+    revision_units = get_revision_units(x) %||% "auto",
+    revision_levels = get_revision_levels(x),
+    is_censored_revision = if (!is.null(censored_col) &&
       censored_col %in% colnames(data)) {
       censored_col
     } else {
@@ -787,38 +787,38 @@ plot_validation_delay <- function(x, by = NULL, linewidth = 1,
 
 #' @rdname censoring
 #' @export
-censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
-  .assert_tbl_now(x, "censor_validation_delays_above")
-  if (!has_validation(x)) {
+censor_revision_delays_above <- function(x, max_delay, verbose = TRUE) {
+  .assert_tbl_now(x, "censor_revision_delays_above")
+  if (!has_revision(x)) {
     cli::cli_abort(c(
-      "{.fn censor_validation_delays_above} needs a validation process.",
-      "i" = "Attach one with {.fn add_validation_date}."
+      "{.fn censor_revision_delays_above} needs a revision process.",
+      "i" = "Attach one with {.fn add_revision_date}."
     ))
   }
   if (!is.numeric(max_delay) || length(max_delay) != 1L || max_delay < 0) {
     cli::cli_abort("{.arg max_delay} must be a single non-negative number.")
   }
 
-  delays <- x[[".validation_delay"]]
+  delays <- x[[".revision_delay"]]
   too_long <- is.finite(delays) & delays > max_delay
 
-  # `add_is_censored_validation()` refuses a `grouped_tbl_now`, so the grouping
+  # `add_is_censored_revision()` refuses a `grouped_tbl_now`, so the grouping
   # comes off for the write and goes back on afterwards. `.censor_mark()` does
   # the merge itself -- a delay you have already decided not to take at face
   # value does not become exact because a later, looser threshold was applied.
   group_columns <- dplyr::group_vars(x)
   x <- .tbl_now_regroup(
-    .censor_mark(ungroup(x), too_long, axis = "validation"),
+    .censor_mark(ungroup(x), too_long, axis = "revision"),
     group_columns
   )
 
   if (isTRUE(verbose)) {
     cli::cli_inform(c(
       "i" = paste0(
-        "Marked {sum(too_long)} case{?s} with a validation delay > ",
-        "{max_delay} {get_validation_units(x)} as censored."
+        "Marked {sum(too_long)} case{?s} with a revision delay > ",
+        "{max_delay} {get_revision_units(x)} as censored."
       ),
-      "*" = "That delay is now a lower bound (is_censored_validation)."
+      "*" = "That delay is now a lower bound (is_censored_revision)."
     ))
   }
   x
@@ -837,7 +837,7 @@ censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
 #' back the confirmed counts can be trusted -- and a day that is 80% pending is
 #' a day whose confirmed count means very little.
 #'
-#' @param x A `tbl_now` with a validation process.
+#' @param x A `tbl_now` with a revision process.
 #' @param by Optional stratum column to facet by.
 #' @param proportion When `TRUE` (default) the bands are shares summing to 1;
 #'   `FALSE` shows the counts instead, which keeps the epidemic curve visible.
@@ -852,7 +852,7 @@ censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
 #' the same right-truncation a nowcast exists to correct, one axis over. What is
 #' *not* normal is a pending band that stays wide far from the `now`: those cases
 #' were reported and then never resolved, and they will never be. Consider
-#' [censor_validation_delays_above()].
+#' [censor_revision_delays_above()].
 #'
 #' A `retracted` share that changes over time is worth investigating: it usually
 #' means the testing criteria or the case definition changed, not that the
@@ -865,7 +865,7 @@ censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
 #' reporting process), and `pending` with the neutral `pending` role (not yet
 #' known either way). Override any of them through `palette`.
 #'
-#' @seealso [diagnose_validation_delay()], [validated_cases].
+#' @seealso [diagnose_revision_delay()], [revised_cases].
 #'
 #' @examples
 #' cases <- data.frame(
@@ -877,29 +877,29 @@ censor_validation_delays_above <- function(x, max_delay, verbose = TRUE) {
 #' cases$result[cases$outcome == "pending"] <- as.Date(NA)
 #' flu <- tbl_now(cases,
 #'   event_date = onset, report_date = visit,
-#'   validation_date = result, validation_type = outcome,
+#'   revision_date = result, revision_type = outcome,
 #'   data_type = "linelist", verbose = FALSE
 #' )
 #'
-#' plot_validation_status(flu)
+#' plot_revision_status(flu)
 #'
 #' @export
-plot_validation_status <- function(x, by = NULL, proportion = TRUE,
+plot_revision_status <- function(x, by = NULL, proportion = TRUE,
                                   palette = .tbl_now_palette()) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_validation_status}.")
+    cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_revision_status}.")
   }
-  .assert_tbl_now(x, "plot_validation_status")
-  .tbl_now_check_palette(palette, "plot_validation_status")
-  if (!has_validation(x)) {
+  .assert_tbl_now(x, "plot_revision_status")
+  .tbl_now_check_palette(palette, "plot_revision_status")
+  if (!has_revision(x)) {
     cli::cli_abort(c(
-      "{.fn plot_validation_status} needs a validation process.",
-      "i" = "Attach one with {.fn add_validation_date}."
+      "{.fn plot_revision_status} needs a revision process.",
+      "i" = "Attach one with {.fn add_revision_date}."
     ))
   }
 
   event_col <- get_event_date(x)
-  type_col <- get_validation_type(x)
+  type_col <- get_revision_type(x)
   count_col <- get_case_count(x)
 
   observations <- dplyr::as_tibble(.declass_tbl_now(dplyr::ungroup(x)))

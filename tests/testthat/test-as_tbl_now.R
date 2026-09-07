@@ -768,6 +768,6 @@ test_that("as_tbl_now validates result", {
     verbose = FALSE
   )
 
-  # Should pass validation
+  # Should pass revision
   expect_true(validate_tbl_now(result))
 })

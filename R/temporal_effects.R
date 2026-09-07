@@ -266,7 +266,7 @@ temporal_effects <- S7::new_class(
     season_length = 1,
     holidays = NULL
   ) {
-    # --- Validation checks ---
+    # --- Revision checks ---
     check_bool(day_of_week, "day_of_week")
     check_bool(weekend, "weekend")
     check_bool(day_of_month, "day_of_month")
@@ -386,7 +386,7 @@ temporal_effects <- S7::new_class(
 #' @param x The value supplied for `holiday_lags` / `weekend_lags`.
 #' @param name The argument name (for the error message).
 #'
-#' @return The validated depth as a single integer; the sign records the
+#' @return The revised depth as a single integer; the sign records the
 #'   direction (negative = before the event) and `0` means "off".
 #'
 #' @keywords internal

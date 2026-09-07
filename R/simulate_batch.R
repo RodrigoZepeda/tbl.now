@@ -1,5 +1,5 @@
 # =============================================================================
-# Inject a known batch into a tbl_now (for validation and teaching)
+# Inject a known batch into a tbl_now (for revision and teaching)
 # =============================================================================
 # NOTE ON PACKAGE PLACEMENT.  Model-free; destined for `tbl.now`.  See the header
 # of `35_batch_test_tbl_now.R`.
@@ -297,11 +297,11 @@ simulate_batch <- function(x,
   if (!is.null(existing_now)) {
     tbl_now_arguments$now <- existing_now
   }
-  # A validation is real data about the case; holding its report back does not
+  # A revision is real data about the case; holding its report back does not
   # unmake the laboratory result, so it is carried through. It CAN leave a report
-  # sitting after its own validation -- that is a true statement about the
+  # sitting after its own revision -- that is a true statement about the
   # simulated system, and `tbl_now()`'s ordering check is what says so.
-  tbl_now_arguments <- c(tbl_now_arguments, .validation_rebuild_args(data, observations))
+  tbl_now_arguments <- c(tbl_now_arguments, .revision_rebuild_args(data, observations))
 
   suppressWarnings(do.call(tbl_now, tbl_now_arguments))
 }

@@ -275,7 +275,7 @@ test_that("tbl_now throws warning when repeated rows", {
 
   # Three locations, not all 53. This test is about `tbl_now()`'s response to
   # repeated rows, and one location shows that as well as fifty-three do -- but
-  # the full `flusight` is 452,000 rows and every one of them is validated
+  # the full `flusight` is 452,000 rows and every one of them is revised
   # twice below, which made this single test 4% of the whole CRAN suite. Both
   # warnings asserted below still fire on the subset; that was checked, not
   # assumed.

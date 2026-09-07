@@ -1213,10 +1213,10 @@ test_that("demotion keeps the metadata the user attached through `...`", {
   expect_null(attr(demoted, "event_date", exact = TRUE))
 })
 
-add_validation_date_fixture <- function(x) {
+add_revision_date_fixture <- function(x) {
   x[["resolved"]] <- x[[get_report_date(x)]] + 2
   x[["outcome"]] <- rep("confirmed", nrow(x))
-  add_validation_date(x, "resolved", "outcome")
+  add_revision_date(x, "resolved", "outcome")
 }
 
 test_that("every attribute tbl_now() sets is listed as one the class owns", {
@@ -1224,7 +1224,7 @@ test_that("every attribute tbl_now() sets is listed as one the class owns", {
   # class but not to that list would outlive the demotion, and its column name
   # would outlive the column.
   x <- demotion_fixture() |>
-    add_validation_date_fixture()
+    add_revision_date_fixture()
 
   owned <- tbl.now:::.TBL_NOW_ATTRIBUTES
   actual <- setdiff(names(tbl_now_attributes(x)), "class")
@@ -1253,7 +1253,7 @@ test_that("mutating protected date columns rebuilds generated delays", {
   expect_equal(assigned$.delay, as.numeric(assigned$report - assigned$event))
 })
 
-test_that("mutating validation dates rebuilds validation numeric columns", {
+test_that("mutating revision dates rebuilds revision numeric columns", {
   x <- tbl_now(
     data.frame(
       event = as.Date("2021-01-01") + 0:2,
@@ -1262,16 +1262,16 @@ test_that("mutating validation dates rebuilds validation numeric columns", {
       outcome = rep("confirmed", 3)
     ),
     event_date = event, report_date = report,
-    validation_date = result, validation_type = outcome,
+    revision_date = result, revision_type = outcome,
     data_type = "linelist", units = "days", verbose = FALSE
   )
 
   moved <- x |>
     dplyr::mutate(result = result - 1)
   expect_true(is_tbl_now(moved))
-  expect_true(".validation_delay" %in% names(moved))
+  expect_true(".revision_delay" %in% names(moved))
   expect_equal(
-    moved$.validation_delay,
+    moved$.revision_delay,
     as.numeric(moved$result - moved$report)
   )
 })
@@ -1289,7 +1289,7 @@ test_that("date-column rebuilds preserve grouping", {
 })
 
 test_that("renaming protected generated columns demotes without stale attributes", {
-  x <- add_validation_date_fixture(demotion_fixture())
+  x <- add_revision_date_fixture(demotion_fixture())
 
   demoted <- suppressWarnings(
     dplyr::rename(x, delay_num = .delay)

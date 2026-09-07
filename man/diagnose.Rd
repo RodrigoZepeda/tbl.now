@@ -105,7 +105,7 @@ deliberately never promoted to a warning: \code{validate_tbl_now()} runs on
 every \code{dplyr} verb, and a new warning there would turn a quiet
 construction into a noisy one for data that has always been accepted.}
 \item{\code{ok}}{The check ran and found nothing.}
-\item{\code{skipped}}{Could not be assessed -- no validation process, the
+\item{\code{skipped}}{Could not be assessed -- no revision process, the
 wrong data type, or an optional package that is not installed.}
 }
 }

@@ -47,7 +47,7 @@ a real, **deliberately unpolished** dataset. We will:
 
 We'll start the process by nowcasting with two dates (event and report
 dates) and then we'll focus on nowcasting with three dates (event,
-report, and validation dates).
+report, and revision dates).
 
 Let's start by calling the libraries:
 

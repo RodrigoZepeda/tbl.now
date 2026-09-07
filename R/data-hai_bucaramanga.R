@@ -101,7 +101,7 @@
 #'
 #' @seealso
 #' [tbl_now()] to declare the date columns, and
-#' [add_validation_date()][add] for the third one this dataset
+#' [add_revision_date()][add] for the third one this dataset
 #' has; [diagnose()] and [diagnose_drift()], which this dataset is deliberately
 #' messy enough to exercise; the package's other datasets -- [denguedat],
 #' [mpoxdat], [flusight], [covid_colombia] and [covid_us].

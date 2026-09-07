@@ -1,10 +1,10 @@
-# `change_now()` and the validation process -- issue #51.
+# `change_now()` and the revision process -- issue #51.
 #
 # Moving `now` BACKWARDS is what this verb is for: it is how a backtest asks
 # "what did this data look like as of an earlier date". Before the fix, an
-# object carrying a validation process refused every such move, because
-# `validate_tbl_now()` correctly observed that a validation cannot post-date
-# the as-of moment -- and the wrong conclusion was drawn from it. A validation
+# object carrying a revision process refused every such move, because
+# `validate_tbl_now()` correctly observed that a revision cannot post-date
+# the as-of moment -- and the wrong conclusion was drawn from it. A revision
 # dated after the new `now` has simply not happened yet.
 
 # `as.list()` on a `tbl_now` carries the attributes along, and `now` is exactly
@@ -15,7 +15,7 @@ bare_cols <- function(x) {
   out
 }
 
-validation_fixture <- function() {
+revision_fixture <- function() {
   cases <- data.frame(
     onset   = as.Date("2021-01-04") + 0:9,
     visit   = as.Date("2021-01-05") + 0:9,
@@ -25,13 +25,13 @@ validation_fixture <- function() {
   )
   tbl_now(cases,
     event_date = "onset", report_date = "visit",
-    validation_date = "result", validation_type = "outcome",
+    revision_date = "result", revision_type = "outcome",
     data_type = "linelist", verbose = FALSE
   )
 }
 
-test_that("change_now() moves `now` backwards past a validation (#51)", {
-  flu <- validation_fixture()
+test_that("change_now() moves `now` backwards past a revision (#51)", {
+  flu <- revision_fixture()
   expect_equal(get_now(flu), as.Date("2021-01-17"))
 
   # This is the reproducer from the issue, verbatim. It used to abort.
@@ -43,8 +43,8 @@ test_that("change_now() moves `now` backwards past a validation (#51)", {
   expect_equal(get_now(earlier), as.Date("2021-01-10"))
 })
 
-test_that("change_now() masks validations dated after the new `now`", {
-  flu <- validation_fixture()
+test_that("change_now() masks revisions dated after the new `now`", {
+  flu <- revision_fixture()
   earlier <- suppressMessages(suppressWarnings(
     change_now(flu, as.Date("2021-01-10"))
   ))
@@ -56,43 +56,43 @@ test_that("change_now() masks validations dated after the new `now`", {
   # resolved.
   expect_true(all(is.na(earlier$result[future])))
   expect_true(all(earlier$outcome[future] == "pending"))
-  expect_true(all(is.na(earlier$.validation_num[future])))
-  expect_true(all(is.na(earlier$.validation_delay[future])))
+  expect_true(all(is.na(earlier$.revision_num[future])))
+  expect_true(all(is.na(earlier$.revision_delay[future])))
 
   # Untouched: everything that had already happened by then, INCLUDING the
-  # validation dated exactly on the new `now` -- that one has happened.
+  # revision dated exactly on the new `now` -- that one has happened.
   expect_equal(earlier$result[!future], flu$result[!future])
   expect_equal(earlier$outcome[!future], flu$outcome[!future])
-  expect_equal(earlier$.validation_delay[!future], flu$.validation_delay[!future])
+  expect_equal(earlier$.revision_delay[!future], flu$.revision_delay[!future])
   expect_true(as.Date("2021-01-10") %in% earlier$result)
 })
 
 test_that("the re-censored object is valid, and the counts follow", {
-  flu <- validation_fixture()
+  flu <- revision_fixture()
   earlier <- suppressMessages(suppressWarnings(
     change_now(flu, as.Date("2021-01-10"))
   ))
 
-  # No error-level finding about the validation sitting after `now`: that is
+  # No error-level finding about the revision sitting after `now`: that is
   # the check that used to fire.
   findings <- suppressWarnings(diagnose(earlier))
   expect_equal(sum(findings$status == "error"), 0L)
-  validation_row <- findings[
-    findings$check == "now" & findings$scope == "validation_date",
+  revision_row <- findings[
+    findings$check == "now" & findings$scope == "revision_date",
   ]
-  expect_equal(nrow(validation_row), 1L)
-  expect_equal(as.character(validation_row$status), "ok")
+  expect_equal(nrow(revision_row), 1L)
+  expect_equal(as.character(revision_row$status), "ok")
 
   # As of 10 January only two of the five confirmations had come back.
-  expect_equal(sum(get_latest_validated_cases(flu, "confirmed")[["n"]]), 5)
-  expect_equal(sum(suppressWarnings(get_latest_validated_cases(earlier, "confirmed"))[["n"]]), 2)
+  expect_equal(sum(get_latest_revised_cases(flu, "confirmed")[["n"]]), 5)
+  expect_equal(sum(suppressWarnings(get_latest_revised_cases(earlier, "confirmed"))[["n"]]), 2)
 })
 
 test_that("a whole backtest walk never errors (#51 regression guard)", {
-  flu <- validation_fixture()
+  flu <- revision_fixture()
 
   # The loop the issue says users will write. Every one of these dates is
-  # earlier than `max(validation_date)`, which is precisely the case that used
+  # earlier than `max(revision_date)`, which is precisely the case that used
   # to abort, so a single failure anywhere fails the test.
   as_of_dates <- seq(as.Date("2021-01-05"), as.Date("2021-01-17"), by = "day")
   for (as_of in as_of_dates) {
@@ -107,7 +107,7 @@ test_that("a whole backtest walk never errors (#51 regression guard)", {
 })
 
 test_that("masking is idempotent and only ever looks backwards", {
-  flu <- validation_fixture()
+  flu <- revision_fixture()
   once <- suppressMessages(suppressWarnings(change_now(flu, as.Date("2021-01-10"))))
   twice <- suppressMessages(suppressWarnings(change_now(once, as.Date("2021-01-10"))))
   expect_equal(bare_cols(twice), bare_cols(once))
@@ -118,9 +118,9 @@ test_that("masking is idempotent and only ever looks backwards", {
   expect_equal(get_now(later), as.Date("2021-02-01"))
 })
 
-test_that("update_now() does not mask -- a validation is an observation", {
-  flu <- validation_fixture()
-  # `now` is inferred as the max over all three axes, so no validation can
+test_that("update_now() does not mask -- a revision is an observation", {
+  flu <- revision_fixture()
+  # `now` is inferred as the max over all three axes, so no revision can
   # post-date it and nothing is masked.
   refreshed <- suppressMessages(update_now(flu))
   expect_equal(get_now(refreshed), as.Date("2021-01-17"))
@@ -128,11 +128,11 @@ test_that("update_now() does not mask -- a validation is an observation", {
 })
 
 test_that("masking reports what it did, and `verbose = FALSE` silences it", {
-  flu <- validation_fixture()
+  flu <- revision_fixture()
 
   expect_message(
     suppressWarnings(change_now(flu, as.Date("2021-01-10"))),
-    "Returned 7 validations"
+    "Returned 7 revisions"
   )
   expect_no_message(
     suppressWarnings(change_now(flu, as.Date("2021-01-10"), verbose = FALSE))
@@ -141,7 +141,7 @@ test_that("masking reports what it did, and `verbose = FALSE` silences it", {
   expect_no_message(change_now(flu, as.Date("2021-02-01")))
 })
 
-test_that("change_now() still works on an object with no validation", {
+test_that("change_now() still works on an object with no revision", {
   plain <- tbl_now(
     data.frame(
       onset = as.Date("2021-01-04") + 0:9,
@@ -167,12 +167,12 @@ test_that("change_now() masks count data too, and resets the censoring flag", {
   )
   counts <- tbl_now(cases,
     event_date = "onset", report_date = "visit",
-    validation_date = "result", validation_type = "outcome",
+    revision_date = "result", revision_type = "outcome",
     case_count = "n", data_type = "count-incidence", verbose = FALSE
   )
   # Flag everything, so the reset below has something to reset.
-  counts <- suppressMessages(censor_validation_delays_above(counts, 0))
-  flag <- get_is_censored_validation(counts)
+  counts <- suppressMessages(censor_revision_delays_above(counts, 0))
+  flag <- get_is_censored_revision(counts)
   expect_true(all(counts[[flag]]))
 
   earlier <- suppressMessages(suppressWarnings(

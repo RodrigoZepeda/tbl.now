@@ -82,10 +82,10 @@
 #'   that arrived after the nowcast's `now`.
 #' @param strata Character vector of strata columns to keep.
 #' @param truth_axis Which process defines the observed counts: `"report"` for
-#'   counts eventually reported, or `"validation"` for counts eventually
-#'   resolved on the validation axis.
+#'   counts eventually reported, or `"revision"` for counts eventually
+#'   resolved on the revision axis.
 #' @param truth_type Which case type to score. See [get_latest_reported_cases()]
-#'   and [get_latest_validated_cases()] for the accepted values.
+#'   and [get_latest_revised_cases()] for the accepted values.
 #' @param complete_grid Logical. Whether missing event/stratum cells inside
 #'   `x`'s surveillance grid should be filled with zero.
 #'
@@ -95,7 +95,7 @@
 #' @keywords internal
 #' @noRd
 .eventual_counts <- function(x, strata = get_strata(x),
-                             truth_axis = c("report", "validation"),
+                             truth_axis = c("report", "revision"),
                              truth_type = "total", complete_grid = FALSE) {
   .assert_tbl_now(x, "truth")
   truth_axis <- match.arg(truth_axis)
@@ -107,7 +107,7 @@
   observed <- if (identical(truth_axis, "report")) {
     get_latest_reported_cases(ungroup(x), type = truth_type)
   } else {
-    get_latest_validated_cases(ungroup(x), type = truth_type)
+    get_latest_revised_cases(ungroup(x), type = truth_type)
   }
   # `.cases_at()` names the count after the object's `case_count`, or
   # `n` when the source was a line list (which it has just aggregated).
@@ -207,7 +207,7 @@
 #'
 #' @keywords internal
 #' @noRd
-.resolve_truth <- function(truth, x, truth_axis = c("report", "validation"),
+.resolve_truth <- function(truth, x, truth_axis = c("report", "revision"),
                            truth_type = "total") {
   truth_axis <- match.arg(truth_axis)
   if (is.null(truth)) {
@@ -380,13 +380,13 @@
 #'   which is only meaningful when that object still holds the later reports.
 #'   A backtest instead uses the truth table it already stores.
 #' @param truth_axis Which process defines the observed counts. `"report"`
-#'   (default) scores counts eventually reported. `"validation"` scores counts
-#'   eventually resolved on the validation axis and requires a validation-aware
+#'   (default) scores counts eventually reported. `"revision"` scores counts
+#'   eventually resolved on the revision axis and requires a revision-aware
 #'   `truth`.
-#' @param truth_type Which case type to score. Defaults to `"total"`. Validation
+#' @param truth_type Which case type to score. Defaults to `"total"`. Revision
 #'   types such as `"confirmed"`, `"retracted"`, `"pending"`, `"unknown"` and
 #'   `"net"` follow the same meanings as [get_latest_reported_cases()] and
-#'   [get_latest_validated_cases()]. `"by_type"` is refused because scoring needs
+#'   [get_latest_revised_cases()]. `"by_type"` is refused because scoring needs
 #'   one observed value per event-date/stratum target.
 #'
 #' @return
@@ -481,7 +481,7 @@
 #' }
 #'
 #' @export
-score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "validation"),
+score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "revision"),
                           truth_type = "total") {
   .assert_tbl_nowcast(x)
   truth_axis <- match.arg(truth_axis)
@@ -629,7 +629,7 @@ score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "validation"
 nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
                              seed = NULL, keep_draws = FALSE,
                              on_error = c("warn", "abort"), verbose = TRUE,
-                             truth_axis = c("report", "validation"),
+                             truth_axis = c("report", "revision"),
                              truth_type = "total") {
   .assert_tbl_now(x, "nowcast_backtest")
   on_error <- match.arg(on_error)
@@ -769,7 +769,7 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
   if (any(before_data)) {
     cli::cli_abort(c(
       "{.arg now_dates} must be on or after {.val {as.character(earliest)}}.",
-      "i" = "That is the latest of the first event, report, and validation dates \\
+      "i" = "That is the latest of the first event, report, and revision dates \\
              present in {.arg x}."
     ))
   }
@@ -798,7 +798,7 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
 #' Earliest valid backtest origin
 #'
 #' A retrospective origin before any declared time axis exists cannot represent
-#' data availability. Validation dates join the lower bound when present.
+#' data availability. Revision dates join the lower bound when present.
 #'
 #' @param x A `tbl_now`.
 #'
@@ -810,7 +810,7 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
   candidates <- c(
     .min_present_date(x, get_event_date(x)),
     .min_present_date(x, get_report_date(x)),
-    .min_present_date(x, get_validation_date(x))
+    .min_present_date(x, get_revision_date(x))
   )
   max(candidates[!is.na(candidates)])
 }
@@ -1204,7 +1204,7 @@ nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"
 #' @rdname score_nowcast
 #' @export
 as_scoringutils <- function(x, truth = NULL,
-                            truth_axis = c("report", "validation"),
+                            truth_axis = c("report", "revision"),
                             truth_type = "total") {
   truth_axis <- match.arg(truth_axis)
   if (inherits(x, "nowcast_backtest")) {
@@ -1240,7 +1240,7 @@ as_scoringutils <- function(x, truth = NULL,
 #'
 #' @keywords internal
 #' @noRd
-.resolve_backtest_truth <- function(x, truth, truth_axis = c("report", "validation"),
+.resolve_backtest_truth <- function(x, truth, truth_axis = c("report", "revision"),
                                     truth_type = "total") {
   truth_axis <- match.arg(truth_axis)
   resolved <- if (is.null(truth)) {
@@ -1314,7 +1314,7 @@ as_scoringutils <- function(x, truth = NULL,
 #' @keywords internal
 #' @noRd
 as_forecast_quantile_tbl_nowcast <- function(data, ..., truth = NULL,
-                                             truth_axis = c("report", "validation"),
+                                             truth_axis = c("report", "revision"),
                                              truth_type = "total") {
   scoringutils::as_forecast_quantile(
     as.data.frame(as_scoringutils(
@@ -1330,7 +1330,7 @@ as_forecast_quantile_tbl_nowcast <- function(data, ..., truth = NULL,
 #'   most commonly `forecast_unit`.
 #' @exportS3Method scoringutils::as_forecast_quantile
 as_forecast_quantile.nowcast_backtest <- function(data, ..., truth = NULL,
-                                                  truth_axis = c("report", "validation"),
+                                                  truth_axis = c("report", "revision"),
                                                   truth_type = "total") {
   scoringutils::as_forecast_quantile(
     as.data.frame(as_scoringutils(
@@ -1387,7 +1387,7 @@ as_forecast_quantile.nowcast_backtest <- function(data, ..., truth = NULL,
 #' @keywords internal
 #' @noRd
 as_forecast_sample_tbl_nowcast <- function(data, ..., truth = NULL,
-                                           truth_axis = c("report", "validation"),
+                                           truth_axis = c("report", "revision"),
                                            truth_type = "total") {
   .assert_tbl_nowcast(data, "data")
   if (is.null(data@draws)) {
@@ -1463,7 +1463,7 @@ as_forecast_sample_tbl_nowcast <- function(data, ..., truth = NULL,
 #'   most commonly `forecast_unit`.
 #' @exportS3Method scoringutils::as_forecast_sample
 as_forecast_sample.nowcast_backtest <- function(data, ..., truth = NULL,
-                                                truth_axis = c("report", "validation"),
+                                                truth_axis = c("report", "revision"),
                                                 truth_type = "total") {
   key <- c(data$event_date, data$strata %||% character(0))
   frame <- .as_scoringutils_sample_frame(

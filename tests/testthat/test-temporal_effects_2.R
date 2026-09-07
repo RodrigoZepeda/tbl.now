@@ -141,7 +141,7 @@ test_that("temporal_effects accepts NULL for holidays", {
 })
 
 # ============================================================================
-# Tests for temporal_effects() validation
+# Tests for temporal_effects() revision
 # ============================================================================
 
 test_that("temporal_effects fails with non-logical day_of_week", {

@@ -223,28 +223,28 @@
     dplyr::arrange(.data$report_date)
 }
 
-#' Validated cases per validation date
+#' Revised cases per revision date
 #'
-#' Counts resolved cases by `validation_date` (not by event or report date).
-#' Pending rows have no validation date and are excluded.
+#' Counts resolved cases by `revision_date` (not by event or report date).
+#' Pending rows have no revision date and are excluded.
 #'
-#' @param object A `tbl_now` object with a validation process.
+#' @param object A `tbl_now` object with a revision process.
 #' @param strata_cols Optional character vector of columns to split on; when
 #'   supplied the result carries a `strata` label column.
 #'
-#' @return A tibble with `validation_date`, `case_count` (and `strata`).
+#' @return A tibble with `revision_date`, `case_count` (and `strata`).
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_validation_process <- function(object, strata_cols = NULL) {
+.tbl_now_revision_process <- function(object, strata_cols = NULL) {
   incidence <- object |>
     ungroup() |>
     to_count(to = "count-incidence")
   case_count_column <- get_case_count(incidence)
-  validation_date_column <- get_validation_date(object)
+  revision_date_column <- get_revision_date(object)
 
   plot_data <- dplyr::tibble(
-    validation_date = incidence[[validation_date_column]],
+    revision_date = incidence[[revision_date_column]],
     case_count      = incidence[[case_count_column]]
   )
   if (length(strata_cols) > 0) {
@@ -252,15 +252,15 @@
   }
 
   plot_data |>
-    dplyr::filter(!is.na(.data$validation_date), !is.na(.data$case_count)) |>
+    dplyr::filter(!is.na(.data$revision_date), !is.na(.data$case_count)) |>
     dplyr::group_by(dplyr::across(dplyr::all_of(
-      c("validation_date", if (length(strata_cols) > 0) "strata")
+      c("revision_date", if (length(strata_cols) > 0) "strata")
     ))) |>
     dplyr::summarise(
       case_count = sum(.data$case_count, na.rm = TRUE),
       .groups    = "drop"
     ) |>
-    dplyr::arrange(.data$validation_date)
+    dplyr::arrange(.data$revision_date)
 }
 
 #' The calendar cycle over which a `"percent"` share is computed
@@ -348,7 +348,7 @@
 #' @noRd
 .tbl_now_percent_unavailable <- function(palette) {
   .tbl_now_empty_panel(
-    "Percentages need date-based event/report/validation columns", palette
+    "Percentages need date-based event/report/revision columns", palette
   )
 }
 
@@ -588,7 +588,7 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_holiday_config <- function(object, date_type = c(
-  "event_date", "report_date", "validation_date"
+  "event_date", "report_date", "revision_date"
 )) {
   date_type <- match.arg(date_type)
   specs <- .filter_temporal_effect_specs(get_temporal_effects(object), date_type)
@@ -826,7 +826,7 @@
     case      = " effect",
     delay     = " delay effect",
     reporting = " reporting effect",
-    validation = " validation effect"
+    revision = " revision effect"
   ))
 }
 
@@ -1220,29 +1220,29 @@
   )
 }
 
-#' Panel: validation-arrival periodogram
+#' Panel: revision-arrival periodogram
 #'
-#' A periodogram of the validation-arrival series.
+#' A periodogram of the revision-arrival series.
 #'
-#' @param validation_process A tibble from `.tbl_now_validation_process()`.
-#' @param validation_units The validation units (used to label the period axis).
+#' @param revision_process A tibble from `.tbl_now_revision_process()`.
+#' @param revision_units The revision units (used to label the period axis).
 #' @param palette A named colour palette.
 #'
 #' @return A ggplot object (or an empty panel when the series is too short).
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_panel_validation_periodogram <- function(validation_process,
-                                                 validation_units, palette,
+.tbl_now_panel_revision_periodogram <- function(revision_process,
+                                                 revision_units, palette,
                                                  size = 1, linewidth = 1) {
-  style <- .tbl_now_process_style("validation", palette)
+  style <- .tbl_now_process_style("revision", palette)
   .tbl_now_periodogram_panel(
-    validation_process$case_count, validation_units, palette,
+    revision_process$case_count, revision_units, palette,
     size = size, linewidth = linewidth,
     title = "Cycles (periodogram)",
     subtitle = style$subtitle,
     line_colour = style$line,
-    empty_message = "Too few points to estimate validation cycles"
+    empty_message = "Too few points to estimate revision cycles"
   )
 }
 
@@ -1770,9 +1770,9 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_all_panel_keys <- function(event_units, holiday_config = NULL,
-                                    validation_units = NULL,
-                                    validation_holiday_config = NULL,
-                                    has_validation = FALSE,
+                                    revision_units = NULL,
+                                    revision_holiday_config = NULL,
+                                    has_revision = FALSE,
                                     report_holiday_config = holiday_config) {
   event_groupings <- c(
     .tbl_now_calendar_groupings(event_units),
@@ -1782,9 +1782,9 @@
     .tbl_now_calendar_groupings(event_units),
     .tbl_now_holiday_groupings(report_holiday_config)
   )
-  validation_groupings <- c(
-    .tbl_now_calendar_groupings(validation_units),
-    .tbl_now_holiday_groupings(validation_holiday_config)
+  revision_groupings <- c(
+    .tbl_now_calendar_groupings(revision_units),
+    .tbl_now_holiday_groupings(revision_holiday_config)
   )
   c(
     "delay_distribution",
@@ -1793,10 +1793,10 @@
     "seasonality",
     if (length(report_groupings) > 0) paste0("delay_", report_groupings),
     "delay_seasonality",
-    if (has_validation && length(validation_groupings) > 0) {
-      paste0("validation_", validation_groupings)
+    if (has_revision && length(revision_groupings) > 0) {
+      paste0("revision_", revision_groupings)
     },
-    if (has_validation) "validation_seasonality"
+    if (has_revision) "revision_seasonality"
   )
 }
 
@@ -1815,15 +1815,15 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_resolve_panels <- function(panels, event_units, holiday_config = NULL,
-                                    validation_units = NULL,
-                                    validation_holiday_config = NULL,
-                                    has_validation = FALSE,
+                                    revision_units = NULL,
+                                    revision_holiday_config = NULL,
+                                    has_revision = FALSE,
                                     report_holiday_config = holiday_config) {
   all_keys <- .tbl_now_all_panel_keys(
     event_units, holiday_config,
-    validation_units = validation_units,
-    validation_holiday_config = validation_holiday_config,
-    has_validation = has_validation,
+    revision_units = revision_units,
+    revision_holiday_config = revision_holiday_config,
+    has_revision = has_revision,
     report_holiday_config = report_holiday_config
   )
   event_groupings <- c(
@@ -1834,9 +1834,9 @@
     .tbl_now_calendar_groupings(event_units),
     .tbl_now_holiday_groupings(report_holiday_config)
   )
-  validation_groupings <- c(
-    .tbl_now_calendar_groupings(validation_units),
-    .tbl_now_holiday_groupings(validation_holiday_config)
+  revision_groupings <- c(
+    .tbl_now_calendar_groupings(revision_units),
+    .tbl_now_holiday_groupings(revision_holiday_config)
   )
 
   if (is.null(panels)) panels <- "all"
@@ -1849,7 +1849,7 @@
       all                 = all_keys,
       calendar            = paste0("calendar_", event_groupings),
       delay_calendar      = paste0("delay_", report_groupings),
-      validation_calendar = paste0("validation_", validation_groupings),
+      revision_calendar = paste0("revision_", revision_groupings),
       key
     )
   }
@@ -1861,10 +1861,10 @@
     "calendar_holiday", "calendar_holiday_lag", "seasonality",
     "delay_weekday", "delay_week", "delay_month",
     "delay_holiday", "delay_holiday_lag", "delay_seasonality",
-    "validation_weekday", "validation_week", "validation_month",
-    "validation_holiday", "validation_holiday_lag", "validation_seasonality"
+    "revision_weekday", "revision_week", "revision_month",
+    "revision_holiday", "revision_holiday_lag", "revision_seasonality"
   )
-  aliases <- c("all", "calendar", "delay_calendar", "validation_calendar")
+  aliases <- c("all", "calendar", "delay_calendar", "revision_calendar")
   unknown <- setdiff(requested, known_keys)
   if (length(unknown) > 0) {
     cli::cli_abort(c(
@@ -1878,17 +1878,17 @@
   holiday_keys <- c(
     "calendar_holiday", "calendar_holiday_lag",
     "delay_holiday", "delay_holiday_lag",
-    "validation_holiday", "validation_holiday_lag"
+    "revision_holiday", "revision_holiday_lag"
   )
-  validation_keys <- grep("^validation_", requested, value = TRUE)
+  revision_keys <- grep("^revision_", requested, value = TRUE)
   inapplicable <- setdiff(requested, all_keys)
   unavailable_holiday <- intersect(inapplicable, holiday_keys)
-  unavailable_validation <- if (!has_validation) {
-    setdiff(intersect(inapplicable, validation_keys), holiday_keys)
+  unavailable_revision <- if (!has_revision) {
+    setdiff(intersect(inapplicable, revision_keys), holiday_keys)
   } else {
     character(0)
   }
-  unavailable_unit <- setdiff(inapplicable, c(holiday_keys, unavailable_validation))
+  unavailable_unit <- setdiff(inapplicable, c(holiday_keys, unavailable_revision))
 
   if (length(unavailable_unit) > 0) {
     cli::cli_warn(
@@ -1896,10 +1896,10 @@
        not apply to the selected time units and {?was/were} skipped."
     )
   }
-  if (length(unavailable_validation) > 0) {
+  if (length(unavailable_revision) > 0) {
     cli::cli_warn(
-      "{cli::qty(unavailable_validation)}Panel{?s} {.val {unavailable_validation}} \\
-       need{?s/} a validation process and {?was/were} skipped."
+      "{cli::qty(unavailable_revision)}Panel{?s} {.val {unavailable_revision}} \\
+       need{?s/} a revision process and {?was/were} skipped."
     )
   }
   if (length(unavailable_holiday) > 0) {
@@ -1954,8 +1954,8 @@
       ctx$delay_per_date, ctx$event_units, palette,
       size = size, linewidth = linewidth
     ),
-    validation_seasonality = .tbl_now_panel_validation_periodogram(
-      ctx$validation_process, ctx$validation_units, palette,
+    revision_seasonality = .tbl_now_panel_revision_periodogram(
+      ctx$revision_process, ctx$revision_units, palette,
       size = size, linewidth = linewidth
     ),
     calendar_weekday = .tbl_now_panel_calendar(
@@ -2003,35 +2003,35 @@
       ctx$measure, ctx$reporting_process,
       size = size, linewidth = linewidth
     ),
-    validation_weekday = .tbl_now_panel_calendar(
-      ctx$validation_process, "weekday", palette, ctx$validation_holiday_config,
+    revision_weekday = .tbl_now_panel_calendar(
+      ctx$revision_process, "weekday", palette, ctx$revision_holiday_config,
       ctx$measure, size = size, linewidth = linewidth,
-      date_col = "validation_date", process = "validation",
-      title_kind = "validation", y_label = "validated cases"
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
     ),
-    validation_week = .tbl_now_panel_calendar(
-      ctx$validation_process, "week", palette, ctx$validation_holiday_config,
+    revision_week = .tbl_now_panel_calendar(
+      ctx$revision_process, "week", palette, ctx$revision_holiday_config,
       ctx$measure, size = size, linewidth = linewidth,
-      date_col = "validation_date", process = "validation",
-      title_kind = "validation", y_label = "validated cases"
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
     ),
-    validation_month = .tbl_now_panel_calendar(
-      ctx$validation_process, "month", palette, ctx$validation_holiday_config,
+    revision_month = .tbl_now_panel_calendar(
+      ctx$revision_process, "month", palette, ctx$revision_holiday_config,
       ctx$measure, size = size, linewidth = linewidth,
-      date_col = "validation_date", process = "validation",
-      title_kind = "validation", y_label = "validated cases"
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
     ),
-    validation_holiday = .tbl_now_panel_calendar(
-      ctx$validation_process, "holiday", palette, ctx$validation_holiday_config,
+    revision_holiday = .tbl_now_panel_calendar(
+      ctx$revision_process, "holiday", palette, ctx$revision_holiday_config,
       ctx$measure, size = size, linewidth = linewidth,
-      date_col = "validation_date", process = "validation",
-      title_kind = "validation", y_label = "validated cases"
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
     ),
-    validation_holiday_lag = .tbl_now_panel_calendar(
-      ctx$validation_process, "holiday_lag", palette, ctx$validation_holiday_config,
+    revision_holiday_lag = .tbl_now_panel_calendar(
+      ctx$revision_process, "holiday_lag", palette, ctx$revision_holiday_config,
       ctx$measure, size = size, linewidth = linewidth,
-      date_col = "validation_date", process = "validation",
-      title_kind = "validation", y_label = "validated cases"
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
     ),
     .tbl_now_empty_panel(paste0("Unknown panel: ", key), palette, size = size)
   )
@@ -2062,10 +2062,10 @@
       value  = ctx$delay_per_date_by$mean_delay
     )
   }
-  validation_series <- function() {
+  revision_series <- function() {
     dplyr::tibble(
-      strata = ctx$validation_process_by$strata,
-      value  = ctx$validation_process_by$case_count
+      strata = ctx$revision_process_by$strata,
+      value  = ctx$revision_process_by$case_count
     )
   }
 
@@ -2093,11 +2093,11 @@
       empty_message = "Too few points to estimate delay cycles",
       size = size, linewidth = linewidth
     ),
-    validation_seasonality = .tbl_now_periodogram_by(
-      validation_series(), ctx$validation_units, palette,
+    revision_seasonality = .tbl_now_periodogram_by(
+      revision_series(), ctx$revision_units, palette,
       title = "Cycles (periodogram)",
-      subtitle = .tbl_now_process_style("validation", palette)$subtitle,
-      empty_message = "Too few points to estimate validation cycles",
+      subtitle = .tbl_now_process_style("revision", palette)$subtitle,
+      empty_message = "Too few points to estimate revision cycles",
       size = size, linewidth = linewidth
     ),
     calendar_weekday = .tbl_now_panel_calendar_strata(
@@ -2145,35 +2145,35 @@
       ctx$measure, ctx$reporting_process_by,
       size = size, linewidth = linewidth
     ),
-    validation_weekday = .tbl_now_panel_calendar_strata(
-      ctx$validation_process_by, "weekday", palette, ctx$validation_holiday_config,
+    revision_weekday = .tbl_now_panel_calendar_strata(
+      ctx$revision_process_by, "weekday", palette, ctx$revision_holiday_config,
       ctx$measure, size = size, linewidth = linewidth,
-      date_col = "validation_date", process = "validation",
-      title_kind = "validation", y_label = "validated cases"
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
     ),
-    validation_week = .tbl_now_panel_calendar_strata(
-      ctx$validation_process_by, "week", palette, ctx$validation_holiday_config,
+    revision_week = .tbl_now_panel_calendar_strata(
+      ctx$revision_process_by, "week", palette, ctx$revision_holiday_config,
       ctx$measure, size = size, linewidth = linewidth,
-      date_col = "validation_date", process = "validation",
-      title_kind = "validation", y_label = "validated cases"
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
     ),
-    validation_month = .tbl_now_panel_calendar_strata(
-      ctx$validation_process_by, "month", palette, ctx$validation_holiday_config,
+    revision_month = .tbl_now_panel_calendar_strata(
+      ctx$revision_process_by, "month", palette, ctx$revision_holiday_config,
       ctx$measure, size = size, linewidth = linewidth,
-      date_col = "validation_date", process = "validation",
-      title_kind = "validation", y_label = "validated cases"
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
     ),
-    validation_holiday = .tbl_now_panel_calendar_strata(
-      ctx$validation_process_by, "holiday", palette, ctx$validation_holiday_config,
+    revision_holiday = .tbl_now_panel_calendar_strata(
+      ctx$revision_process_by, "holiday", palette, ctx$revision_holiday_config,
       ctx$measure, size = size, linewidth = linewidth,
-      date_col = "validation_date", process = "validation",
-      title_kind = "validation", y_label = "validated cases"
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
     ),
-    validation_holiday_lag = .tbl_now_panel_calendar_strata(
-      ctx$validation_process_by, "holiday_lag", palette, ctx$validation_holiday_config,
+    revision_holiday_lag = .tbl_now_panel_calendar_strata(
+      ctx$revision_process_by, "holiday_lag", palette, ctx$revision_holiday_config,
       ctx$measure, size = size, linewidth = linewidth,
-      date_col = "validation_date", process = "validation",
-      title_kind = "validation", y_label = "validated cases"
+      date_col = "revision_date", process = "revision",
+      title_kind = "revision", y_label = "revised cases"
     ),
     .tbl_now_empty_panel(paste0("Unknown panel: ", key), palette, size = size)
   )
@@ -2189,14 +2189,14 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_panel_xlim <- function(key, xlims) {
-  if (grepl("^(calendar|validation)_", key)) {
+  if (grepl("^(calendar|revision)_", key)) {
     return(xlims$calendar_effect)
   }
   switch(key,
     delay_distribution = xlims$delay_distribution,
     epidemic           = xlims$event_date,
     seasonality        = xlims$seasonality,
-    validation_seasonality = xlims$seasonality,
+    revision_seasonality = xlims$seasonality,
     NULL
   )
 }
@@ -2425,25 +2425,25 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
 
   object <- ungroup(object)
   event_units <- get_event_units(object)
-  validation_units <- get_validation_units(object)
+  revision_units <- get_revision_units(object)
   data_type <- get_data_type(object)
-  has_validation_process <- has_validation(object)
+  has_revision_process <- has_revision(object)
 
   # The holiday panels describe the attached temporal-effects spec, so which of
   # them exist depends on the object, not just on its time unit.
   holiday_config <- .tbl_now_holiday_config(object, "event_date")
   report_holiday_config <- .tbl_now_holiday_config(object, "report_date") %||%
     holiday_config
-  validation_holiday_config <- if (has_validation_process) {
-    .tbl_now_holiday_config(object, "validation_date")
+  revision_holiday_config <- if (has_revision_process) {
+    .tbl_now_holiday_config(object, "revision_date")
   } else {
     NULL
   }
   panel_keys <- .tbl_now_resolve_panels(
     panels, event_units, holiday_config,
-    validation_units = validation_units,
-    validation_holiday_config = validation_holiday_config,
-    has_validation = has_validation_process,
+    revision_units = revision_units,
+    revision_holiday_config = revision_holiday_config,
+    has_revision = has_revision_process,
     report_holiday_config = report_holiday_config
   )
 
@@ -2508,12 +2508,12 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
     length(delay_holiday_keys) > 0 ||
     (length(delay_share_keys) > 0 && !is_percent)
   needs_reporting_process <- is_percent && length(delay_share_keys) > 0
-  validation_calendar_keys <- grep(
-    "^validation_(weekday|week|month|holiday_lag|holiday)$",
+  revision_calendar_keys <- grep(
+    "^revision_(weekday|week|month|holiday_lag|holiday)$",
     panel_keys, value = TRUE
   )
-  needs_validation_process <- "validation_seasonality" %in% panel_keys ||
-    length(validation_calendar_keys) > 0
+  needs_revision_process <- "revision_seasonality" %in% panel_keys ||
+    length(revision_calendar_keys) > 0
   # For count-cumulative data the delay-distribution panel becomes the cumulative
   # growth-ratio panel instead of a histogram of increments.
   is_cumulative <- identical(data_type, "count-cumulative")
@@ -2525,26 +2525,26 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
       "epidemic", "calendar_weekday", "calendar_week", "calendar_month",
       "calendar_holiday", "calendar_holiday_lag", "seasonality"
     ))
-    validation_needed <- needs_validation_process
+    revision_needed <- needs_revision_process
     ctx <- list(
       by_strata            = TRUE,
       data_type            = data_type,
       event_units          = event_units,
-      validation_units     = validation_units,
+      revision_units     = revision_units,
       incomplete_threshold = incomplete_threshold,
       level                = level,
       measure              = measure,
       holiday_config       = holiday_config,
       report_holiday_config = report_holiday_config,
-      validation_holiday_config = validation_holiday_config,
+      revision_holiday_config = revision_holiday_config,
       reporting_process_by = if (needs_reporting_process) {
         .tbl_now_reporting_process(object, strata_cols)
       },
       epidemic_process_by  = if (epidemic_needed) {
         .tbl_now_epidemic_process_by(object, strata_cols)
       },
-      validation_process_by = if (validation_needed) {
-        .tbl_now_validation_process(object, strata_cols)
+      revision_process_by = if (revision_needed) {
+        .tbl_now_revision_process(object, strata_cols)
       },
       delay_distribution_by = if ("delay_distribution" %in% panel_keys && !is_cumulative) {
         .tbl_now_delay_distribution_by(object, strata_cols)
@@ -2561,8 +2561,8 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
     delay_per_date <- if (needs_delay_effects) {
       trim_to_complete(.tbl_now_delay_per_date(object))
     }
-    validation_process <- if (needs_validation_process) {
-      .tbl_now_validation_process(object)
+    revision_process <- if (needs_revision_process) {
+      .tbl_now_revision_process(object)
     }
     ctx <- list(
       by_strata            = FALSE,
@@ -2571,15 +2571,15 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
       delay_growth         = if (needs_growth) .tbl_now_cumulative_growth(object),
       epidemic_process     = epidemic_process,
       delay_per_date       = delay_per_date,
-      validation_process   = validation_process,
+      revision_process   = revision_process,
       event_units          = event_units,
-      validation_units     = validation_units,
+      revision_units     = revision_units,
       incomplete_threshold = incomplete_threshold,
       level                = level,
       measure              = measure,
       holiday_config       = holiday_config,
       report_holiday_config = report_holiday_config,
-      validation_holiday_config = validation_holiday_config,
+      revision_holiday_config = revision_holiday_config,
       reporting_process    = if (needs_reporting_process) {
         .tbl_now_reporting_process(object)
       },

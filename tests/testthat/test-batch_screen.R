@@ -253,7 +253,7 @@ test_that("a scheduled weekly closure is absorbed by `period` and not called a b
   expect_lte(adjusted_flags, 2L)
 })
 
-# -- diagnose_batches(): argument validation ---------------------------------------
+# -- diagnose_batches(): argument checks ---------------------------------------
 
 test_that("diagnose_batches() validates its inputs", {
   skip_on_cran()
@@ -435,6 +435,27 @@ test_that("count-cumulative data de-accumulates and screens with the robust null
   expect_true(all(c("delta", "deficit", "p_transport") %in% names(screened)))
 })
 
+test_that("revision-axis count-cumulative increments keep revision delays", {
+  cumulative_tbl <- tbl_now(
+    data.frame(
+      onset = as.Date("2021-01-01"),
+      report = as.Date("2021-01-02") + 0:2,
+      result = as.Date("2021-01-03") + c(0, 2, 4),
+      total = c(2, 5, 7),
+      outcome = "confirmed"
+    ),
+    event_date = onset, report_date = report,
+    revision_date = result, revision_type = outcome,
+    case_count = total, data_type = "count-cumulative",
+    units = "days", verbose = FALSE
+  )
+
+  increments <- tbl.now:::.batch_report_increments(cumulative_tbl, axis = "revision")
+
+  expect_equal(increments$.count, c(2, 3, 2))
+  expect_equal(increments$.delay, cumulative_tbl$.revision_delay)
+})
+
 # -- censored dates ------------------------------------------------------------
 
 test_that("the batch family ignores censored arrival dates", {
@@ -470,6 +491,54 @@ test_that("the batch family ignores censored arrival dates", {
     ),
     "Ignoring"
   )
+})
+
+test_that("revision-axis increments use report-to-revision delays", {
+  frame <- data.frame(
+    onset = as.Date("2021-01-01") + 0:13,
+    report = as.Date("2021-01-02") + 0:13,
+    result = as.Date("2021-01-17"),
+    outcome = "confirmed"
+  )
+  x <- suppressWarnings(tbl_now(frame,
+    event_date = onset, report_date = report,
+    revision_date = result, revision_type = outcome,
+    event_units = "weeks", report_units = "weeks", revision_units = "weeks",
+    data_type = "linelist", verbose = FALSE
+  ))
+
+  increments <- tbl.now:::.batch_report_increments(x, axis = "revision")
+
+  expect_equal(nrow(increments), nrow(x))
+  expect_equal(
+    sort(increments$.delay),
+    sort(as.numeric(x$.revision_delay))
+  )
+})
+
+test_that("revision-axis registration totals use revision units", {
+  x <- suppressWarnings(tbl_now(
+    data.frame(
+      onset = as.Date("2021-01-01") + 0:3,
+      report = as.Date("2021-01-02") + 0:3,
+      result = as.Date("2021-01-10") + 7 * (0:3),
+      outcome = "confirmed"
+    ),
+    event_date = onset, report_date = report,
+    revision_date = result, revision_type = outcome,
+    event_units = "days", report_units = "days", revision_units = "weeks",
+    data_type = "linelist", verbose = FALSE
+  ))
+  increments <- data.frame(
+    .report_date = as.Date("2021-01-10") + 7 * (0:3),
+    .stratum = "all",
+    .count = 1
+  )
+
+  totals <- tbl.now:::.batch_registration_totals(increments, x, axis = "revision")
+
+  expect_equal(nrow(totals), 4L)
+  expect_equal(as.numeric(diff(totals$report_date)), rep(7, 3))
 })
 
 test_that("diagnose_batches() works on a grouped tbl_now", {

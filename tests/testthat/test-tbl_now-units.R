@@ -1,5 +1,5 @@
 # `units` is the shared default for `event_units`, `report_units` and
-# `validation_units`. The point of the tests below is that it is *only* a
+# `revision_units`. The point of the tests below is that it is *only* a
 # default: anything given explicitly still wins, including `"auto"`.
 
 library(dplyr, quietly = TRUE, warn.conflicts = FALSE)
@@ -85,14 +85,15 @@ test_that("`units` sets both date axes at once", {
   expect_equal(get_report_units(x), "days")
 })
 
-test_that("`units` sets the validation axis too", {
+test_that("`units` sets the revision axis too", {
   x <- tbl_now(make_daily(),
     event_date = onset, report_date = reported,
-    validation_date = resolved, validation_type = outcome,
+    revision_date = resolved, revision_type = outcome,
     units = "days", verbose = FALSE
   )
-  expect_equal(get_validation_units(x), "days")
-  expect_true(has_validation(x))
+  expect_equal(get_revision_units(x), "days")
+  expect_false(is.null(get_revision_units(x)))
+  expect_true(has_revision(x))
 })
 
 test_that("an explicit axis argument beats `units`", {
@@ -104,14 +105,15 @@ test_that("an explicit axis argument beats `units`", {
   expect_equal(get_report_units(x), "weeks")
 })
 
-test_that("an explicit validation_units beats `units`", {
+test_that("an explicit revision_units beats `units`", {
   x <- tbl_now(make_daily(),
     event_date = onset, report_date = reported,
-    validation_date = resolved, validation_type = outcome,
-    units = "days", validation_units = "weeks", verbose = FALSE
+    revision_date = resolved, revision_type = outcome,
+    units = "days", revision_units = "weeks", verbose = FALSE
   )
   expect_equal(get_event_units(x), "days")
-  expect_equal(get_validation_units(x), "weeks")
+  expect_equal(get_revision_units(x), "weeks")
+  expect_false(is.null(get_revision_units(x)))
 })
 
 test_that("an explicit \"auto\" still means infer, even when `units` says otherwise", {

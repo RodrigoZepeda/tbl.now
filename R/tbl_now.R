@@ -21,7 +21,7 @@
 #' The minimum you must supply is `event_date` and `report_date` (or one of them
 #' plus a `delay` column, from which the other is reconstructed). Everything else
 #' is optional and can be added later with [add_strata()], [add_covariates()],
-#' [add_validation_date()] and the rest of the [add()] family.
+#' [add_revision_date()] and the rest of the [add()] family.
 #'
 #' Once the object exists the usual path is [summary()][tbl_now_summary] to see
 #' what is in the data, [diagnose()] to see what is wrong with it,
@@ -84,7 +84,7 @@
 #'
 #' @param units (optional) Character. Either `"auto"` (default), `"days"`,
 #' `"weeks"`, `"months"`, `"years"` or `"numeric"`. The **default** for
-#' `event_units`, `report_units` and `validation_units`: say it once instead of
+#' `event_units`, `report_units` and `revision_units`: say it once instead of
 #' three times. Any of the three that you give explicitly wins over `units`, so
 #' `units = "days", report_units = "weeks"` reads a daily event date against a
 #' weekly report date.
@@ -99,42 +99,42 @@
 #' "count-incidence" or "count-cumulative". See section below for
 #' an explanation on data types.
 #'
-#' @param validation_date (optional)
+#' @param revision_date (optional)
 #' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 #' column holding a **third** date: the day the report was resolved. Influenza is
 #' the picture to keep in mind -- symptoms begin (the event), the patient sees a
 #' doctor (the report), and days later a swab comes back. The assumed timeline is
-#' `event_date <= report_date <= validation_date <= now`. Leave `NULL` (the
-#' default) for the usual two-date object. See [add_validation_date()].
+#' `event_date <= report_date <= revision_date <= now`. Leave `NULL` (the
+#' default) for the usual two-date object. See [add_revision_date()].
 #'
-#' @param validation_type (optional)
+#' @param revision_type (optional)
 #' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 #' column saying what the resolution *was*: `"confirmed"`, `"retracted"` (it was
 #' reported, but it is not a case after all), `"pending"` or `NA`. **`"pending"`
-#' means reported and still waiting**, so it carries no validation date --
+#' means reported and still waiting**, so it carries no revision date --
 #' which is a different thing from a result that was never recorded (`NA`). A
-#' validation date with no type warns rather than guessing, because a date
+#' revision date with no type warns rather than guessing, because a date
 #' alone cannot say whether the case was confirmed or retracted.
 #'
-#' @param validation_units (optional) Character. Either `"auto"` (default),
+#' @param revision_units (optional) Character. Either `"auto"` (default),
 #' `"days"`, `"weeks"`, `"months"`, `"years"` or `"numeric"` -- the grid the
-#' validation date lives on, resolved the same way as `report_units`.
+#' revision date lives on, resolved the same way as `report_units`.
 #'
-#' @param validation_levels (optional) `NULL` (default) or a **named** character
-#' vector translating the labels in `validation_type` into the canonical
+#' @param revision_levels (optional) `NULL` (default) or a **named** character
+#' vector translating the labels in `revision_type` into the canonical
 #' outcomes, for data that was not recorded in English:
 #' `c(confirmado = "confirmed", retractado = "retracted", pendiente = "pending")`.
 #' The names are the labels in your data, the values are the canonical ones. The
 #' column is rewritten to the canonical values and the dictionary is kept as an
-#' attribute, readable with `get_validation_levels()`. Only
+#' attribute, readable with `get_revision_levels()`. Only
 #' `"confirmed"`, `"retracted"`, `"pending"` and `NA` are ever stored.
 #'
-#' @param is_censored_validation (optional)
+#' @param is_censored_revision (optional)
 #' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html) or `NULL` (default).
-#' The validation-axis counterpart of `is_censored_report`: the name of a
-#' logical column marking rows whose **validation delay** is a bound rather
-#' than a measurement. Requires a `validation_date`. See
-#' [censor_validation_delays_above()][censor_reporting_delays_above].
+#' The revision-axis counterpart of `is_censored_report`: the name of a
+#' logical column marking rows whose **revision delay** is a bound rather
+#' than a measurement. Requires a `revision_date`. See
+#' [censor_revision_delays_above()][censor_reporting_delays_above].
 #'
 #' @param verbose (optional) Logical. Whether to throw a message. Default = `TRUE`.
 #'
@@ -160,7 +160,7 @@
 #'
 #' @section Attributes:
 #'
-#' The following attributes are part of a `tbl_now` and are validated
+#' The following attributes are part of a `tbl_now` and are revised
 #' by the [validate_tbl_now()] function:
 #'
 #' \describe{
@@ -176,11 +176,11 @@
 #'   \item{report_units}{Either `days`, `weeks`, `months`, `years` or `numeric`. Corresponds to the units of `report_date`}
 #'   \item{data_type}{Either `linelist`, `count-incidence` or `count-cumulative` depending on whether it is linelist data
 #'   or count data with incidence (each report date's incidence) or cumulative (overall known cases at report date)}
-#'   \item{validation_date}{Name of the column with the (optional) third date: when the report was resolved.}
-#'   \item{validation_type}{Name of the column saying what that resolution was (`"confirmed"`, `"retracted"`, `"pending"`).}
-#'   \item{validation_units}{Units of `validation_date`, resolved like `report_units`.}
-#'   \item{validation_levels}{The (optional) dictionary translating the labels in `validation_type` into the canonical outcomes.}
-#'   \item{is_censored_validation}{Column indicating whether the *validation* delay is only a bound (the validation-axis counterpart of `is_censored_report`).}
+#'   \item{revision_date}{Name of the column with the (optional) third date: when the report was resolved.}
+#'   \item{revision_type}{Name of the column saying what that resolution was (`"confirmed"`, `"retracted"`, `"pending"`).}
+#'   \item{revision_units}{Units of `revision_date`, resolved like `report_units`.}
+#'   \item{revision_levels}{The (optional) dictionary translating the labels in `revision_type` into the canonical outcomes.}
+#'   \item{is_censored_revision}{Column indicating whether the *revision* delay is only a bound (the revision-axis counterpart of `is_censored_report`).}
 #'   \item{computed_temporal_effect_cols}{Names of the temporal-effect columns that have actually been materialised in the data by [compute_temporal_effects()].}
 #' }
 #'
@@ -308,11 +308,11 @@ tbl_now <- function(data,
                     covariates = NULL,
                     case_count = NULL,
                     is_censored_report = NULL,
-                    validation_date = NULL,
-                    validation_type = NULL,
-                    validation_units = units,
-                    validation_levels = NULL,
-                    is_censored_validation = NULL,
+                    revision_date = NULL,
+                    revision_type = NULL,
+                    revision_units = units,
+                    revision_levels = NULL,
+                    is_censored_revision = NULL,
                     now = NULL,
                     event_units = units,
                     report_units = units,
@@ -349,9 +349,9 @@ tbl_now <- function(data,
   covariates_quo <- rlang::enquo(covariates)
   case_count_quo <- rlang::enquo(case_count)
   is_censored_report_quo <- rlang::enquo(is_censored_report)
-  validation_date_quo <- rlang::enquo(validation_date)
-  validation_type_quo <- rlang::enquo(validation_type)
-  is_censored_validation_quo <- rlang::enquo(is_censored_validation)
+  revision_date_quo <- rlang::enquo(revision_date)
+  revision_type_quo <- rlang::enquo(revision_type)
+  is_censored_revision_quo <- rlang::enquo(is_censored_revision)
 
   # Get event date column
   if (!rlang::quo_is_null(event_date_quo)) {
@@ -445,50 +445,50 @@ tbl_now <- function(data,
   is_censored_report_select <- .tbl_now_eval_select(is_censored_report_quo, data)
   is_censored_report <- colnames(data)[is_censored_report_select]
 
-  validation_date_select <- .tbl_now_eval_select(validation_date_quo, data)
-  validation_date <- colnames(data)[validation_date_select]
-  if (length(validation_date) == 0) validation_date <- NULL
+  revision_date_select <- .tbl_now_eval_select(revision_date_quo, data)
+  revision_date <- colnames(data)[revision_date_select]
+  if (length(revision_date) == 0) revision_date <- NULL
 
-  validation_type_select <- .tbl_now_eval_select(validation_type_quo, data)
-  validation_type <- colnames(data)[validation_type_select]
-  if (length(validation_type) == 0) validation_type <- NULL
+  revision_type_select <- .tbl_now_eval_select(revision_type_quo, data)
+  revision_type <- colnames(data)[revision_type_select]
+  if (length(revision_type) == 0) revision_type <- NULL
 
-  is_censored_validation_select <-
-    .tbl_now_eval_select(is_censored_validation_quo, data)
-  is_censored_validation <- colnames(data)[is_censored_validation_select]
-  if (length(is_censored_validation) == 0) is_censored_validation <- NULL
+  is_censored_revision_select <-
+    .tbl_now_eval_select(is_censored_revision_quo, data)
+  is_censored_revision <- colnames(data)[is_censored_revision_select]
+  if (length(is_censored_revision) == 0) is_censored_revision <- NULL
 
-  if (is.null(validation_date) && !is.null(validation_type)) {
+  if (is.null(revision_date) && !is.null(revision_type)) {
     cli::cli_abort(c(
-      "{.arg validation_type} was given without a {.arg validation_date}.",
+      "{.arg revision_type} was given without a {.arg revision_date}.",
       "i" = "An outcome needs a date to sit on. Supply both, or neither."
     ))
   }
 
-  if (is.null(validation_date) && !is.null(is_censored_validation)) {
+  if (is.null(revision_date) && !is.null(is_censored_revision)) {
     cli::cli_abort(c(
-      "{.arg is_censored_validation} was given without a
-       {.arg validation_date}.",
-      "i" = "There is no validation delay to censor. Supply both, or neither."
+      "{.arg is_censored_revision} was given without a
+       {.arg revision_date}.",
+      "i" = "There is no revision delay to censor. Supply both, or neither."
     ))
   }
 
-  validation_levels <- .check_validation_levels(validation_levels)
-  if (is.null(validation_date) && !is.null(validation_levels)) {
+  revision_levels <- .check_revision_levels(revision_levels)
+  if (is.null(revision_date) && !is.null(revision_levels)) {
     cli::cli_abort(c(
-      "{.arg validation_levels} was given without a {.arg validation_date}.",
-      "i" = "The dictionary translates {.arg validation_type}, which needs a
+      "{.arg revision_levels} was given without a {.arg revision_date}.",
+      "i" = "The dictionary translates {.arg revision_type}, which needs a
              date to sit on."
     ))
   }
 
   # Fill in / validate the outcome column, and check the timeline.
-  resolved_validation <- .resolve_validation_type(
-    data, validation_date, validation_type, validation_levels,
+  resolved_revision <- .resolve_revision_type(
+    data, revision_date, revision_type, revision_levels,
     verbose = verbose
   )
-  data <- resolved_validation$data
-  validation_type <- resolved_validation$validation_type
+  data <- resolved_revision$data
+  revision_type <- resolved_revision$revision_type
   if (length(is_censored_report) == 0) is_censored_report <- NULL
 
   strata_select <- .tbl_now_eval_select(strata_quo, data)
@@ -540,29 +540,29 @@ tbl_now <- function(data,
   # Infer automatic variables------
 
   # Infer the now
-  # The event <= report <= validation timeline is checked by
+  # The event <= report <= revision timeline is checked by
   # `validate_tbl_now()` at the end of this function, through the same findings
   # engine `diagnose()` uses. Checking it here as well would warn twice.
 
-  # A validation is an OBSERVATION, so it moves the `now` forward exactly as a
+  # A revision is an OBSERVATION, so it moves the `now` forward exactly as a
   # report does: the as-of moment is the last thing anybody knew.
   now <- infer_now(data,
     now = now, event_date = event_date, report_date = report_date,
-    validation_date = validation_date
+    revision_date = revision_date
   )
 
   # Infer the date_units whether it is daily, weekly, monthly or yearly
   event_units <- infer_units(data, date_column = event_date, date_units = event_units)
   report_units <- infer_units(data, date_column = report_date, date_units = report_units)
-  validation_units <- if (is.null(validation_date)) {
+  revision_units <- if (is.null(revision_date)) {
     NULL
   } else {
-    # Early in an outbreak there may be only one validation, or none, and a
+    # Early in an outbreak there may be only one revision, or none, and a
     # single date has no spacing to infer a grid from. Fall back to the REPORT
-    # units rather than refusing the object: the validation lives on the same
+    # units rather than refusing the object: the revision lives on the same
     # calendar as the report it resolves.
     tryCatch(
-      infer_units(data, date_column = validation_date, date_units = validation_units),
+      infer_units(data, date_column = revision_date, date_units = revision_units),
       error = function(e) report_units
     )
   }
@@ -599,11 +599,11 @@ tbl_now <- function(data,
   attr(data, "report_units") <- report_units
   attr(data, "data_type") <- data_type
   attr(data, "is_censored_report") <- is_censored_report
-  attr(data, "validation_date") <- validation_date
-  attr(data, "validation_type") <- validation_type
-  attr(data, "validation_units") <- validation_units
-  attr(data, "validation_levels") <- validation_levels
-  attr(data, "is_censored_validation") <- is_censored_validation
+  attr(data, "revision_date") <- revision_date
+  attr(data, "revision_type") <- revision_type
+  attr(data, "revision_units") <- revision_units
+  attr(data, "revision_levels") <- revision_levels
+  attr(data, "is_censored_revision") <- is_censored_revision
 
   # Add all other attributes from ...
   for (attr_name in names(other_attrs)) {
@@ -629,14 +629,14 @@ tbl_now <- function(data,
     force = force
   )
 
-  # `.validation_num` sits on the SAME anchor as `.event_num`/`.report_num`
+  # `.revision_num` sits on the SAME anchor as `.event_num`/`.report_num`
   # (the earliest event date), so the three are directly comparable, and
-  # `.validation_delay` is the report-to-resolution time.
-  if (!is.null(validation_date)) {
-    data <- .add_validation_num(
+  # `.revision_delay` is the report-to-resolution time.
+  if (!is.null(revision_date)) {
+    data <- .add_revision_num(
       data,
-      event_date = event_date, validation_date = validation_date,
-      validation_units = validation_units, force = force
+      event_date = event_date, revision_date = revision_date,
+      revision_units = revision_units, force = force
     )
   }
 

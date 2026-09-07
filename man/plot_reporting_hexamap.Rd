@@ -13,7 +13,7 @@ plot_reporting_hexamap(
   format = "\%d/\%b/\%y",
   max_cells = 12000L,
   trans = "sqrt",
-  axis = c("report", "validation"),
+  axis = c("report", "revision"),
   size = 1.5,
   shape = 16,
   text_size = 2.3,
@@ -46,10 +46,10 @@ Default \code{"\%d/\%b/\%y"}.}
 \item{trans}{Fill transform for the count scale. Default \code{"sqrt"}.}
 
 \item{axis}{Which time axis to draw: \code{"report"} (default) or
-\code{"validation"}. On the validation axis the picture answers the
+\code{"revision"}. On the revision axis the picture answers the
 laboratory's version of the question -- when results arrived, rather than
-when reports did. Needs a validation process (see \code{\link[=add_validation_date]{add_validation_date()}});
-cases still \code{"pending"} have no validation date and are left out.}
+when reports did. Needs a revision process (see \code{\link[=add_revision_date]{add_revision_date()}});
+cases still \code{"pending"} have no revision date and are left out.}
 
 \item{size}{Size of the plotted points, in millimetres, as \pkg{ggplot2}
 measures it. Default \code{1.5}. See \strong{Details} for why there is no

@@ -11,7 +11,7 @@ plot_scalogram(
   wname = "PAUL",
   format = "\%d/\%b/\%y",
   plotly = FALSE,
-  axis = c("report", "validation"),
+  axis = c("report", "revision"),
   palette = .tbl_now_palette()
 )
 }
@@ -34,10 +34,10 @@ Default \code{"\%d/\%b/\%y"}.}
 static plot. Default \code{FALSE}.}
 
 \item{axis}{Which time axis to draw: \code{"report"} (default) or
-\code{"validation"}. On the validation axis the picture answers the
+\code{"revision"}. On the revision axis the picture answers the
 laboratory's version of the question -- when results arrived, rather than
-when reports did. Needs a validation process (see \code{\link[=add_validation_date]{add_validation_date()}});
-cases still \code{"pending"} have no validation date and are left out.}
+when reports did. Needs a revision process (see \code{\link[=add_revision_date]{add_revision_date()}});
+cases still \code{"pending"} have no revision date and are left out.}
 
 \item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}). The
 scalogram is drawn entirely with tiles, so it takes no \code{size} or

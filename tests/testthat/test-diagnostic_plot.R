@@ -53,6 +53,28 @@ test_that("each panel has a stand-alone plotting function", {
   expect_error(plot_epidemic_process(mtcars), class = "rlang_error")
 })
 
+test_that("stand-alone process plots label revision-axis arrivals", {
+  frame <- data.frame(
+    onset = as.Date("2021-01-01") + 0:4,
+    report = as.Date("2021-01-02") + 0:4,
+    result = as.Date("2021-01-04") + 0:4,
+    outcome = "confirmed"
+  )
+  x <- tbl_now(frame,
+    event_date = onset, report_date = report,
+    revision_date = result, revision_type = outcome,
+    data_type = "linelist", verbose = FALSE
+  )
+
+  arrivals <- plot_reporting_process(x, axis = "revision")
+  epidemic <- plot_epidemic_process(x, axis = "revision")
+
+  expect_equal(arrivals$labels$title, "Revision process")
+  expect_equal(arrivals$labels$x, "Revision date")
+  expect_equal(arrivals$labels$y, "Revisions")
+  expect_equal(epidemic$labels$title, "Epidemic process")
+})
+
 test_that(".diag_batch_stripes finds an obvious volume spike and honours k = 0", {
   inc <- data.frame(
     .report_date = as.Date("2023-01-01") + 0:29,

@@ -80,10 +80,10 @@
 #' @param palette A named colour palette (see [tbl_now_palette()]).
 #'
 #' @param axis Which time axis to draw: `"report"` (default) or
-#'   `"validation"`. On the validation axis the picture answers the
+#'   `"revision"`. On the revision axis the picture answers the
 #'   laboratory's version of the question -- when results arrived, rather than
-#'   when reports did. Needs a validation process (see [add_validation_date()]);
-#'   cases still `"pending"` have no validation date and are left out.
+#'   when reports did. Needs a revision process (see [add_revision_date()]);
+#'   cases still `"pending"` have no revision date and are left out.
 #' @returns A \pkg{ggplot2} object.
 #'
 #' @references Jalal, H. and Burke, D. S. (2020). Hexamaps for Age-Period-Cohort
@@ -104,7 +104,7 @@
 plot_reporting_hexamap <- function(x, max_delay = NULL, complete = FALSE,
                                    iso = NULL, iso_minor = NULL,
                                    format = "%d/%b/%y", max_cells = 12000L,
-                                   trans = "sqrt", axis = c("report", "validation"),
+                                   trans = "sqrt", axis = c("report", "revision"),
                                    size = 1.5, shape = 16, text_size = 2.3,
                                    grid_linewidth_major = 0.3,
                                    grid_linewidth_minor = 0.15,

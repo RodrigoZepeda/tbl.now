@@ -79,7 +79,7 @@
 #' # A plain data.frame is not a tbl_now ...
 #' is_tbl_now(data.frame(x = 1:3))
 #'
-#' ## ... and asking for validation says so, with a reason. (Wrapped in try()
+#' ## ... and asking for revision says so, with a reason. (Wrapped in try()
 #' # because it is meant to fail here.)
 #' try(validate_tbl_now(data.frame(x = 1:3)))
 #'
@@ -95,7 +95,7 @@ validate_tbl_now <- function(x, warn_non_uniqueness = FALSE, warn_now = TRUE) {
   # this function has always shown as an alert.
   findings <- .tbl_now_findings(
     x,
-    checks = .diagnose_validation_checks(),
+    checks = .diagnose_revision_checks(),
     by_strata = FALSE,
     warn_non_uniqueness = warn_non_uniqueness,
     warn_now = warn_now,
@@ -169,9 +169,9 @@ tbl_now_reconstruct <- function(data, template) {
 .TBL_NOW_ATTRIBUTES <- c(
   "event_date", "report_date", "case_count", "strata", "covariates",
   "now", "event_units", "report_units", "data_type",
-  "is_censored_report", "is_censored_validation",
-  "validation_date", "validation_type", "validation_units",
-  "validation_levels",
+  "is_censored_report", "is_censored_revision",
+  "revision_date", "revision_type", "revision_units",
+  "revision_levels",
   "temporal_effects", "computed_temporal_effect_cols"
 )
 
@@ -248,7 +248,7 @@ tbl_now_reconstruct_internal <- function(data, template) {
 #'
 #' A `tbl_now` cannot describe a nowcast without these. The rest of
 #' `.TBL_NOW_ATTRIBUTES` is optional: an object with no strata, no covariates
-#' and no validation process is perfectly well formed.
+#' and no revision process is perfectly well formed.
 #'
 #' @keywords internal
 #' @noRd
@@ -311,7 +311,7 @@ is_tbl_now <- function(x) {
 #' @param ... Passed to the underlying `[` method: rows and columns to keep.
 #'
 #' @return A `tbl_now` object, or a plain data frame when the operation
-#' invalidated the class.
+#' inrevised the class.
 #'
 #' @seealso
 #' [tbl_now()] for the attributes being preserved;
@@ -452,7 +452,7 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
         force = TRUE,
         warn_non_uniqueness = FALSE
       ),
-      .validation_rebuild_args(.data, .data)
+      .revision_rebuild_args(.data, .data)
     ))
     attr(x, "temporal_effects") <- get_temporal_effects(.data)
     attr(x, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(x))
@@ -498,7 +498,7 @@ dplyr_col_modify.grouped_tbl_now <- function(data, cols) {
 #' @keywords internal
 #' @noRd
 .tbl_now_protected_date_cols <- function(x) {
-  c(get_event_date(x), get_report_date(x), get_validation_date(x))
+  c(get_event_date(x), get_report_date(x), get_revision_date(x))
 }
 
 #' Whether a protected date column changed values
@@ -548,7 +548,7 @@ dplyr_reconstruct.grouped_tbl_now <- function(data, template) {
 #' in place). Internal lazy-sensitive code uses this to call
 #' [tibble::as_tibble()] / [as.data.frame()] *without* triggering the
 #' `tbl_now` methods (which materialise the temporal-effect spec): coercion has
-#' to stay lazy inside validation, reconstruction, `complete_zeroes()`, etc.
+#' to stay lazy inside revision, reconstruction, `complete_zeroes()`, etc.
 #' On a plain data frame it is a no-op.
 #'
 #' @param x Any object (typically a `tbl_now`).
@@ -619,7 +619,7 @@ ungroup.grouped_tbl_now <- function(x, ...) {
         force = TRUE,
         warn_non_uniqueness = FALSE
       ),
-      .validation_rebuild_args(old_x, tbl)
+      .revision_rebuild_args(old_x, tbl)
     ))
     attr(x, "temporal_effects") <- get_temporal_effects(old_x)
     attr(x, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(old_x), names(x))
@@ -666,9 +666,9 @@ summarise.tbl_now <- function(.data, ..., .by = NULL, .groups = NULL) {
           warn_non_uniqueness = FALSE,
           align_weeks = FALSE
         ),
-        # Every fixed attribute list is a place the validation process can be
+        # Every fixed attribute list is a place the revision process can be
         # dropped in silence.
-        .validation_rebuild_args(.data, ungrouped)
+        .revision_rebuild_args(.data, ungrouped)
       ))
       attr(tmp, "temporal_effects") <- get_temporal_effects(.data)
       attr(tmp, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(tmp))
@@ -747,9 +747,9 @@ reframe.tbl_now <- function(.data, ..., .by = NULL) {
           warn_non_uniqueness = FALSE,
           align_weeks = FALSE
         ),
-        # Every fixed attribute list is a place the validation process can be
+        # Every fixed attribute list is a place the revision process can be
         # dropped in silence.
-        .validation_rebuild_args(.data, reframed_tbl)
+        .revision_rebuild_args(.data, reframed_tbl)
       ))
       attr(tmp, "temporal_effects") <- get_temporal_effects(.data)
       attr(tmp, "computed_temporal_effect_cols") <- intersect(get_temporal_effect_cols(.data), names(tmp))

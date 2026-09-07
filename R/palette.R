@@ -38,7 +38,7 @@
 #'   about **when we found out**. Red by default.
 #' * **`epidemic*`** -- the *epidemic* process: event dates, case counts,
 #'   anything about **what happened**. Green by default.
-#' * **`validation*`** -- the *validation* process: validation dates and
+#' * **`revision*`** -- the *revision* process: revision dates and
 #'   resolution arrivals. Ochre by default.
 #'
 #' A palette that swaps the two hues is fine; a *plot* that draws delays with an
@@ -56,8 +56,8 @@
 #' @param epidemic_mid Mid-tone epidemic colour (the middle stop of the count
 #'   ramp).
 #' @param epidemic_dark Darkest epidemic colour (dense overplotted curves).
-#' @param validation Strong colour of the validation process.
-#' @param validation_light Attenuated validation colour (box fills).
+#' @param revision Strong colour of the revision process.
+#' @param revision_light Attenuated revision colour (box fills).
 #' @param ink Body text, axis text and titles.
 #' @param ink_muted Secondary text: subtitles, captions, immature-region shading.
 #' @param ink_inverse Text drawn *on top of* a filled label.
@@ -104,8 +104,8 @@ tbl_now_palette <- function(
   epidemic_light  = "#A8BFA9",
   epidemic_mid    = "#7A9E7E",
   epidemic_dark   = "#334335",
-  validation      = "#C79800",
-  validation_light = "#E6CE80",
+  revision      = "#C79800",
+  revision_light = "#E6CE80",
   ink             = "#262626",
   ink_muted       = "#607060",
   ink_inverse     = "#FFFFFF",
@@ -129,8 +129,8 @@ tbl_now_palette <- function(
     epidemic_light  = epidemic_light,
     epidemic_mid    = epidemic_mid,
     epidemic_dark   = epidemic_dark,
-    validation      = validation,
-    validation_light = validation_light,
+    revision      = revision,
+    revision_light = revision_light,
     ink             = ink,
     ink_muted       = ink_muted,
     ink_inverse     = ink_inverse,
@@ -237,11 +237,11 @@ print.tbl_now_palette <- function(x, ...) {
 #' Every panel belongs to one process, and the whole package uses the
 #' same visual grammar for them: the **reporting** roles for anything
 #' reporting-related, the **epidemic** roles for the event-date process, and the
-#' **validation** roles for resolution arrivals. The subtitle says which one the
+#' **revision** roles for resolution arrivals. The subtitle says which one the
 #' panel describes, so a panel lifted out of the `autoplot()` grid still reads on
 #' its own.
 #'
-#' @param process `"reporting"`, `"epidemic"` or `"validation"`.
+#' @param process `"reporting"`, `"epidemic"` or `"revision"`.
 #' @param palette A named colour palette (see [tbl_now_palette()]).
 #'
 #' @return A list with `fill`, `line` and `subtitle`.
@@ -255,11 +255,11 @@ print.tbl_now_palette <- function(x, ...) {
       line     = palette[["reporting"]],
       subtitle = "Reporting delay process"
     )
-  } else if (identical(process, "validation")) {
+  } else if (identical(process, "revision")) {
     list(
-      fill     = palette[["validation_light"]],
-      line     = palette[["validation"]],
-      subtitle = "Validation process"
+      fill     = palette[["revision_light"]],
+      line     = palette[["revision"]],
+      subtitle = "Revision process"
     )
   } else {
     list(

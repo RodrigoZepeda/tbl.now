@@ -24,31 +24,31 @@
 #'   other row alone. This is the one you want when the threshold *is* the rule:
 #'   "anything that took more than 60 days is a lower bound, not a measurement".
 #'
-#' On the **validation** axis (report date to resolution, the
-#' `is_censored_validation` flag), the same three:
+#' On the **revision** axis (report date to resolution, the
+#' `is_censored_revision` flag), the same three:
 #'
-#' * `censor_validations()` -- rows matching a condition get a **replacement
-#'   validation date** and the flag.
-#' * `censor_validation_delays()` -- the same, said as a delay from the report.
-#' * `censor_validation_delays_above()` -- **considers as censored every
-#'   validation delay longer than `max_delay`**, in the object's validation
+#' * `censor_revisions()` -- rows matching a condition get a **replacement
+#'   revision date** and the flag.
+#' * `censor_revision_delays()` -- the same, said as a delay from the report.
+#' * `censor_revision_delays_above()` -- **considers as censored every
+#'   revision delay longer than `max_delay`**, in the object's revision
 #'   units: a laboratory result that took months is a case you have stopped
 #'   believing the turnaround of.
 #'
 #' @details
 #' The reporting delay is read from the generated `.delay` column (report date
-#' minus event date, in the object's event units); the validation delay from
-#' `.validation_delay` (validation date minus report date, in validation
+#' minus event date, in the object's event units); the revision delay from
+#' `.revision_delay` (revision date minus report date, in revision
 #' units). Existing censoring flags are merged rather than overwritten, so a
 #' delay that was already censored stays censored, and the flag column is
-#' created (as `.is_censored_report` / `.is_censored_validation`) when the
+#' created (as `.is_censored_report` / `.is_censored_revision`) when the
 #' object has none.
 #'
 #' The threshold functions keep the case **and its date**. Nothing is deleted
 #' and no outcome is rewritten: the flag says the delay is a bound rather than a
 #' measurement, and it is up to the model to use that. A case that was confirmed
 #' after 200 days is still a confirmed case, and
-#' [get_latest_validated_cases()][validated_cases] still counts it.
+#' [get_latest_revised_cases()][revised_cases] still counts it.
 #'
 #' `condition` is evaluated inside the data, like a [dplyr::filter()] expression,
 #' so it can name any column -- including the generated `.delay`. Rows where it
@@ -67,23 +67,23 @@
 #' because it describes a date that has just changed; run
 #' `compute_temporal_effects()` again to rebuild it. The `.event_*` ones are
 #' kept -- the event dates never move -- and neither is touched by the
-#' validation verbs.
+#' revision verbs.
 #'
 #' @section Pending cases are skipped:
 #' `"pending"` means **reported and still waiting**, so a pending case has no
-#' validation date -- that is the whole difference between it and a resolution
+#' revision date -- that is the whole difference between it and a resolution
 #' that was never recorded. Writing a date onto one would assert a resolution
 #' that never happened, and make the case look resolved to everything counting
-#' arrivals on the validation axis.
+#' arrivals on the revision axis.
 #'
-#' So `censor_validations()` and `censor_validation_delays()` **skip pending
+#' So `censor_revisions()` and `censor_revision_delays()` **skip pending
 #' rows** when they would write a date, and say how many they skipped. To censor
 #' a case that really was resolved but whose date is missing, make sure its
-#' `validation_type` says so first. Flagging without a replacement is not
+#' `revision_type` says so first. Flagging without a replacement is not
 #' affected: no date is written, so there is nothing to contradict.
 #'
-#' @param x A `tbl_now` object. The three validation verbs require one that
-#'   carries a validation process (see [add_validation_date()][add]).
+#' @param x A `tbl_now` object. The three revision verbs require one that
+#'   carries a revision process (see [add_revision_date()][add]).
 #'
 #' @param condition An unquoted expression evaluated in `x`, as in
 #'   [dplyr::filter()]. Rows where it is `TRUE` are censored.
@@ -94,8 +94,8 @@
 #'   the case has not been reported as of now, which is the whole point of the
 #'   censoring flag. `NULL` leaves the dates alone and only sets the flag.
 #'
-#' @param to_validation The replacement validation date for the matching rows: a
-#'   single value, or one per row of `x`. Must match the class of the validation
+#' @param to_revision The replacement revision date for the matching rows: a
+#'   single value, or one per row of `x`. Must match the class of the revision
 #'   column. Defaults to `get_now(x)` -- the case has not been resolved as of
 #'   now. `NULL` leaves the dates alone and only sets the flag. Pending cases
 #'   are skipped; see *Pending cases are skipped*.
@@ -103,9 +103,9 @@
 #' @param to_delay The replacement delay for the matching rows. For
 #'   `censor_reporting_delays()` it is in the object's **event** units and the
 #'   report date becomes `event_date + to_delay`; for
-#'   `censor_validation_delays()` it is in **validation** units and the
-#'   validation date becomes `report_date + to_delay`, because that is what
-#'   `.validation_delay` measures. A single
+#'   `censor_revision_delays()` it is in **revision** units and the
+#'   revision date becomes `report_date + to_delay`, because that is what
+#'   `.revision_delay` measures. A single
 #'   number or one per row. `NULL` (the default) leaves the dates alone and only
 #'   sets the flag. It must be a **whole number** of those units, on every axis:
 #'   there is no such date as half a day later, and a calendar axis used to bend
@@ -113,24 +113,24 @@
 #'
 #' @param max_delay Numeric. Every delay **strictly greater** than this is
 #'   considered censored; the rest are left alone. In the object's event units
-#'   for `censor_reporting_delays_above()`, validation units for
-#'   `censor_validation_delays_above()`.
+#'   for `censor_reporting_delays_above()`, revision units for
+#'   `censor_revision_delays_above()`.
 #'
 #' @param verbose Logical. Whether to report how many rows were affected.
 #'   Default `TRUE`.
 #'
 #' @returns
 #' A `tbl_now` with that axis's censoring column updated, creating it when
-#' absent (`.is_censored_report` or `.is_censored_validation`), and with the
+#' absent (`.is_censored_report` or `.is_censored_revision`), and with the
 #' dates replaced where a replacement was asked for. The three reporting verbs
-#' touch `is_censored_report` and the report date; the three validation verbs
-#' touch `is_censored_validation` and the validation date. Neither rewrites
-#' `validation_type`, and nothing is ever deleted.
+#' touch `is_censored_report` and the report date; the three revision verbs
+#' touch `is_censored_revision` and the revision date. Neither rewrites
+#' `revision_type`, and nothing is ever deleted.
 #'
 #' @seealso
 #' [add_is_censored_report()][add] and [change_is_censored_report()][add] to set the flag by
-#' hand, and [add_is_censored_validation()][add] for the validation axis;
-#' [diagnose_validation_delay()] and [plot_delay_distribution()] to find
+#' hand, and [add_is_censored_revision()][add] for the revision axis;
+#' [diagnose_revision_delay()] and [plot_delay_distribution()] to find
 #' the threshold worth using; [diagnose_truncation()] for the delays that are
 #' missing rather than long; [complete_zeroes()] for the opposite problem.
 #'
@@ -177,7 +177,7 @@
 #' fixed[[get_report_date(fixed)]]
 #' fixed[[get_is_censored_report(fixed)]]
 #'
-#' ## ---- The validation counterpart ----------------------------------------
+#' ## ---- The revision counterpart ----------------------------------------
 #'
 #' cases <- data.frame(
 #'   onset = as.Date("2021-01-04") + 0:4,
@@ -187,29 +187,29 @@
 #' )
 #' flu <- tbl_now(cases,
 #'   event_date = onset, report_date = visit,
-#'   validation_date = result, validation_type = outcome,
+#'   revision_date = result, revision_type = outcome,
 #'   data_type = "linelist", verbose = FALSE
 #' )
 #'
 #' # That one is flagged; all five stay confirmed, and the date is kept.
-#' flagged <- censor_validation_delays_above(flu, 30, verbose = FALSE)
-#' flagged[[get_is_censored_validation(flagged)]]
+#' flagged <- censor_revision_delays_above(flu, 30, verbose = FALSE)
+#' flagged[[get_is_censored_revision(flagged)]]
 #' table(flagged[["outcome"]])
 #'
 #' # The condition form: cap that turnaround at 30 days from the report, which
-#' # moves the validation date to match.
-#' capped_lab <- censor_validation_delays(flu, .validation_delay > 30,
+#' # moves the revision date to match.
+#' capped_lab <- censor_revision_delays(flu, .revision_delay > 30,
 #'   to_delay = 30, verbose = FALSE
 #' )
-#' capped_lab$.validation_delay
+#' capped_lab$.revision_delay
 #'
 #' ## A pending case has no resolution date, so there is nothing to censor --
 #' # it is skipped rather than given a date it never had.
 #' waiting <- flu
 #' waiting[["outcome"]][2] <- "pending"
 #' waiting[["result"]][2] <- as.Date(NA)
-#' waiting <- change_validation_date(waiting, "result", "outcome")
-#' out <- censor_validations(waiting, is.na(result), verbose = FALSE)
+#' waiting <- change_revision_date(waiting, "result", "outcome")
+#' out <- censor_revisions(waiting, is.na(result), verbose = FALSE)
 #' out[["result"]][2] # still NA
 #'
 #' @name censoring
@@ -336,34 +336,34 @@ censor_reporting_delays <- function(x, condition, to_delay = NULL, verbose = TRU
 
 #' @rdname censoring
 #' @export
-censor_validations <- function(x, condition, to_validation = get_now(x),
+censor_revisions <- function(x, condition, to_revision = get_now(x),
                                verbose = TRUE) {
-  .assert_tbl_now(x, "censor_validations")
-  .censor_require_validation(x, "censor_validations")
+  .assert_tbl_now(x, "censor_revisions")
+  .censor_require_revision(x, "censor_revisions")
   check_verbose(verbose)
   # The default reads `x`, and `x` is reassigned below.
-  force(to_validation)
+  force(to_revision)
 
   matched <- .censor_condition(x, rlang::enquo(condition))
-  .censor_check_replacement(x, get_validation_date(x), to_validation, "to_validation")
-  matched <- .censor_drop_pending(x, matched, to_validation, verbose)
+  .censor_check_replacement(x, get_revision_date(x), to_revision, "to_revision")
+  matched <- .censor_drop_pending(x, matched, to_revision, verbose)
 
   group_columns <- dplyr::group_vars(x)
   x <- .censor_replace_dates(
     ungroup(x),
-    matched = matched, column = get_validation_date(x), values = to_validation,
-    arg = "to_validation", axis = "validation", verbose = verbose
+    matched = matched, column = get_revision_date(x), values = to_revision,
+    arg = "to_revision", axis = "revision", verbose = verbose
   )
   x <- .tbl_now_regroup(x, group_columns)
 
   if (verbose) {
-    fate <- if (is.null(to_validation)) {
-      "Their validation delay is now a bound, not a measurement (is_censored_validation)."
+    fate <- if (is.null(to_revision)) {
+      "Their revision delay is now a bound, not a measurement (is_censored_revision)."
     } else {
-      "Their validation date was replaced and the delay is now a bound (is_censored_validation)."
+      "Their revision date was replaced and the delay is now a bound (is_censored_revision)."
     }
     cli::cli_inform(c(
-      "i" = "Censored {sum(matched)} validation{?s}.",
+      "i" = "Censored {sum(matched)} revision{?s}.",
       "*" = fate
     ))
   }
@@ -373,10 +373,10 @@ censor_validations <- function(x, condition, to_validation = get_now(x),
 
 #' @rdname censoring
 #' @export
-censor_validation_delays <- function(x, condition, to_delay = NULL,
+censor_revision_delays <- function(x, condition, to_delay = NULL,
                                      verbose = TRUE) {
-  .assert_tbl_now(x, "censor_validation_delays")
-  .censor_require_validation(x, "censor_validation_delays")
+  .assert_tbl_now(x, "censor_revision_delays")
+  .censor_require_revision(x, "censor_revision_delays")
   check_verbose(verbose)
 
   matched <- .censor_condition(x, rlang::enquo(condition))
@@ -392,21 +392,21 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
       )
     }
     .assert_whole_delay(
-      to_delay, get_validation_units(x) %||% get_report_units(x), "to_delay"
+      to_delay, get_revision_units(x) %||% get_report_units(x), "to_delay"
     )
-    # `.validation_delay` is the laboratory's turnaround, measured from the
-    # REPORT, in validation units -- not from the event, as `.delay` is.
+    # `.revision_delay` is the laboratory's turnaround, measured from the
+    # REPORT, in revision units -- not from the event, as `.delay` is.
     rebuilt <- .reconstruct_date_from_delay(
       data.frame(
         .report = x[[get_report_date(x)]],
         .delay_value = rep(to_delay, length.out = nrow(x))
       ),
       known_col = ".report", delay_col = ".delay_value",
-      units = get_validation_units(x) %||% get_report_units(x),
-      new_col_name = ".validation", direction = "add",
+      units = get_revision_units(x) %||% get_report_units(x),
+      new_col_name = ".revision", direction = "add",
       arg = "to_delay"
     )
-    replacement <- rebuilt[[".validation"]]
+    replacement <- rebuilt[[".revision"]]
   }
 
   matched <- .censor_drop_pending(x, matched, replacement, verbose)
@@ -414,19 +414,19 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
   group_columns <- dplyr::group_vars(x)
   x <- .censor_replace_dates(
     ungroup(x),
-    matched = matched, column = get_validation_date(x), values = replacement,
-    arg = "to_delay", axis = "validation", verbose = verbose
+    matched = matched, column = get_revision_date(x), values = replacement,
+    arg = "to_delay", axis = "revision", verbose = verbose
   )
   x <- .tbl_now_regroup(x, group_columns)
 
   if (verbose) {
     fate <- if (is.null(to_delay)) {
-      "Their validation delay is now a bound, not a measurement (is_censored_validation)."
+      "Their revision delay is now a bound, not a measurement (is_censored_revision)."
     } else {
-      "Their validation date was moved to match the new delay (is_censored_validation)."
+      "Their revision date was moved to match the new delay (is_censored_revision)."
     }
     cli::cli_inform(c(
-      "i" = "Censored {sum(matched)} validation{?s}.",
+      "i" = "Censored {sum(matched)} revision{?s}.",
       "*" = fate
     ))
   }
@@ -436,8 +436,8 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
 
 #' Check a date replacement against the column it is going into
 #'
-#' Split out so the validation verbs can run it BEFORE the pending guard: a bad
-#' `to_validation` should be an error about `to_validation`, not a warning about
+#' Split out so the revision verbs can run it BEFORE the pending guard: a bad
+#' `to_revision` should be an error about `to_revision`, not a warning about
 #' pending cases followed by an error.
 #'
 #' @param x A `tbl_now`.
@@ -472,7 +472,7 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
   invisible(NULL)
 }
 
-#' Refuse a validation-axis verb on an object that has no validation process
+#' Refuse a revision-axis verb on an object that has no revision process
 #'
 #' @param x A `tbl_now`.
 #' @param fn The calling function, for the message.
@@ -481,28 +481,28 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
 #'
 #' @keywords internal
 #' @noRd
-.censor_require_validation <- function(x, fn) {
-  if (!has_validation(x)) {
+.censor_require_revision <- function(x, fn) {
+  if (!has_revision(x)) {
     cli::cli_abort(c(
-      "{.fn {fn}} needs a validation process.",
-      "i" = "Attach one with {.fn add_validation_date}."
+      "{.fn {fn}} needs a revision process.",
+      "i" = "Attach one with {.fn add_revision_date}."
     ))
   }
   invisible(NULL)
 }
 
-#' Drop pending rows from a validation-censoring selection
+#' Drop pending rows from a revision-censoring selection
 #'
 #' `"pending"` means reported and still waiting, so a pending case has no
-#' validation date -- that is what separates it from a resolution nobody wrote
+#' revision date -- that is what separates it from a resolution nobody wrote
 #' down. Writing a date onto one asserts a resolution that never happened, and
 #' makes the case look resolved to everything counting arrivals on the
-#' validation axis.
+#' revision axis.
 #'
 #' Only applies when a date would actually be written: flagging alone
 #' contradicts nothing.
 #'
-#' @param x A `tbl_now` carrying a validation process.
+#' @param x A `tbl_now` carrying a revision process.
 #' @param matched The rows the condition selected.
 #' @param values The replacement, or `NULL` when only the flag is being set.
 #' @param verbose Whether to say how many rows were skipped.
@@ -515,7 +515,7 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
   if (is.null(values)) {
     return(matched)
   }
-  type_col <- get_validation_type(x)
+  type_col <- get_revision_type(x)
   if (is.null(type_col) || !type_col %in% names(x)) {
     return(matched)
   }
@@ -529,10 +529,10 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
 
   if (verbose) {
     cli::cli_warn(c(
-      "Skipped {sum(skipped)} pending case{?s}: a pending validation has no
+      "Skipped {sum(skipped)} pending case{?s}: a pending revision has no
        date to censor.",
       "i" = "{.val pending} means reported and still waiting, so writing a
-             validation date would assert a resolution that never happened.",
+             revision date would assert a resolution that never happened.",
       "*" = "Set {.arg {type_col}} to {.val confirmed} or {.val retracted}
              first if the case really was resolved."
     ))
@@ -587,14 +587,14 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
 #' the axis as an argument rather than existing twice. Attribute names stay
 #' behind the getters, as everywhere else in the package.
 #'
-#' @param axis `"report"` or `"validation"`.
+#' @param axis `"report"` or `"revision"`.
 #'
 #' @return A list with `get`, `add`, `column` and `argument` (the name
 #'   `tbl_now()` takes that flag under).
 #'
 #' @keywords internal
 #' @noRd
-.censor_axis <- function(axis = c("report", "validation")) {
+.censor_axis <- function(axis = c("report", "revision")) {
   axis <- match.arg(axis)
   if (axis == "report") {
     list(
@@ -605,10 +605,10 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
     )
   } else {
     list(
-      get = get_is_censored_validation,
-      add = add_is_censored_validation,
-      column = ".is_censored_validation",
-      argument = "is_censored_validation"
+      get = get_is_censored_revision,
+      add = add_is_censored_revision,
+      column = ".is_censored_revision",
+      argument = "is_censored_revision"
     )
   }
 }
@@ -620,7 +620,7 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
 #'
 #' @param x A `tbl_now`.
 #' @param rows A logical vector of length `nrow(x)`.
-#' @param axis `"report"` (default) or `"validation"`.
+#' @param axis `"report"` (default) or `"revision"`.
 #'
 #' @return `x`, with that axis's censoring column set.
 #'
@@ -646,7 +646,7 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
 #' @param data A bare data frame taken from `x`.
 #' @param x The `tbl_now` it came from (for the flag column's name).
 #' @param rows A logical vector of length `nrow(data)`.
-#' @param axis `"report"` (default) or `"validation"`.
+#' @param axis `"report"` (default) or `"revision"`.
 #'
 #' @return A list with `data` (the frame, flag column written) and `column`
 #'   (its name).
@@ -718,7 +718,7 @@ censor_validation_delays <- function(x, condition, to_delay = NULL,
   # A day-of-week term computed on the REPORT date describes a date that has
   # just moved. Drop those columns rather than carry a stale answer -- and drop
   # only those: the event-date terms are still true, and neither kind is
-  # computed on the validation date, so the validation axis touches nothing.
+  # computed on the revision date, so the revision axis touches nothing.
   stale_effects <- if (identical(axis, "report")) {
     grep(
       "^\\.report_", intersect(get_temporal_effect_cols(x), colnames(data)),

@@ -234,7 +234,7 @@ test_that("time_cols_to_numeric correctly converts numeric data", {
   expect_equal(result$.report_num[1], 4)
 })
 
-# Tests for validation and error handling ----
+# Tests for revision and error handling ----
 test_that("time_cols_to_numeric fails when mixing numeric with date units", {
   test_data <- setup_test_data()
 

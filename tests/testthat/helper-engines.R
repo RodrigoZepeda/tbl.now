@@ -262,7 +262,7 @@ engine_args <- function(engine, x) {
     baselinenowcast = list(draws = 50),
     # A `count-cumulative` stream needs a CONFIRMATION PROCESS: the signed
     # increments it models can go down, and `model()`'s default is
-    # `no_validation()`, under which the fit reports "Joint fit failed to
+    # `no_revision()`, under which the fit reports "Joint fit failed to
     # converge for all init attempts".
     #
     # `run_nowcast()` deliberately does not inject one -- picking a model

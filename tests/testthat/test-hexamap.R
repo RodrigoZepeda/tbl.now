@@ -70,7 +70,7 @@ test_that("the grid line widths are settable and independent", {
   )
 })
 
-test_that("a size argument is validated", {
+test_that("a size argument is revised", {
   tn <- make_hex_tbl()
   expect_error(plot_reporting_hexamap(tn, size = -1), "non-negative")
   expect_error(plot_reporting_hexamap(tn, size = c(1, 2)), "single")

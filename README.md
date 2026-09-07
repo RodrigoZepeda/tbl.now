@@ -104,18 +104,18 @@ unless it is reconstructed from <code>delay</code>.
 
 <td align="center">
 
-<img src="man/figures/validation_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="validation">
+<img src="man/figures/revision_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="revision">
 </td>
 
 <td align="left">
 
-<code>validation_date</code>
+<code>revision_date</code>
 </td>
 
 <td align="left">
 
 An optional third date indicating when the report was resolved (see
-<code>validation_type</code>). <em>Optional</em>.
+<code>revision_type</code>). <em>Optional</em>.
 </td>
 
 </tr>
@@ -124,19 +124,19 @@ An optional third date indicating when the report was resolved (see
 
 <td align="center">
 
-<img src="man/figures/validation_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="validation">
+<img src="man/figures/revision_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="revision">
 </td>
 
 <td align="left">
 
-<code>validation_type</code>
+<code>revision_type</code>
 </td>
 
 <td align="left">
 
-What the validation date resolved to. Only <code>confirmed</code>,
+What the revision date resolved to. Only <code>confirmed</code>,
 <code>retracted</code>, <code>pending</code> or <code>NA</code> are ever
-stored; use <code>validation_levels</code> for data recorded in other
+stored; use <code>revision_levels</code> for data recorded in other
 words. <em>Optional</em>.
 </td>
 
@@ -146,18 +146,18 @@ words. <em>Optional</em>.
 
 <td align="center">
 
-<img src="man/figures/validation_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="validation_levels">
+<img src="man/figures/revision_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="revision_levels">
 </td>
 
 <td align="left">
 
-<code>validation_levels</code>
+<code>revision_levels</code>
 </td>
 
 <td align="left">
 
 A named dictionary translating the labels in
-<code>validation_type</code> into those four, e.g. <code>c(positive =
+<code>revision_type</code> into those four, e.g. <code>c(positive =
 “confirmed”)</code>. <em>Optional</em>.
 </td>
 
@@ -276,7 +276,7 @@ axis). <em>Optional</em>; inferred by default.
 <td align="left">
 
 <code>event_units</code>, <code>report_units</code>,
-<code>validation_units</code>
+<code>revision_units</code>
 </td>
 
 <td align="left">
@@ -312,17 +312,17 @@ back-fill dump. <em>Optional</em>.
 
 <td align="center">
 
-<img src="man/figures/censoring.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="is_censored_validation">
+<img src="man/figures/censoring.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="is_censored_revision">
 </td>
 
 <td align="left">
 
-<code>is_censored_validation</code>
+<code>is_censored_revision</code>
 </td>
 
 <td align="left">
 
-The same on the validation axis: flags rows whose <em>validation</em>
+The same on the revision axis: flags rows whose <em>revision</em>
 delay is a bound rather than a measurement. <em>Optional</em>.
 </td>
 

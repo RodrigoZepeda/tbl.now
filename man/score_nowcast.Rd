@@ -10,14 +10,14 @@
 score_nowcast(
   x,
   truth = NULL,
-  truth_axis = c("report", "validation"),
+  truth_axis = c("report", "revision"),
   truth_type = "total"
 )
 
 as_scoringutils(
   x,
   truth = NULL,
-  truth_axis = c("report", "validation"),
+  truth_axis = c("report", "revision"),
   truth_type = "total"
 )
 
@@ -25,7 +25,7 @@ as_scoringutils(
   data,
   ...,
   truth = NULL,
-  truth_axis = c("report", "validation"),
+  truth_axis = c("report", "revision"),
   truth_type = "total"
 )
 
@@ -33,7 +33,7 @@ as_scoringutils(
   data,
   ...,
   truth = NULL,
-  truth_axis = c("report", "validation"),
+  truth_axis = c("report", "revision"),
   truth_type = "total"
 )
 }
@@ -54,14 +54,14 @@ which is only meaningful when that object still holds the later reports.
 A backtest instead uses the truth table it already stores.}
 
 \item{truth_axis}{Which process defines the observed counts. \code{"report"}
-(default) scores counts eventually reported. \code{"validation"} scores counts
-eventually resolved on the validation axis and requires a validation-aware
+(default) scores counts eventually reported. \code{"revision"} scores counts
+eventually resolved on the revision axis and requires a revision-aware
 \code{truth}.}
 
-\item{truth_type}{Which case type to score. Defaults to \code{"total"}. Validation
+\item{truth_type}{Which case type to score. Defaults to \code{"total"}. Revision
 types such as \code{"confirmed"}, \code{"retracted"}, \code{"pending"}, \code{"unknown"} and
 \code{"net"} follow the same meanings as \code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}} and
-\code{\link[=get_latest_validated_cases]{get_latest_validated_cases()}}. \code{"by_type"} is refused because scoring needs
+\code{\link[=get_latest_revised_cases]{get_latest_revised_cases()}}. \code{"by_type"} is refused because scoring needs
 one observed value per event-date/stratum target.}
 
 \item{data}{A \code{\link[=nowcast_backtest]{nowcast_backtest()}}.}

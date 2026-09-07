@@ -597,7 +597,7 @@ test_that("to_count handles data with no strata or covariates", {
   expect_equal(sum(result$n), 3)
 })
 
-# Tests for data validation ----
+# Tests for data revision ----
 test_that("to_count maintains data integrity", {
   skip_on_cran()
   test_data <- setup_test_data()
